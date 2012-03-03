@@ -64,3 +64,5 @@ schLib = env.Library("qserv_schedtest",
                       + "").split())
 installedSchLib = env.Install('lib', schLib)
 env.Append(sched_libs=[installedSchLib[0]])
+
+env.Append(xrfile_libs = env.Library("qserv_xrootfile", "XrootFilename.cc"))

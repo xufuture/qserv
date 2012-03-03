@@ -49,6 +49,8 @@ testEnv.Append(BUILDERS = {'Test': bld})
 for src in Glob("*.cc"):
     if "MySqlFs_" in src.name:
         src = [src] + testEnv["built_libs"]
+    elif "MySqlFsFile_" in src.name:
+        src = [src] + testEnv["xrfile_libs"]
     elif "FifoScheduler_" in src.name:
         src = [src] + testEnv["sched_libs"]
     prog = testEnv.Program(src)

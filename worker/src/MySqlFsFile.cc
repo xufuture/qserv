@@ -61,6 +61,10 @@
 
 namespace qWorker = lsst::qserv::worker;
 
+////////////////////////////////////////////////////////////////////////
+// Anonymous local helpers
+////////////////////////////////////////////////////////////////////////
+namespace {
 
 // Boost launching helper
 template <typename Callable>
@@ -175,6 +179,7 @@ std::ostream& operator<<(std::ostream& os, Timer const& tm) {
     return os;
 }
 
+} // anonymous namespace
 //////////////////////////////////////////////////////////////////////////////
 // MySqlFsFile
 //////////////////////////////////////////////////////////////////////////////
@@ -552,6 +557,8 @@ int qWorker::MySqlFsFile::_handleTwoReadOpen(char const* fileName) {
 int qWorker::MySqlFsFile::_checkForHash(std::string const& hash) {
     _dumpName = hashToResultPath(hash); 
     _hasRead = false;
+    // Should check to see if the hash is our responsibility.
+    // Should reject hashes that we will never produce.
     ResultErrorPtr p = _getResultState(_dumpName);
     if(p.get()) {
         if(p->first != 0) { // Error, so report it.
