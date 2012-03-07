@@ -46,6 +46,8 @@ public:
     std::string hashName() const { return _hashName; }
 
     std::string var(std::string const& key) const;
+    bool hasVar(std::string const& key) const;
+    
 
     /// @return the path prefix element for a given request type.
     std::string prefix(RequestType const& r) const;
@@ -55,9 +57,9 @@ public:
     void setAsResult(std::string const& hashName);
     
     // Add optional specifiers ?foo&bar=1&bar2=2
-    void addKey(std::string const& key);
-    void addKey(std::string const& key, int val);
-    void addKey(std::string const& key, std::string const& val);
+    void addVar(std::string const& key);
+    void addVar(std::string const& key, int val);
+    void addVar(std::string const& key, std::string const& val);
 
 private:
     class Tokenizer;

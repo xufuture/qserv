@@ -95,6 +95,11 @@ std::string qsrv::QservPath::var(std::string const& key) const {
     }
     return std::string();
 }
+
+bool qsrv::QservPath::hasVar(std::string const& key) const {
+    VarMap::const_iterator ci = _vars.find(key);
+    return ci != _vars.end();
+}
     
 std::string qsrv::QservPath::prefix(RequestType const& r) const {
     switch(r) {
@@ -126,17 +131,17 @@ void qsrv::QservPath::setAsResult(std::string const& hashName) {
 
 
 // Add optional specifiers ?foo&bar=1&bar2=2
-void qsrv::QservPath::addKey(std::string const& key) {
+void qsrv::QservPath::addVar(std::string const& key) {
     _vars[key]; // Insert empty entry.
 }
 
-void qsrv::QservPath::addKey(std::string const& key, int val) {
+void qsrv::QservPath::addVar(std::string const& key, int val) {
     std::stringstream ss;
     ss << val;
     _vars[key] = ss.str();
 }
 
-void qsrv::QservPath::addKey(std::string const& key, std::string const& val) {
+void qsrv::QservPath::addVar(std::string const& key, std::string const& val) {
     _vars[key] = val;
 }
 

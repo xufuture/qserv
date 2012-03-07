@@ -88,9 +88,9 @@ BOOST_AUTO_TEST_CASE(CreateKeyPath) {
     qsrv::QservPath qp1;
     std::string hName("abcdef1234567890");
     qp1.setAsResult(hName);
-    qp1.addKey("batch");
-    qp1.addKey("bsize", 5);
-    qp1.addKey("session", "test");
+    qp1.addVar("batch");
+    qp1.addVar("bsize", 5);
+    qp1.addVar("session", "test");
     BOOST_CHECK_EQUAL(qp1.requestType(), qsrv::QservPath::RESULT);
     BOOST_CHECK_EQUAL(qp1.hashName(), hName);
     BOOST_CHECK_EQUAL(qp1.path(), test1);
