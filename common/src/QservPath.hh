@@ -57,22 +57,27 @@ public:
     // Add optional specifiers ?foo&bar=1&bar2=2
     void addKey(std::string const& key);
     void addKey(std::string const& key, int val);
+    void addKey(std::string const& key, std::string const& val);
 
 private:
     class Tokenizer;
     void _setFromPath(std::string const& path);
     std::string _ingestKeys(std::string const& leafPlusKeys);
-    std::string _ingestKeyStr(std::string const& keyStr);
+    void _ingestKeyStr(std::string const& keyStr);
+    std::string _renderVars() const; 
+
 
     RequestType _requestType;
     std::string _db;
     int _chunk;
     std::string _hashName;
+    std::string _queryString;
     typedef std::map<std::string, std::string> VarMap;
     VarMap _vars;
     static char const _pathSep = '/';
     static char const _varSep = '?';
     static char const _varDelim = '&';
+    static char const _eqSep = '=';
     
 };
 

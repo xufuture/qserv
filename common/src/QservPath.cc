@@ -35,16 +35,33 @@ public:
         : _cursor(0), _next(0), _s(s), _sep(sep) {
         _seek();
     }
+
     std::string token() { return _s.substr(_cursor, _next-_cursor); }
+
     int tokenAsInt() {
         int num;
         std::stringstream csm(token());
         csm >> num;        
         return num;
     }
-    void next() { _cursor = _next + 1; _seek(); }
+
+    void next() { 
+        if(_next != std::string::npos) {
+            _cursor = _next + 1; 
+            _seek(); 
+        } else { _cursor = _next; }
+    }
+        
+    bool done() {
+        return _cursor == std::string::npos;
+    }
 private:
-    void _seek() { _next = _s.find_first_of(_sep, _cursor); }
+    void _seek() { 
+        _next = _s.find_first_of(_sep, _cursor); 
+        if(_next == std::string::npos) {
+            
+        }
+    }
 
     std::string::size_type _cursor;
     std::string::size_type _next;
@@ -62,7 +79,11 @@ std::string qsrv::QservPath::path() const {
     ss << _pathSep << prefix(_requestType);
     if(_requestType == CQUERY) {
         ss << _pathSep << _db << _pathSep << _chunk;
-    } else {
+    } else if(_requestType == RESULT){
+        ss << _pathSep << _hashName;
+        if(_vars.size() > 0) {
+            ss << _varSep << _renderVars();
+        }
     }
     return ss.str();
 }
@@ -98,6 +119,26 @@ void qsrv::QservPath::setAsCquery(std::string const& db, int chunk) {
     _db = db;
     _chunk = chunk;
 }
+void qsrv::QservPath::setAsResult(std::string const& hashName) {
+    _requestType = RESULT;
+    _hashName = hashName;
+}
+
+
+// Add optional specifiers ?foo&bar=1&bar2=2
+void qsrv::QservPath::addKey(std::string const& key) {
+    _vars[key]; // Insert empty entry.
+}
+
+void qsrv::QservPath::addKey(std::string const& key, int val) {
+    std::stringstream ss;
+    ss << val;
+    _vars[key] = ss.str();
+}
+
+void qsrv::QservPath::addKey(std::string const& key, std::string const& val) {
+    _vars[key] = val;
+}
 
 void qsrv::QservPath::_setFromPath(std::string const& path) {
     std::string rTypeString;
@@ -122,7 +163,7 @@ void qsrv::QservPath::_setFromPath(std::string const& path) {
     } else if(rTypeString == prefix(RESULT)) {
         _requestType = RESULT;
         t.next();
-        _hashName = t.token();
+        _hashName = _ingestKeys(t.token()); 
     } else if(rTypeString == prefix(OLDQ1)) {
         _requestType = OLDQ1;
         t.next();
@@ -136,6 +177,7 @@ void qsrv::QservPath::_setFromPath(std::string const& path) {
     }    
 }
 
+/// @return leaf, without ?key=value&key=value... string.
 std::string qsrv::QservPath::_ingestKeys(std::string const& leafPlusKeys) {
     std::string::size_type start;
     start = leafPlusKeys.find_first_of(_varSep, 0);
@@ -146,17 +188,34 @@ std::string qsrv::QservPath::_ingestKeys(std::string const& leafPlusKeys) {
     }
     ++start;
     Tokenizer t(leafPlusKeys.substr(start), _varDelim);
-    for(std::string defn = t.token(); !defn.empty(); t.next()) {
-        _ingestKeyStr(defn);
+    for(; !t.done(); t.next()) {
+        _ingestKeyStr(t.token());
     }
+    return leafPlusKeys.substr(0, start-1);
 }
 
-std::string qsrv::QservPath::_ingestKeyStr(std::string const& keyStr) {
+void qsrv::QservPath::_ingestKeyStr(std::string const& keyStr) {
     std::string::size_type equalsPos;
-    equalsPos = keyStr.find_first_of('=');
+    equalsPos = keyStr.find_first_of(_eqSep);
     if(equalsPos == std::string::npos) { // No = clause, value-less key.
         _vars[keyStr] = std::string(); // empty insert.
     } else {
         _vars[keyStr.substr(0,equalsPos)] = keyStr.substr(equalsPos+1);
     }    
+}
+
+/// @return varstr: e.g. ?k=v&k=v&k=v ...
+std::string qsrv::QservPath::_renderVars() const {
+    std::stringstream ss;
+    VarMap::const_iterator i;
+    bool hasPrev = false;
+    for(i=_vars.begin(); i != _vars.end(); ++i) {
+        if(hasPrev) ss << _varDelim;
+        ss << i->first;
+        if(!i->second.empty()) {
+           ss << _eqSep << i->second;
+        }
+        hasPrev = true;
+    }
+    return ss.str();
 }

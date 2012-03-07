@@ -41,7 +41,6 @@ BOOST_FIXTURE_TEST_SUITE(PathTestSuite, PathFixture)
 BOOST_AUTO_TEST_CASE(QueryPathCreate) {
     qsrv::QservPath qp;
     qp.setAsCquery("LSST", 3141);
-    std::cout << "path became:" << qp.path() << std::endl;
     BOOST_CHECK_EQUAL(qp.path(), "/q/LSST/3141");
 }
 
@@ -75,5 +74,27 @@ BOOST_AUTO_TEST_CASE(QueryPathOld) {
     BOOST_CHECK_EQUAL(qp2.requestType(), qsrv::QservPath::OLDQ2);
     BOOST_CHECK_EQUAL(qp2.chunk(), 32767);
 }
+
+BOOST_AUTO_TEST_CASE(PathWithKeys) {
+    std::string testPath1("/result/1234567890abcdef?debug&fun=yes&obj=world");
+    qsrv::QservPath qp1(testPath1);
+    BOOST_CHECK_EQUAL(qp1.requestType(), qsrv::QservPath::RESULT);
+    BOOST_CHECK_EQUAL(qp1.hashName(), "1234567890abcdef");
+    BOOST_CHECK_EQUAL(qp1.path(), testPath1);
+}
+
+BOOST_AUTO_TEST_CASE(CreateKeyPath) {
+    std::string test1("/result/abcdef1234567890?batch&bsize=5&session=test");
+    qsrv::QservPath qp1;
+    std::string hName("abcdef1234567890");
+    qp1.setAsResult(hName);
+    qp1.addKey("batch");
+    qp1.addKey("bsize", 5);
+    qp1.addKey("session", "test");
+    BOOST_CHECK_EQUAL(qp1.requestType(), qsrv::QservPath::RESULT);
+    BOOST_CHECK_EQUAL(qp1.hashName(), hName);
+    BOOST_CHECK_EQUAL(qp1.path(), test1);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
