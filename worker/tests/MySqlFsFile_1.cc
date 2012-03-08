@@ -22,10 +22,10 @@
  
 #define BOOST_TEST_MODULE MySqlFsFile_1
 #include "boost/test/included/unit_test.hpp"
-#include "lsst/qserv/worker/XrootFilename.h"
+#include "lsst/qserv/QservPath.hh"
 
 namespace test = boost::test_tools;
-namespace qWorker = lsst::qserv::worker;
+namespace qsrv = lsst::qserv;
 
 struct Fixture {
     Fixture() {}
@@ -35,36 +35,42 @@ struct Fixture {
 BOOST_FIXTURE_TEST_SUITE(FsFile, Fixture)
 
 BOOST_AUTO_TEST_CASE(TestParse) {
-    qWorker::XrootFilename fn("hello?obj=world&fun=yes&debug");
-    BOOST_CHECK_EQUAL(fn.getFile(), "hello");
-    BOOST_CHECK_EQUAL(fn.getQueryString(), "obj=world&fun=yes&debug");
-    BOOST_CHECK(fn.hasKey("obj"));
-    BOOST_CHECK(fn.hasKey("fun"));
-    BOOST_CHECK(fn.hasKey("debug"));
-    BOOST_CHECK_EQUAL(fn.getValue("obj"), "world");
+    std::string prefix("/result/");
+    std::string hash("1122334455");
+    qsrv::QservPath qp( prefix + hash + "?obj=earth");
+    BOOST_CHECK_EQUAL(qp.requestType(), qsrv::QservPath::RESULT);
+    BOOST_CHECK_EQUAL(qp.hashName(), hash);
+    BOOST_CHECK_EQUAL(qp.var("obj"), "earth");
 }
 
 BOOST_AUTO_TEST_CASE(TestParse2) {
-    qWorker::XrootFilename fn("hello?obj=world&fun=yes&debug&obj=earth");
-    BOOST_CHECK_EQUAL(fn.getFile(), "hello");
-    BOOST_CHECK_EQUAL(fn.getQueryString(), "obj=world&fun=yes&debug&obj=earth");
-    BOOST_CHECK(fn.hasKey("obj"));
-    BOOST_CHECK(fn.hasKey("fun"));
-    BOOST_CHECK(fn.hasKey("debug"));
-    BOOST_CHECK_EQUAL(fn.getValue("obj"), "earth");
+    std::string prefix("/result/");
+    std::string hash("abcde12345");
+    qsrv::QservPath qp( prefix + hash + "?obj=world&fun=yes&debug&obj=earth");
+    BOOST_CHECK_EQUAL(qp.requestType(), qsrv::QservPath::RESULT);
+    BOOST_CHECK_EQUAL(qp.hashName(), hash);
+    BOOST_CHECK_EQUAL(qp.var("obj"), "earth");
+    BOOST_CHECK_EQUAL(qp.var("fun"), "yes");
+    BOOST_CHECK(qp.hasVar("debug"));
+    BOOST_CHECK_EQUAL(qp.var("debug"), std::string());
 }
 
 BOOST_AUTO_TEST_CASE(FileBuild) {
+    qsrv::QservPath p;
     std::string fstr("1234567890abcdef");
-    qWorker::XrootFilename fn(fstr);
-    fn.addValue("obj", "world");
-    fn.addValue("batch","yes");
-    BOOST_CHECK_EQUAL(fn.getFile(), fstr);
-    BOOST_CHECK(fn.hasKey("obj"));
-    BOOST_CHECK(fn.hasKey("batch"));
-    BOOST_CHECK_EQUAL(fn.getValue("obj"), "world");
-    BOOST_CHECK_EQUAL(fn.getValue("batch"), "yes");
-    BOOST_CHECK_EQUAL(fn.getQueryString(), "batch=yes&obj=world");
+    p.setAsResult(fstr);
+    p.addVar("obj", "world");
+    p.addVar("batch","yes");
+    BOOST_CHECK_EQUAL(p.hashName(), fstr);
+    BOOST_CHECK(p.hasVar("obj"));
+    BOOST_CHECK(p.hasVar("batch"));
+    BOOST_CHECK_EQUAL(p.requestType(), qsrv::QservPath::RESULT);
+
+    qsrv::QservPath p2(p.path());
+    BOOST_CHECK_EQUAL(p2.hashName(), fstr);
+    BOOST_CHECK(p2.hasVar("obj"));
+    BOOST_CHECK(p2.hasVar("batch"));
+    BOOST_CHECK_EQUAL(p2.requestType(), qsrv::QservPath::RESULT);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
