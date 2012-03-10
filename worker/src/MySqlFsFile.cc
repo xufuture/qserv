@@ -42,6 +42,7 @@
 #include "lsst/qserv/worker/Base.h"
 #include "lsst/qserv/worker/RequestTaker.h"
 #include "lsst/qserv/worker/XrdLogger.h"
+#include "lsst/qserv/worker/ResultRequest.h"
 #include "lsst/qserv/QservPath.hh"
 
 #include <algorithm>
@@ -238,6 +239,7 @@ int qWorker::MySqlFsFile::_acceptFile(char const* fileName) {
         return SFS_OK; // No other action is needed.
 
     case QservPath::RESULT:
+        _rRequest.reset(new ResultRequest(*_path));
         rc = _checkForHash(_path->hashName());
         if(rc == SFS_ERROR) {
             _eDest->Say((Pformat("File open %1% fail. Query error: %2%.")

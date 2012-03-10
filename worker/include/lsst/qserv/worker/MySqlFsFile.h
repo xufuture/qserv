@@ -48,7 +48,7 @@ namespace lsst {
 namespace qserv {
 namespace worker {
 class RequestTaker; // Forward
-
+class ResultRequest;
 
 class AddCallbackFunction {
 public:
@@ -121,7 +121,7 @@ private:
     boost::shared_ptr<QservPath> _path;
     boost::shared_ptr<RequestTaker> _requestTaker;
     boost::shared_ptr<Service> _service;
-
+    boost::shared_ptr<ResultRequest> _rRequest;
 };
 
 }}} // namespace lsst::qserv::worker
