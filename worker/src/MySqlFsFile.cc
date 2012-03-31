@@ -239,7 +239,7 @@ int qWorker::MySqlFsFile::_acceptFile(char const* fileName) {
         return SFS_OK; // No other action is needed.
 
     case QservPath::RESULT:
-        _rRequest.reset(new ResultRequest(*_path));
+        _rRequest.reset(new ResultRequest(*_path, &(this->error)));
         rc = _checkForHash(_path->hashName());
         if(rc == SFS_ERROR) {
             _eDest->Say((Pformat("File open %1% fail. Query error: %2%.")
@@ -484,6 +484,7 @@ bool qWorker::MySqlFsFile::_addWritePacket(XrdSfsFileOffset offset,
 void qWorker::MySqlFsFile::_addCallback(std::string const& filename) {
     assert(_path->requestType() == QservPath::RESULT);
     assert(_addCallbackF.get() != 0);
+    
     (*_addCallbackF)(*this, filename);
 }
 

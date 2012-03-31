@@ -24,6 +24,7 @@
 #include "lsst/qserv/worker/Base.h"
 #include "lsst/qserv/worker/QueryRunner.h"
 #include "lsst/qserv/QservPath.hh"
+#include "XrdSfs/XrdSfsCallBack.hh"
 
 namespace qWorker = lsst::qserv::worker;
 
@@ -37,10 +38,53 @@ void lookupResult(std::string const& hash) {
 }
 #endif
 }
+
+////////////////////////////////////////////////////////////////////////
+// XrdFinishListener
+////////////////////////////////////////////////////////////////////////
+class XrdFinishListener { 
+public:
+    XrdFinishListener(XrdOucErrInfo* eInfo) {
+        _callback = XrdSfsCallBack::Create(eInfo);
+    }
+    virtual void operator()(qWorker::ResultError const& p) {
+        if(p.first == 0) {
+            // std::cerr << "Callback=OK!\t" << (void*)_callback << std::endl;
+            _callback->Reply_OK();
+        } else {
+            //std::cerr << "Callback error! " << p.first 
+            //	      << " desc=" << p.second << std::endl;
+            _callback->Reply_Error(p.first, p.second.c_str());
+        }
+        _callback = 0;
+        // _callback will be auto-destructed after any Reply_* call.
+    }
+private:
+    XrdSfsCallBack* _callback;
+};
+////////////////////////////////////////////////////////////////////////
+// NullListener
+////////////////////////////////////////////////////////////////////////
+class NullListener { 
+public:
+    explicit NullListener(const char* name) : _name(name) {
+    }
+    virtual void operator()(qWorker::ResultError const& p) {
+        if(p.first == 0) {
+            std::cerr << "Callback=OK!\t" << _name << std::endl;
+        } else {
+            std::cerr << "Callback error! " << _name << " " 
+                      << p.first << " desc=" << p.second << std::endl;
+        }
+    }
+private:
+    const char* _name;
+};
 ////////////////////////////////////////////////////////////////////////
 // class ResultRequest
 ////////////////////////////////////////////////////////////////////////
-qWorker::ResultRequest::ResultRequest(QservPath const& p) :_state(UNKNOWN) {
+qWorker::ResultRequest::ResultRequest(QservPath const& p, XrdOucErrInfo* e) 
+    :_state(UNKNOWN), _fsFileEinfo(e) {
     assert(p.requestType() == QservPath::RESULT);
     _accept(p);
 }
@@ -75,7 +119,13 @@ qWorker::ResultRequest::_accept(QservPath const& p) {
             _state = OPENERROR;
         }
     } else { // No news, so listen for it.
-        //_addCallback(hash); // FIXME
+        if(_fsFileEinfo) {
+            qWorker::QueryRunner::getTracker().listenOnce(
+                p.hashName(), XrdFinishListener(_fsFileEinfo));
+        } else {
+            qWorker::QueryRunner::getTracker().listenOnce(
+                p.hashName(), NullListener("rrGeneric"));                
+        }
         _state = OPENWAIT; 
     }
     _state = OPEN;

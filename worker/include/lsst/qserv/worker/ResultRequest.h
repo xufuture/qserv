@@ -28,8 +28,7 @@
 
 //#include <boost/signal.hpp>
 #include <boost/shared_ptr.hpp>
-//#include <boost/make_shared.hpp>
-//#include "lsst/qserv/worker/WorkQueue.h"
+class XrdOucErrInfo; // forward
 
 namespace lsst {
 namespace qserv {
@@ -41,7 +40,7 @@ public:
     enum State {UNKNOWN, OPENWAIT, OPEN, OPENERROR};
     typedef boost::shared_ptr<ResultRequest> Ptr;
 
-    explicit ResultRequest(QservPath const& p);
+    explicit ResultRequest(QservPath const& p, XrdOucErrInfo* e);
     State getState() const { return _state; }
     std::string getStateStr() const;
 private:
@@ -54,6 +53,7 @@ private:
     friend std::ostream& 
         operator<<(std::ostream& os, 
                    lsst::qserv::worker::ResultRequest const& rr); 
+    XrdOucErrInfo* _fsFileEinfo;
 };
 
     

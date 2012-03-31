@@ -1,0 +1,27 @@
+The qserv worker library handles query results as follows:
+
+Master requests result file by hash, e.g. /result/abcdef123540921
+Thus it *opens* that file.
+
+MySqlFs constructs a MySqlFsFile object, and performs the "open" call.
+If the result is ready, open() returns with SFS_OK. This is a simple case.
+If not, open() returns SFS_STARTED, but first requests a callback
+object from the XrdSfs module, stores it in another object
+(FinishListener) that is 
+inserted into the result tracker for calling when the result is
+ready. 
+
+The latter case is somewhat complex. The 2011 era qserv hides the
+existence of FinishListener in MySqlFs, passing its factory function
+to MySqlFsFile. The intent was to loosen coupling to the result
+tracker and improve testability of MySqlFsFile.  However, this seems
+like an unnecessary complexity.
+
+The FinishListener object needs to understand a XrdSfsFile in order to
+fire the callback when appropriately invoked by the result
+tracker. In the new version, we want ResultRequest to manage requests
+for results. It needs to be able to fire the XrdSfsFile callback, or
+another callback (for testing). It seems that we should push the
+dependency lower than MySqlFs, perhaps to RequestResult. This would
+remove the plumbing for the factory function needed in the 2011
+version of MySqlFs.
