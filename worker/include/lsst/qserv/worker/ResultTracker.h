@@ -77,7 +77,10 @@ public:
     //////////////////////////////////////////////////
     // Methods
     //////////////////////////////////////////////////
+    // Constructor
     ResultTracker() : _workQueue(3) {} // Callback pool w/ 3 threads
+
+    // Notify everyone that an item i for key k is ready
     void notify(Key const& k, Item const& i) {
         _verifyKey(k); // Force k to exist in _signals
         LSPtr s;
@@ -96,6 +99,8 @@ public:
             _news[k] = i;
         }
     }
+
+    // Destroy news items for key k
     void clearNews(Key const& k) {
         boost::unique_lock<boost::mutex> lock(_newsMutex);
         typename NewsMap::iterator i = _news.find(k);
@@ -103,6 +108,8 @@ public:
             _news.erase(i);
         }
     }
+
+    // Register a callback to be fired when key k has news
     template <typename Callable>
     void listenOnce(Key const& k, Callable const& c) {
         {
@@ -137,6 +144,8 @@ public:
             }
         }
     }
+
+    // Check to see whether key k has news
     ItemPtr getNews(Key const& k) {
         ItemPtr p;
         boost::unique_lock<boost::mutex> lock(_newsMutex);

@@ -84,10 +84,24 @@ private:
 // class ResultRequest
 ////////////////////////////////////////////////////////////////////////
 qWorker::ResultRequest::ResultRequest(QservPath const& p, XrdOucErrInfo* e) 
-    :_state(UNKNOWN), _fsFileEinfo(e) {
+    :_state(UNKNOWN), _fsFileEinfo(e), _hash(p.hashName()) {
     assert(p.requestType() == QservPath::RESULT);
     _accept(p);
 }
+
+/// discards results: clears news in result tracker and deletes dump file
+/// @return false if unsuccessful
+bool qWorker::ResultRequest::discard() {
+    _state = DISCARDED;
+    QueryRunner::getTracker().clearNews(_hash);
+    // Must remove dump file while we are doing the single-query workaround
+    // _eDest->Say((Pformat("Not Removing dump file(%1%)")
+    // 		 % _dumpName ).str().c_str());
+    int result = ::unlink(_dumpName.c_str());
+    if(result != 0) { return false; }
+    return true;
+}
+
 
 std::string qWorker::ResultRequest::getStateStr() const {
     std::stringstream ss;
@@ -101,9 +115,18 @@ std::string qWorker::ResultRequest::getStateStr() const {
     case OPENERROR:
         ss << "Error:" << _error;
         return ss.str();
+    case DISCARDED:
+        return "Discarded";
     default:
         return "Corrupt";
     }
+}
+
+std::string
+qWorker::ResultRequest::str() const {
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -112,12 +135,12 @@ std::string qWorker::ResultRequest::getStateStr() const {
 qWorker::ResultRequest::State 
 qWorker::ResultRequest::_accept(QservPath const& p) {
     _dumpName = hashToResultPath(p.hashName()); 
-    ResultErrorPtr rp = QueryRunner::getTracker().getNews(p.hashName());
+    ResultErrorPtr rp = QueryRunner::getTracker().getNews(_hash);
     if(rp.get()) {
         if(rp->first != 0) { // Error, so report it.
             _error = rp->second;
             _state = OPENERROR;
-        }
+        } else { _state = OPEN; }
     } else { // No news, so listen for it.
         if(_fsFileEinfo) {
             qWorker::QueryRunner::getTracker().listenOnce(
@@ -127,8 +150,7 @@ qWorker::ResultRequest::_accept(QservPath const& p) {
                 p.hashName(), NullListener("rrGeneric"));                
         }
         _state = OPENWAIT; 
-    }
-    _state = OPEN;
+    } 
     return _state;
 }
 

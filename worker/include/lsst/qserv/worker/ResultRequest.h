@@ -37,16 +37,24 @@ namespace worker {
 
 class ResultRequest {
 public:
-    enum State {UNKNOWN, OPENWAIT, OPEN, OPENERROR};
+    enum State {UNKNOWN, OPENWAIT, OPEN, OPENERROR, DISCARDED};
     typedef boost::shared_ptr<ResultRequest> Ptr;
 
     explicit ResultRequest(QservPath const& p, XrdOucErrInfo* e);
+
+    // Modifiers
+    bool discard();
+    
+    // Retrievers
     State getState() const { return _state; }
+    std::string getDumpName() const { return _dumpName; }
     std::string getStateStr() const;
+    std::string str() const;
 private:
     State _accept(QservPath const& p);
 
     State _state;
+    std::string _hash;
     std::string _dumpName;
     std::string _error;
 

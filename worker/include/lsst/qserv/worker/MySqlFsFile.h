@@ -100,22 +100,15 @@ private:
     void _addCallback(std::string const& filename);
     bool _flushWrite();
     bool _flushWriteDetach();
-    bool _flushWriteSync();
     bool _hasPacketEof(char const* buffer, XrdSfsXferSize bufferSize) const;
 
-    int _handleTwoReadOpen(char const* fileName);
-    int _checkForHash(std::string const& hash);
-
     ResultErrorPtr _getResultState(std::string const& physFilename);
-
-    void _setDumpNameAsChunkId();
 
     XrdSysError* _eDest;
     AddCallbackFunction::Ptr _addCallbackF;
     fs::FileValidator::Ptr _validator;
     int _chunkId;
     std::string _userName;
-    std::string _dumpName;
     bool _hasRead;
     StringBuffer2 _queryBuffer;
     boost::shared_ptr<QservPath> _path;
