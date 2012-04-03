@@ -336,46 +336,18 @@ int qWorker::MySqlFsFile::read(XrdSfsFileOffset fileOffset,
 
 XrdSfsXferSize qWorker::MySqlFsFile::read(
     XrdSfsFileOffset fileOffset, char* buffer, XrdSfsXferSize bufferSize) {
-    std::string msg;
-    std::string fn = _rRequest->getDumpName();
     _hasRead = true;
-    struct stat statbuf;
-    if (::stat(fn.c_str(), &statbuf) == -1) {
-        statbuf.st_size = -errno;
-    }
-            
-    msg = (Pformat("File read(%1%) at %2% for %3% by %4% [actual=%5% %6%]")
+    ResultRequest::ResultInfo ri = _rRequest->read(fileOffset, buffer, 
+                                                   bufferSize);
+    std::string msg = (Pformat("File read(%1%) at %2% for %3% by %4% [actual=%5% %6%] %7%")
            % _path->chunk() % fileOffset % bufferSize % _userName 
-           % fn % statbuf.st_size).str();
+           % _rRequest->getDumpName() % ri.realSize % ri.msg).str();
     _eDest->Say(msg.c_str());
-    int fd = qWorker::dumpFileOpen(fn);
-    if (fd == -1) {
-      std::stringstream ss;
-      ss << (void*)this << "  Can't open dumpfile: " << fn;
-      std::string s = ss.str();
-      _eDest->Say(s.c_str());
-
-      error.setErrInfo(errno, "Query results missing");
-        return -errno;
-    } else {
-      std::stringstream ss;
-      ss << (void*)this << "  Dumpfile OK: " << fn;
-      std::string s;
-      ss >> s;
-      _eDest->Say(s.c_str());
-    }
-    off_t pos = ::lseek(fd, fileOffset, SEEK_SET);
-    if (pos == static_cast<off_t>(-1) || pos != fileOffset) {
-        error.setErrInfo(errno, "Unable to seek in query results");
-        return -errno;
-    }
-    ssize_t bytes = ::read(fd, buffer, bufferSize);
-    if (bytes == -1) {
-        error.setErrInfo(errno, "Unable to read query results");
-        return -errno;
-    }
-    ::close(fd);
-    return bytes;
+    if(ri.error.length() > 0 ) {
+        error.setErrInfo(ri.errNo, "Query results missing");
+        return -(ri.errNo);
+     } 
+    return ri.size;
 }
 
 int qWorker::MySqlFsFile::read(XrdSfsAio* aioparm) {

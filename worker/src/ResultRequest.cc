@@ -26,6 +26,8 @@
 #include "lsst/qserv/QservPath.hh"
 #include "XrdSfs/XrdSfsCallBack.hh"
 
+#include <fcntl.h>
+
 namespace qWorker = lsst::qserv::worker;
 
 ////////////////////////////////////////////////////////////////////////
@@ -84,7 +86,7 @@ private:
 // class ResultRequest
 ////////////////////////////////////////////////////////////////////////
 qWorker::ResultRequest::ResultRequest(QservPath const& p, XrdOucErrInfo* e) 
-    :_state(UNKNOWN), _fsFileEinfo(e), _hash(p.hashName()) {
+    :_state(UNKNOWN), _fsFileEinfo(e), _hasRealSize(false), _hash(p.hashName()) {
     assert(p.requestType() == QservPath::RESULT);
     _accept(p);
 }
@@ -102,6 +104,45 @@ bool qWorker::ResultRequest::discard() {
     return true;
 }
 
+qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::read(ReadSize offset, 
+                                                                char* buffer, 
+                                                                ReadSize bufferSize) {
+    ResultInfo ri;
+    std::string msg;
+    std::string fn = _dumpName;
+    if(!_hasRealSize) {
+        struct stat statbuf;
+        if (::stat(fn.c_str(), &statbuf) == -1) {
+            statbuf.st_size = -errno;
+        }
+        _realSize = statbuf.st_size;
+        _hasRealSize = true;
+    }
+    ri.realSize = _realSize;
+    
+    int fd = ::open(fn.c_str(), O_RDONLY);
+    if (fd == -1) {
+        ri.errNo = errno;
+        ri.error = this->str() + " [Can't open dumpfile]";
+    }  else {
+        off_t pos = ::lseek(fd, offset, SEEK_SET);
+        if (pos == static_cast<off_t>(-1) || pos != offset) {
+            ri.errNo = errno;
+            ri.error = "Unable to seek in query results";
+        } else {
+            ssize_t bytes = ::read(fd, buffer, bufferSize);
+            if (bytes == -1) {
+                ri.errNo = errno;
+                ri.error = "Unable to read query results";
+            } else {
+                ri.size = bytes;
+                ri.errNo = 0;
+            } // read()
+        } // lseek()
+    } // open()
+    ::close(fd); // Always close.
+    return ri;
+}
 
 std::string qWorker::ResultRequest::getStateStr() const {
     std::stringstream ss;

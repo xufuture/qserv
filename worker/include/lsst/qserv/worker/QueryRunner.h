@@ -109,7 +109,6 @@ private:
     StringDeque _poisoned;
 };
 
- int dumpFileOpen(std::string const& dbName);
  bool dumpFileExists(std::string const& dumpFilename);
 
 }}}

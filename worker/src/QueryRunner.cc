@@ -559,11 +559,9 @@ boost::shared_ptr<qWorker::CheckFlag> qWorker::QueryRunner::_makeAbort() {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Helpers
+// Helpers 
+// FIXME:  consider moving outside of QueryRunner
 ////////////////////////////////////////////////////////////////////////
-int qWorker::dumpFileOpen(std::string const& dbName) {
-    return open(dbName.c_str(), O_RDONLY);
-}
 
 bool qWorker::dumpFileExists(std::string const& dumpFilename) {
     struct stat statbuf;

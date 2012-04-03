@@ -39,12 +39,22 @@ class ResultRequest {
 public:
     enum State {UNKNOWN, OPENWAIT, OPEN, OPENERROR, DISCARDED};
     typedef boost::shared_ptr<ResultRequest> Ptr;
+    typedef int64_t ReadSize;
+
+    struct ResultInfo {
+        ReadSize realSize;
+        ReadSize size;
+        std::string msg;
+        std::string error;
+        int errNo; // lowercase errno is a macro.
+    };
 
     explicit ResultRequest(QservPath const& p, XrdOucErrInfo* e);
 
     // Modifiers
     bool discard();
-    
+    ResultInfo read(ReadSize offset, char* buffer, ReadSize bufferSize);
+
     // Retrievers
     State getState() const { return _state; }
     std::string getDumpName() const { return _dumpName; }
@@ -54,6 +64,8 @@ private:
     State _accept(QservPath const& p);
 
     State _state;
+    bool _hasRealSize;
+    ReadSize _realSize;
     std::string _hash;
     std::string _dumpName;
     std::string _error;
