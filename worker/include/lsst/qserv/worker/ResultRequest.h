@@ -28,6 +28,10 @@
 
 //#include <boost/signal.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/shared_array.hpp>
+
+#include "lsst/qserv/worker.pb.h"
+
 class XrdOucErrInfo; // forward
 
 namespace lsst {
@@ -41,7 +45,7 @@ public:
     typedef boost::shared_ptr<ResultRequest> Ptr;
     typedef int64_t ReadSize;
 
-    struct ResultInfo {
+    struct ResultInfo { // outcome of read operation
         ReadSize realSize;
         ReadSize size;
         std::string msg;
@@ -49,11 +53,25 @@ public:
         int errNo; // lowercase errno is a macro.
     };
 
+    struct Frame { // Result frame
+        Frame() {}
+        Frame(std::string const& hash, ReadSize dSize, int chunkId);
+        void setup(std::string const& hash, ReadSize dSize, int chunkId);
+        int copyTo(int offset, char* buffer, int count);
+        
+        // Fields
+        boost::shared_ptr<ResultHeader> header;
+        int size;
+        boost::shared_array<char> bytes;   // frame = headerlen + header
+    };
+
     explicit ResultRequest(QservPath const& p, XrdOucErrInfo* e);
 
     // Modifiers
     bool discard();
     ResultInfo read(ReadSize offset, char* buffer, ReadSize bufferSize);
+    ResultInfo readWithHeader(ReadSize offset, char* buffer, 
+                              ReadSize bufferSize);
 
     // Retrievers
     State getState() const { return _state; }
@@ -65,9 +83,11 @@ private:
 
     State _state;
     bool _hasRealSize;
-    ReadSize _realSize;
+    bool _isHeaderReady;
+    ReadSize _realSize; // on-disk dump size
     std::string _hash;
     std::string _dumpName;
+    Frame _frame;
     std::string _error;
 
     friend std::ostream& 

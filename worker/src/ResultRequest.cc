@@ -27,6 +27,7 @@
 #include "XrdSfs/XrdSfsCallBack.hh"
 
 #include <fcntl.h>
+#include <arpa/inet.h> // htonl
 
 namespace qWorker = lsst::qserv::worker;
 
@@ -39,7 +40,17 @@ void lookupResult(std::string const& hash) {
     ResultErrorPtr p = QueryRunner::getTracker().getNews(hash);
 }
 #endif
+qWorker::ResultRequest::ReadSize getRealSize(std::string const& filename) {
+    struct stat statbuf;
+    if (::stat(filename.c_str(), &statbuf) == -1) {
+        statbuf.st_size = -errno;
+    }
+    return statbuf.st_size;
 }
+
+} // anonymous namespace
+
+
 
 ////////////////////////////////////////////////////////////////////////
 // XrdFinishListener
@@ -83,10 +94,60 @@ private:
     const char* _name;
 };
 ////////////////////////////////////////////////////////////////////////
+// class ResultRequest::Frame
+////////////////////////////////////////////////////////////////////////
+
+qWorker::ResultRequest::Frame::Frame(std::string const& hash, 
+                                       qWorker::ResultRequest::ReadSize dSize,
+                                       int chunkId) {
+    setup(hash, dSize, chunkId);
+}
+
+void
+qWorker::ResultRequest::Frame::setup(std::string const& hash, 
+                                           qWorker::ResultRequest::ReadSize dSize,
+                                           int chunkId) {
+    // frameSize = sizeof(headerSize) + sizeof(serialized header)
+    // Prepare header
+    header.reset(new lsst::qserv::ResultHeader());
+    assert(header.get());
+
+    // Fill-in
+    header->set_session(0); // FIXME
+    lsst::qserv::ResultHeader::Result* res = header->add_result();
+    res->add_hash(hash);
+    res->set_resultsize(dSize);
+    res->add_chunkid(chunkId);
+    std::stringstream ss;
+    header->SerializeToOstream(&ss);
+    ReadSize headerSize = ss.tellp();
+    // Compute frame size
+    size = headerSize + sizeof(uint32_t);
+    
+    // Now writeout
+    bytes.reset(new char[size]);
+    *reinterpret_cast<uint32_t*>(bytes.get()) = htonl(headerSize);
+
+    ss.seekp(0);
+    ss.read(bytes.get() + sizeof(uint32_t), headerSize);
+    assert(!(ss.fail() || ss.eof()));
+    assert(ss.tellp() == headerSize);
+}
+
+int qWorker::ResultRequest::Frame::copyTo(int offset, char* buffer, int count) {
+    assert(bytes.get());
+    int copySize = count;
+    if(copySize > size) { copySize = size; }
+    memcpy(buffer, bytes.get(), copySize);
+    return copySize;
+}
+
+////////////////////////////////////////////////////////////////////////
 // class ResultRequest
 ////////////////////////////////////////////////////////////////////////
 qWorker::ResultRequest::ResultRequest(QservPath const& p, XrdOucErrInfo* e) 
-    :_state(UNKNOWN), _fsFileEinfo(e), _hasRealSize(false), _hash(p.hashName()) {
+    :_state(UNKNOWN), _fsFileEinfo(e), _hasRealSize(false), 
+     _isHeaderReady(false), _hash(p.hashName()) {
     assert(p.requestType() == QservPath::RESULT);
     _accept(p);
 }
@@ -104,6 +165,51 @@ bool qWorker::ResultRequest::discard() {
     return true;
 }
 
+qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::readWithHeader(ReadSize offset, 
+                                                                          char* buffer, 
+                                                                          ReadSize bufferSize) {
+    // FIXME: In order to provide richer result handling:
+    // compute a header, serialize it, then compute all offsets relative to that header.
+    // Consider writing out the header's bytes (or saving it in
+    // memory--it should be small (< few KB).
+    
+    // Goals for rich header: allow batching of results.
+    // Format: headerSize (4-byte, network byte order), header, result blobs.
+    // (Result blob sizes are located in the header)
+    // (also, consider that we can do pre-merging on the worker, and
+    // return a single dump for multiple dump files, but that is a
+    // later optimization) 
+
+    // First pass (to close ticket and move on) should implement
+    // checking for rich header in path, and building header and
+    // prepending as appropriate.
+    if(!_isHeaderReady) {
+        if(!_hasRealSize) {
+            _realSize = getRealSize(_dumpName);
+            _hasRealSize = true;
+        }
+        int chunkId = 0; // FIXME: Need to get chunkId from resultError
+        _frame.setup(_hash, _realSize, chunkId);
+    }
+    // Step 1: Construct result header (only once during resultrequest
+    // lifetime.)
+    // 1a: Stat the dump file to get the size
+    ReadSize dumpSize;
+    // 1b: Construct the result header
+    // Step 2: Choose the bytes we need.
+    ReadSize framePart = 0;
+    if(offset < _frame.size) {
+        framePart = _frame.copyTo(offset, buffer, bufferSize);
+    }
+    ReadSize resultOffset = offset - _frame.size;
+    ReadSize spaceLeft = bufferSize - framePart;
+    ResultInfo ri = read(resultOffset, buffer + framePart, spaceLeft);
+    return ri;
+    
+
+}
+
+
 qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::read(ReadSize offset, 
                                                                 char* buffer, 
                                                                 ReadSize bufferSize) {
@@ -111,11 +217,7 @@ qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::read(ReadSize offset,
     std::string msg;
     std::string fn = _dumpName;
     if(!_hasRealSize) {
-        struct stat statbuf;
-        if (::stat(fn.c_str(), &statbuf) == -1) {
-            statbuf.st_size = -errno;
-        }
-        _realSize = statbuf.st_size;
+        _realSize = getRealSize(fn);
         _hasRealSize = true;
     }
     ri.realSize = _realSize;
