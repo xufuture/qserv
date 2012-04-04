@@ -317,26 +317,19 @@ bool qWorker::QueryRunner::_act() {
 
     // Result files shouldn't get reused right now 
     // since we trash them after they are read once
-#if 0 
-    if (qWorker::dumpFileExists(_meta.resultPath)) {
-        (*_log)((Pformat("Reusing pre-existing dump = %1% (chk=%2%)")
-                % _task->resultPath % _task->chunkId).str().c_str());
-        // The system should probably catch this earlier.
-        getTracker().notify(_task->hash, ResultError(0,""));
-        return true;
-    }
-#endif	
     if (!_runTask(_task)) {
         (*_log)((Pformat("(FinishFail:%1%) %2% hash=%3%")
                 % (void*)(this) % dbDump % _task->hash).str().c_str());
         getTracker().notify(_task->hash,
-                            ResultError(-1,"Script exec failure "
+                            ResultError(_task->msg->chunkid(),
+                                        -1,
+                                        "Script exec failure " 
                                         + _getErrorString()));
         return false;
     }
     (*_log)((Pformat("(FinishOK:%1%) %2%")
-            % (void*)(this) % dbDump).str().c_str());    
-    getTracker().notify(_task->hash, ResultError(0,""));
+            % (void*)(this) % dbDump).str().c_str());
+    getTracker().notify(_task->hash, ResultError(_task->msg->chunkid(),0,""));
     return true;
 }
 

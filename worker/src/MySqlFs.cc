@@ -74,13 +74,13 @@ class FinishListener {
 public:
     FinishListener(Callback* cb) : _callback(cb) {}
     virtual void operator()(qWorker::ResultError const& p) {
-        if(p.first == 0) {
+        if(p.code == 0) {
             // std::cerr << "Callback=OK!\t" << (void*)_callback << std::endl;
             _callback->Reply_OK();
         } else {
-            //std::cerr << "Callback error! " << p.first 
+            //std::cerr << "Callback error! " << p.code 
             //	      << " desc=" << p.second << std::endl;
-            _callback->Reply_Error(p.first, p.second.c_str());
+            _callback->Reply_Error(p.code, p.desc.c_str());
         }
         _callback = 0;
         // _callback will be auto-destructed after any Reply_* call.

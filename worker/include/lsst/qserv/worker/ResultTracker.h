@@ -34,8 +34,16 @@ namespace lsst {
 namespace qserv {
 namespace worker {
 
+struct ResultError {
+    ResultError() {}
+    ResultError(int chunkId_, int code_, std::string const& desc_) 
+    : chunkId(chunkId_), code(code_), desc(desc_) {}
+    
+    int chunkId;
+    int code;
+    std::string desc;
+};
 typedef std::pair<int,char const*> ResultItem;
-typedef std::pair<int, std::string> ResultError;
 typedef boost::shared_ptr<ResultError> ResultErrorPtr;
 
 // Make sure Item is a primitive that can be copied.

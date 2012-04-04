@@ -93,7 +93,8 @@ bool qWorker::QueryRunnerManager::squashByHash(std::string const& hash) {
     // Check if squash okay?
     if(success) {
         // Notify the tracker in case someone is waiting.
-        ResultError r(-2, "Squashed by request");
+        // chunkId=-1 -> dummy value
+        ResultError r(-1, -2, "Squashed by request");
         QueryRunner::getTracker().notify(hash, r);
         // Remove squash notification to prevent future poisioning.
         QueryRunner::getTracker().clearNews(hash);

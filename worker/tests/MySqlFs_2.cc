@@ -112,7 +112,7 @@ struct TrackerFixture {
 	std::cout << "dumping newsmap " << std::endl;
 	for(; i != end; ++i) {
 	    std::cout << "str=" << i->first << " code=" 
-		      << i->second.first << std:: endl;
+		      << i->second.code << std:: endl;
 	}
     }
 

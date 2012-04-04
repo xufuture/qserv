@@ -61,13 +61,13 @@ public:
         _callback = XrdSfsCallBack::Create(eInfo);
     }
     virtual void operator()(qWorker::ResultError const& p) {
-        if(p.first == 0) {
+        if(p.code == 0) {
             // std::cerr << "Callback=OK!\t" << (void*)_callback << std::endl;
             _callback->Reply_OK();
         } else {
             //std::cerr << "Callback error! " << p.first 
             //	      << " desc=" << p.second << std::endl;
-            _callback->Reply_Error(p.first, p.second.c_str());
+            _callback->Reply_Error(p.code, p.desc.c_str());
         }
         _callback = 0;
         // _callback will be auto-destructed after any Reply_* call.
@@ -83,11 +83,11 @@ public:
     explicit NullListener(const char* name) : _name(name) {
     }
     virtual void operator()(qWorker::ResultError const& p) {
-        if(p.first == 0) {
+        if(p.code == 0) {
             std::cerr << "Callback=OK!\t" << _name << std::endl;
         } else {
             std::cerr << "Callback error! " << _name << " " 
-                      << p.first << " desc=" << p.second << std::endl;
+                      << p.code << " desc=" << p.desc << std::endl;
         }
     }
 private:
@@ -280,8 +280,8 @@ qWorker::ResultRequest::_accept(QservPath const& p) {
     _dumpName = hashToResultPath(p.hashName()); 
     ResultErrorPtr rp = QueryRunner::getTracker().getNews(_hash);
     if(rp.get()) {
-        if(rp->first != 0) { // Error, so report it.
-            _error = rp->second;
+        if(rp->code != 0) { // Error, so report it.
+            _error = rp->desc;
             _state = OPENERROR;
         } else { _state = OPEN; }
     } else { // No news, so listen for it.
