@@ -63,9 +63,9 @@ message ResultHeader {
     optional int64 session = 1;
     message Result {
         // Meta-info of an upcoming result
-        required string hash = 1; // 
+        repeated string hash = 1; // 
         required int64 resultsize = 3;
-        optional int32 chunkid = 2;
+        repeated int32 chunkid = 2;
     }
     repeated Result result = 2;
 }

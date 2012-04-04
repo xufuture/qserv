@@ -77,9 +77,9 @@ struct ProtocolFixture {
             lsst::qserv::ResultHeader::Result* res = r->add_result();
             std::stringstream hash;
             while(hash.tellp() < 16) { hash << counter; }            
-            res->set_hash(hash.str().substr(0,16));
+            res->add_hash(hash.str().substr(0,16));
             res->set_resultsize(65536+counter);
-            res->set_chunkid(100+i+counter); 
+            res->add_chunkid(100+i+counter); 
         }
         ++counter;
         return r;
@@ -108,9 +108,16 @@ struct ProtocolFixture {
 
     bool compareResults(lsst::qserv::ResultHeader_Result const& r1, 
                         lsst::qserv::ResultHeader_Result const& r2) {
-        return (r1.hash() == r2.hash()) 
-            && (r1.resultsize() == r2.resultsize()) 
-            && (r1.chunkid() == r2.chunkid());
+        if(r1.resultsize() != r2.resultsize()) return false;
+        if(r1.hash_size() != r2.hash_size()) return false;
+        for(int i=0; i<r1.hash_size(); ++i) {
+            if(r1.hash(i) != r1.hash(i)) return false;
+        }
+        if(r1.chunkid_size() != r2.chunkid_size()) return false;
+        for(int i=0; i<r1.chunkid_size(); ++i) {
+            if(r1.chunkid(i) != r1.chunkid(i)) return false;
+        }
+        return true;
     } 
 
 
