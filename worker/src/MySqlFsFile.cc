@@ -208,9 +208,10 @@ qWorker::MySqlFsFile::MySqlFsFile(XrdSysError* lp, char const* user,
 qWorker::MySqlFsFile::~MySqlFsFile(void) {
 }
 
-int qWorker::MySqlFsFile::_acceptFile(char const* fileName) {
+int qWorker::MySqlFsFile::_acceptFile(char const* fileName, char const* opaque) {
     int rc;
     _path.reset(new QservPath(fileName));
+    if(opaque) { _path->importVarStr(opaque); }
     QservPath::RequestType rt = _path->requestType();
     switch(rt) {
     case QservPath::GARBAGE:
@@ -276,11 +277,12 @@ int qWorker::MySqlFsFile::open(char const* fileName,
                                mode_t createMode,
                                XrdSecEntity const* client, 
                                char const* opaque) {
-    if (fileName == 0) {
+    // opaque: stores variable parameters.
+    if (fileName == 0) {//batch&test=3
         error.setErrInfo(EINVAL, "Null filename");
         return SFS_ERROR;
     }
-    return _acceptFile(fileName);
+    return _acceptFile(fileName, opaque);
 }
 
 int qWorker::MySqlFsFile::close(void) {
@@ -344,6 +346,9 @@ XrdSfsXferSize qWorker::MySqlFsFile::read(
            % _rRequest->getDumpName() % ri.realSize % ri.msg).str();
     _eDest->Say(msg.c_str());
     if(ri.error.length() > 0 ) {
+        _eDest->Say((Pformat("File read(%1%) at %2% got error: %3%")
+                    % _rRequest->getChunkId() % fileOffset 
+                    % ri.error).str().c_str());
         error.setErrInfo(ri.errNo, "Query results missing");
         return -(ri.errNo);
      } 

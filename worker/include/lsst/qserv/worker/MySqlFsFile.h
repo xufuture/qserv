@@ -94,7 +94,7 @@ public:
     int getCXinfo(char cxtype[4], int& cxrsz);
 
 private:
-    int _acceptFile(char const* fileName); // New path handling code
+    int _acceptFile(char const* fileName, char const* opaque); 
     bool _addWritePacket(XrdSfsFileOffset offset, char const* buffer, 
                          XrdSfsXferSize bufferSize);
     void _addCallback(std::string const& filename);
