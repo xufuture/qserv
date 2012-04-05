@@ -125,6 +125,10 @@ if not conf.CheckLib("qserv_common", language="C++"):
     print >> sys.stderr, "Could not find qserv_common lib"
     canBuild = False
 
+if not conf.CheckLib("qserv_proto", language="C++"):
+    print >> sys.stderr, "Could not find qserv_proto lib"
+    canBuild = False
+
 # boost library reqs
 if not (detect_deps.checkAddBoost(conf, "boost_thread")
         and detect_deps.checkAddBoost(conf, "boost_regex")):

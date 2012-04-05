@@ -24,9 +24,11 @@
 // Standard
 #include <iostream>
 #include <fcntl.h> // for O_RDONLY, O_WRONLY, etc.
+#include <arpa/inet.h> // for ntohl
 
 // Boost
 #include <boost/make_shared.hpp>
+#include <boost/shared_array.hpp>
 #include <boost/thread.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -39,6 +41,8 @@
 #include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/master/PacketIter.h"
 #include "lsst/qserv/common/WorkQueue.h"
+#include "lsst/qserv/worker.pb.h"
+#include "lsst/qserv/QservPath.hh"
 
 // Namespace modifiers
 using boost::make_shared;
@@ -246,7 +250,8 @@ qMaster::ChunkQuery::ChunkQuery(qMaster::TransactionSpec const& t, int id,
     : XrdPosixCallBack(),
       _id(id), _spec(t), 
       _manager(mgr),
-      _shouldSquash(false) {
+      _shouldSquash(false),
+      _useBatchResult(false) {
     assert(_manager != NULL);
     _result.open = 0;
     _result.queryWrite = 0;
@@ -490,8 +495,11 @@ void qMaster::ChunkQuery::_sendQuery(int fd) {
     } else {
         _result.queryWrite = writeCount;
         _queryHostPort = qMaster::xrdGetEndpoint(fd);
-        _resultUrl = qMaster::makeUrlType(_queryHostPort.c_str(), "result", 
-                                          _hash, 'r');
+        QservPath qp;
+        qp.setAsResult(_hash);
+        if(_useBatchResult) { qp.addVar("batch"); }
+
+        _resultUrl = qMaster::makeUrl(_queryHostPort.c_str(), qp.path(), 'r');
         _writeCloseTimer.start();
         closeFd(fd, "Normal", "dumpPath " + _spec.savePath, 
                 "post-dispatch");
@@ -521,6 +529,31 @@ void qMaster::ChunkQuery::_sendQuery(int fd) {
     std::cout << ss.str();
 }
 
+void qMaster::ChunkQuery::_readHeader(int fd) {
+    const int sizeSize = sizeof(uint32_t);
+    char bufferOfSize[sizeSize];
+    long long headerSize;
+    boost::shared_array<char> buffer;
+    boost::scoped_ptr<lsst::qserv::ResultHeader> rHeader;
+    long long res = qMaster::xrdRead(fd, bufferOfSize, sizeSize);
+
+    if(res != sizeSize) {
+        std::cout << "Unexpected result header read error!" << std::endl;
+        std::cout << "Continuing blindly!" << std::endl;
+    } else {
+        headerSize = ::ntohl(*reinterpret_cast<uint32_t*>(bufferOfSize));
+        buffer.reset(new char[headerSize]);
+        rHeader.reset(new lsst::qserv::ResultHeader());
+        bool parseRes = rHeader->ParseFromArray(buffer.get(), headerSize);
+        std::cout << "Header parse returned: " 
+                  << (parseRes ? "true" : "false") << std::endl;
+        std::cout << "Header contains: " << rHeader->DebugString()  
+                  << std::endl;
+        // FIXME: Now do something reasonable with the info.
+    }
+    
+}
+
 void qMaster::ChunkQuery::_readResultsDefer(int fd) {
     int const fragmentSize = 4*1024*1024; // 4MB fragment size (param?)
     // Should limit cumulative result size for merging.  Now is a
@@ -543,6 +576,10 @@ void qMaster::ChunkQuery::_readResults(int fd) {
 
     // Now read.
     _readTimer.start();
+    if(_useBatchResult) {
+        _readHeader(fd);
+    }
+
     qMaster::xrdReadToLocalFile(fd, fragmentSize, _spec.savePath.c_str(), 
                                 &_shouldSquash,
                                 &(_result.localWrite), &(_result.read));

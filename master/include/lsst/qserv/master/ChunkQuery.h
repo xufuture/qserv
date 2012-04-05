@@ -82,6 +82,7 @@ public:
 
 private:
     void _sendQuery(int fd);
+    void _readHeader(int fd);
     void _readResults(int fd);
     void _readResultsDefer(int fd);
     void _notifyManager();
@@ -101,6 +102,8 @@ private:
     boost::shared_ptr<PacketIter> _packetIter;
     AsyncQueryManager* _manager;
     bool _shouldSquash;
+    bool _useBatchResult;
+
     Timer _writeOpenTimer;
     Timer _writeTimer;
     Timer _writeCloseTimer;
