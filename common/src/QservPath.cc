@@ -70,6 +70,8 @@ private:
 };
 
 //////////////////////////////////////////////////////////////////////
+// qsrv::QservPath
+//////////////////////////////////////////////////////////////////////
 qsrv::QservPath::QservPath(std::string const& path) {
     _setFromPath(path);
 }
@@ -145,6 +147,22 @@ void qsrv::QservPath::addVar(std::string const& key, std::string const& val) {
     _vars[key] = val;
 }
 
+void qsrv::QservPath::importVarStr(std::string const& varStr) {
+    Tokenizer t(varStr, _varDelim);
+    for(; !t.done(); t.next()) {
+        _ingestKeyStr(t.token());
+    } 
+}
+
+std::ostream& operator<<(std::ostream& os, lsst::qserv::QservPath const& qp) {
+    os << "QservPath:" << qp.path();
+    return os;
+}
+
+//////////////////////////////////////////////////////////////////////
+// qsrv::QservPath (private)
+//////////////////////////////////////////////////////////////////////
+
 void qsrv::QservPath::_setFromPath(std::string const& path) {
     std::string rTypeString;
     Tokenizer t(path, _pathSep);
@@ -191,12 +209,8 @@ std::string qsrv::QservPath::_ingestKeys(std::string const& leafPlusKeys) {
     if(start == std::string::npos) { // No keys found        
         return leafPlusKeys;
     }
-    ++start;
-    Tokenizer t(leafPlusKeys.substr(start), _varDelim);
-    for(; !t.done(); t.next()) {
-        _ingestKeyStr(t.token());
-    }
-    return leafPlusKeys.substr(0, start-1);
+    importVarStr(leafPlusKeys.substr(start+1));
+    return leafPlusKeys.substr(0, start);
 }
 
 void qsrv::QservPath::_ingestKeyStr(std::string const& keyStr) {

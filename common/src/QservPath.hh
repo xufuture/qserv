@@ -48,7 +48,6 @@ public:
     std::string var(std::string const& key) const;
     bool hasVar(std::string const& key) const;
     
-
     /// @return the path prefix element for a given request type.
     std::string prefix(RequestType const& r) const;
         
@@ -60,6 +59,9 @@ public:
     void addVar(std::string const& key);
     void addVar(std::string const& key, int val);
     void addVar(std::string const& key, std::string const& val);
+    void importVarStr(std::string const& varStr);
+
+    friend std::ostream& operator<<(std::ostream& os, QservPath const& qp);
 
 private:
     class Tokenizer;
