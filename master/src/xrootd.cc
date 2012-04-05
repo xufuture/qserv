@@ -29,22 +29,22 @@
 
 namespace qMaster = lsst::qserv::master;
 
-std::string qMaster::makeUrl(char const* hostport, char const* typeStr, 
-                             int chunk) {
+std::string qMaster::makeUrlType(char const* hostport, char const* typeStr, 
+                                 int chunk) {
     std::stringstream s;
     s << chunk;
     // boost::format version is 5x slower.
     //std::string s = (boost::format("%d") % chunk).str();
-    return makeUrl(hostport, typeStr, s.str());
+    return makeUrlType(hostport, typeStr, s.str());
 }
 std::string qMaster::makeUrl(char const* hostport, 
-                             std::string const& path) {
-    return makeUrl(hostport, NULL, path);
+                             std::string const& path, char mode) {
+    return makeUrlType(hostport, NULL, path, mode);
 }
 
-std::string qMaster::makeUrl(char const* hostport, 
-                             char const* typeStr, std::string const& s,
-                             char mode) {
+std::string qMaster::makeUrlType(char const* hostport, 
+                                 char const* typeStr, std::string const& s,
+                                 char mode) {
 
     // typeStr is either "query" or "result"
     if(hostport == NULL) {

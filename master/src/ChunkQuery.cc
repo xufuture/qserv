@@ -490,8 +490,8 @@ void qMaster::ChunkQuery::_sendQuery(int fd) {
     } else {
         _result.queryWrite = writeCount;
         _queryHostPort = qMaster::xrdGetEndpoint(fd);
-        _resultUrl = qMaster::makeUrl(_queryHostPort.c_str(), "result", 
-                                      _hash, 'r');
+        _resultUrl = qMaster::makeUrlType(_queryHostPort.c_str(), "result", 
+                                          _hash, 'r');
         _writeCloseTimer.start();
         closeFd(fd, "Normal", "dumpPath " + _spec.savePath, 
                 "post-dispatch");

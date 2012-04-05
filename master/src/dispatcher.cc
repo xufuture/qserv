@@ -81,7 +81,7 @@ int qMaster::submitQuery(int session, int chunk, char* str, int len,
     t.chunkId = chunk;
     t.query = std::string(str, len);
     t.bufferSize = 8192000;
-    t.path = qMaster::makeUrl(hp.c_str(), "query", chunk);
+    t.path = qMaster::makeUrlType(hp.c_str(), "query", chunk);
     t.savePath = savePath;
     return submitQuery(session, TransactionSpec(t), resultName);
 }
@@ -107,7 +107,7 @@ int qMaster::submitQueryMsg(int session, char* dbName, int chunk,
     t.chunkId = chunk;
     t.query = std::string(str, len);
     t.bufferSize = 8192000;
-    t.path = qMaster::makeUrl(hp.c_str(), qp.path());
+    t.path = qMaster::makeUrl(hp.c_str(), qp.path(), 'w');
     t.savePath = savePath;
     return submitQuery(session, TransactionSpec(t), resultName);    
 }
