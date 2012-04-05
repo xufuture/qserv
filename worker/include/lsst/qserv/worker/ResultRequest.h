@@ -69,17 +69,22 @@ public:
 
     // Modifiers
     bool discard();
-    ResultInfo read(ReadSize offset, char* buffer, ReadSize bufferSize);
+    ResultInfo read(ReadSize offset, char* buffer, 
+                    ReadSize bufferSize);
+    ResultInfo readDumpOnly(ReadSize offset, char* buffer, 
+                            ReadSize bufferSize);
     ResultInfo readWithHeader(ReadSize offset, char* buffer, 
                               ReadSize bufferSize);
 
     // Retrievers
     State getState() const { return _state; }
+    int getChunkId() const { return _chunkId; }
     std::string getDumpName() const { return _dumpName; }
     std::string getStateStr() const;
     std::string str() const;
 private:
     State _accept(QservPath const& p);
+    void _importModifiers(QservPath const& p);
 
     State _state;
     bool _hasRealSize;
@@ -87,8 +92,12 @@ private:
     ReadSize _realSize; // on-disk dump size
     std::string _hash;
     std::string _dumpName;
+    int _chunkId;
     Frame _frame;
     std::string _error;
+    // Settings from path modifiers
+    bool _useBatch;
+
 
     friend std::ostream& 
         operator<<(std::ostream& os, 

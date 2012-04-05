@@ -98,15 +98,15 @@ private:
 ////////////////////////////////////////////////////////////////////////
 
 qWorker::ResultRequest::Frame::Frame(std::string const& hash, 
-                                       qWorker::ResultRequest::ReadSize dSize,
-                                       int chunkId) {
+                                     qWorker::ResultRequest::ReadSize dSize,
+                                     int chunkId) {
     setup(hash, dSize, chunkId);
 }
 
 void
 qWorker::ResultRequest::Frame::setup(std::string const& hash, 
-                                           qWorker::ResultRequest::ReadSize dSize,
-                                           int chunkId) {
+                                     qWorker::ResultRequest::ReadSize dSize,
+                                     int chunkId) {
     // frameSize = sizeof(headerSize) + sizeof(serialized header)
     // Prepare header
     header.reset(new lsst::qserv::ResultHeader());
@@ -147,8 +147,10 @@ int qWorker::ResultRequest::Frame::copyTo(int offset, char* buffer, int count) {
 ////////////////////////////////////////////////////////////////////////
 qWorker::ResultRequest::ResultRequest(QservPath const& p, XrdOucErrInfo* e) 
     :_state(UNKNOWN), _fsFileEinfo(e), _hasRealSize(false), 
-     _isHeaderReady(false), _hash(p.hashName()) {
+     _isHeaderReady(false), _hash(p.hashName()),
+     _chunkId(-1), _useBatch(false) {
     assert(p.requestType() == QservPath::RESULT);
+    _importModifiers(p);
     _accept(p);
 }
 
@@ -163,6 +165,13 @@ bool qWorker::ResultRequest::discard() {
     int result = ::unlink(_dumpName.c_str());
     if(result != 0) { return false; }
     return true;
+}
+
+qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::read(ReadSize offset, 
+                                                                char* buffer, 
+                                                                ReadSize bufferSize) {
+    if(_useBatch) return readWithHeader(offset, buffer, bufferSize);
+    else return readDumpOnly(offset, buffer, bufferSize);
 }
 
 qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::readWithHeader(ReadSize offset, 
@@ -188,8 +197,7 @@ qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::readWithHeader(ReadSi
             _realSize = getRealSize(_dumpName);
             _hasRealSize = true;
         }
-        int chunkId = 0; // FIXME: Need to get chunkId from resultError
-        _frame.setup(_hash, _realSize, chunkId);
+        _frame.setup(_hash, _realSize, _chunkId);
     }
     // Step 1: Construct result header (only once during resultrequest
     // lifetime.)
@@ -210,9 +218,9 @@ qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::readWithHeader(ReadSi
 }
 
 
-qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::read(ReadSize offset, 
-                                                                char* buffer, 
-                                                                ReadSize bufferSize) {
+qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::readDumpOnly(ReadSize offset, 
+                                                                        char* buffer, 
+                                                                        ReadSize bufferSize) {
     ResultInfo ri;
     std::string msg;
     std::string fn = _dumpName;
@@ -283,7 +291,10 @@ qWorker::ResultRequest::_accept(QservPath const& p) {
         if(rp->code != 0) { // Error, so report it.
             _error = rp->desc;
             _state = OPENERROR;
-        } else { _state = OPEN; }
+        } else { 
+            _state = OPEN; 
+            _chunkId = rp->chunkId;
+        }
     } else { // No news, so listen for it.
         if(_fsFileEinfo) {
             qWorker::QueryRunner::getTracker().listenOnce(
@@ -297,6 +308,12 @@ qWorker::ResultRequest::_accept(QservPath const& p) {
     return _state;
 }
 
+void 
+qWorker::ResultRequest::_importModifiers(QservPath const& p) {
+    if(p.hasVar("batch")) {
+        _useBatch = true;
+    }
+}
 ////////////////////////////////////////////////////////////////////////
 // class ResultRequest public helper
 ////////////////////////////////////////////////////////////////////////

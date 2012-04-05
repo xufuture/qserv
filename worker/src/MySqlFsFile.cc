@@ -340,7 +340,7 @@ XrdSfsXferSize qWorker::MySqlFsFile::read(
     ResultRequest::ResultInfo ri = _rRequest->read(fileOffset, buffer, 
                                                    bufferSize);
     std::string msg = (Pformat("File read(%1%) at %2% for %3% by %4% [actual=%5% %6%] %7%")
-           % _path->chunk() % fileOffset % bufferSize % _userName 
+           % _rRequest->getChunkId() % fileOffset % bufferSize % _userName 
            % _rRequest->getDumpName() % ri.realSize % ri.msg).str();
     _eDest->Say(msg.c_str());
     if(ri.error.length() > 0 ) {
