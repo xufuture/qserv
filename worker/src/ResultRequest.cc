@@ -118,20 +118,16 @@ qWorker::ResultRequest::Frame::setup(std::string const& hash,
     res->add_hash(hash);
     res->set_resultsize(dSize);
     res->add_chunkid(chunkId);
-    std::stringstream ss;
-    header->SerializeToOstream(&ss);
-    ReadSize headerSize = ss.tellp();
+    ReadSize headerSize = header->ByteSize();
     // Compute frame size
     size = headerSize + sizeof(uint32_t);
     
     // Now writeout
     bytes.reset(new char[size]);
+    bzero(bytes.get(), size);
     *reinterpret_cast<uint32_t*>(bytes.get()) = htonl(headerSize);
-
-    ss.seekp(0);
-    ss.read(bytes.get() + sizeof(uint32_t), headerSize);
-    assert(!(ss.fail() || ss.eof()));
-    assert(ss.tellp() == headerSize);
+    char* headerCursor = bytes.get() + sizeof(uint32_t);
+    header->SerializeToArray(headerCursor, headerSize);
 }
 
 int qWorker::ResultRequest::Frame::copyTo(int offset, char* buffer, int count) {
@@ -170,6 +166,8 @@ bool qWorker::ResultRequest::discard() {
 qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::read(ReadSize offset, 
                                                                 char* buffer, 
                                                                 ReadSize bufferSize) {
+    assert(offset >= 0);
+    assert(buffer);
     if(_useBatch) return readWithHeader(offset, buffer, bufferSize);
     else return readDumpOnly(offset, buffer, bufferSize);
 }
@@ -209,12 +207,20 @@ qWorker::ResultRequest::ResultInfo qWorker::ResultRequest::readWithHeader(ReadSi
     if(offset < _frame.size) {
         framePart = _frame.copyTo(offset, buffer, bufferSize);
     }
-    ReadSize resultOffset = offset - _frame.size;
+    ReadSize resultOffset = offset - _frame.size + framePart;
     ReadSize spaceLeft = bufferSize - framePart;
-    ResultInfo ri = read(resultOffset, buffer + framePart, spaceLeft);
-    return ri;
-    
-
+    if(spaceLeft > 0) {
+        ResultInfo ri = readDumpOnly(resultOffset, buffer + framePart, spaceLeft);
+        ri.size += framePart;
+        return ri;
+    } else {
+        ResultInfo ri;
+        ri.realSize = _realSize;
+        ri.size = bufferSize; // filled the buffer just by using the
+                              // frame.
+        ri.errNo = 0;
+        return ri;
+    }
 }
 
 
