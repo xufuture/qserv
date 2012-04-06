@@ -252,6 +252,7 @@ qMaster::ChunkQuery::ChunkQuery(qMaster::TransactionSpec const& t, int id,
       _manager(mgr),
       _shouldSquash(false),
       _useBatchResult(false) {
+    _useBatchResult = true; // Force right now. (user-optional?)
     assert(_manager != NULL);
     _result.open = 0;
     _result.queryWrite = 0;
@@ -497,7 +498,7 @@ void qMaster::ChunkQuery::_sendQuery(int fd) {
         _queryHostPort = qMaster::xrdGetEndpoint(fd);
         QservPath qp;
         qp.setAsResult(_hash);
-        if(_useBatchResult) { qp.addVar("batch"); }
+        if(_useBatchResult) { qp.addVar("batch"); qp.addVar("test","3"); }
 
         _resultUrl = qMaster::makeUrl(_queryHostPort.c_str(), qp.path(), 'r');
         _writeCloseTimer.start();
@@ -559,7 +560,11 @@ void qMaster::ChunkQuery::_readResultsDefer(int fd) {
     // Should limit cumulative result size for merging.  Now is a
     // good time. Configurable, with default=1G?
 
-    // Now read.
+
+    if(_useBatchResult) {
+        _readHeader(fd);
+    }
+    // PacketIter buffers results in-memory before passing to mysql
     // packetIter will close fd
     _packetIter.reset(new PacketIter(fd, fragmentSize)); 
     _result.localWrite = 1; // MAGIC: stuff the result so that it doesn't
