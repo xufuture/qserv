@@ -97,6 +97,7 @@ qMaster::SqlSubstitution::substituteOnly(qMaster::StringMap const& m) {
     return _substitution->transform(m);
 }
 
+
 void qMaster::SqlSubstitution::_build(std::string const& sqlStatement) {
     boost::lock_guard<boost::mutex> lock(_mappingMutex);
     StringMap const& m = _mapping.getMapReference(999999,999999); 
@@ -124,6 +125,8 @@ void qMaster::SqlSubstitution::_build(std::string const& sqlStatement) {
         _substitution = SubstPtr(new Substitution(template_, _delimiter, true));
         _hasAggregate = spr->getHasAggregate();
         _mFixup = spr->getMergeFixup();
+        StringList dbs = spr->getDbs();
+        if(dbs.size() > 0) { _contextDb = *dbs.begin(); }
     }
 }
 

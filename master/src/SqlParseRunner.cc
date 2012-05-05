@@ -331,6 +331,10 @@ std::string qMaster::SqlParseRunner::getAggParseResult() {
     return _aggParseResult;
 }
 
+std::list<std::string> qMaster::SqlParseRunner::getDbs() const { 
+    return _tableNamer->getDbs();
+}
+
 bool qMaster::SqlParseRunner::getHasChunks() const { 
     return _tableNamer->getHasChunks();
 }

@@ -495,6 +495,7 @@ class QueryBabysitter:
 
     def submitMsg(self, db, chunk, msg, table):
         saveName = self._saveName(chunk)
+        print "Submitting with db,chunk:",db,chunk
         handle = submitQueryMsg(self._sessionId, db, chunk, msg, 
                                 saveName, table)
         self._inFlight[chunk] = (handle, table)
@@ -598,7 +599,7 @@ class HintedQueryAction:
 
         # Table mapping 
         try:
-            self._pConfig = PartitioningConfig() # Should be shared.
+            self._pConfig = PartitioningConfig() # Share per-db
             self._pConfig.applyConfig()
             self._substitution = SqlSubstitution(query, 
                                                  self._pConfig.chunkMapping,
@@ -632,7 +633,7 @@ class HintedQueryAction:
                                              self.queryHash) + "_%s"
         # Should use db from query, not necessarily context.
         self._factory = protocol.TaskMsgFactory(self._sessionId, 
-                                                self._dbContext)
+                                                self._substitution.getContextDb())
 
         # We want result table names longer than result-merging table names.
         self._isValid = True

@@ -56,7 +56,8 @@ public:
     void importSubChunkTables(char const** cStringArr);
     std::string transform(int chunk, int subChunk);
     std::string substituteOnly(std::map<std::string, std::string> const& m);
-    
+
+    std::string getContextDb() const { return _contextDb; }
     /// 0: none, 1: chunk, 2: subchunk
     int getChunkLevel() const { return _chunkLevel; }
     bool getHasAggregate() const {return _hasAggregate; }
@@ -72,6 +73,7 @@ private:
     void _computeChunkLevel(bool hasChunks, bool hasSubChunks);
     std::string _fixDbRef(std::string const& s, int chunk, int subChunk);
 
+    std::string _contextDb;
     std::string _delimiter;
     std::string _errorMsg;
     SubstPtr _substitution;

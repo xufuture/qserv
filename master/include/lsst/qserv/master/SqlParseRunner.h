@@ -66,6 +66,7 @@ public:
     std::string const& getStatement() const { return _statement; }
     std::string getParseResult();
     std::string getAggParseResult();
+    std::list<std::string> getDbs() const;
     bool getHasChunks() const;
     bool getHasSubChunks() const;
 

@@ -72,6 +72,7 @@ public:
     RefDeque const& getRefs() const { return _refs; }
     
     StringList getBadDbs() const;
+    StringList getDbs() const;
 
 private:
     class AliasFunc;

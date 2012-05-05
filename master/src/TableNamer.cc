@@ -148,6 +148,7 @@ bool qMaster::TableNamer::getHasSubChunks() const {
 qMaster::StringList qMaster::TableNamer::getBadDbs() const {
     StringList result;
     // Filter my dbs from table refs through refchecker.
+
     for(RefDeque::const_iterator i=_refs.begin();
         i != _refs.end();
         ++i) {
@@ -157,6 +158,21 @@ qMaster::StringList qMaster::TableNamer::getBadDbs() const {
     }
     return result;
 }
+
+qMaster::StringList qMaster::TableNamer::getDbs() const {
+    StringList result;
+    std::set<std::string> seen;
+    for(RefDeque::const_iterator i=_refs.begin();
+        i != _refs.end();
+        ++i) {
+        if(seen.find(i->db) == seen.end()) {
+            result.push_back(i->db);
+            seen.insert(i->db);
+         }
+    }
+    return result;
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 // class TableNamer (private)
