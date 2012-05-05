@@ -429,107 +429,6 @@ class RegionFactory:
         return regions
                                           
 ########################################################################
-
-class QueryCollater:
-    def __init__(self, sessionId):
-        self.sessionId = sessionId
-        self.inFlight = {}
-        self.scratchPath = setupResultScratch()
-        self._mergeCount = 0
-        self._setDbParams() # Sets up more db params
-        pass
-    
-    def submit(self, chunk, table, q):
-        saveName = self._saveName(chunk)
-        handle = submitQuery(self.sessionId, chunk, q, saveName)
-        self.inFlight[chunk] = (handle, table)
-        #print "Chunk %d to %s    (%s)" % (chunk, saveName, table)
-        #state = joinSession(self.sessionId)
-
-    def finish(self):
-        for (k,v) in self.inFlight.items():
-            s = tryJoinQuery(self.sessionId, v[0])
-            #print "State of", k, "is", getQueryStateString(s)
-
-        s = joinSession(self.sessionId)
-        print "Final state of all queries", getQueryStateString(s)
-        
-        # Merge all results.
-        for (k,v) in self.inFlight.items():
-            self._merger.merge(self._saveName(k), v[1])
-            #self._mergeTable(self._saveName(k), v[1])
-
-
-    def getResultTableName(self):
-        ## Should do sanity checking to make sure that the name has been
-        ## computed.
-        return self._finalQname
-
-    def _getTimeStampId(self):
-        unixtime = time.time()
-        # Use the lower digits as pseudo-unique (usec, sec % 10000)
-        # FIXME: is there a better idea?
-        return str(int(1000000*(unixtime % 10000)))
-
-    def _setDbParams(self):
-        c = lsst.qserv.master.config.config
-        self._dbSock = c.get("resultdb", "unix_socket")
-        self._dbUser = c.get("resultdb", "user")
-        self._dbName = c.get("resultdb", "db")
-        
-        self._finalName = "result_%s" % self._getTimeStampId();
-        self._finalQname = "%s.%s" % (self._dbName, self._finalName)
-
-        self._mysqlBin = c.get("mysql", "mysqlclient")
-        if not self._mysqlBin:
-            self._mysqlBin = "mysql"
-        # setup C++ merger
-        # FIXME: This code is deprecated-- it doesn't properly 
-        # configure the merger.
-        mergeConfig = TableMergerConfig(self._dbName, self._finalQname, 
-                                       self._dbUser, self._dbSock, 
-                                       self._mysqlBin)
-        self._merger = TableMerger(mergeConfig)
-
-    def _mergeTable(self, dumpFile, tableName):
-        dropSql = "DROP TABLE IF EXISTS %s;" % self._finalQname
-        createSql = "CREATE TABLE %s SELECT * FROM %s;" % (self._finalQname,
-                                                           tableName)
-        insertSql = "INSERT INTO %s SELECT * FROM %s;" % (self._finalQname,
-                                                           tableName)
-        cleanupSql = "DROP TABLE %s;" % tableName
-        
-            
-        cmdBase = "%s --socket=%s -u %s %s " % (self._mysqlBin, self._dbSock, 
-                                                self._dbUser,
-                                                self._dbName)
-        loadCmd = cmdBase + " <" + dumpFile
-        mergeSql = ""
-        self._mergeCount += 1
-        if self._mergeCount <= 1:
-            mergeSql += dropSql + createSql + "\n"
-        else:
-            mergeSql += insertSql + "\n";
-        mergeSql += cleanupSql
-        rc = os.system(loadCmd)
-        if rc != 0:
-            print "Error loading result table :", dumpFile
-        else:
-            cmdList = cmdBase.strip().split(" ")
-            p = Popen(cmdList, bufsize=0, 
-                      stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                      close_fds=True)
-            (outdata, errdata) = p.communicate(mergeSql)
-            p.stdin.close()
-            if p.wait() != 0:
-                print "Error merging (%s)." % mergeSql, outdata, errdata
-            pass
-        pass
-        
-    def _saveName(self, chunk):
-        dumpName = "%s_%s.dump" % (str(self.sessionId), str(chunk))
-        return os.path.join(self.scratchPath, dumpName)
-########################################################################
 def setupResultScratch():
     # Make sure scratch directory exists.
     cm = lsst.qserv.master.config
@@ -909,8 +808,6 @@ class HintedQueryAction:
         self._babysitter.finish()
         self._invokeLock.release()
         table = self._babysitter.getResultTableName()
-        #self._collater.finish()
-        #table = self._collater.getResultTableName()
         return table
 
     def getIsValid(self):
