@@ -28,11 +28,14 @@
 #include "lsst/qserv/master/SqlSubstitution.h"
 #include "lsst/qserv/master/ChunkMeta.h"
 #include "lsst/qserv/master/SqlParseRunner.h"
+#include "lsst/qserv/master/SelectParser.h"
 
 using lsst::qserv::master::ChunkMapping;
 using lsst::qserv::master::ChunkMeta;
 using lsst::qserv::master::SqlSubstitution;
 using lsst::qserv::master::SqlParseRunner;
+using lsst::qserv::master::SelectParser;
+
 namespace test = boost::test_tools;
 
 namespace {
@@ -84,6 +87,8 @@ void testStmt2(SqlParseRunner::Ptr spr, bool shouldFail=false) {
         BOOST_CHECK(!parseResult.empty());
     }
 }
+void testParse2(SelectParser::Ptr p) {
+}
 
 } // anonymous namespace
 
@@ -116,6 +121,17 @@ struct ParserFixture {
         p->setup(tableNames);
         return p;
     }
+    SelectParser::Ptr getParser(std::string const& stmt) {
+        return getParser(stmt, config);
+    }
+    SelectParser::Ptr getParser(std::string const& stmt, 
+                                std::map<std::string,std::string> const& cfg) {
+        SelectParser::Ptr p;
+        p = SelectParser::newInstance(stmt, delimiter, cfg);
+        p->setup();
+        return p;
+    }
+
     ChunkMapping cMapping;
     ChunkMeta cMeta;
     std::list<std::string> tableNames;
@@ -510,6 +526,20 @@ BOOST_AUTO_TEST_CASE(Subquery) { // ticket #2053
     SqlParseRunner::Ptr spr = getRunner(stmt);
     testStmt2(spr, true);
 }
+
+BOOST_AUTO_TEST_CASE(NewParser) {
+    char stmts[][128] = {
+        "SELECT * from Science_Ccd_Exposure limit 3;",
+        "SELECT count(*) from Science_Ccd_Exposure;",
+        "select ra_PS ra1,decl_PS as dec1 from Object order by dec1;",
+        "select o1.iflux_PS o1ps, o2.iFlux_PS o2ps from Object o1, Object o2 order by o1.objectId;"
+    };
+    for(int i=0; i < 4; ++i) {
+        std::string stmt = stmts[i];
+        SelectParser::Ptr p = getParser(stmt);
+        testParse2(p);
+    }
+ }
 
 BOOST_AUTO_TEST_SUITE_END()
 ////////////////////////////////////////////////////////////////////////
