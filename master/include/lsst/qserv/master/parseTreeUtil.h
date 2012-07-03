@@ -233,6 +233,30 @@ AnAst getLastSibling(AnAst r) {
 }
 
 template <typename AnAst>
+AnAst getSiblingBefore(AnAst r, AnAst b) {
+    AnAst last;
+    do {
+
+	last = r;
+	r = r->getNextSibling();
+        
+    } while(r != b);
+    return last;
+}
+
+
+template <typename AnAst>
+int countLength(AnAst r, AnAst b) {
+    int i = 0;
+    while(r.get() && (r != b)) {
+        ++i;
+	r = r->getNextSibling();
+    }
+    return i;
+}
+
+
+template <typename AnAst>
 AnAst collapseNodeRange(AnAst start, AnAst bound) {
     // Destroy a node's siblings stopping (but including) a bound
     // This is useful in patching up an AST, substituting one parse 
