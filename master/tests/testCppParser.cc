@@ -532,10 +532,14 @@ BOOST_AUTO_TEST_CASE(NewParser) {
         "SELECT * from Science_Ccd_Exposure limit 3;",
         "SELECT count(*) from Science_Ccd_Exposure;",
         "select ra_PS ra1,decl_PS as dec1 from Object order by dec1;",
-        "select o1.iflux_PS o1ps, o2.iFlux_PS o2ps from Object o1, Object o2 order by o1.objectId;"
+        "select o1.iflux_PS o1ps, o2.iFlux_PS o2ps from Object o1, Object o2 order by o1.objectId;",
+        "select ra_PS from LSST.Object where ra_PS between 3 and 4;",
+        // Test column ref stuff.
+        "select count(*) from LSST.Object_3840, usnob.Object_3840 where LSST.Object_3840.objectId > usnob.Object_3840.objectId;"
     };
-    for(int i=0; i < 4; ++i) {
+    for(int i=0; i < 6; ++i) {
         std::string stmt = stmts[i];
+        std::cout << "----" << stmt << "----" << std::endl;
         SelectParser::Ptr p = getParser(stmt);
         testParse2(p);
     }

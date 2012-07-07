@@ -36,6 +36,10 @@ class SqlSQL2Parser;
 namespace lsst {
 namespace qserv {
 namespace master {
+// Forward
+class SelectList;
+class FromList;
+class WhereClause;
 
 /// class SelectStmt - a container for SQL SELECT statement info.
 class SelectStmt  {
@@ -44,11 +48,17 @@ public:
     typedef boost::shared_ptr<SelectStmt const> Cptr;
     typedef std::list<std::string> StringList; // placeholder
     
+    SelectStmt();
+
     void addHooks(SqlSQL2Parser& p);
+
+    void diagnose(); // for debugging
 // private: // public for now.
-    StringList FromList; // Data sources
-    StringList OutputList; // Desired columns
-    StringList FilterList; // Filtering conditions (WHERE)
+    class Mgr;
+    boost::shared_ptr<Mgr> _mgr;
+    boost::shared_ptr<FromList> _fromList; // Data sources
+    boost::shared_ptr<SelectList> _selectList; // Desired columns
+    boost::shared_ptr<WhereClause> _whereClause; // Filtering conditions (WHERE)
     StringList OutputMods; // Output modifiers (order, grouping,
                            // sort, limit
 };
