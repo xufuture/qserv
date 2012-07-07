@@ -20,10 +20,11 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-// SelectParser is the top-level manager for everything attached to
-// parsing the top-level SQL query. Given an input query and a
-// configuration, computes a query info structure, name ref list, and
-// a "query plan".  
+// SelectStmt is the query info structure. It contains information
+// about the top-level query characteristics. It shouldn't contain
+// information about run-time query execution.  It might contain
+// enough information to generate queries for execution.
+
 
 #if 0
 // Standard
