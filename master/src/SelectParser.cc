@@ -109,5 +109,6 @@ qMaster::SelectParser::setup() {
     _aParser.reset(new AntlrParser(_statement));
     _selectStmt->addHooks(_aParser->parser);
     _aParser->run();
+    _selectStmt->diagnose();
 }
 

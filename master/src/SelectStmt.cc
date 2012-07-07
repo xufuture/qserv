@@ -31,18 +31,26 @@
 #include <cstdio>
 #include <strings.h>
 
-// Boost
-#include <boost/make_shared.hpp>
 #include <boost/bind.hpp>
 #endif //comment out
 
+
+// Standard
 #include <map>
 //#include <antlr/AST.hpp>
+
+// Boost
+//#include <boost/make_shared.hpp>
+
+#include <boost/algorithm/string/predicate.hpp> // string iequal
+
 
 // Local (placed in src/)
 #include "SqlSQL2Parser.hpp" 
 
 #include "lsst/qserv/master/parseTreeUtil.h"
+#include "lsst/qserv/master/ColumnRefH.h"
+#include "lsst/qserv/master/SelectList.h"
 // myself
 #include "lsst/qserv/master/SelectStmt.h"
 
@@ -53,9 +61,94 @@ namespace qMaster = lsst::qserv::master;
 ////////////////////////////////////////////////////////////////////////
 // Experimental
 ////////////////////////////////////////////////////////////////////////
-typedef std::pair<antlr::RefAST, antlr::RefAST> NodeBound;
-typedef std::map<antlr::RefAST, NodeBound> NodeMap;
 
+// forward
+
+////////////////////////////////////////////////////////////////////////
+// class SelectStmt::Mgr
+////////////////////////////////////////////////////////////////////////
+class qMaster::SelectStmt::Mgr {
+public:
+    enum Phrase {SELECTP, FROMP, WHEREP, POST};
+    Mgr(SelectStmt& stmt) 
+        : _stmt(stmt), _phrase(SELECTP) {
+    }
+
+    void addColumnAlias(RefAST label, NodeBound target) {
+        _columnAliases[label] = target;
+    }
+    boost::shared_ptr<VoidFourRefFunc> getColumnRefH();
+    boost::shared_ptr<VoidVoidFunc> getSelectStarH();
+    boost::shared_ptr<VoidOneRefFunc> getSelectListH();
+    class SelectStarH;
+    class SelectListH;
+    friend class SelectStarH;
+    friend class SelectListH;
+    void setSelectFinish() {
+        _phrase = FROMP;
+        // change listener for column refs 
+        _columnRefH->setListener(_stmt._fromList->getColumnRefList());
+    }
+    void setFromFinish() {
+        _phrase = FROMP;
+        // change listener for column refs 
+        _columnRefH->setListener(_stmt._whereClause->getColumnRefList());
+    }
+    
+private:
+    void _setupColumnRefH();
+    SelectStmt& _stmt;
+    Phrase _phrase;
+    NodeMap _columnAliases;
+    boost::shared_ptr<ColumnRefH> _columnRefH;
+
+};
+class qMaster::SelectStmt::Mgr::SelectStarH : public VoidVoidFunc {
+public: 
+    explicit SelectStarH(Mgr& m) : _mgr(m) {}
+    virtual ~SelectStarH() {}
+    virtual void operator()() {
+        using lsst::qserv::master::getLastSibling;
+        using qMaster::tokenText;
+        using qMaster::walkBoundedTreeString;
+        std::cout << "Found Select *" << std::endl;
+        _mgr.setSelectFinish();
+    }
+private:
+    Mgr& _mgr;
+}; // SelectStarH
+
+class qMaster::SelectStmt::Mgr::SelectListH : public VoidOneRefFunc {
+public: 
+    explicit SelectListH(qMaster::SelectStmt::Mgr& m) : _mgr(m) {}
+    virtual ~SelectListH() {}
+    virtual void operator()(RefAST a) {
+        using qMaster::walkTreeString;
+        std::cout << "Found Select List: " << walkTreeString(a) << std::endl;
+        _mgr.setSelectFinish();
+    }
+private:
+    Mgr& _mgr;
+}; // SelectListH
+boost::shared_ptr<VoidVoidFunc> qMaster::SelectStmt::Mgr::getSelectStarH() {
+    // non-const denies make_shared.
+    return boost::shared_ptr<SelectStarH>(new SelectStarH(*this));
+}
+boost::shared_ptr<VoidOneRefFunc> qMaster::SelectStmt::Mgr::getSelectListH() {
+    return boost::shared_ptr<SelectListH>(new SelectListH(*this));
+}
+void qMaster::SelectStmt::Mgr::_setupColumnRefH() {
+    _columnRefH.reset(new ColumnRefH()); 
+    _columnRefH->setListener(_stmt._selectList->getColumnRefList());
+}
+boost::shared_ptr<VoidFourRefFunc> qMaster::SelectStmt::Mgr::getColumnRefH() {
+    if(!_columnRefH.get()) { _setupColumnRefH(); }
+    return _columnRefH;
+}
+
+////////////////////////////////////////////////////////////////////////
+// Handlers
+////////////////////////////////////////////////////////////////////////
 class ColumnAliasH : public VoidTwoRefFunc {
 public: 
     virtual ~ColumnAliasH() {}
@@ -67,16 +160,24 @@ public:
         using qMaster::walkTreeString;
         using qMaster::walkTree;
         if(b.get()) {
-            NodeBound target(a, getSiblingBefore(a,b));
+            qMaster::NodeBound target(a, getSiblingBefore(a,b));
+            // Exclude the "AS" 
+            if(boost::iequals(tokenText(target.second) , "as")) {
+                target.second = getSiblingBefore(a, target.second);
+            }
             std::cout << "column map " << walkTreeString(b) 
                       << " --> "
-                      <<  walkTree(a)
+                      <<  walkBoundedTreeString(target.first, target.second)
                       << std::endl;
             //_am._columnAliasNodeMap[a] = NodeBound(b, getLastSibling(a));
         }
+
+#if 0
         std::cout << "column node " 
                   << walkBoundedTreeString(a, getLastSibling(a))
                   << std::endl;
+#endif
+        // Don't really need column node here-- column ref captures better.
         
         //_am._columnAliasNodes.push_back(NodeBound(a, getLastSibling(a)));
         // Save column ref for pass/fixup computation, 
@@ -85,79 +186,27 @@ public:
 private:
 }; // class ColumnAliasH
 
-class ColumnRefH : public VoidFourRefFunc {
-public:    
-    ColumnRefH() {}
-    virtual ~ColumnRefH() {}
-    virtual void operator()(antlr::RefAST a, antlr::RefAST b, 
-                            antlr::RefAST c, antlr::RefAST d) {
-        if(d.get()) {
-            _process(c, d);
-        } else if(c.get()) {
-            _process(b, c);
-        } else if(b.get()) {
-            _process(a, b);
-        } else { 
-            _process(antlr::RefAST(), a); 
-        }
-        // std::cout << "col _" << tokenText(a) 
-        //        << "_ _" << tokenText(b) 
-        //        << "_ _" << tokenText(c) 
-            //        << "_ _" << tokenText(d) 
-            //        << "_ "; 
-            // a->setText("AWESOMECOLUMN");
-    }
-private:
-    inline void _process(antlr::RefAST t, antlr::RefAST c) {
-        using qMaster::tokenText;
-        std::cout << "columnref: table:" << tokenText(t)
-                  << " column:" << tokenText(c) << std::endl;
-    }
-    
-};
-
-class SelectStarH : public VoidVoidFunc {
-public: 
-    virtual ~SelectStarH() {}
-    virtual void operator()() {
-        using lsst::qserv::master::getLastSibling;
-        using qMaster::tokenText;
-        using qMaster::walkBoundedTreeString;
-        std::cout << "Found Select *" << std::endl;
-    }
-private:
-}; // SelectStarH
-
-class SelectListH : public VoidOneRefFunc {
-public: 
-    virtual ~SelectListH() {}
-    virtual void operator()(RefAST a) {
-        using qMaster::walkTreeString;
-        std::cout << "Found Select List: " << walkTreeString(a) << std::endl;
-    }
-private:
-}; // class ColumnAliasH
-
-struct FromEntry {
-    RefAST alias;
-    NodeBound target;
-    
-};
-
-class FromList {
-public:
-    int i;
-};
 
 ////////////////////////////////////////////////////////////////////////
 // class SelectStmt
 ////////////////////////////////////////////////////////////////////////
 
-
+// Hook into parser to get populated.
+qMaster::SelectStmt::SelectStmt() 
+    : _mgr(new Mgr(*this)),
+    _fromList(new FromList()),
+    _selectList(new SelectList()),
+    _whereClause(new WhereClause()) {
+    // ---
+}
 // Hook into parser to get populated.
 void qMaster::SelectStmt::addHooks(SqlSQL2Parser& p) {
     p._columnAliasHandler.reset(new ColumnAliasH());
-    p._columnRefHandler.reset(new ColumnRefH());
-    p._selectStarHandler.reset(new SelectStarH());
-    p._selectListHandler.reset(new SelectListH());
+    p._columnRefHandler = _mgr->getColumnRefH();
+    p._selectStarHandler = _mgr->getSelectStarH();
+    p._selectListHandler = _mgr->getSelectListH();
+
+}
+void qMaster::SelectStmt::diagnose() {
+    _selectList->getColumnRefList()->printRefs();
 }
