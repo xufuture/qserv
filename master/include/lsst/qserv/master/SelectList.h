@@ -64,6 +64,28 @@ private:
     std::list<ColumnRef> _refs;
 };
 
+class ValueExpr; // forward
+typedef boost::shared_ptr<ValueExpr> ValueExprPtr;
+typedef std::list<ValueExprPtr> ValueExprList;
+
+class FuncExpr {
+public:
+    std::string getName() const;
+    ValueExprList getParams() const;
+};
+
+class ValueExpr {
+public:
+    enum Type { COLUMNREF, FUNCTION, STAR };
+
+    boost::shared_ptr<ColumnRef> getColumnRef() const { return _columnRef; }
+    boost::shared_ptr<FuncExpr> getFuncExpr() const { return _funcExpr; }
+    Type getType() const;
+    //private:
+    boost::shared_ptr<ColumnRef> _columnRef;
+    boost::shared_ptr<FuncExpr> _funcExpr;
+
+};
 
 class SelectList {
 public:
@@ -75,6 +97,7 @@ public:
     
 private:
     boost::shared_ptr<ColumnRefList> _columnRefList;
+    boost::shared_ptr<ValueExprList> _valueExprList;
 };
 
 
