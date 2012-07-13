@@ -529,9 +529,10 @@ BOOST_AUTO_TEST_CASE(NewParser) {
         "select o1.iflux_PS o1ps, o2.iFlux_PS o2ps from Object o1, Object o2 order by o1.objectId;",
         "select ra_PS from LSST.Object where ra_PS between 3 and 4;",
         // Test column ref stuff.
-        "select count(*) from LSST.Object_3840, usnob.Object_3840 where LSST.Object_3840.objectId > usnob.Object_3840.objectId;"
+        "select count(*) from LSST.Object_3840, usnob.Object_3840 where LSST.Object_3840.objectId > usnob.Object_3840.objectId;",
+        "select count(*), max(iFlux_PS) from LSST.Object where iFlux_PS > 100;"
     };
-    for(int i=0; i < 6; ++i) {
+    for(int i=0; i < 7; ++i) {
         std::string stmt = stmts[i];
         std::cout << "----" << stmt << "----" << std::endl;
         SelectParser::Ptr p = getParser(stmt);
