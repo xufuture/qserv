@@ -43,7 +43,6 @@
 #include "lsst/qserv/master/Callback.h"
 #include "lsst/qserv/master/SqlParseRunner.h"
 #include "lsst/qserv/master/Substitution.h"
-#include "lsst/qserv/master/parseTreeUtil.h"
 #include "lsst/qserv/master/stringUtil.h"
 #include "lsst/qserv/master/TableRefChecker.h"
 #include "lsst/qserv/master/TableNamer.h"
@@ -53,7 +52,9 @@
 #include "lsst/qserv/master/SelectStmt.h"
 
 #include "lsst/qserv/master/SelectParser.h"
+#include "lsst/qserv/master/parseTreeUtil.h"
 
+#include <antlr/CommonAST.hpp>
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;
 
@@ -72,13 +73,22 @@ public:
         parser.initializeASTFactory(factory);
         parser.setASTFactory(&factory);
         parser.sql_stmt();
+        explore();
     }
+    void explore();
     std::string statement;
     std::stringstream stream;
     ASTFactory factory;
     SqlSQL2Lexer lexer;
     SqlSQL2Parser parser;
 };
+void 
+qMaster::AntlrParser::explore() {
+    RefAST a = parser.getAST();
+    std::cout << "printing walktree \n";
+    printIndented(a);
+
+}
 
 ////////////////////////////////////////////////////////////////////////
 // class SelectParser
