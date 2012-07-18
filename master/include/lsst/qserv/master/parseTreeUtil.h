@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
@@ -27,6 +28,7 @@
 #include <cassert>
 #include <iostream>
 #include <map>
+#include <list>
 
 #include "antlr/AST.hpp"
 
@@ -182,6 +184,44 @@ void walkTreeVisit(AnAst r, Visitor& v, CheckTerm& ct, int depth=0) {
     }
 	
 }
+template <typename AnAst, typename C>
+class IndentPrinter {
+public:
+    IndentPrinter(std::ostream& o_) : o(o_) {}
+    void operator()(AnAst a, C& p) {
+        o << p.size() << std::string(p.size(), ' ') << tokenText(a) << std::endl;
+    }
+    std::ostream& o;
+};
+
+// AnAST: e.g. RefAST
+// V: Visitor: implements void operator()(AnAST, C const&)
+// C: Container of AnAst, e.g. std::list<RefAST>
+template <typename AnAst, typename V, typename C>
+void visitTreeRooted(AnAst r, V& v, C& p) {
+    //DFS walk
+    antlr::RefAST s = r;
+    while(s.get()) {
+        //--- (visit self)---
+        v(s, p);
+        antlr::RefAST c = s->getFirstChild();
+        if(c.get()) {
+            p.push_back(s);
+            visitTreeRooted(c, v, p);
+            p.pop_back();
+        }
+        s = s->getNextSibling();
+    }
+}
+
+template <typename AnAst>
+void printIndented(AnAst r) {
+    std::list<AnAst> mylist;
+    IndentPrinter<AnAst, std::list<AnAst> > p(std::cout);
+    //visitTreeRooted<AnAst, IndentPrinter, std::list<AnAst> >(r, p, mylist);
+    visitTreeRooted(r, p, mylist);
+}
+
 
 template <typename AnAst, typename Visitor>
 void walkTreeVisit(AnAst r, Visitor& v) {

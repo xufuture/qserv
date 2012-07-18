@@ -626,11 +626,11 @@ function_spec :
 //{ Rule #490 <set_fct_spec> incorporates the rules #491 <set_fct_type> and #267 <general_set_fct>
 //  in order to keep the k down to 2.
 set_fct_spec : 
-	    "count" LEFT_PAREN ( ASTERISK | (set_quantifier)? value_exp ) RIGHT_PAREN 
-	| ( "avg"
-	  | "max" 
-	  | "min" 
-	  | "sum" ) LEFT_PAREN (set_quantifier)? value_exp RIGHT_PAREN  
+	    "count"^ LEFT_PAREN ( ASTERISK | (set_quantifier)? value_exp ) RIGHT_PAREN 
+	| ( "avg"^ 
+	  | "max"^ 
+	  | "min"^ 
+	  | "sum"^ ) LEFT_PAREN (set_quantifier)? value_exp RIGHT_PAREN  
 ;
 //}
 
@@ -1053,7 +1053,7 @@ simple_table :
 //  Rule #475 <select_stmt_single_row> was incorporated in the rule #430 <query_spec>
 //{ Rule #430 <query_spec> additionally incorporates the rule #475 <select_stmt_single_row> - see EXF5
 query_spec : 
-	"select" (set_quantifier)? select_list (into_clause)? table_exp 
+	"select"^ (set_quantifier)? select_list (into_clause)? table_exp 
 ;
 //}
 
@@ -1200,7 +1200,7 @@ from_with_where :
         
 //{ Rule #265 <from_clause>
 from_clause : 
-	"from" table_ref_list {handleFrom();}
+	"from"^ table_ref_list {handleFrom();}
 ;
 //}
 
@@ -1213,9 +1213,9 @@ table_ref_list :
 //{ Rule #637 <where_clause>
 // danielw: Add special qserv restrictor(optional) to trap spatial specs
 where_clause : 
-	w1:"where" qserv_restrictor (boolean_factor_op search_condition)?
+	w1:"where"^ qserv_restrictor (boolean_factor_op search_condition)?
         {handleWhereCondition(w1_AST);}
-    | w2:"where" search_condition {handleWhereCondition(w2_AST);}
+    | w2:"where"^ search_condition {handleWhereCondition(w2_AST);}
 ; 
 //}
 
@@ -1240,12 +1240,12 @@ float_num :
 
 //{
 qserv_fct_name :
-   "qserv_areaspec_box" 
-    | "qserv_areaspec_circle"
-    | "qserv_areaspec_ellipse"
-    | "qserv_areaspec_poly"
-    | "qserv_areaspec_hull"
-    | "qserv_objectId"
+   "qserv_areaspec_box"^ 
+    | "qserv_areaspec_circle"^ 
+    | "qserv_areaspec_ellipse"^ 
+    | "qserv_areaspec_poly"^ 
+    | "qserv_areaspec_hull"^ 
+    | "qserv_objectId"^ 
 ;
 //}
 
