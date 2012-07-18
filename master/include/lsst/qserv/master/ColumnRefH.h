@@ -30,6 +30,8 @@
 // Standard
 #include <list>
 
+#include "lsst/qserv/master/parserBase.h" // VoidFourRefFunc
+#include "lsst/qserv/master/parseTreeUtil.h" // tokenText
 // Forward
 class SqlSQL2Parser;
 

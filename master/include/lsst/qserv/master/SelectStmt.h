@@ -52,7 +52,10 @@ public:
 
     void addHooks(SqlSQL2Parser& p);
 
+    void addSelectStar();
+
     void diagnose(); // for debugging
+
 // private: // public for now.
     class Mgr;
     boost::shared_ptr<Mgr> _mgr;

@@ -113,6 +113,7 @@ public:
         using qMaster::tokenText;
         using qMaster::walkBoundedTreeString;
         std::cout << "Found Select *" << std::endl;
+        _mgr._stmt.addSelectStar();
         _mgr.setSelectFinish();
     }
 private:
@@ -208,6 +209,12 @@ void qMaster::SelectStmt::addHooks(SqlSQL2Parser& p) {
     p._selectListHandler = _mgr->getSelectListH();
 
 }
+
+void qMaster::SelectStmt::addSelectStar() {
+    _selectList->addStar();
+}
+
 void qMaster::SelectStmt::diagnose() {
     _selectList->getColumnRefList()->printRefs();
+    _selectList->dbgPrint();
 }
