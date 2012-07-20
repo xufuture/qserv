@@ -246,6 +246,17 @@ std::string walkBoundedTreeString(AnAst r, AnAst lastSib) {
 }
 
 template <typename AnAst>
+std::string walkSiblingString(AnAst r) {
+    CompactPrintVisitor<AnAst> p;
+    while(r.get()) {
+        p(r);
+        r = r->getNextSibling();
+    }
+    return p.result;
+}
+
+
+template <typename AnAst>
 void walkTreeSubstitute(AnAst r, 
                         std::map<std::string, std::string> const& m) {
     SubstituteVisitor<AnAst> s(m);
