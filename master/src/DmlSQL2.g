@@ -403,19 +403,19 @@ select_stmt :
 
 //{ MySQL limit <limit_clause> 
 limit_clause : 
-	"limit" i:UNSIGNED_INTEGER {handleLimit(i_AST);} 
+	"limit"^ i:UNSIGNED_INTEGER {handleLimit(i_AST);} 
 ;
 //}
 
 //{ Rule #--- <into_clause>, see EXF5
 into_clause : 
-	"into" target_spec (COMMA target_spec)* 
+	"into"^ target_spec (COMMA target_spec)* 
 ;
 //}
 
 //{ Rule #383 <order_by_clause>
 order_by_clause : 
-	"order" "by" i:sort_spec_list {handleOrderBy(i_AST);} 
+	"order"^ "by" i:sort_spec_list {handleOrderBy(i_AST);} 
 ;
 //}
 
@@ -570,15 +570,19 @@ qualified_name :
 //{ Rule #474 <select_list>
 select_list : 
 	  ASTERISK {handleSelectStar();}
-	| a:select_sublist (COMMA select_sublist)* {handleSelectList(a_AST);}
+	| a:select_sublist (COMMA! select_sublist)* {        
+            #select_list = #([SELECT_LIST,"SELECT_LIST"], #select_list);
+            handleSelectList(a_AST);}
 ;
 //}
 
 //{ Rule #476 <select_sublist> with disambiguating syntactic predicate
 // (slow backtracking but that's LL(k))
 select_sublist : 
-	  (table_name PERIOD ASTERISK)=> table_name PERIOD ASTERISK
-	| derived_column
+	  (table_name PERIOD ASTERISK)=> table_name PERIOD ASTERISK {
+            #select_sublist = #([SELECT_TABLESTAR,"SELECT_TABLESTAR"], #select_sublist);}
+	| derived_column {
+            #select_sublist = #([SELECT_COLUMN,"SELECT_COLUMN"], #select_sublist);}
 ;
 //}
 
@@ -616,7 +620,7 @@ function_ref :
 //	id (options{greedy=true;}:PERIOD id (options{greedy=true;}:PERIOD id)?)?
 
 function_spec : 
-        a:function_ref LEFT_PAREN function_parameter_spec RIGHT_PAREN
+        a:function_ref LEFT_PAREN b:function_parameter_spec RIGHT_PAREN {handleFunctionSpec(a_AST, b_AST);}
     ;
 
 
@@ -1053,7 +1057,7 @@ simple_table :
 //  Rule #475 <select_stmt_single_row> was incorporated in the rule #430 <query_spec>
 //{ Rule #430 <query_spec> additionally incorporates the rule #475 <select_stmt_single_row> - see EXF5
 query_spec : 
-	"select"^ (set_quantifier)? select_list (into_clause)? table_exp 
+	"select" (set_quantifier)? select_list (into_clause)? table_exp       
 ;
 //}
 
@@ -1252,7 +1256,7 @@ qserv_fct_name :
 
 //{ Rule #281 <group_by_clause>
 group_by_clause : 
-	"group" "by" a:grouping_column_ref_list {handleGroupBy(a_AST);}
+	"group"^ "by" a:grouping_column_ref_list {handleGroupBy(a_AST);}
 ;
 //}
 
@@ -1270,7 +1274,7 @@ grouping_column_ref_list :
 
 //{ Rule #282 <having_clause>
 having_clause : 
-	"having" search_condition 
+	"having"^ search_condition 
 ;
 //}
 
