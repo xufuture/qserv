@@ -106,7 +106,8 @@ options {
 	language=Cpp;
 	namespaceAntlr="";
 	namespaceStd=""; 
-	genHashLines = false;
+    // genHashLines = false;
+	genHashLines = true; //Enable line numbers for errors
 }
 
 //
@@ -187,6 +188,12 @@ void handleTableAlias(RefAST tableName, RefAST subQuery,
 void handleSetFctSpec(RefAST fct) {
     if(_setFctSpecHandler.get()) {
         (*_setFctSpecHandler)(fct);
+    }
+    return; // Do-nothing placeholder
+}
+void handleFunctionSpec(RefAST name, RefAST params) {
+    if(_functionSpecHandler.get()) {
+        (*_functionSpecHandler)(name, params);
     }
     return; // Do-nothing placeholder
 }
@@ -273,6 +280,7 @@ boost::shared_ptr<VoidTwoRefFunc> _tableListHandler;
 boost::shared_ptr<VoidTwoRefFunc> _columnAliasHandler;
 boost::shared_ptr<VoidFourRefFunc> _tableAliasHandler;
 boost::shared_ptr<VoidOneRefFunc> _setFctSpecHandler;
+boost::shared_ptr<VoidTwoRefFunc> _functionSpecHandler;
 boost::shared_ptr<VoidOneRefFunc> _selectListHandler;
 boost::shared_ptr<VoidVoidFunc> _selectStarHandler;
 boost::shared_ptr<VoidOneRefFunc> _groupByHandler;

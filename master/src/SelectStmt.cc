@@ -188,6 +188,55 @@ public:
 private:
 }; // class ColumnAliasH
 
+class SetFctSpecH : public VoidOneRefFunc {
+public:
+    virtual ~SetFctSpecH() {}
+    virtual void operator()(antlr::RefAST a)  {
+        // FIXME: Put parameters underneath function name node.
+        
+        // FIXME: Create function call node.
+    }    
+    
+};
+
+class FunctionSpecH : public VoidTwoRefFunc {
+public:
+    virtual ~FunctionSpecH() {}
+    virtual void operator()(antlr::RefAST a, antlr::RefAST b)  {
+        using qMaster::walkTreeString;
+        using qMaster::tokenText;
+        // Make into a tree
+        // Make b a child of a
+        a->setFirstChild(b);
+        // Look for b among a's siblings and excise b from the list.
+        RefAST bSib = a;
+        RefAST next = bSib->getNextSibling();
+        while(next.get()) {
+            if(next == b) {
+                bSib->setNextSibling(RefAST()); 
+                break;
+            }
+            next = next->getNextSibling();
+        } 
+        RefAST current = b;
+        next = current->getNextSibling();;
+        while(next.get()) {
+            if(tokenText(next) == ")") {
+                current->setNextSibling(RefAST());
+                break;
+            }
+            current = next;
+            next = next->getNextSibling();;
+            
+        }
+        std::cout << "recv func:" << walkTreeString(a) << "--"
+                  << walkTreeString(b) << std::endl;
+
+        // FIXME: Create function call node.
+        //addFuncExpr(a,b);
+    }
+    
+};
 
 ////////////////////////////////////////////////////////////////////////
 // class SelectStmt
@@ -207,6 +256,7 @@ void qMaster::SelectStmt::addHooks(SqlSQL2Parser& p) {
     p._columnRefHandler = _mgr->getColumnRefH();
     p._selectStarHandler = _mgr->getSelectStarH();
     p._selectListHandler = _mgr->getSelectListH();
+    p._functionSpecHandler.reset(new FunctionSpecH());
 
 }
 
@@ -218,3 +268,4 @@ void qMaster::SelectStmt::diagnose() {
     _selectList->getColumnRefList()->printRefs();
     _selectList->dbgPrint();
 }
+
