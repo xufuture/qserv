@@ -117,7 +117,10 @@ private:
     SelectParser(std::string const& statement, 
                    std::string const& delimiter,
                    StringMap const& config);
+    // Init
     void _readConfig(StringMap const& m);
+    // Post-parse
+    void _import();
 
     std::string const _statement;
     boost::shared_ptr<SelectStmt> _selectStmt;    
