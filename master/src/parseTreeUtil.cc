@@ -61,13 +61,14 @@ qMaster::substituteWithMap(std::string& s,
                            std::map<std::string, std::string>  const& m,
                            int minMatch) {
     if(s.empty()) return false;
-
+    assert(minMatch >= 0);
     bool did = false;
     std::map<std::string, std::string>::const_iterator i = m.find(s);
     if(i != m.end()) {
         s = i->second;
         did = true;
-    } else if(s.size() >= minMatch) { // more aggressively for larger tokens.
+    } else if(s.size() >= static_cast<unsigned>(minMatch)) { 
+        // more aggressively for larger tokens.
         for(i=m.begin(); i != m.end(); ++i) {
             std::string orig = i->first;
             std::string repl = i->second;
