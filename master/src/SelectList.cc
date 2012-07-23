@@ -74,7 +74,7 @@ ColumnRefList::acceptColumnRef(antlr::RefAST d, antlr::RefAST t,
 }
 
 void
-SelectList::addStar() {
+SelectList::addStar(antlr::RefAST a) {
     assert(_valueExprList.get());
     _valueExprList->push_back(ValueExpr::newStarExpr());
 }

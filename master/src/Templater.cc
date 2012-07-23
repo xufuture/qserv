@@ -179,7 +179,7 @@ void Templater::JoinVisitor::_reassignRefs(RefList& l) {
 ////////////////////////////////////////////////////////////////////////
 void Templater::TableListHandler::operator()(antlr::RefAST a, 
                                              antlr::RefAST b) {
-    walkTreeVisit(a, _deferred); // Defer so that the alias processing
+    //walkTreeVisit(a, _deferred); // Defer so that the alias processing
                                  // can happen first.
 }
 

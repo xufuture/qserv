@@ -115,7 +115,10 @@ public:
     boost::shared_ptr<ColumnRefList> getColumnRefList() {
         return _columnRefList;
     }
-    void addStar();
+    void addStar(antlr::RefAST star);
+    void addRegular(antlr::RefAST n);
+    void addFunc(antlr::RefAST n);
+
     void dbgPrint() const;
     
 private:
