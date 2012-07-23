@@ -563,14 +563,16 @@ schema_name :
 //{ Rule #424 <qualified_name> incorpotates <schema_name> to enable left_factoring
 //  It needs k=2 if used in <table_name> see <select_sublist>
 qualified_name : 
-	i:id (options{greedy=true;}:PERIOD j:id (options{greedy=true;}:PERIOD k:id)?)? {handleQualifiedName(i_AST, j_AST, k_AST);}
+	i:id (options{greedy=true;}:PERIOD j:id (options{greedy=true;}:PERIOD k:id)?)? { 
+            #qualified_name = #([QUALIFIED_NAME,"QUALIFIED_NAME"], #qualified_name);
+            handleQualifiedName(i_AST, j_AST, k_AST);}
 ;
 //}
 
 //{ Rule #474 <select_list>
 select_list : 
-	  ASTERISK {handleSelectStar();}
-	| a:select_sublist (COMMA! select_sublist)* {        
+    astr:ASTERISK {handleSelectStar(astr_AST);}
+    | a:select_sublist (COMMA! select_sublist)* {        
             #select_list = #([SELECT_LIST,"SELECT_LIST"], #select_list);
             handleSelectList(a_AST);}
 ;
@@ -596,7 +598,7 @@ derived_column :
 
 //{ Rule #630 <value_exp_primary> was reorganized to resolve ambiguities and tune performance
 value_exp_primary : 
-	  fct:set_fct_spec {handleSetFctSpec(fct_AST);}
+	  fct:set_fct_spec {/*fct.setType(FCT_NAME); */ handleSetFctSpec(fct_AST);}
 	| case_exp 
 	| cast_spec 
     | (function_ref LEFT_PAREN) => function_spec
@@ -620,7 +622,9 @@ function_ref :
 //	id (options{greedy=true;}:PERIOD id (options{greedy=true;}:PERIOD id)?)?
 
 function_spec : 
-        a:function_ref LEFT_PAREN b:function_parameter_spec RIGHT_PAREN {handleFunctionSpec(a_AST, b_AST);}
+        a:function_ref LEFT_PAREN b:function_parameter_spec RIGHT_PAREN {
+            #function_spec = #([FUNCTION_SPEC,"FUNCTION_SPEC"], #function_spec);
+            handleFunctionSpec(a_AST, b_AST);}
     ;
 
 
@@ -1125,7 +1129,10 @@ table_ref :
 //{ Rule #--- <table_ref_aux> was introduced to avoid recursion, see also rule #325 <joined_table>
 table_ref_aux : 
 	(n:table_name | /*derived_table*/q:table_subquery) ((as:"as")? c:correlation_name (LEFT_PAREN derived_column_list RIGHT_PAREN)?)? 
-{handleTableAlias(n_AST, q_AST, as_AST, c_AST);}
+        {
+            #table_ref_aux = #([TABLE_REF_AUX,"TABLE_REF_AUX"], #table_ref_aux); 
+            handleTableAlias(n_AST, q_AST, as_AST, c_AST);
+        }
 ;
 //}
 
@@ -1350,6 +1357,7 @@ char_value_exp :
 //{ Rule #629 <value_exp> must have been totally redesigned to resolve the issue of data type equivalence, see NSF1
 value_exp : 
 	term (options{greedy=true;}:(term_op | CONCATENATION_OP) term )* 
+        {#value_exp = #([VALUE_EXP,"VALUE_EXP"], #value_exp);}
 ;
 //}
 

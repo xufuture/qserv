@@ -48,6 +48,8 @@
 
 // Local (placed in src/)
 #include "SqlSQL2Parser.hpp" 
+#include "SqlSQL2Tokens.h"
+#include "SqlSQL2TokenTypes.hpp"
 
 #include "lsst/qserv/master/parseTreeUtil.h"
 #include "lsst/qserv/master/ColumnRefH.h"
@@ -79,7 +81,7 @@ public:
         _columnAliases[label] = target;
     }
     boost::shared_ptr<VoidFourRefFunc> getColumnRefH();
-    boost::shared_ptr<VoidVoidFunc> getSelectStarH();
+    boost::shared_ptr<VoidOneRefFunc> getSelectStarH();
     boost::shared_ptr<VoidOneRefFunc> getSelectListH();
     class SelectStarH;
     class SelectListH;
@@ -104,11 +106,11 @@ private:
     boost::shared_ptr<ColumnRefH> _columnRefH;
 
 };
-class qMaster::SelectStmt::Mgr::SelectStarH : public VoidVoidFunc {
+class qMaster::SelectStmt::Mgr::SelectStarH : public VoidOneRefFunc {
 public: 
     explicit SelectStarH(Mgr& m) : _mgr(m) {}
     virtual ~SelectStarH() {}
-    virtual void operator()() {
+    virtual void operator()(antlr::RefAST a) {
         using lsst::qserv::master::getLastSibling;
         using qMaster::tokenText;
         using qMaster::walkBoundedTreeString;
@@ -126,13 +128,67 @@ public:
     virtual ~SelectListH() {}
     virtual void operator()(RefAST a) {
         using qMaster::walkTreeString;
-        std::cout << "Found Select List: " << walkTreeString(a) << std::endl;
+        std::cout << "Found Select List("
+                  << a->getType() << "): " 
+                  << walkSiblingString(a) << std::endl;
+        _import(a);
         _mgr.setSelectFinish();
+    }
+    void _importValue(RefAST a) {
+        switch(a->getType()) {
+        case SqlSQL2TokenTypes::SQL2RW_count:
+        case SqlSQL2TokenTypes::SQL2RW_avg:
+        case SqlSQL2TokenTypes::SQL2RW_max:
+        case SqlSQL2TokenTypes::SQL2RW_min:
+        case SqlSQL2TokenTypes::SQL2RW_sum:
+            std::cout << "Aggregation detected." << tokenText(a) << std::endl;
+            break;
+        case SqlSQL2TokenTypes::REGULAR_ID:
+            std::cout << "RegularId." << tokenText(a) << std::endl;
+            break;
+        case SqlSQL2TokenTypes::FUNCTION_SPEC:
+            std::cout << "fspec." << tokenText(a) << std::endl;
+            break;
+        default:
+            std::cout << "FIXME handle ("<< a->getType() 
+                      << ")" << tokenText(a) << std::endl;
+            break;
+        }
+    }
+    void _importTableStar(RefAST a) {
+        // FIXME
+    }
+    void _import(RefAST a) {
+        for(; a.get(); a=a->getNextSibling()) {
+            if(a->getType() != ANTLR_SELECT_COLUMN) {
+                if(a->getType() == ANTLR_SELECT_TABLESTAR) {
+                    _importTableStar(a);
+                } else {
+                    std::cout << "Warning, unhandled parse element:" 
+                              << walkTreeString(a) << std::endl;
+                    continue;
+                }
+            }
+            //_mgr._stmt->_selectList;
+            RefAST node = a->getFirstChild();
+            switch(node->getType()) {
+            case ANTLR_VALUE_EXP:
+                _importValue(node->getFirstChild());
+                break;
+            default:
+                std::cout << "Warning, Unsupported SELECT_COLUMN child:" 
+                          << walkTreeString(node) << std::endl;
+                break;
+            }
+            
+            
+        }
+        
     }
 private:
     Mgr& _mgr;
 }; // SelectListH
-boost::shared_ptr<VoidVoidFunc> qMaster::SelectStmt::Mgr::getSelectStarH() {
+boost::shared_ptr<VoidOneRefFunc> qMaster::SelectStmt::Mgr::getSelectStarH() {
     // non-const denies make_shared.
     return boost::shared_ptr<SelectStarH>(new SelectStarH(*this));
 }
@@ -167,10 +223,10 @@ public:
             if(boost::iequals(tokenText(target.second) , "as")) {
                 target.second = getSiblingBefore(a, target.second);
             }
-            std::cout << "column map " << walkTreeString(b) 
-                      << " --> "
-                      <<  walkBoundedTreeString(target.first, target.second)
-                      << std::endl;
+            // std::cout << "column map " << walkTreeString(b) 
+            //           << " --> "
+            //           <<  walkBoundedTreeString(target.first, target.second)
+            //           << std::endl;
             //_am._columnAliasNodeMap[a] = NodeBound(b, getLastSibling(a));
         }
 
@@ -256,16 +312,16 @@ void qMaster::SelectStmt::addHooks(SqlSQL2Parser& p) {
     p._columnRefHandler = _mgr->getColumnRefH();
     p._selectStarHandler = _mgr->getSelectStarH();
     p._selectListHandler = _mgr->getSelectListH();
-    p._functionSpecHandler.reset(new FunctionSpecH());
+    //p._functionSpecHandler.reset(new FunctionSpecH());
 
 }
 
 void qMaster::SelectStmt::addSelectStar() {
-    _selectList->addStar();
+//    _selectList->addStar();
 }
 
 void qMaster::SelectStmt::diagnose() {
     _selectList->getColumnRefList()->printRefs();
-    _selectList->dbgPrint();
+    //_selectList->dbgPrint();
 }
 

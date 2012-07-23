@@ -131,6 +131,10 @@ void qMaster::SelectParser::_import() {
     RefAST root = _aParser->parser.getAST();
     RefAST selectListRoot = root->getNextSibling(); 
     assert(selectListRoot.get());
+    if(selectListRoot->getType() == SqlSQL2TokenTypes::ASTERISK) {
+        std::cout << "Select* detected. " << std::endl;
+        return; // FIXME
+    }
     RefAST selectList = selectListRoot->getFirstChild();
     assert(selectList.get()); 
 //    assert(selectList->getType() == ANTLR_SELECT_LIST);

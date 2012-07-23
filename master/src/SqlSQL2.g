@@ -204,9 +204,9 @@ void handleSelectList(RefAST a) {
     return; // Do-nothing placeholder
     
 }
-void handleSelectStar() {
+void handleSelectStar(RefAST a) {
     if(_selectStarHandler.get()) {
-        (*_selectStarHandler)();
+        (*_selectStarHandler)(a);
     }
     return; // Do-nothing placeholder    
 }
@@ -282,7 +282,7 @@ boost::shared_ptr<VoidFourRefFunc> _tableAliasHandler;
 boost::shared_ptr<VoidOneRefFunc> _setFctSpecHandler;
 boost::shared_ptr<VoidTwoRefFunc> _functionSpecHandler;
 boost::shared_ptr<VoidOneRefFunc> _selectListHandler;
-boost::shared_ptr<VoidVoidFunc> _selectStarHandler;
+boost::shared_ptr<VoidOneRefFunc> _selectStarHandler;
 boost::shared_ptr<VoidOneRefFunc> _groupByHandler;
 boost::shared_ptr<VoidOneRefFunc> _groupColumnHandler;
 boost::shared_ptr<VoidOneRefFunc> _limitHandler;

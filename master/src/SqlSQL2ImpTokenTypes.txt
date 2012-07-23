@@ -333,4 +333,8 @@ SELECT_LIST("select_list")=1001
 SELECT_SUBLIST("select_sublist")=1002
 SELECT_COLUMN("select_column")=1003
 SELECT_TABLESTAR("select_tablestar")=1004
+FUNCTION_SPEC("function_spec")=1005
+VALUE_EXP("value_exp")=1006
+QUALIFIED_NAME("qualified_name")=1007
+TABLE_REF_AUX("table_ref_aux")=1008
 // END_IMPORT
