@@ -20,9 +20,15 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 // SelectList
- 
+
+// Idea was to have this as an intermediate query tree representation.
+// ANTLR-specific manipulation crept into this container due to
+// convenience, but let's think of a way to isolate the ANTLR portion
+// without being too complicated.
 #include "lsst/qserv/master/SelectList.h"
 #include <iterator>
+
+#include "SqlSQL2TokenTypes.hpp" // For ANTLR typing.
 
 using lsst::qserv::master::ColumnRef;
 using lsst::qserv::master::ColumnRefList;
@@ -44,6 +50,19 @@ ValueExprPtr ValueExpr::newColumnRefExpr(boost::shared_ptr<ColumnRef> cr) {
 ValueExprPtr ValueExpr::newStarExpr() {
     ValueExprPtr expr(new ValueExpr());
     expr->_type = STAR;
+    return expr;
+}
+ValueExprPtr ValueExpr::newFuncExpr(boost::shared_ptr<FuncExpr> fe) {
+    ValueExprPtr expr(new ValueExpr());
+    expr->_type = FUNCTION;
+    expr->_funcExpr = fe;
+    return expr;
+}
+
+ValueExprPtr ValueExpr::newAggExpr(boost::shared_ptr<FuncExpr> fe) {
+    ValueExprPtr expr(new ValueExpr());
+    expr->_type = AGGFUNC;
+    expr->_funcExpr = fe;
     return expr;
 }
 
@@ -80,10 +99,67 @@ SelectList::addStar(antlr::RefAST a) {
 }
 
 void
+SelectList::addFunc(antlr::RefAST a) {
+    assert(_valueExprList.get());
+   boost::shared_ptr<FuncExpr> fe(new FuncExpr());
+   if(a->getType() == SqlSQL2TokenTypes::FUNCTION_SPEC) { a = a->getFirstChild(); }
+   std::cout << "fspec name:" << tokenText(a) << std::endl;
+   fe->name = tokenText(a);
+   _fillParams(fe->params, a->getNextSibling());
+   _valueExprList->push_back(ValueExpr::newFuncExpr(fe));
+}
+
+void
+SelectList::addAgg(antlr::RefAST a) {
+    assert(_valueExprList.get());
+   boost::shared_ptr<FuncExpr> fe(new FuncExpr());
+   fe->name = tokenText(a);
+   _fillParams(fe->params, a->getFirstChild());
+   _valueExprList->push_back(ValueExpr::newAggExpr(fe));
+}
+
+void
+SelectList::addRegular(antlr::RefAST a) {
+    assert(_valueExprList.get());
+    // boost::shared_ptr<FuncExpr> fe(new Expr());
+   // ValueExprPtr ValueExpr::newColumnRefExpr(boost::shared_ptr<ColumnRef> cr) {
+
+   // fe->name = tokenText(a);
+   // _fillParams(fe->params, a->getFirstChild());
+    std::cout << "FIXME: addRegular confounded with column ref handler now." << std::endl;
+    //_valueExprList->push_back(ValueExpr::newColumnRefExpr(a));
+}
+
+void
 SelectList::dbgPrint() const {
     assert(_valueExprList.get());
     std::copy(_valueExprList->begin(),
               _valueExprList->end(),
               std::ostream_iterator<ValueExprPtr>(std::cout, "\n"));
     
+}
+
+ValueExprPtr _newValueExpr(antlr::RefAST v) {
+    ValueExprPtr e(new ValueExpr());
+    // Figure out what type of value expr, and create it properly.
+    std::cout << "Type of:" << v->getText() << "(" << v->getType() << ")" << std::endl;
+    return e;
+}
+
+void 
+SelectList::_fillParams(ValueExprList& p, antlr::RefAST pnodes) {
+    antlr::RefAST current = pnodes;
+    std::cout << "params got " << tokenText(pnodes) << std::endl;
+    // Make sure the parser gave us the right nodes.
+    assert(current->getType() == SqlSQL2TokenTypes::LEFT_PAREN); 
+    for(current = current->getNextSibling(); 
+        current.get(); 
+        current=current->getNextSibling()) {
+        if(current->getType() == SqlSQL2TokenTypes::COMMA) { continue; }
+        if(current->getType() == SqlSQL2TokenTypes::RIGHT_PAREN) { break; }
+        p.push_back(_newValueExpr(current));
+    }
+    std::cout << "printing params \n";
+    printIndented(pnodes);
+    // FIXME
 }

@@ -142,12 +142,15 @@ public:
         case SqlSQL2TokenTypes::SQL2RW_min:
         case SqlSQL2TokenTypes::SQL2RW_sum:
             std::cout << "Aggregation detected." << tokenText(a) << std::endl;
+            _mgr._stmt._selectList->addAgg(a);
             break;
         case SqlSQL2TokenTypes::REGULAR_ID:
             std::cout << "RegularId." << tokenText(a) << std::endl;
+            _mgr._stmt._selectList->addRegular(a);
             break;
         case SqlSQL2TokenTypes::FUNCTION_SPEC:
             std::cout << "fspec." << tokenText(a) << std::endl;
+            _mgr._stmt._selectList->addFunc(a);
             break;
         default:
             std::cout << "FIXME handle ("<< a->getType() 
@@ -180,10 +183,7 @@ public:
                           << walkTreeString(node) << std::endl;
                 break;
             }
-            
-            
-        }
-        
+        }        
     }
 private:
     Mgr& _mgr;
