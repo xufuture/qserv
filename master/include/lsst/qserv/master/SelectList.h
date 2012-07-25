@@ -80,11 +80,16 @@ class FuncExpr {
 public:
     std::string getName() const;
     ValueExprList getParams() const;
+
+    std::string name;
+    ValueExprList params;
 };
+
+typedef boost::shared_ptr<FuncExpr> FuncExprPtr;
 
 class ValueExpr {
 public:
-    enum Type { COLUMNREF, FUNCTION, STAR };
+    enum Type { COLUMNREF, FUNCTION, AGGFUNC, STAR };
 
     boost::shared_ptr<ColumnRef> getColumnRef() const { return _columnRef; }
     boost::shared_ptr<FuncExpr> getFuncExpr() const { return _funcExpr; }
@@ -92,7 +97,8 @@ public:
     
     static ValueExprPtr newColumnRefExpr(boost::shared_ptr<ColumnRef> cr);
     static ValueExprPtr newStarExpr();
-    static ValueExprPtr newFuncExpr(boost::shared_ptr<FuncExpr> cr);
+    static ValueExprPtr newAggExpr(boost::shared_ptr<FuncExpr> fe);
+    static ValueExprPtr newFuncExpr(boost::shared_ptr<FuncExpr> fe);
     friend std::ostream& operator<<(std::ostream& os, ValueExpr const& ve);
     friend std::ostream& operator<<(std::ostream& os, ValueExpr const* ve);
 
@@ -118,10 +124,13 @@ public:
     void addStar(antlr::RefAST star);
     void addRegular(antlr::RefAST n);
     void addFunc(antlr::RefAST n);
+    void addAgg(antlr::RefAST n);
+    
 
     void dbgPrint() const;
     
 private:
+    void _fillParams(ValueExprList& p, antlr::RefAST pnodes);
     boost::shared_ptr<ColumnRefList> _columnRefList;
     boost::shared_ptr<ValueExprList> _valueExprList;
 };
