@@ -38,7 +38,7 @@
 // Local (placed in src/)
 #include "SqlSQL2Parser.hpp" 
 #include "SqlSQL2Lexer.hpp"
-#include "SqlSQL2Tokens.h"
+#include "SqlSQL2TokenTypes.hpp"
 #if 0
 #include "lsst/qserv/master/Callback.h"
 #include "lsst/qserv/master/SqlParseRunner.h"
@@ -138,7 +138,8 @@ void qMaster::SelectParser::_import() {
     RefAST selectList = selectListRoot->getFirstChild();
     assert(selectList.get()); 
 //    assert(selectList->getType() == ANTLR_SELECT_LIST);
-    std::cout << "selectlisttype is " << ANTLR_SELECT_LIST << std::endl;
+    std::cout << "selectlisttype is " 
+              << SqlSQL2TokenTypes::SELECT_LIST << std::endl;
     std::cout << "select list is: " 
               << "(" << selectListRoot->getType() << ") "
               << walkSiblingString(selectList) 

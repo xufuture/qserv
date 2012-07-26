@@ -48,7 +48,6 @@
 
 // Local (placed in src/)
 #include "SqlSQL2Parser.hpp" 
-#include "SqlSQL2Tokens.h"
 #include "SqlSQL2TokenTypes.hpp"
 
 #include "lsst/qserv/master/parseTreeUtil.h"
@@ -163,8 +162,8 @@ public:
     }
     void _import(RefAST a) {
         for(; a.get(); a=a->getNextSibling()) {
-            if(a->getType() != ANTLR_SELECT_COLUMN) {
-                if(a->getType() == ANTLR_SELECT_TABLESTAR) {
+            if(a->getType() != SqlSQL2TokenTypes::SELECT_COLUMN) {
+                if(a->getType() == SqlSQL2TokenTypes::SELECT_TABLESTAR) {
                     _importTableStar(a);
                 } else {
                     std::cout << "Warning, unhandled parse element:" 
@@ -175,7 +174,7 @@ public:
             //_mgr._stmt->_selectList;
             RefAST node = a->getFirstChild();
             switch(node->getType()) {
-            case ANTLR_VALUE_EXP:
+            case SqlSQL2TokenTypes::VALUE_EXP:
                 _importValue(node->getFirstChild());
                 break;
             default:
