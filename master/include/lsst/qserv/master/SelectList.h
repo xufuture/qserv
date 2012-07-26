@@ -50,6 +50,8 @@ struct ColumnRef {
     std::string db;
     std::string table;
     std::string column;
+    friend std::ostream& operator<<(std::ostream& os, ColumnRef const& cr);
+    friend std::ostream& operator<<(std::ostream& os, ColumnRef const* cr);
 };
 
 class ColumnRefList : public ColumnRefH::Listener {
@@ -83,6 +85,8 @@ public:
 
     std::string name;
     ValueExprList params;
+    friend std::ostream& operator<<(std::ostream& os, FuncExpr const& fe);
+    friend std::ostream& operator<<(std::ostream& os, FuncExpr const* fe);
 };
 
 typedef boost::shared_ptr<FuncExpr> FuncExprPtr;

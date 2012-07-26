@@ -25,6 +25,10 @@
 // ANTLR-specific manipulation crept into this container due to
 // convenience, but let's think of a way to isolate the ANTLR portion
 // without being too complicated.
+
+// Should we keep a hash table when column refs are detected, so we can
+// map them?
+// For now, just build the syntax tree without evaluating.
 #include "lsst/qserv/master/SelectList.h"
 #include <iterator>
 
@@ -38,7 +42,31 @@ using lsst::qserv::master::SelectList;
 namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers
+std::ostream& output(std::ostream& os, qMaster::ValueExprList const& vel) {
+    std::copy(vel.begin(), vel.end(),
+              std::ostream_iterator<qMaster::ValueExprPtr>(std::cout, ";"));
+    
+    return os;
+}
 } // anonymous namespace
+
+
+std::ostream& qMaster::operator<<(std::ostream& os, qMaster::ColumnRef const& cr) {
+    return os << "(" << cr.db << "," << cr.table << "," << cr.column << ")";
+}
+std::ostream& qMaster::operator<<(std::ostream& os, qMaster::ColumnRef const* cr) {
+    return os << *cr;
+}
+
+std::ostream& qMaster::operator<<(std::ostream& os, FuncExpr const& fe) {
+    os << "(" << fe.name << ",";
+    output(os, fe.params);
+    os << ")";
+    return os;
+}
+std::ostream& qMaster::operator<<(std::ostream& os, FuncExpr const* fe) {
+    return os << *fe;
+}
 
 ValueExprPtr ValueExpr::newColumnRefExpr(boost::shared_ptr<ColumnRef> cr) {
     ValueExprPtr expr(new ValueExpr());
@@ -68,9 +96,10 @@ ValueExprPtr ValueExpr::newAggExpr(boost::shared_ptr<FuncExpr> fe) {
 
 std::ostream& qMaster::operator<<(std::ostream& os, ValueExpr const& ve) {
     switch(ve._type) {
-    case ValueExpr::COLUMNREF: os << "cref"; break;
-    case ValueExpr::FUNCTION: os << "Func"; break;
-    case ValueExpr::STAR: os << "*"; break;
+    case ValueExpr::COLUMNREF: os << "CREF: " << *(ve._columnRef); break;
+    case ValueExpr::FUNCTION: os << "FUNC: " << *(ve._funcExpr); break;
+    case ValueExpr::AGGFUNC: os << "AGGFUNC: " << *(ve._funcExpr); break;
+    case ValueExpr::STAR: os << "<*>"; break;
     default: os << "UnknownExpr"; break;
     }
     return os;
@@ -133,23 +162,50 @@ SelectList::addRegular(antlr::RefAST a) {
 void
 SelectList::dbgPrint() const {
     assert(_valueExprList.get());
+    std::cout << "Parsed value expression for select list." << std::endl;
     std::copy(_valueExprList->begin(),
               _valueExprList->end(),
               std::ostream_iterator<ValueExprPtr>(std::cout, "\n"));
+
     
 }
-
+ValueExprPtr _newColumnRef(antlr::RefAST v) {
+    ValueExprPtr e(new ValueExpr());
+    e->_type = ValueExpr::COLUMNREF;
+    e->_columnRef.reset(new qMaster::ColumnRef("","",qMaster::tokenText(v) + "FIXME"));
+    std::cout << "need to make column ref out of " << qMaster::tokenText(v) << std::endl;
+    return e;
+}
 ValueExprPtr _newValueExpr(antlr::RefAST v) {
     ValueExprPtr e(new ValueExpr());
     // Figure out what type of value expr, and create it properly.
     std::cout << "Type of:" << v->getText() << "(" << v->getType() << ")" << std::endl;
+    switch(v->getType()) {
+    case SqlSQL2TokenTypes::ASTERISK:
+            std::cout << "star*: " << std::endl;
+        return ValueExpr::newStarExpr();
+    case SqlSQL2TokenTypes::VALUE_EXP:
+        v = v->getFirstChild();
+        switch(v->getType()) {
+        case SqlSQL2TokenTypes::REGULAR_ID:
+            std::cout << "Regular id: " << qMaster::tokenText(v) << std::endl;
+            // FIXME: could this be a func?
+            return _newColumnRef(v);
+        case SqlSQL2TokenTypes::FUNCTION_SPEC:
+            // FIXME.
+            std::cout << "nested function. FIXME. Nesting not supported" << std::endl;
+        };
+        std::cout << "ValueExp child:" << v->getText() << "(" << v->getType() << ")" << std::endl;
+        break;
+    default: break;
+    };
     return e;
 }
 
 void 
 SelectList::_fillParams(ValueExprList& p, antlr::RefAST pnodes) {
     antlr::RefAST current = pnodes;
-    std::cout << "params got " << tokenText(pnodes) << std::endl;
+    //std::cout << "params got " << tokenText(pnodes) << std::endl;
     // Make sure the parser gave us the right nodes.
     assert(current->getType() == SqlSQL2TokenTypes::LEFT_PAREN); 
     for(current = current->getNextSibling(); 
@@ -157,9 +213,14 @@ SelectList::_fillParams(ValueExprList& p, antlr::RefAST pnodes) {
         current=current->getNextSibling()) {
         if(current->getType() == SqlSQL2TokenTypes::COMMA) { continue; }
         if(current->getType() == SqlSQL2TokenTypes::RIGHT_PAREN) { break; }
-        p.push_back(_newValueExpr(current));
+        ValueExprPtr ve = _newValueExpr(current);
+        if(!ve.get()) {
+            throw std::string("Qserv internal error: Couldn't build valueExpr from " 
+                              + tokenText(current));
+        }
+        p.push_back(ve);
     }
-    std::cout << "printing params \n";
-    printIndented(pnodes);
+    //std::cout << "printing params \n";
+    //printIndented(pnodes);
     // FIXME
 }

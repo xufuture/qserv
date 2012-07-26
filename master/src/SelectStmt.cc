@@ -321,7 +321,7 @@ void qMaster::SelectStmt::addSelectStar() {
 }
 
 void qMaster::SelectStmt::diagnose() {
-    _selectList->getColumnRefList()->printRefs();
-    //_selectList->dbgPrint();
+    //_selectList->getColumnRefList()->printRefs();
+    _selectList->dbgPrint();
 }
 
