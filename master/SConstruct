@@ -173,7 +173,10 @@ parserSrcs = map(lambda x: os.path.join('src', x),
                   "SqlSQL2Parser.cpp",
                   "TableNamer.cc",
                   "TableRefChecker.cc",
-                  "TableRemapper.cc"])
+                  "TableRemapper.cc",
+                  "SelectParser.cc",
+                  "SelectList.cc",
+                  "SelectStmt.cc"])
 
 pyPath = 'python/lsst/qserv/master'
 pyLibName = os.path.join(pyPath, '_masterLib.so')

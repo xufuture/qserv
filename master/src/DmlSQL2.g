@@ -403,19 +403,19 @@ select_stmt :
 
 //{ MySQL limit <limit_clause> 
 limit_clause : 
-	"limit" i:UNSIGNED_INTEGER {handleLimit(i_AST);} 
+	"limit"^ i:UNSIGNED_INTEGER {handleLimit(i_AST);} 
 ;
 //}
 
 //{ Rule #--- <into_clause>, see EXF5
 into_clause : 
-	"into" target_spec (COMMA target_spec)* 
+	"into"^ target_spec (COMMA target_spec)* 
 ;
 //}
 
 //{ Rule #383 <order_by_clause>
 order_by_clause : 
-	"order" "by" i:sort_spec_list {handleOrderBy(i_AST);} 
+	"order"^ "by" i:sort_spec_list {handleOrderBy(i_AST);} 
 ;
 //}
 
@@ -563,22 +563,28 @@ schema_name :
 //{ Rule #424 <qualified_name> incorpotates <schema_name> to enable left_factoring
 //  It needs k=2 if used in <table_name> see <select_sublist>
 qualified_name : 
-	i:id (options{greedy=true;}:PERIOD j:id (options{greedy=true;}:PERIOD k:id)?)? {handleQualifiedName(i_AST, j_AST, k_AST);}
+	i:id (options{greedy=true;}:PERIOD j:id (options{greedy=true;}:PERIOD k:id)?)? { 
+            #qualified_name = #([QUALIFIED_NAME,"QUALIFIED_NAME"], #qualified_name);
+            handleQualifiedName(i_AST, j_AST, k_AST);}
 ;
 //}
 
 //{ Rule #474 <select_list>
 select_list : 
-	  ASTERISK {handleSelectStar();}
-	| a:select_sublist (COMMA select_sublist)* {handleSelectList(a_AST);}
+    astr:ASTERISK {handleSelectStar(astr_AST);}
+    | a:select_sublist (COMMA! select_sublist)* {        
+            #select_list = #([SELECT_LIST,"SELECT_LIST"], #select_list);
+            handleSelectList(a_AST);}
 ;
 //}
 
 //{ Rule #476 <select_sublist> with disambiguating syntactic predicate
 // (slow backtracking but that's LL(k))
 select_sublist : 
-	  (table_name PERIOD ASTERISK)=> table_name PERIOD ASTERISK
-	| derived_column
+	  (table_name PERIOD ASTERISK)=> table_name PERIOD ASTERISK {
+            #select_sublist = #([SELECT_TABLESTAR,"SELECT_TABLESTAR"], #select_sublist);}
+	| derived_column {
+            #select_sublist = #([SELECT_COLUMN,"SELECT_COLUMN"], #select_sublist);}
 ;
 //}
 
@@ -592,7 +598,7 @@ derived_column :
 
 //{ Rule #630 <value_exp_primary> was reorganized to resolve ambiguities and tune performance
 value_exp_primary : 
-	  fct:set_fct_spec {handleSetFctSpec(fct_AST);}
+	  fct:set_fct_spec {/*fct.setType(FCT_NAME); */ handleSetFctSpec(fct_AST);}
 	| case_exp 
 	| cast_spec 
     | (function_ref LEFT_PAREN) => function_spec
@@ -616,7 +622,9 @@ function_ref :
 //	id (options{greedy=true;}:PERIOD id (options{greedy=true;}:PERIOD id)?)?
 
 function_spec : 
-        a:function_ref LEFT_PAREN function_parameter_spec RIGHT_PAREN
+        a:function_ref LEFT_PAREN b:function_parameter_spec RIGHT_PAREN {
+            #function_spec = #([FUNCTION_SPEC,"FUNCTION_SPEC"], #function_spec);
+            handleFunctionSpec(a_AST, b_AST);}
     ;
 
 
@@ -626,11 +634,11 @@ function_spec :
 //{ Rule #490 <set_fct_spec> incorporates the rules #491 <set_fct_type> and #267 <general_set_fct>
 //  in order to keep the k down to 2.
 set_fct_spec : 
-	    "count" LEFT_PAREN ( ASTERISK | (set_quantifier)? value_exp ) RIGHT_PAREN 
-	| ( "avg"
-	  | "max" 
-	  | "min" 
-	  | "sum" ) LEFT_PAREN (set_quantifier)? value_exp RIGHT_PAREN  
+	    "count"^ LEFT_PAREN ( ASTERISK | (set_quantifier)? value_exp ) RIGHT_PAREN 
+	| ( "avg"^ 
+	  | "max"^ 
+	  | "min"^ 
+	  | "sum"^ ) LEFT_PAREN (set_quantifier)? value_exp RIGHT_PAREN  
 ;
 //}
 
@@ -1053,7 +1061,7 @@ simple_table :
 //  Rule #475 <select_stmt_single_row> was incorporated in the rule #430 <query_spec>
 //{ Rule #430 <query_spec> additionally incorporates the rule #475 <select_stmt_single_row> - see EXF5
 query_spec : 
-	"select" (set_quantifier)? select_list (into_clause)? table_exp 
+	"select" (set_quantifier)? select_list (into_clause)? table_exp       
 ;
 //}
 
@@ -1121,7 +1129,10 @@ table_ref :
 //{ Rule #--- <table_ref_aux> was introduced to avoid recursion, see also rule #325 <joined_table>
 table_ref_aux : 
 	(n:table_name | /*derived_table*/q:table_subquery) ((as:"as")? c:correlation_name (LEFT_PAREN derived_column_list RIGHT_PAREN)?)? 
-{handleTableAlias(n_AST, q_AST, as_AST, c_AST);}
+        {
+            #table_ref_aux = #([TABLE_REF_AUX,"TABLE_REF_AUX"], #table_ref_aux); 
+            handleTableAlias(n_AST, q_AST, as_AST, c_AST);
+        }
 ;
 //}
 
@@ -1200,7 +1211,7 @@ from_with_where :
         
 //{ Rule #265 <from_clause>
 from_clause : 
-	"from" table_ref_list {handleFrom();}
+	"from"^ table_ref_list {handleFrom();}
 ;
 //}
 
@@ -1213,9 +1224,9 @@ table_ref_list :
 //{ Rule #637 <where_clause>
 // danielw: Add special qserv restrictor(optional) to trap spatial specs
 where_clause : 
-	w1:"where" qserv_restrictor (boolean_factor_op search_condition)?
+	w1:"where"^ qserv_restrictor (boolean_factor_op search_condition)?
         {handleWhereCondition(w1_AST);}
-    | w2:"where" search_condition {handleWhereCondition(w2_AST);}
+    | w2:"where"^ search_condition {handleWhereCondition(w2_AST);}
 ; 
 //}
 
@@ -1240,19 +1251,19 @@ float_num :
 
 //{
 qserv_fct_name :
-   "qserv_areaspec_box" 
-    | "qserv_areaspec_circle"
-    | "qserv_areaspec_ellipse"
-    | "qserv_areaspec_poly"
-    | "qserv_areaspec_hull"
-    | "qserv_objectId"
+   "qserv_areaspec_box"^ 
+    | "qserv_areaspec_circle"^ 
+    | "qserv_areaspec_ellipse"^ 
+    | "qserv_areaspec_poly"^ 
+    | "qserv_areaspec_hull"^ 
+    | "qserv_objectId"^ 
 ;
 //}
 
 
 //{ Rule #281 <group_by_clause>
 group_by_clause : 
-	"group" "by" a:grouping_column_ref_list {handleGroupBy(a_AST);}
+	"group"^ "by" a:grouping_column_ref_list {handleGroupBy(a_AST);}
 ;
 //}
 
@@ -1270,7 +1281,7 @@ grouping_column_ref_list :
 
 //{ Rule #282 <having_clause>
 having_clause : 
-	"having" search_condition 
+	"having"^ search_condition 
 ;
 //}
 
@@ -1346,6 +1357,7 @@ char_value_exp :
 //{ Rule #629 <value_exp> must have been totally redesigned to resolve the issue of data type equivalence, see NSF1
 value_exp : 
 	term (options{greedy=true;}:(term_op | CONCATENATION_OP) term )* 
+        {#value_exp = #([VALUE_EXP,"VALUE_EXP"], #value_exp);}
 ;
 //}
 
