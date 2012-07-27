@@ -337,4 +337,5 @@ FUNCTION_SPEC("function_spec")=1005
 VALUE_EXP("value_exp")=1006
 QUALIFIED_NAME("qualified_name")=1007
 TABLE_REF_AUX("table_ref_aux")=1008
+COLUMN_ALIAS_NAME("column_alias_name")=1009
 // END_IMPORT
