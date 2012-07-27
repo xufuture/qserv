@@ -68,16 +68,19 @@ std::ostream& qMaster::operator<<(std::ostream& os, FuncExpr const* fe) {
     return os << *fe;
 }
 
-ValueExprPtr ValueExpr::newColumnRefExpr(boost::shared_ptr<ColumnRef> cr) {
+ValueExprPtr ValueExpr::newColumnRefExpr(boost::shared_ptr<ColumnRef const> cr) {
     ValueExprPtr expr(new ValueExpr());
     expr->_type = COLUMNREF;
     expr->_columnRef = cr;
     return expr;
 }
 
-ValueExprPtr ValueExpr::newStarExpr() {
+ValueExprPtr ValueExpr::newStarExpr(std::string const& table) {
     ValueExprPtr expr(new ValueExpr());
     expr->_type = STAR;
+    if(!table.empty()) {
+        expr->_tableStar = table;
+    }
     return expr;
 }
 ValueExprPtr ValueExpr::newFuncExpr(boost::shared_ptr<FuncExpr> fe) {
@@ -99,7 +102,11 @@ std::ostream& qMaster::operator<<(std::ostream& os, ValueExpr const& ve) {
     case ValueExpr::COLUMNREF: os << "CREF: " << *(ve._columnRef); break;
     case ValueExpr::FUNCTION: os << "FUNC: " << *(ve._funcExpr); break;
     case ValueExpr::AGGFUNC: os << "AGGFUNC: " << *(ve._funcExpr); break;
-    case ValueExpr::STAR: os << "<*>"; break;
+    case ValueExpr::STAR: 
+        os << "<";
+        if(!ve._tableStar.empty()) os << ve._tableStar << ".";
+        os << "*>"; 
+        break;
     default: os << "UnknownExpr"; break;
     }
     return os;
@@ -115,16 +122,27 @@ ColumnRefList::acceptColumnRef(antlr::RefAST d, antlr::RefAST t,
     boost::shared_ptr<ColumnRef> cr(new ColumnRef(tokenText(d), 
                                                   tokenText(t), 
                                                   tokenText(c)));
-    _refs.push_back(*cr);
-    if(_valueExprList.get()) {
-        _valueExprList->push_back(ValueExpr::newColumnRefExpr(cr));
-    }
+    antlr::RefAST first = d;
+    if(!d.get()) { 
+        if (!t.get()) { first = c; }
+        else first = t; 
+    } 
+    _refs[first] = cr;
+    // Don't add to list. Let selectList handle it later. Only track for now.
+    // Need to be able to lookup ref by RefAST.
 }
 
 void
-SelectList::addStar(antlr::RefAST a) {
+SelectList::addStar(antlr::RefAST table) {
     assert(_valueExprList.get());
-    _valueExprList->push_back(ValueExpr::newStarExpr());
+
+    ValueExprPtr ve;
+    if(table.get()) {
+        ve = ValueExpr::newStarExpr(qMaster::tokenText(table));
+    } else {
+        ve = ValueExpr::newStarExpr(std::string());
+    }
+    _valueExprList->push_back(ve);
 }
 
 void
@@ -150,13 +168,8 @@ SelectList::addAgg(antlr::RefAST a) {
 void
 SelectList::addRegular(antlr::RefAST a) {
     assert(_valueExprList.get());
-    // boost::shared_ptr<FuncExpr> fe(new Expr());
-   // ValueExprPtr ValueExpr::newColumnRefExpr(boost::shared_ptr<ColumnRef> cr) {
-
-   // fe->name = tokenText(a);
-   // _fillParams(fe->params, a->getFirstChild());
-    std::cout << "FIXME: addRegular confounded with column ref handler now." << std::endl;
-    //_valueExprList->push_back(ValueExpr::newColumnRefExpr(a));
+    boost::shared_ptr<ColumnRef const> cr(_columnRefList->getRef(a));
+    _valueExprList->push_back(ValueExpr::newColumnRefExpr(cr));
 }
 
 void
@@ -176,14 +189,15 @@ ValueExprPtr _newColumnRef(antlr::RefAST v) {
     std::cout << "need to make column ref out of " << qMaster::tokenText(v) << std::endl;
     return e;
 }
+
 ValueExprPtr _newValueExpr(antlr::RefAST v) {
     ValueExprPtr e(new ValueExpr());
     // Figure out what type of value expr, and create it properly.
     std::cout << "Type of:" << v->getText() << "(" << v->getType() << ")" << std::endl;
     switch(v->getType()) {
     case SqlSQL2TokenTypes::ASTERISK:
-            std::cout << "star*: " << std::endl;
-        return ValueExpr::newStarExpr();
+        std::cout << "star*: " << std::endl;
+        return ValueExpr::newStarExpr(std::string());
     case SqlSQL2TokenTypes::VALUE_EXP:
         v = v->getFirstChild();
         switch(v->getType()) {

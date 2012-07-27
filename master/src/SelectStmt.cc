@@ -52,7 +52,9 @@
 
 #include "lsst/qserv/master/parseTreeUtil.h"
 #include "lsst/qserv/master/ColumnRefH.h"
+#include "lsst/qserv/master/ColumnAliasMap.h"
 #include "lsst/qserv/master/SelectList.h"
+
 // myself
 #include "lsst/qserv/master/SelectStmt.h"
 
@@ -114,7 +116,7 @@ public:
         using qMaster::tokenText;
         using qMaster::walkBoundedTreeString;
         std::cout << "Found Select *" << std::endl;
-        _mgr._stmt.addSelectStar();
+        _mgr._stmt.addSelectStar(RefAST());
         _mgr.setSelectFinish();
     }
 private:
@@ -158,13 +160,19 @@ public:
         }
     }
     void _importTableStar(RefAST a) {
-        // FIXME
+        RefAST table = a->getFirstChild();
+        assert(table.get() 
+               && table->getType() == SqlSQL2TokenTypes::QUALIFIED_NAME);
+        table = table->getFirstChild();
+        assert(table.get());
+        _mgr._stmt._selectList->addStar(table);
     }
     void _import(RefAST a) {
         for(; a.get(); a=a->getNextSibling()) {
             if(a->getType() != SqlSQL2TokenTypes::SELECT_COLUMN) {
                 if(a->getType() == SqlSQL2TokenTypes::SELECT_TABLESTAR) {
                     _importTableStar(a);
+                    return;
                 } else {
                     std::cout << "Warning, unhandled parse element:" 
                               << walkTreeString(a) << std::endl;
@@ -173,6 +181,11 @@ public:
             }
             //_mgr._stmt->_selectList;
             RefAST node = a->getFirstChild();
+            RefAST nodeLast = getLastSibling(node);
+            if(nodeLast->getType() == SqlSQL2TokenTypes::COLUMN_ALIAS_NAME) {
+                std::cout << "FIXME: " << tokenText(node) << " has an alias "
+                          << tokenText(nodeLast) << std::endl;
+            }
             switch(node->getType()) {
             case SqlSQL2TokenTypes::VALUE_EXP:
                 _importValue(node->getFirstChild());
@@ -182,11 +195,13 @@ public:
                           << walkTreeString(node) << std::endl;
                 break;
             }
+                
         }        
     }
 private:
     Mgr& _mgr;
 }; // SelectListH
+
 boost::shared_ptr<VoidOneRefFunc> qMaster::SelectStmt::Mgr::getSelectStarH() {
     // non-const denies make_shared.
     return boost::shared_ptr<SelectStarH>(new SelectStarH(*this));
@@ -208,6 +223,7 @@ boost::shared_ptr<VoidFourRefFunc> qMaster::SelectStmt::Mgr::getColumnRefH() {
 ////////////////////////////////////////////////////////////////////////
 class ColumnAliasH : public VoidTwoRefFunc {
 public: 
+    ColumnAliasH(boost::shared_ptr<qMaster::ColumnAliasMap> map) : _map(map) {}
     virtual ~ColumnAliasH() {}
     virtual void operator()(antlr::RefAST a, antlr::RefAST b)  {
         using lsst::qserv::master::getLastSibling;
@@ -227,8 +243,9 @@ public:
             //           <<  walkBoundedTreeString(target.first, target.second)
             //           << std::endl;
             //_am._columnAliasNodeMap[a] = NodeBound(b, getLastSibling(a));
+            b->setType(SqlSQL2TokenTypes::COLUMN_ALIAS_NAME);
+            _map->addAlias(b, a);
         }
-
 #if 0
         std::cout << "column node " 
                   << walkBoundedTreeString(a, getLastSibling(a))
@@ -241,6 +258,7 @@ public:
         // regardless of alias.
     }
 private:
+    boost::shared_ptr<qMaster::ColumnAliasMap> _map;
 }; // class ColumnAliasH
 
 class SetFctSpecH : public VoidOneRefFunc {
@@ -300,14 +318,15 @@ public:
 // Hook into parser to get populated.
 qMaster::SelectStmt::SelectStmt() 
     : _mgr(new Mgr(*this)),
-    _fromList(new FromList()),
-    _selectList(new SelectList()),
-    _whereClause(new WhereClause()) {
+      _fromList(new FromList()),
+      _selectList(new SelectList()),
+      _whereClause(new WhereClause()),
+      _columnAliasMap(new ColumnAliasMap()) {
     // ---
 }
 // Hook into parser to get populated.
 void qMaster::SelectStmt::addHooks(SqlSQL2Parser& p) {
-    p._columnAliasHandler.reset(new ColumnAliasH());
+    p._columnAliasHandler.reset(new ColumnAliasH(_columnAliasMap));
     p._columnRefHandler = _mgr->getColumnRefH();
     p._selectStarHandler = _mgr->getSelectStarH();
     p._selectListHandler = _mgr->getSelectListH();
@@ -315,8 +334,8 @@ void qMaster::SelectStmt::addHooks(SqlSQL2Parser& p) {
 
 }
 
-void qMaster::SelectStmt::addSelectStar() {
-//    _selectList->addStar();
+void qMaster::SelectStmt::addSelectStar(antlr::RefAST table) {
+    _selectList->addStar(table);
 }
 
 void qMaster::SelectStmt::diagnose() {

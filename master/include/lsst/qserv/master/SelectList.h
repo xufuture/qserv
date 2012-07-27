@@ -46,7 +46,7 @@ typedef std::list<ValueExprPtr> ValueExprList;
 struct ColumnRef {
     ColumnRef(std::string db_, std::string table_, std::string column_) 
         : db(db_), table(table_), column(column_) {}
-
+    
     std::string db;
     std::string table;
     std::string column;
@@ -63,17 +63,30 @@ public:
     void setValueExprList(boost::shared_ptr<ValueExprList> vel) {
         _valueExprList = vel;
     }
+    boost::shared_ptr<ColumnRef const> getRef(antlr::RefAST r) {
+        if(_refs.find(r) == _refs.end()) {
+            std::cout << "couldn't find " << tokenText(r) << " in";
+            printRefs();
+        }
+        assert(_refs.find(r) != _refs.end());
+        return _refs[r];
+    }
+    
     void printRefs() const {
         std::cout << "Printing select refs." << std::endl;
-        typedef std::list<ColumnRef>::const_iterator Citer;
+        typedef RefMap::const_iterator Citer;
         Citer end = _refs.end();
         for(Citer i=_refs.begin(); i != end; ++i) {
-            std::cout << "\t\"" << i->db << "\".\"" 
-                      << i->table << "\".\""  << i->column << std::endl;
+            ColumnRef const& cr(*(i->second));
+            std::cout << "\t\"" << cr.db << "\".\"" 
+                      << cr.table << "\".\""  
+                      << cr.column << "\"" << std::endl;
         }
     }
 private:
-    std::list<ColumnRef> _refs;
+    typedef std::map<antlr::RefAST, boost::shared_ptr<ColumnRef> > RefMap;
+    RefMap _refs;
+    
     boost::shared_ptr<ValueExprList> _valueExprList;
 };
 
@@ -95,12 +108,12 @@ class ValueExpr {
 public:
     enum Type { COLUMNREF, FUNCTION, AGGFUNC, STAR };
 
-    boost::shared_ptr<ColumnRef> getColumnRef() const { return _columnRef; }
+    boost::shared_ptr<ColumnRef const> getColumnRef() const { return _columnRef; }
     boost::shared_ptr<FuncExpr> getFuncExpr() const { return _funcExpr; }
     Type getType() const { return _type; }
     
-    static ValueExprPtr newColumnRefExpr(boost::shared_ptr<ColumnRef> cr);
-    static ValueExprPtr newStarExpr();
+    static ValueExprPtr newColumnRefExpr(boost::shared_ptr<ColumnRef const> cr);
+    static ValueExprPtr newStarExpr(std::string const& table);
     static ValueExprPtr newAggExpr(boost::shared_ptr<FuncExpr> fe);
     static ValueExprPtr newFuncExpr(boost::shared_ptr<FuncExpr> fe);
     friend std::ostream& operator<<(std::ostream& os, ValueExpr const& ve);
@@ -108,9 +121,10 @@ public:
 
     //private:
     Type _type;
-    boost::shared_ptr<ColumnRef> _columnRef;
+    boost::shared_ptr<ColumnRef const> _columnRef;
     boost::shared_ptr<FuncExpr> _funcExpr;
-    
+    std::string _alias;
+    std::string _tableStar;
 };
 
 class SelectList {
@@ -125,7 +139,7 @@ public:
     boost::shared_ptr<ColumnRefList> getColumnRefList() {
         return _columnRefList;
     }
-    void addStar(antlr::RefAST star);
+    void addStar(antlr::RefAST table);
     void addRegular(antlr::RefAST n);
     void addFunc(antlr::RefAST n);
     void addAgg(antlr::RefAST n);

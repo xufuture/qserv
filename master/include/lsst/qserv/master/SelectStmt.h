@@ -40,6 +40,7 @@ namespace master {
 class SelectList;
 class FromList;
 class WhereClause;
+class ColumnAliasMap;
 
 /// class SelectStmt - a container for SQL SELECT statement info.
 class SelectStmt  {
@@ -52,7 +53,7 @@ public:
 
     void addHooks(SqlSQL2Parser& p);
 
-    void addSelectStar();
+    void addSelectStar(antlr::RefAST table);
 
     void diagnose(); // for debugging
 
@@ -62,6 +63,7 @@ public:
     boost::shared_ptr<FromList> _fromList; // Data sources
     boost::shared_ptr<SelectList> _selectList; // Desired columns
     boost::shared_ptr<WhereClause> _whereClause; // Filtering conditions (WHERE)
+    boost::shared_ptr<ColumnAliasMap> _columnAliasMap;
     StringList OutputMods; // Output modifiers (order, grouping,
                            // sort, limit
 };
