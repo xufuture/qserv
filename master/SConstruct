@@ -176,7 +176,8 @@ parserSrcs = map(lambda x: os.path.join('src', x),
                   "TableRemapper.cc",
                   "SelectParser.cc",
                   "SelectList.cc",
-                  "SelectStmt.cc"])
+                  "SelectStmt.cc",
+                  "SelectFactory.cc"])
 
 pyPath = 'python/lsst/qserv/master'
 pyLibName = os.path.join(pyPath, '_masterLib.so')
