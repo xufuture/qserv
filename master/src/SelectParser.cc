@@ -138,8 +138,8 @@ void qMaster::SelectParser::_import() {
     RefAST selectList = selectListRoot->getFirstChild();
     assert(selectList.get()); 
 //    assert(selectList->getType() == ANTLR_SELECT_LIST);
-    std::cout << "selectlisttype is " 
-              << SqlSQL2TokenTypes::SELECT_LIST << std::endl;
+    // std::cout << "selectlisttype is " 
+    //           << SqlSQL2TokenTypes::SELECT_LIST << std::endl;
     std::cout << "select list is: " 
               << "(" << selectListRoot->getType() << ") "
               << walkSiblingString(selectList) 

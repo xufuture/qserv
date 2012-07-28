@@ -142,15 +142,15 @@ public:
         case SqlSQL2TokenTypes::SQL2RW_max:
         case SqlSQL2TokenTypes::SQL2RW_min:
         case SqlSQL2TokenTypes::SQL2RW_sum:
-            std::cout << "Aggregation detected." << tokenText(a) << std::endl;
+            //          std::cout << "Aggregation detected." << tokenText(a) << std::endl;
             _mgr._stmt._selectList->addAgg(a);
             break;
         case SqlSQL2TokenTypes::REGULAR_ID:
-            std::cout << "RegularId." << tokenText(a) << std::endl;
+//            std::cout << "RegularId." << tokenText(a) << std::endl;
             _mgr._stmt._selectList->addRegular(a);
             break;
         case SqlSQL2TokenTypes::FUNCTION_SPEC:
-            std::cout << "fspec." << tokenText(a) << std::endl;
+            //std::cout << "fspec." << tokenText(a) << std::endl;
             _mgr._stmt._selectList->addFunc(a);
             break;
         default:
@@ -322,8 +322,10 @@ qMaster::SelectStmt::SelectStmt()
       _selectList(new SelectList()),
       _whereClause(new WhereClause()),
       _columnAliasMap(new ColumnAliasMap()) {
+    _selectList->setAliasMap(_columnAliasMap);
     // ---
 }
+
 // Hook into parser to get populated.
 void qMaster::SelectStmt::addHooks(SqlSQL2Parser& p) {
     p._columnAliasHandler.reset(new ColumnAliasH(_columnAliasMap));

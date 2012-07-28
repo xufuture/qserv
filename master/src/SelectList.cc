@@ -150,7 +150,7 @@ SelectList::addFunc(antlr::RefAST a) {
     assert(_valueExprList.get());
    boost::shared_ptr<FuncExpr> fe(new FuncExpr());
    if(a->getType() == SqlSQL2TokenTypes::FUNCTION_SPEC) { a = a->getFirstChild(); }
-   std::cout << "fspec name:" << tokenText(a) << std::endl;
+   //std::cout << "fspec name:" << tokenText(a) << std::endl;
    fe->name = tokenText(a);
    _fillParams(fe->params, a->getNextSibling());
    _valueExprList->push_back(ValueExpr::newFuncExpr(fe));
@@ -185,8 +185,8 @@ SelectList::dbgPrint() const {
 ValueExprPtr _newColumnRef(antlr::RefAST v) {
     ValueExprPtr e(new ValueExpr());
     e->_type = ValueExpr::COLUMNREF;
-    e->_columnRef.reset(new qMaster::ColumnRef("","",qMaster::tokenText(v) + "FIXME"));
-    std::cout << "need to make column ref out of " << qMaster::tokenText(v) << std::endl;
+    e->_columnRef.reset(new qMaster::ColumnRef("","",qMaster::walkSiblingString(v) + "FIXME"));
+    //std::cout << "need to make column ref out of " << qMaster::tokenText(v) << std::endl;
     return e;
 }
 
@@ -203,15 +203,19 @@ ValueExprPtr _newValueExpr(antlr::RefAST v) {
         switch(v->getType()) {
         case SqlSQL2TokenTypes::REGULAR_ID:
             std::cout << "Regular id: " << qMaster::tokenText(v) << std::endl;
-            // FIXME: could this be a func?
-            return _newColumnRef(v);
+            return  _newColumnRef(v);
+            // antlr::RefAST a = _aliasMap->getAlias(v);
+            // if(a.get()) ve->_alias = qMaster::tokenText(a);
+            break;
         case SqlSQL2TokenTypes::FUNCTION_SPEC:
             // FIXME.
             std::cout << "nested function. FIXME. Nesting not supported" << std::endl;
         };
+
         std::cout << "ValueExp child:" << v->getText() << "(" << v->getType() << ")" << std::endl;
         break;
-    default: break;
+    default: 
+            break;
     };
     return e;
 }

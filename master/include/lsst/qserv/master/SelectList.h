@@ -36,6 +36,10 @@
 namespace lsst {
 namespace qserv {
 namespace master {
+// Forward
+class ColumnRefMap;
+class ColumnAliasMap;
+
 typedef std::pair<antlr::RefAST, antlr::RefAST> NodeBound;
 typedef std::map<antlr::RefAST, NodeBound> NodeMap;
 
@@ -144,6 +148,9 @@ public:
     void addFunc(antlr::RefAST n);
     void addAgg(antlr::RefAST n);
     
+    void setAliasMap(boost::shared_ptr<ColumnAliasMap const> m) {
+        // FIXME
+    }
 
     void dbgPrint() const;
     
@@ -151,6 +158,7 @@ private:
     void _fillParams(ValueExprList& p, antlr::RefAST pnodes);
     boost::shared_ptr<ColumnRefList> _columnRefList;
     boost::shared_ptr<ValueExprList> _valueExprList;
+    boost::shared_ptr<ColumnRefMap const> _aliasMap;
 };
 
 
