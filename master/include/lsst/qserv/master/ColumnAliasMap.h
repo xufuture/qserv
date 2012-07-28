@@ -40,15 +40,29 @@ class ColumnAliasMap {
 public:
     typedef boost::shared_ptr<ColumnAliasMap> Ptr;
     typedef boost::shared_ptr<ColumnAliasMap const> Cptr;
+    typedef std::map<antlr::RefAST, antlr::RefAST> Map;
+    typedef Map::const_iterator Miter;
 
     ColumnAliasMap() {}
 
     void addAlias(antlr::RefAST alias, antlr::RefAST target) {
         _map[alias] = target;
+        _rMap[target] = alias;
+    }
+    inline antlr::RefAST get(antlr::RefAST alias) const {
+        return _get(_map, alias);
+    }
+    inline antlr::RefAST getAlias(antlr::RefAST target) const {
+        return _get(_rMap, target);
     }
 private:
-    typedef std::map<antlr::RefAST, antlr::RefAST> Map;
+    inline antlr::RefAST _get(Map const& m, antlr::RefAST k) const {
+        Miter i = m.find(k);
+        if(i != m.end()) return i->second;
+        else return antlr::RefAST();        
+    }
     Map _map;
+    Map _rMap;
 };
 
 }}} // namespace lsst::qserv::master
