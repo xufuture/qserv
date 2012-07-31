@@ -634,11 +634,11 @@ function_spec :
 //{ Rule #490 <set_fct_spec> incorporates the rules #491 <set_fct_type> and #267 <general_set_fct>
 //  in order to keep the k down to 2.
 set_fct_spec : 
-	    "count"^ LEFT_PAREN ( ASTERISK | (set_quantifier)? value_exp ) RIGHT_PAREN 
+	    "count"^ LEFT_PAREN ( ASTERISK | (set_quantifier)? value_exp ) RIGHT_PAREN  { #set_fct_spec = #([SET_FCT_SPEC,"SET_FCT_SPEC"], #set_fct_spec);}
 	| ( "avg"^ 
 	  | "max"^ 
 	  | "min"^ 
-	  | "sum"^ ) LEFT_PAREN (set_quantifier)? value_exp RIGHT_PAREN  
+	  | "sum"^ ) LEFT_PAREN (set_quantifier)? value_exp RIGHT_PAREN  { #set_fct_spec = #([SET_FCT_SPEC,"SET_FCT_SPEC"], #set_fct_spec);} 
 ;
 //}
 

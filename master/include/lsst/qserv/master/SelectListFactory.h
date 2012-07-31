@@ -31,36 +31,61 @@
 #include <map>
 #include <antlr/AST.hpp>
 #include <boost/shared_ptr.hpp>
+#include <stdexcept>
+
 
 namespace lsst {
 namespace qserv {
 namespace master {
+// Forward
+class ValueExpr;
+typedef boost::shared_ptr<ValueExpr> ValueExprPtr;
+typedef std::list<ValueExprPtr> ValueExprList;
+
+class SelectList;
+class ColumnRefMap;
 
 class SelectListFactory {
 public:
-    
+    boost::shared_ptr<SelectList> getProduct();
 private:
     friend class SelectFactory;
 
     class SelectListH;
+    class SelectStarH;
+    friend class SelectStarH;
     class ColumnAliasH;
+    class ParseException;
 
     // For "friends"
-    explicit SelectListFactory(boost::shared_ptr<ParseAliasMap> aliasMap) {}
+    SelectListFactory(boost::shared_ptr<ParseAliasMap> aliasMap,
+                      boost::shared_ptr<ColumnRefMap> crMap);
     void attachTo(SqlSQL2Parser& p);
 
     // Really private
     void _import(RefAST selectRoot);
+    
+    void _addSelectColumn(RefAST expr);
+    void _addSelectStar(RefAST child=RefAST());
+    ValueExprPtr _newColumnExpr(RefAST expr);
+    ValueExprPtr _newSetFctSpec(RefAST expr);
 
     // Delegate handlers
     boost::shared_ptr<SelectListH> _selectListH;
     boost::shared_ptr<ColumnAliasH> _columnAliasH;
+
     // data
     boost::shared_ptr<ParseAliasMap> _aliases;
-
-
+    boost::shared_ptr<ColumnRefMap> _columnRefMap;
+    boost::shared_ptr<ValueExprList> _valueExprList;
+    
 };
 
+
+class SelectListFactory::ParseException : public std::runtime_error {
+public:
+  explicit ParseException(RefAST subtree);
+};
 
 }}} // namespace lsst::qserv::master
 

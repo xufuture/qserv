@@ -322,7 +322,7 @@ qMaster::SelectStmt::SelectStmt()
       _selectList(new SelectList()),
       _whereClause(new WhereClause()),
       _columnAliasMap(new ColumnAliasMap()) {
-    _selectList->setAliasMap(_columnAliasMap);
+    //_selectList->setAliasMap(_columnAliasMap);
     // ---
 }
 

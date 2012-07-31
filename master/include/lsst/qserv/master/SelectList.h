@@ -143,17 +143,14 @@ public:
     boost::shared_ptr<ColumnRefList> getColumnRefList() {
         return _columnRefList;
     }
+
     void addStar(antlr::RefAST table);
     void addRegular(antlr::RefAST n);
     void addFunc(antlr::RefAST n);
     void addAgg(antlr::RefAST n);
     
-    void setAliasMap(boost::shared_ptr<ColumnAliasMap const> m) {
-        // FIXME
-    }
-
     void dbgPrint() const;
-    
+    friend class SelectListFactory;
 private:
     void _fillParams(ValueExprList& p, antlr::RefAST pnodes);
     boost::shared_ptr<ColumnRefList> _columnRefList;
