@@ -56,12 +56,6 @@ public:
         } else { 
             _process(antlr::RefAST(), antlr::RefAST(), a); 
         }
-        // std::cout << "col _" << tokenText(a) 
-        //        << "_ _" << tokenText(b) 
-        //        << "_ _" << tokenText(c) 
-            //        << "_ _" << tokenText(d) 
-            //        << "_ "; 
-            // a->setText("AWESOMECOLUMN");
     }
     void setListener(boost::shared_ptr<Listener> crl) {
         _listener = crl;
@@ -78,15 +72,37 @@ public:
                                  antlr::RefAST c) = 0;
 };
 
+class ColumnRefMap : public ColumnRefH::Listener {
+public:
+    struct Ref {
+        Ref() {}
+        Ref(antlr::RefAST d, antlr::RefAST t, antlr::RefAST c) 
+            : db(d), table(t), column(c) {}
+        antlr::RefAST db;
+        antlr::RefAST table;
+        antlr::RefAST column;
+    };
+    typedef std::map<antlr::RefAST, Ref> Map;
+    
+    virtual void acceptColumnRef(antlr::RefAST d, antlr::RefAST t, 
+                                 antlr::RefAST c) {
+        Ref r(d, t, c);
+        if(d.get())      { map[d] = r; } 
+        else if(t.get()) { map[t] = r; }
+        else             { map[c] = r; }
+    }
+    Map map;
+};
+
 ////////////////////////////////////////////////////////////////////////
 // Inlines
 ////////////////////////////////////////////////////////////////////////
 inline void 
 ColumnRefH::_process(antlr::RefAST d, antlr::RefAST t, antlr::RefAST c) {
     using lsst::qserv::master::tokenText;
-    std::cout << "columnref: db:" << tokenText(d)
-              << " table:" << tokenText(t)
-              << " column:" << tokenText(c) << std::endl;
+    // std::cout << "columnref: db:" << tokenText(d)
+    //           << " table:" << tokenText(t)
+    //           << " column:" << tokenText(c) << std::endl;
     if(_listener.get()) { _listener->acceptColumnRef(d, t, c); }
 }
 
