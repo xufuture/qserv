@@ -58,6 +58,7 @@ public:
     void diagnose(); // for debugging
 
 // private: // public for now.
+    friend class SelectFactory;
     class Mgr;
     boost::shared_ptr<Mgr> _mgr;
     boost::shared_ptr<FromList> _fromList; // Data sources

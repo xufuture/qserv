@@ -109,9 +109,11 @@ std::ostream& qMaster::operator<<(std::ostream& os, ValueExpr const& ve) {
         break;
     default: os << "UnknownExpr"; break;
     }
+    if(!ve._alias.empty()) { os << " [" << ve._alias << "]"; }
     return os;
 }
 std::ostream& qMaster::operator<<(std::ostream& os, ValueExpr const* ve) {
+    if(!ve) return os << "<NULL>";
     return os << *ve;
 }
 

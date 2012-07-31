@@ -44,15 +44,20 @@ namespace qserv {
 namespace master {
 // Forward
 class ParseAliasMap;
+class ColumnRefMap;
 class SelectListFactory;
 class FromFactory;
 class WhereFactory;
+class SelectStmt;
+class FromList;
+class WhereClause;
 
 class SelectFactory {
 public:
     SelectFactory();
     void attachTo(SqlSQL2Parser& p);
- 
+
+    boost::shared_ptr<SelectStmt> getStatement();
 
     boost::shared_ptr<SelectListFactory> getSelectListFactory() { 
         return _slFactory; }
@@ -63,10 +68,12 @@ public:
 
     
 private:
+    void _attachShared(SqlSQL2Parser& p);
 
     // parse-domain state
     boost::shared_ptr<ParseAliasMap> _columnAliases;
     boost::shared_ptr<ParseAliasMap> _tableAliases;
+    boost::shared_ptr<ColumnRefMap> _columnRefMap;
 
     // delegates
     boost::shared_ptr<SelectListFactory> _slFactory;
@@ -83,6 +90,7 @@ public:
     friend class SelectFactory;
     FromFactory(boost::shared_ptr<ParseAliasMap> aliases) :
         _aliases(aliases) {}
+    boost::shared_ptr<FromList> getProduct();
 private:
     void attachTo(SqlSQL2Parser& p) {
         // FIXME
@@ -94,6 +102,7 @@ class WhereFactory {
 public:
     friend class SelectFactory;
     WhereFactory() {}
+    boost::shared_ptr<WhereClause> getProduct();
 private:
     void attachTo(SqlSQL2Parser& p) {
         // FIXME
