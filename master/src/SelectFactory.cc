@@ -386,9 +386,66 @@ SelectListFactory::ParseException::ParseException(RefAST subtree) :
 ////////////////////////////////////////////////////////////////////////
 using qMaster::FromList;
 using qMaster::FromFactory;
-boost::shared_ptr<FromList> FromFactory::getProduct() {
+////////////////////////////////////////////////////////////////////////
+// FromFactory::FromClauseH
+////////////////////////////////////////////////////////////////////////
+class FromFactory::TableRefListH : public VoidTwoRefFunc {
+public:
+    TableRefListH(FromFactory& f) : _f(f) {}
+    virtual ~TableRefListH() {}
+    virtual void operator()(antlr::RefAST a, antlr::RefAST b) {
+        _f._import(a); // Trigger select list construction
+    }    
+private:
+    FromFactory& _f;
+};
+////////////////////////////////////////////////////////////////////////
+// FromFactory::TableRefAuxH
+////////////////////////////////////////////////////////////////////////
+class FromFactory::TableRefAuxH : public VoidFourRefFunc {
+public: 
+    TableRefAuxH(boost::shared_ptr<qMaster::ParseAliasMap> map) 
+        : _map(map) {}
+    virtual ~TableRefAuxH() {}
+    virtual void operator()(antlr::RefAST name, antlr::RefAST sub, 
+                            antlr::RefAST as, antlr::RefAST alias)  {
+        using lsst::qserv::master::getSiblingBefore;
+        using qMaster::tokenText;
+        if(alias.get()) {
+            _map->addAlias(alias, name);
+        }
+        // Save column ref for pass/fixup computation, 
+        // regardless of alias.
+    }
+private:
+    boost::shared_ptr<qMaster::ParseAliasMap> _map;
+};
+
+////////////////////////////////////////////////////////////////////////
+// FromFactory
+////////////////////////////////////////////////////////////////////////
+FromFactory::FromFactory(boost::shared_ptr<ParseAliasMap> aliases) :
+        _aliases(aliases) {
+}
+
+boost::shared_ptr<FromList> 
+FromFactory::getProduct() {
     // FIXME
     return boost::shared_ptr<FromList>(new FromList());
+}
+
+void 
+FromFactory::attachTo(SqlSQL2Parser& p) {
+    boost::shared_ptr<TableRefListH> lh(new TableRefListH(*this));
+    p._tableListHandler = lh;
+    boost::shared_ptr<TableRefAuxH> ah(new TableRefAuxH(_aliases));
+    p._tableAliasHandler = ah;
+}
+
+void 
+FromFactory::_import(antlr::RefAST a) {
+    std::cout << "FROM starts with: " << a->getText() 
+              << " (" << a->getType() << ")" << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////

@@ -336,7 +336,10 @@ SELECT_TABLESTAR("select_tablestar")=1004
 FUNCTION_SPEC("function_spec")=1005
 VALUE_EXP("value_exp")=1006
 QUALIFIED_NAME("qualified_name")=1007
-TABLE_REF_AUX("table_ref_aux")=1008
-COLUMN_ALIAS_NAME("column_alias_name")=1009
-SET_FCT_SPEC("set_fct_spec")=1010
+TABLE_REF("table_ref")=1008
+TABLE_REF_AUX("table_ref_aux")=1009
+COLUMN_ALIAS_NAME("column_alias_name")=1010
+SET_FCT_SPEC("set_fct_spec")=1011
+FROM_CLAUSE("from_clause")=1012
+WHERE_CLAUSE("where_clause")=1013
 // END_IMPORT
