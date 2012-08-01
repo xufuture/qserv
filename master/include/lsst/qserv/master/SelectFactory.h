@@ -88,13 +88,15 @@ private:
 class FromFactory {
 public:
     friend class SelectFactory;
-    FromFactory(boost::shared_ptr<ParseAliasMap> aliases) :
-        _aliases(aliases) {}
+    class TableRefListH;
+    class TableRefAuxH;
+    friend class TableRefListH;
+
+    FromFactory(boost::shared_ptr<ParseAliasMap> aliases);
     boost::shared_ptr<FromList> getProduct();
 private:
-    void attachTo(SqlSQL2Parser& p) {
-        // FIXME
-    }
+    void attachTo(SqlSQL2Parser& p);
+    void _import(antlr::RefAST a);
     boost::shared_ptr<ParseAliasMap> _aliases;
 };
 

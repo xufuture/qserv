@@ -1121,7 +1121,7 @@ joined_table :
 //  The original recursive reference to <joined_table> may be skipped as <table_ref_aux> can also
 //  be a <subquery>, which means it will come down to <joined_table> anyway.
 table_ref : 
-	table_ref_aux (options{greedy=true;}:qualified_join | cross_join)*
+	table_ref_aux (options{greedy=true;}:qualified_join | cross_join)* {#table_ref = #([TABLE_REF,"TABLE_REF"],#table_ref);}
 ;
 //}
 
@@ -1211,7 +1211,7 @@ from_with_where :
         
 //{ Rule #265 <from_clause>
 from_clause : 
-	"from"^ table_ref_list {handleFrom();}
+	"from"^ table_ref_list {#from_clause= #([FROM_CLAUSE,"FROM_CLAUSE"], #from_clause); handleFrom();}
 ;
 //}
 
@@ -1225,8 +1225,8 @@ table_ref_list :
 // danielw: Add special qserv restrictor(optional) to trap spatial specs
 where_clause : 
 	w1:"where"^ qserv_restrictor (boolean_factor_op search_condition)?
-        {handleWhereCondition(w1_AST);}
-    | w2:"where"^ search_condition {handleWhereCondition(w2_AST);}
+        {#where_clause=#([WHERE_CLAUSE,"WHERE_CLAUSE"], #where_clause); handleWhereCondition(w1_AST);}
+    | w2:"where"^ search_condition {#where_clause=#([WHERE_CLAUSE,"WHERE_CLAUSE"], #where_clause); handleWhereCondition(w2_AST);}
 ; 
 //}
 
