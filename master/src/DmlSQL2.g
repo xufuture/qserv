@@ -1239,7 +1239,9 @@ qserv_restrictor :
 //{ A single invocation to a qserv restriction function
 qserv_fct_spec : 
         n:qserv_fct_name LEFT_PAREN (f:signed_num_lit (COMMA signed_num_lit)*)? RIGHT_PAREN
-        {handleQservFctSpec(n_AST,f_AST);}
+        { 
+            #qserv_fct_spec=#([QSERV_FCT_SPEC,"QSERV_FCT_SPEC"], #qserv_fct_spec); 
+            handleQservFctSpec(n_AST,f_AST);}
     ;
 //}
 

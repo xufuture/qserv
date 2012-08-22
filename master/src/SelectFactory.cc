@@ -446,16 +446,53 @@ void
 FromFactory::_import(antlr::RefAST a) {
     std::cout << "FROM starts with: " << a->getText() 
               << " (" << a->getType() << ")" << std::endl;
+    // FIXME: walk the tree and add elements.
 }
 
+////////////////////////////////////////////////////////////////////////
+// WhereFactory::WhereCondH
+////////////////////////////////////////////////////////////////////////
+class lsst::qserv::master::WhereFactory::WhereCondH : public VoidOneRefFunc {
+public:
+    WhereCondH(lsst::qserv::master::WhereFactory& wf) : _wf(wf) {}
+    virtual ~WhereCondH() {}
+    virtual void operator()(antlr::RefAST where) {
+        _wf._import(where);
+    }
+private:
+    lsst::qserv::master::WhereFactory& _wf;
+};
 ////////////////////////////////////////////////////////////////////////
 // WhereFactory
 ////////////////////////////////////////////////////////////////////////
 using qMaster::WhereClause;
 using qMaster::WhereFactory;
+WhereFactory::WhereFactory() {
+    // FIXME
+}
+
 boost::shared_ptr<WhereClause> WhereFactory::getProduct() {
     // FIXME
     return boost::shared_ptr<WhereClause>(new WhereClause());
 }
 
+void 
+WhereFactory::attachTo(SqlSQL2Parser& p) {
+    boost::shared_ptr<WhereCondH> wch(new WhereCondH(*this));
+    p._whereCondHandler = wch;
+#if 0
+    // Should trigger when the WHERE clause is detected.
+    // Modifiers too? (ORDER, GROUP, LIMIT)
+#endif
+}
 
+void 
+WhereFactory::_import(antlr::RefAST a) {
+    std::cout << "WHERE starts with: " << a->getText() 
+              << " (" << a->getType() << ")" << std::endl;
+    
+    std::cout << "WHERE: (((" << walkTreeString(a) 
+              << ")))" << std::endl;
+    
+    // FIXME: walk the tree and add elements.
+}
