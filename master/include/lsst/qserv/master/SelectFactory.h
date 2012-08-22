@@ -103,12 +103,14 @@ private:
 class WhereFactory {
 public:
     friend class SelectFactory;
-    WhereFactory() {}
+    class WhereCondH;
+    friend class WhereCondH;
+
+    WhereFactory();
     boost::shared_ptr<WhereClause> getProduct();
 private:
-    void attachTo(SqlSQL2Parser& p) {
-        // FIXME
-    }
+    void attachTo(SqlSQL2Parser& p);
+    void _import(antlr::RefAST a);
 };
 
 
