@@ -173,7 +173,7 @@ def checkAddAntlr(conf):
     found = conf.CheckLibWithHeader("antlr", "antlr/AST.hpp", 
                                     language="C++")
     if not found:
-        print >> sys.stderr, "Could not locate libantlr or antler/AST.hpp"
+        print >> sys.stderr, "Could not locate libantlr or antlr/AST.hpp"
     return found
 
 def composeEnv(env, roots=[], includes=[], libs=[]):
