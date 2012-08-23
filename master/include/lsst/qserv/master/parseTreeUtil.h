@@ -166,23 +166,22 @@ std::string walkTree(AnAst r) {
 
 template <typename AnAst, typename Visitor, typename CheckTerm>
 void walkTreeVisit(AnAst r, Visitor& v, CheckTerm& ct, int depth=0) {
-    //DFS walk?
-    v(r);
-    //if(ct(r,depth)) return; // On terminal, visit only.
-    antlr::RefAST c = r->getFirstChild();
-    if(c.get()) {
-	std::cout << "Child: " << tokenText(r) << "----" << tokenText(c) 
-		  << std::endl;
-	walkTreeVisit(c, v, ct, depth+1);
-    }
-    // Now print sibling(s)
-    antlr::RefAST s = r->getNextSibling();
-    if(s.get() && !ct(r,depth)) {
-	//	std::cout << "Sib: " << tokenText(r) << "----" << tokenText(s) 
-	//		  << std::endl;
-	walkTreeVisit(s, v, ct, depth);
-    }
-	
+    AnAst first = r;
+    do {
+        if(r != first) {
+            std::cout << "(Sib) ";
+        }
+        //DFS walk?
+        v(r);
+        //if(ct(r,depth)) return; // On terminal, visit only.
+        antlr::RefAST c = r->getFirstChild();
+        if(c.get()) {
+            std::cout << "Child: " << tokenText(r) << "----" << tokenText(c) 
+                      << std::endl;
+            walkTreeVisit(c, v, ct, depth+1);
+        } 
+        r = r->getNextSibling();
+    } while(r.get() && ct(r,depth));
 }
 template <typename AnAst, typename C>
 class IndentPrinter {
