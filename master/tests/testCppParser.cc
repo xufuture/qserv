@@ -531,8 +531,8 @@ BOOST_AUTO_TEST_CASE(NewParser) {
         "select ra_PS from LSST.Object where ra_PS between 3 and 4;",
         // Test column ref stuff.
         "select count(*) from LSST.Object_3840, usnob.Object_3840 where LSST.Object_3840.objectId > usnob.Object_3840.objectId;",
-        "select count(*), max(iFlux_PS) from LSST.Object where iFlux_PS > 100;",
-        "select count(*), max(iFlux_PS) from LSST.Object where qserv_areaspec_box(0,0,1,1) and iFlux_PS > 100;"
+        "select count(*), max(iFlux_PS) from LSST.Object where iFlux_PS > 100 and col1=col2;",
+        "select count(*), max(iFlux_PS) from LSST.Object where qserv_areaspec_box(0,0,1,1) and iFlux_PS > 100 and col1=col2 and col3=4;"
     };
     for(int i=0; i < 8; ++i) {
         std::string stmt = stmts[i];
