@@ -712,7 +712,7 @@ searched_when_clause :
 
 //{ Rule #471 <search_condition>
 search_condition : 
-	boolean_term (!boolean_term_op boolean_term)* {
+	boolean_term (boolean_term_op boolean_term)* {
             #search_condition = #([OR_OP, "OR_OP"], #search_condition); 
         }
 ;
@@ -726,7 +726,7 @@ boolean_term_op :
 
 //{ Rule #047 <boolean_term>
 boolean_term : 
-    boolean_factor (!boolean_factor_op boolean_factor)* {
+    boolean_factor (boolean_factor_op boolean_factor)* {
             #boolean_term = #([AND_OP, "AND_OP"], #boolean_term); 
         }
 ;
