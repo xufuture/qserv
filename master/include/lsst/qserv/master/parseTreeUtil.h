@@ -27,6 +27,7 @@
 #define LSST_QSERV_MASTER_PARSETREEUTIL_H
 #include <cassert>
 #include <iostream>
+#include <sstream>
 #include <map>
 #include <list>
 
@@ -219,6 +220,16 @@ void printIndented(AnAst r) {
     IndentPrinter<AnAst, std::list<AnAst> > p(std::cout);
     //visitTreeRooted<AnAst, IndentPrinter, std::list<AnAst> >(r, p, mylist);
     visitTreeRooted(r, p, mylist);
+}
+
+template <typename AnAst>
+std::string walkIndentedString(AnAst r) {
+    std::list<AnAst> mylist;
+    std::stringstream ss;
+    IndentPrinter<AnAst, std::list<AnAst> > p(ss);
+    //visitTreeRooted<AnAst, IndentPrinter, std::list<AnAst> >(r, p, mylist);
+    visitTreeRooted(r, p, mylist);
+    return ss.str();
 }
 
 

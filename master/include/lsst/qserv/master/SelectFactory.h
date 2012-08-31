@@ -91,6 +91,7 @@ public:
     class TableRefListH;
     class TableRefAuxH;
     friend class TableRefListH;
+    class RefGenerator;
 
     FromFactory(boost::shared_ptr<ParseAliasMap> aliases);
     boost::shared_ptr<FromList> getProduct();

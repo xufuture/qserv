@@ -25,6 +25,11 @@
 // now, the code for other factories is included here as well.
 
 #include "lsst/qserv/master/SelectFactory.h"
+
+// C++
+#include <deque>
+
+// Package
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
 #include "lsst/qserv/master/ColumnRefH.h"
 
@@ -35,6 +40,7 @@
 #include "lsst/qserv/master/ParseAliasMap.h" 
 
 #include "lsst/qserv/master/parseTreeUtil.h"
+#include "lsst/qserv/master/TableRefN.h"
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;
 
@@ -59,6 +65,33 @@ inline std::string getSiblingStringBounded(RefAST left, RefAST right) {
     }
     return p.result;
 }
+////////////////////////////////////////////////////////////////////////
+// TableRefN misc impl. (to be placed in TableRefN.cc later)
+////////////////////////////////////////////////////////////////////////
+std::ostream& qMaster::operator<<(std::ostream& os, qMaster::TableRefN const& refN) {
+    return refN.putStream(os);
+}
+////////////////////////////////////////////////////////////////////////
+// ParseAliasMap misc impl. (to be placed in ParseAliasMap.cc later)
+////////////////////////////////////////////////////////////////////////
+std::ostream& qMaster::operator<<(std::ostream& os, 
+                                  qMaster::ParseAliasMap const& m) {
+    using qMaster::ParseAliasMap;
+    typedef ParseAliasMap::Miter Miter;
+    os << "AliasMap fwd(";
+    for(Miter it=m._map.begin(); it != m._map.end(); ++it) {
+        os << it->first->getText() << "->" << it->second->getText()
+           << ", ";
+    }
+    os << ")    rev(";
+    for(Miter it=m._rMap.begin(); it != m._rMap.end(); ++it) {
+        os << it->first->getText() << "->" << it->second->getText()
+           << ", ";
+    }
+    os << ")";
+    return os;
+}
+
 ////////////////////////////////////////////////////////////////////////
 // Parse handlers
 ////////////////////////////////////////////////////////////////////////
@@ -394,7 +427,7 @@ public:
     TableRefListH(FromFactory& f) : _f(f) {}
     virtual ~TableRefListH() {}
     virtual void operator()(antlr::RefAST a, antlr::RefAST b) {
-        _f._import(a); // Trigger select list construction
+        _f._import(a); // Trigger from list construction
     }    
 private:
     FromFactory& _f;
@@ -420,9 +453,98 @@ public:
 private:
     boost::shared_ptr<qMaster::ParseAliasMap> _map;
 };
-
+class QualifiedName {
+public:    
+    QualifiedName(antlr::RefAST qn) {
+        for(; qn.get(); qn = qn->getNextSibling()) {
+            if(qn->getType() == SqlSQL2TokenTypes::PERIOD) continue;
+            names.push_back(qn->getText());            
+        }
+    }
+    std::string getQual(int i) const {
+        return names[names.size() -1 - i];
+    }
+    std::string getName() const { return getQual(0); }
+    std::deque<std::string> names;
+};
 ////////////////////////////////////////////////////////////////////////
-// FromFactory
+// FromFactory::ListIterator
+////////////////////////////////////////////////////////////////////////
+class FromFactory::RefGenerator {
+public: 
+    RefGenerator(antlr::RefAST firstRef,
+                 boost::shared_ptr<ParseAliasMap> aliases) 
+        : _cursor(firstRef), _aliases(aliases) {
+        std::cout << *_aliases << std::endl;
+        
+    }
+    TableRefN::Ptr get() const {
+        assert(_cursor->getType() == SqlSQL2TokenTypes::TABLE_REF);
+        RefAST node = _cursor->getFirstChild();
+        RefAST child;
+
+        TableRefN::Ptr tn;
+        
+        switch(node->getType()) {
+        case SqlSQL2TokenTypes::TABLE_REF_AUX:
+            child = node->getFirstChild();
+            switch(child->getType()) {
+            case SqlSQL2TokenTypes::QUALIFIED_NAME:
+                tn.reset(_processQualifiedName(child));
+                break;
+            default:
+                break;
+            }
+            break;
+            // FIXME
+        default:
+            break;
+        }
+        return tn;
+    }
+    void next() {
+        _cursor = _cursor->getNextSibling();
+        if(!_cursor.get()) return; // Iteration complete
+        switch(_cursor->getType()) {
+        case SqlSQL2TokenTypes::COMMA:
+            next();
+            break;
+        default:
+            break;
+        }
+    }
+    bool isDone() const {
+        return !_cursor.get();
+    }
+private:
+    void _setup() {
+        // Sanity check: make sure we were constructed with a TABLE_REF
+        if(_cursor->getType() == SqlSQL2TokenTypes::TABLE_REF) {
+            // Nothing else to do
+        } else {
+            _cursor = RefAST(); // Clear out cursor so that isDone == true
+        }
+    }
+    SimpleTableN* _processQualifiedName(RefAST n) const {
+        RefAST qnStub = n;
+        RefAST aliasN = _aliases->getAlias(qnStub);
+        std::string alias;
+        if(aliasN.get()) alias = aliasN->getText();
+        QualifiedName qn(n->getFirstChild());
+        if(qn.names.size() > 1) {
+            return new SimpleTableN(qn.getQual(1), qn.getName(), alias);
+        } else {
+            return new SimpleTableN("", qn.getName(), alias);
+        }
+    }
+
+    // Fields
+    antlr::RefAST _cursor;
+    boost::shared_ptr<ParseAliasMap> _aliases;
+                 
+};
+////////////////////////////////////////////////////////////////////////
+// FromFactory (impl)
 ////////////////////////////////////////////////////////////////////////
 FromFactory::FromFactory(boost::shared_ptr<ParseAliasMap> aliases) :
         _aliases(aliases) {
@@ -446,6 +568,12 @@ void
 FromFactory::_import(antlr::RefAST a) {
     std::cout << "FROM starts with: " << a->getText() 
               << " (" << a->getType() << ")" << std::endl;
+    
+    for(RefGenerator refGen(a, _aliases); !refGen.isDone(); refGen.next()) {
+        TableRefN::Ptr p = refGen.get();
+        TableRefN& tn = *p;
+    }
+    
     // FIXME: walk the tree and add elements.
 }
 
@@ -490,9 +618,7 @@ void
 WhereFactory::_import(antlr::RefAST a) {
     std::cout << "WHERE starts with: " << a->getText() 
               << " (" << a->getType() << ")" << std::endl;
-    
-    std::cout << "WHERE: (((" << walkTreeString(a) 
-              << ")))" << std::endl;
-    
+//    std::cout << "WHERE indented: " << walkIndentedString(a) << std::endl;
+
     // FIXME: walk the tree and add elements.
 }
