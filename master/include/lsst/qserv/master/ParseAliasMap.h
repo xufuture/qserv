@@ -67,6 +67,7 @@ public:
         return _get(_rMap, target);
     }
 private:
+    friend std::ostream& operator<<(std::ostream& os, ParseAliasMap const& m);
 
     inline antlr::RefAST _get(Map const& m, antlr::RefAST k) const {
         Miter i = m.find(k);
@@ -76,6 +77,9 @@ private:
     Map _map;
     Map _rMap;
 };
+
+// cryptically implemented in SelectFactory.cc for now.
+std::ostream& operator<<(std::ostream& os, ParseAliasMap const& m);
 
 }}} // namespace lsst::qserv::master
 

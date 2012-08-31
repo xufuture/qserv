@@ -33,6 +33,8 @@
 #include <boost/shared_ptr.hpp>
 
 #include "lsst/qserv/master/ColumnRefH.h"
+#include "lsst/qserv/master/TableRefN.h"
+
 namespace lsst {
 namespace qserv {
 namespace master {
@@ -174,7 +176,9 @@ public:
     }
     
 private:
+    friend class FromListFactory;
     boost::shared_ptr<ColumnRefList> _columnRefList;
+    TableRefnListPtr _tableRefns;
 };
 
 class WhereClause {

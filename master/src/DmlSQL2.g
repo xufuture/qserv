@@ -1119,7 +1119,7 @@ explicit_table :
 //  The original recursive reference to <joined_table> may be skipped as <table_ref_aux> can also
 //  be a <subquery>, which means it will come down to <joined_table> anyway.
 joined_table : 
-	table_ref_aux (qualified_join | cross_join)
+	table_ref_aux (qualified_join | cross_join) {#joined_table = #([JOINED_TABLE,"JOINED_TABLE"],#joined_table);}
 ; 
 //}
 

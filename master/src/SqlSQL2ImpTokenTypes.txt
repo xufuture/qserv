@@ -346,4 +346,6 @@ QSERV_FCT_SPEC("qserv_fct_spec")=1014
 OR_OP("or_op")=1015
 AND_OP("and_op")=1016
 BOOLEAN_FACTOR("boolean_factor")=1017
+JOINED_TABLE("joined_table")=1018
+
 // END_IMPORT
