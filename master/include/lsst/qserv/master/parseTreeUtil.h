@@ -182,7 +182,7 @@ void walkTreeVisit(AnAst r, Visitor& v, CheckTerm& ct, int depth=0) {
             walkTreeVisit(c, v, ct, depth+1);
         } 
         r = r->getNextSibling();
-    } while(r.get() && ct(r,depth));
+    } while(r.get() && !ct(r,depth));
 }
 template <typename AnAst, typename C>
 class IndentPrinter {
