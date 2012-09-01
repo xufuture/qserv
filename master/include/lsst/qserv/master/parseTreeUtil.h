@@ -274,6 +274,15 @@ void walkTreeSubstitute(AnAst r,
 }
 
 
+template <typename AnAst, typename Check>
+AnAst findSibling(AnAst r, Check& c) {
+    while(r.get()) {
+        if(c(r)) { break; }
+        r = r->getNextSibling();
+    }
+    return r;
+}
+
 
 template <typename AnAst>
 std::string getFuncString(AnAst r) {

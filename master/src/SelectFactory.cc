@@ -28,6 +28,7 @@
 
 // C++
 #include <deque>
+#include <iterator>
 
 // Package
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
@@ -40,6 +41,7 @@
 #include "lsst/qserv/master/ParseAliasMap.h" 
 
 #include "lsst/qserv/master/parseTreeUtil.h"
+
 #include "lsst/qserv/master/TableRefN.h"
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;
@@ -48,6 +50,7 @@ namespace qMaster = lsst::qserv::master;
 ////////////////////////////////////////////////////////////////////////
 // Anonymous helpers
 ////////////////////////////////////////////////////////////////////////
+namespace {
 inline RefAST walkToSiblingBefore(RefAST node, int typeId) {
     RefAST last = node;
     for(; node.get(); node = node->getNextSibling()) {
@@ -65,6 +68,88 @@ inline std::string getSiblingStringBounded(RefAST left, RefAST right) {
     }
     return p.result;
 }
+
+class ParamGenerator {
+public:
+    struct Check {
+        bool operator()(RefAST r) {
+            return (r->getType() == SqlSQL2TokenTypes::RIGHT_PAREN) 
+                || (r->getType() == SqlSQL2TokenTypes::COMMA);
+        }
+    };
+    class Iter  {
+    public:
+        typedef std::forward_iterator_tag iterator_category;
+        typedef std::string value_type;
+        typedef int difference_type;
+        typedef std::string* pointer;
+        typedef std::string& reference;
+
+        RefAST start;
+        RefAST current;
+        RefAST nextCache;
+        Iter operator++(int) {
+            //std::cout << "advancingX..: " << current->getText() << std::endl;
+            Iter tmp = *this;
+            ++*this;
+            return tmp;
+        }
+        Iter& operator++() {
+            //std::cout << "advancing..: " << current->getText() << std::endl;
+            Check c;
+            if(nextCache.get()) { 
+                current = nextCache; 
+            } else {
+                current = qMaster::findSibling(current, c);
+                if(current.get()) {
+                    // Move to next value
+                    current = current->getNextSibling(); 
+                }
+            }
+            return *this; 
+        }
+
+        std::string operator*() {
+            Check c;
+            assert(current.get());
+            qMaster::CompactPrintVisitor<antlr::RefAST> p;
+            for(;current.get() && !c(current); 
+                current = current->getNextSibling()) {
+                p(current);                
+            }
+            return p.result;
+        }
+        bool operator==(Iter const& rhs) const {
+            return (start == rhs.start) && (current == rhs.current);
+        }
+        bool operator!=(Iter const& rhs) const {
+            return !(*this == rhs);
+        }
+
+    };
+    ParamGenerator(RefAST a) {
+        _beginIter.start = a;
+        if(a.get() && (a->getType() == SqlSQL2TokenTypes::LEFT_PAREN)) {
+            _beginIter.current = a->getNextSibling(); // Move past paren.
+        } else { // else, set current as end.
+            _beginIter.current = RefAST();
+        }
+        _endIter.start = a;
+        _endIter.current = RefAST();
+    }
+
+    Iter begin() {
+        return _beginIter;
+    }
+
+    Iter end() {
+        return _endIter;
+    }
+private:
+    Iter _beginIter;
+    Iter _endIter;
+};
+} // anonymous
 ////////////////////////////////////////////////////////////////////////
 // TableRefN misc impl. (to be placed in TableRefN.cc later)
 ////////////////////////////////////////////////////////////////////////
@@ -617,8 +702,82 @@ WhereFactory::attachTo(SqlSQL2Parser& p) {
 void 
 WhereFactory::_import(antlr::RefAST a) {
     std::cout << "WHERE starts with: " << a->getText() 
-              << " (" << a->getType() << ")" << std::endl;
-//    std::cout << "WHERE indented: " << walkIndentedString(a) << std::endl;
+              << " (" << a->getType() << ")" << std::endl;    
 
+    std::cout << "WHERE indented: " << walkIndentedString(a) << std::endl;
+    assert(a->getType() == SqlSQL2TokenTypes::SQL2RW_where);
+    RefAST first = a->getFirstChild();
+    assert(first.get());
+    switch(first->getType()) {
+    case SqlSQL2TokenTypes::QSERV_FCT_SPEC:
+        while(first->getType() == SqlSQL2TokenTypes::QSERV_FCT_SPEC) {
+            _addQservRestrictor(first->getFirstChild());
+            first = first->getNextSibling();
+            if(first.get()) {
+                std::cout << "connector: " << first->getText() << "("
+                          << first->getType() << ")" << std::endl;
+                first = first->getNextSibling();
+                assert(first.get());
+            } else { break; }
+        }
+        _addOrSibs(first->getFirstChild());
+        break;
+    case SqlSQL2TokenTypes::OR_OP:
+        _addOrSibs(first->getFirstChild());
+        break;
+    default:
+        break;
+    }
     // FIXME: walk the tree and add elements.
+}
+void 
+WhereFactory::_addQservRestrictor(antlr::RefAST a) {
+    std::string r(a->getText()); // e.g. qserv_areaspec_box
+    std::cout << "Adding from " << r << " : ";
+    ParamGenerator pg(a->getNextSibling());
+    std::vector<std::string> params;
+
+    // for(ParamGenerator::Iter it = pg.begin();
+    //     it != pg.end();
+    //     ++it) {
+    //     std::cout << "iterating:" << *it << std::endl;
+    // }
+    std::copy(pg.begin(), pg.end(), std::back_inserter(params));
+    std::copy(params.begin(),params.end(),
+              std::ostream_iterator<std::string>(std::cout,", "));
+    // FIXME: add restrictor spec.
+}
+template <typename Check>
+struct PrintExcept : public qMaster::PrintVisitor<antlr::RefAST> {
+public:
+    PrintExcept(Check c_) : c(c_) {}
+    void operator()(antlr::RefAST a) {
+        if(!c(a)) qMaster::PrintVisitor<antlr::RefAST>::operator()(a);
+    }
+    Check& c;
+};
+struct MetaCheck {
+    bool operator()(antlr::RefAST a) {
+        if(!a.get()) return false;
+        switch(a->getType()) {
+        case SqlSQL2TokenTypes::OR_OP:
+        case SqlSQL2TokenTypes::AND_OP:
+        case SqlSQL2TokenTypes::BOOLEAN_FACTOR:
+        case SqlSQL2TokenTypes::VALUE_EXP:
+            return true;
+        default:
+            return false;
+        }
+        return false;
+    }
+};
+
+void 
+WhereFactory::_addOrSibs(antlr::RefAST a) {
+    MetaCheck mc;
+    PrintExcept<MetaCheck> p(mc);
+    walkTreeVisit(a, p);
+    std::cout << "Adding orsibs: " << p.result << std::endl;
+    //std::cout << "(old): " << walkTreeString(a) << std::endl;
+    //std::cout << "(indent): " << walkIndentedString(a) << std::endl;
 }

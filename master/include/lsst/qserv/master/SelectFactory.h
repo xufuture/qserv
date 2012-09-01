@@ -112,6 +112,9 @@ public:
 private:
     void attachTo(SqlSQL2Parser& p);
     void _import(antlr::RefAST a);
+    void _addQservRestrictor(antlr::RefAST a);
+    void _addOrSibs(antlr::RefAST a);
+
 };
 
 
