@@ -79,44 +79,7 @@ private:
     boost::shared_ptr<SelectListFactory> _slFactory;
     boost::shared_ptr<FromFactory> _fFactory;
     boost::shared_ptr<WhereFactory> _wFactory;
-
-    // intermediate state
-    
-
 };
-
-class FromFactory {
-public:
-    friend class SelectFactory;
-    class TableRefListH;
-    class TableRefAuxH;
-    friend class TableRefListH;
-    class RefGenerator;
-
-    FromFactory(boost::shared_ptr<ParseAliasMap> aliases);
-    boost::shared_ptr<FromList> getProduct();
-private:
-    void attachTo(SqlSQL2Parser& p);
-    void _import(antlr::RefAST a);
-    boost::shared_ptr<ParseAliasMap> _aliases;
-};
-
-class WhereFactory {
-public:
-    friend class SelectFactory;
-    class WhereCondH;
-    friend class WhereCondH;
-
-    WhereFactory();
-    boost::shared_ptr<WhereClause> getProduct();
-private:
-    void attachTo(SqlSQL2Parser& p);
-    void _import(antlr::RefAST a);
-    void _addQservRestrictor(antlr::RefAST a);
-    void _addOrSibs(antlr::RefAST a);
-
-};
-
 
 }}} // namespace lsst::qserv::master
 
