@@ -651,15 +651,18 @@ FromFactory::attachTo(SqlSQL2Parser& p) {
 
 void 
 FromFactory::_import(antlr::RefAST a) {
-    std::cout << "FROM starts with: " << a->getText() 
-              << " (" << a->getType() << ")" << std::endl;
-    
+    // std::cout << "FROM starts with: " << a->getText() 
+    //           << " (" << a->getType() << ")" << std::endl;
+    std::stringstream ss;
+    // std::cout << "FROM indented: " << walkIndentedString(a) << std::endl;
     for(RefGenerator refGen(a, _aliases); !refGen.isDone(); refGen.next()) {
         TableRefN::Ptr p = refGen.get();
+        ss << "Found ref:" ;
         TableRefN& tn = *p;
+        ss << tn;   
     }
-    
-    // FIXME: walk the tree and add elements.
+    std::string s(ss.str());
+    if(s.size() > 0) { std::cout << s << std::endl; } 
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -701,10 +704,10 @@ WhereFactory::attachTo(SqlSQL2Parser& p) {
 
 void 
 WhereFactory::_import(antlr::RefAST a) {
-    std::cout << "WHERE starts with: " << a->getText() 
-              << " (" << a->getType() << ")" << std::endl;    
+    // std::cout << "WHERE starts with: " << a->getText() 
+    //           << " (" << a->getType() << ")" << std::endl;    
 
-    std::cout << "WHERE indented: " << walkIndentedString(a) << std::endl;
+    // std::cout << "WHERE indented: " << walkIndentedString(a) << std::endl;
     assert(a->getType() == SqlSQL2TokenTypes::SQL2RW_where);
     RefAST first = a->getFirstChild();
     assert(first.get());
@@ -713,9 +716,8 @@ WhereFactory::_import(antlr::RefAST a) {
         while(first->getType() == SqlSQL2TokenTypes::QSERV_FCT_SPEC) {
             _addQservRestrictor(first->getFirstChild());
             first = first->getNextSibling();
-            if(first.get()) {
-                std::cout << "connector: " << first->getText() << "("
-                          << first->getType() << ")" << std::endl;
+            if(first.get() 
+               && (first->getType() == SqlSQL2TokenTypes::SQL2RW_and)) {
                 first = first->getNextSibling();
                 assert(first.get());
             } else { break; }
@@ -747,6 +749,7 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
               std::ostream_iterator<std::string>(std::cout,", "));
     // FIXME: add restrictor spec.
 }
+
 template <typename Check>
 struct PrintExcept : public qMaster::PrintVisitor<antlr::RefAST> {
 public:
@@ -778,6 +781,7 @@ WhereFactory::_addOrSibs(antlr::RefAST a) {
     PrintExcept<MetaCheck> p(mc);
     walkTreeVisit(a, p);
     std::cout << "Adding orsibs: " << p.result << std::endl;
-    //std::cout << "(old): " << walkTreeString(a) << std::endl;
-    //std::cout << "(indent): " << walkIndentedString(a) << std::endl;
+    // FIXME: Store template.
+    // Template must allow table substitution.
+    // For now, reuse old templating scheme.
 }
