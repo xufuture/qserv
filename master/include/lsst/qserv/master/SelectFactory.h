@@ -48,9 +48,12 @@ class ColumnRefMap;
 class SelectListFactory;
 class FromFactory;
 class WhereFactory;
+class ModFactory;
+class ValueExprFactory;
 class SelectStmt;
 class FromList;
 class WhereClause;
+class ValueExpr;
 
 class SelectFactory {
 public:
@@ -66,7 +69,6 @@ public:
     boost::shared_ptr<WhereFactory> getWhereFactory() {
         return _wFactory; }
 
-    
 private:
     void _attachShared(SqlSQL2Parser& p);
 
@@ -79,6 +81,8 @@ private:
     boost::shared_ptr<SelectListFactory> _slFactory;
     boost::shared_ptr<FromFactory> _fFactory;
     boost::shared_ptr<WhereFactory> _wFactory;
+    boost::shared_ptr<ModFactory> _mFactory;
+    boost::shared_ptr<ValueExprFactory> _vFactory;
 };
 
 }}} // namespace lsst::qserv::master

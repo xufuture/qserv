@@ -29,6 +29,7 @@
 
 #include <list>
 #include <map>
+#include <deque>
 #include <antlr/AST.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -174,9 +175,11 @@ public:
     boost::shared_ptr<ColumnRefList> getColumnRefList() {
         return _columnRefList;
     }
-    
+
 private:
-    friend class FromListFactory;
+    friend std::ostream& operator<<(std::ostream& os, FromList const& fl);
+    friend class FromFactory;
+
     boost::shared_ptr<ColumnRefList> _columnRefList;
     TableRefnListPtr _tableRefns;
 };
@@ -188,9 +191,83 @@ public:
     boost::shared_ptr<ColumnRefList> getColumnRefList() {
         return _columnRefList;
     }
-    
+
 private:
+    friend std::ostream& operator<<(std::ostream& os, WhereClause const& wc);
+    friend class WhereFactory;
+
+    std::string _original;
     boost::shared_ptr<ColumnRefList> _columnRefList;
+};
+
+class OrderByTerm {
+public:
+    enum Order {DEFAULT, ASC, DESC};
+        
+    OrderByTerm() {}
+    OrderByTerm(boost::shared_ptr<ValueExpr> val,
+                Order _order,
+                std::string _collate);
+
+    ~OrderByTerm() {}
+
+    boost::shared_ptr<const ValueExpr> getExpr();
+    Order getOrder() const;
+    std::string getCollate() const;
+
+private:
+    friend std::ostream& operator<<(std::ostream& os, OrderByTerm const& ob);
+    friend class ModFactory;
+
+    boost::shared_ptr<ValueExpr> _expr;
+    Order _order;
+    std::string _collate;
+};
+
+class OrderByClause {
+public:
+    typedef std::deque<OrderByTerm> List;
+
+    OrderByClause() : _terms (new List()) {}
+    ~OrderByClause() {}
+
+private:
+    friend std::ostream& operator<<(std::ostream& os, OrderByClause const& oc);
+    friend class ModFactory;
+
+    void _addTerm(OrderByTerm const& t) {_terms->push_back(t); }
+    boost::shared_ptr<List> _terms;
+};
+
+class GroupByTerm {
+public:
+    GroupByTerm() {}
+    ~GroupByTerm() {}
+
+    boost::shared_ptr<const ValueExpr> getExpr();
+    std::string getCollate() const;
+
+private:
+    friend std::ostream& operator<<(std::ostream& os, GroupByTerm const& gb);
+    friend class ModFactory;
+    
+    boost::shared_ptr<ValueExpr> _expr;
+    std::string _collate;
+};
+
+class GroupByClause {
+public:
+    typedef std::deque<GroupByTerm> List;
+
+    GroupByClause() : _terms(new List()) {}
+    ~GroupByClause() {}
+
+private:
+    friend std::ostream& operator<<(std::ostream& os, GroupByClause const& gc);
+    friend class ModFactory;
+
+    void _addTerm(GroupByTerm const& t) { _terms->push_back(t); }
+    boost::shared_ptr<List> _terms;
 };
 
 }}} // namespace lsst::qserv::master

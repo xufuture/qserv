@@ -20,19 +20,17 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// FromFactory constructs a FromList that maintains parse state of
-// the FROM clause for future interrogation, manipulation, and
-// reconstruction.
+// ModFactory constructs representations of misc modifier clauses in SQL such as
+// ORDER BY, GROUP BY, LIMIT, and HAVING (not yet).
+// LIMIT is assumed to only permit unsigned integers.
 
-#ifndef LSST_QSERV_MASTER_FROMFACTORY_H
-#define LSST_QSERV_MASTER_FROMFACTORY_H
+#ifndef LSST_QSERV_MASTER_MODFACTORY_H
+#define LSST_QSERV_MASTER_MODFACTORY_H
 
+// #include <list>
+// #include <map>
 #include <antlr/AST.hpp>
 #include <boost/shared_ptr.hpp>
-
-
-// Impl
-#include <boost/make_shared.hpp>
 
 // Forward
 class SqlSQL2Parser;
@@ -41,29 +39,42 @@ namespace lsst {
 namespace qserv {
 namespace master {
 // Forward
-class ParseAliasMap;
-// class ColumnRefMap;
-class FromList;
+class SelectFactory;
+class ValueExprFactory;
+class OrderByClause;
+class GroupByClause;
 
-class FromFactory {
+class ModFactory {
 public:
+    // ANTLR handlers
     friend class SelectFactory;
-    class TableRefListH;
-    class TableRefAuxH;
-    friend class TableRefListH;
-    class RefGenerator;
+    class GroupByH;
+    friend class GroupByH;
+    class OrderByH;
+    friend class OrderByH;
+    class LimitH;
+    friend class LimitH;
 
-    FromFactory(boost::shared_ptr<ParseAliasMap> aliases);
-    boost::shared_ptr<FromList> getProduct();
+    ModFactory(boost::shared_ptr<ValueExprFactory> vf);
+
+    int getLimit(); // -1: not specified.
+    boost::shared_ptr<OrderByClause> getOrderBy();
+    boost::shared_ptr<GroupByClause> getGroupBy();
 private:
     void attachTo(SqlSQL2Parser& p);
-    void _import(antlr::RefAST a);
+    void _importLimit(antlr::RefAST a);
+    void _importOrderBy(antlr::RefAST a);
+    void _importGroupBy(antlr::RefAST a);
 
-    boost::shared_ptr<ParseAliasMap> _aliases;
-    boost::shared_ptr<FromList> _list;
+    // Fields
+    boost::shared_ptr<ValueExprFactory> _vFactory;
+    int _limit;
+    boost::shared_ptr<OrderByClause> _orderBy;
+    boost::shared_ptr<GroupByClause> _groupBy;
 };
+
 
 }}} // namespace lsst::qserv::master
 
-#endif // LSST_QSERV_MASTER_FROMFACTORY_H
+#endif // LSST_QSERV_MASTER_MODFACTORY_H
 

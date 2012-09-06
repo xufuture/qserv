@@ -162,6 +162,7 @@ WhereFactory::attachTo(SqlSQL2Parser& p) {
 
 void 
 WhereFactory::_import(antlr::RefAST a) {
+    _clause.reset(new WhereClause());
     // std::cout << "WHERE starts with: " << a->getText() 
     //           << " (" << a->getType() << ")" << std::endl;    
 
@@ -237,8 +238,12 @@ void
 WhereFactory::_addOrSibs(antlr::RefAST a) {
     MetaCheck mc;
     PrintExcept<MetaCheck> p(mc);
+    
+    assert(_clause.get());
+
     walkTreeVisit(a, p);
     std::cout << "Adding orsibs: " << p.result << std::endl;
+    _clause->_original = p.result;
     // FIXME: Store template.
     // Template must allow table substitution.
     // For now, reuse old templating scheme.

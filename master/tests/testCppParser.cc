@@ -547,6 +547,18 @@ BOOST_AUTO_TEST_CASE(NewParser) {
         testParse2(p);
     }
  }
+BOOST_AUTO_TEST_CASE(Mods) {
+    char stmts[][128] = {
+        "SELECT * from Object order by ra_PS limit 3;",
+        "SELECT count(*) from Science_Ccd_Exposure group by visit;",
+    };
+    for(int i=0; i < 2; ++i) {
+        std::string stmt = stmts[i];
+        std::cout << "----" << stmt << "----" << std::endl;
+        SelectParser::Ptr p = getParser(stmt);
+        testParse2(p);
+    }
+ }
 
 BOOST_AUTO_TEST_SUITE_END()
 ////////////////////////////////////////////////////////////////////////

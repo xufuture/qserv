@@ -38,12 +38,13 @@ namespace lsst {
 namespace qserv {
 namespace master {
 // Forward
+class ParseAliasMap;
 class ValueExpr;
 typedef boost::shared_ptr<ValueExpr> ValueExprPtr;
 typedef std::list<ValueExprPtr> ValueExprList;
 
 class SelectList;
-class ColumnRefMap;
+class ValueExprFactory;
 
 class SelectListFactory {
 public:
@@ -59,7 +60,7 @@ private:
 
     // For "friends"
     SelectListFactory(boost::shared_ptr<ParseAliasMap> aliasMap,
-                      boost::shared_ptr<ColumnRefMap> crMap);
+                      boost::shared_ptr<ValueExprFactory> vf);
     void attachTo(SqlSQL2Parser& p);
 
     // Really private
@@ -76,7 +77,7 @@ private:
 
     // data
     boost::shared_ptr<ParseAliasMap> _aliases;
-    boost::shared_ptr<ColumnRefMap> _columnRefMap;
+    boost::shared_ptr<ValueExprFactory> _vFactory;
     boost::shared_ptr<ValueExprList> _valueExprList;
     
 };

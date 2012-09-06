@@ -64,6 +64,9 @@ public:
     boost::shared_ptr<FromList> _fromList; // Data sources
     boost::shared_ptr<SelectList> _selectList; // Desired columns
     boost::shared_ptr<WhereClause> _whereClause; // Filtering conditions (WHERE)
+    boost::shared_ptr<OrderByClause> _orderBy; // Ordering
+    boost::shared_ptr<GroupByClause> _groupBy; // Aggr. grouping
+    int  _limit; // result limit
     boost::shared_ptr<ColumnAliasMap> _columnAliasMap;
     StringList OutputMods; // Output modifiers (order, grouping,
                            // sort, limit

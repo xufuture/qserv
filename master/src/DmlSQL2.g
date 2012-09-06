@@ -427,13 +427,13 @@ sort_spec_list :
 
 //{ Rule #519 <sort_spec>
 sort_spec : 
-	sort_key (collate_clause)? (ordering_spec)? 
+	sort_key (collate_clause)? (ordering_spec)? { #sort_spec = #([SORT_SPEC,"SORT_SPEC"], #sort_spec);}
 ;
 //}
 
 //{ Rule #518 <sort_key>
 sort_key : 
-	  column_ref 
+	  column_ref {#sort_key = #([SORT_KEY,"SORT_KEY"], #sort_key);}
 	| UNSIGNED_INTEGER 
 ;
 //}
@@ -1277,7 +1277,9 @@ group_by_clause :
 
 //{ Rule #279 <grouping_column_ref>
 grouping_column_ref : 
-	a:column_ref (collate_clause)? {handleGroupColumn(a_AST);}
+	a:column_ref (b:collate_clause)? {
+            #grouping_column_ref=#([GROUPING_COLUMN_REF,"GROUPING_COLUMN_REF"], #([COLUMN_REF,"COLUMN_REF"],a), b);
+            handleGroupColumn(a_AST);}
 ;
 //}
 
@@ -1466,7 +1468,7 @@ factor :
 
 //{ Rule #084 <collate_clause>
 collate_clause : 
-	"collate" collation_name 
+	"collate" collation_name { #collate_clause = #([COLLATE_CLAUSE,"COLLATE_CLAUSE"], #collate_clause);}
 ;
 //}
 
