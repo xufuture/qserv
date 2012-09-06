@@ -39,6 +39,8 @@
 #include "lsst/qserv/master/SelectList.h" 
 #include "lsst/qserv/master/FromFactory.h"
 #include "lsst/qserv/master/WhereFactory.h"
+#include "lsst/qserv/master/ModFactory.h"
+#include "lsst/qserv/master/ValueExprFactory.h"
 
 #include "lsst/qserv/master/ParseAliasMap.h" 
 #include "lsst/qserv/master/parseTreeUtil.h"
@@ -51,24 +53,6 @@ namespace qMaster = lsst::qserv::master;
 // Anonymous helpers
 ////////////////////////////////////////////////////////////////////////
 namespace {
-inline RefAST walkToSiblingBefore(RefAST node, int typeId) {
-    RefAST last = node;
-    for(; node.get(); node = node->getNextSibling()) {
-        if(node->getType() == typeId) return last;
-        last = node;
-    }
-    return RefAST();
-}
-
-inline std::string getSiblingStringBounded(RefAST left, RefAST right) {
-    qMaster::CompactPrintVisitor<RefAST> p;
-    for(; left.get(); left = left->getNextSibling()) {
-        p(left);
-        if(left == right) break;
-    }
-    return p.result;
-}
-
 } // anonymous
 ////////////////////////////////////////////////////////////////////////
 // Parse handlers
@@ -85,10 +69,11 @@ SelectFactory::SelectFactory()
     : _columnAliases(new ParseAliasMap()),
       _tableAliases(new ParseAliasMap()),
       _columnRefMap(new ColumnRefMap()),
-      _slFactory(new SelectListFactory(_columnAliases, _columnRefMap)),
       _fFactory(new FromFactory(_tableAliases)),
-      _wFactory(new WhereFactory()) {
-
+      _wFactory(new WhereFactory()),
+      _vFactory(new ValueExprFactory(_columnRefMap)) {
+    _slFactory.reset(new SelectListFactory(_columnAliases, _vFactory));
+    _mFactory.reset(new ModFactory(_vFactory));
 }
 
 void
@@ -98,6 +83,7 @@ SelectFactory::attachTo(SqlSQL2Parser& p) {
     _slFactory->attachTo(p);
     _fFactory->attachTo(p);
     _wFactory->attachTo(p);
+    _mFactory->attachTo(p);
 }
 
 boost::shared_ptr<SelectStmt>
@@ -106,6 +92,9 @@ SelectFactory::getStatement() {
     stmt->_selectList = _slFactory->getProduct();
     stmt->_fromList = _fFactory->getProduct();
     stmt->_whereClause = _wFactory->getProduct();
+    stmt->_orderBy = _mFactory->getOrderBy();
+    stmt->_groupBy = _mFactory->getGroupBy();
+    stmt->_limit = _mFactory->getLimit();
     return stmt;
 }
 
@@ -177,9 +166,9 @@ private:
 using qMaster::SelectList;
 
 SelectListFactory::SelectListFactory(boost::shared_ptr<ParseAliasMap> aliasMap,
-                                     boost::shared_ptr<ColumnRefMap> crMap)
+                                     boost::shared_ptr<ValueExprFactory> vf)
     : _aliases(aliasMap),
-      _columnRefMap(crMap),
+      _vFactory(vf),
       _valueExprList(new ValueExprList()) {
 }
 
@@ -239,17 +228,8 @@ SelectListFactory::_addSelectColumn(RefAST expr) {
     RefAST child = expr->getFirstChild();
     assert(child.get());
     //    std::cout << "child is " << child->getType() << std::endl;
-    ValueExprPtr ve;
-    switch(child->getType()) {
-    case SqlSQL2TokenTypes::REGULAR_ID:
-    case SqlSQL2TokenTypes::FUNCTION_SPEC:
-        ve = _newColumnExpr(child);
-        break;
-    case SqlSQL2TokenTypes::SET_FCT_SPEC:
-        ve = _newSetFctSpec(child);
-        break;
-    default: break;
-    }
+    ValueExprPtr ve = _vFactory->newExpr(child);
+
     // Annotate if alias found.
     RefAST alias = _aliases->getAlias(expr);
     if(alias.get()) {
@@ -277,111 +257,6 @@ SelectListFactory::_addSelectStar(RefAST child) {
         ve = ValueExpr::newStarExpr(std::string());
     }
     _valueExprList->push_back(ve);
-}
-qMaster::ValueExprPtr 
-SelectListFactory::_newColumnExpr(RefAST expr) {
-    RefAST child = expr->getFirstChild();
-    //    std::cout << "new col expr has value " << walkSiblingString(expr)
-    //              << std::endl;
-    ValueExprPtr ve(new ValueExpr());
-    boost::shared_ptr<FuncExpr> fe;
-    RefAST last;
-    switch(expr->getType()) {
-    case SqlSQL2TokenTypes::REGULAR_ID: 
-        // make column ref. (no further children)
-        ve->_type = ValueExpr::COLUMNREF;
-        {
-            ColumnRefMap::Map::const_iterator it = _columnRefMap->map.find(expr);
-            assert(it != _columnRefMap->map.end()); // Consider an exception instead
-            ColumnRefMap::Ref r = it->second;
-            ve->_columnRef.reset(new qMaster::ColumnRef(tokenText(r.db),
-                                                    tokenText(r.table),
-                                                    tokenText(r.column)));
-        }
-        return ve;    
-    case SqlSQL2TokenTypes::FUNCTION_SPEC:
-        //        std::cout << "col child (fct): " << child->getType() << " "
-        //                  << child->getText() << std::endl;
-        ve->_type = ValueExpr::FUNCTION;
-        fe.reset(new FuncExpr());
-        last = walkToSiblingBefore(child, SqlSQL2TokenTypes::LEFT_PAREN);
-        fe->name = getSiblingStringBounded(child, last);
-        last = last->getNextSibling(); // Advance to LEFT_PAREN
-        assert(last.get());
-        // Now fill params. 
-        for(antlr::RefAST current = last->getNextSibling();
-            current.get(); current = current->getNextSibling()) {
-            // Should be a * or a value expr.
-            ValueExprPtr pve;
-            switch(current->getType()) {
-            case SqlSQL2TokenTypes::VALUE_EXP: 
-                pve = _newColumnExpr(current->getFirstChild());
-                break;
-            case SqlSQL2TokenTypes::COMMA: continue;
-            case SqlSQL2TokenTypes::RIGHT_PAREN: continue;
-            default: break;
-            }
-            fe->params.push_back(pve);            
-        }
-        ve->_funcExpr = fe;
-        return ve;
-        
-        break;
-    default: 
-        throw ParseException(expr);
-        break;
-    }
-    return ValueExprPtr();
-}
-
-qMaster::ValueExprPtr 
-SelectListFactory::_newSetFctSpec(RefAST expr) {
-    ValueExprPtr ve(new ValueExpr());
-    boost::shared_ptr<FuncExpr> fe(new FuncExpr());
-    //    std::cout << "set_fct_spec " << walkTreeString(expr) << std::endl;
-    RefAST nNode = expr->getFirstChild();
-    assert(nNode.get());
-    fe->name = nNode->getText();
-    // Now fill params.
-    antlr::RefAST current = nNode->getFirstChild();
-#if 1 // Aggregation functions can only have one param.
-    assert(current->getType() == SqlSQL2TokenTypes::LEFT_PAREN); 
-    current = current->getNextSibling();
-    // Should be a * or a value expr.
-    ValueExprPtr pve;
-    switch(current->getType()) {
-    case SqlSQL2TokenTypes::VALUE_EXP: 
-        pve = _newColumnExpr(current->getFirstChild());
-        break;
-    case SqlSQL2TokenTypes::ASTERISK: 
-        pve.reset(new ValueExpr());
-        pve->_type = ValueExpr::STAR;
-        break;
-    default: break;
-    }
-    current = current->getNextSibling();
-    assert(current->getType() == SqlSQL2TokenTypes::RIGHT_PAREN); 
-    fe->params.push_back(pve);
-#else
-    //std::cout << "params got " << tokenText(pnodes) << std::endl;
-    // Make sure the parser gave us the right nodes.
-
-    for(current = current->getNextSibling(); 
-        current.get(); 
-        current=current->getNextSibling()) {
-        if(current->getType() == SqlSQL2TokenTypes::COMMA) { continue; }
-        if(current->getType() == SqlSQL2TokenTypes::RIGHT_PAREN) { break; }
-        ValueExprPtr ve = _newColumnExpr(current);
-        if(!ve.get()) {
-            throw ParseException(current);
-        }
-        fe->params.push_back(ve);
-    }
-#endif
-    // Now fill-out ValueExpr
-    ve->_type = ValueExpr::AGGFUNC;
-    ve->_funcExpr = fe;
-    return ve;
 }
 
 ////////////////////////////////////////////////////////////////////////

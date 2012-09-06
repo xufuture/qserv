@@ -325,6 +325,9 @@ FromFactory::attachTo(SqlSQL2Parser& p) {
 
 void 
 FromFactory::_import(antlr::RefAST a) {
+    _list.reset(new FromList());
+    _list->_tableRefns.reset(new TableRefnList());
+
     // std::cout << "FROM starts with: " << a->getText() 
     //           << " (" << a->getType() << ")" << std::endl;
     std::stringstream ss;
@@ -334,6 +337,7 @@ FromFactory::_import(antlr::RefAST a) {
         ss << "Found ref:" ;
         TableRefN& tn = *p;
         ss << tn;   
+        _list->_tableRefns->push_back(p);
     }
     std::string s(ss.str());
     if(s.size() > 0) { std::cout << s << std::endl; } 

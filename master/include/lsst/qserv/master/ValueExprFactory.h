@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2012 LSST Corporation.
+ * Copyright 2008, 2009, 2010 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,50 +20,33 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// FromFactory constructs a FromList that maintains parse state of
-// the FROM clause for future interrogation, manipulation, and
-// reconstruction.
+// ValueExprFactory constructs ValueExpr instances from antlr nodes.
 
-#ifndef LSST_QSERV_MASTER_FROMFACTORY_H
-#define LSST_QSERV_MASTER_FROMFACTORY_H
+#ifndef LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
+#define LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
 
-#include <antlr/AST.hpp>
 #include <boost/shared_ptr.hpp>
-
-
-// Impl
-#include <boost/make_shared.hpp>
+#include <antlr/AST.hpp>
 
 // Forward
-class SqlSQL2Parser;
 
 namespace lsst {
 namespace qserv {
 namespace master {
 // Forward
-class ParseAliasMap;
-// class ColumnRefMap;
-class FromList;
+class ColumnRefMap;
+class ValueExpr;
 
-class FromFactory {
+class ValueExprFactory {
 public:
-    friend class SelectFactory;
-    class TableRefListH;
-    class TableRefAuxH;
-    friend class TableRefListH;
-    class RefGenerator;
-
-    FromFactory(boost::shared_ptr<ParseAliasMap> aliases);
-    boost::shared_ptr<FromList> getProduct();
+    ValueExprFactory(boost::shared_ptr<ColumnRefMap> cMap);
+    boost::shared_ptr<ValueExpr> newExpr(antlr::RefAST a);
 private:
-    void attachTo(SqlSQL2Parser& p);
-    void _import(antlr::RefAST a);
-
-    boost::shared_ptr<ParseAliasMap> _aliases;
-    boost::shared_ptr<FromList> _list;
+    boost::shared_ptr<ColumnRefMap> _columnRefMap;
 };
 
 }}} // namespace lsst::qserv::master
 
-#endif // LSST_QSERV_MASTER_FROMFACTORY_H
+
+#endif // LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
 

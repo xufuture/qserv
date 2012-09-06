@@ -22,9 +22,11 @@
 // SelectList
 
 // Idea was to have this as an intermediate query tree representation.
-// ANTLR-specific manipulation crept into this container due to
-// convenience, but let's think of a way to isolate the ANTLR portion
-// without being too complicated.
+// This might be practical through the use of factories to hide enough
+// of the ANTLR-specific parts. Because we have inserted nodes in the
+// ANTLR tree, node navigation should be sensible enough that the
+// ANTLR-specific complexity can be minimized to only a dependence on
+// the tree node structure.
 
 // Should we keep a hash table when column refs are detected, so we can
 // map them?
@@ -243,4 +245,75 @@ SelectList::_fillParams(ValueExprList& p, antlr::RefAST pnodes) {
     //std::cout << "printing params \n";
     //printIndented(pnodes);
     // FIXME
+}
+////////////////////////////////////////////////////////////////////////
+// FromList
+////////////////////////////////////////////////////////////////////////
+std::ostream& 
+qMaster::operator<<(std::ostream& os, qMaster::FromList const& fl) {
+    os << "FROM ";
+    if(fl._tableRefns.get() && fl._tableRefns->size() > 0) {
+        TableRefnList const& refList = *(fl._tableRefns);
+        std::copy(refList.begin(), refList.end(),
+                  std::ostream_iterator<TableRefN::Ptr>(std::cout,", "));
+    } else {
+        os << "(empty)";
+    }
+    return os;
+}
+
+////////////////////////////////////////////////////////////////////////
+// WhereClause
+////////////////////////////////////////////////////////////////////////
+std::ostream& 
+qMaster::operator<<(std::ostream& os, qMaster::WhereClause const& wc) {
+    os << "WHERE " << wc._original;
+    return os;
+}
+////////////////////////////////////////////////////////////////////////
+// OrderByTerm
+////////////////////////////////////////////////////////////////////////
+std::ostream& 
+qMaster::operator<<(std::ostream& os, qMaster::OrderByTerm const& t) {
+    os << *(t._expr);
+    if(!t._collate.empty()) os << " COLLATE " << t._collate;
+    switch(t._order) {
+    case qMaster::OrderByTerm::ASC: os << " ASC"; break;
+    case qMaster::OrderByTerm::DESC: os << " DESC"; break;
+    case qMaster::OrderByTerm::DEFAULT: break;
+    }
+    return os;
+}
+////////////////////////////////////////////////////////////////////////
+// OrderByClause
+////////////////////////////////////////////////////////////////////////
+std::ostream& 
+qMaster::operator<<(std::ostream& os, qMaster::OrderByClause const& c) {
+    if(c._terms.get()) {
+        os << "ORDER BY ";
+        std::copy(c._terms->begin(),c._terms->end(),
+                  std::ostream_iterator<qMaster::OrderByTerm>(os,", "));
+    }
+    return os;
+}
+////////////////////////////////////////////////////////////////////////
+// GroupByTerm
+////////////////////////////////////////////////////////////////////////
+std::ostream& 
+qMaster::operator<<(std::ostream& os, qMaster::GroupByTerm const& t) {
+    os << *(t._expr);
+    if(!t._collate.empty()) os << " COLLATE " << t._collate;
+    return os;
+}
+////////////////////////////////////////////////////////////////////////
+// GroupByClause
+////////////////////////////////////////////////////////////////////////
+std::ostream& 
+qMaster::operator<<(std::ostream& os, qMaster::GroupByClause const& c) {
+    if(c._terms.get()) {
+        os << "GROUP BY ";
+        std::copy(c._terms->begin(),c._terms->end(),
+              std::ostream_iterator<qMaster::GroupByTerm>(os,", "));
+    }
+    return os;
 }

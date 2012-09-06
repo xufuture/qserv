@@ -347,5 +347,9 @@ OR_OP("or_op")=1015
 AND_OP("and_op")=1016
 BOOLEAN_FACTOR("boolean_factor")=1017
 JOINED_TABLE("joined_table")=1018
-
+SORT_SPEC("sort_spec")=1019
+SORT_KEY("sort_key")=1020
+COLLATE_CLAUSE("collate_clause")=1021
+GROUPING_COLUMN_REF("grouping_column_ref")=1022
+COLUMN_REF("column_ref")=1023        
 // END_IMPORT

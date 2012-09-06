@@ -112,10 +112,8 @@ protected:
 
 };
 
-
-
 // Containers
-typedef std::list<TableRefN> TableRefnList;
+typedef std::list<TableRefN::Ptr> TableRefnList;
 typedef boost::shared_ptr<TableRefnList> TableRefnListPtr;
 
 }}} // namespace lsst::qserv::master
