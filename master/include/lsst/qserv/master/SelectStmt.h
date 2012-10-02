@@ -40,6 +40,8 @@ namespace master {
 class SelectList;
 class FromList;
 class WhereClause;
+class OrderByClause;
+class GroupByClause;
 class ColumnAliasMap;
 
 /// class SelectStmt - a container for SQL SELECT statement info.

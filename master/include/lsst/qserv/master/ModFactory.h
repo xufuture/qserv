@@ -57,9 +57,9 @@ public:
 
     ModFactory(boost::shared_ptr<ValueExprFactory> vf);
 
-    int getLimit(); // -1: not specified.
-    boost::shared_ptr<OrderByClause> getOrderBy();
-    boost::shared_ptr<GroupByClause> getGroupBy();
+    int getLimit() { return _limit; } // -1: not specified.
+    boost::shared_ptr<OrderByClause> getOrderBy() { return _orderBy; }
+    boost::shared_ptr<GroupByClause> getGroupBy() { return _groupBy; }
 private:
     void attachTo(SqlSQL2Parser& p);
     void _importLimit(antlr::RefAST a);
