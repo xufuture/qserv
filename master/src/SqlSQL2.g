@@ -248,6 +248,12 @@ void handleFromWhere(RefAST fw) {
     }
     return; // Do-nothing placeholder    
 }
+void handleHaving(RefAST h) {
+    if(_havingHandler.get()) {
+        (*_havingHandler)(h);
+    }
+    return; // Do-nothing placeholder    
+}
 void handleWhereCondition(RefAST where) {
     if(_whereCondHandler.get()) {
         (*_whereCondHandler)(where);
@@ -287,6 +293,7 @@ boost::shared_ptr<VoidOneRefFunc> _groupByHandler;
 boost::shared_ptr<VoidOneRefFunc> _groupColumnHandler;
 boost::shared_ptr<VoidOneRefFunc> _limitHandler;
 boost::shared_ptr<VoidOneRefFunc> _orderByHandler;
+boost::shared_ptr<VoidOneRefFunc> _havingHandler;
 
 // for WHERE clause editing/injection.
 boost::shared_ptr<VoidVoidFunc> _fromHandler;

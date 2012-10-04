@@ -82,6 +82,18 @@ private:
     lsst::qserv::master::ModFactory& _mf;
 };
 ////////////////////////////////////////////////////////////////////////
+// ModFactory::HavingH
+////////////////////////////////////////////////////////////////////////
+class lsst::qserv::master::ModFactory::HavingH : public VoidOneRefFunc {
+public:
+    HavingH(lsst::qserv::master::ModFactory& mf) : _mf(mf) {}
+    virtual void operator()(antlr::RefAST n) {
+        _mf._importHaving(n);
+    }
+private:
+    lsst::qserv::master::ModFactory& _mf;
+};
+////////////////////////////////////////////////////////////////////////
 // ModFactory
 ////////////////////////////////////////////////////////////////////////
 using qMaster::ModFactory;
@@ -97,6 +109,7 @@ void ModFactory::attachTo(SqlSQL2Parser& p) {
     p._limitHandler.reset(new LimitH(*this));
     p._orderByHandler.reset(new OrderByH(*this));
     p._groupByHandler.reset(new GroupByH(*this));
+    p._havingHandler.reset(new HavingH(*this));
 }
 
 void ModFactory::_importLimit(antlr::RefAST a) {
@@ -176,5 +189,20 @@ void ModFactory::_importGroupBy(antlr::RefAST a) {
         _groupBy->_addTerm(gb);
         a = a->getNextSibling();
     }
+    
+}
+
+void ModFactory::_importHaving(antlr::RefAST a) {
+    _groupBy = boost::make_shared<GroupByClause>();
+    // HAVING takes an boolean expression that is dependent on an
+    // aggregation expression that was specified in the select list.
+    // Online examples for SQL HAVING always have only one aggregation
+    // and only one boolean, so this code will only accept single
+    // aggregation, single boolean expressions.
+    // e.g. HAVING count(obj.ra_PS_sigma) > 0.04
+    assert(a.get());
+    std::cout << "having got " << walkTreeString(a) << std::endl;
+
+    // For now, we will silently traverse and recognize but ignore.
     
 }

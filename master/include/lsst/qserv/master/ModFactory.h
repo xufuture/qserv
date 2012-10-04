@@ -43,6 +43,7 @@ class SelectFactory;
 class ValueExprFactory;
 class OrderByClause;
 class GroupByClause;
+class HavingClause;
 
 class ModFactory {
 public:
@@ -54,23 +55,29 @@ public:
     friend class OrderByH;
     class LimitH;
     friend class LimitH;
+    class HavingH;
+    friend class HavingH;
 
     ModFactory(boost::shared_ptr<ValueExprFactory> vf);
 
     int getLimit() { return _limit; } // -1: not specified.
     boost::shared_ptr<OrderByClause> getOrderBy() { return _orderBy; }
     boost::shared_ptr<GroupByClause> getGroupBy() { return _groupBy; }
+    boost::shared_ptr<HavingClause> getHaving() { return _having; }
+
 private:
     void attachTo(SqlSQL2Parser& p);
     void _importLimit(antlr::RefAST a);
     void _importOrderBy(antlr::RefAST a);
     void _importGroupBy(antlr::RefAST a);
+    void _importHaving(antlr::RefAST a);
 
     // Fields
     boost::shared_ptr<ValueExprFactory> _vFactory;
     int _limit;
     boost::shared_ptr<OrderByClause> _orderBy;
     boost::shared_ptr<GroupByClause> _groupBy;
+    boost::shared_ptr<HavingClause> _having;
 };
 
 
