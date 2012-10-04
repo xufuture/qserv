@@ -246,6 +246,14 @@ SelectList::_fillParams(ValueExprList& p, antlr::RefAST pnodes) {
     //printIndented(pnodes);
     // FIXME
 }
+
+std::ostream& 
+qMaster::operator<<(std::ostream& os, qMaster::SelectList const& sl) {
+    os << "SELECT ";
+    os << "(FIXME)";
+    return os;
+}
+
 ////////////////////////////////////////////////////////////////////////
 // FromList
 ////////////////////////////////////////////////////////////////////////

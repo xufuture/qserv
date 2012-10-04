@@ -155,6 +155,7 @@ public:
     void dbgPrint() const;
     friend class SelectListFactory;
 private:
+    friend std::ostream& operator<<(std::ostream& os, SelectList const& sl);
     void _fillParams(ValueExprList& p, antlr::RefAST pnodes);
     boost::shared_ptr<ColumnRefList> _columnRefList;
     boost::shared_ptr<ValueExprList> _valueExprList;

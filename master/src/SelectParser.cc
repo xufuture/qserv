@@ -86,6 +86,7 @@ public:
 void 
 qMaster::AntlrParser::explore() {
     RefAST a = parser.getAST();
+//    std::cout << "wholething: " << walkIndentedString(a) << std::endl;
 //    std::cout << "printing walktree \n";
 //    printIndented(a);
 

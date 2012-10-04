@@ -343,5 +343,32 @@ void qMaster::SelectStmt::addSelectStar(antlr::RefAST table) {
 void qMaster::SelectStmt::diagnose() {
     //_selectList->getColumnRefList()->printRefs();
     _selectList->dbgPrint();
+    _generate();
+    
 }
+
+////////////////////////////////////////////////////////////////////////
+// class SelectStmt (private)
+////////////////////////////////////////////////////////////////////////
+namespace {
+template <typename OS, typename T>
+inline OS& print(OS& os, char const label[], boost::shared_ptr<T> t) {
+    if(t.get()) { 
+        os << label << ": " << *t << std::endl;
+    }
+    return os; 
+}
+}
+void qMaster::SelectStmt::_generate() {
+    //_selectList->getColumnRefList()->printRefs();
+    using std::cout;
+    using std::endl;
+    print(std::cout, "from", _fromList);
+    print(std::cout, "select", _selectList);
+    print(std::cout, "where", _whereClause);
+    print(std::cout, "orderby", _orderBy);
+    print(std::cout, "groupby", _groupBy);
+    print(std::cout, "having", _having);    
+}
+
 
