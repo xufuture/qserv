@@ -42,6 +42,7 @@ class FromList;
 class WhereClause;
 class OrderByClause;
 class GroupByClause;
+class HavingClause;
 class ColumnAliasMap;
 
 /// class SelectStmt - a container for SQL SELECT statement info.
@@ -60,14 +61,18 @@ public:
     void diagnose(); // for debugging
 
 // private: // public for now.
+    // Declarations
     friend class SelectFactory;
     class Mgr;
+    // Fields
     boost::shared_ptr<Mgr> _mgr;
     boost::shared_ptr<FromList> _fromList; // Data sources
     boost::shared_ptr<SelectList> _selectList; // Desired columns
     boost::shared_ptr<WhereClause> _whereClause; // Filtering conditions (WHERE)
     boost::shared_ptr<OrderByClause> _orderBy; // Ordering
     boost::shared_ptr<GroupByClause> _groupBy; // Aggr. grouping
+    boost::shared_ptr<HavingClause> _having; // Aggr. grouping
+    
     int  _limit; // result limit
     boost::shared_ptr<ColumnAliasMap> _columnAliasMap;
     StringList OutputMods; // Output modifiers (order, grouping,

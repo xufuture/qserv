@@ -317,3 +317,13 @@ qMaster::operator<<(std::ostream& os, qMaster::GroupByClause const& c) {
     }
     return os;
 }
+////////////////////////////////////////////////////////////////////////
+// HavingClause
+////////////////////////////////////////////////////////////////////////
+std::ostream& 
+qMaster::operator<<(std::ostream& os, qMaster::HavingClause const& c) {
+    if(!c._expr.empty()) {
+        os << "HAVING " << c._expr;
+    }
+    return os;
+}

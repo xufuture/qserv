@@ -1291,7 +1291,10 @@ grouping_column_ref_list :
 
 //{ Rule #282 <having_clause>
 having_clause : 
-	"having"^ search_condition 
+	"having"^ sc:search_condition {
+            #having_clause=#([HAVING_CLAUSE,"HAVING_CLAUSE"], sc);
+            handleHaving(sc_AST);
+        }
 ;
 //}
 

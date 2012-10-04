@@ -270,6 +270,17 @@ private:
     boost::shared_ptr<List> _terms;
 };
 
+class HavingClause {
+public:
+    HavingClause() {}
+    ~HavingClause() {}
+
+private:
+    friend std::ostream& operator<<(std::ostream& os, HavingClause const& h);
+    friend class ModFactory;
+    std::string _expr;
+};
+
 }}} // namespace lsst::qserv::master
 
 
