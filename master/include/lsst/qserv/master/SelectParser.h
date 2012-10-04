@@ -80,7 +80,8 @@ public:
     void setup();
     // @return Original select statement
     std::string const& getStatement() const { return _statement; }
-
+    
+    boost::shared_ptr<SelectStmt> getSelectStmt() { return _selectStmt; }
     // Move to QueryPlan
 #if 0
     // Better as: "chunkquery" and "post query fix"

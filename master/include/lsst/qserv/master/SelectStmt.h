@@ -64,6 +64,10 @@ public:
     // Declarations
     friend class SelectFactory;
     class Mgr;
+
+    // Helpers
+    void _generate();
+
     // Fields
     boost::shared_ptr<Mgr> _mgr;
     boost::shared_ptr<FromList> _fromList; // Data sources
