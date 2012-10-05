@@ -25,17 +25,22 @@
 #include <sstream>
 #include <boost/thread/once.hpp>
 
+#include "lsst/qserv/SqlConnection.hh"
+
 namespace qWorker = lsst::qserv::worker;
 
 namespace { 
+
     // Settings declaration ////////////////////////////////////////////////
-    static const int settingsCount = 6;
+    static const int settingsCount = 7;
     // key, env var name, default, description
     static const char* settings[settingsCount][4] = {
         {"xrdQueryPath", "QSW_XRDQUERYPATH", "/query2", 
          "xrootd path for query,e.g. /query2"},
         {"mysqlSocket", "QSW_DBSOCK", "/var/lib/mysql/mysql.sock",
          "MySQL socket file path for db connections"},
+        {"mysqlDefaultUser", "QSW_DEFUSER", "qsmaster",
+         "Default username for mysql connections"},
         {"mysqlDump", "QSW_MYSQLDUMP", "/usr/bin/mysqldump", 
         "path to mysqldump program binary"},
         {"scratchPath", "QSW_SCRATCHPATH", "/tmp/qserv",
@@ -61,11 +66,29 @@ namespace {
         return 0 == ::access(execFile.c_str(), X_OK);
     }
 
-    bool validateMysql(qWorker::Config const& c) {
-        // Can't do dump w/o an executable.
+    std::string validateMysql(qWorker::Config const& c) {
+        using namespace lsst::qserv;
+        bool isValid = true;
+        SqlConfig sc;
+        sc.hostname = "";
+        sc.username = c.getString("mysqlDefaultUser");
+        sc.password = "";
+        sc.dbName = c.getString("scratchDb");
+        sc.port = 0;
+        sc.socket = c.getString("mysqlSocket");
+        isValid = isValid && sc.isValid();
+        if(!isValid) { return "Invalid MySQL config"; }
+
+        SqlConnection scn(sc);
+        SqlErrorObject eo;
+        isValid = isValid && scn.connectToDb(eo);
+        if(!isValid) { return "Unable to connect to MySQL."; }
+
+       // Can't do dump w/o an executable.
         // Shell exec will crash a boost test case badly if this fails.
-        return isExecutable(c.getString("mysqlDump"));
-        // In the future, could try connecting to mysql instance here.
+        isValid = isValid && isExecutable(c.getString("mysqlDump"));
+        if(!isValid) { return "Could not find mysqldump."; }
+        else return std::string();
     }
 }
 
@@ -115,17 +138,8 @@ void qWorker::Config::_load() {
 
 void qWorker::Config::_validate() {
     // assume we're thread-protected
-    bool valid = true;
-    std::string error;
-    bool r;
-
-    r = validateMysql(*this);
-    valid &= r;
-    if(!r) {
-        error += "Bad mysqldump path.";
-    }
-    _isValid = valid;
-    _error = error;
+    _error = validateMysql(*this);
+    _isValid = _error.empty();
 }
 
 ////////////////////////////////////////////////////////////////////////

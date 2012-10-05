@@ -49,13 +49,16 @@ testEnv.Append(BUILDERS = {'Test': bld})
 for src in Glob("*.cc"):
     libs = []
     if(filter(lambda s: s in src.name, 
-              ["MySqlFs_", "FifoScheduler_", "Metadata_"])):
+              ["MySqlFs_", "FifoScheduler_", "Metadata_", "SanityCheck"])):
         src = [src] + testEnv["built_libs"] 
         libs = testEnv["built_elibs"] + ["mysqlclient_r"]
     elif "PathStructure_" in src.name:
         # src = [src, testEnv.Object("QservPathStructure.o", 
         #                            "../src/QservPathStructure.cc")]
         src = [src, "../src/QservPathStructure.cc"]
+    elif "SanityCheck" in src.name:
+        src = [src, "../src/Config.cc"]
+
     else:
         src = [src]
     pass
