@@ -104,7 +104,5 @@ void qMaster::SelectStmt::_generate() {
     print(std::cout, "where", _whereClause);
     print(std::cout, "orderby", _orderBy);
     print(std::cout, "groupby", _groupBy);
-    print(std::cout, "having", _having);    
+    print(std::cout, "having", _having);
 }
-
-

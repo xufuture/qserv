@@ -150,6 +150,9 @@ private:
 std::ostream& qMaster::operator<<(std::ostream& os, qMaster::TableRefN const& refN) {
     return refN.putStream(os);
 }
+std::ostream& qMaster::operator<<(std::ostream& os, qMaster::TableRefN const* refN) {
+    return refN->putStream(os);
+}
 ////////////////////////////////////////////////////////////////////////
 // ParseAliasMap misc impl. (to be placed in ParseAliasMap.cc later)
 ////////////////////////////////////////////////////////////////////////
@@ -311,8 +314,7 @@ FromFactory::FromFactory(boost::shared_ptr<ParseAliasMap> aliases) :
 
 boost::shared_ptr<FromList> 
 FromFactory::getProduct() {
-    // FIXME
-    return boost::shared_ptr<FromList>(new FromList());
+    return _list;
 }
 
 void 

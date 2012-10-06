@@ -94,6 +94,7 @@ SelectFactory::getStatement() {
     stmt->_whereClause = _wFactory->getProduct();
     stmt->_orderBy = _mFactory->getOrderBy();
     stmt->_groupBy = _mFactory->getGroupBy();
+    stmt->_having = _mFactory->getHaving();
     stmt->_limit = _mFactory->getLimit();
     return stmt;
 }
