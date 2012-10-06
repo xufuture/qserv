@@ -203,5 +203,6 @@ void ModFactory::_importHaving(antlr::RefAST a) {
     assert(a.get());
     std::cout << "having got " << walkTreeString(a) << std::endl;
     // For now, we will silently traverse and recognize but ignore.
+    _having->_expr = walkTreeString(a); // FIXME
     
 }

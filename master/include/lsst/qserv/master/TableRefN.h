@@ -45,9 +45,9 @@ protected:
     std::string alias;
     
 };
-// (implemented in SelectFactory.cc for now)
+// (implemented in FromFactory.cc for now)
 std::ostream& operator<<(std::ostream& os, TableRefN const& refN);
-
+std::ostream& operator<<(std::ostream& os, TableRefN const* refN);
 
 
 class SimpleTableN : public TableRefN {

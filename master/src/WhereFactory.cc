@@ -136,6 +136,15 @@ public:
 private:
     lsst::qserv::master::WhereFactory& _wf;
 };
+
+class FromWhereH : public VoidOneRefFunc {
+public:
+    FromWhereH() {}
+    virtual ~FromWhereH() {}
+    virtual void operator()(antlr::RefAST fw) {
+        qMaster::printDigraph("fromwhere", std::cout, fw);
+    }
+};
 ////////////////////////////////////////////////////////////////////////
 // WhereFactory
 ////////////////////////////////////////////////////////////////////////
@@ -146,8 +155,9 @@ WhereFactory::WhereFactory() {
 }
 
 boost::shared_ptr<WhereClause> WhereFactory::getProduct() {
-    // FIXME
-    return boost::shared_ptr<WhereClause>(new WhereClause());
+    
+    // FIXME!!!
+    return _clause;
 }
 
 void 
@@ -155,6 +165,9 @@ WhereFactory::attachTo(SqlSQL2Parser& p) {
     boost::shared_ptr<WhereCondH> wch(new WhereCondH(*this));
     p._whereCondHandler = wch;
 #if 0
+    boost::shared_ptr<FromWhereH> fwh(new FromWhereH());
+    p._fromWhereHandler = fwh;
+
     // Should trigger when the WHERE clause is detected.
     // Modifiers too? (ORDER, GROUP, LIMIT)
 #endif
@@ -206,7 +219,8 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     std::copy(pg.begin(), pg.end(), std::back_inserter(params));
     std::copy(params.begin(),params.end(),
               std::ostream_iterator<std::string>(std::cout,", "));
-    // FIXME: add restrictor spec.
+    // FIXME: add restrictor spec to facilitate later synthesis of
+    // bounding functions. 
 }
 
 template <typename Check>

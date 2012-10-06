@@ -250,6 +250,8 @@ SelectList::_fillParams(ValueExprList& p, antlr::RefAST pnodes) {
 std::ostream& 
 qMaster::operator<<(std::ostream& os, qMaster::SelectList const& sl) {
     os << "SELECT ";
+    std::copy(sl._valueExprList->begin(), sl._valueExprList->end(),
+                  std::ostream_iterator<ValueExprPtr>(os,", "));
     os << "(FIXME)";
     return os;
 }
