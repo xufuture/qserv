@@ -29,6 +29,38 @@
 
 namespace qMaster=lsst::qserv::master;
 
+namespace {
+template <typename AnAst, typename C>
+class DigraphVisitor {
+public:
+    typedef std::map<AnAst, std::string> AstMap;
+
+    DigraphVisitor() : i(0) {}
+    void operator()(AnAst a, C& p) {
+        std::string parent = stringify(p.back());
+        s << "\"" << parent << "\"" << " -> " 
+          << "\"" << stringify(a) << "\"" << "\n";
+    }
+    std::string stringify(AnAst a) {
+        typename AstMap::const_iterator e(ids.end());
+        if(ids.find(a) == e) {
+            std::stringstream t;
+            t << qMaster::tokenText(a) << "[" << ++i << "]";
+            ids[a] = t.str();
+        }
+        return ids[a];
+    }
+    void output(std::string label, std::ostream& o) {
+        o << "digraph tree_" << label << " {\n"
+          << s.str()
+          << "}\n";
+    }
+    int i;
+    AstMap ids;
+    std::stringstream s;
+
+};
+}
 // Creates a new text node and and puts it into the tree
 // after the specified node, but before the node's next sibling.
 antlr::RefAST qMaster::insertTextNodeAfter(antlr::ASTFactory* factory, 
@@ -54,6 +86,13 @@ antlr::RefAST qMaster::insertTextNodeBefore(antlr::ASTFactory* factory,
    n->setText(s);
    n = newChild;
    return n;
+}
+
+void qMaster::printDigraph(std::string lbl, std::ostream& o, antlr::RefAST n) {
+    DigraphVisitor<antlr::RefAST, std::list<antlr::RefAST> > dv;
+    std::list<antlr::RefAST> c;
+    visitTreeRooted(n, dv, c);
+    dv.output(lbl, o);
 }
 
 bool
