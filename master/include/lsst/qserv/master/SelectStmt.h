@@ -54,22 +54,16 @@ public:
     
     SelectStmt();
 
-    void addHooks(SqlSQL2Parser& p);
-
-    void addSelectStar(antlr::RefAST table);
-
     void diagnose(); // for debugging
 
 // private: // public for now.
     // Declarations
     friend class SelectFactory;
-    class Mgr;
 
     // Helpers
     void _generate();
 
     // Fields
-    boost::shared_ptr<Mgr> _mgr;
     boost::shared_ptr<FromList> _fromList; // Data sources
     boost::shared_ptr<SelectList> _selectList; // Desired columns
     boost::shared_ptr<WhereClause> _whereClause; // Filtering conditions (WHERE)
