@@ -367,6 +367,7 @@ antlr::RefAST insertTextNodeBefore(antlr::ASTFactory* factory,
                                   std::string const& s, 
                                    antlr::RefAST n);
 
+void printDigraph(std::string lbl, std::ostream& o, antlr::RefAST n);
 
 }}} // lsst::qserv::master
 
