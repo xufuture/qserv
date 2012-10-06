@@ -19,9 +19,9 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// WhereFactory.cc houses the implementation of the ModFactory, which
+// ModFactory.cc houses the implementation of the ModFactory, which
 // is responsible for constructing representations of LIMIT, ORDER BY,
-// and GROUP BY clauses. Some day, it may handle HAVING as well.
+// and GROUP BY clauses. It has a placeholder to support HAVING.
 
 #include "lsst/qserv/master/ModFactory.h"
 
@@ -193,7 +193,7 @@ void ModFactory::_importGroupBy(antlr::RefAST a) {
 }
 
 void ModFactory::_importHaving(antlr::RefAST a) {
-    _groupBy = boost::make_shared<GroupByClause>();
+    _having = boost::make_shared<HavingClause>();
     // HAVING takes an boolean expression that is dependent on an
     // aggregation expression that was specified in the select list.
     // Online examples for SQL HAVING always have only one aggregation
@@ -202,7 +202,6 @@ void ModFactory::_importHaving(antlr::RefAST a) {
     // e.g. HAVING count(obj.ra_PS_sigma) > 0.04
     assert(a.get());
     std::cout << "having got " << walkTreeString(a) << std::endl;
-
     // For now, we will silently traverse and recognize but ignore.
     
 }
