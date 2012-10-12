@@ -25,16 +25,7 @@
 // information about run-time query execution.  It might contain
 // enough information to generate queries for execution.
 
-
-#if 0
-// Standard
-#include <functional>
-#include <cstdio>
-#include <strings.h>
-
-#include <boost/bind.hpp>
-#endif //comment out
-
+#include "lsst/qserv/master/SelectStmt.h"
 
 // Standard
 #include <map>
@@ -54,9 +45,9 @@
 #include "lsst/qserv/master/ColumnRefH.h"
 #include "lsst/qserv/master/ColumnAliasMap.h"
 #include "lsst/qserv/master/SelectList.h"
-
+#include "lsst/qserv/master/WhereClause.h"
 // myself
-#include "lsst/qserv/master/SelectStmt.h"
+
 
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;
