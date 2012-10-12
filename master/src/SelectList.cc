@@ -32,6 +32,7 @@
 // map them?
 // For now, just build the syntax tree without evaluating.
 #include "lsst/qserv/master/SelectList.h"
+#include "lsst/qserv/master/QueryTemplate.h"
 #include <iterator>
 
 #include "SqlSQL2TokenTypes.hpp" // For ANTLR typing.
@@ -46,9 +47,14 @@ namespace qMaster=lsst::qserv::master;
 namespace { // File-scope helpers
 std::ostream& output(std::ostream& os, qMaster::ValueExprList const& vel) {
     std::copy(vel.begin(), vel.end(),
-              std::ostream_iterator<qMaster::ValueExprPtr>(std::cout, ";"));
+              std::ostream_iterator<qMaster::ValueExprPtr>(os, ";"));
     
     return os;
+}
+void renderList(qMaster::QueryTemplate& qt, qMaster::ValueExprList const& vel) {
+    qt.pushDelim();
+    std::for_each(vel.begin(), vel.end(), ValueExpr::render(qt));
+    qt.popDelim();
 }
 } // anonymous namespace
 
@@ -60,6 +66,14 @@ std::ostream& qMaster::operator<<(std::ostream& os, qMaster::ColumnRef const* cr
     return os << *cr;
 }
 
+void qMaster::ColumnRef::render(QueryTemplate& qt) const {
+    qt.pushDelim();
+    if(!db.empty()) { qt.append(db); qt.append("."); }
+    if(!table.empty()) {qt.append(table); qt.append("."); }
+    qt.append(column);
+    qt.popDelim();
+}
+
 std::ostream& qMaster::operator<<(std::ostream& os, FuncExpr const& fe) {
     os << "(" << fe.name << ",";
     output(os, fe.params);
@@ -69,6 +83,16 @@ std::ostream& qMaster::operator<<(std::ostream& os, FuncExpr const& fe) {
 std::ostream& qMaster::operator<<(std::ostream& os, FuncExpr const* fe) {
     return os << *fe;
 }
+
+void qMaster::FuncExpr::render(qMaster::QueryTemplate& qt) const {
+    qt.pushDelim();
+    qt.append(name); 
+    qt.append("(");
+    renderList(qt, params);
+    qt.append(")");
+    qt.popDelim();
+}
+
 
 ValueExprPtr ValueExpr::newColumnRefExpr(boost::shared_ptr<ColumnRef const> cr) {
     ValueExprPtr expr(new ValueExpr());
@@ -114,9 +138,36 @@ std::ostream& qMaster::operator<<(std::ostream& os, ValueExpr const& ve) {
     if(!ve._alias.empty()) { os << " [" << ve._alias << "]"; }
     return os;
 }
+
 std::ostream& qMaster::operator<<(std::ostream& os, ValueExpr const* ve) {
     if(!ve) return os << "<NULL>";
     return os << *ve;
+}
+
+void qMaster::ValueExpr::render::operator()(qMaster::ValueExpr const& ve) {
+    std::stringstream ss;
+    if(_count++ > 0) _qt.append(",");
+    switch(ve._type) {
+    case ValueExpr::COLUMNREF: ve._columnRef->render(_qt); break;
+    case ValueExpr::FUNCTION: ve._funcExpr->render(_qt); break;
+    case ValueExpr::AGGFUNC: ve._funcExpr->render(_qt); break;
+    case ValueExpr::STAR: 
+        if(!ve._tableStar.empty()) ss << ve._tableStar << ".";
+        ss << "*"; 
+        _qt.append(ss.str());
+        break;
+    default: break;
+    }
+    if(!ve._alias.empty()) { _qt.append("AS"); _qt.append(ve._alias); }
+    _qt.pushDelim();
+    _qt.popDelim();
+}
+
+std::string qMaster::QueryTemplate::dbgStr() const {
+    std::stringstream ss;
+    std::copy(_elements.begin(), _elements.end(),
+              std::ostream_iterator<std::string>(ss, ""));
+    return ss.str();
 }
 
 void
@@ -256,6 +307,15 @@ qMaster::operator<<(std::ostream& os, qMaster::SelectList const& sl) {
     return os;
 }
 
+std::string
+qMaster::SelectList::getGenerated() {
+    QueryTemplate qt;
+    std::stringstream ss;
+    std::for_each(_valueExprList->begin(), _valueExprList->end(),
+                  ValueExpr::render(qt));
+    return qt.dbgStr();
+}
+
 ////////////////////////////////////////////////////////////////////////
 // FromList
 ////////////////////////////////////////////////////////////////////////
@@ -265,11 +325,22 @@ qMaster::operator<<(std::ostream& os, qMaster::FromList const& fl) {
     if(fl._tableRefns.get() && fl._tableRefns->size() > 0) {
         TableRefnList const& refList = *(fl._tableRefns);
         std::copy(refList.begin(), refList.end(),
-                  std::ostream_iterator<TableRefN::Ptr>(std::cout,", "));
+                  std::ostream_iterator<TableRefN::Ptr>(os,", "));
     } else {
         os << "(empty)";
     }
     return os;
+}
+
+std::string
+qMaster::FromList::getGenerated(){
+    QueryTemplate qt;
+    std::stringstream ss;
+    if(_tableRefns.get() && _tableRefns->size() > 0) {
+        TableRefnList const& refList = *_tableRefns;
+        std::for_each(refList.begin(), refList.end(), TableRefN::render(qt));
+    } 
+    return qt.dbgStr();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -279,6 +350,13 @@ std::ostream&
 qMaster::operator<<(std::ostream& os, qMaster::WhereClause const& wc) {
     os << "WHERE " << wc._original;
     return os;
+}
+
+std::string
+qMaster::WhereClause::getGenerated() {
+    std::stringstream ss;
+    ss << "(FIXME)" << _original;
+    return ss.str();
 }
 ////////////////////////////////////////////////////////////////////////
 // OrderByTerm
@@ -306,6 +384,16 @@ qMaster::operator<<(std::ostream& os, qMaster::OrderByClause const& c) {
     }
     return os;
 }
+
+std::string
+qMaster::OrderByClause::getGenerated() {
+    std::stringstream ss;
+    if(_terms.get()) {
+        std::copy(_terms->begin(), _terms->end(),
+                  std::ostream_iterator<qMaster::OrderByTerm>(ss,", "));
+    }
+    return ss.str();
+}
 ////////////////////////////////////////////////////////////////////////
 // GroupByTerm
 ////////////////////////////////////////////////////////////////////////
@@ -327,6 +415,15 @@ qMaster::operator<<(std::ostream& os, qMaster::GroupByClause const& c) {
     }
     return os;
 }
+std::string
+qMaster::GroupByClause::getGenerated() {
+    std::stringstream ss;
+    if(_terms.get()) {
+        std::copy(_terms->begin(), _terms->end(),
+              std::ostream_iterator<qMaster::GroupByTerm>(ss,", "));
+    }
+    return ss.str();
+}
 ////////////////////////////////////////////////////////////////////////
 // HavingClause
 ////////////////////////////////////////////////////////////////////////
@@ -336,4 +433,11 @@ qMaster::operator<<(std::ostream& os, qMaster::HavingClause const& c) {
         os << "HAVING " << c._expr;
     }
     return os;
+}
+std::string
+qMaster::HavingClause::getGenerated() {
+    if(!_expr.empty()) {
+        return _expr;
+    }
+    return std::string();
 }

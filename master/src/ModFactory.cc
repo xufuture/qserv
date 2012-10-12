@@ -201,7 +201,7 @@ void ModFactory::_importHaving(antlr::RefAST a) {
     // aggregation, single boolean expressions.
     // e.g. HAVING count(obj.ra_PS_sigma) > 0.04
     assert(a.get());
-    std::cout << "having got " << walkTreeString(a) << std::endl;
+    //std::cout << "having got " << walkTreeString(a) << std::endl;
     // For now, we will silently traverse and recognize but ignore.
     _having->_expr = walkTreeString(a); // FIXME
     

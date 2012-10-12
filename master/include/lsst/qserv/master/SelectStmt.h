@@ -61,6 +61,7 @@ public:
     friend class SelectFactory;
 
     // Helpers
+    void _print();
     void _generate();
 
     // Fields

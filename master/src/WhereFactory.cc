@@ -155,8 +155,6 @@ WhereFactory::WhereFactory() {
 }
 
 boost::shared_ptr<WhereClause> WhereFactory::getProduct() {
-    
-    // FIXME!!!
     return _clause;
 }
 
@@ -164,13 +162,6 @@ void
 WhereFactory::attachTo(SqlSQL2Parser& p) {
     boost::shared_ptr<WhereCondH> wch(new WhereCondH(*this));
     p._whereCondHandler = wch;
-#if 0
-    boost::shared_ptr<FromWhereH> fwh(new FromWhereH());
-    p._fromWhereHandler = fwh;
-
-    // Should trigger when the WHERE clause is detected.
-    // Modifiers too? (ORDER, GROUP, LIMIT)
-#endif
 }
 
 void 

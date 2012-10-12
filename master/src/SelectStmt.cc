@@ -94,8 +94,15 @@ inline OS& print(OS& os, char const label[], boost::shared_ptr<T> t) {
     }
     return os; 
 }
+template <typename OS, typename T>
+inline OS& generate(OS& os, char const label[], boost::shared_ptr<T> t) {
+    if(t.get()) { 
+        os << label << " " << t->getGenerated() << std::endl;
+    }
+    return os; 
 }
-void qMaster::SelectStmt::_generate() {
+}
+void qMaster::SelectStmt::_print() {
     //_selectList->getColumnRefList()->printRefs();
     using std::cout;
     using std::endl;
@@ -105,4 +112,17 @@ void qMaster::SelectStmt::_generate() {
     print(std::cout, "orderby", _orderBy);
     print(std::cout, "groupby", _groupBy);
     print(std::cout, "having", _having);
+}
+
+void qMaster::SelectStmt::_generate() {
+    //_selectList->getColumnRefList()->printRefs();
+    using std::cout;
+    using std::endl;
+    generate(std::cout, "SELECT", _selectList);
+    generate(std::cout, "FROM", _fromList);
+
+    generate(std::cout, "WHERE", _whereClause);
+    generate(std::cout, "ORDER BY", _orderBy);
+    generate(std::cout, "GROUP BY", _groupBy);
+    generate(std::cout, "HAVING", _having);
 }
