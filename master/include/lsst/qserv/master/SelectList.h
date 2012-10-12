@@ -42,6 +42,8 @@ namespace master {
 // Forward
 class ColumnRefMap;
 class ColumnAliasMap;
+class QueryTemplate;
+class BoolTerm;
 
 typedef std::pair<antlr::RefAST, antlr::RefAST> NodeBound;
 typedef std::map<antlr::RefAST, NodeBound> NodeMap;
@@ -59,6 +61,7 @@ struct ColumnRef {
     std::string column;
     friend std::ostream& operator<<(std::ostream& os, ColumnRef const& cr);
     friend std::ostream& operator<<(std::ostream& os, ColumnRef const* cr);
+    void render(QueryTemplate& qt) const;
 };
 
 class ColumnRefList : public ColumnRefH::Listener {
@@ -107,6 +110,7 @@ public:
     ValueExprList params;
     friend std::ostream& operator<<(std::ostream& os, FuncExpr const& fe);
     friend std::ostream& operator<<(std::ostream& os, FuncExpr const* fe);
+    void render(QueryTemplate& qt) const;
 };
 
 typedef boost::shared_ptr<FuncExpr> FuncExprPtr;
@@ -126,12 +130,26 @@ public:
     friend std::ostream& operator<<(std::ostream& os, ValueExpr const& ve);
     friend std::ostream& operator<<(std::ostream& os, ValueExpr const* ve);
 
+    class render;
+    friend class render;
     //private:
     Type _type;
     boost::shared_ptr<ColumnRef const> _columnRef;
     boost::shared_ptr<FuncExpr> _funcExpr;
     std::string _alias;
     std::string _tableStar;
+};
+
+class ValueExpr::render : public std::unary_function<ValueExpr, void> {
+public:
+    render(QueryTemplate& qt) : _qt(qt), _count(0) {}
+    void operator()(ValueExpr const& ve);
+    void operator()(ValueExpr const* vep) { 
+        if(vep) (*this)(*vep); }
+    void operator()(boost::shared_ptr<ValueExpr> const& vep) { 
+        (*this)(vep.get()); }
+    QueryTemplate& _qt;
+    int _count;
 };
 
 class SelectList {
@@ -153,6 +171,8 @@ public:
     void addAgg(antlr::RefAST n);
     
     void dbgPrint() const;
+    std::string getGenerated();
+
     friend class SelectListFactory;
 private:
     friend std::ostream& operator<<(std::ostream& os, SelectList const& sl);
@@ -176,6 +196,7 @@ public:
     boost::shared_ptr<ColumnRefList> getColumnRefList() {
         return _columnRefList;
     }
+    std::string getGenerated();
 
 private:
     friend std::ostream& operator<<(std::ostream& os, FromList const& fl);
@@ -192,6 +213,7 @@ public:
     boost::shared_ptr<ColumnRefList> getColumnRefList() {
         return _columnRefList;
     }
+    std::string getGenerated();
 
 private:
     friend std::ostream& operator<<(std::ostream& os, WhereClause const& wc);
@@ -199,6 +221,7 @@ private:
 
     std::string _original;
     boost::shared_ptr<ColumnRefList> _columnRefList;
+    boost::shared_ptr<BoolTerm> _tree;
 };
 
 class OrderByTerm {
@@ -232,6 +255,8 @@ public:
     OrderByClause() : _terms (new List()) {}
     ~OrderByClause() {}
 
+    std::string getGenerated();
+
 private:
     friend std::ostream& operator<<(std::ostream& os, OrderByClause const& oc);
     friend class ModFactory;
@@ -263,6 +288,8 @@ public:
     GroupByClause() : _terms(new List()) {}
     ~GroupByClause() {}
 
+    std::string getGenerated();
+
 private:
     friend std::ostream& operator<<(std::ostream& os, GroupByClause const& gc);
     friend class ModFactory;
@@ -275,6 +302,8 @@ class HavingClause {
 public:
     HavingClause() {}
     ~HavingClause() {}
+
+    std::string getGenerated();
 
 private:
     friend std::ostream& operator<<(std::ostream& os, HavingClause const& h);

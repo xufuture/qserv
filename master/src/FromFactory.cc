@@ -37,6 +37,7 @@
 #include "lsst/qserv/master/parseTreeUtil.h"
 
 #include "lsst/qserv/master/TableRefN.h"
+#include "lsst/qserv/master/QueryTemplate.h"
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;
 
@@ -152,6 +153,12 @@ std::ostream& qMaster::operator<<(std::ostream& os, qMaster::TableRefN const& re
 }
 std::ostream& qMaster::operator<<(std::ostream& os, qMaster::TableRefN const* refN) {
     return refN->putStream(os);
+}
+void qMaster::TableRefN::render::operator()(qMaster::TableRefN const& refN) {
+    std::stringstream ss;
+    refN.putTemplate(_qt);
+    if(_count++ > 0) _qt.append(",");
+    _qt.append(ss.str());
 }
 ////////////////////////////////////////////////////////////////////////
 // ParseAliasMap misc impl. (to be placed in ParseAliasMap.cc later)

@@ -26,10 +26,12 @@
 #include <string>
 #include <list>
 #include <boost/shared_ptr.hpp>
+#include "lsst/qserv/master/QueryTemplate.h"
 
 namespace lsst {
 namespace qserv {
 namespace master {
+class QueryTemplate; // Forward
 
 class TableRefN {
 public:
@@ -39,9 +41,25 @@ public:
     virtual std::string const& getDb() const = 0;
     virtual std::string const& getTable() const = 0;
     virtual std::ostream& putStream(std::ostream& os) const = 0;
-
+    virtual void putTemplate(QueryTemplate& qt) const = 0;
+    class render;
 protected:
     TableRefN(std::string const& alias_) : alias(alias_) {}
+    inline void _putTable(QueryTemplate& qt,
+                         std::string const& db, 
+                         std::string const& table) const {
+        if(!db.empty()) { 
+            qt.append(db);
+            qt.append(".");
+        } 
+        qt.append(table);
+    }
+    inline void _putAlias(QueryTemplate& qt) const {
+        if(!alias.empty()) { 
+            qt.append("AS"); 
+            qt.append(alias); 
+        }
+    }
     std::string alias;
     
 };
@@ -49,6 +67,16 @@ protected:
 std::ostream& operator<<(std::ostream& os, TableRefN const& refN);
 std::ostream& operator<<(std::ostream& os, TableRefN const* refN);
 
+class TableRefN::render {
+public:
+    render(QueryTemplate& qt) : _qt(qt), _count(0) {}
+    void operator()(TableRefN const& trn);
+    void operator()(TableRefN::Ptr const trn) {
+        if(trn.get()) (*this)(*trn);
+    }
+    QueryTemplate& _qt;
+    int _count;
+};
 
 class SimpleTableN : public TableRefN {
 public:
@@ -63,6 +91,10 @@ public:
         os << "Table(" << db << "." << table << ")";
         if(!alias.empty()) { os << " AS " << alias; }
         return os;
+    }
+    virtual void putTemplate(QueryTemplate& qt) const {
+        _putTable(qt, db, table);
+        _putAlias(qt);
     }
 protected:
 //    std::string alias; // inherited
@@ -101,7 +133,12 @@ public:
         if(!alias.empty()) { os << " AS " << alias; }
         return os;
     }
-
+    virtual void putTemplate(QueryTemplate& qt) const {
+        _putTable(qt, db1, table1);
+        qt.append("JOIN");
+        _putTable(qt, db2, table2);
+        _putAlias(qt);
+    }
 protected:
     std::string db1;
     std::string table1;
