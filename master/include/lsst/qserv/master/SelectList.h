@@ -33,8 +33,10 @@
 #include <antlr/AST.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "lsst/qserv/master/ColumnRefH.h"
+#include "lsst/qserv/master/ColumnRef.h"
+#include "lsst/qserv/master/ColumnRefList.h"
 #include "lsst/qserv/master/TableRefN.h"
+#include "lsst/qserv/master/ValueExpr.h"
 
 namespace lsst {
 namespace qserv {
@@ -44,113 +46,10 @@ class ColumnRefMap;
 class ColumnAliasMap;
 class QueryTemplate;
 class BoolTerm;
-
+#if 0
 typedef std::pair<antlr::RefAST, antlr::RefAST> NodeBound;
 typedef std::map<antlr::RefAST, NodeBound> NodeMap;
-
-class ValueExpr; // forward
-typedef boost::shared_ptr<ValueExpr> ValueExprPtr;
-typedef std::list<ValueExprPtr> ValueExprList;
-
-struct ColumnRef {
-    ColumnRef(std::string db_, std::string table_, std::string column_) 
-        : db(db_), table(table_), column(column_) {}
-    
-    std::string db;
-    std::string table;
-    std::string column;
-    friend std::ostream& operator<<(std::ostream& os, ColumnRef const& cr);
-    friend std::ostream& operator<<(std::ostream& os, ColumnRef const* cr);
-    void render(QueryTemplate& qt) const;
-};
-
-class ColumnRefList : public ColumnRefH::Listener {
-public:
-    ColumnRefList() {}
-    virtual ~ColumnRefList() {}
-    virtual void acceptColumnRef(antlr::RefAST d, antlr::RefAST t, 
-                                 antlr::RefAST c);
-    void setValueExprList(boost::shared_ptr<ValueExprList> vel) {
-        _valueExprList = vel;
-    }
-    boost::shared_ptr<ColumnRef const> getRef(antlr::RefAST r) {
-        if(_refs.find(r) == _refs.end()) {
-            std::cout << "couldn't find " << tokenText(r) << " in";
-            printRefs();
-        }
-        assert(_refs.find(r) != _refs.end());
-        return _refs[r];
-    }
-    
-    void printRefs() const {
-        std::cout << "Printing select refs." << std::endl;
-        typedef RefMap::const_iterator Citer;
-        Citer end = _refs.end();
-        for(Citer i=_refs.begin(); i != end; ++i) {
-            ColumnRef const& cr(*(i->second));
-            std::cout << "\t\"" << cr.db << "\".\"" 
-                      << cr.table << "\".\""  
-                      << cr.column << "\"" << std::endl;
-        }
-    }
-private:
-    typedef std::map<antlr::RefAST, boost::shared_ptr<ColumnRef> > RefMap;
-    RefMap _refs;
-    
-    boost::shared_ptr<ValueExprList> _valueExprList;
-};
-
-
-class FuncExpr {
-public:
-    std::string getName() const;
-    ValueExprList getParams() const;
-
-    std::string name;
-    ValueExprList params;
-    friend std::ostream& operator<<(std::ostream& os, FuncExpr const& fe);
-    friend std::ostream& operator<<(std::ostream& os, FuncExpr const* fe);
-    void render(QueryTemplate& qt) const;
-};
-
-typedef boost::shared_ptr<FuncExpr> FuncExprPtr;
-
-class ValueExpr {
-public:
-    enum Type { COLUMNREF, FUNCTION, AGGFUNC, STAR };
-
-    boost::shared_ptr<ColumnRef const> getColumnRef() const { return _columnRef; }
-    boost::shared_ptr<FuncExpr> getFuncExpr() const { return _funcExpr; }
-    Type getType() const { return _type; }
-    
-    static ValueExprPtr newColumnRefExpr(boost::shared_ptr<ColumnRef const> cr);
-    static ValueExprPtr newStarExpr(std::string const& table);
-    static ValueExprPtr newAggExpr(boost::shared_ptr<FuncExpr> fe);
-    static ValueExprPtr newFuncExpr(boost::shared_ptr<FuncExpr> fe);
-    friend std::ostream& operator<<(std::ostream& os, ValueExpr const& ve);
-    friend std::ostream& operator<<(std::ostream& os, ValueExpr const* ve);
-
-    class render;
-    friend class render;
-    //private:
-    Type _type;
-    boost::shared_ptr<ColumnRef const> _columnRef;
-    boost::shared_ptr<FuncExpr> _funcExpr;
-    std::string _alias;
-    std::string _tableStar;
-};
-
-class ValueExpr::render : public std::unary_function<ValueExpr, void> {
-public:
-    render(QueryTemplate& qt) : _qt(qt), _count(0) {}
-    void operator()(ValueExpr const& ve);
-    void operator()(ValueExpr const* vep) { 
-        if(vep) (*this)(*vep); }
-    void operator()(boost::shared_ptr<ValueExpr> const& vep) { 
-        (*this)(vep.get()); }
-    QueryTemplate& _qt;
-    int _count;
-};
+#endif
 
 class SelectList {
 public:
@@ -182,13 +81,6 @@ private:
     boost::shared_ptr<ColumnRefMap const> _aliasMap;
 };
 
-
-struct FromEntry {
-    antlr::RefAST alias;
-    NodeBound target;
-    
-};
-
 class FromList {
 public:
     FromList() : _columnRefList(new ColumnRefList()) {}
@@ -204,24 +96,6 @@ private:
 
     boost::shared_ptr<ColumnRefList> _columnRefList;
     TableRefnListPtr _tableRefns;
-};
-
-class WhereClause {
-public:
-    WhereClause() : _columnRefList(new ColumnRefList()) {}
-    ~WhereClause() {}
-    boost::shared_ptr<ColumnRefList> getColumnRefList() {
-        return _columnRefList;
-    }
-    std::string getGenerated();
-
-private:
-    friend std::ostream& operator<<(std::ostream& os, WhereClause const& wc);
-    friend class WhereFactory;
-
-    std::string _original;
-    boost::shared_ptr<ColumnRefList> _columnRefList;
-    boost::shared_ptr<BoolTerm> _tree;
 };
 
 class OrderByTerm {

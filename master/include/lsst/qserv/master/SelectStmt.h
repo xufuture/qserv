@@ -30,6 +30,9 @@
 // Standard
 #include <list>
 
+// Boost
+#include <boost/shared_ptr.hpp>
+
 // Forward
 class SqlSQL2Parser;
 

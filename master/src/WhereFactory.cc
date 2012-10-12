@@ -32,8 +32,8 @@
 // Package
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
 #include "lsst/qserv/master/parserBase.h" // Handler base classes
-#include "lsst/qserv/master/SelectList.h" // WhereClause decl.
-
+//#include "lsst/qserv/master/SelectList.h" // WhereClause decl.
+#include "lsst/qserv/master/WhereClause.h" 
 
 
 // namespace modifiers

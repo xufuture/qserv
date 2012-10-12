@@ -25,6 +25,7 @@
 #define LSST_QSERV_MASTER_TABLEREFN_H
 #include <string>
 #include <list>
+#include <iostream>
 #include <boost/shared_ptr.hpp>
 #include "lsst/qserv/master/QueryTemplate.h"
 
