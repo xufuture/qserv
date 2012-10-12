@@ -34,6 +34,7 @@
 #include "lsst/qserv/master/parserBase.h" // Handler base classes
 //#include "lsst/qserv/master/SelectList.h" // WhereClause decl.
 #include "lsst/qserv/master/WhereClause.h" 
+#include "lsst/qserv/master/BoolTermFactory.h"
 
 
 // namespace modifiers
@@ -200,7 +201,9 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     std::string r(a->getText()); // e.g. qserv_areaspec_box
     std::cout << "Adding from " << r << " : ";
     ParamGenerator pg(a->getNextSibling());
-    std::vector<std::string> params;
+
+    QsRestrictor::Ptr restr(new QsRestrictor());
+    QsRestrictor::StringList& params = restr->_params;
 
     // for(ParamGenerator::Iter it = pg.begin();
     //     it != pg.end();
@@ -208,10 +211,16 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     //     std::cout << "iterating:" << *it << std::endl;
     // }
     std::copy(pg.begin(), pg.end(), std::back_inserter(params));
-    std::copy(params.begin(),params.end(),
+    std::copy(params.begin(), params.end(),
               std::ostream_iterator<std::string>(std::cout,", "));
     // FIXME: add restrictor spec to facilitate later synthesis of
     // bounding functions. 
+    if(!_clause->_restrs.get()) {
+        _clause->_resetRestrs(); 
+    }
+    assert(_clause->_restrs.get());
+    restr->_name = r;
+    _clause->_restrs->push_back(restr);
 }
 
 template <typename Check>
@@ -223,6 +232,7 @@ public:
     }
     Check& c;
 };
+
 struct MetaCheck {
     bool operator()(antlr::RefAST a) {
         if(!a.get()) return false;
@@ -238,6 +248,94 @@ struct MetaCheck {
         return false;
     }
 };
+////////////////////////////////////////////////////////////////////////
+// BoolTermFactory helper
+////////////////////////////////////////////////////////////////////////
+class matchStr {
+public: 
+    matchStr(std::string const& s) : _s(s) {}
+    bool operator()(antlr::RefAST a) {
+        return qMaster::tokenText(a) == _s;
+    }
+    std::string _s;
+};
+class matchType {
+public: 
+    matchType(int tokenType) : _type(tokenType) {}
+    bool operator()(antlr::RefAST a) {
+        return a->getType() == _type;
+    }
+    int _type;
+};
+
+template <class F>
+void forEachSibs(antlr::RefAST a, F& f) {
+    for(; a.get(); a = a->getNextSibling()) {
+        f(a);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////
+// BoolTermFactory
+////////////////////////////////////////////////////////////////////////
+using qMaster::BoolTermFactory;
+
+qMaster::BoolTerm::Ptr 
+qMaster::BoolTermFactory::newBoolTerm(antlr::RefAST a) {
+    BoolTerm::Ptr b;
+    antlr::RefAST child = a->getFirstChild();
+    switch(a->getType()) {
+    case SqlSQL2TokenTypes::OR_OP: b = newOrTerm(child); break;
+    case SqlSQL2TokenTypes::AND_OP: b = newAndTerm(child); break;
+    case SqlSQL2TokenTypes::BOOLEAN_FACTOR: b = newBoolFactor(child); break;
+    case SqlSQL2TokenTypes::VALUE_EXP: 
+        b = newUnknown(a); break; // Value expr not expected here.
+    default:
+        b = newUnknown(a); break; 
+    }
+    return b;
+}
+
+qMaster::OrTerm::Ptr 
+BoolTermFactory::newOrTerm(antlr::RefAST a) {
+    qMaster::OrTerm::Ptr p(new OrTerm());
+    multiImport<OrTerm> oi(*this, *p);
+    matchType matchOr(SqlSQL2TokenTypes::SQL2RW_or);
+    applyExcept<multiImport<OrTerm>,matchType> ae(oi, matchOr);
+    forEachSibs(a, ae);   
+    return p;
+}
+qMaster::AndTerm::Ptr 
+BoolTermFactory::newAndTerm(antlr::RefAST a) {
+    qMaster::AndTerm::Ptr p(new AndTerm());
+    multiImport<AndTerm> ai(*this, *p);
+    matchType matchAnd(SqlSQL2TokenTypes::SQL2RW_and);
+    applyExcept<multiImport<AndTerm>,matchType> ae(ai, matchAnd);
+    forEachSibs(a, ae);
+    return p;
+}
+qMaster::BoolFactor::Ptr 
+BoolTermFactory::newBoolFactor(antlr::RefAST a) {
+    // FIXME
+    std::cout << "bool factor:";
+    spacePrint sp(std::cout);
+    forEachSibs(a, sp);
+    std::cout << std::endl;
+
+    return qMaster::BoolFactor::Ptr();
+}
+qMaster::UnknownTerm::Ptr 
+BoolTermFactory::newUnknown(antlr::RefAST a) {
+    // FIXME
+    std::cout << "unknown term:" << qMaster::walkTreeString(a) << std::endl;
+    return qMaster::UnknownTerm::Ptr();
+}
+#if 0
+qMaster::BoolTerm::Ptr newValueExpr(antlr::RefAST a) {
+    // FIXME
+    return qMaster::OrTerm::Ptr();
+}
+#endif
 
 void 
 WhereFactory::_addOrSibs(antlr::RefAST a) {
@@ -248,8 +346,13 @@ WhereFactory::_addOrSibs(antlr::RefAST a) {
 
     walkTreeVisit(a, p);
     std::cout << "Adding orsibs: " << p.result << std::endl;
+    BoolTermFactory::tagPrint tp(std::cout, "addOr");
+    forEachSibs(a, tp);
+    BoolTermFactory f;
+    _clause->_tree = f.newOrTerm(a);
     _clause->_original = p.result;
     // FIXME: Store template.
     // Template must allow table substitution.
     // For now, reuse old templating scheme.
 }
+

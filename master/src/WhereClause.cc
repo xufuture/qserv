@@ -23,10 +23,34 @@
 // container for the parsed elements of a SQL WHERE.
 #include "lsst/qserv/master/WhereClause.h"
 
+#include <iostream>
+#include "lsst/qserv/master/QueryTemplate.h"
+
 namespace qMaster=lsst::qserv::master;
+using qMaster::QsRestrictor;
 
 namespace { // File-scope helpers
 }
+
+
+////////////////////////////////////////////////////////////////////////
+// QsRestirctor::render
+////////////////////////////////////////////////////////////////////////
+void QsRestrictor::render::operator()(QsRestrictor::Ptr const& p) {
+    if(p.get()) {
+        qt.append(p->_name);
+        qt.append("(");
+        StringList::const_iterator i;
+        int c=0;
+        for(i=p->_params.begin(); i != p->_params.end(); ++i) {
+            if(++c > 1) qt.append(",");
+            qt.append(*i);
+        }
+        qt.append(")");
+    }
+}
+
+
 ////////////////////////////////////////////////////////////////////////
 // WhereClause
 ////////////////////////////////////////////////////////////////////////
@@ -38,7 +62,39 @@ qMaster::operator<<(std::ostream& os, qMaster::WhereClause const& wc) {
 
 std::string
 qMaster::WhereClause::getGenerated() {
-    std::stringstream ss;
-    ss << "(FIXME)" << _original;
-    return ss.str();
+    QueryTemplate qt;
+    
+    if(_restrs.get()) {
+        std::for_each(_restrs->begin(), _restrs->end(), 
+                      QsRestrictor::render(qt));
+    }
+    return qt.dbgStr();
+}
+
+////////////////////////////////////////////////////////////////////////
+// WhereClause (private)
+////////////////////////////////////////////////////////////////////////
+void
+qMaster::WhereClause::_resetRestrs() {
+    _restrs.reset(new QsRestrictor::List());
+}
+
+////////////////////////////////////////////////////////////////////////
+// BoolTerm section
+////////////////////////////////////////////////////////////////////////
+std::ostream& qMaster::OrTerm::putStream(std::ostream& os) const {
+    // FIXME
+    return os;
+}
+std::ostream& qMaster::AndTerm::putStream(std::ostream& os) const {
+    // FIXME
+    return os;
+}
+std::ostream& qMaster::BoolFactor::putStream(std::ostream& os) const {
+    // FIXME
+    return os;
+}
+std::ostream& qMaster::UnknownTerm::putStream(std::ostream& os) const {
+    // FIXME
+    return os;
 }
