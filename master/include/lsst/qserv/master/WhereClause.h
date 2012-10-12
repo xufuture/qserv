@@ -46,6 +46,23 @@
 namespace lsst { namespace qserv { namespace master {
 class BoolTerm; // Forward
 
+class QsRestrictor {
+public:
+    typedef boost::shared_ptr<QsRestrictor> Ptr;
+    typedef std::list<Ptr> List;
+    typedef std::list<std::string> StringList;
+
+    class render {
+    public:
+        render(QueryTemplate& qt_) : qt(qt_) {}
+        void operator()(QsRestrictor::Ptr const& p);
+        QueryTemplate& qt;
+    };
+
+    std::string _name;
+    StringList _params;
+};
+
 class WhereClause {
 public:
     WhereClause() : _columnRefList(new ColumnRefList()) {}
@@ -59,29 +76,45 @@ private:
     friend std::ostream& operator<<(std::ostream& os, WhereClause const& wc);
     friend class WhereFactory;
 
+    void _resetRestrs();
+    
     std::string _original;
     boost::shared_ptr<ColumnRefList> _columnRefList;
     boost::shared_ptr<BoolTerm> _tree;
+    boost::shared_ptr<QsRestrictor::List> _restrs;
+
 };
 
 class BoolTerm {
 public:
     typedef boost::shared_ptr<BoolTerm> Ptr;
-    typedef std::list<BoolTerm> PtrList;
+    typedef std::list<Ptr> PtrList;
 
     friend std::ostream& operator<<(std::ostream& os, BoolTerm const& bt);
     virtual std::ostream& putStream(std::ostream& os) const = 0;
 
 };
 class OrTerm : public BoolTerm {
-public:
+public:    
+    typedef boost::shared_ptr<OrTerm> Ptr;
     virtual std::ostream& putStream(std::ostream& os) const;
     BoolTerm::PtrList _terms;
 };
 class AndTerm : public BoolTerm {
 public:
+    typedef boost::shared_ptr<AndTerm> Ptr;
     virtual std::ostream& putStream(std::ostream& os) const;
     BoolTerm::PtrList _terms;
+};
+class BoolFactor : public BoolTerm {
+public:
+    typedef boost::shared_ptr<BoolFactor> Ptr;
+    virtual std::ostream& putStream(std::ostream& os) const;
+};
+class UnknownTerm : public BoolTerm {
+public:
+    typedef boost::shared_ptr<UnknownTerm> Ptr;
+    virtual std::ostream& putStream(std::ostream& os) const;
 };
 
 }}} // namespace lsst::qserv::master
