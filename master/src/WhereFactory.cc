@@ -32,7 +32,7 @@
 // Package
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
 #include "lsst/qserv/master/parserBase.h" // Handler base classes
-//#include "lsst/qserv/master/SelectList.h" // WhereClause decl.
+#include "lsst/qserv/master/ValueExprFactory.h" 
 #include "lsst/qserv/master/WhereClause.h" 
 #include "lsst/qserv/master/BoolTermFactory.h"
 
@@ -151,8 +151,10 @@ public:
 ////////////////////////////////////////////////////////////////////////
 using qMaster::WhereClause;
 using qMaster::WhereFactory;
-WhereFactory::WhereFactory() {
-    // FIXME
+using qMaster::ValueExprFactory;
+
+WhereFactory::WhereFactory(boost::shared_ptr<ValueExprFactory> vf) 
+    : _vf(vf) {
 }
 
 boost::shared_ptr<WhereClause> WhereFactory::getProduct() {
@@ -274,14 +276,31 @@ void forEachSibs(antlr::RefAST a, F& f) {
         f(a);
     }
 }
+////////////////////////////////////////////////////////////////////////
+// BoolTermFactory::bfImport
+////////////////////////////////////////////////////////////////////////
+
+void qMaster::BoolTermFactory::bfImport::operator()(antlr::RefAST a) {
+    switch(a->getType()) {
+    case SqlSQL2TokenTypes::VALUE_EXP:
+        _bfr._terms.push_back(_bf.newValueExprTerm(a));
+        break;
+    default:
+        _bfr._terms.push_back(_bf.newPassTerm(a));
+        break;
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////
 // BoolTermFactory
 ////////////////////////////////////////////////////////////////////////
 using qMaster::BoolTermFactory;
+BoolTermFactory::BoolTermFactory(boost::shared_ptr<ValueExprFactory> vf)
+    : _vFactory(vf) {    
+}
 
 qMaster::BoolTerm::Ptr 
-qMaster::BoolTermFactory::newBoolTerm(antlr::RefAST a) {
+BoolTermFactory::newBoolTerm(antlr::RefAST a) {
     BoolTerm::Ptr b;
     antlr::RefAST child = a->getFirstChild();
     switch(a->getType()) {
@@ -322,6 +341,9 @@ BoolTermFactory::newBoolFactor(antlr::RefAST a) {
     forEachSibs(a, sp);
     std::cout << std::endl;
 
+    BoolFactor::Ptr bf(new BoolFactor());
+    bfImport bfi(*this, *bf);
+    forEachSibs(a, bfi);
     return qMaster::BoolFactor::Ptr();
 }
 qMaster::UnknownTerm::Ptr 
@@ -330,12 +352,20 @@ BoolTermFactory::newUnknown(antlr::RefAST a) {
     std::cout << "unknown term:" << qMaster::walkTreeString(a) << std::endl;
     return qMaster::UnknownTerm::Ptr();
 }
-#if 0
-qMaster::BoolTerm::Ptr newValueExpr(antlr::RefAST a) {
-    // FIXME
-    return qMaster::OrTerm::Ptr();
+
+qMaster::PassTerm::Ptr
+BoolTermFactory::newPassTerm(antlr::RefAST a) {
+    qMaster::PassTerm::Ptr p(new PassTerm());
+    p->_text = tokenText(a); // FIXME: Should this be a tree walk?
+    return p;
 }
-#endif
+
+qMaster::ValueExprTerm::Ptr
+BoolTermFactory::newValueExprTerm(antlr::RefAST a) {
+    qMaster::ValueExprTerm::Ptr p(new ValueExprTerm());
+    p->_expr = _vFactory->newExpr(a);
+    return p;
+}
 
 void 
 WhereFactory::_addOrSibs(antlr::RefAST a) {
@@ -348,7 +378,7 @@ WhereFactory::_addOrSibs(antlr::RefAST a) {
     std::cout << "Adding orsibs: " << p.result << std::endl;
     BoolTermFactory::tagPrint tp(std::cout, "addOr");
     forEachSibs(a, tp);
-    BoolTermFactory f;
+    BoolTermFactory f(_vf);
     _clause->_tree = f.newOrTerm(a);
     _clause->_original = p.result;
     // FIXME: Store template.

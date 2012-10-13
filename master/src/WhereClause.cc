@@ -68,6 +68,10 @@ qMaster::WhereClause::getGenerated() {
         std::for_each(_restrs->begin(), _restrs->end(), 
                       QsRestrictor::render(qt));
     }
+    if(_tree.get()) {
+        // FIXME: Render the tree into the query template.
+    }
+
     return qt.dbgStr();
 }
 
@@ -95,6 +99,14 @@ std::ostream& qMaster::BoolFactor::putStream(std::ostream& os) const {
     return os;
 }
 std::ostream& qMaster::UnknownTerm::putStream(std::ostream& os) const {
+    // FIXME
+    return os;
+}
+std::ostream& qMaster::PassTerm::putStream(std::ostream& os) const {
+    // FIXME
+    return os;
+}
+std::ostream& qMaster::ValueExprTerm::putStream(std::ostream& os) const {
     // FIXME
     return os;
 }

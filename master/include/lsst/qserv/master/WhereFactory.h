@@ -43,11 +43,11 @@ namespace master {
 // class ColumnRefMap;
 // class SelectListFactory;
 // class FromFactory;
-// class WhereFactory;
 // class SelectStmt;
 // class FromList;
 class SelectFactory;
 class WhereClause;
+class ValueExprFactory;
 
 class WhereFactory {
 public:
@@ -55,7 +55,8 @@ public:
     class WhereCondH;
     friend class WhereCondH;
 
-    WhereFactory();
+    WhereFactory(boost::shared_ptr<ValueExprFactory> vf);
+
     boost::shared_ptr<WhereClause> getProduct();
 private:
     void attachTo(SqlSQL2Parser& p);
@@ -65,6 +66,7 @@ private:
 
     // Fields
     boost::shared_ptr<WhereClause> _clause;
+    boost::shared_ptr<ValueExprFactory> _vf;
 };
 
 

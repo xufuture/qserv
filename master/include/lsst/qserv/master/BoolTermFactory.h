@@ -32,7 +32,8 @@
 namespace lsst { namespace qserv { namespace master {
 class BoolTermFactory {
 public:
-    BoolTermFactory() {}
+    BoolTermFactory(boost::shared_ptr<ValueExprFactory> vf);
+
     template <class Apply, class Reject>
     class applyExcept {
     public:
@@ -42,7 +43,7 @@ public:
         }
     private:
         Apply& _af;
-        Reject& _rf;        
+        Reject& _rf;
     };
     template <typename Term>
     class multiImport {
@@ -53,8 +54,17 @@ public:
         }
     private:
         BoolTermFactory& _bf;
-        Term& _t;        
+        Term& _t;
     };
+    class bfImport {
+    public:
+        bfImport(BoolTermFactory& bf, BoolFactor& bfr) : _bf(bf), _bfr(bfr)  {}
+        void operator()(antlr::RefAST a);
+    private:
+        BoolTermFactory& _bf;
+        BoolFactor& _bfr;
+    };
+
     struct tagPrint {
         tagPrint(std::ostream& os_, std::string const& tag_) 
             : os(os_), tag(tag_) {}
@@ -74,12 +84,15 @@ public:
         int count;
     };
 
-
     BoolTerm::Ptr newBoolTerm(antlr::RefAST a);
     OrTerm::Ptr newOrTerm(antlr::RefAST a);
     AndTerm::Ptr newAndTerm(antlr::RefAST a);
     BoolFactor::Ptr newBoolFactor(antlr::RefAST a);
     UnknownTerm::Ptr newUnknown(antlr::RefAST a);
+    PassTerm::Ptr newPassTerm(antlr::RefAST a);
+    ValueExprTerm::Ptr newValueExprTerm(antlr::RefAST a);
+
+    boost::shared_ptr<ValueExprFactory> _vFactory;
 };
 
 }}} // namespace lsst::qserv::master
