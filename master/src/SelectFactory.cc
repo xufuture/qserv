@@ -70,10 +70,11 @@ SelectFactory::SelectFactory()
       _tableAliases(new ParseAliasMap()),
       _columnRefMap(new ColumnRefMap()),
       _fFactory(new FromFactory(_tableAliases)),
-      _wFactory(new WhereFactory()),
       _vFactory(new ValueExprFactory(_columnRefMap)) {
+
     _slFactory.reset(new SelectListFactory(_columnAliases, _vFactory));
     _mFactory.reset(new ModFactory(_vFactory));
+    _wFactory.reset(new WhereFactory(_vFactory));
 }
 
 void
