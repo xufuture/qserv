@@ -219,7 +219,6 @@ SelectListFactory::_import(RefAST selectRoot) {
 
 void
 SelectListFactory::_addSelectColumn(RefAST expr) {
-    ValueExprPtr e(new ValueExpr());
     // Figure out what type of value expr, and create it properly.
     // std::cout << "SelectCol Type of:" << expr->getText() 
     //           << "(" << expr->getType() << ")" << std::endl;
