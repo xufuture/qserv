@@ -94,18 +94,22 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, BoolTerm const& bt);
     virtual std::ostream& putStream(std::ostream& os) const = 0;
-
+    virtual void renderTo(QueryTemplate& qt) const = 0;
+    class render;
 };
 class OrTerm : public BoolTerm {
 public:    
     typedef boost::shared_ptr<OrTerm> Ptr;
     virtual std::ostream& putStream(std::ostream& os) const;
+    virtual void renderTo(QueryTemplate& qt) const;
+    class render;
     BoolTerm::PtrList _terms;
 };
 class AndTerm : public BoolTerm {
 public:
     typedef boost::shared_ptr<AndTerm> Ptr;
     virtual std::ostream& putStream(std::ostream& os) const;
+    virtual void renderTo(QueryTemplate& qt) const;
     BoolTerm::PtrList _terms;
 };
 class BfTerm {
@@ -114,28 +118,33 @@ public:
     typedef std::list<Ptr> PtrList;
     virtual ~BfTerm() {}
     virtual std::ostream& putStream(std::ostream& os) const = 0;
+    virtual void renderTo(QueryTemplate& qt) const = 0;
 };
 class BoolFactor : public BoolTerm {
 public:
     typedef boost::shared_ptr<BoolFactor> Ptr;
     virtual std::ostream& putStream(std::ostream& os) const;
+    virtual void renderTo(QueryTemplate& qt) const;
     BfTerm::PtrList _terms;
 };
 class UnknownTerm : public BoolTerm {
 public:
     typedef boost::shared_ptr<UnknownTerm> Ptr;
     virtual std::ostream& putStream(std::ostream& os) const;
+    virtual void renderTo(QueryTemplate& qt) const;
 };
 class PassTerm : public BfTerm {
 public:
     typedef boost::shared_ptr<PassTerm> Ptr;
     virtual std::ostream& putStream(std::ostream& os) const;
+    virtual void renderTo(QueryTemplate& qt) const;
     std::string _text;
 };
 class ValueExprTerm : public BfTerm {
 public:
     typedef boost::shared_ptr<ValueExprTerm> Ptr;
     virtual std::ostream& putStream(std::ostream& os) const;
+    virtual void renderTo(QueryTemplate& qt) const;
     boost::shared_ptr<ValueExpr> _expr;
 };
 

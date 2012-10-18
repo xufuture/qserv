@@ -182,6 +182,7 @@ parserSrcs = map(lambda x: os.path.join('src', x),
                   "SelectFactory.cc",
                   "FromFactory.cc",
                   "ValueExprFactory.cc",
+                  "ValueExpr.cc",
                   "WhereFactory.cc",
                   "ModFactory.cc"])
 

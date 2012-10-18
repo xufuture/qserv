@@ -335,7 +335,6 @@ BoolTermFactory::newAndTerm(antlr::RefAST a) {
 }
 qMaster::BoolFactor::Ptr 
 BoolTermFactory::newBoolFactor(antlr::RefAST a) {
-    // FIXME
     std::cout << "bool factor:";
     spacePrint sp(std::cout);
     forEachSibs(a, sp);
@@ -344,13 +343,12 @@ BoolTermFactory::newBoolFactor(antlr::RefAST a) {
     BoolFactor::Ptr bf(new BoolFactor());
     bfImport bfi(*this, *bf);
     forEachSibs(a, bfi);
-    return qMaster::BoolFactor::Ptr();
+    return bf;
 }
 qMaster::UnknownTerm::Ptr 
 BoolTermFactory::newUnknown(antlr::RefAST a) {
-    // FIXME
     std::cout << "unknown term:" << qMaster::walkTreeString(a) << std::endl;
-    return qMaster::UnknownTerm::Ptr();
+    return qMaster::UnknownTerm::Ptr(new qMaster::UnknownTerm());
 }
 
 qMaster::PassTerm::Ptr
@@ -363,7 +361,7 @@ BoolTermFactory::newPassTerm(antlr::RefAST a) {
 qMaster::ValueExprTerm::Ptr
 BoolTermFactory::newValueExprTerm(antlr::RefAST a) {
     qMaster::ValueExprTerm::Ptr p(new ValueExprTerm());
-    p->_expr = _vFactory->newExpr(a);
+    p->_expr = _vFactory->newExpr(a->getFirstChild());
     return p;
 }
 

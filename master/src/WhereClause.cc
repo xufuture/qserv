@@ -69,7 +69,7 @@ qMaster::WhereClause::getGenerated() {
                       QsRestrictor::render(qt));
     }
     if(_tree.get()) {
-        // FIXME: Render the tree into the query template.
+        _tree->renderTo(qt);
     }
 
     return qt.dbgStr();
@@ -109,4 +109,47 @@ std::ostream& qMaster::PassTerm::putStream(std::ostream& os) const {
 std::ostream& qMaster::ValueExprTerm::putStream(std::ostream& os) const {
     // FIXME
     return os;
+}
+class qMaster::BoolTerm::render {
+public:
+    render(QueryTemplate& qt_) : qt(qt_) {}
+    void operator()(BoolTerm::Ptr const& t) {
+        t->renderTo(qt);
+    }
+    QueryTemplate& qt;
+};
+namespace {
+template <typename Plist>
+inline void renderList(qMaster::QueryTemplate& qt, 
+                       Plist const& lst, 
+                       std::string const& sep) {
+    int count=0;
+    typename Plist::const_iterator i;
+    for(i = lst.begin(); i != lst.end(); ++i) {
+        if(!sep.empty() && ++count > 1) { qt.append(sep); }
+        assert(i->get());
+        (**i).renderTo(qt);
+    }
+}
+}
+void qMaster::OrTerm::renderTo(QueryTemplate& qt) const {
+    renderList(qt, _terms, "OR");
+}
+void qMaster::AndTerm::renderTo(QueryTemplate& qt) const {
+    renderList(qt, _terms, "AND");
+}
+void qMaster::BoolFactor::renderTo(QueryTemplate& qt) const {
+    std::string s;
+    renderList(qt, _terms, s);
+}
+void qMaster::UnknownTerm::renderTo(QueryTemplate& qt) const {
+    qt.append("unknown");
+}
+void qMaster::PassTerm::renderTo(QueryTemplate& qt) const {
+    qt.append(_text);
+}
+void qMaster::ValueExprTerm::renderTo(QueryTemplate& qt) const {
+    ValueExpr::render r(qt);
+    r(_expr);
+    assert(_expr.get());
 }

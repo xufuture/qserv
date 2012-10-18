@@ -148,6 +148,14 @@ newSetFctSpec(RefAST expr, ColumnRefMap& cMap) {
     return ve;
 }
 
+boost::shared_ptr<ValueExpr> 
+newConstExpr(RefAST expr) {
+    boost::shared_ptr<ValueExpr> ve(new ValueExpr());
+    ve->_tableStar = qMaster::walkTreeString(expr);
+    ve->_type = ValueExpr::CONST;
+    return ve;
+}
+
 
 } // anonymous
 ////////////////////////////////////////////////////////////////////////
@@ -169,8 +177,11 @@ ValueExprFactory::newExpr(antlr::RefAST a) {
     case SqlSQL2TokenTypes::SET_FCT_SPEC:
         ve = newSetFctSpec(a, *_columnRefMap);
         break;
-    default: break;
+    default: 
+        ve = newConstExpr(a);
+        break;
     }
+    assert(ve.get());
     return ve;
 }
 
