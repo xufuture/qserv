@@ -54,7 +54,7 @@ typedef boost::shared_ptr<FuncExpr> FuncExprPtr;
 
 class ValueExpr {
 public:
-    enum Type { COLUMNREF, FUNCTION, AGGFUNC, STAR };
+    enum Type { COLUMNREF, FUNCTION, AGGFUNC, STAR, CONST };
 
     boost::shared_ptr<ColumnRef const> getColumnRef() const { return _columnRef; }
     boost::shared_ptr<FuncExpr> getFuncExpr() const { return _funcExpr; }
@@ -74,7 +74,7 @@ public:
     boost::shared_ptr<ColumnRef const> _columnRef;
     boost::shared_ptr<FuncExpr> _funcExpr;
     std::string _alias;
-    std::string _tableStar;
+    std::string _tableStar; // Reused as const val (no tablestar)
 };
 
 class ValueExpr::render : public std::unary_function<ValueExpr, void> {
