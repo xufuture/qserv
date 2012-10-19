@@ -32,6 +32,7 @@
 #include <list>
 
 #include "antlr/AST.hpp"
+#include "lsst/qserv/master/sqltoken.h"
 
 // Forward
 namespace antlr {
@@ -91,30 +92,12 @@ public:
 	if(!s.empty() && !result.empty()) {
 	    int last = result[result.size()-1];
 	    int next = s[0];
-	    if(shouldSeparate(lastToken, last,next)) {
+	    if(sqlShouldSeparate(lastToken, last,next)) {
 		result += " ";
 	    } 
 	}
         lastToken = s;
 	result += s;
-    }
-    bool iequal(std::string const& a, std::string const& b) {
-        if(a.size() != b.size()) return false;
-        int i;
-        int sz = a.size();
-        for(i=0; i != sz; ++i) {
-            if(std::tolower(a[i]) != std::tolower(b[i])) return false; 
-        }
-        return true;
-    }
-    bool shouldSeparate(std::string const& s, int last, int next) {
-        if(iequal(s, "where")) return true;
-	return (isalnum(last) && isalnum(next)) // adjoining alnums
-	    || ((last == '*') && isalnum(next)) // *saf
-	    || ((next == '*') && isalnum(last)) // saf*
-	    || ((last == ')') && isalnum(next)) // )asdf
-	    || ((last == '#') && isalnum(next)) // #asdf
-	    ;
     }
     std::string lastToken;
     std::string result;
