@@ -24,9 +24,13 @@
 // template, given certain parameters (e.g. chunk/subchunk).
 #include "lsst/qserv/master/QueryTemplate.h"
 #include <sstream>
+#include <iostream>
 #include "lsst/qserv/master/sqltoken.h" // sqlShouldSeparate
+#include "lsst/qserv/master/ColumnRef.h"
+#include "lsst/qserv/master/TableRef.h"
 
 namespace qMaster=lsst::qserv::master;
+using lsst::qserv::master::QueryTemplate;
 
 namespace { // File-scope helpers
 struct SpacedOutput {
@@ -40,18 +44,140 @@ struct SpacedOutput {
         os << s;
         last = s;
     }
+    void operator()(boost::shared_ptr<QueryTemplate::Entry> e) {
+        assert(e.get());
+        (*this)(e->getValue());
+    }
+
     std::ostream& os;
     std::string last;
     std::string sep;
 };
-}
 
-
-std::string qMaster::QueryTemplate::dbgStr() const {
+template <typename C>
+std::string outputString(C& c) {
     std::stringstream ss;
     SpacedOutput so(ss, " ");
-//    std::copy(_elements.begin(), _elements.end(),
-//              std::ostream_iterator<std::string>(ss, ""));
-    std::for_each(_elements.begin(), _elements.end(), so);
+    std::for_each(c.begin(), c.end(), so);
     return ss.str();
+}
+
+} // anonymous namespace
+////////////////////////////////////////////////////////////////////////
+// QueryTemplate::Entry subclasses
+////////////////////////////////////////////////////////////////////////
+class TableEntry : public qMaster::QueryTemplate::Entry {
+public:
+    TableEntry(qMaster::TableRef const& tr) 
+        : db(tr.db), table(tr.table) {
+    }
+    virtual std::string getValue() const { 
+        std::stringstream ss; 
+        if(!db.empty()) { ss << db << "."; }
+        ss << table;
+        return ss.str();
+    }
+    virtual bool getIsDynamic() const { return true; }
+
+    std::string db;
+    std::string table;
+};
+class ColumnEntry : public QueryTemplate::Entry {
+public:
+    ColumnEntry(qMaster::ColumnRef const& cr) 
+        : db(cr.db), table(cr.table), column(cr.column) {        
+    }
+    virtual std::string getValue() const { 
+        std::stringstream ss; 
+        if(!db.empty()) { ss << db << "."; }
+        if(!table.empty()) { ss << table << "."; }
+        ss << column;
+        return ss.str();
+    }
+    virtual bool getIsDynamic() const { return true; }
+
+    std::string db;
+    std::string table;
+    std::string column;
+};
+class StringEntry : public QueryTemplate::Entry {
+public:
+    StringEntry(std::string const& s_) : s(s_) {}
+    virtual std::string getValue() const { return s; } 
+    std::string s;
+};
+struct EntryMerger {
+    EntryMerger() {}
+
+    void operator()(boost::shared_ptr<QueryTemplate::Entry> e) {
+        if(!_candidates.empty()) {
+            if(!_checkMergeable(_candidates.back(), e)) {
+                _mergeCurrent();
+            }
+        }
+        _candidates.push_back(e);
+    }
+    void pack() { _mergeCurrent(); }
+    bool _checkMergeable(boost::shared_ptr<QueryTemplate::Entry> left,
+                         boost::shared_ptr<QueryTemplate::Entry> right) {
+        return !((left->getIsDynamic() || right->getIsDynamic()));
+    }
+    void _mergeCurrent() {
+        if(_candidates.size() > 1) {
+            boost::shared_ptr<QueryTemplate::Entry> e;
+            e.reset(new StringEntry(outputString(_candidates)));
+            _entries.push_back(e);
+            _candidates.clear();
+        } else if(!_candidates.empty()) {
+            // Only one entry.
+            _entries.push_back(_candidates.back());
+            _candidates.pop_back();
+        }
+    }
+    std::list<boost::shared_ptr<QueryTemplate::Entry> > _candidates;
+    std::list<boost::shared_ptr<QueryTemplate::Entry> > _entries;
+};
+// Wraps up the EntryMerger, so that for_each uses persistent state.
+struct EntryMergerWrapper {
+    EntryMergerWrapper(EntryMerger& em_) : em(em_) {}
+
+    void operator()(boost::shared_ptr<QueryTemplate::Entry> e) {
+        em(e);
+    }
+    EntryMerger& em;
+};
+
+////////////////////////////////////////////////////////////////////////
+// QueryTemplate
+////////////////////////////////////////////////////////////////////////
+std::string qMaster::QueryTemplate::dbgStr() const {
+    _optimize();
+    return outputString(_elements);
+}
+void qMaster::QueryTemplate::append(std::string const& s) {
+    _elements.push_back(s);
+    boost::shared_ptr<Entry> e(new StringEntry(s));
+    _entries.push_back(e);
+}
+void qMaster::QueryTemplate::append(qMaster::ColumnRef const& cr) {
+    boost::shared_ptr<Entry> e(new ColumnEntry(cr));
+    _entries.push_back(e);
+}
+
+void qMaster::QueryTemplate::append(qMaster::TableRef const& tr) {
+    boost::shared_ptr<Entry> e(new TableEntry(tr));
+    _entries.push_back(e);
+}
+////////////////////////////////////////////////////////////////////////
+// QueryTemplate (private)
+////////////////////////////////////////////////////////////////////////
+void qMaster::QueryTemplate::_optimize() const{
+    EntryMerger em;
+    EntryMergerWrapper emw(em);
+    std::for_each(_entries.begin(), _entries.end(), emw);
+    em.pack();
+    std::cout << "merged " << _entries.size() << " entries to "
+              << em._entries.size() << std::endl;
+    std::cout << "was: " << outputString(_elements) << std::endl;
+    std::cout << "now: " << outputString(em._entries) << std::endl;
 }

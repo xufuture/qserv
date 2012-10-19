@@ -42,17 +42,34 @@
 #define LSST_QSERV_MASTER_QUERYTEMPLATE_H
 #include <string>
 #include <list>
+#include <boost/shared_ptr.hpp>
+
 namespace lsst { namespace qserv { namespace master {
+// Forward
+class ColumnRef;
+class TableRef;
+
 class QueryTemplate {
 public:
+    class Entry {
+    public:
+        virtual ~Entry() {}
+        virtual std::string getValue() const = 0;
+        virtual bool getIsDynamic() const { return false; }
+    };
+
     QueryTemplate() {}
 
-    void append(std::string const& s) {
-        _elements.push_back(s);
-    }
+    void append(std::string const& s);
+    void append(ColumnRef const& cr);
+    void append(TableRef const& tr);
+
     std::string dbgStr() const;
+private:
+    void _optimize() const; // not really const.
     // Later, make this a list of the templatable.
     std::list<std::string> _elements; 
+    std::list<boost::shared_ptr<Entry> > _entries;
 };
 }}} // lsst::qserv::master
 #endif // LSST_QSERV_MASTER_QUERYTEMPLATE_H
