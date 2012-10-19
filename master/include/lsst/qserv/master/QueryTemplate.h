@@ -40,6 +40,8 @@
 // output, a human readable output, and a generated query.
 #ifndef LSST_QSERV_MASTER_QUERYTEMPLATE_H
 #define LSST_QSERV_MASTER_QUERYTEMPLATE_H
+#include <string>
+#include <list>
 namespace lsst { namespace qserv { namespace master {
 class QueryTemplate {
 public:

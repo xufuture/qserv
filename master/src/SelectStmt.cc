@@ -92,6 +92,15 @@ inline OS& generate(OS& os, char const label[], boost::shared_ptr<T> t) {
     }
     return os; 
 }
+template <typename T>
+inline void renderTemplate(qMaster::QueryTemplate& qt, 
+                           char const prefix[], 
+                           boost::shared_ptr<T> t) {
+    if(t.get()) { 
+        qt.append(prefix);
+        t->renderTo(qt);
+    }
+}
 }
 void qMaster::SelectStmt::_print() {
     //_selectList->getColumnRefList()->printRefs();
@@ -106,14 +115,23 @@ void qMaster::SelectStmt::_print() {
 }
 
 void qMaster::SelectStmt::_generate() {
+    QueryTemplate qt;
     //_selectList->getColumnRefList()->printRefs();
     using std::cout;
     using std::endl;
+#if 0
     generate(std::cout, "SELECT", _selectList);
     generate(std::cout, "FROM", _fromList);
-
     generate(std::cout, "WHERE", _whereClause);
     generate(std::cout, "ORDER BY", _orderBy);
     generate(std::cout, "GROUP BY", _groupBy);
     generate(std::cout, "HAVING", _having);
+#endif
+    renderTemplate(qt, "SELECT", _selectList);
+    renderTemplate(qt, "FROM", _fromList);
+    renderTemplate(qt, "WHERE", _whereClause);
+    renderTemplate(qt, "ORDER BY", _orderBy);
+    renderTemplate(qt, "GROUP BY", _groupBy);
+    renderTemplate(qt, "HAVING", _having);
+    std::cout << qt.dbgStr() << std::endl;
 }
