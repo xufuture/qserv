@@ -63,7 +63,10 @@ qMaster::operator<<(std::ostream& os, qMaster::WhereClause const& wc) {
 std::string
 qMaster::WhereClause::getGenerated() {
     QueryTemplate qt;
-    
+    renderTo(qt);
+    return qt.dbgStr();
+}
+void qMaster::WhereClause::renderTo(QueryTemplate& qt) const {
     if(_restrs.get()) {
         std::for_each(_restrs->begin(), _restrs->end(), 
                       QsRestrictor::render(qt));
@@ -71,8 +74,6 @@ qMaster::WhereClause::getGenerated() {
     if(_tree.get()) {
         _tree->renderTo(qt);
     }
-
-    return qt.dbgStr();
 }
 
 ////////////////////////////////////////////////////////////////////////

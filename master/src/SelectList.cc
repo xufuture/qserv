@@ -45,14 +45,19 @@ using lsst::qserv::master::SelectList;
 namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers
-} // anonymous namespace
+template <typename T>
+struct renderWithSep {
+    renderWithSep(qMaster::QueryTemplate& qt_, std::string const& sep_) 
+        : qt(qt_),sep(sep_),count(0) {}
+    void operator()(T const& t) {
+        if(++count > 1) qt.append(sep);
+    }
+    qMaster::QueryTemplate& qt;
+    std::string sep;
+    int count;
 
-std::string qMaster::QueryTemplate::dbgStr() const {
-    std::stringstream ss;
-    std::copy(_elements.begin(), _elements.end(),
-              std::ostream_iterator<std::string>(ss, ""));
-    return ss.str();
-}
+};
+} // anonymous namespace
 
 void
 ColumnRefList::acceptColumnRef(antlr::RefAST d, antlr::RefAST t, 
@@ -194,10 +199,15 @@ qMaster::operator<<(std::ostream& os, qMaster::SelectList const& sl) {
 std::string
 qMaster::SelectList::getGenerated() {
     QueryTemplate qt;
-    std::stringstream ss;
+    renderTo(qt);
+    return qt.dbgStr();
+}
+
+void
+qMaster::SelectList::renderTo(qMaster::QueryTemplate& qt) const {
     std::for_each(_valueExprList->begin(), _valueExprList->end(),
                   ValueExpr::render(qt));
-    return qt.dbgStr();
+
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -217,16 +227,19 @@ qMaster::operator<<(std::ostream& os, qMaster::FromList const& fl) {
 }
 
 std::string
-qMaster::FromList::getGenerated(){
+qMaster::FromList::getGenerated() {
     QueryTemplate qt;
-    std::stringstream ss;
+    renderTo(qt);
+    return qt.dbgStr();
+}
+
+void
+qMaster::FromList::renderTo(qMaster::QueryTemplate& qt) const {
     if(_tableRefns.get() && _tableRefns->size() > 0) {
         TableRefnList const& refList = *_tableRefns;
         std::for_each(refList.begin(), refList.end(), TableRefN::render(qt));
     } 
-    return qt.dbgStr();
 }
-
 ////////////////////////////////////////////////////////////////////////
 // OrderByTerm
 ////////////////////////////////////////////////////////////////////////
@@ -256,12 +269,20 @@ qMaster::operator<<(std::ostream& os, qMaster::OrderByClause const& c) {
 
 std::string
 qMaster::OrderByClause::getGenerated() {
+    QueryTemplate qt;
+    renderTo(qt);
+    return qt.dbgStr();
+}
+
+void
+qMaster::OrderByClause::renderTo(qMaster::QueryTemplate& qt) const {
     std::stringstream ss;
     if(_terms.get()) {
         std::copy(_terms->begin(), _terms->end(),
                   std::ostream_iterator<qMaster::OrderByTerm>(ss,", "));
     }
-    return ss.str();
+    qt.append(ss.str());
+    // FIXME
 }
 ////////////////////////////////////////////////////////////////////////
 // GroupByTerm
@@ -286,12 +307,19 @@ qMaster::operator<<(std::ostream& os, qMaster::GroupByClause const& c) {
 }
 std::string
 qMaster::GroupByClause::getGenerated() {
+    QueryTemplate qt;
+    renderTo(qt);
+    return qt.dbgStr();
+}
+
+void
+qMaster::GroupByClause::renderTo(qMaster::QueryTemplate& qt) const {
     std::stringstream ss;
     if(_terms.get()) {
         std::copy(_terms->begin(), _terms->end(),
               std::ostream_iterator<qMaster::GroupByTerm>(ss,", "));
     }
-    return ss.str();
+    qt.append(ss.str()); // FIXME
 }
 ////////////////////////////////////////////////////////////////////////
 // HavingClause
@@ -305,8 +333,13 @@ qMaster::operator<<(std::ostream& os, qMaster::HavingClause const& c) {
 }
 std::string
 qMaster::HavingClause::getGenerated() {
+    QueryTemplate qt;
+    renderTo(qt);
+    return qt.dbgStr();
+}
+void
+qMaster::HavingClause::renderTo(qMaster::QueryTemplate& qt) const {
     if(!_expr.empty()) {
-        return _expr;
+        qt.append(_expr);
     }
-    return std::string();
 }

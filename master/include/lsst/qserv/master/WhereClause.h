@@ -71,6 +71,7 @@ public:
         return _columnRefList;
     }
     std::string getGenerated();
+    void renderTo(QueryTemplate& qt) const;
 
 private:
     friend std::ostream& operator<<(std::ostream& os, WhereClause const& wc);

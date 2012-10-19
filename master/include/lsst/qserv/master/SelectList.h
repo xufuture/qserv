@@ -71,6 +71,7 @@ public:
     
     void dbgPrint() const;
     std::string getGenerated();
+    void renderTo(QueryTemplate& qt) const;
 
     friend class SelectListFactory;
 private:
@@ -89,6 +90,7 @@ public:
         return _columnRefList;
     }
     std::string getGenerated();
+    void renderTo(QueryTemplate& qt) const;
 
 private:
     friend std::ostream& operator<<(std::ostream& os, FromList const& fl);
@@ -130,6 +132,7 @@ public:
     ~OrderByClause() {}
 
     std::string getGenerated();
+    void renderTo(QueryTemplate& qt) const;
 
 private:
     friend std::ostream& operator<<(std::ostream& os, OrderByClause const& oc);
@@ -163,6 +166,7 @@ public:
     ~GroupByClause() {}
 
     std::string getGenerated();
+    void renderTo(QueryTemplate& qt) const;
 
 private:
     friend std::ostream& operator<<(std::ostream& os, GroupByClause const& gc);
@@ -178,6 +182,7 @@ public:
     ~HavingClause() {}
 
     std::string getGenerated();
+    void renderTo(QueryTemplate& qt) const;
 
 private:
     friend std::ostream& operator<<(std::ostream& os, HavingClause const& h);
