@@ -45,26 +45,14 @@
 namespace lsst { namespace qserv { namespace master {
 class QueryTemplate {
 public:
-    QueryTemplate(std::string const& delim=std::string()) 
-        : _delim(delim) {}
+    QueryTemplate() {}
+
     void append(std::string const& s) {
-        if(!_elements.empty() && !_delim.empty()) { 
-            _elements.push_back(_delim); }
         _elements.push_back(s);
     }
     std::string dbgStr() const;
-    std::string const& getDelim() const { return _delim; }
-    void setDelim(std::string const& delim) { _delim = delim; }
-    void pushDelim(std::string const& s=std::string()) {
-        _delims.push_back(_delim); 
-        _delim = s; }
-    void popDelim() { 
-        _delim = _delims.back(); 
-        _delims.pop_back(); }
     // Later, make this a list of the templatable.
     std::list<std::string> _elements; 
-    std::list<std::string> _delims; 
-    std::string _delim;
 };
 }}} // lsst::qserv::master
 #endif // LSST_QSERV_MASTER_QUERYTEMPLATE_H

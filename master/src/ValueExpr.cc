@@ -42,9 +42,7 @@ std::ostream& output(std::ostream& os, qMaster::ValueExprList const& vel) {
 }
 
 void renderList(qMaster::QueryTemplate& qt, qMaster::ValueExprList const& vel) {
-    qt.pushDelim();
     std::for_each(vel.begin(), vel.end(), ValueExpr::render(qt));
-    qt.popDelim();
 }
 
 }
@@ -56,11 +54,9 @@ std::ostream& qMaster::operator<<(std::ostream& os, qMaster::ColumnRef const* cr
     return os << *cr;
 }
 void qMaster::ColumnRef::render(QueryTemplate& qt) const {
-    qt.pushDelim();
     if(!db.empty()) { qt.append(db); qt.append("."); }
     if(!table.empty()) {qt.append(table); qt.append("."); }
     qt.append(column);
-    qt.popDelim();
 }
 
 std::ostream& qMaster::operator<<(std::ostream& os, FuncExpr const& fe) {
@@ -74,12 +70,10 @@ std::ostream& qMaster::operator<<(std::ostream& os, FuncExpr const* fe) {
 }
 
 void qMaster::FuncExpr::render(qMaster::QueryTemplate& qt) const {
-    qt.pushDelim();
     qt.append(name); 
     qt.append("(");
     renderList(qt, params);
     qt.append(")");
-    qt.popDelim();
 }
 
 
@@ -152,7 +146,5 @@ void qMaster::ValueExpr::render::operator()(qMaster::ValueExpr const& ve) {
     default: break;
     }
     if(!ve._alias.empty()) { _qt.append("AS"); _qt.append(ve._alias); }
-    _qt.pushDelim();
-    _qt.popDelim();
 }
 
