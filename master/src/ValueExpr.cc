@@ -54,9 +54,12 @@ std::ostream& qMaster::operator<<(std::ostream& os, qMaster::ColumnRef const* cr
     return os << *cr;
 }
 void qMaster::ColumnRef::render(QueryTemplate& qt) const {
+#if 0
     if(!db.empty()) { qt.append(db); qt.append("."); }
     if(!table.empty()) {qt.append(table); qt.append("."); }
     qt.append(column);
+#endif
+    qt.append(*this);
 }
 
 std::ostream& qMaster::operator<<(std::ostream& os, FuncExpr const& fe) {
@@ -138,9 +141,11 @@ void qMaster::ValueExpr::render::operator()(qMaster::ValueExpr const& ve) {
     case ValueExpr::FUNCTION: ve._funcExpr->render(_qt); break;
     case ValueExpr::AGGFUNC: ve._funcExpr->render(_qt); break;
     case ValueExpr::STAR: 
-        if(!ve._tableStar.empty()) ss << ve._tableStar << ".";
-        ss << "*"; 
-        _qt.append(ss.str());
+        if(!ve._tableStar.empty()) {
+            _qt.append(ColumnRef("",ve._tableStar, "*"));
+        } else {
+            _qt.append("*");
+        }
         break;
     case ValueExpr::CONST: _qt.append(ve._tableStar); break;
     default: break;

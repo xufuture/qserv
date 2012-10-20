@@ -27,7 +27,7 @@
 #include <iostream>
 #include "lsst/qserv/master/sqltoken.h" // sqlShouldSeparate
 #include "lsst/qserv/master/ColumnRef.h"
-#include "lsst/qserv/master/TableRef.h"
+#include "lsst/qserv/master/TableRefN.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::QueryTemplate;
@@ -68,8 +68,8 @@ std::string outputString(C& c) {
 ////////////////////////////////////////////////////////////////////////
 class TableEntry : public qMaster::QueryTemplate::Entry {
 public:
-    TableEntry(qMaster::TableRef const& tr) 
-        : db(tr.db), table(tr.table) {
+    TableEntry(qMaster::TableRefN const& tr) 
+        : db(tr.getDb()), table(tr.getTable()) {
     }
     virtual std::string getValue() const { 
         std::stringstream ss; 
@@ -162,11 +162,13 @@ void qMaster::QueryTemplate::append(std::string const& s) {
 void qMaster::QueryTemplate::append(qMaster::ColumnRef const& cr) {
     boost::shared_ptr<Entry> e(new ColumnEntry(cr));
     _entries.push_back(e);
+    _elements.push_back(e->getValue()); // old
 }
 
-void qMaster::QueryTemplate::append(qMaster::TableRef const& tr) {
+void qMaster::QueryTemplate::append(qMaster::TableRefN const& tr) {
     boost::shared_ptr<Entry> e(new TableEntry(tr));
     _entries.push_back(e);
+    _elements.push_back(e->getValue()); // old
 }
 ////////////////////////////////////////////////////////////////////////
 // QueryTemplate (private)
