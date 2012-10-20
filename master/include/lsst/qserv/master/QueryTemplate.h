@@ -47,7 +47,7 @@
 namespace lsst { namespace qserv { namespace master {
 // Forward
 class ColumnRef;
-class TableRef;
+class TableRefN;
 
 class QueryTemplate {
 public:
@@ -62,7 +62,7 @@ public:
 
     void append(std::string const& s);
     void append(ColumnRef const& cr);
-    void append(TableRef const& tr);
+    void append(TableRefN const& tr);
 
     std::string dbgStr() const;
 private:

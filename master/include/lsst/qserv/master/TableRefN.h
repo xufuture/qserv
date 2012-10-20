@@ -46,15 +46,6 @@ public:
     class render;
 protected:
     TableRefN(std::string const& alias_) : alias(alias_) {}
-    inline void _putTable(QueryTemplate& qt,
-                         std::string const& db, 
-                         std::string const& table) const {
-        if(!db.empty()) { 
-            qt.append(db);
-            qt.append(".");
-        } 
-        qt.append(table);
-    }
     inline void _putAlias(QueryTemplate& qt) const {
         if(!alias.empty()) { 
             qt.append("AS"); 
@@ -94,7 +85,7 @@ public:
         return os;
     }
     virtual void putTemplate(QueryTemplate& qt) const {
-        _putTable(qt, db, table);
+        qt.append(*this);
         _putAlias(qt);
     }
 protected:
@@ -135,9 +126,10 @@ public:
         return os;
     }
     virtual void putTemplate(QueryTemplate& qt) const {
-        _putTable(qt, db1, table1);
+        // FIXME: need to pass Join decorator into template.
+        qt.append(SimpleTableN(db1, table1, ""));
         qt.append("JOIN");
-        _putTable(qt, db2, table2);
+        qt.append(SimpleTableN(db2, table2, ""));
         _putAlias(qt);
     }
 protected:
