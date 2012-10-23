@@ -127,7 +127,7 @@ struct ParserFixture {
     SelectParser::Ptr getParser(std::string const& stmt, 
                                 std::map<std::string,std::string> const& cfg) {
         SelectParser::Ptr p;
-        p = SelectParser::newInstance(stmt, delimiter, cfg);
+        p = SelectParser::newInstance(stmt);
         p->setup();
         return p;
     }

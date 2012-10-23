@@ -29,6 +29,7 @@
 #include "lsst/qserv/master/xrootd.h"
 #include "lsst/qserv/master/SessionManager.h"
 #include "lsst/qserv/master/AsyncQueryManager.h"
+#include "lsst/qserv/master/QuerySession.h"
 #include "lsst/qserv/QservPath.hh"
 
 namespace qMaster = lsst::qserv::master;
@@ -197,6 +198,21 @@ void qMaster::resumeReadTrans(int session) {
     AsyncQueryManager& qm = getAsyncManager(session);
     qm.resumeReadTrans();
 }
+
+void qMaster::setupQuery(int session, std::string const& query) {
+    
+    // FIXME
+    AsyncQueryManager& qm = getAsyncManager(session);
+    QuerySession& qs = qm.getQuerySession();
+    qs.setQuery(query);
+}
+
+std::string const& qMaster::getSessionError(int session) {
+    static const std::string empty;
+    // FIXME
+    return empty;
+}
+
 
 qMaster::QueryState qMaster::joinSession(int session) {
     AsyncQueryManager& qm = getAsyncManager(session);

@@ -178,8 +178,10 @@ void qMaster::QueryTemplate::_optimize() const{
     EntryMergerWrapper emw(em);
     std::for_each(_entries.begin(), _entries.end(), emw);
     em.pack();
+#if 0 // Debugging.
     std::cout << "merged " << _entries.size() << " entries to "
               << em._entries.size() << std::endl;
     std::cout << "was: " << outputString(_elements) << std::endl;
     std::cout << "now: " << outputString(em._entries) << std::endl;
+#endif
 }

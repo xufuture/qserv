@@ -78,6 +78,7 @@ from lsst.qserv.master import TransactionSpec
 
 # Dispatcher 
 from lsst.qserv.master import newSession, discardSession
+from lsst.qserv.master import setupQuery, getSessionError
 from lsst.qserv.master import submitQuery, submitQueryMsg
 from lsst.qserv.master import initDispatcher
 from lsst.qserv.master import tryJoinQuery, joinSession
@@ -729,6 +730,8 @@ class HintedQueryAction:
         # Config preparation
         qConfig = self._prepareCppConfig(self._dbContext, hints)
         self._sessionId = newSession(qConfig)
+        setupQuery(self._sessionId, query, cfg) # new parser
+        assert not getSessionError(self._sessionId)
         cModule = lsst.qserv.master.config
         cf = cModule.config.get("partitioner", "emptyChunkListFile")
         self._emptyChunks = self._loadEmptyChunks(cf)
