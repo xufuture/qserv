@@ -50,6 +50,7 @@ class TableMergerConfig;
 class XrdTransResult;
 class TransactionSpec;
 class PacketIter;
+class QuerySession;
 
 //////////////////////////////////////////////////////////////////////
 // class AsyncQueryManager 
@@ -97,6 +98,9 @@ public:
     void resumeReadTrans();
     lsst::qserv::common::WorkQueue& getReadQueue() { return *_readQueue; }
     lsst::qserv::common::WorkQueue& getWriteQueue() { return *_writeQueue; }
+    
+    QuerySession& getQuerySession() { return *_qSession; }
+
 private:
     // QuerySpec: ChunkQuery object + result name
     typedef std::pair<boost::shared_ptr<ChunkQuery>, std::string> QuerySpec;
@@ -145,6 +149,7 @@ private:
     boost::shared_ptr<TableMerger> _merger;
     boost::shared_ptr<lsst::qserv::common::WorkQueue> _readQueue;
     boost::shared_ptr<lsst::qserv::common::WorkQueue> _writeQueue;
+    boost::shared_ptr<QuerySession> _qSession;
 };
 }}} // lsst::qserv::master namespace
 

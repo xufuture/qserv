@@ -34,6 +34,7 @@
 #include "lsst/qserv/master/ChunkQuery.h"
 #include "lsst/qserv/master/TableMerger.h"
 #include "lsst/qserv/master/Timer.h"
+#include "lsst/qserv/master/QuerySession.h"
 #include "lsst/qserv/common/WorkQueue.h"
 #include "lsst/qserv/master/PacketIter.h"
 
@@ -330,6 +331,8 @@ void qMaster::AsyncQueryManager::_readConfig(std::map<std::string,
                   << std::endl;
         _xrootdHostPort = "lsst-dev01:1094";
     }
+    // Setup session
+    _qSession.reset(new QuerySession());
 }
 
 void qMaster::AsyncQueryManager::_addNewResult(PacIterPtr pacIter,

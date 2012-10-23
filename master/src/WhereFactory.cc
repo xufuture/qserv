@@ -335,11 +335,12 @@ BoolTermFactory::newAndTerm(antlr::RefAST a) {
 }
 qMaster::BoolFactor::Ptr 
 BoolTermFactory::newBoolFactor(antlr::RefAST a) {
+#if 0
     std::cout << "bool factor:";
     spacePrint sp(std::cout);
     forEachSibs(a, sp);
     std::cout << std::endl;
-
+#endif
     BoolFactor::Ptr bf(new BoolFactor());
     bfImport bfi(*this, *bf);
     forEachSibs(a, bfi);

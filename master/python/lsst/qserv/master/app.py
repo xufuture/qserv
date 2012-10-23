@@ -78,6 +78,7 @@ from lsst.qserv.master import TransactionSpec
 
 # Dispatcher 
 from lsst.qserv.master import newSession, discardSession
+from lsst.qserv.master import setupQuery, getSessionError
 from lsst.qserv.master import submitQuery, submitQueryMsg
 from lsst.qserv.master import initDispatcher
 from lsst.qserv.master import tryJoinQuery, joinSession, getQueryStateString
@@ -705,6 +706,8 @@ class HintedQueryAction:
         # Config preparation
         qConfig = self._prepareCppConfig(self._dbContext, hints)
         self._sessionId = newSession(qConfig)
+        setupQuery(self._sessionId, query, cfg) # new parser
+        assert not getSessionError(self._sessionId)
         cModule = lsst.qserv.master.config
         cf = cModule.config.get("partitioner", "emptyChunkListFile")
         cfgLimit = int(cModule.config.get("debug", "chunkLimit"))
@@ -713,7 +716,7 @@ class HintedQueryAction:
             print "Using debugging chunklimit:",cfgLimit
         useMemory = cModule.config.get("tuning", "memoryEngine")
 
-        self._emptyChunks = self._loadEmptyChunks(cf)        
+        self._emptyChunks = self._loadEmptyChunks(cf)
 
         # Table mapping 
         try:

@@ -26,6 +26,7 @@
 #ifndef LSST_QSERV_MASTER_DISPATCHER_H
 #define LSST_QSERV_MASTER_DISPATCHER_H
 
+#include "lsst/qserv/master/common.h"
 #include "lsst/qserv/master/transaction.h" 
 #include "lsst/qserv/master/xrdfile.h"
 #include "lsst/qserv/master/TableMerger.h"
@@ -47,6 +48,14 @@ int submitQuery(int session, lsst::qserv::master::TransactionSpec const& s,
 		std::string const& resultName=std::string());
 void pauseReadTrans(int session);
 void resumeReadTrans(int session);
+
+// Parser model 3:
+void setupQuery(int session, std::string const& query); // new model.
+std::string const& getSessionError(int session);
+std::vector<lsst::qserv::master::Constraint> getConstraints(int session);
+void addChunk(int session, lsst::qserv::master::ChunkSpec const& cs );
+
+
 QueryState joinQuery(int session, int id);
 QueryState tryJoinQuery(int session, int id);
 QueryState joinSession(int session);

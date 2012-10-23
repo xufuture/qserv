@@ -33,6 +33,7 @@
 #include <list>
 #include <sstream>
 
+#include <boost/shared_ptr.hpp>
 // package
 #include "lsst/qserv/master/common.h"
 # if 0
@@ -72,9 +73,7 @@ public:
     typedef boost::shared_ptr<SelectParser> Ptr;
 
     // From SqlParseRunner (interface)
-    static Ptr newInstance(std::string const& statement, 
-                           std::string const& delimiter,
-                           StringMap const& config);
+    static Ptr newInstance(std::string const& statement);
 
     // (Deprecated) Pass in a list of allowed names
     void setup();
@@ -115,13 +114,10 @@ public:
 #endif
 private:
     // Setup and construction
-    SelectParser(std::string const& statement, 
-                   std::string const& delimiter,
-                   StringMap const& config);
+    SelectParser(std::string const& statement);
     // Init
-    void _readConfig(StringMap const& m);
+    //void _readConfig(StringMap const& m);
     // Post-parse
-    void _import();
 
     std::string const _statement;
     boost::shared_ptr<SelectStmt> _selectStmt;    

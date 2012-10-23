@@ -23,6 +23,7 @@
 #ifndef LSST_QSERV_MASTER_TRANSACTION_H
 #define LSST_QSERV_MASTER_TRANSACTION_H
 #include <string>
+#include <vector>
 
 namespace lsst {
 namespace qserv {
@@ -32,7 +33,6 @@ namespace master {
 /// specification of a subquery, as far as the xrootd layer is
 /// concerned.
 class TransactionSpec {
-
 public:
  TransactionSpec() : chunkId(-1) {}
     int chunkId;
@@ -45,6 +45,20 @@ public:
     
     class Reader;  // defined in thread.h
 };
+
+class Constraint {
+public:
+    std::string name;
+    std::vector<std::string> params;
+};
+typedef std::vector<Constraint> ConstraintVector;
+
+class ChunkSpec {
+public:
+    int chunk;
+    std::vector<int> subChunks;
+};
+typedef std::vector<ChunkSpec> ChunkSpecVector;
 
 }}} // namespace lsst::qserv::master
 
