@@ -36,6 +36,7 @@ class QuerySession {
 public:
     friend class AsyncQueryManager; // factory for QuerySession.
     void setQuery(std::string const& q);
+    bool getHasAggregate() const;
     ConstraintVector getConstraints() const;
     void addChunk(ChunkSpec const& cs);
 private:
