@@ -1,6 +1,7 @@
+// -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2012 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -19,47 +20,24 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
+// ChunkQuerySpec is an value class that contains information pertinent to
+// executing a chunk query. 
 
-#ifndef LSST_QSERV_MASTER_TRANSACTION_H
-#define LSST_QSERV_MASTER_TRANSACTION_H
+#ifndef LSST_QSERV_MASTER_CHUNKQUERYSPEC_H
+#define LSST_QSERV_MASTER_CHUNKQUERYSPEC_H
 #include <string>
 #include <vector>
-
-namespace lsst {
-namespace qserv {
-namespace master {
-
-/// class TransactionSpec - A value class for the minimum
-/// specification of a subquery, as far as the xrootd layer is
-/// concerned.
-class TransactionSpec {
+namespace lsst { namespace qserv { namespace master {
+// This is pretty tentative.
+class ChunkQuerySpec {
 public:
- TransactionSpec() : chunkId(-1) {}
-    int chunkId;
-    std::string path;
     std::string query;
-    int bufferSize;
-    std::string savePath;
-    
-    bool isNull() const { return path.length() == 0; }
-    
-    class Reader;  // defined in thread.h
-};
-
-class Constraint {
-public:
-    std::string name;
-    std::vector<std::string> params;
-};
-typedef std::vector<Constraint> ConstraintVector;
-
-class ChunkSpec {
-public:
+    std::string db;
     int chunkId;
     std::vector<int> subChunks;
 };
-typedef std::vector<ChunkSpec> ChunkSpecVector;
-
 }}} // namespace lsst::qserv::master
 
-#endif // LSST_QSERV_MASTER_TRANSACTION_H
+
+#endif // LSST_QSERV_MASTER_CHUNKQUERYSPEC_H
+

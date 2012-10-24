@@ -26,21 +26,77 @@
 
 #ifndef LSST_QSERV_MASTER_QUERYSESSION_H
 #define LSST_QSERV_MASTER_QUERYSESSION_H
+#include <list>
 #include <string>
+#include <boost/iterator/iterator_facade.hpp>
+#include <boost/shared_ptr.hpp>
+
 #include "lsst/qserv/master/transaction.h"
+#include "lsst/qserv/master/ChunkQuerySpec.h"
 
 namespace lsst { namespace qserv { namespace master {
-
+class SelectStmt; // forward
 
 class QuerySession {
 public:
+    class Iter;
+    friend class Iter;
     friend class AsyncQueryManager; // factory for QuerySession.
+
     void setQuery(std::string const& q);
     bool getHasAggregate() const;
     ConstraintVector getConstraints() const;
     void addChunk(ChunkSpec const& cs);
+    
+    SelectStmt const& getStmt() const { return *_stmt; }
+    // Iteration
+    Iter cQueryBegin();
+    Iter cQueryEnd();
+    
+    // For test harnesses.
+    struct Test { int cfgNum; };
+    explicit QuerySession(Test const& t) {}
 private:
+    typedef std::list<ChunkSpec> ChunkSpecList;
+
     QuerySession();
+    
+    boost::shared_ptr<SelectStmt> _stmt;
+    ChunkSpecList _chunks;
+};
+
+
+class QuerySession::Iter : public boost::iterator_facade <
+    QuerySession::Iter, ChunkQuerySpec, boost::forward_traversal_tag> {
+public:
+    Iter() : _qs(NULL) {}
+
+private:
+    Iter(QuerySession& qs, ChunkSpecList::iterator i) 
+        : _qs(&qs), _pos(i), _dirty(false) {}
+    friend class QuerySession;
+    friend class boost::iterator_core_access;
+
+    void increment() { ++_pos; _dirty = true; }
+
+    bool equal(Iter const& other) const {
+        return (this->_qs == other._qs) && (this->_pos == other._pos);
+    }
+
+    ChunkQuerySpec& dereference() const;
+
+    void _buildCache() const;
+    void _updateCache() const {
+        if(_dirty) {
+            _buildCache();
+            _dirty = false;
+        }
+    }
+
+    QuerySession* _qs;
+    ChunkSpecList::const_iterator _pos;
+    mutable ChunkQuerySpec _cache;
+    mutable bool _dirty;
 };
 
 }}} // namespace lsst::qserv::master

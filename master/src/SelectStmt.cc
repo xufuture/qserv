@@ -112,6 +112,7 @@ void qMaster::SelectStmt::_print() {
     print(std::cout, "orderby", _orderBy);
     print(std::cout, "groupby", _groupBy);
     print(std::cout, "having", _having);
+    if(_limit != -1) { std::cout << " LIMIT " << _limit; }
 }
 
 void qMaster::SelectStmt::_generate() {
@@ -133,5 +134,11 @@ void qMaster::SelectStmt::_generate() {
     renderTemplate(qt, "ORDER BY", _orderBy);
     renderTemplate(qt, "GROUP BY", _groupBy);
     renderTemplate(qt, "HAVING", _having);
+    if(_limit != -1) { 
+        std::stringstream ss;
+        ss << _limit;
+        qt.append("LIMIT");
+        qt.append(ss.str());
+    }
     std::cout << qt.dbgStr() << std::endl;
 }
