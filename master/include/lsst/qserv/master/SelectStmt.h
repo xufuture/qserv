@@ -59,6 +59,8 @@ public:
 
     void diagnose(); // for debugging
 
+    boost::shared_ptr<WhereClause const> getWhere() const;
+
 // private: // public for now.
     // Declarations
     friend class SelectFactory;
