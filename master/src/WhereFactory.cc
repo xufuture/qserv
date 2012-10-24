@@ -177,26 +177,18 @@ WhereFactory::_import(antlr::RefAST a) {
     assert(a->getType() == SqlSQL2TokenTypes::SQL2RW_where);
     RefAST first = a->getFirstChild();
     assert(first.get());
-    switch(first->getType()) {
-    case SqlSQL2TokenTypes::QSERV_FCT_SPEC:
-        while(first->getType() == SqlSQL2TokenTypes::QSERV_FCT_SPEC) {
-            _addQservRestrictor(first->getFirstChild());
+    while(first.get() 
+          && (first->getType() == SqlSQL2TokenTypes::QSERV_FCT_SPEC)) {
+        _addQservRestrictor(first->getFirstChild());
+        first = first->getNextSibling();
+        if(first.get() && (first->getType() == SqlSQL2TokenTypes::SQL2RW_and)) {
             first = first->getNextSibling();
-            if(first.get() 
-               && (first->getType() == SqlSQL2TokenTypes::SQL2RW_and)) {
-                first = first->getNextSibling();
-                assert(first.get());
-            } else { break; }
         }
-        _addOrSibs(first->getFirstChild());
-        break;
-    case SqlSQL2TokenTypes::OR_OP:
-        _addOrSibs(first->getFirstChild());
-        break;
-    default:
-        break;
     }
-    // FIXME: walk the tree and add elements.
+    if(first.get() 
+       && (first->getType() == SqlSQL2TokenTypes::OR_OP)) {
+        _addOrSibs(first->getFirstChild());
+    }
 }
 void 
 WhereFactory::_addQservRestrictor(antlr::RefAST a) {
