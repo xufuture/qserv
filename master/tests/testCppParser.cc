@@ -29,12 +29,17 @@
 #include "lsst/qserv/master/ChunkMeta.h"
 #include "lsst/qserv/master/SqlParseRunner.h"
 #include "lsst/qserv/master/SelectParser.h"
+#include "lsst/qserv/master/transaction.h"
+#include "lsst/qserv/master/QuerySession.h"
 
 using lsst::qserv::master::ChunkMapping;
 using lsst::qserv::master::ChunkMeta;
+using lsst::qserv::master::ChunkSpec;
+using lsst::qserv::master::QuerySession;
 using lsst::qserv::master::SqlSubstitution;
 using lsst::qserv::master::SqlParseRunner;
 using lsst::qserv::master::SelectParser;
+using lsst::qserv::master::SelectStmt;
 
 namespace test = boost::test_tools;
 
@@ -105,6 +110,7 @@ struct ParserFixture {
         config["table.alloweddbs"] = "LSST";
         config["table.partitioncols"] = "Object:ra_Test,decl_Test,objectIdObjTest;"
             "Source:raObjectTest,declObjectTest,objectIdSourceTest";
+        qsTest.cfgNum = 0;
 
     };
     ~ParserFixture(void) { };
@@ -131,6 +137,17 @@ struct ParserFixture {
         p->setup();
         return p;
     }
+    ChunkSpec makeChunkSpec(int chunkNum, bool withSubChunks=false) {
+        ChunkSpec cs;
+        cs.chunkId = chunkNum;
+        if(withSubChunks) {
+            int base = 1000 * chunkNum;
+            cs.subChunks.push_back(base);
+            cs.subChunks.push_back(base+10);
+            cs.subChunks.push_back(base+20);
+        }
+        return cs;
+    }
 
     ChunkMapping cMapping;
     ChunkMeta cMeta;
@@ -139,6 +156,8 @@ struct ParserFixture {
     std::map<std::string, std::string> config;
     std::map<std::string, int> whiteList;
     std::string defaultDb;
+
+    QuerySession::Test qsTest;
 };
 
 
@@ -555,6 +574,21 @@ BOOST_AUTO_TEST_CASE(Mods) {
         
     }
  }
+BOOST_AUTO_TEST_CASE(CountNew) {
+    std::string stmt = "SELECT count(*) from Source where qserv_areaspec_box(0,0,1,1);";
+    QuerySession qs(qsTest);
+    qs.setQuery(stmt);
+    qs.getConstraints();
+    SelectStmt const& stmt2 = qs.getStmt();
+    qs.addChunk(makeChunkSpec(100));
+    qs.addChunk(makeChunkSpec(101));
+    QuerySession::Iter i;
+    QuerySession::Iter e = qs.cQueryEnd();
+    for(i = qs.cQueryBegin(); i != e; ++i) {        
+    }
+    
+}
+ 
 
 BOOST_AUTO_TEST_SUITE_END()
 ////////////////////////////////////////////////////////////////////////

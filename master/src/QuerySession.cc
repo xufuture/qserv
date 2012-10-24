@@ -50,6 +50,7 @@ void QuerySession::setQuery(std::string const& q) {
     SelectParser::Ptr p;
     p = SelectParser::newInstance(q);
     p->setup();
+    _stmt = p->getSelectStmt();
     // Perform parse.
     //testParse2(p);    
     // Set error on parse problem; Query manager will check.
@@ -72,5 +73,28 @@ qMaster::ConstraintVector QuerySession::getConstraints() const {
 }
 
 void QuerySession::addChunk(qMaster::ChunkSpec const& cs) {
-    // FIXME
+    _chunks.push_back(cs);
+}
+QuerySession::Iter QuerySession::cQueryBegin() {
+    return Iter(*this, _chunks.begin());
+}
+QuerySession::Iter QuerySession::cQueryEnd() {
+    return Iter(*this, _chunks.end());
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// QuerySession::Iter
+////////////////////////////////////////////////////////////////////////
+qMaster::ChunkQuerySpec& QuerySession::Iter::dereference() const {
+    if(_dirty) { _updateCache(); }
+    return _cache;
+}
+
+void QuerySession::Iter::_buildCache() const {
+    assert(_qs != NULL);
+    _cache.db = "FIXME"; // _qs->_db;
+    _cache.query = "QUERYFIXME"; // _qs._templateQuery();
+    _cache.chunkId = _pos->chunkId;
+    _cache.subChunks.assign(_pos->subChunks.begin(), _pos->subChunks.end());
 }
