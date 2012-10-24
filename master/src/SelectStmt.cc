@@ -74,6 +74,10 @@ void qMaster::SelectStmt::diagnose() {
     
 }
 
+boost::shared_ptr<qMaster::WhereClause const> 
+qMaster::SelectStmt::getWhere() const {
+    return _whereClause;
+}
 ////////////////////////////////////////////////////////////////////////
 // class SelectStmt (private)
 ////////////////////////////////////////////////////////////////////////

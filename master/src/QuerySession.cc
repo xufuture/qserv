@@ -23,11 +23,29 @@
 // QuerySession, which is a container for input query state (and
 // related state available prior to execution.
 #include "lsst/qserv/master/QuerySession.h"
+
+#include <algorithm>
 #include "lsst/qserv/master/SelectParser.h"
+#include "lsst/qserv/master/SelectStmt.h"
+#include "lsst/qserv/master/WhereClause.h"
+
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::QuerySession;
 
 namespace { // File-scope helpers
+struct printConstraintHelper {
+    printConstraintHelper(std::ostream& os_) : os(os_) {}
+    void operator()(qMaster::Constraint const& c) {
+        os << "Constraint " << c.name << " ";
+        std::copy(c.params.begin(), c.params.end(), 
+                  std::ostream_iterator<std::string>(os, ","));
+        os << "[" << c.params.size() << "]";
+    }
+    std::ostream& os;
+};
+void printConstraints(qMaster::ConstraintVector const& cv) {
+    std::for_each(cv.begin(), cv.end(), printConstraintHelper(std::cout));
+}
 void build(qMaster::SelectParser::Ptr p) {
     // Perform parse
 
@@ -68,6 +86,26 @@ bool QuerySession::getHasAggregate() const {
     return false;
 }
 qMaster::ConstraintVector QuerySession::getConstraints() const {
+    boost::shared_ptr<WhereClause const> wc = _stmt->getWhere();
+    boost::shared_ptr<QsRestrictor::List const> p = wc->getRestrs();
+    if(p.get()) {
+        ConstraintVector cv(p->size());
+        int i=0;
+        QsRestrictor::List::const_iterator li;
+        for(li = p->begin(); li != p->end(); ++li) {
+            Constraint c;
+            QsRestrictor const& r = **li;
+            c.name = r._name;
+            StringList::const_iterator si;
+            for(si = r._params.begin(); si != r._params.end(); ++si) {
+                c.params.push_back(*si);
+            }
+            cv[i] = c;
+            ++i;
+        }
+        printConstraints(cv);
+        return cv;
+    }
     // FIXME
     return ConstraintVector();
 }

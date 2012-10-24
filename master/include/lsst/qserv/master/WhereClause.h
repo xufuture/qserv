@@ -70,6 +70,10 @@ public:
     boost::shared_ptr<ColumnRefList> getColumnRefList() {
         return _columnRefList;
     }
+    boost::shared_ptr<QsRestrictor::List const> getRestrs() const {
+        return _restrs;
+    }
+
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
 
