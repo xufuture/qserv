@@ -61,7 +61,15 @@ std::string outputString(C& c) {
     std::for_each(c.begin(), c.end(), so);
     return ss.str();
 }
-
+struct MappingWrapper {
+    MappingWrapper(QueryTemplate::EntryMapping const& em_, QueryTemplate& qt_) 
+        : em(em_), qt(qt_) {}
+    void operator()(boost::shared_ptr<QueryTemplate::Entry> e) {
+            qt.append(em.mapEntry(*e));
+        }
+    QueryTemplate::EntryMapping const& em;
+    QueryTemplate& qt;
+};
 } // anonymous namespace
 ////////////////////////////////////////////////////////////////////////
 // QueryTemplate::Entry subclasses
@@ -151,29 +159,34 @@ struct EntryMergerWrapper {
 // QueryTemplate
 ////////////////////////////////////////////////////////////////////////
 std::string qMaster::QueryTemplate::dbgStr() const {
-    _optimize();
-    return outputString(_elements);
+    _optimize(); // FIXME: needs to be moved to the right place
+    return outputString(_entries);
 }
 void qMaster::QueryTemplate::append(std::string const& s) {
-    _elements.push_back(s);
     boost::shared_ptr<Entry> e(new StringEntry(s));
     _entries.push_back(e);
 }
 void qMaster::QueryTemplate::append(qMaster::ColumnRef const& cr) {
     boost::shared_ptr<Entry> e(new ColumnEntry(cr));
     _entries.push_back(e);
-    _elements.push_back(e->getValue()); // old
 }
 
 void qMaster::QueryTemplate::append(qMaster::TableRefN const& tr) {
     boost::shared_ptr<Entry> e(new TableEntry(tr));
     _entries.push_back(e);
-    _elements.push_back(e->getValue()); // old
+}
+void qMaster::QueryTemplate::append(boost::shared_ptr<QueryTemplate::Entry> e) {
+    _entries.push_back(e);
+}
+std::string qMaster::QueryTemplate::generate(EntryMapping const& em) {
+    QueryTemplate newQt;
+    std::for_each(_entries.begin(), _entries.end(), MappingWrapper(em, newQt));
+    return outputString(newQt._entries);
 }
 ////////////////////////////////////////////////////////////////////////
 // QueryTemplate (private)
 ////////////////////////////////////////////////////////////////////////
-void qMaster::QueryTemplate::_optimize() const{
+void qMaster::QueryTemplate::_optimize() const {
     EntryMerger em;
     EntryMergerWrapper emw(em);
     std::for_each(_entries.begin(), _entries.end(), emw);

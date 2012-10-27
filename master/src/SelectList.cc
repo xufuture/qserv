@@ -34,6 +34,7 @@
 #include "lsst/qserv/master/SelectList.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include <iterator>
+#include <boost/make_shared.hpp>
 
 #include "SqlSQL2TokenTypes.hpp" // For ANTLR typing.
 
@@ -42,6 +43,10 @@ using lsst::qserv::master::ColumnRefList;
 using lsst::qserv::master::ValueExpr;
 using lsst::qserv::master::ValueExprPtr;
 using lsst::qserv::master::SelectList;
+using lsst::qserv::master::FromList;
+using lsst::qserv::master::OrderByClause;
+using lsst::qserv::master::GroupByClause;
+using lsst::qserv::master::HavingClause;
 namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers
@@ -210,6 +215,13 @@ qMaster::SelectList::renderTo(qMaster::QueryTemplate& qt) const {
 
 }
 
+boost::shared_ptr<SelectList> qMaster::SelectList::copySyntax() {
+    boost::shared_ptr<SelectList> newS(new SelectList(*this));
+    // Shallow copy of expr list is okay.
+    newS->_valueExprList.reset(new ValueExprList(*_valueExprList));
+    // For the other fields, default-copied versions are okay.
+    return newS;
+}
 ////////////////////////////////////////////////////////////////////////
 // FromList
 ////////////////////////////////////////////////////////////////////////
@@ -239,6 +251,14 @@ qMaster::FromList::renderTo(qMaster::QueryTemplate& qt) const {
         TableRefnList const& refList = *_tableRefns;
         std::for_each(refList.begin(), refList.end(), TableRefN::render(qt));
     } 
+}
+
+boost::shared_ptr<qMaster::FromList> qMaster::FromList::copySyntax() {
+    boost::shared_ptr<FromList> newL(new FromList(*this));
+    // Shallow copy of expr list is okay.
+    newL->_tableRefns.reset(new TableRefnList(*_tableRefns));
+    // For the other fields, default-copied versions are okay.
+    return newL;
 }
 ////////////////////////////////////////////////////////////////////////
 // OrderByTerm
@@ -284,6 +304,9 @@ qMaster::OrderByClause::renderTo(qMaster::QueryTemplate& qt) const {
     qt.append(ss.str());
     // FIXME
 }
+boost::shared_ptr<OrderByClause> OrderByClause::copySyntax() {
+    return boost::make_shared<OrderByClause>(*this);
+}
 ////////////////////////////////////////////////////////////////////////
 // GroupByTerm
 ////////////////////////////////////////////////////////////////////////
@@ -321,6 +344,10 @@ qMaster::GroupByClause::renderTo(qMaster::QueryTemplate& qt) const {
     }
     qt.append(ss.str()); // FIXME
 }
+
+boost::shared_ptr<GroupByClause> GroupByClause::copySyntax() {
+    return boost::make_shared<GroupByClause>(*this);
+}
 ////////////////////////////////////////////////////////////////////////
 // HavingClause
 ////////////////////////////////////////////////////////////////////////
@@ -342,4 +369,8 @@ qMaster::HavingClause::renderTo(qMaster::QueryTemplate& qt) const {
     if(!_expr.empty()) {
         qt.append(_expr);
     }
+}
+
+boost::shared_ptr<HavingClause> HavingClause::copySyntax() {
+    return boost::make_shared<HavingClause>(*this);
 }

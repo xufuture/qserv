@@ -32,6 +32,7 @@
 
 // Boost
 #include <boost/shared_ptr.hpp>
+#include "lsst/qserv/master/QueryTemplate.h"
 
 // Forward
 class SqlSQL2Parser;
@@ -60,6 +61,8 @@ public:
     void diagnose(); // for debugging
 
     boost::shared_ptr<WhereClause const> getWhere() const;
+    QueryTemplate getTemplate() const;
+    boost::shared_ptr<SelectStmt> copySyntax() const;
 
 // private: // public for now.
     // Declarations
@@ -68,7 +71,7 @@ public:
     // Helpers
     void _print();
     void _generate();
-
+    
     // Fields
     boost::shared_ptr<FromList> _fromList; // Data sources
     boost::shared_ptr<SelectList> _selectList; // Desired columns

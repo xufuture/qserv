@@ -72,6 +72,7 @@ public:
     void dbgPrint() const;
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
+    boost::shared_ptr<SelectList> copySyntax();
 
     friend class SelectListFactory;
 private:
@@ -91,6 +92,7 @@ public:
     }
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
+    boost::shared_ptr<FromList> copySyntax();
 
 private:
     friend std::ostream& operator<<(std::ostream& os, FromList const& fl);
@@ -133,6 +135,7 @@ public:
 
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
+    boost::shared_ptr<OrderByClause> copySyntax();
 
 private:
     friend std::ostream& operator<<(std::ostream& os, OrderByClause const& oc);
@@ -167,6 +170,7 @@ public:
 
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
+    boost::shared_ptr<GroupByClause> copySyntax();
 
 private:
     friend std::ostream& operator<<(std::ostream& os, GroupByClause const& gc);
@@ -183,6 +187,7 @@ public:
 
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
+    boost::shared_ptr<HavingClause> copySyntax();
 
 private:
     friend std::ostream& operator<<(std::ostream& os, HavingClause const& h);
