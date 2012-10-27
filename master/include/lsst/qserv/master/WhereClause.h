@@ -31,6 +31,7 @@
 #include <list>
 // Boost
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 // Qserv
 #include "lsst/qserv/master/ColumnRefList.h"
 
@@ -76,6 +77,7 @@ public:
 
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
+    boost::shared_ptr<WhereClause> copySyntax();
 
 private:
     friend std::ostream& operator<<(std::ostream& os, WhereClause const& wc);
@@ -100,6 +102,8 @@ public:
     friend std::ostream& operator<<(std::ostream& os, BoolTerm const& bt);
     virtual std::ostream& putStream(std::ostream& os) const = 0;
     virtual void renderTo(QueryTemplate& qt) const = 0;
+    virtual boost::shared_ptr<BoolTerm> copySyntax() {
+        return boost::shared_ptr<BoolTerm>(); }
     class render;
 };
 class OrTerm : public BoolTerm {
@@ -107,6 +111,8 @@ public:
     typedef boost::shared_ptr<OrTerm> Ptr;
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
+    virtual boost::shared_ptr<BoolTerm> copySyntax();
+
     class render;
     BoolTerm::PtrList _terms;
 };
@@ -115,6 +121,7 @@ public:
     typedef boost::shared_ptr<AndTerm> Ptr;
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
+    virtual boost::shared_ptr<BoolTerm> copySyntax();
     BoolTerm::PtrList _terms;
 };
 class BfTerm {

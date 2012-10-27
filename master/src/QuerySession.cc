@@ -25,6 +25,7 @@
 #include "lsst/qserv/master/QuerySession.h"
 
 #include <algorithm>
+#include "lsst/qserv/master/PlanWriter.h"
 #include "lsst/qserv/master/SelectParser.h"
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/WhereClause.h"
@@ -69,6 +70,9 @@ void QuerySession::setQuery(std::string const& q) {
     p = SelectParser::newInstance(q);
     p->setup();
     _stmt = p->getSelectStmt();
+
+    PlanWriter pw;
+    pw.write(*_stmt, _chunks);
     // Perform parse.
     //testParse2(p);    
     // Set error on parse problem; Query manager will check.

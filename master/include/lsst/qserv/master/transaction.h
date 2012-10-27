@@ -24,6 +24,7 @@
 #define LSST_QSERV_MASTER_TRANSACTION_H
 #include <string>
 #include <vector>
+#include <list>
 
 namespace lsst {
 namespace qserv {
@@ -58,6 +59,7 @@ public:
     int chunkId;
     std::vector<int> subChunks;
 };
+typedef std::list<ChunkSpec> ChunkSpecList;
 typedef std::vector<ChunkSpec> ChunkSpecVector;
 
 }}} // namespace lsst::qserv::master

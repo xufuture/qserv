@@ -57,18 +57,23 @@ public:
         virtual std::string getValue() const = 0;
         virtual bool getIsDynamic() const { return false; }
     };
+    class EntryMapping {
+    public:
+        virtual ~EntryMapping() {}
+        virtual boost::shared_ptr<Entry> mapEntry(Entry const& e) const = 0;
+    };
 
     QueryTemplate() {}
 
     void append(std::string const& s);
     void append(ColumnRef const& cr);
     void append(TableRefN const& tr);
+    void append(boost::shared_ptr<Entry> e);
 
     std::string dbgStr() const;
+    std::string generate(EntryMapping const& em);
 private:
     void _optimize() const; // not really const.
-    // Later, make this a list of the templatable.
-    std::list<std::string> _elements; 
     std::list<boost::shared_ptr<Entry> > _entries;
 };
 }}} // lsst::qserv::master

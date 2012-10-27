@@ -60,6 +60,25 @@ namespace qMaster = lsst::qserv::master;
 // forward
 
 ////////////////////////////////////////////////////////////////////////
+// anonymous
+////////////////////////////////////////////////////////////////////////
+namespace {
+template <typename T>
+inline void renderTemplate(qMaster::QueryTemplate& qt, 
+                           char const prefix[], 
+                           boost::shared_ptr<T> t) {
+    if(t.get()) { 
+        qt.append(prefix);
+        t->renderTo(qt);
+    }
+}
+template <typename T>
+inline void 
+copySyntaxIf(boost::shared_ptr<T>& dest, boost::shared_ptr<T> source) {
+    if(source.get()) dest = source->copySyntax();
+}
+}
+////////////////////////////////////////////////////////////////////////
 // class SelectStmt
 ////////////////////////////////////////////////////////////////////////
 
@@ -74,10 +93,43 @@ void qMaster::SelectStmt::diagnose() {
     
 }
 
+qMaster::QueryTemplate 
+qMaster::SelectStmt::getTemplate() const {
+    QueryTemplate qt;
+    renderTemplate(qt, "SELECT", _selectList);
+    renderTemplate(qt, "FROM", _fromList);
+    renderTemplate(qt, "WHERE", _whereClause);
+    renderTemplate(qt, "ORDER BY", _orderBy);
+    renderTemplate(qt, "GROUP BY", _groupBy);
+    renderTemplate(qt, "HAVING", _having);
+    if(_limit != -1) { 
+        std::stringstream ss;
+        ss << _limit;
+        qt.append("LIMIT");
+        qt.append(ss.str());
+    }
+    return qt;    
+}
+
 boost::shared_ptr<qMaster::WhereClause const> 
 qMaster::SelectStmt::getWhere() const {
     return _whereClause;
 }
+
+boost::shared_ptr<qMaster::SelectStmt> 
+qMaster::SelectStmt::copySyntax() const {
+    boost::shared_ptr<SelectStmt> newS(new SelectStmt(*this));
+    // Starting from a shallow copy, make a copy of the syntax portion.
+    copySyntaxIf(newS->_fromList, _fromList);
+    copySyntaxIf(newS->_selectList, _selectList);
+    copySyntaxIf(newS->_whereClause, _whereClause);
+    copySyntaxIf(newS->_orderBy, _orderBy);
+    copySyntaxIf(newS->_groupBy, _groupBy);
+    copySyntaxIf(newS->_having, _having);
+    // For the other fields, default-copied versions are okay.
+    return newS;
+}
+
 ////////////////////////////////////////////////////////////////////////
 // class SelectStmt (private)
 ////////////////////////////////////////////////////////////////////////
@@ -96,15 +148,7 @@ inline OS& generate(OS& os, char const label[], boost::shared_ptr<T> t) {
     }
     return os; 
 }
-template <typename T>
-inline void renderTemplate(qMaster::QueryTemplate& qt, 
-                           char const prefix[], 
-                           boost::shared_ptr<T> t) {
-    if(t.get()) { 
-        qt.append(prefix);
-        t->renderTo(qt);
-    }
-}
+
 }
 void qMaster::SelectStmt::_print() {
     //_selectList->getColumnRefList()->printRefs();
@@ -120,7 +164,6 @@ void qMaster::SelectStmt::_print() {
 }
 
 void qMaster::SelectStmt::_generate() {
-    QueryTemplate qt;
     //_selectList->getColumnRefList()->printRefs();
     using std::cout;
     using std::endl;
@@ -131,18 +174,6 @@ void qMaster::SelectStmt::_generate() {
     generate(std::cout, "ORDER BY", _orderBy);
     generate(std::cout, "GROUP BY", _groupBy);
     generate(std::cout, "HAVING", _having);
-#endif
-    renderTemplate(qt, "SELECT", _selectList);
-    renderTemplate(qt, "FROM", _fromList);
-    renderTemplate(qt, "WHERE", _whereClause);
-    renderTemplate(qt, "ORDER BY", _orderBy);
-    renderTemplate(qt, "GROUP BY", _groupBy);
-    renderTemplate(qt, "HAVING", _having);
-    if(_limit != -1) { 
-        std::stringstream ss;
-        ss << _limit;
-        qt.append("LIMIT");
-        qt.append(ss.str());
-    }
-    std::cout << qt.dbgStr() << std::endl;
+#endif    
+    std::cout << getTemplate().dbgStr() << std::endl;
 }

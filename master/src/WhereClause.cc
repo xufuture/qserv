@@ -27,7 +27,8 @@
 #include "lsst/qserv/master/QueryTemplate.h"
 
 namespace qMaster=lsst::qserv::master;
-using qMaster::QsRestrictor;
+using lsst::qserv::master::QsRestrictor;
+using lsst::qserv::master::WhereClause;
 
 namespace { // File-scope helpers
 }
@@ -55,18 +56,18 @@ void QsRestrictor::render::operator()(QsRestrictor::Ptr const& p) {
 // WhereClause
 ////////////////////////////////////////////////////////////////////////
 std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::WhereClause const& wc) {
+qMaster::operator<<(std::ostream& os, WhereClause const& wc) {
     os << "WHERE " << wc._original;
     return os;
 }
 
 std::string
-qMaster::WhereClause::getGenerated() {
+WhereClause::getGenerated() {
     QueryTemplate qt;
     renderTo(qt);
     return qt.dbgStr();
 }
-void qMaster::WhereClause::renderTo(QueryTemplate& qt) const {
+void WhereClause::renderTo(QueryTemplate& qt) const {
     if(_restrs.get()) {
         std::for_each(_restrs->begin(), _restrs->end(), 
                       QsRestrictor::render(qt));
@@ -76,11 +77,21 @@ void qMaster::WhereClause::renderTo(QueryTemplate& qt) const {
     }
 }
 
+boost::shared_ptr<WhereClause> WhereClause::copySyntax() {
+    boost::shared_ptr<WhereClause> newC(new WhereClause(*this));
+    // Shallow copy of expr list is okay.
+    if(_tree.get()) {
+        newC->_tree = _tree->copySyntax();
+    }
+    // For the other fields, default-copied versions are okay.
+    return newC;
+}
+
 ////////////////////////////////////////////////////////////////////////
 // WhereClause (private)
 ////////////////////////////////////////////////////////////////////////
 void
-qMaster::WhereClause::_resetRestrs() {
+WhereClause::_resetRestrs() {
     _restrs.reset(new QsRestrictor::List());
 }
 
@@ -153,4 +164,15 @@ void qMaster::ValueExprTerm::renderTo(QueryTemplate& qt) const {
     ValueExpr::render r(qt);
     r(_expr);
     assert(_expr.get());
+}
+
+boost::shared_ptr<qMaster::BoolTerm> qMaster::OrTerm::copySyntax() {
+    boost::shared_ptr<OrTerm> ot(new OrTerm());
+    ot->_terms = _terms; // shallow copy for now
+    return ot;
+}
+boost::shared_ptr<qMaster::BoolTerm> qMaster::AndTerm::copySyntax() {
+    boost::shared_ptr<AndTerm> at(new AndTerm());
+    at->_terms = _terms; // shallow copy for now
+    return at;
 }
