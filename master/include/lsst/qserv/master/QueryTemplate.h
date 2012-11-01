@@ -76,5 +76,7 @@ private:
     void _optimize() const; // not really const.
     std::list<boost::shared_ptr<Entry> > _entries;
 };
+typedef std::list<boost::shared_ptr<QueryTemplate> >QueryTemplateList;
+
 }}} // lsst::qserv::master
 #endif // LSST_QSERV_MASTER_QUERYTEMPLATE_H
