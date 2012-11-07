@@ -35,6 +35,7 @@ namespace qserv {
 
 namespace lsst {
 namespace qserv {
+class MonetConfig; // Forward
 namespace worker {
 class Logger; // Forward
 ////////////////////////////////////////////////////////////////////////
@@ -53,6 +54,10 @@ public:
     
     bool performMysqldump(Logger& log,
                           std::string const& user,
+                          std::string const& dumpFile,
+                          SqlErrorObject&);
+    bool performMonetDump(Logger& log,
+                          MonetConfig const& mc,
                           std::string const& dumpFile,
                           SqlErrorObject&);
 

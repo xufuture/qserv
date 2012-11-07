@@ -20,8 +20,10 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
  
-#include "MonetConnection.hh"
+#include "lsst/qserv/worker/MonetConnection.hh"
 #include <mapi.h> // MonetDb MAPI (low-level C API)
+
+#include "lsst/qserv/SqlErrorObject.hh"
 
 using lsst::qserv::MonetConfig;
 using lsst::qserv::MonetConnection;
@@ -45,6 +47,7 @@ MonetConnection::MonetConnection(MonetConfig const& c) {
     _config = c;
     _state.reset(new MonetState());
     _state->hdl = NULL;
+    _connected = false;
     _init();
 }
 
@@ -68,6 +71,7 @@ void MonetConnection::_init() {
     if(mapi_error(_state->dbh)) {
         _die();
     }
+    _connected = true;
 }
 
 void MonetConnection::_die() {
@@ -130,37 +134,74 @@ MonetConnection::_packageResults(MonetResults& r) {
 
 bool 
 MonetConnection::runQuery(char const* query, int qSize, 
-                          MonetResults& r, MonetErrorObj& e) {
-  _state->hdl = NULL;
-  if(query[qSize-1] == '\0') { // Null-terminated?
-      _state->hdl = mapi_query(_state->dbh, query);
-  } else {
-      std::string q(query, qSize); // Use std::string's null-terminate
-      _state->hdl = mapi_query(_state->dbh, q.c_str());
-  }
-  if(mapi_error(_state->dbh) != MOK) { _flagError(); return false; }
-  _packageResults(r);
-  return true;
+                          MonetResults& r, SqlErrorObject& e) {
+    _state->hdl = NULL;
+    if(query[qSize-1] == '\0') { // Null-terminated?
+        _state->hdl = mapi_query(_state->dbh, query);
+    } else {
+        std::string q(query, qSize); // Use std::string's null-terminate
+        _state->hdl = mapi_query(_state->dbh, q.c_str());
+    }
+    if(mapi_error(_state->dbh) != MOK) { _flagError(); return false; }
+    _packageResults(r);
+    return true;
 }
 
 bool 
-MonetConnection::runQuery(char const* query, int qSize, MonetErrorObj& e) {
+MonetConnection::runQuery(char const* query, int qSize, SqlErrorObject& e) {
     MonetResults r;
     return runQuery(query, qSize, r, e);
 }
 
 bool 
-MonetConnection::runQuery(std::string const& query, MonetResults& r, MonetErrorObj& e) {
-  _state->hdl = NULL;
-  _state->hdl = mapi_query(_state->dbh, query.c_str());
-  if(mapi_error(_state->dbh) != MOK) { _flagError(); return false; }
-  _packageResults(r);
-  return true;
+MonetConnection::runQuery(std::string const& query, MonetResults& r, SqlErrorObject& e) {
+    _state->hdl = NULL;
+    _state->hdl = mapi_query(_state->dbh, query.c_str());
+    if(mapi_error(_state->dbh) != MOK) { _flagError(); return false; }
+    _packageResults(r);
+    return true;
 }
 
 bool 
-MonetConnection::runQuery(std::string const& query, MonetErrorObj& e) {
+MonetConnection::runQuery(std::string const& query, SqlErrorObject& e) {
     MonetResults r;
     return runQuery(query.c_str(), r, e);
 }
 
+bool MonetConnection::dropDb(std::string const& dbName, SqlErrorObject& e,
+                             bool failIfDoesNotExist) {
+    // Nop right now.
+    return true;
+}
+bool MonetConnection::connectToDb(SqlErrorObject&) {
+    return _connected;
+}
+bool MonetConnection::tableExists(std::string const& tableName, 
+                                  SqlErrorObject&,
+                                  std::string const& dbName) {
+    return true; // FIXME
+    //    PFormat("SELECT name FROM tables WHERE name 'table_I_want_to_drop'");
+}
+
+bool MonetConnection::dropTable(std::string const& tableName,
+                                SqlErrorObject& e,
+                                bool failIfDoesNotExist,
+                                std::string const& dbName) {
+    // Ignores dbName for now.
+    if (!_connected) return false;
+    // Just try to drop it, and ignore the error.
+    std::string sql = "DROP TABLE " + tableName;
+    if (!runQuery(sql, e)) {
+        return _setErrorObject(e, "Problem executing: " + sql);
+    }
+    return true;    
+}
+ 
+bool 
+MonetConnection::_setErrorObject(SqlErrorObject& errObj, 
+                               std::string const& extraMsg) {
+    if ( ! extraMsg.empty() ) {
+        errObj.addErrMsg(extraMsg);
+    }
+    return false;
+}

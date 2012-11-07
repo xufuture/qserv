@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# example: monetdump.py localhost 50000 monetdb monetdb voc emp
+# example: monetdump.py localhost 50000 monetdb monetdb voc emp dumpfile.txt
 import os,sys
 import subprocess
 import tempfile

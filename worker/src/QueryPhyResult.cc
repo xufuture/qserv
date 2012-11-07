@@ -27,8 +27,10 @@
 #include "lsst/qserv/SqlErrorObject.hh"
 #include "lsst/qserv/worker/Config.h"
 #include "lsst/qserv/worker/Base.h"
+#include "lsst/qserv/worker/MonetConnection.hh"
  
 namespace qWorker = lsst::qserv::worker;
+using lsst::qserv::MonetConfig;
 
 ////////////////////////////////////////////////////////////////////////
 void qWorker::QueryPhyResult::addResultTable(std::string const& t) {
@@ -97,6 +99,75 @@ bool qWorker::QueryPhyResult::performMysqldump(qWorker::Logger& log,
     }
     return true;
 }
+
+bool qWorker::QueryPhyResult::performMonetDump(qWorker::Logger& log,
+                                               MonetConfig const& mc,
+                                               std::string const& dumpFile,
+                                               SqlErrorObject& errObj) {
+    // Dump a database to a dumpfile.
+    
+    // Make sure the path exists
+    _mkdirP(dumpFile);
+
+#if 0
+    /*
+      msqldump [ options ] [ dbname ]
+
+      Msqldump is the program to dump an MonetDB/SQL database. The
+      dump can be used to populate a new MonetDB/SQL database. 
+      OPTIONS
+        −−database=database (−d database)
+        −−host=hostname (−h hostname) (default: localhost).
+        −−port=portnr (−p portnr) (default: 50000).       
+        −−user=user (−u user)
+        −−describe (−D)  Only dump the database schema.
+        −−inserts (−N)
+        When dumping the table data, use INSERT INTO statements,
+      rather than COPY INTO + CSV values. INSERT INTO statements are
+      better portable, and necessary when the load of the dump is
+      processed by e.g. a JDBC application. 
+      −−quiet (−q) Don’t print the welcome message.
+    */
+    // Hardcode msqldump path.
+#if 0
+    std::string dumpProg = "/scratch/danielw/MonetDB-Apr2012-SP1/bin/msqldump";
+    std::string cmd = dumpProg + 
+        (Pformat( " −−database=%1%"
+                  " −−host=%2%" 
+                  " −−port=%3%"
+                  " −−user=%4%"
+                  " −−inserts")).str();
+#endif
+    // Actually, use dump wrapper to do type conversion.
+    std::string myDump = "monetdump.py";
+    std::stringstream cs;
+    cs << myDump << " " 
+       << mc.hostname << " "
+       << mc.port << " "
+       << mc.user << " " 
+       << mc.password << " "
+       << mc.db << " " // or _outDb, which might be "schema" in MonetDB
+       << table << " "
+       << dumpFile;
+    log((Pformat("dump cmdline: %1%") % ss.str()).str().c_str());
+
+    log((Pformat("TIMING,000000QueryDumpStart,%1%")
+            % ::time(NULL)).str().c_str());
+    int cmdResult = system(cmd.c_str());
+
+    log((Pformat("TIMING,000000QueryDumpFinish,%1%")
+            % ::time(NULL)).str().c_str());
+
+    if (cmdResult != 0) {
+        errObj.setErrNo(errno);
+        return errObj.addErrMsg("Unable to dump database " + _outDb
+                                + " to " + dumpFile);
+    }
+    */
+#endif
+    return true;
+}
+
 
 void qWorker::QueryPhyResult::_mkdirP(std::string const& filePath) {
     // Quick and dirty mkdir -p functionality.  No error checking.

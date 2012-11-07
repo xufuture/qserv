@@ -39,6 +39,7 @@
 
 namespace lsst {
 namespace qserv {
+class SqlErrorObject;
 /// Eventually, make this compatible with SqlErrorObject
 struct MonetErrorObj {
     int dummy;
@@ -96,32 +97,32 @@ class MonetConnection {
 public:
     MonetConnection(MonetConfig const& mc);
     ~MonetConnection();
-    bool connectToDb(MonetErrorObj&);
-    bool selectDb(std::string const& dbName, MonetErrorObj& e);
+    bool connectToDb(SqlErrorObject&);
+    bool selectDb(std::string const& dbName, SqlErrorObject& e);
     bool runQuery(char const* query, int qSize, 
-                  MonetResults& results, MonetErrorObj& e);
+                  MonetResults& results, SqlErrorObject& e);
     // Convenience functions for above.
-    bool runQuery(char const* query, int qSize, MonetErrorObj& e);
-    bool runQuery(std::string const& query, MonetResults& r, MonetErrorObj& e);
-    bool runQuery(std::string const& query, MonetErrorObj& e);
+    bool runQuery(char const* query, int qSize, SqlErrorObject& e);
+    bool runQuery(std::string const& query, MonetResults& r, SqlErrorObject& e);
+    bool runQuery(std::string const& query, SqlErrorObject& e);
     
-    bool dbExists(std::string const& dbName, MonetErrorObj& e);
-    bool createDb(std::string const& dbName, MonetErrorObj& e, 
+    bool dbExists(std::string const& dbName, SqlErrorObject& e);
+    bool createDb(std::string const& dbName, SqlErrorObject& e, 
                   bool failIfExists=true);
     bool createDbAndSelect(std::string const& dbName, 
-                           MonetErrorObj&, 
+                           SqlErrorObject&, 
                            bool failIfExists=true);
-    bool dropDb(std::string const& dbName, MonetErrorObj&,
+    bool dropDb(std::string const& dbName, SqlErrorObject&,
                 bool failIfDoesNotExist=true);
     bool tableExists(std::string const& tableName, 
-                     MonetErrorObj&,
+                     SqlErrorObject&,
                      std::string const& dbName="");
     bool dropTable(std::string const& tableName,
-                   MonetErrorObj&,
+                   SqlErrorObject&,
                    bool failIfDoesNotExist=true,
                    std::string const& dbName="");
     bool listTables(std::vector<std::string>&, 
-                    MonetErrorObj&,
+                    SqlErrorObject&,
                     std::string const& prefixed="",
                     std::string const& dbName="");
 
@@ -132,7 +133,7 @@ private:
     void _die();
     void _packageResults(MonetResults& r);
     void _flagError();
-    bool _setErrorObject(MonetErrorObj&, 
+    bool _setErrorObject(SqlErrorObject&, 
                          std::string const& details=std::string(""));
 
     std::string _error;

@@ -41,10 +41,11 @@ namespace qWorker = lsst::qserv::worker;
 
 namespace {
 
+template <class Connection, class ErrorObject>
 bool
 runQueryInPieces(boost::shared_ptr<qWorker::Logger> log, 
-                 SqlConnection& sqlConn,
-                 SqlErrorObject& errObj,
+                 Connection& sqlConn,
+                 ErrorObject& errObj,
                  std::string const& query,
                  qWorker::CheckFlag* checkAbort) {
     // Run a larger query in pieces split by semicolon/newlines.
@@ -79,10 +80,11 @@ runQueryInPieces(boost::shared_ptr<qWorker::Logger> log,
     return true;
 }
 
+template <class Connection, class ErrorObject>
 bool
 runScriptPiece(boost::shared_ptr<qWorker::Logger> log,
-               SqlConnection& sqlConn,
-               SqlErrorObject& errObj,
+               Connection& sqlConn,
+               ErrorObject& errObj,
                std::string const& scriptId, 
                std::string const& pieceName,
                std::string const& piece, 
@@ -103,10 +105,11 @@ runScriptPiece(boost::shared_ptr<qWorker::Logger> log,
     return true;
 }
 
+template <class Connection, class ErrorObject>
 bool
 runScriptPieces(boost::shared_ptr<qWorker::Logger> log,
-                SqlConnection& sqlConn,
-                SqlErrorObject& errObj,
+                Connection& sqlConn,
+                ErrorObject& errObj,
                 std::string const& scriptId, 
                 std::string const& build, 
                 std::string const& run, 
@@ -373,6 +376,15 @@ std::string qWorker::QueryRunner::_getErrorString() const {
   }
 */
 bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
+#ifdef TRYMONET
+    MonetConfig mc;
+    mc.hostname = "localhost";
+    mc.username = "monetdb";
+    mc.password = "monetdb";
+    mc.port = 50000;
+    mc.db = "LSST";
+    MonetConnection conn(mc);
+#else
     SqlConfig sc;
     sc.hostname = "";
     sc.username = _user.c_str();
@@ -381,8 +393,8 @@ bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
     sc.port = 0;
     sc.socket = getConfig().getString("mysqlSocket").c_str();
     
-    SqlConnection _sqlConn(sc);
-
+    SqlConnection conn(sc);
+#endif
     bool success = true;
     _scriptId = t->dbName.substr(0, 6);
     (*_log)((Pformat("TIMING,%1%ScriptStart,%2%")
@@ -393,7 +405,7 @@ bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
     assert(t.get());
     assert(t->msg.get());
     TaskMsg& m(*t->msg);
-    if(!_sqlConn.connectToDb(_errObj)) {
+    if(!conn.connectToDb(_errObj)) {
         (*_log)((Pformat("Cfg error! connect MySQL as %1% using %2%") 
                 % getConfig().getString("mysqlSocket") % _user).str().c_str());
         return _errObj.addErrMsg("Unable to connect to MySQL as " + _user);
@@ -418,7 +430,7 @@ bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
             }
         }
         ss << f.query();
-        success = _runFragment(_sqlConn, ss.str(), 
+        success = _runFragment(conn, ss.str(), 
                                scb.build.str(), scb.clean.str(), 
                                resultTable);
         if(!success) return false;
@@ -429,7 +441,7 @@ bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
             return false;
         }
     }
-    if (!_sqlConn.dropTable(_pResult->getCommaResultTables(), _errObj, false)) {
+    if (!conn.dropTable(_pResult->getCommaResultTables(), _errObj, false)) {
         return false;
     }
     return true;
