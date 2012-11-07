@@ -11,10 +11,15 @@ libEnv = env.Clone()
 # Build up list of sources for lib.
 sources=[]
 #print os.getcwd(), os.listdir('../src')
-for root, dirs, files in os.walk('../src'):
-    sources += fnmatch.filter(files, "*.cc")
+srctop = "../src/"
+for root, dirs, files in os.walk(srctop):
+    subpath = root[len(srctop):]
+    sources += map(lambda f: os.path.join(subpath, f), 
+                   fnmatch.filter(files, "*.cc"))
     # Filter out dotfiles?
     dirs = [d for d in dirs if not fnmatch.fnmatch(d, ".*")]
+dontbuild = set(["monet/monetdbtest.cc"]) # test
+sources = [s for s in sources if s not in dontbuild]
 
 libEnv.Append(CPPPATH = ['../include'])
 libEnv.Append(CPPPATH = ['../../common/include']) 
@@ -41,6 +46,14 @@ conf.CheckLib("qserv_common")
 conf.CheckLib("qserv_proto")
 conf.CheckLib("XrdOfs")
 libEnv = conf.Finish()
+
+# MonetDb MAPI
+# Make this non-hardcoded later.
+monetInstallDir = "/scratch/danielw/MonetDB-Apr2012-SP1"
+libEnv['ENV']['PKG_CONFIG_PATH'] = [monetInstallDir + "/lib/pkgconfig"]
+libEnv.ParseConfig('pkg-config --cflags --libs monetdb-mapi')
+#mLib = env.Library("monet/MonetConnection.cc")
+#sources += mLib
 
 lib = libEnv.SharedLibrary("qserv_worker", sources)
 installedLib = libEnv.Install('lib', lib)
