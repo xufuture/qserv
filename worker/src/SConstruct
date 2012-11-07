@@ -1,0 +1,20 @@
+# -*- python -*-
+#
+# Setup our environment
+#
+# Do not change these
+import glob, os, re, sys
+
+env = Environment()
+
+searchRoots = ['/usr', '/usr/local/'] # search in /usr/local by default.
+if os.environ.has_key('SEARCH_ROOTS'):
+    searchRoots = os.environ['SEARCH_ROOTS'].split(":")
+
+# Make this non-hardcoded later.
+monetInstallDir = "/scratch/danielw/MonetDB-Apr2012-SP1"
+
+env['ENV']['PKG_CONFIG_PATH'] = [monetInstallDir + "/lib/pkgconfig"]
+env.ParseConfig('pkg-config --cflags --libs monetdb-mapi')
+mLib = env.Library("MonetConnection.cc")
+mTest = env.Program("monetdbtest", ["monetdbtest.cc", mLib] )

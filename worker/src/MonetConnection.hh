@@ -140,7 +140,6 @@ private:
     const char* _mysqlError;
     MonetConfig _config;
     std::tr1::shared_ptr<MonetState> _state;
-    Mapi _handle;
     bool _connected;
 
 
