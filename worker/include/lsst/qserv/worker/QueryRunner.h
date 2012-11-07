@@ -41,6 +41,7 @@ namespace lsst {
 namespace qserv {
     // Forward
     class SqlConnection;
+    class MonetConnection;
 }}
 
 namespace lsst {
@@ -79,6 +80,11 @@ private:
     std::string _getDumpTableList(std::string const& script);
     bool _runTask(Task::Ptr t);
     bool _runFragment(SqlConnection& sqlConn,
+                      std::string const& scr,
+                      std::string const& buildSc,
+                      std::string const& cleanSc,
+                      std::string const& resultTable);
+    bool _runFragment(MonetConnection& mc,
                       std::string const& scr,
                       std::string const& buildSc,
                       std::string const& cleanSc,

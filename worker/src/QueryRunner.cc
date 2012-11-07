@@ -39,6 +39,11 @@ using lsst::qserv::SqlConnection;
 
 namespace qWorker = lsst::qserv::worker;
 
+#define TRYMONET
+#include "lsst/qserv/worker/MonetConnection.hh"
+using lsst::qserv::MonetConfig;
+using lsst::qserv::MonetConnection;
+
 namespace {
 
 template <class Connection, class ErrorObject>
@@ -463,6 +468,25 @@ bool qWorker::QueryRunner::_runFragment(SqlConnection& sqlConn,
         return false; 
     }
     if ( !runScriptPieces(_log, sqlConn, _errObj, _scriptId, buildSc, 
+                          scr, cleanSc, check.get()) ) {
+        return false;
+    }
+    (*_log)((Pformat("TIMING,%1%ScriptFinish,%2%")
+             % _scriptId % ::time(NULL)).str().c_str());
+    return true;
+}
+
+bool qWorker::QueryRunner::_runFragment(MonetConnection& mc,
+                                        std::string const& scr,
+                                        std::string const& buildSc,
+                                        std::string const& cleanSc,
+                                        std::string const& resultTable) {
+    boost::shared_ptr<CheckFlag> check(_makeAbort());
+    if(_checkPoisoned()) { // Check for poison
+        _poisonCleanup(); // Clean it up.
+        return false; 
+    }
+    if ( !runScriptPieces(_log, mc, _errObj, _scriptId, buildSc, 
                           scr, cleanSc, check.get()) ) {
         return false;
     }
