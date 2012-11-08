@@ -46,6 +46,24 @@ using lsst::qserv::MonetConnection;
 
 namespace {
 
+std::string makeCreate(std::string const& tName, std::string const& selQuery) {
+    std::stringstream ss;
+#ifdef TRYMONET
+    char const createPrefix[] = "CREATE TABLE ";
+    char const createSep[] = " AS ";
+    char const createSuffix[] = " WITH DATA;";
+#else
+    char const createPrefix[] = "CREATE TABLE ";
+    char const createSep[] = " ";
+    char const createSuffix[] = ";";
+#endif            
+    ss << createPrefix << tName << createSep;
+    if(selQuery[selQuery.size()-1] == ';') { // chop off semi
+        ss << selQuery.substr(0, selQuery.size()-1) << createSuffix;
+    } else { ss << selQuery << createSuffix; }
+    return ss.str();
+}
+        
 template <class Connection, class ErrorObject>
 bool
 runQueryInPieces(boost::shared_ptr<qWorker::Logger> log, 
@@ -420,7 +438,6 @@ bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
         ScScriptBuilder<int> scb("LSST", "Object", // FIXME: get from message
                                  SUB_CHUNK_COLUMN, t->msg->chunkid());
         std::stringstream ss;
-
         for(int j=0; j < f.subchunk_size(); ++j) {
             scb(f.subchunk(j));
         }
@@ -429,7 +446,7 @@ bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
 
         if(t->needsCreate) {
             if(!_pResult->hasResultTable(resultTable)) {
-                ss << "CREATE TABLE " << resultTable << " ";
+                ss << makeCreate(resultTable, f.query());
             } else {
                 ss << "INSERT INTO " << resultTable << " ";
             }
