@@ -88,7 +88,7 @@ private:
                       std::string const& scr,
                       std::string const& buildSc,
                       std::string const& cleanSc,
-                      std::string const& resultTable);
+                      std::string const& dumpFile);
     void _buildSubchunkScripts(std::string const& script,
                                std::string& build, std::string& cleanup);
     bool _prepareAndSelectResultDb(SqlConnection& sqlConn,

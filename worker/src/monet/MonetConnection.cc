@@ -21,6 +21,9 @@
  */
  
 #include "lsst/qserv/worker/MonetConnection.hh"
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <mapi.h> // MonetDb MAPI (low-level C API)
 
 #include "lsst/qserv/SqlErrorObject.hh"
@@ -29,6 +32,9 @@ using lsst::qserv::MonetConfig;
 using lsst::qserv::MonetConnection;
 using lsst::qserv::MonetErrorObj;
 using lsst::qserv::MonetResults;
+
+namespace {
+}
 
 ////////////////////////////////////////////////////////////////////////
 // class MonetState
@@ -68,9 +74,11 @@ void MonetConnection::_init() {
                                _config.username.c_str(), 
                                _config.password.c_str(),
                                "sql", _config.db.c_str());
+    mapi_setAutocommit(_state->dbh, 1);
     if(mapi_error(_state->dbh)) {
         _die();
     }
+
     _connected = true;
 }
 
@@ -92,25 +100,17 @@ void MonetConnection::_die() {
     }    
 }
 
-void MonetConnection::_flagError() {
+void MonetConnection::_flagError(SqlErrorObject& e) {
     // We need to distinguish between errors ruin the db connection
     // and calling client errors that don't force us to re-initialize
     // the connection. 
-    return; // FIXME
     if(_state->hdl != NULL) {
-        mapi_explain_query(_state->hdl, stderr);
         do {
             if (mapi_result_error(_state->hdl) != NULL)
-                mapi_explain_result(_state->hdl, stderr);
+                e.addErrMsg(mapi_result_error(_state->hdl));
         } while (mapi_next_result(_state->hdl) == 1);
         mapi_close_handle(_state->hdl);
-        mapi_destroy(_state->dbh);
-    } else if (_state->dbh != NULL) {
-        mapi_explain(_state->dbh, stderr);
-        mapi_destroy(_state->dbh);
-    } else {
-        fprintf(stderr, "command failed\n");
-    }    
+    } 
 }
 
 void
@@ -131,19 +131,45 @@ MonetConnection::_packageResults(MonetResults& r) {
     }
 
 }
+void MonetConnection::_dumpResults(std::string const& dumpFile) {
+    std::ofstream os(dumpFile.c_str());
+    MapiHdl& hdl = _state->hdl;
+    int numCols = -1;
+    std::cerr << "Writing to " << dumpFile << std::endl;
+    do {
+        while(mapi_fetch_row(hdl)) {
+        std::stringstream ss;
+        int c=0;
+        if(numCols == -1) { numCols = mapi_get_field_count(hdl); }
+        for(int i=0; i < numCols; ++i) {
+            ss << "'" << mapi_fetch_field(hdl,i) << "'";
+            if(++c > 1) ss << ",";
+        }
+        if(c > 0) os << ss.str();
+        }
+    }   while(mapi_next_result(hdl) == 1); 
+    std::cerr << "Done writing " << dumpFile << std::endl;
+    os.close();
+}
 
 bool 
 MonetConnection::runQuery(char const* query, int qSize, 
                           MonetResults& r, SqlErrorObject& e) {
+    bool success = _runHelper(query, qSize, e);
+    if(success) {
+        _packageResults(r);
+    }
+}
+
+bool MonetConnection::_runHelper(char const* query, int size, SqlErrorObject& e) {
     _state->hdl = NULL;
-    if(query[qSize-1] == '\0') { // Null-terminated?
+    if(query[size-1] == '\0') { // Null-terminated?
         _state->hdl = mapi_query(_state->dbh, query);
     } else {
-        std::string q(query, qSize); // Use std::string's null-terminate
+        std::string q(query, size); // Use std::string's null-terminate
         _state->hdl = mapi_query(_state->dbh, q.c_str());
     }
-    if(mapi_error(_state->dbh) != MOK) { _flagError(); return false; }
-    _packageResults(r);
+    if(mapi_error(_state->dbh) != MOK) { _flagError(e); return false; }
     return true;
 }
 
@@ -154,11 +180,23 @@ MonetConnection::runQuery(char const* query, int qSize, SqlErrorObject& e) {
 }
 
 bool 
+MonetConnection::runQueryDump(char const* query, int qSize, 
+                          SqlErrorObject& e, std::string const& dumpFile) {
+    bool success = _runHelper(query, qSize, e);
+    if(success) {
+        _dumpResults(dumpFile);
+    } else {
+        std::cerr << "Query Fail: " << query << std::endl;
+    }
+}
+
+bool 
 MonetConnection::runQuery(std::string const& query, MonetResults& r, SqlErrorObject& e) {
     _state->hdl = NULL;
     _state->hdl = mapi_query(_state->dbh, query.c_str());
-    if(mapi_error(_state->dbh) != MOK) { _flagError(); return false; }
+    if(mapi_error(_state->dbh) != MOK) { _flagError(e); return false; }
     _packageResults(r);
+
     return true;
 }
 

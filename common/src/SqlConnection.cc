@@ -189,6 +189,15 @@ SqlConnection::runQuery(char const* query, int qSize, SqlErrorObject& errObj) {
 }
 
 bool 
+SqlConnection::runQueryDump(char const* query, int qSize, 
+                            SqlErrorObject& errObj, 
+                            std::string const& dumpFile) {
+    // FIXME: can't dump results right now.
+    SqlResults results(true); // true - discard results immediately
+    return runQuery(query, qSize, results, errObj);
+}
+
+bool 
 SqlConnection::runQuery(std::string const query,
                         SqlResults& results,
                         SqlErrorObject& errObj) {

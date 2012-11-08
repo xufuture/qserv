@@ -45,13 +45,14 @@ using lsst::qserv::MonetConfig;
 using lsst::qserv::MonetConnection;
 
 namespace {
+static std::string emptyString;
 
 std::string makeCreate(std::string const& tName, std::string const& selQuery) {
     std::stringstream ss;
 #ifdef TRYMONET
     char const createPrefix[] = "CREATE TABLE ";
     char const createSep[] = " AS ";
-    char const createSuffix[] = " WITH DATA;";
+    char const createSuffix[] = " WITH NO DATA;";
 #else
     char const createPrefix[] = "CREATE TABLE ";
     char const createSep[] = " ";
@@ -70,7 +71,8 @@ runQueryInPieces(boost::shared_ptr<qWorker::Logger> log,
                  Connection& sqlConn,
                  ErrorObject& errObj,
                  std::string const& query,
-                 qWorker::CheckFlag* checkAbort) {
+                 qWorker::CheckFlag* checkAbort,
+                 std::string const& dumpFile=emptyString) {
     // Run a larger query in pieces split by semicolon/newlines.
     // This tries to avoid the max_allowed_packet
     // (MySQL client/server protocol) problem.
@@ -78,7 +80,19 @@ runQueryInPieces(boost::shared_ptr<qWorker::Logger> log,
     qWorker::SqlFragmenter sf(query);
     while(!sf.isDone()) {
         qWorker::SqlFragmenter::Piece p = sf.getNextPiece();
-        if ( !sqlConn.runQuery(p.first, p.second, errObj) ) {
+        (*log)((Pformat("Attempting: >>%1%<<") % query).str().c_str());
+        bool qSuccess;
+#ifdef TRYMONET
+        if(!dumpFile.empty()) {            
+            qSuccess = !sqlConn.runQueryDump(p.first, p.second, errObj, dumpFile+"_d");
+            (*log)((Pformat(">>%1%<< with dump in %2%") % query % (dumpFile+"_d")).str().c_str());
+        } else { qSuccess = !sqlConn.runQuery(p.first, p.second, errObj);}
+#else
+        qSuccess = !sqlConn.runQuery(p.first, p.second, errObj);
+#endif
+        if ( qSuccess ) {
+            (*log)((Pformat("Success on: >>%1%<< with dump in %2%") % query % (dumpFile+"_d")).str().c_str());
+
             // On error, the partial error is as good as the global.
             if( errObj.isSet() ) {
                 unsigned s=p.second;
@@ -111,12 +125,15 @@ runScriptPiece(boost::shared_ptr<qWorker::Logger> log,
                std::string const& scriptId, 
                std::string const& pieceName,
                std::string const& piece, 
-               qWorker::CheckFlag* checkAbort) {
+               qWorker::CheckFlag* checkAbort,
+               std::string const& dumpFile=emptyString) {
+
     (*log)((Pformat("TIMING,%1%%2%Start,%3%")
                  % scriptId % pieceName % ::time(NULL)).str().c_str());
     //(*log)(("Hi. my piece is++"+piece+"++").c_str());
 	
-    bool result = runQueryInPieces(log, sqlConn, errObj, piece, checkAbort);
+    bool result = runQueryInPieces(log, sqlConn, errObj, piece, 
+                                   checkAbort, dumpFile);
     (*log)((Pformat("TIMING,%1%%2%Finish,%3%")
            % scriptId % pieceName % ::time(NULL)).str().c_str());
     if ( ! result ) {
@@ -137,11 +154,12 @@ runScriptPieces(boost::shared_ptr<qWorker::Logger> log,
                 std::string const& build, 
                 std::string const& run, 
                 std::string const& cleanup,
-                qWorker::CheckFlag* checkAbort) {
+                qWorker::CheckFlag* checkAbort,
+                std::string const& dumpFile=emptyString) {
     if ( runScriptPiece(log, sqlConn, errObj, scriptId, "QueryBuildSub", 
                         build, checkAbort) ) {
         if ( ! runScriptPiece(log, sqlConn, errObj, scriptId, "QueryExec", 
-                              run, checkAbort) ) {
+                              run, checkAbort, dumpFile) ) {
             (*log)((Pformat("Fail QueryExec phase for %1%: %2%") 
                    % scriptId % errObj.errMsg()).str().c_str());
         }
@@ -402,10 +420,10 @@ bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
 #ifdef TRYMONET
     MonetConfig mc;
     mc.hostname = "localhost";
-    mc.username = "monetdb";
-    mc.password = "monetdb";
+    mc.username = "lsst";
+    mc.password = "lsst";
     mc.port = 50000;
-    mc.db = "LSST";
+    mc.db = "lsst";
     MonetConnection conn(mc);
 #else
     SqlConfig sc;
@@ -428,11 +446,18 @@ bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
     assert(t.get());
     assert(t->msg.get());
     TaskMsg& m(*t->msg);
+#ifdef TRYMONET
+    if(!conn.connectToDb(_errObj)) {
+        (*_log)("No monetdb connection"); 
+        return _errObj.addErrMsg("Couldn't connect to monetdb");
+    }
+#else
     if(!conn.connectToDb(_errObj)) {
         (*_log)((Pformat("Cfg error! connect MySQL as %1% using %2%") 
                 % getConfig().getString("mysqlSocket") % _user).str().c_str());
         return _errObj.addErrMsg("Unable to connect to MySQL as " + _user);
     }
+#endif
     for(int i=0; i < m.fragment_size(); ++i) {
         Task::Fragment const& f(m.fragment(i));
         ScScriptBuilder<int> scb("LSST", "Object", // FIXME: get from message
@@ -448,21 +473,35 @@ bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
             if(!_pResult->hasResultTable(resultTable)) {
                 ss << makeCreate(resultTable, f.query());
             } else {
-                ss << "INSERT INTO " << resultTable << " ";
+                ss << "INSERT INTO " << resultTable << " " << f.query();
             }
         }
-        ss << f.query();
+        (*_log)("query runner _runFragment"); 
+#if 0 // Table creation
         success = _runFragment(conn, ss.str(), 
                                scb.build.str(), scb.clean.str(), 
                                resultTable);
+#else // Result dump right away
+        success = _runFragment(conn, ss.str() + f.query(), 
+                               scb.build.str(), scb.clean.str(), 
+                               _task->resultPath);
+#endif
         if(!success) return false;
         _pResult->addResultTable(resultTable);
     }
     if(success) {
-        if(!_pResult->performMysqldump(*_log,_user,_task->resultPath,_errObj)) {
-            return false;
-        }
+#ifdef TRYMONET
+        if(!_pResult->performMonetDump(*_log, mc,
+                                       _task->resultPath,_errObj)) {
+            return false; }
+        (*_log)("Finished Monet dump OK");
+#else
+        if(!_pResult->performMysqldump(*_log,_user,
+                                       _task->resultPath,_errObj)) {
+            return false; }
+#endif
     }
+
     if (!conn.dropTable(_pResult->getCommaResultTables(), _errObj, false)) {
         return false;
     }
@@ -497,14 +536,17 @@ bool qWorker::QueryRunner::_runFragment(MonetConnection& mc,
                                         std::string const& scr,
                                         std::string const& buildSc,
                                         std::string const& cleanSc,
-                                        std::string const& resultTable) {
+                                        std::string const& dumpFile) {
+    (*_log)("query runner _runFragment Entry"); 
     boost::shared_ptr<CheckFlag> check(_makeAbort());
     if(_checkPoisoned()) { // Check for poison
         _poisonCleanup(); // Clean it up.
         return false; 
     }
+    (*_log)((Pformat("Running pieces in monet for resultdump %1%")
+             % dumpFile).str().c_str());
     if ( !runScriptPieces(_log, mc, _errObj, _scriptId, buildSc, 
-                          scr, cleanSc, check.get()) ) {
+                          scr, cleanSc, check.get(), dumpFile) ) {
         return false;
     }
     (*_log)((Pformat("TIMING,%1%ScriptFinish,%2%")

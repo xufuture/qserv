@@ -7,9 +7,10 @@ from textwrap import dedent
 from itertools import ifilter
 
 try:
-    [mhost,mport,muser,mpassword,mdb,mtable, dumpfile] = sys.argv
+    [myname, mhost,mport,muser,mpassword,mdb,mtable, dumpfile] = sys.argv
+    mschema = mdb
 except:
-    print "No args spec'd. Using defaults."
+    print "No args spec'd. Using defaults. args (", len(sys.argv), ") are", sys.argv
     # test overrides
     mhost="localhost"
     mport="50000"
@@ -25,6 +26,7 @@ except:
 
 mClient="/scratch/danielw/MonetDB-Apr2012-SP1/bin/mclient";
 dumpSchemaTemplate="SELECT col.name, col.type FROM {schema}.tables AS tab, {schema}._columns AS col WHERE tab.name='{table}' AND tab.id = col.table_id ORDER BY col.number;"
+dumpSchemaTemplate="SELECT col.name, col.type FROM sys.tables AS tab, sys._columns AS col WHERE tab.name='{table}' AND tab.id = col.table_id ORDER BY col.number;"
 dumpSchema = dumpSchemaTemplate.format(schema=mschema, table=mtable)
 mClientCmd="$mClient --database $mdb --format=csv"
 
@@ -69,6 +71,24 @@ def makeCreate(tablename, columns):
     statement = "\n".join([prefix,core,suffix])
     return statement
 
+def makeDump2(dotfile, tablename, targetfile, prepend):
+    #cmd = "copy select * from %s INTO '%s' USING DELIMITERS ',', '\\n';" % (tablename, targetfile)
+    target = open(targetfile, "w")
+    target.write(prepend)
+    ins = "INSERT INTO %s VALUES (%s);\n"
+    if not os.access(targetfile+"_d", os.R_OK):
+        print >>sys.stderr, "couldn't read ",targetfile+"_d"
+        cmd = "select * from %s;" % (tablename)
+        for line in startMclient(dotfile, cmd):
+            quoted = ",".join("'"+s+"'" for s in line.rstrip().split(","))
+            target.write(ins % (tablename, quoted))
+    else:
+        predump = open(targetfile+"_d")
+        for line in predump:
+            target.write(ins % (tablename, line.strip()))
+        pass
+    target.close()
+
 def makeDump(dotfile, tablename, targetfile, prepend):
     #cmd = "copy select * from %s INTO '%s' USING DELIMITERS ',', '\\n';" % (tablename, targetfile)
     cmd = "select * from %s;" % (tablename)
@@ -79,12 +99,11 @@ def makeDump(dotfile, tablename, targetfile, prepend):
         quoted = ",".join("'"+s+"'" for s in line.rstrip().split(","))
         target.write(ins % (tablename, quoted))
     target.close()
-
         
 dotfile = makeDotFile(muser, mpassword)
 columnTuples = callMclient(dotfile, dumpSchema).split("\n")
 columns = [s.split(",") for s in columnTuples if s]
-makeDump(dotfile, mtable, dumpfile, makeCreate(mtable, columns) + "\n")
+makeDump2(dotfile, mtable, dumpfile, makeCreate(mtable, columns) + "\n")
 os.unlink(dotfile)
 
 

@@ -105,11 +105,11 @@ bool qWorker::QueryPhyResult::performMonetDump(qWorker::Logger& log,
                                                std::string const& dumpFile,
                                                SqlErrorObject& errObj) {
     // Dump a database to a dumpfile.
+    log("MonetDumpEntry");
     
     // Make sure the path exists
     _mkdirP(dumpFile);
 
-#if 0
     /*
       msqldump [ options ] [ dbname ]
 
@@ -128,8 +128,8 @@ bool qWorker::QueryPhyResult::performMonetDump(qWorker::Logger& log,
       processed by e.g. a JDBC application. 
       −−quiet (−q) Don’t print the welcome message.
     */
-    // Hardcode msqldump path.
 #if 0
+    // Hardcode msqldump path.
     std::string dumpProg = "/scratch/danielw/MonetDB-Apr2012-SP1/bin/msqldump";
     std::string cmd = dumpProg + 
         (Pformat( " −−database=%1%"
@@ -139,17 +139,18 @@ bool qWorker::QueryPhyResult::performMonetDump(qWorker::Logger& log,
                   " −−inserts")).str();
 #endif
     // Actually, use dump wrapper to do type conversion.
-    std::string myDump = "monetdump.py";
+    std::string myDump = "/scratch/danielw/b/qserv/worker/src/monetdump.py";
     std::stringstream cs;
     cs << myDump << " " 
        << mc.hostname << " "
        << mc.port << " "
-       << mc.user << " " 
+       << mc.username << " " 
        << mc.password << " "
        << mc.db << " " // or _outDb, which might be "schema" in MonetDB
-       << table << " "
+       << _getSpaceResultTables() << " "
        << dumpFile;
-    log((Pformat("dump cmdline: %1%") % ss.str()).str().c_str());
+    std::string cmd=cs.str();
+    log((Pformat("dump cmdline: %1%") % cmd).str().c_str());
 
     log((Pformat("TIMING,000000QueryDumpStart,%1%")
             % ::time(NULL)).str().c_str());
@@ -163,8 +164,7 @@ bool qWorker::QueryPhyResult::performMonetDump(qWorker::Logger& log,
         return errObj.addErrMsg("Unable to dump database " + _outDb
                                 + " to " + dumpFile);
     }
-    */
-#endif
+    
     return true;
 }
 

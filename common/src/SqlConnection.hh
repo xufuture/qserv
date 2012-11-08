@@ -87,6 +87,8 @@ public:
     bool runQuery(char const* query, int qSize, 
                   SqlResults& results, SqlErrorObject&);
     bool runQuery(char const* query, int qSize, SqlErrorObject&);
+    bool runQueryDump(char const* query, int qSize, SqlErrorObject& e,
+                  std::string const& dumpFile);
     bool runQuery(std::string const query, SqlResults&, SqlErrorObject&);
     bool runQuery(std::string const query, SqlErrorObject&);
     bool dbExists(std::string const& dbName, SqlErrorObject&);
