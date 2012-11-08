@@ -91,6 +91,7 @@ void MonetConnection::_die() {
                 mapi_explain_result(_state->hdl, stderr);
         } while (mapi_next_result(_state->hdl) == 1);
         mapi_close_handle(_state->hdl);
+        _state->hdl = NULL;
         mapi_destroy(_state->dbh);
     } else if (_state->dbh != NULL) {
         mapi_explain(_state->dbh, stderr);
@@ -110,6 +111,7 @@ void MonetConnection::_flagError(SqlErrorObject& e) {
                 e.addErrMsg(mapi_result_error(_state->hdl));
         } while (mapi_next_result(_state->hdl) == 1);
         mapi_close_handle(_state->hdl);
+        _state->hdl = NULL;
     } 
 }
 
@@ -225,6 +227,7 @@ bool MonetConnection::dropTable(std::string const& tableName,
                                 SqlErrorObject& e,
                                 bool failIfDoesNotExist,
                                 std::string const& dbName) {
+    return true; // forget about dropping right now.
     // Ignores dbName for now.
     if (!_connected) return false;
     // Just try to drop it, and ignore the error.

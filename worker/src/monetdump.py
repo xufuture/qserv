@@ -65,7 +65,7 @@ def remapType(monetType):
         return monetType
 
 def makeCreate(tablename, columns):
-    prefix = "CREATE TABLE '%s' (" % tablename
+    prefix = "CREATE TABLE `%s` (" % tablename
     suffix = ");"
     core = ",\n".join(["'%s' %s" % (cname, remapType(ctype)) for (cname, ctype) in columns])
     statement = "\n".join([prefix,core,suffix])
@@ -86,6 +86,7 @@ def makeDump2(dotfile, tablename, targetfile, prepend):
         predump = open(targetfile+"_d")
         for line in predump:
             target.write(ins % (tablename, line.strip()))
+        os.unlink(targetfile+"_d")
         pass
     target.close()
 
