@@ -332,10 +332,10 @@ qMaster::SpatialUdfHandler::SpatialUdfHandler(
                   << std::endl;
     }
 
-    _udfName["box"] = "scisql_s2PtInBox";
-    _udfName["circle"] = "scisql_s2PtInCircle";
-    _udfName["ellipse"] = "scisql_s2PtInEllipse";
-    _udfName["poly"] = "scisql_s2PtInCPoly";
+    _udfName["box"] = "lsst_s2PtInBox";
+    _udfName["circle"] = "lsst_s2PtInCircle";
+    _udfName["ellipse"] = "lsst_s2PtInEllipse";
+    _udfName["poly"] = "lsst_s2PtInCPoly";
     _specName["box"] = "qserv_areaspec_box";
     _specName["circle"] = "qserv_areaspec_circle";
     _specName["ellipse"] = "qserv_areaspec_ellipse";
