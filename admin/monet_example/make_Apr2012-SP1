@@ -1,0 +1,22 @@
+#!/bin/bash
+
+username=danielw
+mdbname=MonetDB-Apr2012-SP1
+mdbversion=MonetDB-11.9.5
+dbdir=/scratch/$username
+
+cd $dbdir
+rm -Rf build/*
+rm -Rf $mdbname/*
+tar -xvjf ${mdbversion}.tar.bz2
+
+cd $dbdir/$mdbversion
+./de-bootstrap
+./bootstrap
+
+cd $dbdir/build
+# On Ubuntu this has to run with --disable-strict, others may use --enable-strict
+#../$mdbversion/configure --prefix=$dbdir/$mdbname --enable-optimize --disable-debug --disable-assert --disable-java --disable-strict
+../$mdbversion/configure --prefix=$dbdir/$mdbname --enable-optimize --disable-debug --disable-assert --disable-java --enable-strict
+make
+make install
