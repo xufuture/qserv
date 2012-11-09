@@ -37,6 +37,7 @@ using lsst::qserv::master::NodeBound;
 ////////////////////////////////////////////////////////////////////////
 // Helpers:
 ////////////////////////////////////////////////////////////////////////
+namespace {
 class posixTolower {
 public:
     posixTolower() : _locale("POSIX") {}
@@ -46,7 +47,23 @@ public:
 private:
     std::locale _locale;
 };
-
+std::string sanitize(std::string const& in) {
+    std::stringstream ss;
+    // Quick and dirty char sanitizer
+    for(unsigned i=0; i < in.size(); ++i) {
+        switch(in[i]) {
+        case '*': ss << "S_s"; break;
+        case '(': ss << "L_s"; break;
+        case ')': ss << "R_s"; break;
+        case '+': ss << "P_s"; break;
+        case '-': ss << "M_s"; break;
+        case ',': ss << "C_s"; break;
+        default: ss << in[i]; break;
+        }
+    }
+    return ss.str();
+}
+}
 
 ////////////////////////////////////////////////////////////////////////
 // AggregateRecord
@@ -116,11 +133,24 @@ AggregateMgr::CountAggBuilder::operator()(NodeBound const& lbl,
                                           NodeBound const& meaning) {
     AggregateRecord a;
     a.fillStandard(lbl, meaning);
-    a.pass = a.orig;
-    a.fixup = _computeFixup(a);
+    _computePassFixup(a);
+    // Force aliases to help MonetDb name result columns
+    //    a.pass = a.orig;
+    //    a.fixup = _computeFixup(a);
     return a;
 }
 
+void
+AggregateMgr::CountAggBuilder::_computePassFixup(AggregateRecord& a) {
+    std::string param = a.getFuncParam();
+    // Convert count(x) to count(x) as qcnt_x for pass.
+    std::string countAlias = "qcnt_" + sanitize(param);
+    boost::format passFmt("COUNT(%1%) AS %2%");
+    a.pass = (passFmt % param % countAlias).str();
+    // Convert count(x) to sum(qcnt_x) `count(x)` for fixup.
+    boost::format fixFmt("SUM(%1%) AS `%2%`");
+    a.fixup = (fixFmt % countAlias % a.getLabelText()).str();
+}
 std::string 
 AggregateMgr::CountAggBuilder::_computeFixup(AggregateRecord const& a) {
     std::string agg = "SUM"; //tokenText(meaning.first);

@@ -171,6 +171,7 @@ public:
                                        NodeBound const& meaning);
 private:
     std::string _computeFixup(AggregateRecord const& a); 
+    void _computePassFixup(AggregateRecord& a); 
 };
 
 // CountAggBuilder builds AggregateRecords for AVG() aggregations.

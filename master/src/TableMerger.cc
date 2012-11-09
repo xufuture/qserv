@@ -89,6 +89,7 @@ std::string extractReplacedCreateStmt(char const* s, ::off_t size,
                                       std::string const& oldTable, 
                                       std::string const& newTable,
                                       bool dropQuote) {
+    std::cout << "MERGER: extracting create from:" << std::string(s,size) << std::endl;
     boost::regex createExp("(CREATE TABLE )(`?)(" + oldTable + ")(`?)( ?[^;]+?;)");
     std::string newForm;
     if(dropQuote) {
@@ -405,6 +406,7 @@ bool TableMerger::_importIter(SqlInsertIter& sii,
         char const* stmtBegin = sii->first;
         std::size_t stmtSize = sii->second - stmtBegin;
         std::string q(stmtBegin, stmtSize);
+        std::cout << "MERGER importing: " << q << std::endl;
         bool dropQuote = (std::string::npos != _mergeTable.find("."));
         inplaceReplace(q, tableName, 
                        dropDbContext(_mergeTable, _config.targetDb), 
