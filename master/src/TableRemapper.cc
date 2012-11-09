@@ -77,7 +77,8 @@ public:
     std::ostream& writeChunkName(std::ostream& os, 
                                  std::string const& db,
                                  std::string const& table) {
-        return os << db << "." << _delim << table << _delim;
+        //return os << db << "." << _delim << table << _delim;
+        return os << _delim << table << _delim;
     } 
 
     std::ostream& writePlainName(std::ostream& os, 

@@ -113,7 +113,7 @@ private:
                                                       "declCol", 
                                                       "decl"));
             
-            s << "(scisql_" << fName << "(" << tName << "." << raStr 
+            s << "(lsst_" << fName << "(" << tName << "." << raStr 
               << "," << tName << "." << declStr << ",";
             if(paramCount == USE_STRING) {
                 s << '"'; // Place params inside a string.
