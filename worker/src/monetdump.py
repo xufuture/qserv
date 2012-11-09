@@ -57,6 +57,7 @@ def startMclient(dotfilename, stmt):
 
 xmap = {
     "real" : "float",
+    "wrd" : "bigint"
     }
 def remapType(monetType):
     try:
