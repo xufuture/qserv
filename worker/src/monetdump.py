@@ -68,14 +68,18 @@ def remapType(monetType):
 def makeCreate(tablename, columns):
     prefix = "CREATE TABLE `%s` (" % tablename
     suffix = ");"
-    core = ",\n".join(["'%s' %s" % (cname, remapType(ctype)) for (cname, ctype) in columns])
+    core = ",\n".join(["%s %s" % (cname, remapType(ctype)) for (cname, ctype) in columns])
     statement = "\n".join([prefix,core,suffix])
     return statement
 
 def makeDump2(dotfile, tablename, targetfile, prepend):
+    ## Prefix and suffix to look like mysqldump.
+    prefix = "LOCK TABLES `%s` WRITE;\n" % tablename
+    suffix = "UNLOCK TABLES;\n"
     #cmd = "copy select * from %s INTO '%s' USING DELIMITERS ',', '\\n';" % (tablename, targetfile)
     target = open(targetfile, "w")
     target.write(prepend)
+    target.write(prefix)
     ins = "INSERT INTO %s VALUES (%s);\n"
     if not os.access(targetfile+"_d", os.R_OK):
         print >>sys.stderr, "couldn't read ",targetfile+"_d"
@@ -89,6 +93,7 @@ def makeDump2(dotfile, tablename, targetfile, prepend):
             target.write(ins % (tablename, line.strip()))
         os.unlink(targetfile+"_d")
         pass
+    target.write(suffix)
     target.close()
 
 def makeDump(dotfile, tablename, targetfile, prepend):

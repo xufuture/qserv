@@ -130,6 +130,7 @@ public:
 private:
     void _init();
     void _die();
+    void _reset();
     void _packageResults(MonetResults& r);
     bool _runHelper(char const* query, int qSize, SqlErrorObject& e);
     void _dumpResults(std::string const& dumpFile);

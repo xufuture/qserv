@@ -32,13 +32,14 @@ class SqlFragmenter {
 public:
     typedef std::pair<char const*, int> Piece;
 
-    SqlFragmenter(std::string const& query);
+    SqlFragmenter(std::string const& query, bool useSingles=false);
 
     bool isDone() const { return _pNext == _qEnd; }
     Piece const& getNextPiece();
     unsigned getCount() const { return _count; }
 private:
     void _advance();
+    void _advanceSingle();
 
     // Constant
     static const std::string _delimiter;
@@ -50,6 +51,7 @@ private:
     std::string::size_type _sizeTarget;
     unsigned _count;
     Piece _current;
+    bool _useSingles;
 };
 }}} // lsst::qserv::worker
 

@@ -26,12 +26,13 @@ namespace qWorker = lsst::qserv::worker;
 // Constants
 const std::string qWorker::SqlFragmenter::_delimiter = ";\n";
 
-qWorker::SqlFragmenter::SqlFragmenter(std::string const& query) 
+qWorker::SqlFragmenter::SqlFragmenter(std::string const& query, bool useSingles) 
     : _query(query),
       _pNext(0),
       _qEnd(query.length()),
       _sizeTarget(1024), // too little?
-      _count(0)
+      _count(0),
+      _useSingles(useSingles)      
 {
 }
 
@@ -44,7 +45,28 @@ qWorker::SqlFragmenter::Piece const& qWorker::SqlFragmenter::getNextPiece() {
     return _current;
 }
 
+void qWorker::SqlFragmenter::_advanceSingle() {
+    std::string::size_type begin = _pNext;
+    std::string::size_type end;
+    std::string::size_type searchTarget;
+    end = _query.find(_delimiter, begin);
+    // Did we find a split-point?
+    if(end != std::string::npos) {
+        end += _delimiter.size();
+    } else {
+        end = _qEnd;
+    }
+    int pos = end;
+    _current.first = _query.data() + begin;
+    _current.second = pos - (int) begin;
+    _pNext = end; // Advance for next iteration.    
+}
+
 void qWorker::SqlFragmenter::_advance() {
+    if(_useSingles) {
+        _advanceSingle(); 
+        return; 
+    }
     std::string::size_type begin = _pNext;
     std::string::size_type end;
     std::string::size_type searchTarget;

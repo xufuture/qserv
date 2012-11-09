@@ -21,10 +21,13 @@
  */
  
 #include "lsst/qserv/worker/MonetConnection.hh"
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <mapi.h> // MonetDb MAPI (low-level C API)
+
+#include <boost/thread.hpp>
 
 #include "lsst/qserv/SqlErrorObject.hh"
 
@@ -34,6 +37,15 @@ using lsst::qserv::MonetErrorObj;
 using lsst::qserv::MonetResults;
 
 namespace {
+bool detectRetry(char const* s, int size) {
+    char const cStr[]="CREATE TABLE";
+    char const dStr[]="DROP TABLE";
+    int const cSize=12;
+    int const dSize=10;
+    if(size < dSize) return false;
+    return (::strncmp(s, cStr, cSize) == 0) || (::strncmp(s, dStr, dSize) == 0) ;
+}
+static boost::mutex monetCatMutex;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -80,6 +92,16 @@ void MonetConnection::_init() {
     }
 
     _connected = true;
+}
+void MonetConnection::_reset() {
+    if(_state->hdl != NULL) {
+        mapi_close_handle(_state->hdl);
+        _state->hdl = NULL;
+        mapi_destroy(_state->dbh);
+    } else if (_state->dbh != NULL) {
+        mapi_destroy(_state->dbh);
+    } 
+    _init();
 }
 
 void MonetConnection::_die() {
@@ -134,7 +156,7 @@ MonetConnection::_packageResults(MonetResults& r) {
 
 }
 void MonetConnection::_dumpResults(std::string const& dumpFile) {
-    std::ofstream os(dumpFile.c_str());
+    std::ofstream os(dumpFile.c_str(), std::ios::out | std::ios::app );
     MapiHdl& hdl = _state->hdl;
     int numCols = -1;
     std::cerr << "Writing to " << dumpFile << std::endl;
@@ -157,10 +179,21 @@ void MonetConnection::_dumpResults(std::string const& dumpFile) {
 bool 
 MonetConnection::runQuery(char const* query, int qSize, 
                           MonetResults& r, SqlErrorObject& e) {
-    bool success = _runHelper(query, qSize, e);
+    
+    bool success=false;
+    bool isCreate = detectRetry(query, qSize);
+    boost::shared_ptr<boost::lock_guard<boost::mutex> > lockP;
+    while(!success) {
+        if(isCreate) lockP.reset(new boost::lock_guard<boost::mutex>(monetCatMutex));
+        success = _runHelper(query, qSize, e);
+        lockP.reset();
+        if(success || !isCreate) break; // try only once for non-create statements.
+    }
+
     if(success) {
         _packageResults(r);
     }
+    return success;
 }
 
 bool MonetConnection::_runHelper(char const* query, int size, SqlErrorObject& e) {
@@ -171,7 +204,12 @@ bool MonetConnection::_runHelper(char const* query, int size, SqlErrorObject& e)
         std::string q(query, size); // Use std::string's null-terminate
         _state->hdl = mapi_query(_state->dbh, q.c_str());
     }
-    if(mapi_error(_state->dbh) != MOK) { _flagError(e); return false; }
+    if(mapi_error(_state->dbh) != MOK) { 
+        std::cerr << "MONET: QF>>" << std::string(query,size) << "<<QF" <<std::endl;
+        _flagError(e); 
+        _reset(); // Prepare to retry.
+        return false; 
+    }
     return true;
 }
 
@@ -184,12 +222,21 @@ MonetConnection::runQuery(char const* query, int qSize, SqlErrorObject& e) {
 bool 
 MonetConnection::runQueryDump(char const* query, int qSize, 
                           SqlErrorObject& e, std::string const& dumpFile) {
-    bool success = _runHelper(query, qSize, e);
-    if(success) {
+    bool success = false;
+    bool isCreate = detectRetry(query, qSize);
+    int tries=0;
+    int maxTries=100; // arbitrarily decide not to retry more than 100x.
+    while(!success) {
+        success = _runHelper(query, qSize, e);
+        if(success || !isCreate 
+           || (++tries > maxTries)) break; // try only once for non-create statements.
+    }
+    if(success && !isCreate) {
         _dumpResults(dumpFile);
     } else {
         std::cerr << "Query Fail: " << query << std::endl;
     }
+    return success;
 }
 
 bool 
@@ -227,7 +274,7 @@ bool MonetConnection::dropTable(std::string const& tableName,
                                 SqlErrorObject& e,
                                 bool failIfDoesNotExist,
                                 std::string const& dbName) {
-    return true; // forget about dropping right now.
+    //return true; // forget about dropping right now.
     // Ignores dbName for now.
     if (!_connected) return false;
     // Just try to drop it, and ignore the error.

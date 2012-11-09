@@ -77,15 +77,21 @@ runQueryInPieces(boost::shared_ptr<qWorker::Logger> log,
     // This tries to avoid the max_allowed_packet
     // (MySQL client/server protocol) problem.
     // MySQL default max_allowed_packet=1MB
+#ifdef TRYMONET
+    qWorker::SqlFragmenter sf(query, true); // Try to break up into single statements.
+#else
     qWorker::SqlFragmenter sf(query);
+#endif
     while(!sf.isDone()) {
         qWorker::SqlFragmenter::Piece p = sf.getNextPiece();
-        (*log)((Pformat("Attempting: >>%1%<<") % query).str().c_str());
+        (*log)((Pformat("Attempting: >>%1%<<") % std::string(p.first, p.second)).str().c_str());
         bool qSuccess;
 #ifdef TRYMONET
         if(!dumpFile.empty()) {            
             qSuccess = !sqlConn.runQueryDump(p.first, p.second, errObj, dumpFile+"_d");
-            (*log)((Pformat(">>%1%<< with dump in %2%") % query % (dumpFile+"_d")).str().c_str());
+            (*log)((Pformat(">>%1%<< with dump in %2%") 
+                    % std::string(p.first, p.second) 
+                    % (dumpFile+"_d")).str().c_str());
         } else { qSuccess = !sqlConn.runQuery(p.first, p.second, errObj);}
 #else
         qSuccess = !sqlConn.runQuery(p.first, p.second, errObj);
@@ -482,7 +488,8 @@ bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
                                scb.build.str(), scb.clean.str(), 
                                resultTable);
 #else // Result dump right away
-        success = _runFragment(conn, ss.str() + f.query(), 
+        // Need a \n so that ;\n can get detected by sql fragmenter.
+        success = _runFragment(conn, ss.str() +"\n" +  f.query(), 
                                scb.build.str(), scb.clean.str(), 
                                _task->resultPath);
 #endif
