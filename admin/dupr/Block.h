@@ -23,7 +23,7 @@ struct RecordInfo {
     int64_t id;      // Integer record ID.
 
     bool operator<(RecordInfo const r) const {
-        return htmId < r.htmId;
+        return htmId < r.htmId || (htmId == r.htmId && id < r.id);
     }
 };
 
@@ -102,11 +102,13 @@ public:
     std::string const & path() const { return _file.path(); }
 
     /// Write out sz bytes of data.
-    inline void append(void const * data, size_t sz) {
+    inline void append(void const * data, size_t const sz) {
+        assert(sz <= _blockSize);
         size_t i = _size;
         size_t n = _blockSize - i;
         if (sz >= n) {
             memcpy(_block.get() + i, data, n);
+            _size = _blockSize;
             issue();
             if (sz > n) {
                 memcpy(_block.get(), static_cast<char const *>(data) + n, sz - n);

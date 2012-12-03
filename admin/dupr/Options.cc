@@ -34,7 +34,7 @@ void buildCommonOptions(po::options_description & options) {
     input.add_options()
         ("delimiter,d", po::value<char>()->default_value(','),
             "CSV delimiter character.")
-        ("schema,s", po::value<string>(),
+        ("fields,f", po::value<string>(),
             "Comma separated list of field names in input file(s) or index.")
         ("partitioned-by,p", po::value<string>(),
             "Name of partitioning right ascension and declination "
@@ -171,11 +171,11 @@ Options const indexerCommandLine(int argc, char ** argv) {
     opts.inputFiles = vm["input"].as<vector<string> >();
     opts.indexDir = vm["index-dir"].as<string>();
     opts.scratchDir = vm["scratch-dir"].as<string>();
-    if (vm.count("schema") != 1) {
-        cerr << "--schema not specified"<< endl;
+    if (vm.count("fields") != 1) {
+        cerr << "--fields not specified"<< endl;
         exit(EXIT_FAILURE);
     }
-    vector<string> fields = split(vm["schema"].as<string>());
+    vector<string> fields = split(vm["fields"].as<string>());
     opts.numFields = static_cast<int>(fields.size());
     if (vm.count("partitioned-by") != 1) {
         cerr << "--partitioned-by not specified"<< endl;

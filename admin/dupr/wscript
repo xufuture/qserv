@@ -20,11 +20,9 @@ def configure(conf):
     conf.load('compiler_cxx')
     conf.env.append_value('CXXFLAGS', '-Wall')
     conf.env.append_value('CXXFLAGS', '-Wextra')
-    if conf.options.debug:
-        conf.env.append_value('CXXFLAGS', '-g')
-    else:
+    conf.env.append_value('CXXFLAGS', '-g')
+    if not conf.options.debug:
         conf.env.append_value('CXXFLAGS', '-O3')
-        conf.env.append_value('CXXFLAGS', '-DNDEBUG')
     if conf.options.eigen_includes:
         conf.env.append_value('INCLUDES', conf.options.eigen_includes)
     if conf.options.boost_includes:

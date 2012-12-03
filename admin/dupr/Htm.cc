@@ -1,6 +1,8 @@
 #include "Htm.h"
 
 #include <cmath>
+#include <cstdio>
+#include <algorithm>
 #include <stdexcept>
 
 #include "FileUtils.h"
@@ -9,8 +11,11 @@ using std::sin;
 using std::cos;
 using std::atan2;
 using std::sqrt;
+using std::min;
+using std::max;
 using std::string;
 using std::swap;
+using std::printf;
 
 using Eigen::Vector2d;
 using Eigen::Vector3d;
@@ -69,6 +74,7 @@ namespace {
 
 double const DEG_PER_RAD = 57.2957795130823208767981548141;
 double const RAD_PER_DEG = 0.0174532925199432957692369076849;
+double const EPSILON = 0.001 / 3600;
 
 // HTM root triangle numbers. Add 8 to obtain a level 0 HTM ID.
 uint32_t const S0 = 0;
@@ -136,6 +142,94 @@ inline uint32_t rootNumFor(Vector3d const &v)
     }
 }
 
+// Clamp dec to lie in range [-90,90]
+inline double clampDec(double dec) {
+    if (dec < -90.0) {
+        return -90.0;
+    } else if (dec > 90.0) {
+        return 90.0;
+    }
+    return dec;
+}
+
+// Return minimum delta between 2 right ascensions
+inline double minDeltaRa(double ra1, double ra2) {
+    double delta = abs(ra1 - ra2);
+    return min(delta, 360.0 - delta);
+}
+
+// Compute the extent in longitude [-alpha,alpha] of the circle
+// with radius r and center (0, centerDec) on the unit sphere.
+// Both r and centerDec are assumed to be in units of degrees;
+// centerDec is clamped to lie in the range [-90,90] and r must
+// lie in the range [0, 90].
+double maxAlpha(double r, double centerDec) {
+    if (r < 0.0 || r > 90.0) {
+        throw std::runtime_error("radius must lie in range [0, 90] deg");
+    }
+    if (r == 0.0) {
+        return 0.0;
+    }
+    double d = clampDec(centerDec);
+    if (abs(d) + r > 90.0 - 1/3600.0) {
+        return 180.0;
+    }
+    r *= RAD_PER_DEG;
+    d *= RAD_PER_DEG;
+    double y = sin(r);
+    double x = sqrt(abs(cos(d - r) * cos(d + r)));
+    return DEG_PER_RAD * abs(atan(y / x));
+}
+
+// Compute the number of segments to divide the given declination range
+// (stripe) into. Two points in the declination range separated by at least
+// one segment are guaranteed to be separated by an angular distance of at
+// least width.
+int segments(double decMin, double decMax, double width) {
+    double dec = max(abs(decMin), abs(decMax));
+    if (dec > 90.0 - 1/3600.0) {
+        return 1;
+    }
+    if (width >= 180.0) {
+        return 1;
+    } else if (width < 1/3600.0) {
+        width = 1/3600;
+    }
+    dec *= RAD_PER_DEG;
+    double cw = cos(width * RAD_PER_DEG);
+    double sd = sin(dec);
+    double cd = cos(dec);
+    double x = cw - sd * sd;
+    double u = cd * cd;
+    double y = sqrt(abs(u * u - x * x));
+    return static_cast<int>(
+        floor(360.0 / abs(DEG_PER_RAD * atan2(y, x))));
+}
+
+// Return the angular width of a single segment obtained by
+// chopping the declination stripe [decMin, decMax] into
+// numSegments equal width (in right ascension) segments.
+double segmentWidth(double decMin, double decMax, int numSegments) {
+    double dec = max(abs(decMin), abs(decMax)) * RAD_PER_DEG;
+    double cw = cos(RAD_PER_DEG * (360.0 / numSegments));
+    double sd = sin(dec);
+    double cd = cos(dec);
+    return acos(cw * cd * cd + sd * sd) * DEG_PER_RAD;
+}
+
+
+// For use in computing partition bounds: clamps an input longitude angle
+// to 360.0 deg. Any input angle >= 360.0 - EPSILON is mapped to 360.0.
+// This is because partition bounds are computed by multiplying a sub-chunk
+// width by a sub-chunk number; the last sub-chunk in a sub-stripe can
+// therefore have a maximum longitude angle very slightly less than 360.0.
+double clampRa(double ra) {
+    if (ra >= 360.0 or (360.0 - ra < EPSILON)) {
+        return 360.0;
+    }
+    return ra;
+}
+
 } // unnamed namespace
 
 
@@ -170,7 +264,7 @@ uint32_t htmId(Vector3d const &v, int level) {
             id = (id << 2) + 1;
             continue;
         }
-        if (v.dot((sv2 + sv1).cross(sv2 - sv1)) >= 0) {
+        if (v.dot((sv0 + sv1).cross(sv0 - sv1)) >= 0) {
             v0 = v2;
             v1 = sv1;
             v2 = sv0;
@@ -240,13 +334,7 @@ Vector2d const spherical(Vector3d const &v) {
         sc(0) = ra;
     }
     if (v(2) != 0.0) {
-        double dec = atan2(v(2), sqrt(d2)) * DEG_PER_RAD;
-        if (dec < -90.0) {
-            dec = -90.0;
-        } else if (dec > 90.0) {
-            dec = 90.0;
-        }
-        sc(1) = dec;
+        sc(1) = clampDec(atan2(v(2), sqrt(d2)) * DEG_PER_RAD);
     }
     return sc;
 }
@@ -393,13 +481,15 @@ void PopulationMap::write(string const & path) const {
     buf[1] = static_cast<uint32_t>(_nonEmpty.size());
     for (size_t i = 0; i < _nonEmpty.size(); ++i) {
         uint32_t id = _nonEmpty[i];
+        uint32_t nrec = getNumRecords(id);
+        uint32_t sz = getSize(id);
         buf[3*i + 2] = id;
-        buf[3*i + 3] = getNumRecords(id);
-        buf[3*i + 4] = getSize(id);
+        buf[3*i + 3] = nrec;
+        buf[3*i + 4] = sz;
+        printf("Trixel %9u : %7u records, %9u bytes\n", id, nrec, sz);
     }
     OutputFile f(path);
     f.append(buf.get(), n * sizeof(uint32_t));
 }
 
 } // namespace dupr
-

@@ -66,7 +66,7 @@ void * InputFile::read(void * buf, off_t off, size_t sz) const {
 
 OutputFile::OutputFile(string const & path) : _path(path), _fd(-1) {
     int fd = open(path.c_str(),
-                  O_TRUNC | O_CREAT | O_WRONLY | O_APPEND,
+                  O_TRUNC | O_CREAT | O_WRONLY,
                   S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR);
     if (fd == -1) {
         throw std::runtime_error("open() failed");

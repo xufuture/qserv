@@ -113,6 +113,7 @@ void index(Options const & options) {
     state->merger.finish();
     cout << "\tmerging finished in " << t.elapsed() << " sec" << endl;
     // Write the population map
+    state->map.makeQueryable();
     state->map.write(options.indexDir + "/map.bin");
 }
 

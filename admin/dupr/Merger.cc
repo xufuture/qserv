@@ -197,9 +197,10 @@ void Merger::finish() {
     if (!_scratchWriter) {
         return;
     }
-    // flush the scratch file
+    // close the scratch file
     string path = _scratchWriter->path();
     _scratchWriter->close();
+    _scratchWriter.reset(0);
     vector<ScratchRunData> data;
     vector<ScratchRun> runs;
     data.reserve(_scratchBlocks.size());
