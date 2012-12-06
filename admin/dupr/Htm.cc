@@ -13,12 +13,14 @@ using std::atan2;
 using std::sqrt;
 using std::min;
 using std::max;
+using std::printf;
 using std::string;
 using std::swap;
-using std::printf;
+using std::vector;
 
 using Eigen::Vector2d;
 using Eigen::Vector3d;
+using Eigen::Matrix3d;
 
 
 namespace {
@@ -158,6 +160,18 @@ inline double minDeltaRa(double ra1, double ra2) {
     return min(delta, 360.0 - delta);
 }
 
+// Range reduce the given right ascension to lie in [0, 360).
+double reduceRa(double ra) {
+    ra = fmod(ra, 360.0);
+    if (ra < 0.0) {
+        ra += 360.0;
+        if (ra == 360.0) {
+            ra = 0.0;
+        }
+    }
+    return ra;
+}
+
 // Compute the extent in longitude [-alpha,alpha] of the circle
 // with radius r and center (0, centerDec) on the unit sphere.
 // Both r and centerDec are assumed to be in units of degrees;
@@ -217,7 +231,6 @@ double segmentWidth(double decMin, double decMax, int numSegments) {
     return acos(cw * cd * cd + sd * sd) * DEG_PER_RAD;
 }
 
-
 // For use in computing partition bounds: clamps an input longitude angle
 // to 360.0 deg. Any input angle >= 360.0 - EPSILON is mapped to 360.0.
 // This is because partition bounds are computed by multiplying a sub-chunk
@@ -228,6 +241,31 @@ double clampRa(double ra) {
         return 360.0;
     }
     return ra;
+}
+
+// Return the angular separation between v0 and v1 in degrees.
+double angSep(Vector3d const & v0, Vector3d const & v1) {
+    double cs = v0.dot(v1);
+    Vector3d n = v0.cross(v1);
+    double ss = n.norm();
+    if (cs == 0.0 && ss == 0.0) {
+        return 0.0;
+    }
+    return atan2(ss, cs) * DEG_PER_RAD;
+}
+
+// 32 bit integer hash function from Brett Mulvey.
+// See http://home.comcast.net/~bretm/hash/4.html
+uint32_t mulveyHash(uint32_t x) {
+    x += x << 16;
+    x ^= x >> 13;
+    x += x << 4;
+    x ^= x >> 7;
+    x += x << 10;
+    x ^= x >> 5;
+    x += x << 8;
+    x ^= x >> 16;
+    return x;
 }
 
 } // unnamed namespace
@@ -490,6 +528,403 @@ void PopulationMap::write(string const & path) const {
     }
     OutputFile f(path);
     f.append(buf.get(), n * sizeof(uint32_t));
+}
+
+
+SphericalBox::SphericalBox(double raMin, double raMax, double decMin, double decMax) {
+    if (decMin > decMax) {
+        throw std::runtime_error("Dec max < Dec min");
+    } else if (raMax < raMin && (raMax < 0.0 || raMin > 360.0)) {
+        throw std::runtime_error("RA max < RA min");
+    }
+    if (raMax - raMin >= 360.0) {
+        _raMin = 0.0;
+        _raMax = 360.0;
+    } else {
+        _raMin = reduceRa(raMin);
+        _raMax = reduceRa(raMax);
+    }
+    _decMin = clampDec(decMin);
+    _decMax = clampDec(decMax);
+}
+
+SphericalBox::SphericalBox(Matrix3d const & m) {
+    // find bounding circle for triangle with center cv and radius r
+    Vector3d cv = m.col(0) + m.col(1) + m.col(2);
+    double r = angSep(cv, m.col(0));
+    r = max(r, angSep(cv, m.col(1)));
+    r = max(r, angSep(cv, m.col(2)));
+    r += 1/3600.0;
+    // construct bounding box for bounding circle. This is inexact,
+    // but involves less code than a more accurate computation.
+    Vector2d c = spherical(cv);
+    double alpha = maxAlpha(r, c(1));
+    _decMin = clampDec(c(1) - r);
+    _decMax = clampDec(c(1) + r);
+    if (alpha > 180.0 - 1/3600.0) {
+        _raMin = 0.0;
+        _raMax = 360.0;
+    } else {
+        double raMin = c(0) - alpha;
+        double raMax = c(0) + alpha;
+        if (raMin < 0.0) {
+            raMin += 360.0;
+            if (raMin == 360.0) {
+                raMin = 0.0;
+            }
+        }
+        _raMin = raMin;
+        if (raMax > 360.0) {
+            raMax -= 360.0;
+        }
+        _raMax = raMax;
+    }
+}
+
+void SphericalBox::expand(double radius) {
+    if (radius < 0.0) {
+        throw std::runtime_error(
+            "Cannot expand spherical box by a negative angle");
+    } else if (radius == 0.0) {
+        return;
+    }
+    double const extent = getRaExtent();
+    double const alpha = maxAlpha(radius, max(abs(_decMin), abs(_decMax)));
+    if (extent + 2.0 * alpha >= 360.0 - 1/3600.0) {
+        _raMin = 0.0;
+        _raMax = 360.0;
+    } else {
+        _raMin -= alpha;
+        if (_raMin < 0.0) {
+            _raMin += 360.0;
+            if (_raMin == 360.0) {
+                _raMin = 0.0;
+            }
+        }
+        _raMax += alpha;
+        if (_raMax > 360.0) {
+            _raMax -= 360.0;
+        }
+    }
+    _decMin = clampDec(_decMin - radius);
+    _decMax = clampDec(_decMax + radius);
+}
+
+vector<uint32_t> const SphericalBox::htmIds(int level) const {
+    vector<uint32_t> ids;
+    if (level < 0 || level > HTM_MAX_LEVEL) {
+        throw std::runtime_error("invalid HTM subdivision level");
+    }
+    for (int r = 0; r < 8; ++r) {
+        Matrix3d m;
+        m.col(0) = *htmRootVert[r*3];
+        m.col(1) = *htmRootVert[r*3 + 1];
+        m.col(2) = *htmRootVert[r*3 + 2];
+        findIds(r + 8, level, m, ids);
+    }
+    return ids;
+}
+
+// Slow method of finding trixels overlapping a box. But, for the subdivision
+// levels and box sizes encountered in practice, this is very unlikely to be
+// a performance problem.
+void SphericalBox::findIds(
+    uint32_t id,
+    int level,
+    Matrix3d const & m,
+    vector<uint32_t> & ids
+) const {
+    if (!intersects(SphericalBox(m))) {
+        return;
+    } else if (level == 0) {
+        ids.push_back(id);
+        return;
+    }
+    Matrix3d mChild;
+    Vector3d const sv0 = (m.col(1) + m.col(2)).normalized();
+    Vector3d const sv1 = (m.col(2) + m.col(0)).normalized();
+    Vector3d const sv2 = (m.col(0) + m.col(1)).normalized();
+    mChild.col(0) = m.col(0);
+    mChild.col(1) = sv2;
+    mChild.col(2) = sv1;
+    findIds(id*4, level - 1, mChild, ids);
+    mChild.col(0) = m.col(1);
+    mChild.col(1) = sv0;
+    mChild.col(2) = sv2;
+    findIds(id*4 + 1, level - 1, mChild, ids);
+    mChild.col(0) = m.col(2);
+    mChild.col(1) = sv1;
+    mChild.col(2) = sv0;
+    findIds(id*4 + 2, level - 1, mChild, ids);
+    mChild.col(0) = sv0;
+    mChild.col(1) = sv1;
+    mChild.col(2) = sv2;
+    findIds(id*4 + 3, level - 1, mChild, ids);
+}
+
+
+Chunker::Chunker(double overlap, int32_t numStripes, int32_t numSubStripesPerStripe) :
+    _numChunksPerStripe(),
+    _numSubChunksPerChunk(),
+    _subChunkWidth(),
+    _alpha()
+{
+    if (numStripes < 1 || numSubStripesPerStripe < 1) {
+        throw std::runtime_error(
+            "Number of stripes and sub-stripes per stripe must be positive");
+    }
+    if (overlap < 0.0 || overlap > 10.0) {
+        throw std::runtime_error("Overlap must be in range [0, 10] deg");
+    }
+    int32_t const numSubStripes = numStripes * numSubStripesPerStripe;
+    _overlap = overlap;
+    _numStripes = numStripes;
+    _numSubStripesPerStripe = numSubStripesPerStripe;
+    double const stripeHeight = 180.0 / numStripes;
+    double const subStripeHeight = 180.0 / numSubStripes;
+    if (subStripeHeight < overlap) {
+        throw std::runtime_error("Overlap exceeds sub-stripe height");
+    }
+    _subStripeHeight = subStripeHeight;
+    boost::scoped_array<int32_t> numChunksPerStripe(new int32_t[numStripes]);
+    boost::scoped_array<int32_t> numSubChunksPerChunk(new int32_t[numSubStripes]);
+    boost::scoped_array<double> subChunkWidth(new double[numSubStripes]);
+    boost::scoped_array<double> alpha(new double[numSubStripes]);
+    int32_t maxSubChunksPerChunk = 0;
+    for (int32_t i = 0; i < numStripes; ++i) {
+        int32_t nc = segments(
+            i*stripeHeight - 90.0, (i + 1)*stripeHeight - 90.0, stripeHeight);
+        numChunksPerStripe[i] = nc;
+        for (int32_t j = 0; i < numSubStripesPerStripe; ++i) {
+            int32_t ss = i * numSubStripesPerStripe + j;
+            double decMin = ss*subStripeHeight - 90.0;
+            double decMax = (ss + 1)*subStripeHeight - 90.0;
+            int32_t nsc = segments(decMin, decMax, subStripeHeight) / nc;
+            maxSubChunksPerChunk = max(maxSubChunksPerChunk, nsc);
+            numSubChunksPerChunk[ss] = nsc;
+            double scw = 360.0 / (nsc * nc);
+            subChunkWidth[ss] = scw;
+            double a = maxAlpha(overlap, max(abs(decMin), abs(decMax)));
+            if (a > scw) {
+                throw std::runtime_error("Overlap exceeds sub-chunk width");
+            }
+            alpha[ss] = a;
+        }
+    }
+    _maxSubChunksPerChunk = maxSubChunksPerChunk;
+    swap(numChunksPerStripe, _numChunksPerStripe);
+    swap(numSubChunksPerChunk, _numSubChunksPerChunk);
+    swap(subChunkWidth, _subChunkWidth);
+    swap(alpha, _alpha);
+}
+
+Chunker::~Chunker() { }
+
+SphericalBox const Chunker::getChunkBounds(int32_t chunkId) const {
+    int32_t stripe = getStripe(chunkId);
+    int32_t chunk = getChunk(chunkId, stripe);
+    double width = 360.0 / _numChunksPerStripe[stripe];
+    double raMin = max(0.0, chunk*width);
+    double raMax = clampRa((chunk + 1)*width);
+    double decMin = clampDec(stripe*_numSubStripesPerStripe*_subStripeHeight - 90.0);
+    double decMax = clampDec((stripe + 1)*_numSubStripesPerStripe*_subStripeHeight - 90.0);
+    return SphericalBox(raMin, raMax, decMin, decMax);
+}
+
+SphericalBox const Chunker::getSubChunkBounds(
+    int32_t chunkId,
+    int32_t subChunkId
+) const {
+    int32_t stripe = getStripe(chunkId);
+    int32_t chunk = getChunk(chunkId, stripe);
+    int32_t subStripe = getSubStripe(subChunkId, stripe);
+    int32_t subChunk = getSubChunk(subChunkId, stripe, subStripe, chunk);
+    double raMin = subChunk*_subChunkWidth[subChunk];
+    double raMax = clampRa((subChunk + 1)*_subChunkWidth[subChunk]);
+    double decMin = clampDec(subStripe*_subStripeHeight - 90.0);
+    double decMax = clampDec((subStripe + 1)*_subStripeHeight - 90.0);
+    return SphericalBox(raMin, raMax, decMin, decMax);
+}
+
+void Chunker::locate(
+    Vector2d const & position,
+    int32_t chunkId,
+    vector<ChunkLocation> & locations
+) const {
+    // Find non-overlap location of position
+    double const ra = position(0);
+    double const dec = position(1);
+    int32_t subStripe = static_cast<int32_t>(
+        floor((dec + 90.0) / _subStripeHeight));
+    int32_t const numSubStripes = _numSubStripesPerStripe*_numStripes;
+    if (subStripe >= numSubStripes) {
+        subStripe = numSubStripes - 1;
+    }
+    int32_t const stripe = subStripe/_numSubStripesPerStripe;
+    int32_t subChunk = static_cast<int32_t>(
+        floor(ra / _subChunkWidth[subStripe]));
+    int32_t const numChunks = _numChunksPerStripe[stripe];
+    int32_t const numSubChunksPerChunk = _numSubChunksPerChunk[subStripe];
+    int32_t const numSubChunks = numChunks*numSubChunksPerChunk;
+    if (subChunk >= numSubChunks) {
+        subChunk = numSubChunks - 1;
+    }
+    int32_t const chunk = subChunk / numSubChunksPerChunk;
+    if (chunkId < 0 || getChunkId(stripe, chunk) == chunkId) {
+        // non-overlap location is in the requested chunk
+        ChunkLocation loc;
+        loc.chunkId = getChunkId(stripe, chunk);
+        loc.subChunkId = getSubChunkId(stripe, subStripe, chunk, subChunk);
+        loc.overlap = ChunkLocation::PRIMARY;
+        locations.push_back(loc);
+    }
+    // Get sub-chunk bounds
+    double const raMin = subChunk*_subChunkWidth[subChunk];
+    double const raMax = clampRa((subChunk + 1)*_subChunkWidth[subChunk]);
+    double const decMin = clampDec(subStripe*_subStripeHeight - 90.0);
+    double const decMax = clampDec((subStripe + 1)*_subStripeHeight - 90.0);
+    // Check whether the position is in the overlap regions of sub-chunks in
+    // the sub-stripe above and below this one.
+    if (subStripe > 0 && dec < decMin + _overlap) {
+        // position is in full-overlap region of sub-chunks 1 sub-stripe down
+        upDownOverlap(ra, chunkId, ChunkLocation::FULL_OVERLAP,
+                      (subStripe - 1) / _numSubStripesPerStripe,
+                      subStripe - 1, locations);
+    }
+    if (subStripe < numSubStripes - 1 && dec >= decMax - _overlap) {
+        // position is in full/self-overlap regions of sub-chunks 1 sub-stripe up
+        upDownOverlap(ra, chunkId, ChunkLocation::SELF_OVERLAP,
+                      (subStripe + 1) / _numSubStripesPerStripe,
+                      subStripe + 1, locations);
+    }
+    // Check whether the position is in the overlap regions of the sub-chunks
+    // to the left and right.
+    if (numSubChunks == 1) {
+        return;
+    }
+    double const alpha = _alpha[subStripe];
+    if (ra < raMin + alpha) {
+        // position is in full/self-overlap region of sub-chunk to the left
+        int32_t overlapChunk, overlapSubChunk;
+        if (subChunk == 0) {
+            overlapChunk = numChunks - 1;
+            overlapSubChunk = numSubChunks - 1;
+        } else {
+            overlapChunk = (subChunk - 1) / numSubChunksPerChunk;
+            overlapSubChunk = subChunk - 1;
+        }
+        if (chunkId < 0 || getChunkId(stripe, overlapChunk) == chunkId) {
+            ChunkLocation loc;
+            loc.chunkId = getChunkId(stripe, overlapChunk);
+            loc.subChunkId = getSubChunkId(
+                stripe, subStripe, overlapChunk, overlapSubChunk);
+            loc.overlap = ChunkLocation::SELF_OVERLAP;
+            locations.push_back(loc);
+        }
+    }
+    if (ra > raMax - alpha) {
+        // position is in full-overlap region of sub-chunk to the right
+        int32_t overlapChunk, overlapSubChunk;
+        if (subChunk == numSubChunks - 1) {
+            overlapChunk = 0;
+            overlapSubChunk = 0;
+        } else {
+            overlapChunk = (subChunk + 1) / numSubChunksPerChunk;
+            overlapSubChunk = subChunk + 1;
+        }
+        if (chunkId < 0 || getChunkId(stripe, overlapChunk) == chunkId) {
+            ChunkLocation loc;
+            loc.chunkId = getChunkId(stripe, overlapChunk);
+            loc.subChunkId = getSubChunkId(
+                stripe, subStripe, overlapChunk, overlapSubChunk);
+            loc.overlap = ChunkLocation::FULL_OVERLAP;
+            locations.push_back(loc);
+        }
+    }
+}
+
+void Chunker::upDownOverlap(
+    double ra,
+    int32_t chunkId,
+    ChunkLocation::Overlap overlap,
+    int32_t stripe,
+    int32_t subStripe,
+    vector<ChunkLocation> & locations
+) const {
+    int32_t const numChunks = _numChunksPerStripe[stripe];
+    int32_t const numSubChunksPerChunk = _numSubChunksPerChunk[subStripe];
+    int32_t const numSubChunks = numChunks*numSubChunksPerChunk;
+    double const subChunkWidth = _subChunkWidth[subStripe];
+    double const alpha = _alpha[subStripe];
+    int32_t minSubChunk = static_cast<int32_t>(floor((ra - alpha) / subChunkWidth));
+    int32_t maxSubChunk = static_cast<int32_t>(floor((ra + alpha) / subChunkWidth));
+    if (minSubChunk < 0) {
+        minSubChunk += numSubChunks;
+    }
+    if (maxSubChunk >= numSubChunks) {
+        maxSubChunk -= numSubChunks;
+    }
+    if (minSubChunk > maxSubChunk) {
+        // 0/360 wrap around
+        for (int32_t subChunk = minSubChunk; subChunk < numSubChunks; ++subChunk) {
+            int32_t chunk = subChunk / numSubChunksPerChunk;
+            if (chunkId < 0 || getChunkId(stripe, chunk) == chunkId) {
+                ChunkLocation loc;
+                loc.chunkId = getChunkId(stripe, chunk);
+                loc.subChunkId = getSubChunkId(stripe, subStripe, chunk, subChunk);
+                loc.overlap = overlap;
+                locations.push_back(loc);
+            }
+        }
+        minSubChunk = 0;
+    }
+    for (int32_t subChunk = minSubChunk; subChunk <= maxSubChunk; ++subChunk) {
+        int32_t chunk = subChunk / numSubChunksPerChunk;
+        if (chunkId < 0 || getChunkId(stripe, chunk) == chunkId) {
+            ChunkLocation loc;
+            loc.chunkId = getChunkId(stripe, chunk);
+            loc.subChunkId = getSubChunkId(stripe, subStripe, chunk, subChunk);
+            loc.overlap = overlap;
+            locations.push_back(loc);
+        }
+    }
+}
+
+vector<int32_t> const Chunker::chunksFor(
+    SphericalBox const & region,
+    uint32_t node,
+    uint32_t numNodes,
+    bool hash
+) const {
+    if (numNodes == 0) {
+        throw std::runtime_error("There must be at least one node to assign chunks to");
+    }
+    if (node >= numNodes) {
+        throw std::runtime_error("Node number must be in range [0, numNodes)");
+    }
+    vector<int32_t> chunks;
+    uint32_t n = 0;
+    // The slow and easy route - loop over every chunk, see if it intersects
+    // region and if so determine whether it belongs to the given node.
+    for (int32_t stripe = 0; stripe < _numStripes; ++stripe) {
+        for (int32_t chunk = 0; chunk < _numChunksPerStripe[stripe]; ++chunk, ++n) {
+            int32_t const chunkId = getChunkId(stripe, chunk);
+            if (hash) {
+                if (mulveyHash(static_cast<uint32_t>(chunkId)) % numNodes != node) {
+                    continue;
+                }
+            } else {
+                if (n % numNodes != node) {
+                    continue;
+                }
+            }
+            SphericalBox box = getChunkBounds(getChunkId(stripe, chunk));
+            if (region.intersects(box)) {
+                chunks.push_back(chunkId);
+            }
+        }
+    }
+    return chunks;
 }
 
 } // namespace dupr

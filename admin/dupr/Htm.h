@@ -206,6 +206,192 @@ private:
     std::vector<uint32_t> _nonEmpty;
 };
 
+
+/** A spherical coordinate space bounding box.
+
+    This is similar to a bounding box in cartesian space in that
+    it is specified by a pair of points; however, a spherical box may
+    correspond to the entire unit-sphere, a spherical cap, a lune or
+    the traditional rectangle. Additionally, spherical boxes can span
+    the 0/360 degree longitude angle discontinuity.
+  */
+class SphericalBox {
+public:
+    SphericalBox(double raMin, double raMax, double decMin, double decMax);
+
+    /// Create a conservative bounding box for the triangle with vertices
+    /// stored as column vectors in m.
+    SphericalBox(Eigen::Matrix3d const & m);
+
+    /// Expand the box by the given radius.
+    void expand(double radius);
+
+    /// Is the box empty?
+    bool isEmpty() const {
+        return _decMax < _decMin;
+    }
+
+    /// Does the box wrap around the 0/360 right ascension discontinuity?
+    bool wraps() const {
+        return _raMax < _raMin;
+    }
+
+    /// Return the extent in right ascension of this box.
+    double getRaExtent() const {
+        if (wraps()) {
+            return 360.0 - _raMin + _raMax;
+        }
+        return _raMax - _raMin;
+    }
+
+    /// Does this box intersect the given box?
+    inline bool intersects(SphericalBox const & box) const {
+        if (box.isEmpty()) {
+            return false;
+        } else if (box._decMin > _decMax || box._decMax < _decMin) {
+            return false;
+        } else if (wraps()) {
+            if (box.wraps()) {
+                return true;
+            }
+            return box._raMin <= _raMax || box._raMax >= _raMin;
+        } else if (box.wraps()) {
+            return _raMin <= box._raMax || _raMax >= box._raMin;
+        }
+        return  _raMin <= box._raMax && _raMax >= box._raMin;
+    }
+
+    /// Return a list of IDs for HTM trixels potentially overlapping this box.
+    /// IDs of all overlapping HTM trixels are returned, but IDs for nearby
+    /// trixels that do not actually overlap may also be included.
+    std::vector<uint32_t> const htmIds(int level) const;
+
+private:
+    void findIds(uint32_t id,
+                 int level,
+                 Eigen::Matrix3d const & m,
+                 std::vector<uint32_t> & ids) const;
+
+    double _raMin;
+    double _raMax;
+    double _decMin;
+    double _decMax;
+};
+
+
+/** A chunk location for a position.
+  */
+struct ChunkLocation {
+    enum Overlap {
+        PRIMARY = 0,  // not an overlap location
+        SELF_OVERLAP, // self-overlap location (also a full-overlap location)
+        FULL_OVERLAP, // full-overlap location
+    };
+    int32_t chunkId;
+    int32_t subChunkId;
+    Overlap overlap;
+};
+
+/** A class that assigns points to partitions using a simple scheme that
+    breaks the unit sphere into fixed height declination stripes. These are
+    in turn broken up into fixed width right ascension chunks (each stripe
+    has a variable number of chunks to account for distortion at the poles).
+    Chunks are in turn broken up into fixed height sub-stripes, and each
+    sub-stripe is then divided into fixed width sub-chunks. As before,
+    the number of sub-chunks per sub-stripe is variable to account for
+    polar distortion.
+
+    This class can also assign chunks to servers according to a number
+    of algorithms.
+  */
+class Chunker {
+public:
+    Chunker(double overlap, int32_t numStripes, int32_t numSubStripesPerStripe);
+    ~Chunker();
+
+    double getOverlap() const { return _overlap; }
+
+    /// Return a bounding box for the given chunk.
+    SphericalBox const getChunkBounds(int32_t chunkId) const;
+
+    /// Return a bounding box for the given sub-chunk.
+    SphericalBox const getSubChunkBounds(int32_t chunkId, int32_t subChunkId) const;
+
+    /// Append locations of the given position to the locations vector.
+    /// If chunkId is negative, all locations will be appended. Otherwise,
+    /// only those with the given chunk ID will be appended.
+    void locate(Eigen::Vector2d const & position,
+                int32_t chunkId,
+                std::vector<ChunkLocation> & locations) const;
+
+    /// Return IDs of all chunks overlapping the given region and belonging
+    /// to the given node. The target node is specifed as an integer in
+    /// range [0, numNodes). If hash is true, then chunk C is assigned to
+    /// the node given by hash(C) mod numNodes. Otherwise, chunks are doled
+    /// out to servers in round-robin fashion.
+    ///
+    /// Note that changing the region argument will not affect which server
+    /// a chunk C is assigned to in any way.
+    std::vector<int32_t> const chunksFor(SphericalBox const & region,
+                                         uint32_t node,
+                                         uint32_t numNodes,
+                                         bool hash) const;
+
+private:
+    // Disable copy construction and assignment.
+    Chunker(Chunker const &);
+    Chunker & operator=(Chunker const &);
+
+    // conversion between IDs and indexes
+    int32_t getStripe(int32_t chunkId) const {
+        return chunkId / (2*_numStripes);
+    }
+    int32_t getSubStripe(int32_t subChunkId, int32_t stripe) const {
+        return stripe*_numSubStripesPerStripe + subChunkId/_maxSubChunksPerChunk;
+    }
+    int32_t getChunk(int32_t chunkId, int32_t stripe) const {
+        return chunkId - stripe*2*_numStripes;
+    }
+    int32_t getSubChunk(int32_t subChunkId, int32_t stripe,
+                        int32_t subStripe, int32_t chunk) const {
+        return subChunkId -
+               (subStripe - stripe*_numSubStripesPerStripe)*_maxSubChunksPerChunk +
+               chunk*_numSubChunksPerChunk[subStripe];
+    }
+    int32_t getChunkId(int32_t stripe, int32_t chunk) const {
+        return stripe*2*_numSubStripesPerStripe + chunk;
+    }
+    int32_t getSubChunkId(int32_t stripe, int32_t subStripe,
+                          int32_t chunk, int32_t subChunk) const {
+        return (subStripe - stripe*_numSubStripesPerStripe)*_maxSubChunksPerChunk +
+               (subChunk - chunk*_numSubChunksPerChunk[subStripe]);
+    }
+
+    void upDownOverlap(double ra,
+                       int32_t chunkId,
+                       ChunkLocation::Overlap overlap,
+                       int32_t stripe,
+                       int32_t subStripe,
+                       std::vector<ChunkLocation> & locations) const;
+
+    double _overlap;
+    double _subStripeHeight;
+    int32_t _numStripes;
+    int32_t _numSubStripesPerStripe;
+    /// Maximum number of sub-chunks per chunk across all sub-stripes.
+    int32_t _maxSubChunksPerChunk;
+    /// Number of chunks per stripe, indexed by stripe.
+    boost::scoped_array<int32_t> _numChunksPerStripe;
+    /// Number of sub-chunks per chunk, indexed by sub-stripe.
+    boost::scoped_array<int32_t> _numSubChunksPerChunk;
+    /// Sub-chunk width (in RA) for each sub-stripe.
+    boost::scoped_array<double> _subChunkWidth;
+    /// For each sub-stripe, provides the maximum half-width (in RA)
+    /// of a circle with radius _overlap and center inside the sub-stripe.
+    /// Guaranteed to be smaller than the sub-chunk width.
+    boost::scoped_array<double> _alpha;
+};
+
 } // namespace dupr
 
 #endif

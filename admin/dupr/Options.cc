@@ -20,31 +20,6 @@ namespace dupr {
 
 namespace {
 
-void buildCommonOptions(po::options_description & options) {
-    po::options_description general("General options", 80);
-    general.add_options()
-        ("help,h", po::bool_switch(),
-            "Print usage help.")
-        ("num-threads,j", po::value<int>()->default_value(4),
-            "Number of threads to launch.")
-        ("index-dir,i", po::value<string>()->default_value("."),
-            "Index file directory. Written by the indexer and read from "
-            "by the duplicator. Must be specified exactly once.");
-    po::options_description input("Input options", 80);
-    input.add_options()
-        ("delimiter,d", po::value<char>()->default_value(','),
-            "CSV delimiter character.")
-        ("fields,f", po::value<string>(),
-            "Comma separated list of field names in input file(s) or index.")
-        ("partitioned-by,p", po::value<string>(),
-            "Name of partitioning right ascension and declination "
-            "fields, separated by a comma. Must be specified exactly once.")
-        ("primary-key,k", po::value<string>(),
-            "Name of primary record ID field, e.g. sourceId in the "
-            "Source table. Must be specified exactly once.");
-    options.add(general).add(input);
-}
-
 // Return a copy of s with leading and trailing whitespace removed.
 string const trim(string const & s) {
     static string const ws(" \t\n\r\f");
@@ -76,7 +51,33 @@ vector<string> split(string const & s) {
     return pieces;
 }
 
+void buildCommonOptions(po::options_description & options) {
+    po::options_description general("General options", 80);
+    general.add_options()
+        ("help,h", po::bool_switch(),
+            "Print usage help.")
+        ("num-threads,j", po::value<int>()->default_value(4),
+            "Number of threads to launch.")
+        ("index-dir,i", po::value<string>()->default_value("."),
+            "Index file directory. Written by the indexer and read from "
+            "by the duplicator. Must be specified exactly once.");
+    po::options_description input("Input options", 80);
+    input.add_options()
+        ("delimiter,d", po::value<char>()->default_value(','),
+            "CSV delimiter character.")
+        ("fields,f", po::value<string>(),
+            "Comma separated list of field names in input file(s) or index.")
+        ("partitioned-by,p", po::value<string>(),
+            "Name of partitioning right ascension and declination "
+            "fields, separated by a comma. Must be specified exactly once.")
+        ("primary-key,k", po::value<string>(),
+            "Name of primary record ID field, e.g. sourceId in the "
+            "Source table. Must be specified exactly once.");
+    options.add(general).add(input);
+}
+
 } // unnamed namespace
+
 
 void buildIndexerOptions(po::options_description & options) {
     buildCommonOptions(options);
@@ -105,12 +106,25 @@ void buildDuplicatorOptions(po::options_description & options) {
             "Name of right ascension and declination fields, separated by a "
             "comma. The duplicator will remap these along with the partitioning "
             "position. May be specified any number of times.")
-        ("foreign-key,F", po::value<vector<string> >(),
+        ("foreign-key,K", po::value<vector<string> >(),
             "Name of a foreign record ID field (e.g. objectId in the Source "
             "table) and the corresponding index directory, separated by a "
             "comma. May be specified any number of times.");
+    po::options_description partitioning("Partitioning options", 80);
+    partitioning.add_options()
+        ("num-stripes,S", po::value<int>()->default_value(18),
+            "Number of declination stripes to create chunks from.")
+        ("num-sub-stripes,s", po::value<int>()->default_value(100),
+            "Number of sub-stripes to divide each stripe into.")
+        ("overlap,o", po::value<double>()->default_value(0.01667),
+            "Chunk/sub-chunk overlap radius (deg)")
+        ("chunk-column,C", po::value<string>()->default_value("chunkId"),
+            "Name of chunk ID column")
+        ("sub-chunk-column,c", po::value<string>()->default_value("subChunkId"),
+            "Name of sub-chunk ID column");
     // TODO: these are incomplete
     options.add(duplicator);
+    options.add(partitioning);
 }
 
 Options const indexerCommandLine(int argc, char ** argv) {
@@ -191,14 +205,14 @@ Options const indexerCommandLine(int argc, char ** argv) {
     StringIter i = find(fields.begin(), fields.end(), p[0]);
     if (i == fields.end()) {
         cerr << p[0] + " field specified via --partitioned-by "
-                "is not in the schema" << endl;
+                "does not exist" << endl;
         exit(EXIT_FAILURE);
     }
     opts.partitionPos.raField = static_cast<int>(i - fields.begin());
     i = find(fields.begin(), fields.end(), p[1]);
     if (i == fields.end()) {
         cerr << p[1] + " field specified via --partitioned-by "
-                "is not in the schema" << endl;
+                "does not exist" << endl;
         exit(EXIT_FAILURE);
     }
     opts.partitionPos.decField = static_cast<int>(i - fields.begin());
@@ -210,7 +224,7 @@ Options const indexerCommandLine(int argc, char ** argv) {
     i = find(fields.begin(), fields.end(), pk);
     if (i == fields.end()) {
         cerr << pk + " field specified via --primary-key "
-                "is not in the schema" << endl;
+                "does not exist" << endl;
         exit(EXIT_FAILURE);
     }
     opts.pkField = static_cast<int>(i - fields.begin());
