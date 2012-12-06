@@ -58,11 +58,12 @@ from string import Template
 import metadata
 import lsst.qserv.master.config
 from lsst.qserv.master import geometry
-from lsst.qserv.master.geometry import SphericalBox, SphericalBoxPartitionMap
+from lsst.qserv.master.geometry import SphericalBox
 from lsst.qserv.master.geometry import SphericalConvexPolygon, convexHull
 from lsst.qserv.master.db import TaskDb as Persistence
 from lsst.qserv.master.db import Db
 from lsst.qserv.master import protocol
+from lsst.qserv.master.spatial import getSpatialConfig, getRegionFactory
 
 # SWIG'd functions
 
@@ -127,17 +128,6 @@ def computeShortCircuitQuery(query, conditions):
     return # not a short circuit query.
 
 ## Helpers
-def makePmap():
-    c = lsst.qserv.master.config.config
-    stripes = c.getint("partitioner", "stripes")
-    substripes = c.getint("partitioner", "substripes")
-    if (stripes < 1) or (substripes < 1):
-        msg = "Partitioner's stripes and substripes must be natural numbers."
-        raise lsst.qserv.master.config.ConfigError(msg)
-    p = SphericalBoxPartitionMap(stripes, substripes) 
-    print "Using %d stripes and %d substripes." % (stripes, substripes)
-    return p
-
 def getResultTable(tableName):
     """A convenience function that uses the mysql client to get quick 
     results."""
@@ -192,354 +182,6 @@ class SleepingThread(threading.Thread):
         threading.Thread.__init__(self)
     def run(self):
         time.sleep(self.howlong)
-
-########################################################################
-
-class XrdOperation(threading.Thread):
-        def __init__(self, chunk, query, outputFunc, outputArg, resultPath):
-            threading.Thread.__init__(self)
-
-            self._chunk = chunk
-            self._query = query
-            self._queryLen = len(query)
-            self._outputFunc = outputFunc
-            self._outputArg = outputArg
-            self._url = ""
-            self._handle = None
-            self._resultBufferList = []
-            self._usingCppTransaction = True
-            self._usingXrdReadTo = True
-            self._targetName = os.path.join(resultPath, self._outputArg)
-            self._readSize = 8192000
-
-            self.successful = None
-            self.profileName = "/tmp/qserv_chunk%d_profile" % chunk # Public.
-
-            self.setXrd()
-            pass
-
-        def setXrd(self):
-            hostport = os.getenv("QSERV_XRD","lsst-dev01:1094")
-            user = "qsmaster"
-            self._url = "xroot://%s@%s//query/%d" % (user, hostport, self._chunk)
-
-        def _doRead(self):
-            xrdLseekSet(self._handle, 0L); ## Seek to beginning to read from beginning.
-            while True:
-                bufSize = self._readSize
-                buf = "".center(bufSize) # Fill buffer
-                rCount = xrdReadStr(self._handle, buf)
-                tup = (self._chunk, len(self._resultBufferList), rCount)
-                #print "chunk %d [packet %d] recv %d" % tup
-                if rCount <= 0:
-                    return False
-                self._resultBufferList.append(buf[:rCount])
-                del buf # Really get rid of the buffer
-                if rCount < bufSize:
-                    break
-                pass
-            return True
-
-        def _doPostProc(self, stats, taskName):
-            if self._resultBufferList:
-                # print "Result buffer is", 
-                # for s in resultBufferList:
-                #     print "----",s,"----"
-                stats[taskName+"postStart"] = time.time()
-                self._outputFunc(self._outputArg, self._resultBufferList)
-                stats[taskName+"postFinish"] = time.time()
-            del self._resultBufferList # Really get rid of the result buffer
-            pass
-
-        def _readAndPostProc(self, stats, taskName):
-            stats[taskName+"postStart"] = time.time()
-            success = self._doRead()
-            xrdClose(self._handle)
-            if success:
-                self._doPostProc(stats, taskName)
-            stats[taskName+"postFinish"] = time.time()
-            return success
-
-        def _copyToLocal(self, stats, taskName):
-            """_copyToLocal performs the necessary xrdRead and file writing 
-            to copy xrd data to a local file, using C++ code for heavylifting.
-            Warning!  This duplicates saveTableDump functionality.
-            Use only one of these.  """
-            xrdLseekSet(self._handle, 0L); ## Seek to beginning to read from beg
-            stats[taskName+"postStart"] = time.time()
-            writeRes, readRes = xrdReadToLocalFile(self._handle, 
-                                                   self._readSize,
-                                                   self._targetName)
-            xrdClose(self._handle)
-            stats[taskName+"postFinish"] = time.time()
-            if readRes < 0:
-                print "Couldn't read %d, error %d" %(self._chunk, -readRes)
-                return False
-            elif writeRes < 0:
-                print "Couldn't write %s, error %d" %(self._targetName, 
-                                                      -writeRes)
-                return False
-            return True
-
-        def _doCppTransaction(self, stats, taskName):
-            packedResult = xrdOpenWriteReadSaveClose(self._url,
-                                                     self._query, 
-                                                     self._readSize,
-                                                     self._targetName);
-            self._query = None # Reclaim memory
-            if packedResult.open < 0:
-                print "Error: open ", self._url
-                return False
-            if packedResult.queryWrite < 0:
-                print "Error: dispatch/write %s (%d) e=%d" \
-                    % (self._url, packedResult.open, packedResult.queryWrite)
-                return False
-            if packedResult.read < 0:
-                print "Error: result readback %s (%d) e=%d" \
-                    % (self._url, packedResult.open, packedResult.read)
-                return False
-            if packedResult.localWrite < 0:
-                print "Error: result writeout %s (%d) file %s e=%d" \
-                    % (self._url, packedResult.open, 
-                       self._targetName, packedResult.localWrite)
-                return False
-            return True
-
-        def _doNormalTransaction(self, stats, taskName):
-            self._handle = xrdOpen(self._url, os.O_RDWR)
-            wCount = xrdWrite(self._handle, charArray_frompointer(self._query), 
-                              self._queryLen)
-            self._query = None # Save memory!
-            success = True
-            if wCount == self._queryLen:
-                #print self._url, "Wrote OK", wCount, "out of", self._queryLen
-                if self._usingXrdReadTo:
-                    success = self._copyToLocal(stats, taskName)
-                else:
-                    success = self._readAndPostProc(stats, taskName)
-            else:
-                print self._url, "Write failed! (%d of %d)" %(wCount, self._queryLen)
-                success = False
-            return success
-
-        def run(self):
-            #profile.runctx("self._doMyWork()", globals(), locals(), 
-            #                self.profileName)
-            self._doMyWork()
-
-        def _doMyWork(self):
-            #print "Issuing (%d)" % self._chunk, "via", self._url
-            stats = time.qServQueryTimer[time.qServRunningName]
-            taskName = "chunkQ_" + str(self._chunk)
-            stats[taskName+"Start"] = time.time()
-            self.successful = True
-            if self._usingCppTransaction:
-                self.successful = self._doCppTransaction(stats, taskName)
-            else:
-                self.successful = self._doNormalTransaction(stats, taskName)
-            print "[", self._chunk, "complete]",
-            stats[taskName+"Finish"] = time.time()
-            return self.successful
-        pass
-
-########################################################################
-
-class RegionFactory:
-    def __init__(self):
-        self._constraintNames = {
-            "box" : self._handleBox,
-            "circle" : self._handleCircle,
-            "ellipse" : self._handleEllipse,
-            "poly": self._handleConvexPolygon,
-            "hull": self._handleConvexHull,
-            # Handled elsewhere
-            "db" : self._handleNop,
-            "objectId" : self._handleNop
-            }
-        pass
-
-    def _splitParams(self, name, tupleSize, param):
-        hList = map(float,param.split(","))
-        assert 0 == (len(hList) % tupleSize), "Wrong # for %s." % name
-        # Split a long param list into tuples.
-        return map(lambda x: hList[tupleSize*x : tupleSize*(x+1)],
-                   range(len(hList)/tupleSize))
-        
-    def _handleBox(self, param):
-        # ramin, declmin, ramax, declmax
-        return map(lambda t: SphericalBox(t[:2], t[2:]),
-                   self._splitParams("box", 4, param))
-
-    def _handleCircle(self, param):
-        # ra,decl, radius
-        return map(lambda t: SphericalBox(t[:2], t[2:]),
-                   self._splitParams("circle", 3, param))
-
-    def _handleEllipse(self, param):
-        # ra,decl, majorlen,minorlen,majorangle
-        return map(lambda t: SphericalBox(t[:2], t[2], t[3], t[4]),
-                   self._splitParams("ellipse", 5, param))
-
-    def _handleConvexPolygon(self, param):
-        # For now, list of vertices only, in counter-clockwise order
-        # vertex count, ra1,decl1, ra2,decl2, ra3,decl3, ... raN,declN
-        # Note that:
-        # N = vertex_count, and 
-        # N >= 3 in order to be considered a polygon.
-        return self._handlePointSequence(SphericalConvexPolygon,
-                                         "convex polygon", param)
-
-    def _handleConvexHull(self, param):
-        # ConvexHull is adds a processing step to create a polygon from
-        # an unordered set of points.
-        # Points are given as ra,dec pairs:
-        # point count, ra1,decl1, ra2,decl2, ra3,decl3, ... raN,declN
-        # Note that:
-        # N = point_count, and 
-        # N >= 3 in order to define a hull with nonzero area.
-        return self._handlePointSequence(convexHull, "convex hull", param)
-
-    def _handlePointSequence(self, constructor, name, param):
-        h = param.split(",")
-        polys = []
-        while true:
-            count = int(h[0]) # counts are integer
-            next = 1 + (2*count)
-            assert len(hList) >= next, \
-                "Not enough values for %s (%d)" % (name, count)
-            flatPoints = map(float, h[1 : next])
-            # A list of 2-tuples should be okay as a list of vertices.
-            polys.append(constructor(zip(flatPoints[::2],
-                                        flatPoints[1::2])))
-            h = h[next:]
-        return polys
-        
-    def _handleNop(self, param):
-        return []
-
-    def getRegionFromHint(self, hintDict):
-        """
-        Convert a hint string list into a list of geometry regions that
-        can be used with a partition mapper.
-        
-        @param hintDict a dictionary of hints
-        @return None on error
-        @return list of spherical regions if successful
-        """
-        regions = []
-        try:
-            for name,param in hintDict.items():
-                if name in self._constraintNames: # spec?
-                    regs = self._constraintNames[name](param)
-                    regions.extend(regs)
-                else: # No previous type, and no current match--> error
-                    self.errorDesc = "Bad Hint name found:"+name
-                    return None
-        except Exception, e:
-            self.errorDesc = str(e)
-            return None
-
-        return regions
-                                          
-########################################################################
-
-class QueryCollater:
-    def __init__(self, sessionId):
-        self.sessionId = sessionId
-        self.inFlight = {}
-        self.scratchPath = setupResultScratch()
-        self._mergeCount = 0
-        self._setDbParams() # Sets up more db params
-        pass
-    
-    def submit(self, chunk, table, q):
-        saveName = self._saveName(chunk)
-        handle = submitQuery(self.sessionId, chunk, q, saveName)
-        self.inFlight[chunk] = (handle, table)
-        #print "Chunk %d to %s    (%s)" % (chunk, saveName, table)
-        #state = joinSession(self.sessionId)
-
-    def finish(self):
-        for (k,v) in self.inFlight.items():
-            s = tryJoinQuery(self.sessionId, v[0])
-            #print "State of", k, "is", getQueryStateString(s)
-
-        s = joinSession(self.sessionId)
-        print "Final state of all queries", getQueryStateString(s)
-        
-        # Merge all results.
-        for (k,v) in self.inFlight.items():
-            self._merger.merge(self._saveName(k), v[1])
-            #self._mergeTable(self._saveName(k), v[1])
-
-    def getResultTableName(self):
-        ## Should do sanity checking to make sure that the name has been
-        ## computed.
-        return self._finalQname
-
-    def _getTimeStampId(self):
-        unixtime = time.time()
-        # Use the lower digits as pseudo-unique (usec, sec % 10000)
-        # FIXME: is there a better idea?
-        return str(int(1000000*(unixtime % 10000)))
-
-    def _setDbParams(self):
-        c = lsst.qserv.master.config.config
-        self._dbSock = c.get("resultdb", "unix_socket")
-        self._dbUser = c.get("resultdb", "user")
-        self._dbName = c.get("resultdb", "db")
-        
-        self._finalName = "result_%s" % self._getTimeStampId();
-        self._finalQname = "%s.%s" % (self._dbName, self._finalName)
-
-        self._mysqlBin = c.get("mysql", "mysqlclient")
-        if not self._mysqlBin:
-            self._mysqlBin = "mysql"
-        # setup C++ merger
-        # FIXME: This code is deprecated-- it doesn't properly 
-        # configure the merger.
-        mergeConfig = TableMergerConfig(self._dbName, self._finalQname, 
-                                       self._dbUser, self._dbSock, 
-                                       self._mysqlBin)
-        self._merger = TableMerger(mergeConfig)
-
-    def _mergeTable(self, dumpFile, tableName):
-        dropSql = "DROP TABLE IF EXISTS %s;" % self._finalQname
-        createSql = "CREATE TABLE %s SELECT * FROM %s;" % (self._finalQname,
-                                                           tableName)
-        insertSql = "INSERT INTO %s SELECT * FROM %s;" % (self._finalQname,
-                                                          tableName)
-        cleanupSql = "DROP TABLE %s;" % tableName
-        
-        cmdBase = "%s --socket=%s -u %s %s " % (self._mysqlBin, self._dbSock, 
-                                                self._dbUser,
-                                                self._dbName)
-        loadCmd = cmdBase + " <" + dumpFile
-        mergeSql = ""
-        self._mergeCount += 1
-        if self._mergeCount <= 1:
-            mergeSql += dropSql + createSql + "\n"
-        else:
-            mergeSql += insertSql + "\n";
-        mergeSql += cleanupSql
-        rc = os.system(loadCmd)
-        if rc != 0:
-            print "Error loading result table :", dumpFile
-        else:
-            cmdList = cmdBase.strip().split(" ")
-            p = Popen(cmdList, bufsize=0, 
-                      stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                      close_fds=True)
-            (outdata, errdata) = p.communicate(mergeSql)
-            p.stdin.close()
-            if p.wait() != 0:
-                print "Error merging (%s)." % mergeSql, outdata, errdata
-            pass
-        pass
-        
-    def _saveName(self, chunk):
-        dumpName = "%s_%s.dump" % (str(self.sessionId), str(chunk))
-        return os.path.join(self.scratchPath, dumpName)
 
 ########################################################################
 
@@ -629,69 +271,17 @@ class QueryBabysitter:
         ## computed.
         return getSessionResultName(self._sessionId)
 
+    def _getTimeStampId(self):
+        unixtime = time.time()
+        # Use the lower digits as pseudo-unique (usec, sec % 10000)
+        # FIXME: is there a better idea?
+        return str(int(1000000*(unixtime % 10000)))
+
     def _saveName(self, chunk):
         ## Want to delegate this to the merger.
         dumpName = "%s_%s.dump" % (str(self._sessionId), str(chunk))
         return os.path.join(self._scratchPath, dumpName)
 
-########################################################################
-
-class PartitioningConfig: 
-    """ An object that stores information about the partitioning setup.
-    """
-    def __init__(self):
-        self.clear() # reset fields
-
-    def clear(self):
-        ## public
-        self.chunked = set([])
-        self.subchunked = set([])
-        self.allowedDbs = set([])
-        self.chunkMapping = ChunkMapping()
-        self.chunkMeta = ChunkMeta()
-        pass
-
-    def applyConfig(self):
-        c = lsst.qserv.master.config.config
-        try:
-            chk = c.get("table", "chunked")
-            subchk = c.get("table", "subchunked")
-            adb = c.get("table", "alloweddbs")
-            self.chunked.update(chk.split(","))
-            self.subchunked.update(subchk.split(","))    
-            self.allowedDbs.update(adb.split(","))
-        except:
-            print "Error: Bad or missing chunked/subchunked spec."
-        self._updateMap()
-        self._updateMeta()
-        pass
-
-    def getMapRef(self, chunk, subchunk):
-        """@return a map reference suitable for sql parsing and substitution.
-        For convenience.
-        """
-        return self.chunkMapping.getMapReference(chunk, subchunk)
-
-    def _updateMeta(self):
-        for db in self.allowedDbs:
-            map(lambda t: self.chunkMeta.add(db, t, 1), self.chunked)
-            map(lambda t: self.chunkMeta.add(db, t, 2), self.subchunked)
-        pass
-
-    def _updateMap(self):
-        map(self.chunkMapping.addChunkKey, self.chunked)
-        map(self.chunkMapping.addSubChunkKey, self.subchunked)
-        pass
-
-########################################################################
-class QueryHintError(Exception):
-    """An error in query hinting (Bad/missing values)."""
-    def __init__(self, reason):
-        self.reason = reason
-    def __str__(self):
-        return repr(self.reason)
-
-########################################################################
 class HintedQueryAction:
     """A HintedQueryAction encapsulates logic to prepare, execute, and 
     retrieve results of a query that has a hint string."""
@@ -745,8 +335,7 @@ class HintedQueryAction:
     def _parseAndPrep(self, query, hints):
         # Table mapping 
         try:
-            self._pConfig = PartitioningConfig() # Should be shared.
-            self._pConfig.applyConfig()
+            self._pConfig = getSpatialConfig()
             cfg = self._prepareCppConfig(self._dbContext, hints)
             self._substitution = SqlSubstitution(query, 
                                                  self._pConfig.chunkMeta,
@@ -805,7 +394,7 @@ class HintedQueryAction:
         return cfg
 
     def _parseRegions(self, hints):
-        r = RegionFactory()
+        r = getRegionFactory()
         regs = r.getRegionFromHint(hints)
         if regs != None:
             return regs
