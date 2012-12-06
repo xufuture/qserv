@@ -28,6 +28,7 @@ import time
 import app
 import proxy
 import lsst.qserv.master.config as config
+import lsst.qserv.master.spatial as spatial
 
 # Main AppInterface class
 #
@@ -47,7 +48,7 @@ class AppInterface:
                                                     'func_doc'), 
                                   okname)
         self.reactor = reactor
-        self.pmap = app.makePmap()
+        self.pmap = spatial.makePmap()
         self.actions = {} 
         # set id counter to seconds since the epoch, mod 1 year.
         self._idCounter = int(time.time() % (60*60*24*365))
