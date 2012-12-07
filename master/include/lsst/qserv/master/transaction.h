@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <boost/shared_ptr.hpp>
 
 namespace lsst {
 namespace qserv {
@@ -51,8 +52,27 @@ class Constraint {
 public:
     std::string name;
     std::vector<std::string> params;
+    std::string paramsGet(int i) const {
+        return params[i];
+    }
+    int paramsSize() const {
+        return params.size();
+    }
 };
 typedef std::vector<Constraint> ConstraintVector;
+class ConstraintVec { // Wrapper for SWIG.
+public:
+    ConstraintVec(boost::shared_ptr<ConstraintVector > v)
+        : _vec(v) {}
+    Constraint const& get(int i) const {
+        return (*_vec)[i];
+    }
+    int size() const {
+        return _vec->size();
+    }
+private:
+    boost::shared_ptr<ConstraintVector> _vec;
+};
 
 class ChunkSpec {
 public:

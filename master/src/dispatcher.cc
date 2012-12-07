@@ -31,6 +31,7 @@
 #include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/master/QuerySession.h"
 #include "lsst/qserv/QservPath.hh"
+#include <sstream>
 
 namespace qMaster = lsst::qserv::master;
 
@@ -213,6 +214,32 @@ std::string const& qMaster::getSessionError(int session) {
     return empty;
 }
 
+lsst::qserv::master::Constraint getC(int base) {
+    // SWIG test.
+    std::stringstream ss;
+    qMaster::Constraint c;
+    ss << "box" << base; c.name = ss.str(); ss.str("");
+    ss << base << "1"; c.params.push_back(ss.str()); ss.str("");
+    ss << base << "2"; c.params.push_back(ss.str()); ss.str("");
+    ss << base << "3"; c.params.push_back(ss.str()); ss.str("");
+    ss << base << "4"; c.params.push_back(ss.str()); ss.str("");
+    return c; // SWIG test.
+ }
+
+lsst::qserv::master::ConstraintVec
+lsst::qserv::master::getConstraints(int session) {
+    boost::shared_ptr<ConstraintVector> v(new ConstraintVector());
+    v->push_back(getC(1)); // FIXME
+    v->push_back(getC(2)); 
+    v->push_back(getC(3)); 
+    return ConstraintVec(v);
+}
+
+
+void 
+qMaster::addChunk(int session, lsst::qserv::master::ChunkSpec const& cs ) {
+    // FIXME
+}
 
 qMaster::QueryState qMaster::joinSession(int session) {
     AsyncQueryManager& qm = getAsyncManager(session);

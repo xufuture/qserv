@@ -51,7 +51,8 @@ void resumeReadTrans(int session);
 // Parser model 3:
 void setupQuery(int session, std::string const& query); // new model.
 std::string const& getSessionError(int session);
-std::vector<lsst::qserv::master::Constraint> getConstraints(int session);
+lsst::qserv::master::ConstraintVec getConstraints(int session);
+
 void addChunk(int session, lsst::qserv::master::ChunkSpec const& cs );
 
 
