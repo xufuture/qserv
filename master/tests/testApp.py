@@ -34,10 +34,20 @@ class AppTest(unittest.TestCase):
                 yield c.name + "-->" + ",".join(vecGen(c))
         print "\n".join(vecConGen(cvec))
 
+        for i in range(3):
+            self._addChunk(1, i)
 
         pass
         self.assertEqual(1,1)
 
+    def _addChunk(self, session, base):
+        cs = qMaster.ChunkSpec()
+        cs.chunkId = 1000 + base
+        for i in range(base * 10, 10 + (base *10)):
+            cs.addSubChunk(i)
+        qMaster.addChunk(session, cs)
+
+        
     def _prepareConfig(self):
         qMaster.config.load() # Init.
         cfg = qMaster.config.getStringMap()

@@ -29,6 +29,7 @@
 #include "lsst/qserv/master/SelectParser.h"
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/WhereClause.h"
+#include "lsst/qserv/master/QueryPlugin.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::QuerySession;
@@ -63,14 +64,19 @@ void build(qMaster::SelectParser::Ptr p) {
 
 } // anonymous namespace
 
-QuerySession::QuerySession() {}
+QuerySession::QuerySession() 
+    : _plugins(new PluginList()) {}
 
 void QuerySession::setQuery(std::string const& q) {
     SelectParser::Ptr p;
     p = SelectParser::newInstance(q);
     p->setup();
     _stmt = p->getSelectStmt();
-
+    _preparePlugins();
+    _applyLogicPlugins();
+    _generateConcrete();
+    _applyConcretePlugins();
+        
     PlanWriter pw;
     pw.write(*_stmt, _chunks);
     // Perform parse.
@@ -122,6 +128,29 @@ QuerySession::Iter QuerySession::cQueryBegin() {
 }
 QuerySession::Iter QuerySession::cQueryEnd() {
     return Iter(*this, _chunks.end());
+}
+
+
+void QuerySession::_preparePlugins() {
+    PluginList::iterator i;
+    for(i=_plugins->begin(); i != _plugins->end(); ++i) {
+        (**i).prepare();
+    }
+}
+void QuerySession::_applyLogicPlugins() {
+    PluginList::iterator i;
+    for(i=_plugins->begin(); i != _plugins->end(); ++i) {
+        (**i).applyLogical(*_stmt);
+    }
+}
+void QuerySession::_generateConcrete() {
+    // FIXME
+}
+void QuerySession::_applyConcretePlugins() {
+    PluginList::iterator i;
+    for(i=_plugins->begin(); i != _plugins->end(); ++i) {
+        (**i).applyPhysical(*_stmt);
+    }
 }
 
 

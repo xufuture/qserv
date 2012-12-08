@@ -238,7 +238,16 @@ lsst::qserv::master::getConstraints(int session) {
 
 void 
 qMaster::addChunk(int session, lsst::qserv::master::ChunkSpec const& cs ) {
-    // FIXME
+    std::cout << "Received chunk=" << cs.chunkId << " ";
+    typedef std::vector<int> Vect;
+    int count=0;
+    for(Vect::const_iterator i = cs.subChunks.begin(); 
+        i != cs.subChunks.end(); ++i) {
+        if(++count > 1) std::cout << ", ";
+        std::cout << *i;
+    }
+    std::cout << std::endl;
+    // FIXME: really add it to some async qm managed struct.
 }
 
 qMaster::QueryState qMaster::joinSession(int session) {
