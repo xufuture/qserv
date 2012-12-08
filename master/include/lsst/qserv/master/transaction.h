@@ -78,6 +78,7 @@ class ChunkSpec {
 public:
     int chunkId;
     std::vector<int> subChunks;
+    void addSubChunk(int s) { subChunks.push_back(s); }
 };
 typedef std::list<ChunkSpec> ChunkSpecList;
 typedef std::vector<ChunkSpec> ChunkSpecVector;

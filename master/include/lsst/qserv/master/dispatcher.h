@@ -56,7 +56,6 @@ lsst::qserv::master::ConstraintVec getConstraints(int session);
 
 void addChunk(int session, lsst::qserv::master::ChunkSpec const& cs );
 
-
 QueryState joinQuery(int session, int id);
 QueryState tryJoinQuery(int session, int id);
 QueryState joinSession(int session);

@@ -33,9 +33,11 @@
 
 #include "lsst/qserv/master/transaction.h"
 #include "lsst/qserv/master/ChunkQuerySpec.h"
+#include "lsst/qserv/master/QueryPlugin.h"
 
 namespace lsst { namespace qserv { namespace master {
 class SelectStmt; // forward
+class QueryPlugin; // forward
 
 class QuerySession {
 public:
@@ -58,11 +60,20 @@ public:
     explicit QuerySession(Test const& t) {}
 private:
     typedef std::list<ChunkSpec> ChunkSpecList;
+    typedef std::list<QueryPlugin::Ptr> PluginList;
 
     QuerySession();
-    
+
+    // Pipeline helpers
+    void _preparePlugins();
+    void _applyLogicPlugins();
+    void _generateConcrete();
+    void _applyConcretePlugins();
+
+    // Fields
     boost::shared_ptr<SelectStmt> _stmt;
     ChunkSpecList _chunks;
+    boost::shared_ptr<PluginList> _plugins;
 };
 
 
