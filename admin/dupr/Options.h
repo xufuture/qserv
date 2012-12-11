@@ -4,42 +4,62 @@
 #include <string>
 #include <vector>
 
+#include "Htm.h"
+
 
 namespace dupr {
 
-/** Index for right ascension and declination fields.
-  */
-struct Position {
-    int raField;
-    int decField;
+/// Field indexes for a pair of fields.
+typedef std::pair<int, int> FieldPair;
 
-    Position() : raField(-1), decField(-1) { }
-};
-
+/// A key field and the associated index directory
+typedef std::pair<int, std::string> FieldAndIndex;
 
 /** Command line options for the duplicator/partitioner and indexer.
   */
 struct Options {
-    size_t                   blockSize;    // IO block size.
-    size_t                   k;            // Number of input blocks to merge at once.
+    std::vector<std::string> fields; ///< List of field names, in order of occurence.
+    FieldPair partitionPos; ///< Partitioning position field indexes.
+    int numThreads;         ///< Number of threads to create.
 
-    int                      numThreads;   // Number of threads to create.
+    size_t blockSize;       ///< IO block size.
+    size_t k;               ///< Merge-arity.
+    int htmLevel;           ///< HTM subdivision level for population map.
 
-    int                      htmLevel;     // HTM subdivision level for input population map.
-    int                      numFields;    // Number of fields per record.
-    char                     delimiter;    // CSV delimiter.
+    char delimiter;         ///< CSV delimiter.
+    std::vector<std::string> inputFiles; ///< Input files for indexing/partitioning.
 
-    int                      pkField;      // Index of primary key field (e.g. sourceId in Source).
-    Position                 partitionPos; // Partitioning position field indexes. 
+    int32_t numStripes;     ///< Number of declination stripes for the sky.
+    int32_t numSubStripesPerStripe;
+    double overlap;         ///< Partitioning overlap radius (deg).
+    int chunkIdField;
+    int subChunkIdField;
+    int secondarySortField;
+    std::string prefix;     ///< Chunk file name prefix.
 
-    std::vector<std::string> inputFiles;   // Input files for indexer.
-    std::string              indexDir;     // Directory containing input/output index files.
-    std::string              scratchDir;   // Scratch directory for merger.
+    std::vector<FieldPair> positions; ///< Positions to be remapped by the duplicator.
+    // Keys to be remapped by the duplicator, with associated index directories.
+    std::vector<FieldAndIndex> foreignKeys;
+    int pkField;            ///< Primary key field to be remapped by the duplicator
+                            ///< (e.g. sourceId in Source).
+    SphericalBox dupRegion; ///< Region the duplicator should generate data for.
+    uint32_t node;          ///< Node to generate chunks for.
+    uint32_t numNodes;      ///< Total number of nodes.
+    std::vector<int32_t> chunkIds; ///< Chunk IDs to generate data for.
+    bool hashChunks;        ///< Hash chunks to nodes?
+
+    std::string indexDir;   ///< Input/output index directory.
+    std::string scratchDir; ///< Scratch directory for external merge sort.
+    std::string chunkDir;   ///< Output directory for chunks.
+
+    Options();
+    ~Options();
 };
 
 
-/// Parse indexer command line.
-Options const indexerCommandLine(int argc, char ** argv);
+Options const parseIndexerCommandLine(int argc, char ** argv);
+Options const parseDuplicatorCommandLine(int argc, char ** argv);
+Options const parsePartitionerCommandLine(int argc, char ** argv);
 
 } // namespace dupr
 

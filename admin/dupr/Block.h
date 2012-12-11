@@ -52,7 +52,7 @@ public:
     void read();
 
     /// Process block contents.
-    void process(Options const & opt, PopulationMap & map);
+    void process(Options const & opts, PopulationMap & map);
 
     /// Return block records; empty until process() has been called.
     std::vector<Record> const & records() const { return _recs; }

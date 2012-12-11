@@ -30,30 +30,31 @@ void InputBlock::read() {
     }
 }
 
-void InputBlock::process(Options const &opt, PopulationMap & map) {
+void InputBlock::process(Options const &opts, PopulationMap & map) {
     read();
-    char * beg = _buf;
-    char * const end = beg + _sz;
-    boost::scoped_array<char *> fields(new char *[opt.numFields + 1]());
+    char const * beg = _buf;
+    char const * const end = beg + _sz;
+    boost::scoped_array<char const *> fields(
+        new char const *[opts.fields.size() + 1]());
     vector<Record> records;
     records.reserve(_sz / 1024);
     // Build a Record for every line in the input file.
     while (beg < end) {
-        char * const next = parseLine(
-            beg, end, opt.delimiter, fields.get(), opt.numFields);
+        char const * const next = parseLine(
+            beg, end, opts.delimiter, fields.get(), opts.fields.size());
         Record r;
         r.info.length = static_cast<uint32_t>(next - beg);
         r.line = beg;
         // extract ID
         r.info.id = extractInt(
-            fields[opt.pkField], fields[opt.pkField + 1] - 1);
+            fields[opts.pkField], fields[opts.pkField + 1] - 1);
         // extract ra and dec
         Eigen::Vector2d sc;
-        sc(0) = extractDouble(fields[opt.partitionPos.raField],
-                              fields[opt.partitionPos.raField + 1] - 1);
-        sc(1) = extractDouble(fields[opt.partitionPos.decField],
-                              fields[opt.partitionPos.decField + 1] - 1);
-        r.info.htmId = htmId(cartesian(sc), opt.htmLevel);
+        sc(0) = extractDouble(fields[opts.partitionPos.first],
+                              fields[opts.partitionPos.first + 1] - 1);
+        sc(1) = extractDouble(fields[opts.partitionPos.second],
+                              fields[opts.partitionPos.second + 1] - 1);
+        r.info.htmId = htmId(cartesian(sc), opts.htmLevel);
         records.push_back(r);
         beg = next;
     }

@@ -10,17 +10,22 @@
 
 namespace dupr {
 
-char * parseLine(char * beg, char * end, char delim, char **fields, int n) {
+char const * parseLine(char const * beg,
+                       char const * end,
+                       char delim,
+                       char const ** fields,
+                       size_t n)
+{
     if (end <= beg) {
-        throw std::logic_error("line ends before it begins!?");
+        throw std::logic_error("line ends before it begins");
     }
     if (n < 1) {
-        throw std::logic_error("field count < 1!?");
+        throw std::logic_error("field count is zero");
     }
     bool saw_quote = false;
     bool saw_escape = false;
     fields[0] = beg;
-    int i = 1;
+    size_t i = 1;
     for (; beg < end; ++beg) {
         if (*beg == '\n') {
             ++beg;
@@ -55,7 +60,7 @@ char * parseLine(char * beg, char * end, char delim, char **fields, int n) {
 }
 
 
-bool isNull(char * beg, char * end) {
+bool isNull(char const * beg, char const * end) {
     while (beg < end && isspace(*beg)) { ++beg; }
     while (end - 1 > beg && isspace(*(end - 1))) { --end; }
     if (end <= beg) {
@@ -71,7 +76,7 @@ bool isNull(char * beg, char * end) {
 }
 
 
-double extractDouble(char * beg, char * end) {
+double extractDouble(char const * beg, char const * end) {
     char buf[64];
     while (beg < end && isspace(*beg)) { ++beg; }
     while (end - 1 > beg && isspace(*(end - 1))) { --end; }
@@ -94,7 +99,7 @@ double extractDouble(char * beg, char * end) {
 }
 
 
-int64_t extractInt(char * beg, char * end) {
+int64_t extractInt(char const * beg, char const * end) {
     char buf[32];
     while (beg < end && isspace(*beg)) { ++beg; }
     while (end - 1 > beg && isspace(*(end - 1))) { --end; }

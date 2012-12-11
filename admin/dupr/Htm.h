@@ -42,6 +42,11 @@
     coordinate space, there are no serious distortion issues to worry about
     near the poles.
 
+    Note that if the subdivision level of the target trixels is different
+    from that of the source trixels, the transform above can be used to
+    derive a catalog of greater or smaller density from an input catalog,
+    with relative angular structure roughly preserved.
+
     The PopulationMap class tracks which trixels in an input data set
     contain records, and provides a surjection from the set of all HTM IDs
     (at a given level L) to the set of HTM IDs for trixels containing at
@@ -87,15 +92,15 @@ Eigen::Vector2d const spherical(Eigen::Vector3d const &v);
 class Trixel {
 public:
     /// Construct the trixel with the given HTM ID.
-    Trixel(uint32_t htmId);
+    explicit Trixel(uint32_t htmId);
 
-    /// Convert from cartesian to spherical barycentric coordinates.
-    Eigen::Vector3d const barycentric(Eigen::Vector3d const &v) const {
-        return _mi * v;
+    /// Return matrix that converts from cartesian to spherical barycentric coordinates.
+    Eigen::Matrix3d const & getBarycentricTransform() const {
+        return _mi;
     }
-    /// Convert from spherical barycentric to cartesian coordinates.
-    Eigen::Vector3d const cartesian(Eigen::Vector3d const &b) const {
-        return _m * b;
+    /// Return matrix that converts from spherical barycentric to cartesian coordinates.
+    Eigen::Matrix3d const getCartesianTransform() const {
+        return _m;
     }
 
 private:
@@ -182,7 +187,7 @@ public:
         return _nonEmpty.size();
     }
     /// Map a trixel to a non-empty trixel.
-    uint32_t mapTrixel(uint32_t id) const {
+    uint32_t mapToNonEmptyTrixel(uint32_t id) const {
         if (getNumRecords(id) != 0) {
             return id;
         }
@@ -217,6 +222,8 @@ private:
   */
 class SphericalBox {
 public:
+    SphericalBox() : _raMin(0.0), _raMax(360.0), _decMin(-90.0), _decMax(90.0) { }
+
     SphericalBox(double raMin, double raMax, double decMin, double decMax);
 
     /// Create a conservative bounding box for the triangle with vertices
@@ -245,7 +252,7 @@ public:
     }
 
     /// Does this box intersect the given box?
-    inline bool intersects(SphericalBox const & box) const {
+    bool intersects(SphericalBox const & box) const {
         if (box.isEmpty()) {
             return false;
         } else if (box._decMin > _decMax || box._decMax < _decMin) {
@@ -283,7 +290,7 @@ private:
   */
 struct ChunkLocation {
     enum Overlap {
-        PRIMARY = 0,  // not an overlap location
+        CHUNK = 0,    // not an overlap location
         SELF_OVERLAP, // self-overlap location (also a full-overlap location)
         FULL_OVERLAP, // full-overlap location
     };
@@ -299,10 +306,9 @@ struct ChunkLocation {
     Chunks are in turn broken up into fixed height sub-stripes, and each
     sub-stripe is then divided into fixed width sub-chunks. As before,
     the number of sub-chunks per sub-stripe is variable to account for
-    polar distortion.
-
-    This class can also assign chunks to servers according to a number
-    of algorithms.
+    polar distortion. This class also provides methods for retrieving
+    bounding boxes of chunks and sub-chunks, as well as for assigning
+    chunks to (qserv worker) nodes.
   */
 class Chunker {
 public:
@@ -327,15 +333,13 @@ public:
     /// Return IDs of all chunks overlapping the given region and belonging
     /// to the given node. The target node is specifed as an integer in
     /// range [0, numNodes). If hash is true, then chunk C is assigned to
-    /// the node given by hash(C) mod numNodes. Otherwise, chunks are doled
-    /// out to servers in round-robin fashion.
-    ///
-    /// Note that changing the region argument will not affect which server
-    /// a chunk C is assigned to in any way.
-    std::vector<int32_t> const chunksFor(SphericalBox const & region,
-                                         uint32_t node,
-                                         uint32_t numNodes,
-                                         bool hash) const;
+    /// the node given by hash(C) modulo numNodes. Otherwise, chunks are
+    /// assigned to nodes in round-robin fashion. The region argument has no
+    /// effect on which server a chunk C is assigned to.
+    std::vector<int32_t> const getChunksFor(SphericalBox const & region,
+                                            uint32_t node,
+                                            uint32_t numNodes,
+                                            bool hashChunks) const;
 
 private:
     // Disable copy construction and assignment.
@@ -359,7 +363,7 @@ private:
                chunk*_numSubChunksPerChunk[subStripe];
     }
     int32_t getChunkId(int32_t stripe, int32_t chunk) const {
-        return stripe*2*_numSubStripesPerStripe + chunk;
+        return stripe*2*_numStripes + chunk;
     }
     int32_t getSubChunkId(int32_t stripe, int32_t subStripe,
                           int32_t chunk, int32_t subChunk) const {

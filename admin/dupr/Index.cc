@@ -117,12 +117,12 @@ void index(Options const & options) {
     state->map.write(options.indexDir + "/map.bin");
 }
 
-} // unnamed
+} // unnamed namespace
 
 
 int main(int argc, char ** argv) {
     boost::timer total;
-    Options options = indexerCommandLine(argc, argv);
+    Options options = parseIndexerCommandLine(argc, argv);
     index(options);
     cout << endl << "Indexer finished in " << total.elapsed() << " sec" << endl;
     return EXIT_SUCCESS;

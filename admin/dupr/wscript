@@ -22,7 +22,7 @@ def configure(conf):
     conf.env.append_value('CXXFLAGS', '-Wextra')
     conf.env.append_value('CXXFLAGS', '-g')
     if not conf.options.debug:
-        conf.env.append_value('CXXFLAGS', '-O3')
+        conf.env.append_value('CXXFLAGS', '-O2')
     if conf.options.eigen_includes:
         conf.env.append_value('INCLUDES', conf.options.eigen_includes)
     if conf.options.boost_includes:
@@ -42,10 +42,22 @@ def configure(conf):
                    uselib_store='BOOST_PROGRAM_OPTIONS', mandatory=True)
 
 def build(bld):
-    bld.program(
-        source=bld.path.ant_glob('*.cc'),
+    bld.objects(
+        source=bld.path.ant_glob('*.cc', excl=['Duplicate.cc', 'Index.cc', 'Partition.cc']),
         includes='.',
-        target='qserv_dupr_index',
-        use='PTHREAD BOOST_SYSTEM BOOST_PROGRAM_OPTIONS',
+        target='objects'
+    )
+    bld.program(
+        source=bld.path.ant_glob('Index.cc'),
+        includes='.',
+        target='qserv_dup_index',
+        use='objects PTHREAD BOOST_SYSTEM BOOST_PROGRAM_OPTIONS',
+        install_path='${PREFIX}/bin'
+    )
+    bld.program(
+        source=bld.path.ant_glob('Duplicate.cc'),
+        includes='.',
+        target='qserv_dup',
+        use='objects PTHREAD BOOST_SYSTEM BOOST_PROGRAM_OPTIONS',
         install_path='${PREFIX}/bin'
     )

@@ -2,8 +2,8 @@
 #ifndef CSV_H
 #define CSV_H
 
+#include <sys/types.h>
 #include <stdint.h>
-
 
 namespace dupr {
 
@@ -30,16 +30,20 @@ int const MAX_LINE_SIZE = 16384;
 
     A pointer to the first character in the next line (or end) is returned.
   */
-char * parseLine(char * beg, char * end, char delim, char **fields, int n);
+char const * parseLine(char const * beg,
+                       char const * end,
+                       char delim,
+                       char const ** fields,
+                       size_t n);
 
 /// Return true if the field [beg, end) corresponds to a NULL.
-bool isNull(char * beg, char * end);
+bool isNull(char const * beg, char const * end);
 
 /// Return field [beg, end) as a double. Doesn't handle quoted numeric fields.
-double extractDouble(char * beg, char * end);
+double extractDouble(char const * beg, char const * end);
 
 /// Return field [beg, end) as an int64_t. Doesn't handle quoted numeric fields.
-int64_t extractInt(char * beg, char * end);
+int64_t extractInt(char const * beg, char const * end);
 
 } // namespace dupr
 

@@ -7,6 +7,7 @@
 
 #include "FileUtils.h"
 
+using std::fabs;
 using std::sin;
 using std::cos;
 using std::atan2;
@@ -156,7 +157,7 @@ inline double clampDec(double dec) {
 
 // Return minimum delta between 2 right ascensions
 inline double minDeltaRa(double ra1, double ra2) {
-    double delta = abs(ra1 - ra2);
+    double delta = fabs(ra1 - ra2);
     return min(delta, 360.0 - delta);
 }
 
@@ -185,14 +186,14 @@ double maxAlpha(double r, double centerDec) {
         return 0.0;
     }
     double d = clampDec(centerDec);
-    if (abs(d) + r > 90.0 - 1/3600.0) {
+    if (fabs(d) + r > 90.0 - 1/3600.0) {
         return 180.0;
     }
     r *= RAD_PER_DEG;
     d *= RAD_PER_DEG;
     double y = sin(r);
-    double x = sqrt(abs(cos(d - r) * cos(d + r)));
-    return DEG_PER_RAD * abs(atan(y / x));
+    double x = sqrt(fabs(cos(d - r) * cos(d + r)));
+    return DEG_PER_RAD * fabs(atan(y / x));
 }
 
 // Compute the number of segments to divide the given declination range
@@ -200,7 +201,7 @@ double maxAlpha(double r, double centerDec) {
 // one segment are guaranteed to be separated by an angular distance of at
 // least width.
 int segments(double decMin, double decMax, double width) {
-    double dec = max(abs(decMin), abs(decMax));
+    double dec = max(fabs(decMin), fabs(decMax));
     if (dec > 90.0 - 1/3600.0) {
         return 1;
     }
@@ -215,16 +216,16 @@ int segments(double decMin, double decMax, double width) {
     double cd = cos(dec);
     double x = cw - sd * sd;
     double u = cd * cd;
-    double y = sqrt(abs(u * u - x * x));
+    double y = sqrt(fabs(u * u - x * x));
     return static_cast<int>(
-        floor(360.0 / abs(DEG_PER_RAD * atan2(y, x))));
+        floor(360.0 / fabs(DEG_PER_RAD * atan2(y, x))));
 }
 
 // Return the angular width of a single segment obtained by
 // chopping the declination stripe [decMin, decMax] into
 // numSegments equal width (in right ascension) segments.
 double segmentWidth(double decMin, double decMax, int numSegments) {
-    double dec = max(abs(decMin), abs(decMax)) * RAD_PER_DEG;
+    double dec = max(fabs(decMin), fabs(decMax)) * RAD_PER_DEG;
     double cw = cos(RAD_PER_DEG * (360.0 / numSegments));
     double sd = sin(dec);
     double cd = cos(dec);
@@ -323,7 +324,8 @@ int htmLevel(uint32_t id) {
         return -1; // invalid ID
     }
     // set x = 2^(i + 1) - 1, where i is the index of the MSB of id.
-    uint32_t x = (id >> 1);
+    uint32_t x = id;
+    x |= (x >> 1);
     x |= (x >> 2);
     x |= (x >> 4);
     x |= (x >> 8);
@@ -589,7 +591,7 @@ void SphericalBox::expand(double radius) {
         return;
     }
     double const extent = getRaExtent();
-    double const alpha = maxAlpha(radius, max(abs(_decMin), abs(_decMax)));
+    double const alpha = maxAlpha(radius, max(fabs(_decMin), fabs(_decMax)));
     if (extent + 2.0 * alpha >= 360.0 - 1/3600.0) {
         _raMin = 0.0;
         _raMax = 360.0;
@@ -695,7 +697,7 @@ Chunker::Chunker(double overlap, int32_t numStripes, int32_t numSubStripesPerStr
         int32_t nc = segments(
             i*stripeHeight - 90.0, (i + 1)*stripeHeight - 90.0, stripeHeight);
         numChunksPerStripe[i] = nc;
-        for (int32_t j = 0; i < numSubStripesPerStripe; ++i) {
+        for (int32_t j = 0; j < numSubStripesPerStripe; ++j) {
             int32_t ss = i * numSubStripesPerStripe + j;
             double decMin = ss*subStripeHeight - 90.0;
             double decMax = (ss + 1)*subStripeHeight - 90.0;
@@ -704,7 +706,7 @@ Chunker::Chunker(double overlap, int32_t numStripes, int32_t numSubStripesPerStr
             numSubChunksPerChunk[ss] = nsc;
             double scw = 360.0 / (nsc * nc);
             subChunkWidth[ss] = scw;
-            double a = maxAlpha(overlap, max(abs(decMin), abs(decMax)));
+            double a = maxAlpha(overlap, max(fabs(decMin), fabs(decMax)));
             if (a > scw) {
                 throw std::runtime_error("Overlap exceeds sub-chunk width");
             }
@@ -775,8 +777,11 @@ void Chunker::locate(
         ChunkLocation loc;
         loc.chunkId = getChunkId(stripe, chunk);
         loc.subChunkId = getSubChunkId(stripe, subStripe, chunk, subChunk);
-        loc.overlap = ChunkLocation::PRIMARY;
+        loc.overlap = ChunkLocation::CHUNK;
         locations.push_back(loc);
+    }
+    if (_overlap == 0.0) {
+        return;
     }
     // Get sub-chunk bounds
     double const raMin = subChunk*_subChunkWidth[subChunk];
@@ -890,11 +895,11 @@ void Chunker::upDownOverlap(
     }
 }
 
-vector<int32_t> const Chunker::chunksFor(
+vector<int32_t> const Chunker::getChunksFor(
     SphericalBox const & region,
     uint32_t node,
     uint32_t numNodes,
-    bool hash
+    bool hashChunks
 ) const {
     if (numNodes == 0) {
         throw std::runtime_error("There must be at least one node to assign chunks to");
@@ -904,12 +909,12 @@ vector<int32_t> const Chunker::chunksFor(
     }
     vector<int32_t> chunks;
     uint32_t n = 0;
-    // The slow and easy route - loop over every chunk, see if it intersects
-    // region and if so determine whether it belongs to the given node.
+    // The slow and easy route - loop over every chunk, see if it belongs to
+    // the given node, and if it also intersects with region, return it.
     for (int32_t stripe = 0; stripe < _numStripes; ++stripe) {
         for (int32_t chunk = 0; chunk < _numChunksPerStripe[stripe]; ++chunk, ++n) {
             int32_t const chunkId = getChunkId(stripe, chunk);
-            if (hash) {
+            if (hashChunks) {
                 if (mulveyHash(static_cast<uint32_t>(chunkId)) % numNodes != node) {
                     continue;
                 }
