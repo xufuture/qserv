@@ -16,7 +16,6 @@ fi
 
 echo "Creating ${QSERV_BASE} directory"
 mkdir -p ${QSERV_BASE} || die "mkdir failed";
-chown -R ${QSERV_USER}:${QSERV_USER} ${QSERV_BASE} || die "chown failed"; 
 
 if [ -n "${QSERV_LOG}" ]; then
 	echo "Creating ${QSERV_LOG} directory"
@@ -28,3 +27,6 @@ if [ -n "${QSERV_MYSQL_DATA}" ]; then
 	mkdir -p ${QSERV_MYSQL_DATA} || die "mkdir failed";
 	chown -R ${QSERV_USER}:${QSERV_USER} ${QSERV_MYSQL_DATA} || die "chown failed";
 fi
+
+# above mkdir -p could have created dirs belonging to root in $QSERV_BASE 
+chown -R ${QSERV_USER}:${QSERV_USER} ${QSERV_BASE} || die "chown failed"; 
