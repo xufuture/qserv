@@ -81,13 +81,10 @@ If not already done :
 Then connect to MySQL proxy :
   $ ./admin/qserv-connect-mysql-proxy.sh
 and launch next request :
-  > select * from Object;
+  > select count(*) from Object;
 It should success.
 
 Official documentation : 
 ------------------------
 It is located in ${QSERV_SRC}/admin/Install.txt
 
-Some additional documentation is here :
----------------------------------------
-https://groupes.renater.fr/wiki/petasky/public/qserv_doc
