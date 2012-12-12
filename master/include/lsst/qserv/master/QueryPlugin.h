@@ -26,6 +26,8 @@
 
 #ifndef LSST_QSERV_MASTER_QUERYPLUGIN_H
 #define LSST_QSERV_MASTER_QUERYPLUGIN_H
+
+#include <string>
 #include <boost/shared_ptr.hpp>
 
 namespace lsst { namespace qserv { namespace master {
@@ -35,6 +37,7 @@ class QueryPlugin {
 public:
     // Types
     class Factory;
+    class Plan;
     typedef boost::shared_ptr<QueryPlugin> Ptr;
     typedef boost::shared_ptr<Factory> FactoryPtr;
     
@@ -47,7 +50,7 @@ public:
     virtual void applyLogical(SelectStmt& stmt) {}
 
     /// Apply the plugins's actions to the concrete query plan.
-    virtual void applyPhysical(SelectStmt& stmt) {} // FIXME
+    virtual void applyPhysical(Plan& phy) {} 
 
     static Ptr newInstance(std::string const& name);
     static void registerClass(FactoryPtr f);
@@ -61,8 +64,25 @@ public:
     virtual ~Factory() {}
 
     virtual std::string getName() const { return std::string(); }
-    virtual QueryPlugin::Ptr newInstance();
+    virtual QueryPlugin::Ptr newInstance() { return QueryPlugin::Ptr(); }
 };
+
+// A bundle of references to a components that form a "plan"
+class QueryPlugin::Plan { 
+public:
+    Plan(SelectStmt& stmtOriginal_, SelectStmt& stmtParallel_, 
+         SelectStmt& stmtMerge_, bool& hasMerge_) 
+        :  stmtOriginal(stmtOriginal_),
+           stmtParallel(stmtParallel_), 
+          stmtMerge(stmtMerge_), 
+          hasMerge(hasMerge_) {}
+
+    SelectStmt& stmtOriginal;
+    SelectStmt& stmtParallel;
+    SelectStmt& stmtMerge;
+    bool hasMerge;
+};
+
 
 }}} // namespace lsst::qserv::master
 

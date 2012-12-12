@@ -178,6 +178,7 @@ parserSrcs = map(lambda x: os.path.join('src', x),
                   "SelectParser.cc",
                   "PlanWriter.cc",
                   "QuerySession.cc",
+                  "QueryPlugin.cc",
                   "QueryTemplate.cc",
                   "SelectList.cc",
                   "WhereClause.cc",
@@ -188,7 +189,9 @@ parserSrcs = map(lambda x: os.path.join('src', x),
                   "ValueExprFactory.cc",
                   "ValueExpr.cc",
                   "WhereFactory.cc",
-                  "ModFactory.cc"])
+                  "ModFactory.cc",
+                  "AggregatePlugin.cc",
+                  "AggOp.cc"])
 
 pyPath = 'python/lsst/qserv/master'
 pyLibName = os.path.join(pyPath, '_masterLib.so')

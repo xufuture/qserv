@@ -72,6 +72,12 @@ private:
 
     // Fields
     boost::shared_ptr<SelectStmt> _stmt;
+    boost::shared_ptr<SelectStmt> _stmtParallel;
+    boost::shared_ptr<SelectStmt> _stmtMerge;
+    bool _hasMerge;
+    std::string _tmpTable;
+    std::string _resultTable;
+
     ChunkSpecList _chunks;
     boost::shared_ptr<PluginList> _plugins;
 };
@@ -110,6 +116,7 @@ private:
     mutable bool _dirty;
 };
 
+void initQuerySession(); // Initialize QuerySession-related statics.
 }}} // namespace lsst::qserv::master
 
 

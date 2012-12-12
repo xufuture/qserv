@@ -59,7 +59,8 @@ public:
     boost::shared_ptr<ColumnRef const> getColumnRef() const { return _columnRef; }
     boost::shared_ptr<FuncExpr> getFuncExpr() const { return _funcExpr; }
     Type getType() const { return _type; }
-    
+    ValueExprPtr clone() const;
+
     static ValueExprPtr newColumnRefExpr(boost::shared_ptr<ColumnRef const> cr);
     static ValueExprPtr newStarExpr(std::string const& table);
     static ValueExprPtr newAggExpr(boost::shared_ptr<FuncExpr> fe);

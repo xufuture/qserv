@@ -63,6 +63,10 @@ public:
     boost::shared_ptr<WhereClause const> getWhere() const;
     QueryTemplate getTemplate() const;
     boost::shared_ptr<SelectStmt> copySyntax() const;
+    boost::shared_ptr<SelectStmt> copyMerge() const;
+
+    SelectList const& getSelectList() const { return *_selectList; }
+    SelectList& getSelectList() { return *_selectList; }
 
 // private: // public for now.
     // Declarations

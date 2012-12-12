@@ -27,6 +27,7 @@
 #include <map>
 
 namespace qMaster=lsst::qserv::master;
+using lsst::qserv::master::QueryPlugin;
 
 namespace { // File-scope helpers
 typedef std::map<std::string, QueryPlugin::FactoryPtr> FactoryMap;
@@ -35,13 +36,19 @@ typedef std::map<std::string, QueryPlugin::FactoryPtr> FactoryMap;
 static FactoryMap factoryMap; 
 }
 
-qMaster::QueryPlugin::Ptr
-qMaster::QueryPlugin::newInstance(std::string const& name) {
+QueryPlugin::Ptr
+QueryPlugin::newInstance(std::string const& name) {
     FactoryMap::iterator e = factoryMap.find(name);
     if(e == factoryMap.end()) { // No plugin.
         throw PluginNotFoundError(name);
     } else {
-        return *e->second->newInstance();
+        return e->second->newInstance();
     }
     
+}
+
+void
+QueryPlugin::registerClass(QueryPlugin::FactoryPtr f) {
+    if(!f.get()) return;    
+    factoryMap[f->getName()] = f;
 }

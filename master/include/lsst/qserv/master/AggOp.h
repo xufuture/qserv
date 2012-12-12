@@ -20,36 +20,41 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// PluginNotFoundError is an exception class thrown when a plugin is requested
-// by a name that has not been registered.
+// X is a ...
 
-
-#ifndef LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
-#define LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
-#include <exception>
-#include <string>
-#include <sstream>
+#ifndef LSST_QSERV_MASTER_AGGOP_H
+#define LSST_QSERV_MASTER_AGGOP_H
+#include <map>
+#include <boost/shared_ptr.hpp>
+#include "lsst/qserv/master/AggRecord.h"
+#include "lsst/qserv/master/ValueExpr.h"
 
 namespace lsst { namespace qserv { namespace master {
 
-class PluginNotFoundError: public std::exception {
+class AggOp {
 public:
-    explicit PluginNotFoundError(std::string const& name) {
-        std::stringstream ss;
-        ss << "Plugin '" << name << " requested but not found.";
-        _descr = ss.str();
-    }
-    virtual ~PluginNotFoundError() throw() {}
+    typedef boost::shared_ptr<AggOp> Ptr;
+    class Mgr;
 
-    virtual const char* what() const throw() {
-        return _descr.c_str();
+    virtual AggRecord::Ptr operator()(ValueExpr const& orig) { 
+        return AggRecord::Ptr();
     }
+    virtual ~AggOp() {}
+};
+
+class AggOp::Mgr {
+public:
+    typedef std::map<std::string, AggOp::Ptr> OpMap;
+
+    Mgr();
+    AggOp::Ptr getOp(std::string const& name);
+    AggRecord::Ptr applyOp(std::string const& name, ValueExpr const& orig);
 private:
-    std::string _descr;
+    OpMap _map;
 };
 
 }}} // namespace lsst::qserv::master
 
 
-#endif // LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
+#endif // LSST_QSERV_MASTER_AGGREGATEOP_H
 

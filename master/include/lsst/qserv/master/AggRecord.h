@@ -20,36 +20,33 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// PluginNotFoundError is an exception class thrown when a plugin is requested
-// by a name that has not been registered.
+// X is a ...
 
-
-#ifndef LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
-#define LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
-#include <exception>
-#include <string>
-#include <sstream>
+#ifndef LSST_QSERV_MASTER_AGGRECORD_H
+#define LSST_QSERV_MASTER_AGGRECORD_H
+#include "lsst/qserv/master/ValueExpr.h"
 
 namespace lsst { namespace qserv { namespace master {
 
-class PluginNotFoundError: public std::exception {
+// Record is derived from the previous parse framework's
+// AggregateRecord class.  It is a value class for the information 
+// needed to successfully perform aggregation of distributed queries.
+// lbl and meaning record the original aggregation invocation (+alias)
+// orig, pass, and fixup record SQL expressions
+class AggRecord {
 public:
-    explicit PluginNotFoundError(std::string const& name) {
-        std::stringstream ss;
-        ss << "Plugin '" << name << " requested but not found.";
-        _descr = ss.str();
-    }
-    virtual ~PluginNotFoundError() throw() {}
-
-    virtual const char* what() const throw() {
-        return _descr.c_str();
-    }
-private:
-    std::string _descr;
+    typedef boost::shared_ptr<AggRecord> Ptr;
+    std::string origAlias;
+    lsst::qserv::master::ValueExprPtr orig;
+    lsst::qserv::master::ValueExprList pass;
+    lsst::qserv::master::ValueExprList fixup;
+    std::ostream& printTo(std::ostream& os);
+    std::string getFuncParam() const;
+    std::string getLabelText() const;
 };
 
 }}} // namespace lsst::qserv::master
 
 
-#endif // LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
+#endif // LSST_QSERV_MASTER_AGGRECORD_H
 

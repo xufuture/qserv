@@ -109,6 +109,12 @@ ValueExprPtr ValueExpr::newAggExpr(boost::shared_ptr<FuncExpr> fe) {
     return expr;
 }
 
+ValueExprPtr ValueExpr::clone() const{
+    ValueExprPtr expr(new ValueExpr(*this));
+    return expr;
+}
+
+
 std::ostream& qMaster::operator<<(std::ostream& os, ValueExpr const& ve) {
     switch(ve._type) {
     case ValueExpr::COLUMNREF: os << "CREF: " << *(ve._columnRef); break;
