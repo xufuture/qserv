@@ -74,6 +74,10 @@ public:
     void renderTo(QueryTemplate& qt) const;
     boost::shared_ptr<SelectList> copySyntax();
 
+    // non-const accessor for query manipulation.
+    boost::shared_ptr<ValueExprList> getValueExprList() 
+        { return _valueExprList; }
+
     friend class SelectListFactory;
 private:
     friend std::ostream& operator<<(std::ostream& os, SelectList const& sl);

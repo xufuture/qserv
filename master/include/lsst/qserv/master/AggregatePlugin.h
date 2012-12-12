@@ -20,36 +20,17 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// PluginNotFoundError is an exception class thrown when a plugin is requested
-// by a name that has not been registered.
+// AggregatePlugin is a query plugin that operates on the query in its split
+// parallel/merge forms. 
 
-
-#ifndef LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
-#define LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
-#include <exception>
-#include <string>
-#include <sstream>
+#ifndef LSST_QSERV_MASTER_AGGREGATEPLUGIN_H
+#define LSST_QSERV_MASTER_AGGREGATEPLUGIN_H
 
 namespace lsst { namespace qserv { namespace master {
-
-class PluginNotFoundError: public std::exception {
-public:
-    explicit PluginNotFoundError(std::string const& name) {
-        std::stringstream ss;
-        ss << "Plugin '" << name << " requested but not found.";
-        _descr = ss.str();
-    }
-    virtual ~PluginNotFoundError() throw() {}
-
-    virtual const char* what() const throw() {
-        return _descr.c_str();
-    }
-private:
-    std::string _descr;
-};
+void registerAggregatePlugin();
 
 }}} // namespace lsst::qserv::master
 
 
-#endif // LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
+#endif // LSST_QSERV_MASTER_AGGREGATEPLUGIN_H
 

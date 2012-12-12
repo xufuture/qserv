@@ -9,4 +9,5 @@ bool QuerySession::getHasAggregate() const { return false; }
 lsst::qserv::master::ConstraintVector QuerySession::getConstraints() const {
     return ConstraintVector(); }
 void QuerySession::addChunk(ChunkSpec const& cs) {}
+void lsst::qserv::master::initQuerySession() {}
 

@@ -45,6 +45,7 @@ namespace {
         static SessionMgrPtr sm;
         if(sm.get() == NULL) {
             sm = boost::make_shared<SessionMgr>();
+            qMaster::initQuerySession();
         }
         assert(sm.get() != NULL);
         return *sm;
@@ -208,7 +209,8 @@ void qMaster::setupQuery(int session, std::string const& query) {
     qs.setQuery(query);
 }
 
-std::string const& qMaster::getSessionError(int session) {
+
+std::string const& qMaster::getSessionError3(int session) {
     static const std::string empty;
     // FIXME
     return empty;
@@ -238,6 +240,7 @@ lsst::qserv::master::getConstraints(int session) {
 
 void 
 qMaster::addChunk(int session, lsst::qserv::master::ChunkSpec const& cs ) {
+#if 1 // SWIG plumbing debug
     std::cout << "Received chunk=" << cs.chunkId << " ";
     typedef std::vector<int> Vect;
     int count=0;
@@ -247,8 +250,18 @@ qMaster::addChunk(int session, lsst::qserv::master::ChunkSpec const& cs ) {
         std::cout << *i;
     }
     std::cout << std::endl;
-    // FIXME: really add it to some async qm managed struct.
+#endif
+    AsyncQueryManager& qm = getAsyncManager(session);
+    QuerySession& qs = qm.getQuerySession();
+    qs.addChunk(cs);
 }
+
+/// Submit the query.
+void 
+qMaster::submitQuery3(int session) {
+
+}
+
 
 qMaster::QueryState qMaster::joinSession(int session) {
     AsyncQueryManager& qm = getAsyncManager(session);

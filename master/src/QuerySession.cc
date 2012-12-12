@@ -30,6 +30,7 @@
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/WhereClause.h"
 #include "lsst/qserv/master/QueryPlugin.h"
+#include "lsst/qserv/master/AggregatePlugin.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::QuerySession;
@@ -132,6 +133,7 @@ QuerySession::Iter QuerySession::cQueryEnd() {
 
 
 void QuerySession::_preparePlugins() {
+    _plugins->push_back(QueryPlugin::newInstance("Aggregate"));
     PluginList::iterator i;
     for(i=_plugins->begin(); i != _plugins->end(); ++i) {
         (**i).prepare();
@@ -144,12 +146,38 @@ void QuerySession::_applyLogicPlugins() {
     }
 }
 void QuerySession::_generateConcrete() {
-    // FIXME
+    _hasMerge = false;
+    // In making a statement concrete, the query's execution is split
+    // into a parallel portion and a merging/aggregation portion. 
+    // In many cases, not much needs to be done, since nearly all of
+    // it can be parallelized.
+    // If the query requires aggregation, the select list needs to get
+    // converted into a parallel portion, and the merging includes the
+    // post-parallel steps to merge sub-results.  When the statement
+    // results in merely a collection of unordered concatenated rows,
+    // the merge statement can be left empty, signifying that the sub
+    // results can be concatenated directly into the output table.
+    //
+    // Important parts of the merge statement are 
+    _stmtParallel = _stmt->copySyntax(); // Needs to copy SelectList, since the
+                           // parallel statement's version will get
+                           // updated by plugins. Plugins probably
+                           // need access to the original as a
+                           // reference.
+    _stmtMerge = _stmt->copyMerge(); // Copies SelectList and Mods,
+                                      // but not FROM, and perhaps not
+                                      // WHERE(???)
+    
+    
+    // Compute default merge predicate:
 }
+
+
 void QuerySession::_applyConcretePlugins() {
+    QueryPlugin::Plan p(*_stmt, *_stmtParallel, *_stmtMerge, _hasMerge);
     PluginList::iterator i;
     for(i=_plugins->begin(); i != _plugins->end(); ++i) {
-        (**i).applyPhysical(*_stmt);
+        (**i).applyPhysical(p);
     }
 }
 
@@ -168,4 +196,11 @@ void QuerySession::Iter::_buildCache() const {
     _cache.query = "QUERYFIXME"; // _qs._templateQuery();
     _cache.chunkId = _pos->chunkId;
     _cache.subChunks.assign(_pos->subChunks.begin(), _pos->subChunks.end());
+}
+
+////////////////////////////////////////////////////////////////////////
+// initQuerySession
+////////////////////////////////////////////////////////////////////////
+void lsst::qserv::master::initQuerySession() {
+    registerAggregatePlugin();
 }

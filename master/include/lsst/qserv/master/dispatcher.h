@@ -50,10 +50,11 @@ void resumeReadTrans(int session);
 
 // Parser model 3:
 void setupQuery(int session, std::string const& query); // new model.
-std::string const& getSessionError(int session);
+std::string const& getSessionError3(int session);
 lsst::qserv::master::ConstraintVec getConstraints(int session);
 
 void addChunk(int session, lsst::qserv::master::ChunkSpec const& cs );
+void submitQuery3(int session);
 
 QueryState joinQuery(int session, int id);
 QueryState tryJoinQuery(int session, int id);
