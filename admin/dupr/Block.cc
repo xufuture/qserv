@@ -46,14 +46,17 @@ void InputBlock::process(Options const &opts, PopulationMap & map) {
         r.info.length = static_cast<uint32_t>(next - beg);
         r.line = beg;
         // extract ID
+        if (isNull(fields[opts.pkField], fields[opts.pkField + 1] - 1)) {
+            throw std::runtime_error("CSV file contains NULL primary-key value");
+        }
         r.info.id = extractInt(
             fields[opts.pkField], fields[opts.pkField + 1] - 1);
         // extract ra and dec
         Eigen::Vector2d sc;
         sc(0) = extractDouble(fields[opts.partitionPos.first],
-                              fields[opts.partitionPos.first + 1] - 1);
+                              fields[opts.partitionPos.first + 1] - 1, false);
         sc(1) = extractDouble(fields[opts.partitionPos.second],
-                              fields[opts.partitionPos.second + 1] - 1);
+                              fields[opts.partitionPos.second + 1] - 1, false);
         r.info.htmId = htmId(cartesian(sc), opts.htmLevel);
         records.push_back(r);
         beg = next;

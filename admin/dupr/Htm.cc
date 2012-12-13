@@ -726,7 +726,7 @@ SphericalBox const Chunker::getChunkBounds(int32_t chunkId) const {
     int32_t stripe = getStripe(chunkId);
     int32_t chunk = getChunk(chunkId, stripe);
     double width = 360.0 / _numChunksPerStripe[stripe];
-    double raMin = max(0.0, chunk*width);
+    double raMin = chunk*width;
     double raMax = clampRa((chunk + 1)*width);
     double decMin = clampDec(stripe*_numSubStripesPerStripe*_subStripeHeight - 90.0);
     double decMax = clampDec((stripe + 1)*_numSubStripesPerStripe*_subStripeHeight - 90.0);
@@ -741,8 +741,8 @@ SphericalBox const Chunker::getSubChunkBounds(
     int32_t chunk = getChunk(chunkId, stripe);
     int32_t subStripe = getSubStripe(subChunkId, stripe);
     int32_t subChunk = getSubChunk(subChunkId, stripe, subStripe, chunk);
-    double raMin = subChunk*_subChunkWidth[subChunk];
-    double raMax = clampRa((subChunk + 1)*_subChunkWidth[subChunk]);
+    double raMin = subChunk*_subChunkWidth[subStripe];
+    double raMax = clampRa((subChunk + 1)*_subChunkWidth[subStripe]);
     double decMin = clampDec(subStripe*_subStripeHeight - 90.0);
     double decMax = clampDec((subStripe + 1)*_subStripeHeight - 90.0);
     return SphericalBox(raMin, raMax, decMin, decMax);
@@ -784,8 +784,8 @@ void Chunker::locate(
         return;
     }
     // Get sub-chunk bounds
-    double const raMin = subChunk*_subChunkWidth[subChunk];
-    double const raMax = clampRa((subChunk + 1)*_subChunkWidth[subChunk]);
+    double const raMin = subChunk*_subChunkWidth[subStripe];
+    double const raMax = clampRa((subChunk + 1)*_subChunkWidth[subStripe]);
     double const decMin = clampDec(subStripe*_subStripeHeight - 90.0);
     double const decMax = clampDec((subStripe + 1)*_subStripeHeight - 90.0);
     // Check whether the position is in the overlap regions of sub-chunks in

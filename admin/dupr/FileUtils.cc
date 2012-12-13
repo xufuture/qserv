@@ -21,11 +21,11 @@ InputFile::InputFile(string const & path) : _path(path), _fd(-1), _sz(-1) {
     struct stat st;
     int fd = open(path.c_str(), O_RDONLY);
     if (fd == -1) {
-        throw std::runtime_error("open() failed");
+        throw std::runtime_error("failed to open() " + path);
     }
     if (fstat(fd, &st) != 0) {
         close(fd);
-        throw std::runtime_error("fstat() failed");
+        throw std::runtime_error("failed to fstat() " + path);
     }
     _fd = fd;
     _sz = st.st_size;
@@ -43,7 +43,7 @@ void * InputFile::read(void * buf, off_t off, size_t sz) const {
     if (!buf) {
         b = static_cast<char *>(malloc(sz));
         if (!b) {
-            throw std::runtime_error("malloc() failed");
+            throw std::runtime_error("failed to malloc() read buffer for " + _path);
         }
     }
     char * cur = b;
@@ -51,10 +51,11 @@ void * InputFile::read(void * buf, off_t off, size_t sz) const {
         ssize_t n = pread(_fd, cur, sz, off);
         if (n == 0) {
             if (!buf) { free(b); }
-            throw std::runtime_error("reached end of file before consuming input block");
+            throw std::runtime_error("reached end of file " + _path +
+                                     " before consuming input block");
         } else if (n < 0 && errno != EINTR) {
             if (!buf) { free(b); }
-            throw std::runtime_error("pread() failed");
+            throw std::runtime_error("failed to pread() " + _path);
         } else if (n > 0) {
             sz -= static_cast<size_t>(n);
             off += n;
@@ -69,17 +70,12 @@ OutputFile::OutputFile(string const & path) : _path(path), _fd(-1) {
                   O_TRUNC | O_CREAT | O_WRONLY,
                   S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR);
     if (fd == -1) {
-        throw std::runtime_error("open() failed");
+        throw std::runtime_error("failed to open() " + path);
     }
     _fd = fd;
 }
 
 OutputFile::~OutputFile() {
-    // flush to disk
-    if (fdatasync(_fd) != 0) {
-        perror("fdatasync() failed");
-        exit(EXIT_FAILURE);
-    }
     if (close(_fd) != 0) {
         perror("close() failed");
         exit(EXIT_FAILURE);
@@ -124,22 +120,22 @@ MappedInputFile::MappedInputFile(string const & path) :
 {
     int fd = open(path.c_str(), O_RDONLY);
     if (fd == -1) {
-        throw std::runtime_error("open() failed");
+        throw std::runtime_error("failed to open() " + path);
     }
     struct stat st;
     if (fstat(fd, &st) != 0) {
         close(fd);
-        throw std::runtime_error("fstat() failed");
+        throw std::runtime_error("failed to fstat() " + path);
     }
     if (static_cast<uintmax_t>(st.st_size) > std::numeric_limits<size_t>::max()) {
         close(fd);
-        throw std::runtime_error("input file too large to mmap");
+        throw std::runtime_error("input file " + path + " too large to mmap");
     }
     size_t sz = roundUp(static_cast<size_t>(st.st_size), _pageSz);
     _data = mmap(0, sz, PROT_READ, MAP_SHARED | MAP_NORESERVE, fd, 0);
     if (_data == MAP_FAILED) {
         close(fd);
-        throw std::runtime_error("mmap() failed");
+        throw std::runtime_error("failed to mmap() " + path);
     }
     madvise(_data, sz, MADV_DONTNEED);
     _fd = fd;

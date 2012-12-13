@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include <stdexcept>
+#include <limits>
 
 
 namespace dupr {
@@ -76,8 +77,11 @@ bool isNull(char const * beg, char const * end) {
 }
 
 
-double extractDouble(char const * beg, char const * end) {
+double extractDouble(char const * beg, char const * end, bool allowNull) {
     char buf[64];
+    if (allowNull && isNull(beg, end)) {
+       return std::numeric_limits<double>::quiet_NaN();
+    }
     while (beg < end && isspace(*beg)) { ++beg; }
     while (end - 1 > beg && isspace(*(end - 1))) { --end; }
     if (end <= beg) {

@@ -37,9 +37,11 @@ def configure(conf):
     conf.check_cxx(lib='pthread',
                    uselib_store='PTHREAD', mandatory=True)
     conf.check_cxx(lib='boost_system',
-                   uselib_store='BOOST_SYSTEM', mandatory=True)
+                   uselib_store='BOOST', mandatory=True)
+    conf.check_cxx(lib='boost_timer',
+                   uselib_store='BOOST', mandatory=True)
     conf.check_cxx(lib='boost_program_options',
-                   uselib_store='BOOST_PROGRAM_OPTIONS', mandatory=True)
+                   uselib_store='BOOST', mandatory=True)
 
 def build(bld):
     bld.objects(
@@ -51,13 +53,13 @@ def build(bld):
         source=bld.path.ant_glob('Index.cc'),
         includes='.',
         target='qserv_dup_index',
-        use='objects PTHREAD BOOST_SYSTEM BOOST_PROGRAM_OPTIONS',
+        use='objects PTHREAD BOOST',
         install_path='${PREFIX}/bin'
     )
     bld.program(
         source=bld.path.ant_glob('Duplicate.cc'),
         includes='.',
         target='qserv_dup',
-        use='objects PTHREAD BOOST_SYSTEM BOOST_PROGRAM_OPTIONS',
+        use='objects PTHREAD BOOST',
         install_path='${PREFIX}/bin'
     )

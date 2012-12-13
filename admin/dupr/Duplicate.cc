@@ -1,5 +1,4 @@
 #include <sys/types.h>
-#include <sys/mman.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <algorithm>
@@ -11,7 +10,7 @@
 #include "boost/make_shared.hpp"
 #include "boost/scoped_array.hpp"
 #include "boost/scoped_ptr.hpp"
-#include "boost/timer.hpp"
+#include "boost/timer/timer.hpp"
 
 #include "Block.h"
 #include "Csv.h"
@@ -20,6 +19,7 @@
 #include "ThreadUtils.h"
 
 
+using std::cerr;
 using std::cout;
 using std::endl;
 using std::flush;
@@ -31,6 +31,7 @@ using boost::make_shared;
 using boost::scoped_ptr;
 using boost::scoped_array;
 using boost::shared_ptr;
+using boost::timer::cpu_timer;
 
 using Eigen::Vector2d;
 using Eigen::Matrix3d;
@@ -42,7 +43,7 @@ namespace {
 
 struct KeyInfo {
     shared_ptr<PopulationMap const> map;     // Population map.
-    shared_ptr<MappedInputFile const> file;  // File containing ID/key values.
+    shared_ptr<InputFile const> file;        // File containing ID/key values.
     int fieldIndex;                          // ID/key field index.
 
     KeyInfo() : map(), file(), fieldIndex(-1) { }
@@ -62,10 +63,11 @@ struct KeyInfo {
 class KeyMapper {
 public:
     KeyMapper() : _beg(0), _end(0), _htmId(0), _fieldIndex(-1) { }
-
     KeyMapper(KeyInfo const & key,
               uint32_t sourceHtmId,
               uint32_t destinationHtmId);
+
+    ~KeyMapper();
 
     int getFieldIndex() const {
         return _fieldIndex;
@@ -77,9 +79,20 @@ public:
         return (static_cast<int64_t>(_htmId) << 32) + (p - _beg);
     }
 
+    void swap(KeyMapper & mapper) {
+        using std::swap;
+        swap(_beg, mapper._beg);
+        swap(_end, mapper._end);
+        swap(_htmId, mapper._htmId);
+        swap(_fieldIndex, mapper._fieldIndex);
+    }
+
 private:
-    int64_t const * _beg;
-    int64_t const * _end;
+    KeyMapper(KeyMapper const & mapper);
+    KeyMapper & operator=(KeyMapper const & mapper);
+
+    int64_t * _beg;
+    int64_t * _end;
     uint32_t _htmId;
     int _fieldIndex;
 };
@@ -89,21 +102,26 @@ KeyMapper::KeyMapper(
     uint32_t sourceHtmId,
     uint32_t destinationHtmId
 ) :
+    _beg(0),
+    _end(0),
     _htmId(destinationHtmId),
     _fieldIndex(key.fieldIndex)
 {
-    size_t off = sizeof(int64_t) * static_cast<size_t>(
-        key.map->getNumRecordsBelow(sourceHtmId));
-    size_t sz = static_cast<size_t>(key.map->getNumRecords(sourceHtmId));
-    _beg = reinterpret_cast<int64_t const *>(key.file->data() + off);
-    _end = _beg + sz;
-    size_t pageSize = static_cast<size_t>(sysconf(_SC_PAGESIZE));
-    size_t beg = off & ~(pageSize - 1);
-    size_t end = (off + sz*sizeof(int64_t) + pageSize - 1) & ~(pageSize - 1);
-    char * madvStart = const_cast<char *>(key.file->data()) + beg;
-    size_t madvSize = end - beg;
-    // prefetch IDs into memory
-    madvise(madvStart, madvSize, MADV_WILLNEED);
+    uint64_t offset = key.map->getNumRecordsBelow(sourceHtmId) * sizeof(int64_t);
+    uint32_t nrec = key.map->getNumRecords(sourceHtmId);
+    _beg = static_cast<int64_t *>(key.file->read(
+        0, static_cast<off_t>(offset), nrec * sizeof(int64_t)));
+    _end = _beg + nrec;
+}
+
+KeyMapper::~KeyMapper() {
+    free(_beg);
+    _beg = 0;
+    _end = 0;
+}
+
+void swap(KeyMapper & m1, KeyMapper & m2) {
+    m1.swap(m2);
 }
 
 
@@ -194,13 +212,14 @@ OutputBlock::OutputBlock() : _recs(), _lineBlocks(), _line(0), _end(0) {
 }
 
 OutputBlock::~OutputBlock() {
-    typedef vector<char *>::const_iterator LbIter;
-    for (LbIter i = _lineBlocks.begin(), e = _lineBlocks.end(); i != e; ++i) {
+    typedef vector<char *>::const_iterator Iter;
+    for (Iter i = _lineBlocks.begin(), e = _lineBlocks.end(); i != e; ++i) {
         free(*i);
     }
 }
 
 void OutputBlock::add(ChunkRecord const & r) {
+    assert(r.length < static_cast<uint32_t>(MAX_LINE_SIZE));
     if (static_cast<uint32_t>(_end - _line) < r.length) {
         // allocate another line block
         _line = static_cast<char *>(malloc(LINE_BLOCK_SIZE));
@@ -232,9 +251,15 @@ struct FieldValue {
     }
 
     void set(double val) {
-        int n = snprintf(buf, sizeof(buf), "%.17g", val);
-        assert(n > 0 && n < static_cast<int>(sizeof(buf) - 1));
-        length = static_cast<unsigned char>(n);
+        if (val != val || (val != 0.0 && val == 2.0*val)) {
+            buf[0] = '\\';
+            buf[1] = 'N';
+            length = 2;
+        } else {
+            int n = snprintf(buf, sizeof(buf), "%.17g", val);
+            assert(n > 0 && n < static_cast<int>(sizeof(buf) - 1));
+            length = static_cast<unsigned char>(n);
+        }
     }
 
     void clear() {
@@ -254,6 +279,7 @@ class ChunkDuplicator;
 class TrixelDuplicator {
 public:
     TrixelDuplicator(ChunkDuplicator const & dup);
+    ~TrixelDuplicator();
 
     void duplicate();
 
@@ -263,11 +289,11 @@ private:
 
     void setupTrixel(uint32_t htmId);
     void processTrixel();
-    void finishTrixel();
     uint32_t buildOutputLine();
 
     ChunkDuplicator const &    _dup;
     Options const &            _opts;
+    char *                     _inputStart;
     char const *               _inputLine;
     char const *               _inputEnd;
     bool                       _mapPositions;
@@ -281,8 +307,6 @@ private:
     shared_ptr<OutputBlock>    _block;
     vector<ChunkLocation>      _locations;
     char                       _outputLine[MAX_LINE_SIZE];
-    char *                     _madvStart;
-    size_t                     _madvSize;
 };
 
 
@@ -307,7 +331,7 @@ private:
     Chunker           _chunker;
     KeyInfo           _primary;
     vector<KeyInfo>   _foreignKeys;
-    MappedInputFile   _dataFile;
+    InputFile         _dataFile;
     vector<int32_t>   _chunkIds;
     int32_t           _chunkId;
 
@@ -336,13 +360,13 @@ ChunkDuplicator::ChunkDuplicator(Options const & opts) :
 {
     // Read in population maps, and memory-map required CSV/id files
     _primary.map = make_shared<PopulationMap>(opts.indexDir + "/map.bin");
-    _primary.file = make_shared<MappedInputFile>(opts.indexDir + "/ids.bin");
+    _primary.file = make_shared<InputFile>(opts.indexDir + "/ids.bin");
     _primary.fieldIndex = opts.pkField;
-    typedef vector<FieldAndIndex>::const_iterator FiIter;
-    for (FiIter i = opts.foreignKeys.begin(), e = opts.foreignKeys.end(); i != e; ++i) {
+    typedef vector<FieldAndIndex>::const_iterator Iter;
+    for (Iter i = opts.foreignKeys.begin(), e = opts.foreignKeys.end(); i != e; ++i) {
         KeyInfo ki;
         ki.map = make_shared<PopulationMap>(i->second + "/map.bin");
-        ki.file = make_shared<MappedInputFile>(i->second + "/ids.bin");
+        ki.file = make_shared<InputFile>(i->second + "/ids.bin");
         ki.fieldIndex = i->first;
         _foreignKeys.push_back(ki);
     }
@@ -358,17 +382,17 @@ ChunkDuplicator::ChunkDuplicator(Options const & opts) :
 
 void ChunkDuplicator::duplicate() {
     cout << "Generating chunks..." << endl;
-    typedef vector<int32_t>::const_iterator ChunkIdIter;
-    for (ChunkIdIter i = _chunkIds.begin(), e = _chunkIds.end(); i != e; ++i) {
+    typedef vector<int32_t>::const_iterator Iter;
+    for (Iter i = _chunkIds.begin(), e = _chunkIds.end(); i != e; ++i) {
         cout << "\tchunk " << *i << "... " << flush;
-        boost::timer t;
+        cpu_timer t;
         SphericalBox box = _chunker.getChunkBounds(*i);
         box.expand(_opts.overlap + 1/3600.0); // 1 arcsecond epsilon
         _htmIds = box.htmIds(_opts.htmLevel);
         _chunkId = *i;
         generateChunk();
         finishChunk();
-        cout << t.elapsed() << " sec" << endl;
+        cout << t.format() << flush;
     }
 }
 
@@ -412,8 +436,8 @@ void ChunkDuplicator::finishChunk() {
     // merge sort output blocks
     vector<ChunkRecordRun> runs;
     runs.reserve(_blocks.size());
-    typedef OutputBlockVector::const_iterator BlockIter;
-    for (BlockIter i = _blocks.begin(), e = _blocks.end(); i != e; ++i) {
+    typedef OutputBlockVector::const_iterator Iter;
+    for (Iter i = _blocks.begin(), e = _blocks.end(); i != e; ++i) {
         ChunkRecordRun r;
         r.beg = (*i)->getRecords().begin();
         r.end = (*i)->getRecords().end();
@@ -446,8 +470,13 @@ void ChunkDuplicator::finishChunk() {
 
 void * ChunkDuplicator::run(void * arg) {
     ChunkDuplicator * d = static_cast<ChunkDuplicator *>(arg);
-    TrixelDuplicator t(*d);
-    t.duplicate();
+    try {
+        TrixelDuplicator t(*d);
+        t.duplicate();
+    } catch (std::exception const & ex) {
+        cerr << ex.what() << endl;
+        exit(EXIT_FAILURE);
+    }
     return 0;
 }
 
@@ -455,20 +484,19 @@ void * ChunkDuplicator::run(void * arg) {
 TrixelDuplicator::TrixelDuplicator(ChunkDuplicator const & dup) :
     _dup(dup),
     _opts(_dup._opts),
+    _inputStart(0),
     _inputLine(0),
     _inputEnd(0),
     _mapPositions(false),
     _posMapper(),
-    _keyMappers(new KeyMapper[_dup._foreignKeys.size()]()),
+    _keyMappers(new KeyMapper[1 + _dup._foreignKeys.size()]()),
     _chunkIdField(_opts.chunkIdField),
     _subChunkIdField(_opts.subChunkIdField),
     _numOutputFields(_opts.fields.size()),
     _fields(new char const *[_opts.fields.size() + 1]()),
     _values(new FieldValue[_opts.fields.size() + 2]()),
     _block(),
-    _locations(),
-    _madvStart(0),
-    _madvSize(0)
+    _locations()
 {
     if (_chunkIdField == -1) {
         _chunkIdField = _numOutputFields++;
@@ -476,6 +504,10 @@ TrixelDuplicator::TrixelDuplicator(ChunkDuplicator const & dup) :
     if (_subChunkIdField == -1) {
         _subChunkIdField = _numOutputFields++;
     }
+}
+
+TrixelDuplicator::~TrixelDuplicator() {
+    free(_inputStart);
 }
 
 void TrixelDuplicator::duplicate() {
@@ -496,12 +528,12 @@ void TrixelDuplicator::duplicate() {
         }
         setupTrixel(htmId);
         processTrixel();
-        finishTrixel();
     }
 }
 
 void TrixelDuplicator::setupTrixel(uint32_t htmId) {
-    // Allocate new output block
+    // Free previous input data and allocate new output block
+    free(_inputStart);
     _block.reset(new OutputBlock());
     // Map trixel to a non-empty source trixel
     uint32_t const sourceHtmId = _dup._primary.map->mapToNonEmptyTrixel(htmId);
@@ -510,26 +542,24 @@ void TrixelDuplicator::setupTrixel(uint32_t htmId) {
     if (_mapPositions) {
         _posMapper = PosMapper(sourceHtmId, htmId);
     }
-    _keyMappers[0] = KeyMapper(_dup._primary, sourceHtmId, htmId);
+    {
+        KeyMapper pk(_dup._primary, sourceHtmId, htmId);
+        swap(_keyMappers[0], pk);
+    }
     for (size_t i = 1; i <= _dup._foreignKeys.size(); ++i) {
-        _keyMappers[i] = KeyMapper(_dup._foreignKeys[i - 1], sourceHtmId, htmId);
+        KeyMapper fk(_dup._foreignKeys[i - 1], sourceHtmId, htmId);
+        swap(_keyMappers[i], fk);
     }
     // Locate data for the source trixel
-    size_t off = static_cast<size_t>(_dup._primary.map->getOffset(sourceHtmId));
-    size_t sz = static_cast<size_t>(_dup._primary.map->getSize(sourceHtmId));
-    _inputLine = _dup._dataFile.data() + off;
-    _inputEnd = _inputLine + sz;
-    // Prefetch source trixel data
-    size_t pageSize = static_cast<size_t>(sysconf(_SC_PAGESIZE));
-    size_t beg = off & ~(pageSize - 1);
-    size_t end = (off + sz + pageSize - 1) & ~(pageSize - 1);
-    _madvStart = const_cast<char *>(_dup._dataFile.data()) + beg;
-    _madvSize = end - beg;
-    madvise(_madvStart, _madvSize, MADV_WILLNEED); // or MADV_SEQUENTIAL?
+    uint64_t offset = _dup._primary.map->getOffset(sourceHtmId);
+    uint32_t sz = _dup._primary.map->getSize(sourceHtmId);
+    _inputStart = static_cast<char *>(_dup._dataFile.read(
+        0, static_cast<off_t>(offset), sz));
+    _inputLine = _inputStart;
+    _inputEnd = _inputStart + sz;
 }
 
 void TrixelDuplicator::processTrixel() {
-    typedef vector<ChunkLocation>::const_iterator ClIter;
     for (char const * next; _inputLine < _inputEnd; _inputLine = next) {
         // Clear out data from previous record
         _locations.clear();
@@ -541,10 +571,10 @@ void TrixelDuplicator::processTrixel() {
                          _fields.get(), _opts.fields.size());
         assert(next <= _inputEnd);
         Vector2d p;
-        p(0) = extractDouble(_fields[_opts.partitionPos.first],
-                             _fields[_opts.partitionPos.first + 1] - 1);
-        p(1) = extractDouble(_fields[_opts.partitionPos.second],
-                             _fields[_opts.partitionPos.second + 1] - 1);
+        int ra = _opts.partitionPos.first;
+        int dec = _opts.partitionPos.second;
+        p(0) = extractDouble(_fields[ra], _fields[ra + 1] - 1, false);
+        p(1) = extractDouble(_fields[dec], _fields[dec + 1] - 1, false);
         // map partitioning position to destination trixel if necessary
         if (_mapPositions) {
             p = _posMapper.map(p);
@@ -557,34 +587,42 @@ void TrixelDuplicator::processTrixel() {
         // p falls in the current chunk...
         if (_mapPositions) {
             // map ancillary positions
-            _values[_opts.partitionPos.first].set(p(0));
-            _values[_opts.partitionPos.second].set(p(1));
+            _values[ra].set(p(0));
+            _values[dec].set(p(1));
             for (size_t i = 0; i < _opts.positions.size(); ++i) {
-                p(0) = extractDouble(_fields[_opts.positions[i].first],
-                                     _fields[_opts.positions[i].first + 1] - 1);
-                p(1) = extractDouble(_fields[_opts.positions[i].second],
-                                     _fields[_opts.positions[i].second + 1] - 1);
+                ra = _opts.positions[i].first;
+                dec = _opts.positions[i].second;
+                p(0) = extractDouble(_fields[ra], _fields[ra + 1] - 1, true);
+                p(1) = extractDouble(_fields[dec], _fields[dec + 1] - 1, true);
                 p = _posMapper.map(p);
-                _values[_opts.positions[i].first].set(p(0));
-                _values[_opts.positions[i].second].set(p(1));
+                _values[ra].set(p(0));
+                _values[dec].set(p(1));
             }
         }
         // map keys to destination trixel
         for (size_t i = 0; i < 1 + _opts.foreignKeys.size(); ++i) {
             int f = _keyMappers[i].getFieldIndex();
-            int64_t id = extractInt(_fields[f], _fields[f + 1] - 1);
-            id = _keyMappers[i].map(id);
-            _values[f].set(id);
+            if (!isNull(_fields[f], _fields[f + 1] - 1)) {
+                int64_t id = extractInt(_fields[f], _fields[f + 1] - 1);
+                id = _keyMappers[i].map(id);
+                if (i == 0 && id == 4389563950694400ll) {
+                    cout << "Problem!" << endl;
+                }
+                _values[f].set(id);
+            }
         }
         // extract secondary sort key
         int64_t sortKey = 0;
         if (_opts.secondarySortField >= 0) {
-            sortKey = extractInt(_fields[_opts.secondarySortField],
-                                 _fields[_opts.secondarySortField + 1] - 1);
+            int f = _opts.secondarySortField;
+            if (!isNull(_fields[f], _fields[f + 1] - 1)) {
+                sortKey = extractInt(_fields[f], _fields[f + 1] - 1);
+            }
         }
         _values[_chunkIdField].set(static_cast<int64_t>(_dup._chunkId));
         // loop over locations
-        for (ClIter i = _locations.begin(), e = _locations.end(); i != e; ++i) {
+        typedef vector<ChunkLocation>::const_iterator Iter;
+        for (Iter i = _locations.begin(), e = _locations.end(); i != e; ++i) {
             _values[_subChunkIdField].set(static_cast<int64_t>(i->subChunkId));
             ChunkRecord r;
             r.loc = *i;
@@ -594,10 +632,6 @@ void TrixelDuplicator::processTrixel() {
             _block->add(r);
         }
     }
-}
-
-void TrixelDuplicator::finishTrixel() {
-    madvise(_madvStart, _madvSize, MADV_DONTNEED);
 }
 
 uint32_t TrixelDuplicator::buildOutputLine() {
@@ -634,11 +668,16 @@ uint32_t TrixelDuplicator::buildOutputLine() {
 
 
 int main(int argc, char ** argv) {
-    boost::timer total;
-    Options options = parseDuplicatorCommandLine(argc, argv);
-    ChunkDuplicator duplicator(options);
-    duplicator.duplicate();
-    cout << endl << "Duplicator finished in " << total.elapsed() << " sec" << endl;
+    try {
+        cpu_timer total;
+        Options options = parseDuplicatorCommandLine(argc, argv);
+        ChunkDuplicator duplicator(options);
+        duplicator.duplicate();
+        cout << endl << "Duplicator finished : " << total.format() << endl;
+    } catch (std::exception const & ex) {
+        cerr << ex.what() << endl;
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }
 

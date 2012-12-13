@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "boost/scoped_ptr.hpp"
-#include "boost/timer.hpp"
+#include "boost/timer/timer.hpp"
 
 #include "Block.h"
 #include "Htm.h"
@@ -11,9 +11,12 @@
 #include "Options.h"
 #include "ThreadUtils.h"
 
+using std::cerr;
 using std::cout;
 using std::endl;
 using std::max;
+
+using boost::timer::cpu_timer;
 
 using namespace dupr;
 
@@ -61,23 +64,28 @@ State::~State() { }
  */
 void * run(void * arg) {
     State & state = *static_cast<State *>(arg);
-    while (true) {
-        boost::shared_ptr<InputBlock> block;
-        // get a block to process
-        {
-            Lock lock(state.mutex);
-            if (state.blocks.empty()) {
-                break; // none left
+    try {
+        while (true) {
+            boost::shared_ptr<InputBlock> block;
+            // get a block to process
+            {
+                Lock lock(state.mutex);
+                if (state.blocks.empty()) {
+                    break; // none left
+                }
+                block = state.blocks.back();
+                state.blocks.pop_back();
             }
-            block = state.blocks.back();
-            state.blocks.pop_back();
+            // read the block
+            block->read();
+            // process the block
+            block->process(state.options, state.map);
+            // add the block to the merge queue
+            state.merger.add(block);
         }
-        // read the block
-        block->read();
-        // process the block
-        block->process(state.options, state.map);
-        // add the block to the merge queue
-        state.merger.add(block);
+    } catch (std::exception const & ex) {
+        cerr << ex.what() << endl;
+        exit(EXIT_FAILURE);
     }
     return 0;
 }
@@ -86,13 +94,13 @@ void * run(void * arg) {
 void index(Options const & options) {
     int const numThreads = max(1, options.numThreads);
     cout << "Initializing... " << endl;
-    boost::timer t;
+    cpu_timer t;
     boost::scoped_ptr<State> state(new State(
         options, splitInputs(options.inputFiles, options.blockSize)));
-    cout << "\tsplit inputs into " << state->blocks.size()
-         << " blocks in " << t.elapsed() << " sec" << endl;
+    t.stop();
+    cout << "\tsplit inputs into " << state->blocks.size() << " blocks : " << t.format();
     cout << "Indexing input... " << endl;
-    t.restart();
+    t.resume();
     // create thread pool
     boost::scoped_array<pthread_t> threads(new pthread_t[numThreads - 1]);
     for (int t = 1; t < numThreads; ++t) {
@@ -107,11 +115,13 @@ void index(Options const & options) {
     for (int t = 1; t < numThreads; ++t) {
         ::pthread_join(threads[t-1], 0);
     }
-    cout << "\tfirst pass finished in " << t.elapsed() << " sec" << endl;
-    t.restart();
+    t.stop();
+    cout << "\tfirst pass finished : " << t.format();
+    t.resume();
     // Finish up the merge
     state->merger.finish();
-    cout << "\tmerging finished in " << t.elapsed() << " sec" << endl;
+    t.stop();
+    cout << "\tmerging finished : " << t.format();
     // Write the population map
     state->map.makeQueryable();
     state->map.write(options.indexDir + "/map.bin");
@@ -121,10 +131,15 @@ void index(Options const & options) {
 
 
 int main(int argc, char ** argv) {
-    boost::timer total;
-    Options options = parseIndexerCommandLine(argc, argv);
-    index(options);
-    cout << endl << "Indexer finished in " << total.elapsed() << " sec" << endl;
+    try {
+        cpu_timer total;
+        Options options = parseIndexerCommandLine(argc, argv);
+        index(options);
+        cout << endl << "Indexer finished : " << total.format() << endl;
+    } catch (std::exception const & ex) {
+        cerr << ex.what() << endl;
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }
 

@@ -39,8 +39,9 @@ char const * parseLine(char const * beg,
 /// Return true if the field [beg, end) corresponds to a NULL.
 bool isNull(char const * beg, char const * end);
 
-/// Return field [beg, end) as a double. Doesn't handle quoted numeric fields.
-double extractDouble(char const * beg, char const * end);
+/// Return field [beg, end) as a double. If allowNull is true, NULL fields are
+/// returned as quiet NaNs. Doesn't handle quoted numeric fields.
+double extractDouble(char const * beg, char const * end, bool allowNull);
 
 /// Return field [beg, end) as an int64_t. Doesn't handle quoted numeric fields.
 int64_t extractInt(char const * beg, char const * end);
