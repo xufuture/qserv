@@ -255,20 +255,6 @@ double angSep(Vector3d const & v0, Vector3d const & v1) {
     return atan2(ss, cs) * DEG_PER_RAD;
 }
 
-// 32 bit integer hash function from Brett Mulvey.
-// See http://home.comcast.net/~bretm/hash/4.html
-uint32_t mulveyHash(uint32_t x) {
-    x += x << 16;
-    x ^= x >> 13;
-    x += x << 4;
-    x ^= x >> 7;
-    x += x << 10;
-    x ^= x >> 5;
-    x += x << 8;
-    x ^= x >> 16;
-    return x;
-}
-
 } // unnamed namespace
 
 

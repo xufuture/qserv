@@ -384,15 +384,17 @@ void ChunkDuplicator::duplicate() {
     cout << "Generating chunks..." << endl;
     typedef vector<int32_t>::const_iterator Iter;
     for (Iter i = _chunkIds.begin(), e = _chunkIds.end(); i != e; ++i) {
-        cout << "\tchunk " << *i << "... " << flush;
+        cout << "\tchunk " << *i << "...\n" << flush;
         cpu_timer t;
         SphericalBox box = _chunker.getChunkBounds(*i);
         box.expand(_opts.overlap + 1/3600.0); // 1 arcsecond epsilon
         _htmIds = box.htmIds(_opts.htmLevel);
         _chunkId = *i;
         generateChunk();
+        cout << "\t\tgeneration : " << t.format() << flush;
+        cpu_timer t2;
         finishChunk();
-        cout << t.format() << flush;
+        cout << "\t\tsort/write : " << t2.format() << flush;
     }
 }
 

@@ -14,6 +14,7 @@
 using std::cerr;
 using std::cout;
 using std::endl;
+using std::flush;
 using std::max;
 
 using boost::timer::cpu_timer;
@@ -100,7 +101,7 @@ void index(Options const & options) {
     t.stop();
     cout << "\tsplit inputs into " << state->blocks.size() << " blocks : " << t.format();
     cout << "Indexing input... " << endl;
-    t.resume();
+    cpu_timer t2;
     // create thread pool
     boost::scoped_array<pthread_t> threads(new pthread_t[numThreads - 1]);
     for (int t = 1; t < numThreads; ++t) {
@@ -115,13 +116,13 @@ void index(Options const & options) {
     for (int t = 1; t < numThreads; ++t) {
         ::pthread_join(threads[t-1], 0);
     }
-    t.stop();
-    cout << "\tfirst pass finished : " << t.format();
-    t.resume();
+    t2.stop();
+    cout << "\tfirst pass finished : " << t2.format() << flush;
+    cpu_timer t3;
     // Finish up the merge
     state->merger.finish();
-    t.stop();
-    cout << "\tmerging finished : " << t.format();
+    t3.stop();
+    cout << "\tmerging finished    : " << t3.format() << flush;
     // Write the population map
     state->map.makeQueryable();
     state->map.write(options.indexDir + "/map.bin");

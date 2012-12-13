@@ -66,6 +66,8 @@
 #include "boost/scoped_array.hpp"
 #include "Eigen/Dense"
 
+#include "Hash.h"
+
 
 namespace dupr {
 
@@ -191,7 +193,7 @@ public:
         if (getNumRecords(id) != 0) {
             return id;
         }
-        return _nonEmpty[id % _nonEmpty.size()];
+        return _nonEmpty[mulveyHash(id) % _nonEmpty.size()];
     }
 
     /// Write the population map to a file.
