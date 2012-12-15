@@ -72,6 +72,7 @@ public:
 
     std::string dbgStr() const;
     std::string generate(EntryMapping const& em);
+    void clear();
 private:
     void _optimize() const; // not really const.
     std::list<boost::shared_ptr<Entry> > _entries;
