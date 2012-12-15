@@ -22,27 +22,95 @@
 // X houses the implementation of 
 #include "lsst/qserv/master/AggOp.h"
 
+#include <sstream>
+#include "lsst/qserv/master/FuncExpr.h"
+#include "lsst/qserv/master/ValueExpr.h"
+
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::AggOp;
 using lsst::qserv::master::AggRecord;
 using lsst::qserv::master::ValueExpr;
+using lsst::qserv::master::FuncExpr;
 
 namespace { // File-scope helpers
+
 }
 ////////////////////////////////////////////////////////////////////////
 // AggOp specializations
 ////////////////////////////////////////////////////////////////////////
 class PassAggOp : public AggOp {
 public:
-    virtual AggRecord::Ptr operator()(ValueExpr& orig) {} // FIXME!
+    explicit PassAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
+
+    virtual AggRecord::Ptr operator()(ValueExpr const& orig) {
+        AggRecord::Ptr arp(new AggRecord());
+        arp->orig = orig.clone();
+        arp->pass.push_back(orig.clone());
+        arp->fixup.push_back(orig.clone());
+        arp->origAlias = orig.getAlias();
+        return arp;
+    } 
 };
 class CountAggOp : public AggOp {
 public:
-    virtual AggRecord::Ptr operator()(ValueExpr& orig) {}
+    explicit CountAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
+
+    virtual AggRecord::Ptr operator()(ValueExpr const& orig) {
+        AggRecord::Ptr arp(new AggRecord());
+        std::string interName = _mgr.getAggName("COUNT");
+        arp->orig = orig.clone();
+        boost::shared_ptr<FuncExpr> fe;
+        boost::shared_ptr<ValueExpr> ve;
+        
+        ve = orig.clone();
+        ve->setAlias(interName);
+        arp->pass.push_back(ve);
+
+        fe = FuncExpr::newArg1("SUM", interName);
+        ve = ValueExpr::newFuncExpr(fe);
+        ve->setAlias(orig.getAlias());
+        arp->fixup.push_back(ve);
+
+        arp->origAlias = orig.getAlias();
+        return arp;
+    }
 };
 class AvgAggOp : public AggOp {
 public:
-    virtual AggRecord::Ptr operator()(ValueExpr& orig) {}
+    explicit AvgAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
+
+    virtual AggRecord::Ptr operator()(ValueExpr const& orig) {
+        AggRecord::Ptr arp(new AggRecord());
+        arp->orig = orig.clone();
+
+        boost::shared_ptr<FuncExpr> fe;
+        boost::shared_ptr<ValueExpr> ve;
+        std::string cName = _mgr.getAggName("COUNT");
+        fe = FuncExpr::newLike(*orig.getFuncExpr(), "COUNT");
+        ve = ValueExpr::newFuncExpr(fe);
+        ve->setAlias(cName);
+        arp->pass.push_back(ve);
+
+        std::string sName = _mgr.getAggName("SUM");
+        fe = FuncExpr::newLike(*orig.getFuncExpr(), "SUM");
+        ve = ValueExpr::newFuncExpr(fe);
+        ve->setAlias(sName);
+        arp->pass.push_back(ve);
+        
+        boost::shared_ptr<FuncExpr> fe1;
+        boost::shared_ptr<FuncExpr> fe2;
+        fe1 = FuncExpr::newArg1("SUM", sName);
+        fe2 = FuncExpr::newArg1("SUM", cName);
+
+        // FIXME!!
+        // ArithExpr::newExpr(fe1,fe2);
+        ve = ValueExpr::newFuncExpr(fe1);
+        ve->setAlias(orig.getAlias());
+        arp->fixup.push_back(ve);
+
+        arp->origAlias = orig.getAlias();
+        return arp;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -50,11 +118,13 @@ public:
 ////////////////////////////////////////////////////////////////////////
 AggOp::Mgr::Mgr() {
     // Load the map
-    _map["count"].reset(new CountAggOp());
-    _map["avg"].reset(new AvgAggOp());
-    _map["max"].reset(new PassAggOp());
-    _map["min"].reset(new PassAggOp());
-    _map["sum"].reset(new PassAggOp());
+    AggOp::Ptr pass(new PassAggOp(*this));
+    _map["COUNT"].reset(new CountAggOp(*this));
+    _map["AVG"].reset(new AvgAggOp(*this));
+    _map["MAX"] = pass;
+    _map["MIN"] = pass;
+    _map["SUM"] = pass;
+    _seq = 0; // Note: accessor return ++_seq
 }
 
 AggOp::Ptr 
@@ -66,8 +136,16 @@ AggOp::Mgr::getOp(std::string const& name) {
 
 AggRecord::Ptr 
 AggOp::Mgr::applyOp(std::string const& name, ValueExpr const& orig) {
-    AggOp::Ptr p = getOp(name);
+    std::string n(name);
+    std::transform(name.begin(), name.end(), n.begin(), ::toupper);
+    AggOp::Ptr p = getOp(n);
     assert(p.get());
     return (*p)(orig);
 }
 
+std::string AggOp::Mgr::getAggName(std::string const& name) {
+    std::stringstream ss;
+    int s = getNextSeq();
+    ss << "QS" << s << "_" << name;
+    return ss.str();
+}
