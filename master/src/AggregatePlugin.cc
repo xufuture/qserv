@@ -26,13 +26,17 @@
 #include "lsst/qserv/master/AggregatePlugin.h"
 #include <string>
 #include "lsst/qserv/master/QueryPlugin.h"
+#include "lsst/qserv/master/QueryTemplate.h"
 #include "lsst/qserv/master/ValueExpr.h"
+#include "lsst/qserv/master/FuncExpr.h"
+
 #include "lsst/qserv/master/SelectList.h"
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/AggOp.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::QueryPlugin;
+using lsst::qserv::master::QueryTemplate;
 using lsst::qserv::master::ValueExpr;
 using lsst::qserv::master::FuncExpr;
 using lsst::qserv::master::AggOp;
@@ -63,10 +67,15 @@ private:
     void _makeRecord(lsst::qserv::master::ValueExpr const& e) {
         AggRecord r;
         r.orig = e.clone();
-        if(e.getType() != ValueExpr::AGGFUNC) { return; }
+        if(e.getType() != ValueExpr::AGGFUNC) { 
+            // FIXME: Need to passthrough.
+            return; }
 
         assert(e.getFuncExpr().get());        
-        aMgr.applyOp(e.getFuncExpr()->name, e);
+        AggRecord::Ptr p = aMgr.applyOp(e.getFuncExpr()->name, e);
+        assert(p.get());
+        pList.insert(pList.end(), p->pass.begin(), p->pass.end());
+        mList.insert(mList.end(), p->fixup.begin(), p->fixup.end());
     }
     C& pList;
     C& mList;
@@ -92,7 +101,7 @@ public:
     virtual void applyLogical(lsst::qserv::master::SelectStmt& stmt) {}
 
     /// Apply the plugins's actions to the concrete query plan.
-    virtual void applyPhysical(lsst::qserv::master::QueryPlugin::Plan& stmt);
+    virtual void applyPhysical(lsst::qserv::master::QueryPlugin::Plan& p);
 private:
     AggOp::Mgr _aMgr;
 };
@@ -140,12 +149,22 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p) {
     assert(vlist.get());
     
     printList("aggr origlist", *vlist);
+    // Clear out select lists, since we are rewriting them.
+    pList.getValueExprList()->clear();
+    mList.getValueExprList()->clear();
     AggOp::Mgr m; // Eventually, this can be shared?
     convertAgg<qMaster::ValueExprList> ca(*pList.getValueExprList(), 
                                           *mList.getValueExprList(),
                                           m);
-
+    
     std::for_each(vlist->begin(), vlist->end(), ca);
+    
+    QueryTemplate qt;
+    pList.renderTo(qt);
+    std::cout << "pass: " << qt.dbgStr() << std::endl;
+    qt.clear();
+    mList.renderTo(qt);
+    std::cout << "fixup: " << qt.dbgStr() << std::endl;
 
     // Also need to operate on GROUP BY.
 

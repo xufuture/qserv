@@ -35,11 +35,12 @@ class AggOp {
 public:
     typedef boost::shared_ptr<AggOp> Ptr;
     class Mgr;
-
-    virtual AggRecord::Ptr operator()(ValueExpr const& orig) { 
-        return AggRecord::Ptr();
-    }
+    
+    virtual AggRecord::Ptr operator()(ValueExpr const& orig) = 0;
     virtual ~AggOp() {}
+protected:
+    explicit AggOp(Mgr&m) : _mgr(m) {}
+    Mgr& _mgr;
 };
 
 class AggOp::Mgr {
@@ -49,8 +50,11 @@ public:
     Mgr();
     AggOp::Ptr getOp(std::string const& name);
     AggRecord::Ptr applyOp(std::string const& name, ValueExpr const& orig);
+    int getNextSeq() { return ++_seq; }
+    std::string getAggName(std::string const& name);
 private:
     OpMap _map;
+    int _seq;
 };
 
 }}} // namespace lsst::qserv::master
