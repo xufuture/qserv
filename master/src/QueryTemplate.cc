@@ -183,6 +183,10 @@ std::string qMaster::QueryTemplate::generate(EntryMapping const& em) {
     std::for_each(_entries.begin(), _entries.end(), MappingWrapper(em, newQt));
     return outputString(newQt._entries);
 }
+void qMaster::QueryTemplate::clear() {
+    _entries.clear();
+}
+
 ////////////////////////////////////////////////////////////////////////
 // QueryTemplate (private)
 ////////////////////////////////////////////////////////////////////////
