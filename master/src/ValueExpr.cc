@@ -28,22 +28,25 @@
 #include <iterator>
 #include "lsst/qserv/master/ColumnRef.h"
 #include "lsst/qserv/master/QueryTemplate.h"
+#include "lsst/qserv/master/FuncExpr.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::ValueExpr;
 using lsst::qserv::master::ValueExprPtr;
 
-namespace { // File-scope helpers
-std::ostream& output(std::ostream& os, qMaster::ValueExprList const& vel) {
+std::ostream& 
+qMaster::output(std::ostream& os, qMaster::ValueExprList const& vel) {
     std::copy(vel.begin(), vel.end(),
-              std::ostream_iterator<qMaster::ValueExprPtr>(os, ";"));
-    
+              std::ostream_iterator<qMaster::ValueExprPtr>(os, ";"));    
     return os;
 }
-
-void renderList(qMaster::QueryTemplate& qt, qMaster::ValueExprList const& vel) {
+void 
+qMaster::renderList(qMaster::QueryTemplate& qt, 
+                    qMaster::ValueExprList const& vel) {
     std::for_each(vel.begin(), vel.end(), ValueExpr::render(qt));
 }
+
+namespace { // File-scope helpers
 
 }
 
@@ -60,23 +63,6 @@ void qMaster::ColumnRef::render(QueryTemplate& qt) const {
     qt.append(column);
 #endif
     qt.append(*this);
-}
-
-std::ostream& qMaster::operator<<(std::ostream& os, FuncExpr const& fe) {
-    os << "(" << fe.name << ",";
-    output(os, fe.params);
-    os << ")";
-    return os;
-}
-std::ostream& qMaster::operator<<(std::ostream& os, FuncExpr const* fe) {
-    return os << *fe;
-}
-
-void qMaster::FuncExpr::render(qMaster::QueryTemplate& qt) const {
-    qt.append(name); 
-    qt.append("(");
-    renderList(qt, params);
-    qt.append(")");
 }
 
 

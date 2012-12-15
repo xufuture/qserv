@@ -23,8 +23,11 @@
 // subtrees.
 
 #include "lsst/qserv/master/ValueExprFactory.h"
+#include "lsst/qserv/master/ColumnRefH.h"
+#include "lsst/qserv/master/ColumnRef.h"
+#include "lsst/qserv/master/FuncExpr.h"
 #include "lsst/qserv/master/parseTreeUtil.h"
-#include "lsst/qserv/master/SelectList.h" // For ValueExpr, FuncExpr
+#include "lsst/qserv/master/ValueExpr.h" // For ValueExpr, FuncExpr
 #include "SqlSQL2TokenTypes.hpp" 
 
 

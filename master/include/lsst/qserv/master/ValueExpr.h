@@ -33,24 +33,11 @@ namespace lsst { namespace qserv { namespace master {
 // Forward
 class ColumnRef;
 class QueryTemplate;
-class ValueExpr; 
+class FuncExpr;
 
+class ValueExpr; 
 typedef boost::shared_ptr<ValueExpr> ValueExprPtr;
 typedef std::list<ValueExprPtr> ValueExprList;
-
-class FuncExpr {
-public:
-    std::string getName() const;
-    ValueExprList getParams() const;
-
-    std::string name;
-    ValueExprList params;
-    friend std::ostream& operator<<(std::ostream& os, FuncExpr const& fe);
-    friend std::ostream& operator<<(std::ostream& os, FuncExpr const* fe);
-    void render(QueryTemplate& qt) const;
-};
-
-typedef boost::shared_ptr<FuncExpr> FuncExprPtr;
 
 class ValueExpr {
 public:
@@ -59,6 +46,8 @@ public:
     boost::shared_ptr<ColumnRef const> getColumnRef() const { return _columnRef; }
     boost::shared_ptr<FuncExpr> getFuncExpr() const { return _funcExpr; }
     Type getType() const { return _type; }
+    std::string const& getAlias() const { return _alias; }
+    void setAlias(std::string const& a) { _alias = a; }
     ValueExprPtr clone() const;
 
     static ValueExprPtr newColumnRefExpr(boost::shared_ptr<ColumnRef const> cr);
