@@ -20,10 +20,7 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// SelectStmt contains extracted information about a particular parsed
-// SQL select statement. It is not responsible for performing
-// verification, validation, or other processing that requires
-// persistent or run-time state.
+// ColumnRefH -- column reference parse handler for parser model 3
 #ifndef LSST_QSERV_MASTER_COLUMNREFH_H
 #define LSST_QSERV_MASTER_COLUMNREFH_H
 
