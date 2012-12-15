@@ -24,8 +24,6 @@
 
 #ifndef LSST_QSERV_MASTER_COLUMNREF_H
 #define LSST_QSERV_MASTER_COLUMNREF_H
-#include <antlr/AST.hpp>
-
 
 namespace lsst { namespace qserv { namespace master {
 
