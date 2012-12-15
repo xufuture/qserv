@@ -32,6 +32,7 @@
 // map them?
 // For now, just build the syntax tree without evaluating.
 #include "lsst/qserv/master/SelectList.h"
+#include "lsst/qserv/master/FuncExpr.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include <iterator>
 #include <boost/make_shared.hpp>
