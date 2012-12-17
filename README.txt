@@ -57,32 +57,9 @@ Then, as a normal user, download qserv source dependencies
 
   $ admin/qserv-install-all.sh
 It may take a while ...
-  
-  Partition the PT1.1 data :
-  --------------------------
 
-Assuming PT1.1 data are in ${QSERV_DATA}/pt11/, next command will partition PT1.1 Object data :
-  $ ./admin/qserv-partition-data-pt11.sh
 
-  Load the pt1.1 data :
-  ---------------------
-
-Assuming you've sourced qserv-env.sh, next command will launch Qserv :
-  $ qserv-start
-
-  $ ./admin/qserv-load-data-pt11.sh
-will load PT1.1 Object data.
-
-  Launch Qserv and run a small test :
-  -----------------------------------
-
-If not already done :
-  $ qserv-start
-Then connect to MySQL proxy :
-  $ ./admin/qserv-connect-mysql-proxy.sh
-and launch next request :
-  > select count(*) from Object;
-It should success.
+An example of using Qserv with PT1.1 data is described in admin/examples/PT11data_use.txt
 
 Official documentation : 
 ------------------------

@@ -245,10 +245,10 @@ sub check_and_install_qserv {
 	
 	my $xrootd_conf_file;
 	if ($cluster_type eq "mono-node") {
-		$xrootd_conf_file = "$src_dir/master/resources/lsp-mono-node.cf.tpl";	
+		$xrootd_conf_file = "$src_dir/admin/examples/lsp-mono-node.cf.tpl";	
 	}
 	else {
-		$xrootd_conf_file = "$src_dir/master/resources/lsp.cf.tpl";
+		$xrootd_conf_file = "$src_dir/admin/examples/lsp.cf.tpl";
 	}
 
 	run_command("cp $xrootd_conf_file $install_dir/etc/lsp.cf");
@@ -262,7 +262,7 @@ sub check_and_install_qserv {
 	run_command("perl -pi -e \"s,<XROOTD_PORT>,$xrootd_port,\" $install_dir/etc/lsp.cf");
 
 	#copy in and edit mysql-proxy config
-	run_command("cp $src_dir/master/resources/my-proxy.cnf.tpl $install_dir/etc/my-proxy.cnf");
+	run_command("cp $src_dir/admin/examples/my-proxy.cnf.tpl $install_dir/etc/my-proxy.cnf");
 	run_command("chmod 660 $install_dir/etc/my-proxy.cnf");
         run_command("perl -pi -e \"s,<MYSQL_PROXY_PORT>,$mysql_proxy_port,\" $install_dir/etc/my-proxy.cnf");		
 
@@ -272,7 +272,7 @@ sub check_and_install_qserv {
 	}
 
 	#copy in and edit qserv config
-	run_command("cp $src_dir/master/resources/lsst-dev01.qserv.cnf.tpl $install_dir/etc/local.qserv.cnf");
+	run_command("cp $src_dir/admin/examples/lsst-dev01.qserv.cnf.tpl $install_dir/etc/local.qserv.cnf");
 	run_command("perl -pi -e \"s,<XROOTD_MANAGER_HOST>,$qserv_master,\" $install_dir/etc/local.qserv.cnf");
 	run_command("perl -pi -e \"s,<CMSD_MANAGER_PORT>,$cmsd_manager_port,\" $install_dir/etc/local.qserv.cnf");
 	run_command("perl -pi -e \"s,<XROOTD_PORT>,$xrootd_port,\" $install_dir/etc/local.qserv.cnf");
@@ -380,7 +380,7 @@ sub check_and_install_mysql {
 # configure mysql for use
 sub init_mysql_db {
 
-	run_command("cp $src_dir/master/resources/my.cnf.tpl $install_dir/etc/my.cnf");
+	run_command("cp $src_dir/admin/examples/my.cnf.tpl $install_dir/etc/my.cnf");
 	run_command("perl -pi -e \"s,<INSTALL_DIR>,$install_dir,\" $install_dir/etc/my.cnf");
 	run_command("perl -pi -e \"s,<LOG_DIR>,$log_dir,\" $install_dir/etc/my.cnf");
 	run_command("perl -pi -e \"s,<DATA_DIR>,$mysql_data_dir,\" $install_dir/etc/my.cnf");
@@ -401,7 +401,7 @@ sub init_mysql_db {
                 # password for root@127.0.0.1 won't be updated with next command.
 		# run_command("mysqladmin -S $install_dir/var/lib/mysql/mysql.sock -u root password '$db_pass'", $quiet);
 		# run_command("mysqladmin -h $qserv_master -P$mysql_port -u root password '$db_pass'", $quiet);
-		run_command("cp $src_dir/master/resources/mysql-password.sql.tpl $install_dir/etc/mysql-password.sql");
+		run_command("cp $src_dir/admin/examples/mysql-password.sql.tpl $install_dir/etc/mysql-password.sql");
 		run_command("perl -pi -e \"s,<MYSQL_PASSWORD>,$db_pass,\" $install_dir/etc/mysql-password.sql", $quiet);
 		run_command("$install_dir/bin/mysql -S $install_dir/var/lib/mysql/mysql.sock -u root < $install_dir/etc/mysql-password.sql");
 		run_command("rm $install_dir/etc/mysql-password.sql");
