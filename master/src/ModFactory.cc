@@ -24,6 +24,7 @@
 // and GROUP BY clauses. It has a placeholder to support HAVING.
 
 #include "lsst/qserv/master/ModFactory.h"
+#include "lsst/qserv/master/GroupByClause.h"
 
 // Std
 #include <iterator>
