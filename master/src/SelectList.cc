@@ -46,7 +46,6 @@ using lsst::qserv::master::ValueExprPtr;
 using lsst::qserv::master::SelectList;
 using lsst::qserv::master::FromList;
 using lsst::qserv::master::OrderByClause;
-using lsst::qserv::master::GroupByClause;
 using lsst::qserv::master::HavingClause;
 namespace qMaster=lsst::qserv::master;
 
@@ -307,47 +306,6 @@ qMaster::OrderByClause::renderTo(qMaster::QueryTemplate& qt) const {
 }
 boost::shared_ptr<OrderByClause> OrderByClause::copySyntax() {
     return boost::make_shared<OrderByClause>(*this);
-}
-////////////////////////////////////////////////////////////////////////
-// GroupByTerm
-////////////////////////////////////////////////////////////////////////
-std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::GroupByTerm const& t) {
-    os << *(t._expr);
-    if(!t._collate.empty()) os << " COLLATE " << t._collate;
-    return os;
-}
-////////////////////////////////////////////////////////////////////////
-// GroupByClause
-////////////////////////////////////////////////////////////////////////
-std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::GroupByClause const& c) {
-    if(c._terms.get()) {
-        os << "GROUP BY ";
-        std::copy(c._terms->begin(),c._terms->end(),
-              std::ostream_iterator<qMaster::GroupByTerm>(os,", "));
-    }
-    return os;
-}
-std::string
-qMaster::GroupByClause::getGenerated() {
-    QueryTemplate qt;
-    renderTo(qt);
-    return qt.dbgStr();
-}
-
-void
-qMaster::GroupByClause::renderTo(qMaster::QueryTemplate& qt) const {
-    std::stringstream ss;
-    if(_terms.get()) {
-        std::copy(_terms->begin(), _terms->end(),
-              std::ostream_iterator<qMaster::GroupByTerm>(ss,", "));
-    }
-    qt.append(ss.str()); // FIXME
-}
-
-boost::shared_ptr<GroupByClause> GroupByClause::copySyntax() {
-    return boost::make_shared<GroupByClause>(*this);
 }
 ////////////////////////////////////////////////////////////////////////
 // HavingClause

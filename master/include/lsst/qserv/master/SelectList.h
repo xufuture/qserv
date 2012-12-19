@@ -46,10 +46,7 @@ class ColumnRefMap;
 class ColumnAliasMap;
 class QueryTemplate;
 class BoolTerm;
-#if 0
-typedef std::pair<antlr::RefAST, antlr::RefAST> NodeBound;
-typedef std::map<antlr::RefAST, NodeBound> NodeMap;
-#endif
+class GroupByClause;
 
 class SelectList {
 public:
@@ -146,41 +143,6 @@ private:
     friend class ModFactory;
 
     void _addTerm(OrderByTerm const& t) {_terms->push_back(t); }
-    boost::shared_ptr<List> _terms;
-};
-
-class GroupByTerm {
-public:
-    GroupByTerm() {}
-    ~GroupByTerm() {}
-
-    boost::shared_ptr<const ValueExpr> getExpr();
-    std::string getCollate() const;
-
-private:
-    friend std::ostream& operator<<(std::ostream& os, GroupByTerm const& gb);
-    friend class ModFactory;
-    
-    boost::shared_ptr<ValueExpr> _expr;
-    std::string _collate;
-};
-
-class GroupByClause {
-public:
-    typedef std::deque<GroupByTerm> List;
-
-    GroupByClause() : _terms(new List()) {}
-    ~GroupByClause() {}
-
-    std::string getGenerated();
-    void renderTo(QueryTemplate& qt) const;
-    boost::shared_ptr<GroupByClause> copySyntax();
-
-private:
-    friend std::ostream& operator<<(std::ostream& os, GroupByClause const& gc);
-    friend class ModFactory;
-
-    void _addTerm(GroupByTerm const& t) { _terms->push_back(t); }
     boost::shared_ptr<List> _terms;
 };
 
