@@ -30,15 +30,14 @@ def configure(conf):
     if conf.options.boost_libs:
         conf.env.append_value('LIBPATH', conf.options.boost_libs)
 
-    conf.check_cxx(header_name='pthread.h', mandatory=True)
     conf.check_cxx(header_name='Eigen/Core', mandatory=True)
     conf.check_cxx(header_name='boost/shared_ptr.hpp', mandatory=True)
 
-    conf.check_cxx(lib='pthread',
-                   uselib_store='PTHREAD', mandatory=True)
     conf.check_cxx(lib='boost_system',
                    uselib_store='BOOST', mandatory=True)
     conf.check_cxx(lib='boost_timer',
+                   uselib_store='BOOST', mandatory=True)
+    conf.check_cxx(lib='boost_thread',
                    uselib_store='BOOST', mandatory=True)
     conf.check_cxx(lib='boost_program_options',
                    uselib_store='BOOST', mandatory=True)
@@ -53,13 +52,13 @@ def build(bld):
         source=bld.path.ant_glob('Index.cc'),
         includes='.',
         target='qserv_dup_index',
-        use='objects PTHREAD BOOST',
+        use='objects BOOST',
         install_path='${PREFIX}/bin'
     )
     bld.program(
         source=bld.path.ant_glob('Duplicate.cc'),
         includes='.',
         target='qserv_dup',
-        use='objects PTHREAD BOOST',
+        use='objects BOOST',
         install_path='${PREFIX}/bin'
     )

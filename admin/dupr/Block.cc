@@ -131,9 +131,32 @@ InputBlockVector const splitInputs(vector<string> const & paths, size_t blockSiz
 }
 
 
+struct BlockWriter::Writer {
+    BlockWriter * bw;
+
+    Writer() : bw(0) { }
+    Writer(BlockWriter * blockWriter) : bw(blockWriter) { }
+    void operator()() {
+        boost::unique_lock<boost::mutex> lock(bw->_mutex);
+        bw->_started = true;
+        // signal that the writer thread has started
+        bw->_condition.notify_one();
+        do {
+            // wait for data 
+            bw->_condition.wait(lock);
+            if (bw->_writeSize != 0) {
+                bw->_file.append(static_cast<void *>(bw->_writeBlock.get()), bw->_writeSize);
+                bw->_writeSize = 0;
+            }
+        } while (!bw->_finished);
+    }
+};
+
+
 BlockWriter::BlockWriter(std::string const & path, size_t blockSize) :
     _mutex(),
     _condition(),
+    _thread(),
     _file(path),
     _size(0),
     _blockSize(blockSize),
@@ -147,11 +170,8 @@ BlockWriter::BlockWriter(std::string const & path, size_t blockSize) :
     if (_blockSize == 0) {
         throw std::runtime_error("zero is not a legal block size");
     }
-    Lock lock(_mutex);
-    // create writer thread
-    if (::pthread_create(&_thread, 0, &run, static_cast<void *>(this)) != 0) {
-        throw std::runtime_error("pthread_create() failed");
-    }
+    boost::unique_lock<boost::mutex> lock(_mutex);
+    _thread = boost::thread(Writer(this));
     // wait for writer thread to start
     while (!_started) {
         _condition.wait(lock);
@@ -163,7 +183,7 @@ BlockWriter::~BlockWriter() {
 }
 
 void BlockWriter::close() {
-    Lock lock(_mutex);
+    boost::unique_lock<boost::mutex> lock(_mutex);
     assert(_writeSize == 0);
     if (_finished) {
         return;
@@ -175,14 +195,14 @@ void BlockWriter::close() {
         _writeSize = _size;
         _size = 0;
     }
-    _condition.notify();
-    lock.release();
+    _condition.notify_one();
+    lock.unlock();
     // wait for writer thread to exit
-    ::pthread_join(_thread, 0);
+    _thread.join();
 }
 
 void BlockWriter::issue() {
-    Lock lock(_mutex);
+    boost::lock_guard<boost::mutex> lock(_mutex);
     if (_finished) {
         throw std::runtime_error("block writer has already been closed");
     }
@@ -192,24 +212,7 @@ void BlockWriter::issue() {
     swap(_writeBlock, _block);
     _writeSize = _size;
     _size = 0;
-    _condition.notify();
-}
-
-void * BlockWriter::run(void * arg) {
-    BlockWriter * w = reinterpret_cast<BlockWriter *>(arg);
-    Lock lock(w->_mutex);
-    w->_started = true;
-    // signal that the writer thread has started
-    w->_condition.notify();
-    do {
-        // wait for data
-        w->_condition.wait(lock);
-        if (w->_writeSize != 0) {
-            w->_file.append(static_cast<void *>(w->_writeBlock.get()), w->_writeSize);
-            w->_writeSize = 0;
-        }
-    } while (!w->_finished);
-    return 0;
+    _condition.notify_one();
 }
 
 } // namespace dupr

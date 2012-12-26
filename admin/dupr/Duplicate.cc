@@ -8,15 +8,16 @@
 #include <vector>
 
 #include "boost/make_shared.hpp"
+#include "boost/ref.hpp"
 #include "boost/scoped_array.hpp"
 #include "boost/scoped_ptr.hpp"
+#include "boost/thread.hpp"
 #include "boost/timer/timer.hpp"
 
 #include "Block.h"
 #include "Csv.h"
 #include "Htm.h"
 #include "Options.h"
-#include "ThreadUtils.h"
 
 
 using std::cerr;
@@ -318,14 +319,22 @@ public:
 
     void duplicate();
 
+    void operator()() {
+        try {
+            TrixelDuplicator t(*this);
+            t.duplicate();
+        } catch (std::exception const & ex) {
+            cerr << ex.what() << endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+
 private:
     ChunkDuplicator(ChunkDuplicator const &);
     ChunkDuplicator & operator=(ChunkDuplicator const &);
 
     void generateChunk();
     void finishChunk();
-
-    static void * run(void * arg);
 
     Options const &   _opts;
     Chunker           _chunker;
@@ -337,7 +346,7 @@ private:
 
     char                      _cl0[CACHE_LINE_SIZE];
 
-    mutable Mutex             _mutex;
+    mutable boost::mutex      _mutex;
     mutable vector<uint32_t>  _htmIds;
     mutable OutputBlockVector _blocks;
 
@@ -402,17 +411,14 @@ void ChunkDuplicator::generateChunk() {
     assert(_blocks.empty());
     // create thread pool
     int const numThreads = max(1, _opts.numThreads);
-    boost::scoped_array<pthread_t> threads(new pthread_t[numThreads - 1]);
-    for (int t = 1; t < numThreads; ++t) {
-        if (::pthread_create(&threads[t-1], 0, &run, static_cast<void *>(this)) != 0) {
-            perror("pthread_create() failed");
-            exit(EXIT_FAILURE);
-        }
+    boost::scoped_array<boost::thread> threads(new boost::thread[numThreads - 1]);
+    for (int t = 0; t < numThreads - 1; ++t) {
+        threads[t] = boost::thread(boost::ref(*this));
     }
-    run(static_cast<void *>(this));
+    this->operator()();
     // wait for all threads to finish
-    for (int t = 1; t < numThreads; ++t) {
-        ::pthread_join(threads[t-1], 0);
+    for (int t = 0; t < numThreads - 1; ++t) {
+        threads[t].join();
     }
     assert(_htmIds.empty());
 }
@@ -470,18 +476,6 @@ void ChunkDuplicator::finishChunk() {
     _blocks.clear();
 }
 
-void * ChunkDuplicator::run(void * arg) {
-    ChunkDuplicator * d = static_cast<ChunkDuplicator *>(arg);
-    try {
-        TrixelDuplicator t(*d);
-        t.duplicate();
-    } catch (std::exception const & ex) {
-        cerr << ex.what() << endl;
-        exit(EXIT_FAILURE);
-    }
-    return 0;
-}
-
 
 TrixelDuplicator::TrixelDuplicator(ChunkDuplicator const & dup) :
     _dup(dup),
@@ -516,7 +510,7 @@ void TrixelDuplicator::duplicate() {
     while (true) {
         uint32_t htmId;
         {
-            Lock(_dup._mutex);
+            boost::lock_guard<boost::mutex> lock(_dup._mutex);
             if (_block && !_block->getRecords().empty()) {
                 // store output block in queue
                 _dup._blocks.push_back(_block);

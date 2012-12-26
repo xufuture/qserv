@@ -140,33 +140,32 @@ Merger::~Merger() {
 
 void Merger::add(shared_ptr<InputBlock> const & block) {
     InputBlockVector blocks;
-    {
-        Lock lock(_mutex);
-        assert(_numInputBlocks > 0);
-        // wait until there is space in the queue
-        while (_inputBlocks.size() == _k) {
-            _fullCondition.wait(lock);
-        }
-        assert(_numInputBlocks > 0);
-        --_numInputBlocks;
-        _inputBlocks.push_back(block);
-        if (_inputBlocks.size() < _k && _numInputBlocks != 0) {
-            return;
-        }
-        // got the last input block, or k input blocks are available.
-        while (_merging) {
-            // wait for any in-progress merge to finish.
-            _mergeCondition.wait(lock);
-        }
-        _merging = true; // become the merge thread
-        assert(_inputBlocks.size() == _k ||
-               (_numInputBlocks == 0 && !_inputBlocks.empty()));
-        // grab input blocks
-        blocks.reserve(_k);
-        swap(blocks, _inputBlocks);
-        // unblock threads waiting to add input blocks to the queue
-        _fullCondition.notifyAll();
+    boost::unique_lock<boost::mutex> lock(_mutex);
+    assert(_numInputBlocks > 0);
+    // wait until there is space in the queue
+    while (_inputBlocks.size() == _k) {
+        _fullCondition.wait(lock);
     }
+    assert(_numInputBlocks > 0);
+    --_numInputBlocks;
+    _inputBlocks.push_back(block);
+    if (_inputBlocks.size() < _k && _numInputBlocks != 0) {
+        return;
+    }
+    // got the last input block, or k input blocks are available.
+    while (_merging) {
+        // wait for any in-progress merge to finish.
+        _mergeCondition.wait(lock);
+    }
+    _merging = true; // become the merge thread
+    assert(_inputBlocks.size() == _k ||
+           (_numInputBlocks == 0 && !_inputBlocks.empty()));
+    // grab input blocks
+    blocks.reserve(_k);
+    swap(blocks, _inputBlocks);
+    // unblock threads waiting to add input blocks to the queue
+    _fullCondition.notify_all();
+    lock.unlock();
     // perform the merge
     std::vector<InputRun> runs;
     runs.reserve(_k);
@@ -188,9 +187,9 @@ void Merger::add(shared_ptr<InputBlock> const & block) {
         merge<InputRun, true>(runs);
     }
     // unblock thread waiting to merge the next sequence of input blocks
-    Lock lock(_mutex);
+    lock.lock();
     _merging = false;
-    _mergeCondition.notify();
+    _mergeCondition.notify_one();
 }
 
 void Merger::finish() {

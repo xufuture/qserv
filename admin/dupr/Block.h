@@ -1,16 +1,20 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
-#include <pthread.h>
 #include <vector>
 
 #include "boost/scoped_array.hpp"
 #include "boost/shared_ptr.hpp"
+#include "boost/thread.hpp"
 
 #include "FileUtils.h"
 #include "Htm.h"
 #include "Options.h"
-#include "ThreadUtils.h"
+
+
+#ifndef CACHE_LINE_SIZE
+#   define CACHE_LINE_SIZE 64
+#endif
 
 
 namespace dupr {
@@ -132,14 +136,16 @@ private:
     BlockWriter(BlockWriter const &);
     BlockWriter & operator=(BlockWriter const &);
 
-    static void * run(void * arg);
     void issue();
+
+    struct Writer;
+    friend struct Writer;
 
     char                      _cl0[CACHE_LINE_SIZE];
 
-    Mutex                     _mutex;
-    Condition                 _condition;
-    ::pthread_t               _thread;
+    boost::mutex              _mutex;
+    boost::condition_variable _condition;
+    boost::thread             _thread;
     OutputFile                _file;
     size_t                    _size;
     size_t                    _blockSize;

@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "boost/scoped_ptr.hpp"
+#include "boost/thread.hpp"
 
 #include "Block.h"
-#include "ThreadUtils.h"
 
 
 namespace dupr {
@@ -42,9 +42,9 @@ private:
 
     char                           _cl0[CACHE_LINE_SIZE];
 
-    Mutex                          _mutex;
-    Condition                      _fullCondition;
-    Condition                      _mergeCondition;
+    boost::mutex                   _mutex;
+    boost::condition_variable      _fullCondition;
+    boost::condition_variable      _mergeCondition;
     InputBlockVector               _inputBlocks;
     size_t                         _k;
     size_t                         _numInputBlocks;
