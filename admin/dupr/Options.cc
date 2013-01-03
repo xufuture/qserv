@@ -262,12 +262,15 @@ void buildDuplicationOptions(po::options_description & options) {
             "comma. The duplicator will remap these along with the partitioning "
             "position. May be specified any number of times.")
         ("primary-key", po::value<string>(),
-            "Name of primary record ID field, e.g. sourceId in the "
+            "Name of unique record ID field, e.g. sourceId in the "
             "Source table. Must be specified exactly once.")
-        ("foreign-key", po::value<vector<string> >(),
-            "Name of a foreign record ID field (e.g. objectId in the Source "
-            "table) and the corresponding index directory, separated by a "
-            "comma. May be specified any number of times.")
+        ("foreign-key", po::value<string>(),
+            "Name of a foreign unique ID field (e.g. objectId in the Source "
+            "table. Optional, and must be accompanied by --foreign-key-index "
+            "if it is specified.")
+        ("foreign-key-index", po::value<string>(),
+            "Duplication index directory for foreign key values. "
+            "Ignored unless --foreign-key is specified.")
         ("ra-min", po::value<double>()->default_value(0.0),
             "Minimum right ascension bound (deg) for the "
             "duplication region.")
@@ -332,32 +335,16 @@ void validateAndStoreDuplicationOptions(po::variables_map const & vm, Options & 
     }
     opts.pkField = getFieldIndex(vm, opts, "primary-key");
     if (vm.count("foreign-key") > 0) {
-        vector<string> p = vm["foreign-key"].as<vector<string> >();
-        for (StringIter i = p.begin(), e = p.end(); i != e; ++i) {
-            vector<string> v = split(*i);
-            if (v.size() != 2 || v[0].empty() || v[1].empty()) {
-                cerr << "--foreign-key must consist of a field name "
-                        "and index directory separated by a comma" << endl;
-                exit(EXIT_FAILURE);
-            }
-            FieldAndIndex fi;
-            fi.first = getFieldIndex(opts, v[0], "foreign-key");
-            fi.second = v[1];
-            if (fi.first == opts.pkField || fi.second == opts.indexDir) {
-                cerr << "--foreign-key specification " << v[0]
-                     << "conflicts with --primary-key" << endl;
-                exit(EXIT_FAILURE);
-            }
-            typedef vector<FieldAndIndex>::const_iterator FiIter;
-            for (FiIter f = opts.foreignKeys.begin(), fe = opts.foreignKeys.end(); f != fe; ++f) {
-                if (fi.first == f->first || fi.second == f->second) {
-                    cerr << "--foreign-key specification " << v[0]
-                         << "conflicts with another --foreign-key" << endl;
-                    exit(EXIT_FAILURE);
-                }
-            }
-            opts.foreignKeys.push_back(fi);
+        opts.fkField = getFieldIndex(vm, opts, "foreign-key");
+        if (opts.fkField == opts.pkField) {
+            cerr << "--foreign-key conflicts with --primary-key" << endl;
+            exit(EXIT_FAILURE);
         }
+        if (vm.count("foreign-key-index") != 1) {
+            cerr << "--foreign-key-index not specified" << endl;
+            exit(EXIT_FAILURE);
+        }
+        opts.fkIndexDir = vm["foreign-key-index"].as<string>();
     }
     opts.dupRegion = SphericalBox(vm["ra-min"].as<double>(),
                                   vm["ra-max"].as<double>(),
@@ -397,14 +384,15 @@ Options::Options() :
     secondarySortField(-1),
     prefix("chunk"),
     positions(),
-    foreignKeys(),
     pkField(-1),
+    fkField(-1),
     dupRegion(),
     node(0),
     numNodes(1),
     chunkIds(),
     hashChunks(false),
     indexDir("."),
+    fkIndexDir(""),
     scratchDir("."),
     chunkDir(".")
 { }

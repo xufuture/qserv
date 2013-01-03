@@ -147,6 +147,8 @@ struct BlockWriter::Writer {
             if (bw->_writeSize != 0) {
                 bw->_file.append(static_cast<void *>(bw->_writeBlock.get()), bw->_writeSize);
                 bw->_writeSize = 0;
+                // signal that the writer thread can accept another block
+                bw->_condition.notify_one();
             }
         } while (!bw->_finished);
     }
@@ -184,17 +186,19 @@ BlockWriter::~BlockWriter() {
 
 void BlockWriter::close() {
     boost::unique_lock<boost::mutex> lock(_mutex);
-    assert(_writeSize == 0);
     if (_finished) {
         return;
     }
     // tell writer thread to write remaining data, then exit
-    _finished = true;
     if (_size > 0) {
+        while (_writeSize != 0) {
+            _condition.wait(lock);
+        }
         swap(_writeBlock, _block);
         _writeSize = _size;
         _size = 0;
     }
+    _finished = true;
     _condition.notify_one();
     lock.unlock();
     // wait for writer thread to exit
@@ -202,13 +206,14 @@ void BlockWriter::close() {
 }
 
 void BlockWriter::issue() {
-    boost::lock_guard<boost::mutex> lock(_mutex);
+    boost::unique_lock<boost::mutex> lock(_mutex);
     if (_finished) {
         throw std::runtime_error("block writer has already been closed");
     }
     assert(_size > 0);
-    assert(_writeSize == 0);
-    // swap buffers
+    while (_writeSize != 0) {
+        _condition.wait(lock);
+    }
     swap(_writeBlock, _block);
     _writeSize = _size;
     _size = 0;

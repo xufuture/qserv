@@ -84,7 +84,8 @@ qserv_dup \
     --delimiter=$'\t' \
     --primary-key=sourceId \
     --secondary-sort-field=objectId \
-    --foreign-key=objectId,$OBJECT_INDEX_DIR \
+    --foreign-key=objectId \
+    --foreign-key-index=$OBJECT_INDEX_DIR \
     --partitioned-by=raObject,declObject \
     --position=ra,decl \
     --position=raFlux,declFlux \

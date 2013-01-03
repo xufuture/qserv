@@ -64,11 +64,10 @@ struct KeyInfo {
 class KeyMapper {
 public:
     KeyMapper() : _beg(0), _end(0), _htmId(0), _fieldIndex(-1) { }
-    KeyMapper(KeyInfo const & key,
-              uint32_t sourceHtmId,
-              uint32_t destinationHtmId);
 
     ~KeyMapper();
+
+    void setup(KeyInfo const & key, uint32_t srcHtmId, uint32_t dstHtmId);
 
     int getFieldIndex() const {
         return _fieldIndex;
@@ -78,14 +77,6 @@ public:
         int64_t const * p = std::lower_bound(_beg, _end, key);
         assert(p != _end && key == *p);
         return (static_cast<int64_t>(_htmId) << 32) + (p - _beg);
-    }
-
-    void swap(KeyMapper & mapper) {
-        using std::swap;
-        swap(_beg, mapper._beg);
-        swap(_end, mapper._end);
-        swap(_htmId, mapper._htmId);
-        swap(_fieldIndex, mapper._fieldIndex);
     }
 
 private:
@@ -98,18 +89,14 @@ private:
     int _fieldIndex;
 };
 
-KeyMapper::KeyMapper(
-    KeyInfo const & key,
-    uint32_t sourceHtmId,
-    uint32_t destinationHtmId
-) :
-    _beg(0),
-    _end(0),
-    _htmId(destinationHtmId),
-    _fieldIndex(key.fieldIndex)
-{
-    uint64_t offset = key.map->getNumRecordsBelow(sourceHtmId) * sizeof(int64_t);
-    uint32_t nrec = key.map->getNumRecords(sourceHtmId);
+void KeyMapper::setup(KeyInfo const & key, uint32_t srcHtmId, uint32_t dstHtmId) {
+    free(_beg);
+    _beg = 0;
+    _end = 0;
+    _htmId = dstHtmId;
+    _fieldIndex = key.fieldIndex;
+    uint64_t offset = key.map->getNumRecordsBelow(srcHtmId) * sizeof(int64_t);
+    uint32_t nrec = key.map->getNumRecords(srcHtmId);
     _beg = static_cast<int64_t *>(key.file->read(
         0, static_cast<off_t>(offset), nrec * sizeof(int64_t)));
     _end = _beg + nrec;
@@ -121,11 +108,9 @@ KeyMapper::~KeyMapper() {
     _end = 0;
 }
 
-void swap(KeyMapper & m1, KeyMapper & m2) {
-    m1.swap(m2);
-}
 
-
+/** Remaps positions from a source HTM trixel to a destination HTM trixel.
+  */
 class PosMapper {
 public:
     PosMapper() : _m(Matrix3d::Identity()) { }
@@ -161,6 +146,7 @@ struct ChunkRecord {
                (loc.subChunkId == r.loc.subChunkId && sortKey < r.sortKey);
     }
 };
+
 
 /** A sorted run of output records.
   */
@@ -299,7 +285,8 @@ private:
     char const *               _inputEnd;
     bool                       _mapPositions;
     PosMapper                  _posMapper;
-    scoped_array<KeyMapper>    _keyMappers;
+    KeyMapper                  _pkMapper;
+    KeyMapper                  _fkMapper;
     int                        _chunkIdField;
     int                        _subChunkIdField;
     size_t                     _numOutputFields;
@@ -339,7 +326,7 @@ private:
     Options const &   _opts;
     Chunker           _chunker;
     KeyInfo           _primary;
-    vector<KeyInfo>   _foreignKeys;
+    KeyInfo           _foreign;
     InputFile         _dataFile;
     vector<int32_t>   _chunkIds;
     int32_t           _chunkId;
@@ -359,7 +346,7 @@ ChunkDuplicator::ChunkDuplicator(Options const & opts) :
     _opts(opts),
     _chunker(opts.overlap, opts.numStripes, opts.numSubStripesPerStripe),
     _primary(),
-    _foreignKeys(),
+    _foreign(),
     _dataFile(opts.indexDir + "/data.csv"),
     _chunkIds(),
     _chunkId(-1),
@@ -371,13 +358,10 @@ ChunkDuplicator::ChunkDuplicator(Options const & opts) :
     _primary.map = make_shared<PopulationMap>(opts.indexDir + "/map.bin");
     _primary.file = make_shared<InputFile>(opts.indexDir + "/ids.bin");
     _primary.fieldIndex = opts.pkField;
-    typedef vector<FieldAndIndex>::const_iterator Iter;
-    for (Iter i = opts.foreignKeys.begin(), e = opts.foreignKeys.end(); i != e; ++i) {
-        KeyInfo ki;
-        ki.map = make_shared<PopulationMap>(i->second + "/map.bin");
-        ki.file = make_shared<InputFile>(i->second + "/ids.bin");
-        ki.fieldIndex = i->first;
-        _foreignKeys.push_back(ki);
+    if (opts.fkField != -1) {
+        _foreign.map = make_shared<PopulationMap>(opts.fkIndexDir + "/map.bin");
+        _foreign.file = make_shared<InputFile>(opts.fkIndexDir + "/ids.bin");
+        _foreign.fieldIndex = opts.fkField;
     }
     // Determine which chunks to generate data for
     if (opts.chunkIds.empty()) {
@@ -485,7 +469,8 @@ TrixelDuplicator::TrixelDuplicator(ChunkDuplicator const & dup) :
     _inputEnd(0),
     _mapPositions(false),
     _posMapper(),
-    _keyMappers(new KeyMapper[1 + _dup._foreignKeys.size()]()),
+    _pkMapper(),
+    _fkMapper(),
     _chunkIdField(_opts.chunkIdField),
     _subChunkIdField(_opts.subChunkIdField),
     _numOutputFields(_opts.fields.size()),
@@ -532,19 +517,20 @@ void TrixelDuplicator::setupTrixel(uint32_t htmId) {
     free(_inputStart);
     _block.reset(new OutputBlock());
     // Map trixel to a non-empty source trixel
-    uint32_t const sourceHtmId = _dup._primary.map->mapToNonEmptyTrixel(htmId);
+    uint32_t sourceHtmId;
+    if (_dup._foreign.fieldIndex != -1) {
+        sourceHtmId = _dup._foreign.map->mapToNonEmptyTrixel(htmId);
+    } else {
+        sourceHtmId = _dup._primary.map->mapToNonEmptyTrixel(htmId);
+    }
     // Setup field remappers
     _mapPositions = (sourceHtmId != htmId);
     if (_mapPositions) {
         _posMapper = PosMapper(sourceHtmId, htmId);
     }
-    {
-        KeyMapper pk(_dup._primary, sourceHtmId, htmId);
-        swap(_keyMappers[0], pk);
-    }
-    for (size_t i = 1; i <= _dup._foreignKeys.size(); ++i) {
-        KeyMapper fk(_dup._foreignKeys[i - 1], sourceHtmId, htmId);
-        swap(_keyMappers[i], fk);
+    _pkMapper.setup(_dup._primary, sourceHtmId, htmId);
+    if (_dup._foreign.fieldIndex != -1) {
+        _fkMapper.setup(_dup._foreign, sourceHtmId, htmId);
     }
     // Locate data for the source trixel
     uint64_t offset = _dup._primary.map->getOffset(sourceHtmId);
@@ -596,24 +582,23 @@ void TrixelDuplicator::processTrixel() {
             }
         }
         // map keys to destination trixel
-        for (size_t i = 0; i < 1 + _opts.foreignKeys.size(); ++i) {
-            int f = _keyMappers[i].getFieldIndex();
-            if (!isNull(_fields[f], _fields[f + 1] - 1)) {
-                int64_t id = extractInt(_fields[f], _fields[f + 1] - 1);
-                id = _keyMappers[i].map(id);
-                if (i == 0 && id == 4389563950694400ll) {
-                    cout << "Problem!" << endl;
-                }
-                _values[f].set(id);
-            }
+        int f = _pkMapper.getFieldIndex();
+        if (!isNull(_fields[f], _fields[f + 1] - 1)) {
+            int64_t id = extractInt(_fields[f], _fields[f + 1] - 1);
+            id = _pkMapper.map(id);
+            _values[f].set(id);
+        }
+        f = _fkMapper.getFieldIndex();
+        if (f >= 0 && !isNull(_fields[f], _fields[f + 1] - 1)) {
+            int64_t id = extractInt(_fields[f], _fields[f + 1] - 1); 
+            id = _fkMapper.map(id);
+            _values[f].set(id);
         }
         // extract secondary sort key
         int64_t sortKey = 0;
-        if (_opts.secondarySortField >= 0) {
-            int f = _opts.secondarySortField;
-            if (!isNull(_fields[f], _fields[f + 1] - 1)) {
-                sortKey = extractInt(_fields[f], _fields[f + 1] - 1);
-            }
+        f = _opts.secondarySortField;
+        if (f >= 0 && !isNull(_fields[f], _fields[f + 1] - 1)) {
+            sortKey = extractInt(_fields[f], _fields[f + 1] - 1);
         }
         _values[_chunkIdField].set(static_cast<int64_t>(_dup._chunkId));
         // loop over locations

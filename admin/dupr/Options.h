@@ -12,9 +12,6 @@ namespace dupr {
 /// Field indexes for a pair of fields.
 typedef std::pair<int, int> FieldPair;
 
-/// A key field and the associated index directory
-typedef std::pair<int, std::string> FieldAndIndex;
-
 /** Command line options for the duplicator/partitioner and indexer.
   */
 struct Options {
@@ -38,10 +35,10 @@ struct Options {
     std::string prefix;     ///< Chunk file name prefix.
 
     std::vector<FieldPair> positions; ///< Positions to be remapped by the duplicator.
-    // Keys to be remapped by the duplicator, with associated index directories.
-    std::vector<FieldAndIndex> foreignKeys;
     int pkField;            ///< Primary key field to be remapped by the duplicator
-                            ///< (e.g. sourceId in Source).
+                            ///  (e.g. sourceId in Source).
+    int fkField;            ///< Foreign key field to be remapped 
+                            ///  (e.g. objectId in Source) or -1.
     SphericalBox dupRegion; ///< Region the duplicator should generate data for.
     uint32_t node;          ///< Node to generate chunks for.
     uint32_t numNodes;      ///< Total number of nodes.
@@ -49,6 +46,7 @@ struct Options {
     bool hashChunks;        ///< Hash chunks to nodes?
 
     std::string indexDir;   ///< Input/output index directory.
+    std::string fkIndexDir; ///< Foreign key index directory.
     std::string scratchDir; ///< Scratch directory for external merge sort.
     std::string chunkDir;   ///< Output directory for chunks.
 
