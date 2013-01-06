@@ -27,11 +27,13 @@
 // required some state management and liberal use of callbacks.
 #include <iostream>
 
+#include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include "boost/date_time/posix_time/posix_time_types.hpp" 
 
 #include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/master/ChunkQuery.h"
+#include "lsst/qserv/master/MessageHandler.h"
 #include "lsst/qserv/master/TableMerger.h"
 #include "lsst/qserv/master/Timer.h"
 #include "lsst/qserv/common/WorkQueue.h"
@@ -255,6 +257,10 @@ void qMaster::AsyncQueryManager::joinEverything() {
               << std::endl;
 }
 
+void qMaster::AsyncQueryManager::configureMessageHandler(MessageHandlerConfig const& c) {
+    _messageHandler = boost::make_shared<MessageHandler>(c);
+}
+
 void qMaster::AsyncQueryManager::configureMerger(TableMergerConfig const& c) {
     _merger = boost::make_shared<TableMerger>(c);
 }
@@ -304,6 +310,11 @@ void qMaster::AsyncQueryManager::resumeReadTrans() {
     _canReadCondition.notify_all();
 }
 
+std::string const qMaster::AsyncQueryManager::_errorTmpl("ERROR: chunkId=%d, %s");
+
+void qMaster::AsyncQueryManager::reportError(int chunkId, int code, std::string const& description) {
+    _messageHandler->writeMessage(code, (boost::format(_errorTmpl) % chunkId % description).str());
+}
 
 ////////////////////////////////////////////////////////////////////////
 // private: ////////////////////////////////////////////////////////////

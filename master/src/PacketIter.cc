@@ -89,6 +89,7 @@ bool qMaster::PacketIter::incrementExtend() {
 // lsst::qserv::master::PacketIter private methods
 ////////////////////////////////////////////////////////////////////////
 void qMaster::PacketIter::_setup(bool debug) {
+    _errno = 0; // Important to initialize for proper error handling.
     const int minFragment = 65536;
     _memo = false;
     if(!debug && (_fragSize < minFragment)) _fragSize = minFragment;

@@ -536,6 +536,11 @@ void qMaster::ChunkQuery::_readResultsDefer(int fd) {
     // Now read.
     // packetIter will close fd
     _packetIter.reset(new PacketIter(fd, fragmentSize)); 
+
+    if (_packetIter.get()->getErrno()) {
+        _manager->reportError(_id, _packetIter.get()->getErrno(), "Remote I/O error during XRD read.");
+    }
+
     _result.localWrite = 1; // MAGIC: stuff the result so that it doesn't
     // look like an error to skip the local write.
     _state = COMPLETE;

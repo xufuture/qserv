@@ -28,6 +28,7 @@
 
 #include "lsst/qserv/master/transaction.h" 
 #include "lsst/qserv/master/xrdfile.h"
+#include "lsst/qserv/master/MessageHandler.h"
 #include "lsst/qserv/master/TableMerger.h"
 
 namespace lsst {
@@ -52,6 +53,8 @@ QueryState joinSession(int session);
 std::string const& getQueryStateString(QueryState const& qs);
 std::string getErrorDesc(int session);
 int newSession(std::map<std::string,std::string> const& cfg);
+void configureSessionMessageHandler(int session, 
+                                  lsst::qserv::master::MessageHandlerConfig const& c);
 void configureSessionMerger(int session, 
                             lsst::qserv::master::TableMergerConfig const& c);
 std::string getSessionResultName(int session);

@@ -190,6 +190,20 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     long long readCount;
     readCount = XrdPosixXrootd::Read(fildes, buf, nbyte); 
     QSM_TIMESTOP("Read", fildes);
+
+/*************************************************
+ * TEST FAILURE MODE: Reading query result fails.
+ * ***********************************************/
+//    std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
+//    readCount = -1;
+/*************************************************/
+
+    if (readCount < 0) {
+         if (errno == 0)
+             errno = EREMOTEIO;
+         return -1;
+    }
+
     return readCount;
 }
 
@@ -202,6 +216,13 @@ long long qMaster::xrdWrite(int fildes, const void *buf,
     QSM_TIMESTART("Write", fildes);
     long long res = XrdPosixXrootd::Write(fildes, buf, nbyte);
     QSM_TIMESTOP("Write", fildes);
+
+    if (res < 0) {
+         if (errno == 0)
+             errno = EREMOTEIO;
+         return -1;
+    }
+
     return res;
 }
 

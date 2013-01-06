@@ -45,6 +45,8 @@ namespace master {
 
 // Forward
 class ChunkQuery;
+class MessageHandler;
+class MessageHandlerConfig;
 class TableMerger;
 class TableMergerConfig;
 class XrdTransResult;
@@ -79,7 +81,10 @@ public:
     ~AsyncQueryManager()
     { _destroyPool(); }
 
+    void configureMessageHandler(MessageHandlerConfig const& c);
     void configureMerger(TableMergerConfig const& c);
+
+    void reportError(int chunkId, int code, std::string const& description);
 
     int add(TransactionSpec const& t, std::string const& resultName);
     void join(int id);
@@ -143,9 +148,12 @@ private:
     int _reliefFiles;
 
     std::string _xrootdHostPort;
+    boost::shared_ptr<MessageHandler> _messageHandler;
     boost::shared_ptr<TableMerger> _merger;
     boost::shared_ptr<lsst::qserv::common::WorkQueue> _readQueue;
     boost::shared_ptr<lsst::qserv::common::WorkQueue> _writeQueue;
+
+    static std::string const _errorTmpl;
 };
 }}} // lsst::qserv::master namespace
 

@@ -73,6 +73,21 @@ class Lock:
 
     pass
 
+class Messages:
+    createTmpl = "CREATE TABLE IF NOT EXISTS %s (code SMALLINT, message CHAR(255)) ENGINE=MEMORY;"
+    writeTmpl = "INSERT INTO %s VALUES (%d, '%s');"
+    
+    def __init__(self, tablename):
+        self._tableName = tablename
+        pass
+
+    def createTable(self):
+        self.db = lsst.qserv.master.db.Db()
+        if not self.db.check(): # Can't create.
+            return False
+        self.db.applySql(Messages.createTmpl % self._tableName) 
+        return True
+
 def clearLocks():
     """Get rid of all the locks in the db.(UNFINISHED)"""
     # Probably need to get a regex for lock table names.
