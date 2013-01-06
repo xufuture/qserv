@@ -87,6 +87,9 @@ from lsst.qserv.master import pauseReadTrans, resumeReadTrans
 # Parser
 from lsst.qserv.master import ChunkMeta
 from lsst.qserv.master import ChunkMapping, SqlSubstitution
+# MessageHandler
+from lsst.qserv.master import MessageHandler,MessageHandlerError, MessageHandlerConfig
+from lsst.qserv.master import configureSessionMessageHandler
 # Merger
 from lsst.qserv.master import TableMerger, TableMergerError, TableMergerConfig
 from lsst.qserv.master import configureSessionMerger, getSessionResultName
@@ -567,15 +570,29 @@ class QueryBabysitter:
     can be used by a client.  Unlike the collater, it doesn't do merging.
     """
     def __init__(self, sessionId, queryHash, fixup, 
-                 reportError=lambda e:None, resultName=""):
+                 reportError=lambda e:None, resultName="", messagesName=""):
         self._sessionId = sessionId
         self._inFlight = {}
         # Scratch mgmt (Consider putting somewhere else)
         self._scratchPath = setupResultScratch()
 
+        self._setupMessageHandler(messagesName)
         self._setupMerger(fixup, resultName) 
         self._reportError = reportError
         pass
+
+    def _setupMessageHandler(self, targetTable):
+        c = lsst.qserv.master.config.config
+        dbSock = c.get("resultdb", "unix_socket")
+        dbUser = c.get("resultdb", "user")
+        dbName = c.get("resultdb", "db")        
+
+        mysqlBin = c.get("mysql", "mysqlclient")
+        if not mysqlBin:
+            mysqlBin = "mysql"
+
+        messageHandlerConfig = MessageHandlerConfig(dbName, targetTable, dbUser, dbSock)
+        configureSessionMessageHandler(self._sessionId, messageHandlerConfig)
 
     def _setupMerger(self, fixup, resultName):
         c = lsst.qserv.master.config.config
@@ -694,7 +711,7 @@ class QueryHintError(Exception):
 class HintedQueryAction:
     """A HintedQueryAction encapsulates logic to prepare, execute, and 
     retrieve results of a query that has a hint string."""
-    def __init__(self, query, hints, pmap, reportError, resultName=""):
+    def __init__(self, query, hints, pmap, reportError, resultName="", messagesName=""):
         self.queryStr = query.strip()# Pull trailing whitespace
         # Force semicolon to facilitate worker-side splitting
         if self.queryStr[-1] != ";":  # Add terminal semicolon
@@ -712,7 +729,7 @@ class HintedQueryAction:
         if not self._isValid:
             discardSession(self._sessionId)
             return
-        self._prepForExec(self._useMemory, reportError, resultName)
+        self._prepForExec(self._useMemory, reportError, resultName, messagesName)
 
     def _importQconfig(self, pmap, hints):
         self._dbContext = "LSST" # Later adjusted by hints.        
@@ -759,13 +776,13 @@ class HintedQueryAction:
             self._isValid = False
         return True
 
-    def _prepForExec(self, useMemory, reportError, resultName):
+    def _prepForExec(self, useMemory, reportError, resultName, messagesName):
         self._postFixChunkScope(self._substitution.getChunkLevel())
 
         # Query babysitter.
         self._babysitter = QueryBabysitter(self._sessionId, self.queryHash,
                                            self._substitution.getMergeFixup(),
-                                           reportError, resultName)
+                                           reportError, resultName, messagesName)
         self._reportError = reportError
         ## For generating subqueries
         if useMemory == "yes":

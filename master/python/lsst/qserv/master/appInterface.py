@@ -102,20 +102,22 @@ class AppInterface:
         # shorter than intermediate table names. 
         # This allows in-place name replacement optimization while merging.
         resultName = "%s.result_%d" % (self._resultDb, taskId)
+        messagesName = "%s.messages_%d" % (self._resultDb, taskId)
+        messages = proxy.Messages(messagesName)
         lockName = "%s.lock_%d" % (self._resultDb, taskId)
         lock = proxy.Lock(lockName)
         if not lock.lock():
             return ("error", "error",
                     "error locking result, check qserv/db config.")
         a = app.HintedQueryAction(query, conditions, self.pmap, 
-                                  lambda e: lock.addError(e), resultName)
+                                  lambda e: lock.addError(e), resultName, messagesName)
         if a.getIsValid():
             self._callWithThread(a.invoke)
             lock.unlockAfter(self._getThreadFunc(), a.getResult)
         else:
             lock.unlock()
             return ("error","error",a.getError())
-        return (resultName, lockName, "")
+        return (resultName, messagesName, lockName, "")
     
     def query(self, q, hints):
         """Issue a query, and return a taskId that can be used for tracking.

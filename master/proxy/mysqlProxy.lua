@@ -455,7 +455,7 @@ qType = queryType()
 
 function queryProcessing()
 
-    local self = { lockTableName = nil, resultTableName = nil, qservError = "" }
+    local self = { lockTableName = nil, messagesTableName = nil, resultTableName = nil, qservError = "" }
 
     ---------------------------------------------------------------------------
 
@@ -508,8 +508,9 @@ function queryProcessing()
         end
 
         resultTableName = res[1]
-        lockTableName = res[2]
-        qservError = res[3]
+        messagesTableName = res[2]
+        lockTableName = res[3]
+        qservError = res[4]
 
         if resultTableName == "error" then
            return err.set(ERR_QSERV_PARSE, "Qserv error: " .. qservError)
@@ -550,22 +551,37 @@ function queryProcessing()
             return err.set(ERR_BAD_RES_TNAME, "Invalid result table name ")
         end
 
-        print ("got via rpc " .. resultTableName .. " lock " .. lockTableName)
+        print ("got via rpc " .. resultTableName .. " messages " .. messagesTableName .. " lock " .. lockTableName)
 
         q1 = "SELECT * FROM " .. lockTableName
         proxy.queries:append(1, string.char(proxy.COM_QUERY) .. q1,
                              {resultset_is_needed = true})
+        print("q1 = " .. q1)
 
-        q2 = "SELECT * FROM " .. resultTableName
+        q2 = "SELECT * FROM " .. messagesTableName
         proxy.queries:append(2, string.char(proxy.COM_QUERY) .. q2,
                              {resultset_is_needed = true})
-	q3 = "DROP TABLE " .. lockTableName
+        print("q2 = " .. q2)
+
+        q3 = "SELECT * FROM " .. resultTableName
         proxy.queries:append(3, string.char(proxy.COM_QUERY) .. q3,
                              {resultset_is_needed = true})
+        print("q3 = " .. q3)
 
-	q4 = "DROP TABLE " .. resultTableName
+	q4 = "DROP TABLE " .. lockTableName
         proxy.queries:append(4, string.char(proxy.COM_QUERY) .. q4,
                              {resultset_is_needed = true})
+        print("q4 = " .. q4)
+
+	q5 = "DROP TABLE " .. messagesTableName
+        proxy.queries:append(5, string.char(proxy.COM_QUERY) .. q5,
+                             {resultset_is_needed = true})
+        print("q5 = " .. q5)
+
+	q6 = "DROP TABLE " .. resultTableName
+        proxy.queries:append(6, string.char(proxy.COM_QUERY) .. q6,
+                             {resultset_is_needed = true})
+        print("q6 = " .. q6)
 
         return SUCCESS
     end
@@ -651,24 +667,36 @@ function read_query_result(inj)
            end
         end
         return proxy.PROXY_IGNORE_RESULT
-     elseif (inj.type == 3) or
-            (inj.type == 4) then 
+    -- we injected query with the id=2 (for messaging)
+    elseif (inj.type == 2) then
+        print("q2 - ignoring")
+        for row in inj.resultset.rows do
+            print("   " .. row[1] .. " " .. row[2])
+           if utils.startsWith(row[2], "ERROR") then
+              queryErrorCount  = queryErrorCount + 1
+              return err.setAndSend(ERR_QSERV_RUNTIME,
+                                    "Error during execution:\n".. row[1] .. " " .. row[2])
+           end
+        end
+        return proxy.PROXY_IGNORE_RESULT
+     elseif (inj.type == 4) or
+           (inj.type == 5) or
+           (inj.type == 6) then 
 	-- Proxy will complain if we try to touch 'inj' for these:
 	-- (critical) (read_query_result) ...attempt to call a nil value
 	-- (critical) proxy-plugin.c.303: got asked to send a resultset, 
 	--            but ignoring it as we already have sent 1 resultset(s).
-	--            injection-id: 3
-        print("cleanup q(3,4) - ignoring")
+        print("cleanup q(4,5,6) - ignoring")
         return proxy.PROXY_IGNORE_RESULT
      elseif (queryErrorCount > 0) then
-        print("q2 - already have errors, ignoring")
+        print("q3 - already have errors, ignoring")
         return proxy.PROXY_IGNORE_RESULT
      elseif (inj.resultset.rows == nil) then
-        print("q2 - no resultset.")
+        print("q3 - no resultset.")
         return err.setAndSend(ERR_QSERV_RUNTIME,
                               "Error executing query using qserv.")
      else
-        print("q2 - passing")
+        print("q3 - passing")
         for row in inj.resultset.rows do
             print("   " .. row[1])
         end
