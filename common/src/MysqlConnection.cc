@@ -85,10 +85,13 @@ MysqlConnection::connect() {
 
 bool
 MysqlConnection::_initMysql() {
+    _isConnected = false; // reset.
+    _mysql = NULL;
     boost::lock_guard<boost::mutex> g(_mysqlShared);
     if(!_mysqlReady) {
         int rc = mysql_library_init(0, NULL, NULL);
         assert(0 == rc);
+        _mysqlReady = true;
     }
     return true;
 }
