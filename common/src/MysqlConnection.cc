@@ -42,18 +42,24 @@ inline void killMysql(MYSQL* mysql, bool useThreadMgmt) {
 } // anonymous namespace
 
 MysqlConnection::MysqlConnection() 
-    : _mysql(NULL) {
+    : _mysql(NULL), _mysql_res(NULL) {
     _initMysql();
 }
 
 MysqlConnection::MysqlConnection(SqlConfig const& sqlConfig,
                                  bool useThreadMgmt) 
-    : _sqlConfig(new SqlConfig(sqlConfig)), _useThreadMgmt(useThreadMgmt) {
+    : _sqlConfig(new SqlConfig(sqlConfig)), _useThreadMgmt(useThreadMgmt),
+      _mysql(NULL), _mysql_res(NULL) {
     _initMysql();
 }
     
 MysqlConnection::~MysqlConnection() {
     if(_mysql) {
+        if(_mysql_res) {
+            MYSQL_ROW row;
+            while(row = mysql_fetch_row(_mysql_res)); // Drain results.
+            _mysql_res = NULL;
+        }
         killMysql(_mysql, _useThreadMgmt);
     }
 }
@@ -82,7 +88,21 @@ MysqlConnection::connect() {
     _isConnected = (c != NULL);
     return _isConnected;
 }
+bool
+MysqlConnection::queryUnbuffered(std::string const& query) {
+    // run query, store into list.
+    int rc;
+    rc = mysql_real_query(_mysql, query.c_str(), query.length());
+    if(rc) { return false; }
+    _mysql_res = mysql_use_result(_mysql);
+    if(!_mysql_res) { return false; }
+    return true;
+}
 
+////////////////////////////////////////////////////////////////////////
+// MysqlConnection
+// private:
+////////////////////////////////////////////////////////////////////////
 bool
 MysqlConnection::_initMysql() {
     _isConnected = false; // reset.

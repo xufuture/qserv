@@ -48,12 +48,17 @@ public:
     SqlResultIter(SqlConfig const& sc, std::string const& query);
     SqlErrorObject& getErrorObject() { return _errObj; }
     
-    List const& operator()() const { return _current; }
-    bool done(); // Would like to relax LSST standard 3-4 for iterator classes
-    
+    List const& operator*() const { return _current; }
+    SqlResultIter& operator++(); // pre-increment iterator advance.
+    bool done() const; // Would like to relax LSST standard 3-4 for iterator classes
+
 private:
+    bool _setup(SqlConfig const& sqlConfig, std::string const& query);
+
+    boost::shared_ptr<MysqlConnection> _connection;
     List _current;
     SqlErrorObject _errObj;
+    int _columnCount;
 };
         
 /// class SqlConnection : Class for interacting with a MySQL database.
@@ -93,6 +98,9 @@ public:
                     std::string const& dbName="");
 
     std::string getActiveDbName() const { return _config.dbName; }
+
+    // Static helpers
+    static void populateErrorObject(MysqlConnection& m, SqlErrorObject& o);
 
 private:
     friend class SqlResultIter;

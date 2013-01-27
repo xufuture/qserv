@@ -46,12 +46,20 @@ public:
     MYSQL* getMysql() { return _mysql;} 
     SqlConfig const& getSqlConfig() const { return *_sqlConfig; }
     
+    bool queryUnbuffered(std::string const& query);
+    MYSQL_RES* getResult() { return _mysql_res; }
+    void freeResult() { mysql_free_result(_mysql_res); _mysql_res = NULL; }
+    int getResultFieldCount() {
+        assert(_mysql);
+        return mysql_field_count(_mysql);
+    }
 private:
     bool _initMysql();
     static boost::mutex _mysqlShared;
     static bool _mysqlReady;
 
     MYSQL* _mysql;
+    MYSQL_RES* _mysql_res;
     bool _isConnected;
     boost::shared_ptr<SqlConfig> _sqlConfig;
     bool _useThreadMgmt;
