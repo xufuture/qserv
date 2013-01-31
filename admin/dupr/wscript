@@ -9,8 +9,6 @@ def options(opt):
     opt.add_option('--debug',
         help='Include debug symbols and turn compiler optimizations off',
         action='store_true', default=False, dest='debug')
-    opt.add_option('--eigen-includes',
-        help='Eigen library includes directory', dest='eigen_includes')
     opt.add_option('--boost-includes',
         help='Boost includes directory', dest='boost_includes')
     opt.add_option('--boost-libs',
@@ -23,14 +21,11 @@ def configure(conf):
     conf.env.append_value('CXXFLAGS', '-g')
     if not conf.options.debug:
         conf.env.append_value('CXXFLAGS', '-O2')
-    if conf.options.eigen_includes:
-        conf.env.append_value('INCLUDES', conf.options.eigen_includes)
     if conf.options.boost_includes:
         conf.env.append_value('INCLUDES', conf.options.boost_includes)
     if conf.options.boost_libs:
         conf.env.append_value('LIBPATH', conf.options.boost_libs)
 
-    conf.check_cxx(header_name='Eigen/Core', mandatory=True)
     conf.check_cxx(header_name='boost/shared_ptr.hpp', mandatory=True)
 
     conf.check_cxx(lib='boost_system',

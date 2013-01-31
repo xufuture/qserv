@@ -25,6 +25,7 @@ using std::cout;
 using std::endl;
 using std::flush;
 using std::max;
+using std::pair;
 using std::string;
 using std::vector;
 
@@ -34,8 +35,6 @@ using boost::scoped_array;
 using boost::shared_ptr;
 using boost::timer::cpu_timer;
 
-using Eigen::Vector2d;
-using Eigen::Matrix3d;
 
 using namespace dupr;
 
@@ -118,7 +117,7 @@ public:
     PosMapper(uint32_t sourceHtmId,
               uint32_t destinationHtmId);
 
-    Vector2d const map(Vector2d const & pos) const {
+    pair<double, double> const map(pair<double, double> const & pos) const {
         return spherical(_m * cartesian(pos));
     }
 
@@ -552,11 +551,11 @@ void TrixelDuplicator::processTrixel() {
         next = parseLine(_inputLine, _inputEnd, _opts.delimiter,
                          _fields.get(), _opts.fields.size());
         assert(next <= _inputEnd);
-        Vector2d p;
+        pair<double, double> p;
         int ra = _opts.partitionPos.first;
         int dec = _opts.partitionPos.second;
-        p(0) = extractDouble(_fields[ra], _fields[ra + 1] - 1, false);
-        p(1) = extractDouble(_fields[dec], _fields[dec + 1] - 1, false);
+        p.first = extractDouble(_fields[ra], _fields[ra + 1] - 1, false);
+        p.second = extractDouble(_fields[dec], _fields[dec + 1] - 1, false);
         // map partitioning position to destination trixel if necessary
         if (_mapPositions) {
             p = _posMapper.map(p);
@@ -569,16 +568,16 @@ void TrixelDuplicator::processTrixel() {
         // p falls in the current chunk...
         if (_mapPositions) {
             // map ancillary positions
-            _values[ra].set(p(0));
-            _values[dec].set(p(1));
+            _values[ra].set(p.first);
+            _values[dec].set(p.second);
             for (size_t i = 0; i < _opts.positions.size(); ++i) {
                 ra = _opts.positions[i].first;
                 dec = _opts.positions[i].second;
-                p(0) = extractDouble(_fields[ra], _fields[ra + 1] - 1, true);
-                p(1) = extractDouble(_fields[dec], _fields[dec + 1] - 1, true);
+                p.first = extractDouble(_fields[ra], _fields[ra + 1] - 1, true);
+                p.second = extractDouble(_fields[dec], _fields[dec + 1] - 1, true);
                 p = _posMapper.map(p);
-                _values[ra].set(p(0));
-                _values[dec].set(p(1));
+                _values[ra].set(p.first);
+                _values[dec].set(p.second);
             }
         }
         // map keys to destination trixel

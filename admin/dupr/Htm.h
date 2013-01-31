@@ -62,11 +62,12 @@
 #define HTM_H
 
 #include <stdint.h>
+#include <utility>
 #include <vector>
 #include "boost/scoped_array.hpp"
-#include "Eigen/Dense"
 
 #include "Hash.h"
+#include "Vector.h"
 
 
 namespace dupr {
@@ -75,18 +76,18 @@ namespace dupr {
 int const HTM_MAX_LEVEL = 13;
 
 /// Compute the HTM ID of the given point.
-uint32_t htmId(Eigen::Vector3d const &v, int level);
+uint32_t htmId(Vector3d const &v, int level);
 
 /// Return the subdivision level of the given ID or -1 if the ID is invalid.
 int htmLevel(uint32_t id);
 
 /// Return the unit 3-vector corresponding to the given right ascension
 /// and declination (in degrees).
-Eigen::Vector3d const cartesian(Eigen::Vector2d const &radec);
+Vector3d const cartesian(std::pair<double, double> const &radec);
 
 /// Return the right ascension and declination (in degrees) corresponding
 /// to the given 3-vector.
-Eigen::Vector2d const spherical(Eigen::Vector3d const &v);
+std::pair<double, double> const spherical(Vector3d const &v);
 
 
 /** An HTM triangle.
@@ -97,19 +98,19 @@ public:
     explicit Trixel(uint32_t htmId);
 
     /// Return matrix that converts from cartesian to spherical barycentric coordinates.
-    Eigen::Matrix3d const & getBarycentricTransform() const {
+    Matrix3d const & getBarycentricTransform() const {
         return _mi;
     }
     /// Return matrix that converts from spherical barycentric to cartesian coordinates.
-    Eigen::Matrix3d const getCartesianTransform() const {
+    Matrix3d const getCartesianTransform() const {
         return _m;
     }
 
 private:
     /// [v1 v2 v3], where column vectors are triangle vertices.
-    Eigen::Matrix3d _m;
+    Matrix3d _m;
     /// inverse of _m
-    Eigen::Matrix3d _mi;
+    Matrix3d _mi;
 };
 
 
@@ -230,7 +231,7 @@ public:
 
     /// Create a conservative bounding box for the triangle with vertices
     /// stored as column vectors in m.
-    SphericalBox(Eigen::Matrix3d const & m);
+    SphericalBox(Matrix3d const & m);
 
     /// Expand the box by the given radius.
     void expand(double radius);
@@ -278,7 +279,7 @@ public:
 private:
     void findIds(uint32_t id,
                  int level,
-                 Eigen::Matrix3d const & m,
+                 Matrix3d const & m,
                  std::vector<uint32_t> & ids) const;
 
     double _raMin;
@@ -328,7 +329,7 @@ public:
     /// Append locations of the given position to the locations vector.
     /// If chunkId is negative, all locations will be appended. Otherwise,
     /// only those with the given chunk ID will be appended.
-    void locate(Eigen::Vector2d const & position,
+    void locate(std::pair<double, double> const & position,
                 int32_t chunkId,
                 std::vector<ChunkLocation> & locations) const;
 

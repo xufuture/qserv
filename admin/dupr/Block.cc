@@ -52,11 +52,11 @@ void InputBlock::process(Options const &opts, PopulationMap & map) {
         r.info.id = extractInt(
             fields[opts.pkField], fields[opts.pkField + 1] - 1);
         // extract ra and dec
-        Eigen::Vector2d sc;
-        sc(0) = extractDouble(fields[opts.partitionPos.first],
-                              fields[opts.partitionPos.first + 1] - 1, false);
-        sc(1) = extractDouble(fields[opts.partitionPos.second],
-                              fields[opts.partitionPos.second + 1] - 1, false);
+        std::pair<double, double> sc;
+        sc.first = extractDouble(fields[opts.partitionPos.first],
+                                 fields[opts.partitionPos.first + 1] - 1, false);
+        sc.second = extractDouble(fields[opts.partitionPos.second],
+                                  fields[opts.partitionPos.second + 1] - 1, false);
         r.info.htmId = htmId(cartesian(sc), opts.htmLevel);
         records.push_back(r);
         beg = next;

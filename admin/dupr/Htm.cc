@@ -19,10 +19,8 @@ using std::string;
 using std::swap;
 using std::vector;
 
-using Eigen::Vector2d;
-using Eigen::Vector3d;
-using Eigen::Matrix3d;
 
+namespace dupr {
 
 namespace {
 
@@ -258,8 +256,6 @@ double angSep(Vector3d const & v0, Vector3d const & v1) {
 } // unnamed namespace
 
 
-namespace dupr {
-
 uint32_t htmId(Vector3d const &v, int level) {
     if (level < 0 || level > HTM_MAX_LEVEL) {
         throw std::runtime_error("invalid HTM subdivision level");
@@ -335,9 +331,9 @@ int htmLevel(uint32_t id) {
 }
 
 
-Vector3d const cartesian(Vector2d const &radec) {
-    double ra = radec(0) * RAD_PER_DEG;
-    double dec = radec(1) * RAD_PER_DEG;
+Vector3d const cartesian(std::pair<double, double> const &radec) {
+    double ra = radec.first * RAD_PER_DEG;
+    double dec = radec.second * RAD_PER_DEG;
     double sinRa = sin(ra);
     double cosRa = cos(ra);
     double sinDec = sin(dec);
@@ -346,8 +342,8 @@ Vector3d const cartesian(Vector2d const &radec) {
 }
 
 
-Vector2d const spherical(Vector3d const &v) {
-    Vector2d sc = Vector2d::Zero();
+std::pair<double, double> const spherical(Vector3d const &v) {
+    std::pair<double, double> sc(0.0, 0.0);
     double d2 = v(0)*v(0) + v(1)*v(1);
     if (d2 != 0.0) {
         double ra = atan2(v(1), v(0)) * DEG_PER_RAD;
@@ -357,10 +353,10 @@ Vector2d const spherical(Vector3d const &v) {
                 ra = 0.0;
             }
         }
-        sc(0) = ra;
+        sc.first = ra;
     }
     if (v(2) != 0.0) {
-        sc(1) = clampDec(atan2(v(2), sqrt(d2)) * DEG_PER_RAD);
+        sc.second = clampDec(atan2(v(2), sqrt(d2)) * DEG_PER_RAD);
     }
     return sc;
 }
@@ -545,16 +541,16 @@ SphericalBox::SphericalBox(Matrix3d const & m) {
     r += 1/3600.0;
     // construct bounding box for bounding circle. This is inexact,
     // but involves less code than a more accurate computation.
-    Vector2d c = spherical(cv);
-    double alpha = maxAlpha(r, c(1));
-    _decMin = clampDec(c(1) - r);
-    _decMax = clampDec(c(1) + r);
+    std::pair<double, double> c = spherical(cv);
+    double alpha = maxAlpha(r, c.second);
+    _decMin = clampDec(c.second - r);
+    _decMax = clampDec(c.second + r);
     if (alpha > 180.0 - 1/3600.0) {
         _raMin = 0.0;
         _raMax = 360.0;
     } else {
-        double raMin = c(0) - alpha;
-        double raMax = c(0) + alpha;
+        double raMin = c.first - alpha;
+        double raMax = c.first + alpha;
         if (raMin < 0.0) {
             raMin += 360.0;
             if (raMin == 360.0) {
@@ -735,13 +731,13 @@ SphericalBox const Chunker::getSubChunkBounds(
 }
 
 void Chunker::locate(
-    Vector2d const & position,
+    std::pair<double, double> const & position,
     int32_t chunkId,
     vector<ChunkLocation> & locations
 ) const {
     // Find non-overlap location of position
-    double const ra = position(0);
-    double const dec = position(1);
+    double const ra = position.first;
+    double const dec = position.second;
     int32_t subStripe = static_cast<int32_t>(
         floor((dec + 90.0) / _subStripeHeight));
     int32_t const numSubStripes = _numSubStripesPerStripe*_numStripes;
