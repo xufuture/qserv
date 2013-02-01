@@ -19,10 +19,40 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
+#include "lsst/qserv/worker/QservOss.h"
+#include <deque>
+#include <string>
+#include <algorithm>
+#include <sstream>
+#include <sys/time.h>
+
+using lsst::qserv::worker::QservOss;
+
+namespace {
+
+inline void fillVSInfo(XrdOssVSInfo *sP) {
+    assert(sP);
+    // Fill with bogus large known values
+    long long giga = 1000*1000*1000LL;
+    sP->Total = giga*100; // 100G total
+    sP->Free  = giga*99; // 99G free
+    sP->LFree = giga*99; // 99G free in contiguous
+    sP->Large = giga*99; // 99G in largest partition
+    sP->Usage = giga*1; // 1G in use
+    sP->Quota = giga*100; // 100G quota bytes
+    
+}
+inline std::string makeKey(std::string const& db, int chunk) {
+    std::stringstream ss;
+    ss << db << chunk << "**key";
+    return std::string(ss.str());
+}
+}
+
 class MySqlExportMgr {
 public:
     MySqlExportMgr() {}
-    doWork() {
+    void doWork() {
         // Check metadata for databases to track
         std::deque<std::string> dbs;
         dbs.push_back("LSST"); // FIXME: grab from MySQL
@@ -31,75 +61,87 @@ public:
         // get chunkList
         // SHOW TABLES IN db;
         std::deque<std::string> chunks;
-        std::for_each(dbs.begin(), dbs.end(), doDb);
+        //std::for_each(dbs.begin(), dbs.end(), doDb(dbs));
         // 
     }
 };
-class QservOss : public XrdOss {
+
+class TableListing {
+    // should reuse an idle sql connection
 public:
-    QservOss* getInstance() {
-        if(!_instance.get()) { 
-            _instance.reset(new QservOss());
-        }
-        return _instance.get();
+    void reset() {
     }
-    /// Reset this instance to these settings.
-    QservOss* reset(XrdOss *native_oss,
-                    XrdSysLogger *log,
-                    const char   *cfgFn,
-                    const char   *cfgParams) {
-        // Not sure what to do with native_oss, so we will throw it
-        // away for now.
-        _log = log;       
-        _cfgFn = cfgFn;
-        _cfgParms = cfgParams;
+    std::string getDb() const {
     }
-
-    // XrdOss overrides (relevant)
-    virtual int Stat(const char* path, struct stat* buff, int opts=0);
-    virtual int StatVS(XrdOssVSInfo *sP, const char *sname=0, int updt=0);
-    
-    // XrdOss overrides (stubs)
-    virtual XrdOssDF *newDir(const char *tident) { return -ENOTSUP;}
-    virtual XrdOssDF *newFile(const char *tident) { return -ENOTSUP;}
-    virtual int Chmod(const char *, mode_t mode) { return -ENOTSUP;}
-    virtual int Create(const char *, const char *, mode_t, 
-                       XrdOucEnv &, int opts=0) { return -ENOTSUP;}
-    virtual int Init(XrdSysLogger *, const char *) { return -ENOTSUP;}
-    virtual int Mkdir(const char *, mode_t mode, int mkpath=0) { 
-        return -ENOTSUP;}
-    virtual int Remdir(const char *, int Opts=0) { return -ENOTSUP;}
-    virtual int Truncate(const char *, unsigned long long) { return -ENOTSUP;}
-    virtual int Unlink(const char *, int Opts=0) { return -ENOTSUP;}
-
-private:
-    QservOss();
-    void fillQueryFileStat(struct stat &buf);
-    // fields (static)
-    static boost::shared_ptr<QservOss> _instance;
-
-    // fields (non-static)
-    std::string _cfgFn;
-    std::string _cfgParams;
-    XrdSysLogger* _log; // Consider wrapping up.
-    time_t _initTime;
+    std::string getTable() const {
+    }
 };
+class MetaClient {
+public:
+    MetaClient() {}
 
+    void reset() {
+        // 
+        // for db in should_track:
+        // get table listing for db
+        // 
+    }
+};
+#if 0
+/// generates export directory paths for every chunk in every database served
+bool 
+qWorker::Metadata::generateExportPaths(std::string const& baseDir,
+                                       SqlConnection& sqlConn,
+                                       SqlErrorObject& errObj,
+                                       std::vector<std::string>& exportPaths) {
+    if (!sqlConn.selectDb(_metadataDbName, errObj)) {
+        return false;
+    }
+    std::string sql = "SELECT dbName, partitionedTables FROM Dbs";
+    SqlResults results;
+    if (!sqlConn.runQuery(sql, results, errObj)) {
+        return errObj.addErrMsg("Failed to execute: " + sql);
+    }
+    std::vector<std::string> dbs;
+    std::vector<std::string> pts; // each string = comma separated list
+    if (!results.extractFirst2Columns(dbs, pts, errObj)) {
+        return errObj.addErrMsg("Failed to receive results from: " + sql);
+    }
+    int i, s = dbs.size();
+    for (i=0; i<s ; i++) {
+        std::string dbName = dbs[i];
+        std::string tableList = pts[i];
+        if (!generateExportPathsForDb(baseDir, dbName, tableList, 
+                                      sqlConn, errObj, exportPaths)) {
+            std::stringstream ss;
+            ss << "Failed to create export dir for baseDir="
+               << baseDir << ", dbName=" << dbName << ", tableList=" 
+               << tableList << std::endl;
+            return errObj.addErrMsg(ss.str());
+        }
+    }
+    return true;
+}
+#endif
+////////////////////////////////////////////////////////////////////////
+// QservOss static
+////////////////////////////////////////////////////////////////////////
+boost::shared_ptr<QservOss> QservOss::_instance;
 ////////////////////////////////////////////////////////////////////////
 // QservOss::QservOss()
 ////////////////////////////////////////////////////////////////////////
 QservOss::QservOss() {
-
     // Set _initTime.
     struct timeval now;
     const size_t tvsize = sizeof(struct timeval);
-    size_t csize;
+    void* res;
     ::gettimeofday(&now, NULL); // 
-    csize = memcpy(&_initTime, &(now.tv_sec), tvsize);
-    assert(csize = tvsize);
+    res = memcpy(&_initTime, &(now.tv_sec), tvsize);
+    assert(res == &_initTime);
     
 }
-void QservOss::fillQueryFileStat(struct stat &buf) {
+
+void QservOss::_fillQueryFileStat(struct stat &buf) {
     // The following stat is an example of something acceptable.
     //  File: `1234567890'
     //  Size: 0    Blocks: 0          IO Block: 4096   regular empty file
@@ -127,11 +169,17 @@ void QservOss::fillQueryFileStat(struct stat &buf) {
     buf.st_blksize = 64*1024; //  blksize 64K? -- size for writing queries
     buf.st_blocks = 0; // reserve
     // set st_atime/st_mtime/st_ctime to cmsd init time (now)
-    memcpy(buf.st_atime, &_initTime, sizeof(initTime));
-    memcpy(buf.st_mtime, &_initTime, sizeof(initTime));
-    memcpy(buf.st_ctime, &_initTime, sizeof(initTime));
+    memcpy(&(buf.st_atime), &_initTime, sizeof(_initTime));
+    memcpy(&(buf.st_mtime), &_initTime, sizeof(_initTime));
+    memcpy(&(buf.st_ctime), &_initTime, sizeof(_initTime));
 }
 
+bool QservOss::_checkExist(std::string const& db, int chunk) {
+    std::string key = makeKey(db, chunk);
+    assert(_hashSet.get());
+    HashSet::const_iterator i = _hashSet->find(key);
+    return (i != _hashSet->end());
+}
 /******************************************************************************/
 /*                                 s t a t                                    */
 /******************************************************************************/
@@ -148,8 +196,7 @@ void QservOss::fillQueryFileStat(struct stat &buf) {
 
   Notes:    The XRDOSS_resonly flag in Opts is not supported.
 */
-
-int XrdPssSys::Stat(const char *path, struct stat *buff, int opts) {
+int QservOss::Stat(const char *path, struct stat *buff, int opts) {
     // Idea: Avoid the need to worry about the export dir.
     // 
     // Ignore opts, since we don't know what to do with 
@@ -160,9 +207,11 @@ int XrdPssSys::Stat(const char *path, struct stat *buff, int opts) {
     // Extract db and chunk from path
     std::string db;
     int chunk;
-    if(checkExist(db,chunk)) {
-        _fillQueryFileStat(buf);        
+    if(_checkExist(db,chunk)) {
+        _fillQueryFileStat(*buff);
         return XrdOssOK;
+    } else {
+        return -ENOENT;
     }
 }
 /******************************************************************************/
@@ -179,47 +228,12 @@ int XrdPssSys::Stat(const char *path, struct stat *buff, int opts) {
             Note that quota is zero when sname is null.
 */
 
-int XrdOssSys::StatVS(XrdOssVSInfo *sP, const char *sname, int updt) {
+int QservOss::StatVS(XrdOssVSInfo *sP, const char *sname, int updt) {
     // Idea: Always return some large amount of space, so that
     // the amount never prevents the manager xrootd/cmsd from
     // selecting us as a write target (qserv dispatch target)
-#if 0
-   XrdOssCache_Space   CSpace;
-
-// Check if we should update the statistics
-//
-   if (updt) XrdOssCache::Scan(0);
-
-// If no space name present or no spaces defined and the space is public then
-// return information on all spaces.
-//
-   if (!sname || (!XrdOssCache_Group::fsgroups && !strcmp("public", sname)))
-      {XrdOssCache::Mutex.Lock();
-       sP->Total  = XrdOssCache::fsTotal;
-       sP->Free   = XrdOssCache::fsTotFr;
-       sP->LFree  = XrdOssCache::fsFree;
-       sP->Large  = XrdOssCache::fsLarge;
-       sP->Extents= XrdOssCache::fsCount;
-       XrdOssCache::Mutex.UnLock();
-       return XrdOssOK;
-      }
-
-// Get the space stats
-//
-   if (!(sP->Extents=XrdOssCache_FS::getSpace(CSpace,sname))) return -ENOENT;
-
-// Return the result
-//
-   sP->Total = CSpace.Total;
-   sP->Free  = CSpace.Free;
-   sP->LFree = CSpace.Maxfree;
-   sP->Large = CSpace.Largest;
-   sP->Usage = CSpace.Usage;
-   sP->Quota = CSpace.Quota;
-   return XrdOssOK;
-#else
-   return -ENOTSUP;
-#endif
+    fillVSInfo(sP);
+    return XrdOssOK;
 }
 
 
