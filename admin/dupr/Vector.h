@@ -1,8 +1,8 @@
 /** Vector algebra in 3 dimensions.
 
-    The included Vector3d and Matrix3d classes provide the small amount
-    of functionality required by the duplicator/partitioner. They mimic
-    a subset of the Eigen Vector3d/Matrix3d APIs, which should make switching
+    The Vector3d and Matrix3d classes provide the basic vector algebra
+    operations required by the duplicator/partitioner. They mimic a subset
+    of the Eigen Vector3d/Matrix3d APIs, which should make switching
     to that library easy if more advanced functionality becomes necessary.
   */
 #ifndef VECTOR_H
@@ -101,7 +101,7 @@ public:
         Matrix3d r;
         r.col(0) = this->operator*(m.col(0));
         r.col(1) = this->operator*(m.col(1));
-        r.col(2) = this->operator*(m.col(1));
+        r.col(2) = this->operator*(m.col(2));
         return r;
     }
 
@@ -109,14 +109,14 @@ public:
     Matrix3d const inverse() const {
         Matrix3d inv;
         Matrix3d const & m = *this;
-        // first column of cofactors
-        Vector3d cf0(m(1,1)*m(2,2) - m(2,1)*m(1,2),
-                   m(1,2)*m(2,0) - m(2,2)*m(1,0),
-                   m(1,0)*m(2,1) - m(2,0)*m(1,1));
+        // first column of adjugate matrix
+        Vector3d a0(m(1,1)*m(2,2) - m(2,1)*m(1,2),
+                    m(1,2)*m(2,0) - m(2,2)*m(1,0),
+                    m(1,0)*m(2,1) - m(2,0)*m(1,1));
         // find the inverse of the determinant of m
-        double invDet = 1.0 / cf0.dot(m.col(0));
+        double invDet = 1.0 / (a0(0)*m(0,0) + a0(1)*m(0,1) + a0(2)*m(0,2));
         // column 0
-        inv.col(0) = cf0 * invDet;
+        inv.col(0) = a0 * invDet;
         // column 1
         inv(0,1) = (m(0,2)*m(2,1) - m(2,2)*m(0,1)) * invDet;
         inv(1,1) = (m(0,0)*m(2,2) - m(2,0)*m(0,2)) * invDet;
