@@ -36,6 +36,9 @@ import lsst.qserv.master.db
 import time
 import thread
 
+from lsst.qserv.master import queryMsgGetCount, queryMsgGetMsg
+
+
 class Lock:
     createTmpl = "CREATE TABLE IF NOT EXISTS %s (err CHAR(255), dummy FLOAT) ENGINE=MEMORY;"
     lockTmpl = "LOCK TABLES %s WRITE;"
@@ -44,6 +47,7 @@ class Lock:
 
     def __init__(self, tablename):
         self._tableName = tablename
+        self._queryMsgId = None
         pass
     def lock(self):
         self.db = lsst.qserv.master.db.Db()
@@ -55,9 +59,12 @@ class Lock:
                                               time.time())))
         return True
 
-    def addError(self, error):
+    def addError(self, error): # Deprecated. Use messages object instead.
         self.db.applySql(Lock.writeTmpl % (self._tableName, "ERR "+ error, 
                                            time.time()))
+        pass
+    def setQueryMsgId(self, queryMsgId):
+        self._queryMsgId = queryMsgId
         pass
 
     def unlock(self):
@@ -70,6 +77,15 @@ class Lock:
             function()
             lock.unlock()
         threadid = thread.start_new_thread(waitAndUnlock, tuple())
+
+    def _readQueryMessages(self):
+        if not self._queryMsgId: # No object to read.
+            return
+        msgCount = queryMsgGetCount(self._queryMsgId)
+        for i in range(msgCount):
+            msg, code = queryMsgGetMsg(self._queryMsgId, i)
+            # do something with message and code.
+        
 
     pass
 
