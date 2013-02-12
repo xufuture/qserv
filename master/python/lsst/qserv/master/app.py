@@ -94,6 +94,9 @@ from lsst.qserv.master import configureSessionMessageHandler
 from lsst.qserv.master import TableMerger, TableMergerError, TableMergerConfig
 from lsst.qserv.master import configureSessionMerger, getSessionResultName
 
+# queryMsg
+from lsst.qserv.master import queryMsgAddMsg
+
 # Experimental interactive prompt (not currently working)
 import code, traceback, signal
 
@@ -570,7 +573,7 @@ class QueryBabysitter:
     can be used by a client.  Unlike the collater, it doesn't do merging.
     """
     def __init__(self, sessionId, queryHash, fixup, 
-                 reportError=lambda e:None, resultName="", messagesName=""):
+                 resultName="", messagesName=""):
         self._sessionId = sessionId
         self._inFlight = {}
         # Scratch mgmt (Consider putting somewhere else)
@@ -578,8 +581,12 @@ class QueryBabysitter:
 
         self._setupMessageHandler(messagesName)
         self._setupMerger(fixup, resultName) 
-        self._reportError = reportError
         pass
+
+    def _reportError(self, message):
+        """Wrap existing reportError to call new error message object"""
+        # FIXME: error code is hardcoded to 1.
+        queryMsgAddMsg(self._sessionId, 1, message)
 
     def _setupMessageHandler(self, targetTable):
         c = lsst.qserv.master.config.config
@@ -710,8 +717,19 @@ class QueryHintError(Exception):
 ########################################################################
 class HintedQueryAction:
     """A HintedQueryAction encapsulates logic to prepare, execute, and 
-    retrieve results of a query that has a hint string."""
-    def __init__(self, query, hints, pmap, reportError, resultName="", messagesName=""):
+    retrieve results of a query that has a hint string.
+    @param query - user query string
+    @param hints - key-value for unstructured query hints
+    @param pmap - partitioning map for spatial chunk mapping. caller-maintained
+    @param setQueryMsgId - unary function. a callback so this
+                           object can callback and provide a 
+                           handle (QueryMsgId) for the caller 
+                           to access the query messages object.
+    @param resultName - name of result table.
+    @param messagesName - name of messages table (deprecated. messages 
+                          should get written to QueryMessages object)
+    """
+    def __init__(self, query, hints, pmap, setQueryMsgId, resultName="", messagesName=""):
         self.queryStr = query.strip()# Pull trailing whitespace
         # Force semicolon to facilitate worker-side splitting
         if self.queryStr[-1] != ";":  # Add terminal semicolon
@@ -725,13 +743,20 @@ class HintedQueryAction:
 
         if not self._parseAndPrep(query, hints):
             return
+        # Pass up the sessionId (e.g. for QueryMessages access )
+        setQueryMsgId(self._sessionId) 
 
         if not self._isValid:
             discardSession(self._sessionId)
             return
-        self._prepForExec(self._useMemory, reportError, resultName, messagesName)
+
+        self._prepForExec(self._useMemory, resultName, messagesName)
 
     def _importQconfig(self, pmap, hints):
+        """Import various config bits and initialize some private variables.
+        Gets a sessionId.
+        """
+
         self._dbContext = "LSST" # Later adjusted by hints.        
         # Hint evaluation
         self._pmap = pmap            
@@ -776,14 +801,13 @@ class HintedQueryAction:
             self._isValid = False
         return True
 
-    def _prepForExec(self, useMemory, reportError, resultName, messagesName):
+    def _prepForExec(self, useMemory, resultName, messagesName):
         self._postFixChunkScope(self._substitution.getChunkLevel())
 
         # Query babysitter.
         self._babysitter = QueryBabysitter(self._sessionId, self.queryHash,
                                            self._substitution.getMergeFixup(),
-                                           reportError, resultName, messagesName)
-        self._reportError = reportError
+                                           resultName, messagesName)
         ## For generating subqueries
         if useMemory == "yes":
             print "Memory spec:", useMemory

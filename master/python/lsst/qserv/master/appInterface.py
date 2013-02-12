@@ -110,7 +110,7 @@ class AppInterface:
             return ("error", "error",
                     "error locking result, check qserv/db config.")
         a = app.HintedQueryAction(query, conditions, self.pmap, 
-                                  lambda e: lock.addError(e), resultName, messagesName)
+                                  lock.setQueryMsgId, resultName, messagesName)
         if a.getIsValid():
             self._callWithThread(a.invoke)
             lock.unlockAfter(self._getThreadFunc(), a.getResult)
