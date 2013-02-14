@@ -34,14 +34,14 @@ class XrdOss;
 class XrdSysLogger;
 class XrdOucEnv;
 
-
 namespace lsst { namespace qserv { namespace worker {
+class Logger;
 
 class FakeOssDf : public XrdOssDF {
 public:
-    int Close(long long *retsz=0) { return XrdOssOK; }
-    int Opendir(const char *) { return XrdOssOK; }
-    int Readdir(char *buff, int blen) { return XrdOssOK; }
+    virtual int Close(long long *retsz=0) { return XrdOssOK; }
+    virtual int Opendir(const char *) { return XrdOssOK; }
+    virtual int Readdir(char *buff, int blen) { return XrdOssOK; }
 
     // Constructor and destructor
     FakeOssDf() {}
@@ -64,8 +64,7 @@ public:
                     const char   *cfgParams) {
         // Not sure what to do with native_oss, so we will throw it
         // away for now.
-        _log = log;       
-        _cfgFn = cfgFn;
+        Init(log, cfgFn);
         _cfgParams = cfgParams;
     }
 
@@ -73,13 +72,14 @@ public:
     virtual int Stat(const char* path, struct stat* buff, int opts=0);
     virtual int StatVS(XrdOssVSInfo *sP, const char *sname=0, int updt=0);
     
+    virtual int Init(XrdSysLogger* log, const char* cfgFn);
+    
     // XrdOss overrides (stubs)
     virtual XrdOssDF *newDir(const char *tident) { return new FakeOssDf(); }
     virtual XrdOssDF *newFile(const char *tident) { return new FakeOssDf(); }
     virtual int Chmod(const char *, mode_t mode) { return -ENOTSUP;}
     virtual int Create(const char *, const char *, mode_t, 
                        XrdOucEnv &, int opts=0) { return -ENOTSUP;}
-    virtual int Init(XrdSysLogger *, const char *) { return -ENOTSUP;}
     virtual int Mkdir(const char *, mode_t mode, int mkpath=0) { 
         return -ENOTSUP;}
     virtual int Remdir(const char *, int Opts=0) { return -ENOTSUP;}
@@ -100,7 +100,8 @@ private:
     // fields (non-static)
     std::string _cfgFn;
     std::string _cfgParams;
-    XrdSysLogger* _log; // Consider wrapping up.
+    XrdSysLogger* _xrdSysLogger; 
+    boost::shared_ptr<Logger> _log;
     time_t _initTime;
 };
 }}} // namespace lsst::qserv::master

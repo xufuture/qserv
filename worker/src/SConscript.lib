@@ -9,12 +9,11 @@ import os, fnmatch
 libEnv = env.Clone()
  
 # Build up list of sources for lib.
-cmsSourceNames = ["QservOss.cc"]
+cmsSources = ["QservOss.cc"]
 sources = []
-cmsSources = [os.path.join("../src", f) for f in  cmsSourceNames]
 #print os.getcwd(), os.listdir('../src')
 for root, dirs, files in os.walk('../src'):
-    files = [f for f in files if f not in cmsSourceNames]
+    files = [f for f in files if f not in cmsSources]
     sources += fnmatch.filter(files, "*.cc")
     # Filter out dotfiles?
     dirs = [d for d in dirs if not fnmatch.fnmatch(d, ".*")]

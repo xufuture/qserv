@@ -56,6 +56,9 @@ for src in Glob("*.cc"):
         # src = [src, testEnv.Object("QservPathStructure.o", 
         #                            "../src/QservPathStructure.cc")]
         src = [src, "../src/QservPathStructure.cc"]
+    elif "QservOss_" in src.name:
+        src = [src, "../src/QservOss.cc"]
+        libs = testEnv["built_elibs"] + ["mysqlclient_r", "XrdOuc"]
     else:
         src = [src]
     pass

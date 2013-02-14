@@ -20,13 +20,17 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #include "lsst/qserv/worker/QservOss.h"
-#include <deque>
-#include <string>
 #include <algorithm>
+#include <cstdarg>
+#include <deque>
+#include <iostream>
+#include <string>
 #include <sstream>
 #include <sys/time.h>
+#include "XrdSys/XrdSysLogger.hh"
 
 using lsst::qserv::worker::QservOss;
+using lsst::qserv::worker::Logger;
 
 namespace {
 
@@ -47,6 +51,69 @@ inline std::string makeKey(std::string const& db, int chunk) {
     ss << db << chunk << "**key";
     return std::string(ss.str());
 }
+
+inline bool importCfgParams(QservOss::HashSet& hashSet, 
+                            std::string const& cfgParams) {
+    
+    return true;
+}
+
+} // anonymous namespace
+
+class lsst::qserv::worker::Logger {
+public: 
+    enum LogLevel { LOG_FATAL=1, 
+                    LOG_ERROR=2, 
+                    LOG_WARN=3, 
+                    LOG_INFO=4, 
+                    LOG_DEBUG=5,
+                    LOG_EVERYTHING=9999 };
+    Logger(XrdSysLogger* log) 
+        : _log(log), _logLevel(LOG_EVERYTHING), _prefix("") {
+        _init();
+    }
+    void setPrefix(std::string const& prefix) { _prefix = prefix; }
+    std::string const& getPrefix(std::string const& prefix) const { 
+        return _prefix; }
+    void setLogLevel(LogLevel logLevel) { _logLevel = logLevel; }
+    LogLevel getLogLevel(LogLevel logLevel) const { return _logLevel; }
+
+    inline void fatal(std::string const& s) { message(LOG_FATAL, s); }
+    inline void error(std::string const& s) { message(LOG_ERROR, s); }
+    inline void warn(std::string const& s) { message(LOG_WARN, s); }
+    inline void info(std::string const& s) { message(LOG_INFO, s); }
+    inline void debug(std::string const& s) { message(LOG_INFO, s); }
+
+    inline void fatal(char const* s) { message(LOG_FATAL, s); }
+    inline void error(char const* s) { message(LOG_ERROR, s); }
+    inline void warn(char const* s) { message(LOG_WARN, s); }
+    inline void info(char const* s) { message(LOG_INFO, s); }
+    inline void debug(char const* s) { message(LOG_INFO, s); }
+
+    inline void message(LogLevel logLevel, std::string const& s) {
+        message(logLevel, s.c_str());
+    }
+    void message(LogLevel logLevel, char const* s);    
+
+private:
+    void _init() {
+        if(_log) _xrdSysError.reset(new XrdSysError(_log));
+        
+    }
+    std::string _prefix;
+    XrdSysLogger* _log;
+    boost::shared_ptr<XrdSysError> _xrdSysError;
+    LogLevel _logLevel;
+};
+
+void Logger::message(Logger::LogLevel logLevel, char const* s) {
+    if(logLevel <= _logLevel) { // Lower is higher priority
+        std::stringstream ss;
+        if(!_prefix.empty()) { ss << _prefix << " "; }
+        ss << s << std::endl;
+        if(_xrdSysError) { _xrdSysError->Say(ss.str().c_str()); }
+        else { std::cout << ss.str(); }
+    }
 }
 
 class MySqlExportMgr {
@@ -133,12 +200,12 @@ boost::shared_ptr<QservOss> QservOss::_instance;
 QservOss::QservOss() {
     // Set _initTime.
     struct timeval now;
-    const size_t tvsize = sizeof(struct timeval);
+    const size_t tvsize = sizeof(now.tv_sec);
     void* res;
     ::gettimeofday(&now, NULL); // 
     res = memcpy(&_initTime, &(now.tv_sec), tvsize);
     assert(res == &_initTime);
-    
+    Init(NULL, NULL);
 }
 
 void QservOss::_fillQueryFileStat(struct stat &buf) {
@@ -202,8 +269,9 @@ int QservOss::Stat(const char *path, struct stat *buff, int opts) {
     // Ignore opts, since we don't know what to do with 
     // XRDOSS_resonly 0x01 and  XRDOSS_updtatm 0x02
 
-    // Lookup db/chunk in hash set.    
-    return -ENOTSUP;
+    // Lookup db/chunk in hash set.
+    
+    _log->info(std::string("QservOss Stat ") + path);
     // Extract db and chunk from path
     std::string db;
     int chunk;
@@ -232,11 +300,36 @@ int QservOss::StatVS(XrdOssVSInfo *sP, const char *sname, int updt) {
     // Idea: Always return some large amount of space, so that
     // the amount never prevents the manager xrootd/cmsd from
     // selecting us as a write target (qserv dispatch target)
+    _log->info(std::string("QservOss StatVS ") + sname);
     fillVSInfo(sP);
     return XrdOssOK;
 }
 
 
+/*
+  Function: Initialize staging subsystem
+
+  Input:    None
+
+  Output:   Returns zero upon success otherwise (-errno).
+*/
+
+int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
+    _xrdSysLogger = log;
+    if(log) { 
+        _log.reset(new Logger(log)); 
+        _log->setPrefix("QservOss");
+    }
+    if(!cfgFn) {
+        _cfgFn.assign("");
+    } else {
+        _cfgFn = cfgFn;
+    }
+    _hashSet.reset(new HashSet);
+    
+    // TODO: update self with new config?
+    return 0;
+}
 
 /******************************************************************************/
 /*                XrdOssGetSS (a.k.a. XrdOssGetStorageSystem)                 */
