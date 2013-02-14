@@ -16,7 +16,8 @@
 
 #include "Block.h"
 #include "Csv.h"
-#include "Htm.h"
+#include "Geometry.h"
+#include "HtmIndex.h"
 #include "Options.h"
 
 
@@ -42,9 +43,9 @@ using namespace dupr;
 namespace {
 
 struct KeyInfo {
-    shared_ptr<PopulationMap const> map;     // Population map.
-    shared_ptr<InputFile const> file;        // File containing ID/key values.
-    int fieldIndex;                          // ID/key field index.
+    shared_ptr<HtmIndex const> idx;
+    shared_ptr<InputFile const> file; // File containing ID/key values.
+    int fieldIndex;                   // ID/key field index.
 
     KeyInfo() : map(), file(), fieldIndex(-1) { }
 };
@@ -354,11 +355,11 @@ ChunkDuplicator::ChunkDuplicator(Options const & opts) :
     _blocks()
 {
     // Read in population maps, and memory-map required CSV/id files
-    _primary.map = make_shared<PopulationMap>(opts.indexDir + "/map.bin");
+    _primary.idx = make_shared<HtmIndex>(opts.indexDir + "/map.bin");
     _primary.file = make_shared<InputFile>(opts.indexDir + "/ids.bin");
     _primary.fieldIndex = opts.pkField;
     if (opts.fkField != -1) {
-        _foreign.map = make_shared<PopulationMap>(opts.fkIndexDir + "/map.bin");
+        _foreign.idx = make_shared<HtmIndex>(opts.fkIndexDir + "/map.bin");
         _foreign.file = make_shared<InputFile>(opts.fkIndexDir + "/ids.bin");
         _foreign.fieldIndex = opts.fkField;
     }
@@ -518,9 +519,9 @@ void TrixelDuplicator::setupTrixel(uint32_t htmId) {
     // Map trixel to a non-empty source trixel
     uint32_t sourceHtmId;
     if (_dup._foreign.fieldIndex != -1) {
-        sourceHtmId = _dup._foreign.map->mapToNonEmptyTrixel(htmId);
+        sourceHtmId = _dup._foreign.idx->mapToNonEmpty(htmId).id;
     } else {
-        sourceHtmId = _dup._primary.map->mapToNonEmptyTrixel(htmId);
+        sourceHtmId = _dup._primary.idx->mapToNonEmpty(htmId).id;
     }
     // Setup field remappers
     _mapPositions = (sourceHtmId != htmId);

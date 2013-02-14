@@ -8,7 +8,7 @@
 #include "boost/thread.hpp"
 
 #include "FileUtils.h"
-#include "Htm.h"
+#include "HtmIndex.h"
 #include "Options.h"
 
 
@@ -55,8 +55,8 @@ public:
     /// Read block contents.
     void read();
 
-    /// Process block contents.
-    void process(Options const & opts, PopulationMap & map);
+    /// Process block contents; mutex must be locked while updating idx.
+    void process(Options const & opts, boost::mutex & mutex, HtmIndex & idx);
 
     /// Return block records; empty until process() has been called.
     std::vector<Record> const & records() const { return _recs; }

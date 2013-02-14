@@ -7,7 +7,7 @@
 #include "boost/make_shared.hpp"
 
 #include "Csv.h"
-#include "Htm.h"
+#include "Geometry.h"
 
 using std::string;
 using std::sort;
@@ -30,7 +30,7 @@ void InputBlock::read() {
     }
 }
 
-void InputBlock::process(Options const &opts, PopulationMap & map) {
+void InputBlock::process(Options const &opts, boost::mutex & mutex, HtmIndex & idx) {
     read();
     char const * beg = _buf;
     char const * const end = beg + _sz;
@@ -62,30 +62,34 @@ void InputBlock::process(Options const &opts, PopulationMap & map) {
         beg = next;
     }
     // Sort input records, but not the associated lines of text.
-    // TODO: would sorting lines here make merging faster later, i.e.
-    // due to better cache behavior?
     sort(records.begin(), records.end());
-    // Update population map. This could be done at the end (during the final
-    // merge pass that produces the sorted data file), but doing it here
-    // makes the merge implementation simpler.
+    // Extract HTM index information
     typedef vector<Record>::const_iterator RecordIter;
-    RecordIter i = records.begin();
-    uint32_t htmId = i->info.htmId;
-    uint64_t nrec = 1;
-    uint64_t sz = i->info.length;
-    ++i;
-    for (RecordIter e = records.end(); i != e; ++i) {
-        if (i->info.htmId != htmId) {
-            map.add(htmId, nrec, sz);
-            htmId = i->info.htmId;
-            nrec = 1;
-            sz = i->info.length;
+    vector<HtmIndex::Triangle> tris;
+    RecordIter r = records.begin();
+    uint32_t id = r->info.htmId;
+    uint64_t numRecords = 1;
+    uint64_t recordSize = r->info.length;
+    ++r;
+    for (RecordIter e = records.end(); r != e; ++r) {
+        if (r->info.htmId != id) {
+            tris.push_back(HtmIndex::Triangle(id, numRecords, recordSize));
+            id = r->info.htmId;
+            numRecords = 1;
+            recordSize = r->info.length;
         } else {
-            ++nrec;
-            sz += i->info.length;
+            ++numRecords;
+            recordSize += r->info.length;
         }
     }
-    map.add(htmId, nrec, sz);
+    tris.push_back(HtmIndex::Triangle(id, numRecords, recordSize));
+    typedef vector<HtmIndex::Triangle>::const_iterator TriangleIter;
+    // Update the HTM index
+    boost::unique_lock<boost::mutex> lock(mutex);
+    for (TriangleIter t = tris.begin(), e = tris.end(); t != e; ++t) {
+        idx.update(*t);
+    }
+    lock.unlock();
     // save sorted records
     swap(_recs, records);
 }

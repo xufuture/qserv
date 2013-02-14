@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "Htm.h"
+#include "Geometry.h"
 
 
 namespace dupr {
@@ -12,7 +12,7 @@ namespace dupr {
 /// Field indexes for a pair of fields.
 typedef std::pair<int, int> FieldPair;
 
-/** Command line options for the duplicator/partitioner and indexer.
+/** Command line options for the indexer, duplicator, and partitioner.
   */
 struct Options {
     std::vector<std::string> fields; ///< List of field names, in order of occurence.

@@ -50,10 +50,10 @@ def build(bld):
         use='objects BOOST',
         install_path='${PREFIX}/bin'
     )
-    bld.program(
-        source=bld.path.ant_glob('Duplicate.cc'),
-        includes='.',
-        target='qserv_dup',
-        use='objects BOOST',
-        install_path='${PREFIX}/bin'
-    )
+    #bld.program(
+    #    source=bld.path.ant_glob('Duplicate.cc'),
+    #    includes='.',
+    #    target='qserv_dup',
+    #    use='objects BOOST',
+    #    install_path='${PREFIX}/bin'
+    #)

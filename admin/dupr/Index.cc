@@ -7,7 +7,8 @@
 #include "boost/timer/timer.hpp"
 
 #include "Block.h"
-#include "Htm.h"
+#include "Geometry.h"
+#include "HtmIndex.h"
 #include "Merger.h"
 #include "Options.h"
 
@@ -30,20 +31,21 @@ struct State {
 
     void operator()();
 
+    Options const &  options;  // Indexing options
+
     char             cl0[CACHE_LINE_SIZE];
 
     boost::mutex     mutex;
-    Options const &  options;  // Indexing options
     InputBlockVector blocks;   // Input blocks
     Merger           merger;   // Block merger
-    PopulationMap    map;      // Population map
+    HtmIndex         htmIndex;
 
     char             cl1[CACHE_LINE_SIZE];
 };
 
 State::State(Options const & options, InputBlockVector const & blocks) :
-    mutex(),
     options(options),
+    mutex(),
     blocks(blocks),
     merger(options.indexDir + "/data.csv",
            options.indexDir + "/ids.bin",
@@ -51,7 +53,7 @@ State::State(Options const & options, InputBlockVector const & blocks) :
            options.blockSize,
            options.k,
            blocks.size()),
-    map(options.htmLevel)
+    htmIndex(options.htmLevel)
 { }
 
 State::~State() { }
@@ -79,7 +81,7 @@ void State::operator()() {
             // read the block
             block->read();
             // process the block
-            block->process(options, map);
+            block->process(options, mutex, htmIndex);
             // add the block to the merge queue
             merger.add(block);
         }
@@ -117,9 +119,8 @@ void index(Options const & options) {
     state.merger.finish();
     t3.stop();
     cout << "\tmerging finished    : " << t3.format() << flush;
-    // Write the population map
-    state.map.makeQueryable();
-    state.map.write(options.indexDir + "/map.bin");
+    // Write the HTM index
+    state.htmIndex.write(options.indexDir + "/map.bin");
 }
 
 } // unnamed namespace

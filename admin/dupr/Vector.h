@@ -28,9 +28,14 @@ public:
         return _c[0]*v._c[0] + _c[1]*v._c[1] + _c[2]*v._c[2];
     }
 
+    /// Return the inner product of this vector with itself.
+    double squaredNorm() const {
+        return dot(*this);
+    }
+
     /// Return the L_2 norm of this vector.
     double norm() const {
-        return std::sqrt(dot(*this));
+        return std::sqrt(squaredNorm());
     }
 
     /// Return a normalized copy of this vector.
@@ -109,19 +114,18 @@ public:
     Matrix3d const inverse() const {
         Matrix3d inv;
         Matrix3d const & m = *this;
-        // first column of adjugate matrix
+        // first column of Adj(m), the adjugate matrix of m.
         Vector3d a0(m(1,1)*m(2,2) - m(2,1)*m(1,2),
                     m(1,2)*m(2,0) - m(2,2)*m(1,0),
                     m(1,0)*m(2,1) - m(2,0)*m(1,1));
-        // find the inverse of the determinant of m
+        // find 1.0/det(m), where the determinant of m is the dot product of
+        // the first row of m with the first column of Adj(m).
         double invDet = 1.0 / (a0(0)*m(0,0) + a0(1)*m(0,1) + a0(2)*m(0,2));
-        // column 0
+        // The inverse of m is Adj(m)/det(m); compute it column by column.
         inv.col(0) = a0 * invDet;
-        // column 1
         inv(0,1) = (m(0,2)*m(2,1) - m(2,2)*m(0,1)) * invDet;
         inv(1,1) = (m(0,0)*m(2,2) - m(2,0)*m(0,2)) * invDet;
         inv(2,1) = (m(0,1)*m(2,0) - m(2,1)*m(0,0)) * invDet;
-        // column 2
         inv(0,2) = (m(0,1)*m(1,2) - m(1,1)*m(0,2)) * invDet;
         inv(1,2) = (m(0,2)*m(1,0) - m(1,2)*m(0,0)) * invDet;
         inv(2,2) = (m(0,0)*m(1,1) - m(1,0)*m(0,1)) * invDet;
