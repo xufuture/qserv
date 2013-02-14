@@ -1,3 +1,5 @@
+* TODO scons : scons -c templates seems to remove python-admin
+but scons templates does not install it
 * TODO scons : install auto of scisql
 * TODO create symlinm for tmp dir if not in default location
 * TODO remove mysql password from log
