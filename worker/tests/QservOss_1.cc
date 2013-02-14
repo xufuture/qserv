@@ -41,18 +41,26 @@ BOOST_FIXTURE_TEST_SUITE(QserOssSuite, TestFixture)
 BOOST_AUTO_TEST_CASE(Test1) {
     QservOss*  oss = QservOss::getInstance();
     int result;
-    char aPath[] = "/q/LSST/342";
+    char aPath[] = "/q/LSST/3838";
+    char badPath[] = "/q/LSST/38";
     char tident[] = "user"; // tident = user ident in xrootd
 
     // Test the important calls.
     struct stat aStat;
     result = oss->Stat(aPath, &aStat);
     BOOST_CHECK_NE(result, -ENOTSUP);
+    BOOST_CHECK((result == XrdOssOK) || (result == -ENOENT));
+
+    result = oss->Stat(badPath, &aStat);
+    BOOST_CHECK_NE(result, -ENOTSUP);
+    BOOST_CHECK((result == XrdOssOK) || (result == -ENOENT));
 
     // Necessary but unimportant StatVS.
+    result = oss->StatVS(NULL, NULL);
+    BOOST_CHECK_EQUAL(result, -EEXIST);
     XrdOssVSInfo vsInfo;
     result = oss->StatVS(&vsInfo, NULL);
-    BOOST_CHECK_NE(result, -ENOTSUP);
+    BOOST_CHECK_EQUAL(result, XrdOssOK);
 
     // Test XrdOss overrides (stubs)
     boost::shared_ptr<XrdOssDF>  ossDf;

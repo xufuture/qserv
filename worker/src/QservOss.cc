@@ -20,21 +20,30 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #include "lsst/qserv/worker/QservOss.h"
+#include "lsst/qserv/QservPath.hh"
+#include "lsst/qserv/worker/Logger.h"
 #include <algorithm>
 #include <cstdarg>
 #include <deque>
 #include <iostream>
+#include <map>
 #include <string>
 #include <sstream>
 #include <sys/time.h>
 #include "XrdSys/XrdSysLogger.hh"
+#include "lsst/qserv/worker/MySqlExportMgr.h"
 
 using lsst::qserv::worker::QservOss;
 using lsst::qserv::worker::Logger;
 
-namespace {
 
-inline void fillVSInfo(XrdOssVSInfo *sP) {
+namespace {
+/*
+ * sP - ptr to XrdOssVSInfo to be filled
+ * sname - C-string of name of fs mount. When sname is NULL, 
+ *         we must set sP->Quota to 0.
+ */
+inline void fillVSInfo(XrdOssVSInfo *sP, char const* sname) {
     assert(sP);
     // Fill with bogus large known values
     long long giga = 1000*1000*1000LL;
@@ -43,153 +52,30 @@ inline void fillVSInfo(XrdOssVSInfo *sP) {
     sP->LFree = giga*99; // 99G free in contiguous
     sP->Large = giga*99; // 99G in largest partition
     sP->Usage = giga*1; // 1G in use
-    sP->Quota = giga*100; // 100G quota bytes
+    sP->Extents = 100; // 100 extents?
+    if(sname) {
+        sP->Quota = giga*100; // 100G quota bytes
+    } else {
+        sP->Quota = 0; // 100G quota bytes
+    }        
     
 }
-inline std::string makeKey(std::string const& db, int chunk) {
-    std::stringstream ss;
-    ss << db << chunk << "**key";
-    return std::string(ss.str());
-}
-
-inline bool importCfgParams(QservOss::HashSet& hashSet, 
-                            std::string const& cfgParams) {
+inline std::ostream& print(std::ostream& os, QservOss::HashSet const& h) {
+    QservOss::HashSet::const_iterator i;
+    bool first = true;
+    for(i = h.begin(); i != h.end(); ++i) {
+        os << *i;
+        if(!first)  os << ", ";
+        else first = false;
+    }
+    return os;
     
-    return true;
 }
 
 } // anonymous namespace
 
-class lsst::qserv::worker::Logger {
-public: 
-    enum LogLevel { LOG_FATAL=1, 
-                    LOG_ERROR=2, 
-                    LOG_WARN=3, 
-                    LOG_INFO=4, 
-                    LOG_DEBUG=5,
-                    LOG_EVERYTHING=9999 };
-    Logger(XrdSysLogger* log) 
-        : _log(log), _logLevel(LOG_EVERYTHING), _prefix("") {
-        _init();
-    }
-    void setPrefix(std::string const& prefix) { _prefix = prefix; }
-    std::string const& getPrefix(std::string const& prefix) const { 
-        return _prefix; }
-    void setLogLevel(LogLevel logLevel) { _logLevel = logLevel; }
-    LogLevel getLogLevel(LogLevel logLevel) const { return _logLevel; }
 
-    inline void fatal(std::string const& s) { message(LOG_FATAL, s); }
-    inline void error(std::string const& s) { message(LOG_ERROR, s); }
-    inline void warn(std::string const& s) { message(LOG_WARN, s); }
-    inline void info(std::string const& s) { message(LOG_INFO, s); }
-    inline void debug(std::string const& s) { message(LOG_INFO, s); }
 
-    inline void fatal(char const* s) { message(LOG_FATAL, s); }
-    inline void error(char const* s) { message(LOG_ERROR, s); }
-    inline void warn(char const* s) { message(LOG_WARN, s); }
-    inline void info(char const* s) { message(LOG_INFO, s); }
-    inline void debug(char const* s) { message(LOG_INFO, s); }
-
-    inline void message(LogLevel logLevel, std::string const& s) {
-        message(logLevel, s.c_str());
-    }
-    void message(LogLevel logLevel, char const* s);    
-
-private:
-    void _init() {
-        if(_log) _xrdSysError.reset(new XrdSysError(_log));
-        
-    }
-    std::string _prefix;
-    XrdSysLogger* _log;
-    boost::shared_ptr<XrdSysError> _xrdSysError;
-    LogLevel _logLevel;
-};
-
-void Logger::message(Logger::LogLevel logLevel, char const* s) {
-    if(logLevel <= _logLevel) { // Lower is higher priority
-        std::stringstream ss;
-        if(!_prefix.empty()) { ss << _prefix << " "; }
-        ss << s << std::endl;
-        if(_xrdSysError) { _xrdSysError->Say(ss.str().c_str()); }
-        else { std::cout << ss.str(); }
-    }
-}
-
-class MySqlExportMgr {
-public:
-    MySqlExportMgr() {}
-    void doWork() {
-        // Check metadata for databases to track
-        std::deque<std::string> dbs;
-        dbs.push_back("LSST"); // FIXME: grab from MySQL
-        
-        std::string exportRoot("/tmp/testExport");
-        // get chunkList
-        // SHOW TABLES IN db;
-        std::deque<std::string> chunks;
-        //std::for_each(dbs.begin(), dbs.end(), doDb(dbs));
-        // 
-    }
-};
-
-class TableListing {
-    // should reuse an idle sql connection
-public:
-    void reset() {
-    }
-    std::string getDb() const {
-    }
-    std::string getTable() const {
-    }
-};
-class MetaClient {
-public:
-    MetaClient() {}
-
-    void reset() {
-        // 
-        // for db in should_track:
-        // get table listing for db
-        // 
-    }
-};
-#if 0
-/// generates export directory paths for every chunk in every database served
-bool 
-qWorker::Metadata::generateExportPaths(std::string const& baseDir,
-                                       SqlConnection& sqlConn,
-                                       SqlErrorObject& errObj,
-                                       std::vector<std::string>& exportPaths) {
-    if (!sqlConn.selectDb(_metadataDbName, errObj)) {
-        return false;
-    }
-    std::string sql = "SELECT dbName, partitionedTables FROM Dbs";
-    SqlResults results;
-    if (!sqlConn.runQuery(sql, results, errObj)) {
-        return errObj.addErrMsg("Failed to execute: " + sql);
-    }
-    std::vector<std::string> dbs;
-    std::vector<std::string> pts; // each string = comma separated list
-    if (!results.extractFirst2Columns(dbs, pts, errObj)) {
-        return errObj.addErrMsg("Failed to receive results from: " + sql);
-    }
-    int i, s = dbs.size();
-    for (i=0; i<s ; i++) {
-        std::string dbName = dbs[i];
-        std::string tableList = pts[i];
-        if (!generateExportPathsForDb(baseDir, dbName, tableList, 
-                                      sqlConn, errObj, exportPaths)) {
-            std::stringstream ss;
-            ss << "Failed to create export dir for baseDir="
-               << baseDir << ", dbName=" << dbName << ", tableList=" 
-               << tableList << std::endl;
-            return errObj.addErrMsg(ss.str());
-        }
-    }
-    return true;
-}
-#endif
 ////////////////////////////////////////////////////////////////////////
 // QservOss static
 ////////////////////////////////////////////////////////////////////////
@@ -242,7 +128,7 @@ void QservOss::_fillQueryFileStat(struct stat &buf) {
 }
 
 bool QservOss::_checkExist(std::string const& db, int chunk) {
-    std::string key = makeKey(db, chunk);
+    std::string key = MySqlExportMgr::makeKey(db, chunk);
     assert(_hashSet.get());
     HashSet::const_iterator i = _hashSet->find(key);
     return (i != _hashSet->end());
@@ -271,14 +157,21 @@ int QservOss::Stat(const char *path, struct stat *buff, int opts) {
 
     // Lookup db/chunk in hash set.
     
-    _log->info(std::string("QservOss Stat ") + path);
     // Extract db and chunk from path
     std::string db;
     int chunk;
-    if(_checkExist(db,chunk)) {
+    // Unpack path.
+    QservPath qp(path);
+    if(qp.requestType() != QservPath::CQUERY) {
+        // FIXME: Do we need to support /result here?
+        return -ENOENT;
+    }
+    if(_checkExist(qp.db(), qp.chunk())) {
         _fillQueryFileStat(*buff);
+        _log->info(std::string("QservOss Stat ") + path + " OK");
         return XrdOssOK;
     } else {
+        _log->info(std::string("QservOss Stat ") + path + " non-existant");
         return -ENOENT;
     }
 }
@@ -300,8 +193,15 @@ int QservOss::StatVS(XrdOssVSInfo *sP, const char *sname, int updt) {
     // Idea: Always return some large amount of space, so that
     // the amount never prevents the manager xrootd/cmsd from
     // selecting us as a write target (qserv dispatch target)
-    _log->info(std::string("QservOss StatVS ") + sname);
-    fillVSInfo(sP);
+    if(!sP) {
+        _log->warn("QservOss StatVS null struct or name");
+        return -EEXIST; // Invalid request if name or info struct is null
+    } else if(!sname) { // Null name okay.
+        _log->info("QservOss StatVS all space");
+    } else {
+        _log->info(std::string("QservOss StatVS ") + sname);
+    }
+    fillVSInfo(sP, sname);
     return XrdOssOK;
 }
 
@@ -319,14 +219,24 @@ int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
     if(log) { 
         _log.reset(new Logger(log)); 
         _log->setPrefix("QservOss");
+    } else {
+        _log.reset(new Logger(NULL));
     }
     if(!cfgFn) {
         _cfgFn.assign("");
     } else {
         _cfgFn = cfgFn;
     }
+    _log->info("QservOss Init");
     _hashSet.reset(new HashSet);
-    
+    MySqlExportMgr m(_name, *_log);
+    m.doWork();
+    m.fillDbChunks(*_hashSet);
+    // Print out diags.
+    std::stringstream ss;
+    ss << "Valid paths: ";
+    print(ss, *_hashSet);
+    _log->info(ss.str());
     // TODO: update self with new config?
     return 0;
 }
@@ -350,7 +260,25 @@ XrdOss *XrdOssGetStorageSystem(XrdOss       *native_oss,
                                const char   *parms)
 {
     QservOss* oss = QservOss::getInstance();
-    oss->reset(native_oss, Logger, config_fn, parms);
+    std::string name;
+    char const* xrdname = ::getenv("XRDNAME");
+    if(xrdname) {
+        // Sanitize xrdname
+        char* sanitized = strdup(xrdname);
+        for(char* cursor = sanitized; *xrdname != '\0'; ++xrdname) {
+            if(isalnum(*xrdname)) { 
+                *cursor = *xrdname; 
+                ++cursor;
+            }
+            *cursor = '\0';// Keep the tail null-terminated.
+        }
+
+        name.assign(sanitized);
+    }
+    oss->reset(native_oss, Logger, config_fn, parms, name.c_str());
+    static XrdSysError eRoute(Logger, "QservOssFs");
+    eRoute.Say("QservOss (Qserv Oss for server cmsd)");
+
     return oss;
 }
 } // extern C

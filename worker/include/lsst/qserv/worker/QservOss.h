@@ -61,11 +61,16 @@ public:
     QservOss* reset(XrdOss *native_oss,
                     XrdSysLogger *log,
                     const char   *cfgFn,
-                    const char   *cfgParams) {
+                    const char   *cfgParams,
+                    const char   *name) {
+        if(cfgParams) { _cfgParams = cfgParams; }
+        else { _cfgParams.assign(""); }
+
+        if(name) { _name = name; }
+        else { _name.assign("unknown"); }
         // Not sure what to do with native_oss, so we will throw it
         // away for now.
         Init(log, cfgFn);
-        _cfgParams = cfgParams;
     }
 
     // XrdOss overrides (relevant)
@@ -100,6 +105,7 @@ private:
     // fields (non-static)
     std::string _cfgFn;
     std::string _cfgParams;
+    std::string _name;
     XrdSysLogger* _xrdSysLogger; 
     boost::shared_ptr<Logger> _log;
     time_t _initTime;
