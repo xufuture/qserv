@@ -1,30 +1,38 @@
-* TODO scons : scons -c templates seems to remove python-admin
+* TESTS
+** TODO qservMeta index db must be prefixed by LSST_, it would be better if it could be the name of the database containing data on the worker nodes instead
+** DONE tests/runTest.py works
+* SCONS
+** TODO scons : scons -c templates seems to remove python-admin
 but scons templates does not install it
-* TODO scons : install auto of scisql
-* TODO create symlinm for tmp dir if not in default location
-* TODO remove mysql password from log
-* TODO remove useless parameters in qserv-install, induced by scons templates procedure
-* TODO improve scons clean_all, with dir emptying/cleaning (spécifique pour build/ et suppr fichier dans QSERV_BASE)
-* TODO scons qserv-only : it would be interesting to clean/remove qserv before re-installing ?
-* TODO scons : recopier le fichier de paramètre par défaut dans SConstruct
-  
-* TODO il faut faire un patch des makefile de xrootd pour debian.
-
-* TODO tuer tous les process de qserv avant une nouvelle install
-* TODO add a note  on qserv.cnf
+** TODO scons : install auto of scisql
+** TODO improve scons clean_all, with dir emptying/cleaning (spécifique pour build/ et suppr fichier dans QSERV_BASE)
+** TODO scons qserv-only : it would be interesting to clean/remove qserv before re-installing ?
+** DONE scons : recopier le fichier de paramètre par défaut dans SConstruct
+** TODO tuer tous les process de qserv avant une nouvelle install
+** TODO make scons master, and scons worker targets
+* SYSADMIN
+** TODO create symlinm for tmp dir if not in default location
+** TODO remove useless parameters in qserv-install, induced by scons templates procedure
+** TODO remove mysql password from log
+** TODO add a note  on qserv.cnf
 "alloweddbs=LSST,qservTest_case01_q" after "prohibit" C++ message
-* TODO find bug due to slow request in tests  
-* TODO add a qserv command for reloading qserv parameters
-
-* TODO Is installation of mysql UDF plugin (libqserv_udf.so) usefull, because
+** TODO add a qserv command for reloading qserv parameters
+*OTHER  
+** TODO il faut faire un patch des makefile de xrootd pour debian.
+** TODO find bug due to slow request in tests  
+** TODO comment "stop iptables" in french wiki, or better, add correct iptables
+** TODO AUDIT DE CODE
+bad quality code examples :  
+- qMaster::SqlParseRunner::_interpretBadDbs
+* DONE Is installation of mysql UDF plugin (libqserv_udf.so) usefull, because
 * this file isn't created by build process and its installation isn't done by
 * the qserv-install script ?
   but it is specified several time in the documentation :
   cf ./qserv-0.3.0rc3/worker/doc/HOWTO_install_udf.txt
   cf http://dev.lsstcorp.org/trac/wiki/dbQservDevelopmentInstallationGuide
 
-* TODO current minor modification proposal :
-  - [ ] proposer de tuer les process avec des pid files (changer les chemins
+* DONE current minor modification proposal :
+  - [X] proposer de tuer les process avec des pid files (changer les chemins
     de ceux-ci vers /opt/qserv/var/run/xrootd dans lsp.cf et ajout pour
 startQserv.py)  SLAC
   - [X] préciser dans la doc qu'il faut installer numpy et faire un export de
@@ -38,11 +46,7 @@ startQserv.py)  SLAC
   - [X] qserv-install : démarrer cmsd avant xrootd pour éviter le message :
     120809 15:02:49 24278 XrdOpen: Unable to connect socket to
 clrlsst-dbmaster.in2p3.fr; connection refused
-* TODO comment "stop iptables" in french wiki, or better, add correct iptables
 * rules for xrootd/cmsd
-* TODO AUDIT DE CODE
-bad quality code examples :  
-- qMaster::SqlParseRunner::_interpretBadDbs
 * DONE error redirection to stdout)
    :PROPERTIES:
    :SEND:     OK
