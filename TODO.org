@@ -1,29 +1,30 @@
 * TESTS
 ** TODO qservMeta index db must be prefixed by LSST_, it would be better if it could be the name of the database containing data on the worker nodes instead
-** DONE tests/runTest.py works
 * SCONS
 ** TODO scons : scons -c templates seems to remove python-admin
 but scons templates does not install it
 ** TODO scons : install auto of scisql
 ** TODO improve scons clean_all, with dir emptying/cleaning (spécifique pour build/ et suppr fichier dans QSERV_BASE)
 ** TODO scons qserv-only : it would be interesting to clean/remove qserv before re-installing ?
-** DONE scons : recopier le fichier de paramètre par défaut dans SConstruct
 ** TODO tuer tous les process de qserv avant une nouvelle install
 ** TODO make scons master, and scons worker targets
+** DONE scons : recopier le fichier de paramètre par défaut dans SConstruct
 * SYSADMIN
-** TODO create symlinm for tmp dir if not in default location
 ** TODO remove useless parameters in qserv-install, induced by scons templates procedure
 ** TODO remove mysql password from log
 ** TODO add a note  on qserv.cnf
 "alloweddbs=LSST,qservTest_case01_q" after "prohibit" C++ message
 ** TODO add a qserv command for reloading qserv parameters
-*OTHER  
+* OTHER  
 ** TODO il faut faire un patch des makefile de xrootd pour debian.
 ** TODO find bug due to slow request in tests  
 ** TODO comment "stop iptables" in french wiki, or better, add correct iptables
 ** TODO AUDIT DE CODE
 bad quality code examples :  
 - qMaster::SqlParseRunner::_interpretBadDbs
+* DONE tests/runTest.py works
+* DONE create symlinm for tmp dir if not in default location
+* DONE bug in qserv-stop (kill xrootd, cmsd, mysqld) 
 * DONE Is installation of mysql UDF plugin (libqserv_udf.so) usefull, because
 * this file isn't created by build process and its installation isn't done by
 * the qserv-install script ?
