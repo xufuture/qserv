@@ -1,3 +1,4 @@
+* TODO ask SLAC how chunk number 7200 is computed depending on stripes and substripes
 * TESTS
 ** TODO qservMeta index db must be prefixed by LSST_, it would be better if it could be the name of the database containing data on the worker nodes instead
 * SCONS
