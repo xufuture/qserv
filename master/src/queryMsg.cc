@@ -22,6 +22,8 @@
 // queryMsg.cc houses the implementation of 
 // queryMsg.h (SWIG-exported functions for accessing QueryMessages)
 
+#include "lsst/qserv/master/queryMsg.h"
+
 namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers

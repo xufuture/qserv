@@ -36,7 +36,7 @@ import lsst.qserv.master.db
 import time
 import thread
 
-from lsst.qserv.master import queryMsgGetCount, queryMsgGetMsg
+from lsst.qserv.master import queryMsgGetMsgCount, queryMsgGetMsg
 
 
 class Lock:
