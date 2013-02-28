@@ -1,6 +1,19 @@
-* TODO ask SLAC how chunk number 7200 is computed depending on stripes and substripes
+* TODO ask SLAC how chunk number 7200 is computed depending on stripes and substripes, it seems it is  2*60*60, why ? 
+* TODO W13 :could you copy it at the CC-IN2P3 with the schema ??
+* TODO are they interested in generalizing our design used in tests : 
+  - read and analyze data config (type of files, extensions, ...)
+  - Use of QservDataLoader which could be used not only in tests, for PT1.1 or W13 for example
+
+* TODO study python code standards :  https://dev.lsstcorp.org/trac/wiki/PythonStandardsChecking
+* TODO see for unit tests (LSST standard for this) ?
+* TODO loadPartitionedSchema() : put generated file in tmp dir and watch for recovery on error, use ALTER for schema creation ?
+* TODO study python refactoring method (rope ??)
+* TODO what are good practices for package/modules/class names/sizes ? Ask S. Binet, X. Clerc, IPNL ?
+* TODO logger : optimize usage ?
 * TESTS
 ** TODO qservMeta index db must be prefixed by LSST_, it would be better if it could be the name of the database containing data on the worker nodes instead
+** TODO ticket/2014 runTests.py : finalize architecture in order to load PT1.1
+** TODO ticket/2014 runTests.py : re-read code and propose improvements
 * SCONS
 ** TODO scons : scons -c templates seems to remove python-admin
 but scons templates does not install it
@@ -27,8 +40,8 @@ bad quality code examples :
 * DONE create symlinm for tmp dir if not in default location
 * DONE bug in qserv-stop (kill xrootd, cmsd, mysqld) 
 * DONE Is installation of mysql UDF plugin (libqserv_udf.so) usefull, because
-* this file isn't created by build process and its installation isn't done by
-* the qserv-install script ?
+this file isn't created by build process and its installation isn't done by
+the qserv-install script ?
   but it is specified several time in the documentation :
   cf ./qserv-0.3.0rc3/worker/doc/HOWTO_install_udf.txt
   cf http://dev.lsstcorp.org/trac/wiki/dbQservDevelopmentInstallationGuide
