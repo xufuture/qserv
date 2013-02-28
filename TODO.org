@@ -18,6 +18,10 @@
 
   http://docs.python.org/2/library/unittest.html
 
+  master/python/lsst/qserv/master/testAppInterface.py
+
+  chrono dans les tests unitaires ?
+
 * TODO loadPartitionedSchema() : put generated file in tmp dir and watch for recovery on error, use ALTER for schema creation ?
 * TODO study python refactoring method (rope ??)
 * TODO what are good practices for package/modules/class names/sizes ? Ask S. Binet, X. Clerc, IPNL ?
