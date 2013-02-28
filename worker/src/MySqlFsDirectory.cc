@@ -23,13 +23,16 @@
 #include "lsst/qserv/worker/MySqlFsDirectory.h"
 
 #include "XrdSys/XrdSysError.hh"
+#include "lsst/qserv/worker/Logger.h"
 
 #include <errno.h>
 
 namespace qWorker = lsst::qserv::worker;
+using lsst::qserv::worker::Logger;
 
-qWorker::MySqlFsDirectory::MySqlFsDirectory(XrdSysError* lp, char* user) :
-    XrdSfsDirectory(user), _eDest(lp) {
+qWorker::MySqlFsDirectory::MySqlFsDirectory(boost::shared_ptr<Logger> log, 
+                                            char* user) :
+    XrdSfsDirectory(user), _log(log) {
 }
 
 qWorker::MySqlFsDirectory::~MySqlFsDirectory(void) {
@@ -52,6 +55,6 @@ int qWorker::MySqlFsDirectory::close(void) {
 }
 
 char const* qWorker::MySqlFsDirectory::FName(void) {
-    _eDest->Say("In MySqlFsDirectory::Fname()");
+    _log->info("In MySqlFsDirectory::Fname()");
     return 0;
 }

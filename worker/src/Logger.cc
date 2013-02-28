@@ -39,7 +39,7 @@ void Logger::message(Logger::LogLevel logLevel, char const* s) {
         if(_xrdSysError) { _xrdSysError->Say(ss.str().c_str()); }
         else { 
             if(!_prefix.empty()) { ss << _prefix << " "; }
-            std::cout << _prefix << ss.str() << std::endl; 
+            std::cerr << _prefix << ss.str() << std::endl; 
         }
     }
 }

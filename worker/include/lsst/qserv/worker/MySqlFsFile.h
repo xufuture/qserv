@@ -48,7 +48,7 @@ namespace lsst {
 namespace qserv {
 namespace worker {
 class RequestTaker; // Forward
-
+class Logger;
 
 class AddCallbackFunction {
 public:
@@ -59,7 +59,7 @@ public:
     
 class MySqlFsFile : public XrdSfsFile {
 public:
-    MySqlFsFile(XrdSysError* lp, char const* user = 0, 
+    MySqlFsFile(boost::shared_ptr<Logger> log, char const* user = 0, 
                 AddCallbackFunction::Ptr acf = AddCallbackFunction::Ptr(),
                 fs::FileValidator::Ptr fv = fs::FileValidator::Ptr(),
                 boost::shared_ptr<Service> service = Service::Ptr());
@@ -110,7 +110,7 @@ private:
 
     void _setDumpNameAsChunkId();
 
-    XrdSysError* _eDest;
+    boost::shared_ptr<Logger> _log;
     AddCallbackFunction::Ptr _addCallbackF;
     fs::FileValidator::Ptr _validator;
     int _chunkId;

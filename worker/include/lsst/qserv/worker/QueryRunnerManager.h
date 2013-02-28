@@ -29,16 +29,17 @@ namespace qserv {
 namespace worker {
 
 // Forward
+class Logger;
 class QueryRunner;
 
 ////////////////////////////////////////////////////////////////////////
 class QueryRunnerArg {
 public:
-QueryRunnerArg(Logger::Ptr log_,
+QueryRunnerArg(boost::shared_ptr<Logger> log_,
                Task::Ptr task_,
                std::string overrideDump_=std::string()) 
     : log(log_), task(task_), overrideDump(overrideDump_) { }
-    Logger::Ptr log;
+    boost::shared_ptr<Logger> log;
     Task::Ptr task;
     std::string overrideDump;
 };

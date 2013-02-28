@@ -34,13 +34,19 @@ namespace lsst { namespace qserv { namespace worker {
 
 class Logger {
 public: 
+    typedef boost::shared_ptr<Logger> Ptr;
+
     enum LogLevel { LOG_FATAL=1, 
                     LOG_ERROR=2, 
                     LOG_WARN=3, 
                     LOG_INFO=4, 
                     LOG_DEBUG=5,
                     LOG_EVERYTHING=9999 };
-    Logger(XrdSysLogger* log) 
+    Logger() 
+        : _logLevel(LOG_EVERYTHING), _prefix("") {
+        _init();
+    }
+    explicit Logger(XrdSysLogger* log) 
         : _log(log), _logLevel(LOG_EVERYTHING), _prefix("") {
         _init();
     }

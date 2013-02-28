@@ -27,6 +27,7 @@
 #include "lsst/qserv/SqlErrorObject.hh"
 #include "lsst/qserv/worker/Config.h"
 #include "lsst/qserv/worker/Base.h"
+#include "lsst/qserv/worker/Logger.h"
  
 namespace qWorker = lsst::qserv::worker;
 
@@ -81,14 +82,14 @@ bool qWorker::QueryPhyResult::performMysqldump(qWorker::Logger& log,
          % user
          % dumpFile % _outDb 
          % _getSpaceResultTables()).str();
-    log((Pformat("dump cmdline: %1%") % cmd).str().c_str());
+    log.info((Pformat("dump cmdline: %1%") % cmd).str());
 
-    log((Pformat("TIMING,000000QueryDumpStart,%1%")
-            % ::time(NULL)).str().c_str());
+    log.info((Pformat("TIMING,000000QueryDumpStart,%1%")
+            % ::time(NULL)).str());
     int cmdResult = system(cmd.c_str());
 
-    log((Pformat("TIMING,000000QueryDumpFinish,%1%")
-            % ::time(NULL)).str().c_str());
+    log.info((Pformat("TIMING,000000QueryDumpFinish,%1%")
+            % ::time(NULL)).str());
 
     if (cmdResult != 0) {
         errObj.setErrNo(errno);

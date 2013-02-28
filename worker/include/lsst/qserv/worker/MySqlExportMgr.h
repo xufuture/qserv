@@ -43,17 +43,24 @@ public:
     typedef std::map<std::string, ChunkMap> ExistMap;
 
     MySqlExportMgr(std::string const& name, Logger& log) 
-        : _name(name), _log(log) {}
+        : _name(name), _log(log) { 
+        _init();
+    }
 
     static inline std::string makeKey(std::string const& db, int chunk) {
         std::stringstream ss;
         ss << db << chunk << "**key";
         return std::string(ss.str());
     }
+    static inline bool checkExist(StringSet const& s, 
+                                  std::string const& db, int chunk) {
+        std::string key = makeKey(db, chunk);
+        return (s.end() != s.find(key));
+    }
 
-    void doWork();
     void fillDbChunks(StringSet& s);
 private:
+    void _init();
     ExistMap _existMap;
     std::string _name;
     Logger& _log;

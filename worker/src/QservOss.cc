@@ -32,9 +32,11 @@
 #include <sys/time.h>
 #include "XrdSys/XrdSysLogger.hh"
 #include "lsst/qserv/worker/MySqlExportMgr.h"
+#include "lsst/qserv/worker/XrdName.h"
 
 using lsst::qserv::worker::QservOss;
 using lsst::qserv::worker::Logger;
+using lsst::qserv::worker::XrdName;
 
 
 namespace {
@@ -128,10 +130,8 @@ void QservOss::_fillQueryFileStat(struct stat &buf) {
 }
 
 bool QservOss::_checkExist(std::string const& db, int chunk) {
-    std::string key = MySqlExportMgr::makeKey(db, chunk);
     assert(_hashSet.get());
-    HashSet::const_iterator i = _hashSet->find(key);
-    return (i != _hashSet->end());
+    return MySqlExportMgr::checkExist(*_hashSet, db, chunk);
 }
 /******************************************************************************/
 /*                                 s t a t                                    */
@@ -230,7 +230,6 @@ int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
     _log->info("QservOss Init");
     _hashSet.reset(new HashSet);
     MySqlExportMgr m(_name, *_log);
-    m.doWork();
     m.fillDbChunks(*_hashSet);
     // Print out diags.
     std::stringstream ss;
@@ -260,25 +259,14 @@ XrdOss *XrdOssGetStorageSystem(XrdOss       *native_oss,
                                const char   *parms)
 {
     QservOss* oss = QservOss::getInstance();
-    std::string name;
-    char const* xrdname = ::getenv("XRDNAME");
-    if(xrdname) {
-        // Sanitize xrdname
-        char* sanitized = strdup(xrdname);
-        for(char* cursor = sanitized; *xrdname != '\0'; ++xrdname) {
-            if(isalnum(*xrdname)) { 
-                *cursor = *xrdname; 
-                ++cursor;
-            }
-            *cursor = '\0';// Keep the tail null-terminated.
-        }
-
-        name.assign(sanitized);
-    }
+    XrdName x;
+    std::string name = x.getName();
     oss->reset(native_oss, Logger, config_fn, parms, name.c_str());
     static XrdSysError eRoute(Logger, "QservOssFs");
-    eRoute.Say("QservOss (Qserv Oss for server cmsd)");
-
+    std::stringstream ss;
+    ss << "QservOss (Qserv Oss for server cmsd) ";
+    ss << "\"" << name << "\"";
+    eRoute.Say(ss.str().c_str());
     return oss;
 }
 } // extern C

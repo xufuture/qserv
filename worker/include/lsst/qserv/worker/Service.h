@@ -28,12 +28,13 @@ namespace worker {
 
 class TodoList; // Forward
 class Foreman; // Forward
+class Logger;
 
 class Service {
 public:
     typedef boost::shared_ptr<Service> Ptr;
 
-    explicit Service(Logger::Ptr log=Logger::Ptr());
+    explicit Service(boost::shared_ptr<Logger> log=boost::shared_ptr<Logger>());
     TaskAcceptor::Ptr getAcceptor();
 private:
     boost::shared_ptr<TodoList> _todo;

@@ -13,7 +13,7 @@
 #include "lsst/qserv/worker/FifoScheduler.h"
 #include "lsst/qserv/worker/QueryRunner.h"
 #include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/worker/StderrLogger.h"
+#include "lsst/qserv/worker/Logger.h"
 
 namespace qWorker = lsst::qserv::worker;
 ////////////////////////////////////////////////////////////////////////
@@ -205,7 +205,7 @@ public:
             qWorker::QueryRunner qr(a);
             std::stringstream ss;
             ss << "Runner running " << *_task;
-            (*_log)(ss.str().c_str());
+            _log->info(ss.str());
             qr.actOnce();
             if(_isPoisoned) break;
             // Request new work from the manager
@@ -236,7 +236,7 @@ ForemanImpl::ForemanImpl(Scheduler::Ptr s,
       _running(new qWorker::TodoList::TaskQueue()) {
     if(!_log.get()) {
         // Make basic logger.
-        _log.reset(new qWorker::StderrLogger());
+        _log.reset(new qWorker::Logger());
     }
     _watcher.reset(new Watcher(*this));
     _todo->addWatcher(_watcher); // Callbacks are now possible.

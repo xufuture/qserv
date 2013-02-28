@@ -149,7 +149,7 @@ private:
 } // anonymous namespace
 
 
-void MySqlExportMgr::doWork() {
+void MySqlExportMgr::_init() {
     std::string chunkedForm("(\\w+)_(\\d+)");
     boost::regex regex(chunkedForm);
     // Check metadata for databases to track
