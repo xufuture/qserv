@@ -4,8 +4,20 @@
   - read and analyze data config (type of files, extensions, ...)
   - Use of QservDataLoader which could be used not only in tests, for PT1.1 or W13 for example
 
-* TODO study python code standards :  https://dev.lsstcorp.org/trac/wiki/PythonStandardsChecking
+* DONE study python code standards :  https://dev.lsstcorp.org/trac/wiki/PythonStandardsChecking
+  Utiliser PyLint pour verifier automatiquement
+  Voir http://lsst.in2p3.fr/wiki/index.php/Calcul:Qserv:Qualite
 * TODO see for unit tests (LSST standard for this) ?
+
+  AFW utilise des tests unitaires
+  https://dev.lsstcorp.org/trac/browser/DMS/afw/tests/approximate.py
+  import unittest
+
+  Usage:
+  >>> import approximate; approximate.run()
+
+  http://docs.python.org/2/library/unittest.html
+
 * TODO loadPartitionedSchema() : put generated file in tmp dir and watch for recovery on error, use ALTER for schema creation ?
 * TODO study python refactoring method (rope ??)
 * TODO what are good practices for package/modules/class names/sizes ? Ask S. Binet, X. Clerc, IPNL ?
