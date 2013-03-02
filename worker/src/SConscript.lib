@@ -10,7 +10,7 @@ libEnv = env.Clone()
  
 # Build up list of sources for lib.
 cmsSourcesOnly = ["QservOss.cc"]
-sharedSources = ["Logger.cc", "MySqlExportMgr.cc"]
+sharedSources = ["Config.cc", "Logger.cc", "MySqlExportMgr.cc"]
 sources = []
 cmsSources = cmsSourcesOnly + sharedSources
 #print os.getcwd(), os.listdir('../src')

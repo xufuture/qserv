@@ -374,16 +374,9 @@ std::string qWorker::QueryRunner::_getErrorString() const {
   }
 */
 bool qWorker::QueryRunner::_runTask(qWorker::Task::Ptr t) {
-    SqlConfig sc;
-    sc.hostname = "";
-    sc.username = _user.c_str();
-    sc.password = "";
-    sc.dbName = "";
-    sc.port = 0;
-    sc.socket = getConfig().getString("mysqlSocket").c_str();
-    
-    SqlConnection _sqlConn(sc);
-
+    SqlConfig sc(getConfig().getSqlConfig());
+    sc.username = _user.c_str(); // Override with master-passed username.
+    SqlConnection _sqlConn(sc, true);
     bool success = true;
     _scriptId = t->dbName.substr(0, 6);
     _log->info((Pformat("TIMING,%1%ScriptStart,%2%")

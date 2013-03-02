@@ -58,7 +58,8 @@ for src in Glob("*.cc"):
         src = [src, "../src/QservPathStructure.cc"]
     elif "QservOss_" in src.name:
         ## Keep src list in sync with cmsSources
-        src = [src] + map(lambda f: "../src/" + f, ["QservOss.cc", 
+        src = [src] + map(lambda f: "../src/" + f, ["Config.cc",
+                                                    "QservOss.cc", 
                                                     "Logger.cc", 
                                                     "MySqlExportMgr.cc"])
         libs = testEnv["built_elibs"] + ["mysqlclient_r", "XrdOuc"]

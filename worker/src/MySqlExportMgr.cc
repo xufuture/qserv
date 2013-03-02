@@ -26,6 +26,7 @@
 #include <boost/regex.hpp>
 #include "XrdSys/XrdSysLogger.hh"
 #include "lsst/qserv/SqlConnection.hh"
+#include "lsst/qserv/worker/Config.h"
 #include "lsst/qserv/worker/Logger.h"
 
 namespace qWorker=lsst::qserv::worker;
@@ -154,10 +155,7 @@ void MySqlExportMgr::_init() {
     boost::regex regex(chunkedForm);
     // Check metadata for databases to track
     
-    SqlConfig config;
-    config.socket = "/u1/local/mysql.sock";
-    config.dbName = "mysql";
-    SqlConnection sc(config, true);
+    SqlConnection sc(getConfig().getSqlConfig(), true);
 
     std::deque<std::string> dbs;
 #if 1        
