@@ -20,7 +20,8 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+/// Includes Config class implementation and declarations of key
+/// environment variables for qserv worker instances.
 #include "lsst/qserv/worker/Config.h"
 
 #include <sstream>
@@ -75,6 +76,8 @@ bool validateMysql(Config const& c) {
 } // anonymous namespace
 
 ////////////////////////////////////////////////////////////////////////
+// class Config 
+////////////////////////////////////////////////////////////////////////
 Config::Config() {
     _load();
     _validate();
@@ -105,7 +108,7 @@ SqlConfig const& Config::getSqlConfig() const {
     return *_sqlConfig;
 }
 ////////////////////////////////////////////////////////////////////////
-// Config private
+// class Config private
 ////////////////////////////////////////////////////////////////////////
 char const* Config::_getEnvDefault(char const* varName, 
                                             char const* defVal) {

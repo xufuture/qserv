@@ -19,6 +19,7 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
+/// QueryPhyResult instances contain and manage result table operations
 #include "lsst/qserv/worker/QueryPhyResult.h"
 
 #include <fcntl.h>

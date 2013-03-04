@@ -19,18 +19,18 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// X houses the implementation of 
+// Logger.cc houses the implementation of class Logger. Logger is a
+// simple logging facility that abstracts log messages away from the
+// xrootd system log so that qserv worker code can be debugged outside
+// of a running xrootd instance. It also provides levels of logging
+// priority as a mechanism for reducing logging clutter. 
 #include "lsst/qserv/worker/Logger.h"
 #include <sstream>
 #include <iostream>
 #include "XrdSys/XrdSysLogger.hh"
 
-
 namespace qWorker=lsst::qserv::worker;
 using lsst::qserv::worker::Logger;
-
-namespace { // File-scope helpers
-}
 
 void Logger::message(Logger::LogLevel logLevel, char const* s) {
     if(logLevel <= _logLevel) { // Lower is higher priority
@@ -49,5 +49,3 @@ void Logger::_init() {
         _xrdSysError.reset(new XrdSysError(_log));
     }
 }
-
-

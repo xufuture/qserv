@@ -95,6 +95,7 @@ private:
     Callback* _callback;
 };
 
+/// An AddCallbackFunction implementation to provide xrootd-backed callbacks.
 class AddCallbackFunc : public qWorker::AddCallbackFunction {
 public:
     typedef boost::shared_ptr<AddCallbackFunc> Ptr;
@@ -109,6 +110,9 @@ public:
 };
 #endif // ifndef NO_XROOTD_FS
 
+/// Filesystem-based file path validation. Deprecated in favor of the
+/// internal data-structure-backed PathValidator (populated via mysqld
+/// upon startup/initialization)
 class FileValidator : public qWorker::fs::FileValidator {
 public:
     typedef boost::shared_ptr<FileValidator> Ptr;
@@ -144,10 +148,11 @@ public:
 private:
     MySqlExportMgr::StringSet const& _exports;
 };
-
-
 } // anonymous namespace
 
+////////////////////////////////////////////////////////////////////////
+// class MySqlFs
+////////////////////////////////////////////////////////////////////////
 MySqlFs::MySqlFs(boost::shared_ptr<Logger> log, XrdSysLogger* lp, 
                  char const* cFileName) 
     : XrdSfsFileSystem(), _log(log) {
@@ -234,7 +239,7 @@ int MySqlFs::getStats(char* buff, int blen) {
 }
 
 char const* MySqlFs::getVersion(void) {
-    return "$Id$";
+    return "$Id$"; // Eventually, use git describe
 }
 
 int MySqlFs::mkdir(

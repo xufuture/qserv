@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2012 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,7 +20,9 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// X is a ...
+// XrdName is a small class that helps extract the name of a running xrootd (or
+// cmsd) instance. It does this by checking an environment variable that is
+// specified to be set during initialization of any xrootd/cmsd process. 
 #ifndef LSST_QSERV_WORKER_XRDNAME_H
 #define LSST_QSERV_WORKER_XRDNAME_H
 #include <string>

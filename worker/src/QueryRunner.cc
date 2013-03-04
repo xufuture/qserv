@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2008-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -19,6 +19,9 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
+/// QueryRunner instances perform actual query execution on SQL
+/// databases using SqlConnection objects to interact with dbms
+/// instances.
  
 #include <iostream>
 #include <fcntl.h>

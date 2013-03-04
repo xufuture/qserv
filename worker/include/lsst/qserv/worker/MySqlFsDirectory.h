@@ -1,6 +1,7 @@
+// -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2008-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -33,6 +34,9 @@ namespace qserv {
 namespace worker {
 class Logger; // Forward
 
+/// MySqlFsDirectory is directory object returned by MySqlFs. It
+/// rejects directory operations because they have not been assigned
+/// any meaning in qserv.
 class MySqlFsDirectory : public XrdSfsDirectory {
 public:
     MySqlFsDirectory(boost::shared_ptr<Logger> log, char* user = 0);

@@ -19,6 +19,8 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
+/// Implements MySqlFsFile, the primary way of interfacing qserv
+/// worker functionality to an xrootd file-system interface.
  
 #include "lsst/qserv/worker/MySqlFsFile.h"
 

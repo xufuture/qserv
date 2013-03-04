@@ -19,12 +19,11 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// X houses the implementation of 
+// MySqlExportMgr implementation.
 #include "lsst/qserv/worker/MySqlExportMgr.h"
 #include <sstream>
 #include <iostream>
 #include <boost/regex.hpp>
-#include "XrdSys/XrdSysLogger.hh"
 #include "lsst/qserv/SqlConnection.hh"
 #include "lsst/qserv/worker/Config.h"
 #include "lsst/qserv/worker/Logger.h"
@@ -64,6 +63,7 @@ void getDbs(Logger& log,
     if(nothing) log.warn("No databases found to export.");
 }
 
+/// Functor to be called per-table name
 class doTable {
 public:
     doTable(boost::regex& regex, MySqlExportMgr::ChunkMap& chunkMap) 
@@ -78,7 +78,6 @@ public:
             int chunk = std::atoi(chunkStr.c_str());
             MySqlExportMgr::StringSet& ss = _chunkMap[chunk];
             ss.insert(what[1]);
-
         }
     }
 private:
@@ -86,6 +85,7 @@ private:
     MySqlExportMgr::ChunkMap& _chunkMap;
 };
 
+/// Functor for iterating over a ChunkMap and printing out its contents.
 struct printChunk {
     printChunk(std::ostream& os) : _os(os) {}
     void operator()(MySqlExportMgr::ChunkMap::value_type const& tuple) {
@@ -101,6 +101,7 @@ struct printChunk {
     std::ostream& _os;
 };
 
+/// Functor for iterating over a ChunkMap and updating a StringSet.
 struct addDbItem {
     addDbItem(std::string const& dbName, MySqlExportMgr::StringSet& stringSet) 
         : _dbName(dbName), _stringSet(stringSet) {}
@@ -139,7 +140,6 @@ public:
         
         //std::for_each(chunkMap.begin(), chunkMap.end(), printChunk(std::cout));
         // TODO: Sanity check: do all tables have the same chunks represented?
-
     }
 private:
     MySqlExportMgr::ExistMap& _existMap;
@@ -158,11 +158,8 @@ void MySqlExportMgr::_init() {
     SqlConnection sc(getConfig().getSqlConfig(), true);
 
     std::deque<std::string> dbs;
-#if 1        
+
     getDbs(_log, _name, sc, dbs);
-#else
-    dbs.push_back("LSST"); // FIXME: grab from MySQL
-#endif        
     // If we want to merge in the fs-level files/dirs, we will need the
     // export path (from getenv(XRDLCLROOT))
     // std::string exportRoot("/tmp/testExport");
@@ -184,41 +181,4 @@ void MySqlExportMgr::fillDbChunks(MySqlExportMgr::StringSet& s) {
     }
 }
 
-#if 0
-/// Need to perform as much error resiliency as this function.
-/// generates export directory paths for every chunk in every database served
-bool 
-qWorker::Metadata::generateExportPaths(std::string const& baseDir,
-                                       SqlConnection& sqlConn,
-                                       SqlErrorObject& errObj,
-                                       std::vector<std::string>& exportPaths) {
-    if (!sqlConn.selectDb(_metadataDbName, errObj)) {
-        return false;
-    }
-    std::string sql = "SELECT dbName, partitionedTables FROM Dbs";
-    SqlResults results;
-    if (!sqlConn.runQuery(sql, results, errObj)) {
-        return errObj.addErrMsg("Failed to execute: " + sql);
-    }
-    std::vector<std::string> dbs;
-    std::vector<std::string> pts; // each string = comma separated list
-    if (!results.extractFirst2Columns(dbs, pts, errObj)) {
-        return errObj.addErrMsg("Failed to receive results from: " + sql);
-    }
-    int i, s = dbs.size();
-    for (i=0; i<s ; i++) {
-        std::string dbName = dbs[i];
-        std::string tableList = pts[i];
-        if (!generateExportPathsForDb(baseDir, dbName, tableList, 
-                                      sqlConn, errObj, exportPaths)) {
-            std::stringstream ss;
-            ss << "Failed to create export dir for baseDir="
-               << baseDir << ", dbName=" << dbName << ", tableList=" 
-               << tableList << std::endl;
-            return errObj.addErrMsg(ss.str());
-        }
-    }
-    return true;
-}
-#endif
 

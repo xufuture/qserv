@@ -19,7 +19,7 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+/// Test QservOss oss plugin. 
 #define BOOST_TEST_MODULE QservOss_1
 #include "boost/test/included/unit_test.hpp"
 #include "lsst/qserv/worker/QservOss.h"

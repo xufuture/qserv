@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2012 LSST Corporation.
+ * Copyright 2012-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,7 +20,10 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// X is a ...
+// MySqlExportMgr is a class that implements the capability to retrieve
+// table publishing information from a qserv worker's associated mysqld.
+// It includes helper functions for checking this table publishing table
+// for the existence of certain xrootd paths.
 
 #ifndef LSST_QSERV_WORKER_MYSQLEXPORTMGR_H
 #define LSST_QSERV_WORKER_MYSQLEXPORTMGR_H
@@ -37,9 +40,10 @@ class Logger; // Forward
 
 class MySqlExportMgr {
 public:
-    typedef std::set<std::string> StringSet;
     typedef std::deque<std::string> StringDeque;
-    typedef std::map<int,StringSet> ChunkMap; // convert to unordered_map
+    // These should be converted to unordered_* with C++11
+    typedef std::set<std::string> StringSet;
+    typedef std::map<int,StringSet> ChunkMap; 
     typedef std::map<std::string, ChunkMap> ExistMap;
 
     MySqlExportMgr(std::string const& name, Logger& log) 

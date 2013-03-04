@@ -19,6 +19,11 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
+/// QservOss implementation. Only Stat() and StatVS() are
+/// implemented. Stat() performs path lookup and uses a fixed positive
+/// response if a match is found (error if no match). StatVS() always
+/// provides a particular arbitrary response indicating a free disk
+/// space abundance. 
 #include "lsst/qserv/worker/QservOss.h"
 #include "lsst/qserv/QservPath.hh"
 #include "lsst/qserv/worker/Logger.h"
@@ -62,8 +67,8 @@ inline void fillVSInfo(XrdOssVSInfo *sP, char const* sname) {
     }        
     
 }
-inline std::ostream& print(std::ostream& os, QservOss::HashSet const& h) {
-    QservOss::HashSet::const_iterator i;
+inline std::ostream& print(std::ostream& os, QservOss::StringSet const& h) {
+    QservOss::StringSet::const_iterator i;
     bool first = true;
     for(i = h.begin(); i != h.end(); ++i) {
         os << *i;
@@ -130,8 +135,8 @@ void QservOss::_fillQueryFileStat(struct stat &buf) {
 }
 
 bool QservOss::_checkExist(std::string const& db, int chunk) {
-    assert(_hashSet.get());
-    return MySqlExportMgr::checkExist(*_hashSet, db, chunk);
+    assert(_pathSet.get());
+    return MySqlExportMgr::checkExist(*_pathSet, db, chunk);
 }
 /******************************************************************************/
 /*                                 s t a t                                    */
@@ -228,13 +233,13 @@ int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
         _cfgFn = cfgFn;
     }
     _log->info("QservOss Init");
-    _hashSet.reset(new HashSet);
+    _pathSet.reset(new StringSet);
     MySqlExportMgr m(_name, *_log);
-    m.fillDbChunks(*_hashSet);
+    m.fillDbChunks(*_pathSet);
     // Print out diags.
     std::stringstream ss;
     ss << "Valid paths: ";
-    print(ss, *_hashSet);
+    print(ss, *_pathSet);
     _log->info(ss.str());
     // TODO: update self with new config?
     return 0;

@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
@@ -51,6 +52,10 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////
+// QueryRunnerManager manages a set of QueryRunner threads, which
+// execute queued query tasks for the fulfillment of incoming
+// ChunkQueries. 
+////////////////////////////////////////////////////////////////////////
 class QueryRunnerManager {
 public:
     QueryRunnerManager() : _limit(8), _jobTotal(0) { _init(); }
@@ -90,7 +95,7 @@ private:
     int _jobTotal;
     
     int _limit;
-    boost::mutex _mutex;    
+    boost::mutex _mutex;
 };
 }}} // lsst::qserv::worker
 #endif // LSST_QSERV_WORKER_QUERYRUNNERMANAGER_H

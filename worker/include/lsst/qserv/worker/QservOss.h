@@ -20,7 +20,13 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// X is a ...
+// QservOss is an XrdOss implementation to be used as a cmsd ofs plugin to
+// provide file stat capabilities. This implementation populates a data
+// structure via lookups on a mysqld instance and uses that structure to answer
+// stat() calls. In doing so, the cmsd no longer performs filesystem stat()
+// calls and qserv no longer requires tools to maintain an "export directory" in
+// the filesystem.
+
 
 #ifndef LSST_QSERV_WORKER_QSERVOSS_H
 #define LSST_QSERV_WORKER_QSERVOSS_H
@@ -37,6 +43,9 @@ class XrdOucEnv;
 namespace lsst { namespace qserv { namespace worker {
 class Logger;
 
+/// An XrdOssDF implementation that merely pays lip-service to incoming
+/// directory operations. QservOss objects must return XrdOssDF (or children)
+/// objects as part of their interface contract.
 class FakeOssDf : public XrdOssDF {
 public:
     virtual int Close(long long *retsz=0) { return XrdOssOK; }
@@ -48,9 +57,12 @@ public:
     ~FakeOssDf() {}
 };
 
+/// QservOss is an XrdOss implementation that answers stat() based on an
+/// internal data structure instead of filesystem polling. The internal data
+/// structure is populated by queries on an associated mysqld instance.
 class QservOss : public XrdOss {
 public:
-    typedef std::set<std::string> HashSet; // Convert to unordered_set (C++0x)
+    typedef std::set<std::string> StringSet; // Convert to unordered_set (C++0x)
     static QservOss* getInstance() {
         if(!_instance.get()) { 
             _instance.reset(new QservOss());
@@ -100,9 +112,9 @@ private:
 
     // fields (static)
     static boost::shared_ptr<QservOss> _instance;
-    boost::shared_ptr<HashSet> _hashSet;
 
     // fields (non-static)
+    boost::shared_ptr<StringSet> _pathSet;
     std::string _cfgFn;
     std::string _cfgParams;
     std::string _name;

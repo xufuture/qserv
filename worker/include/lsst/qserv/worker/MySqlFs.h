@@ -38,6 +38,7 @@ namespace worker {
 class Logger;
 class Service;
 
+/// MySqlFs is an xrootd fs plugin class
 class MySqlFs : public XrdSfsFileSystem {
 public:
     typedef std::set<std::string> StringSet;
