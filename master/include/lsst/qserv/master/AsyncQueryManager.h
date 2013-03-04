@@ -47,6 +47,7 @@ namespace master {
 class ChunkQuery;
 class MessageHandler;
 class MessageHandlerConfig;
+class MessageStore;
 class TableMerger;
 class TableMergerConfig;
 class XrdTransResult;
@@ -149,6 +150,7 @@ private:
 
     std::string _xrootdHostPort;
     boost::shared_ptr<MessageHandler> _messageHandler;
+    boost::shared_ptr<MessageStore> _messageStore;
     boost::shared_ptr<TableMerger> _merger;
     boost::shared_ptr<lsst::qserv::common::WorkQueue> _readQueue;
     boost::shared_ptr<lsst::qserv::common::WorkQueue> _writeQueue;

@@ -658,12 +658,12 @@ function read_query_result(inj)
     if (inj.type == 1) then
         print("q1 - ignoring")
         for row in inj.resultset.rows do
-           print("   " .. row[1] .. " " .. row[2])
-           if utils.startsWith(row[1], "ERR ") then
+           print("   " .. row[1] .. " " .. row[2] .. " " .. row[3])
+           -- if utils.startsWith(row[1], "ERR ") then
+           if (tonumber(row[1]) < 0) then -- errors have code < 0
               queryErrorCount  = queryErrorCount + 1
               return err.setAndSend(ERR_QSERV_RUNTIME,
-                                    "Error during execution: '"..
-                                       string.sub(row[1], 5) .."'")   
+                                    "Error during execution:\n".. row[1] .." " .. row[2] .. row[3])   
            end
         end
         return proxy.PROXY_IGNORE_RESULT

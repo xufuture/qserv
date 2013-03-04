@@ -34,6 +34,7 @@
 #include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/master/ChunkQuery.h"
 #include "lsst/qserv/master/MessageHandler.h"
+#include "lsst/qserv/master/MessageStore.h"
 #include "lsst/qserv/master/TableMerger.h"
 #include "lsst/qserv/master/Timer.h"
 #include "lsst/qserv/common/WorkQueue.h"
@@ -314,6 +315,11 @@ std::string const qMaster::AsyncQueryManager::_errorTmpl("ERROR: chunkId=%d, %s"
 
 void qMaster::AsyncQueryManager::reportError(int chunkId, int code, std::string const& description) {
     _messageHandler->writeMessage(code, (boost::format(_errorTmpl) % chunkId % description).str());
+    if (_messageStore == NULL) {
+        // Lazy instantiation of MessageStore.
+        _messageStore = boost::make_shared<MessageStore>();
+    }
+    _messageStore->addMessage(chunkId, code, description);
 }
 
 ////////////////////////////////////////////////////////////////////////

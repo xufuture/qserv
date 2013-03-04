@@ -22,6 +22,7 @@
 // queryMsg.cc houses the implementation of 
 // queryMsg.h (SWIG-exported functions for accessing QueryMessages)
 
+#include <iostream>
 #include "lsst/qserv/master/queryMsg.h"
 
 namespace qMaster=lsst::qserv::master;
@@ -29,8 +30,9 @@ namespace qMaster=lsst::qserv::master;
 namespace { // File-scope helpers
 }
 
-int qMaster::queryMsgGetMsgCount(int session) {
+int qMaster::queryMsgGetCount(int session) {
     // Get QueryMessages from session manager, call getCount()
+    std::cout << "DBG: EXCUTING queryMsgGetCount(" << session << ")" << std::endl;
     return 0; // No messages
 }
 

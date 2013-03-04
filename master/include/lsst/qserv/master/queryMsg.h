@@ -28,7 +28,7 @@
 
 namespace lsst { namespace qserv { namespace master {
 
-int queryMsgGetMsgCount(int session);
+int queryMsgGetCount(int session);
 
 // Python call: msg, code = queryMsgGetMsg(sessionId, msgNum)
 // int* msgCode matches with %apply directive to help SWIG

@@ -36,13 +36,15 @@ import lsst.qserv.master.db
 import time
 import thread
 
-from lsst.qserv.master import queryMsgGetMsgCount, queryMsgGetMsg
+from lsst.qserv.master import queryMsgGetCount, queryMsgGetMsg
 
 
 class Lock:
-    createTmpl = "CREATE TABLE IF NOT EXISTS %s (err CHAR(255), dummy FLOAT) ENGINE=MEMORY;"
+    #createTmpl = "CREATE TABLE IF NOT EXISTS %s (err CHAR(255), dummy FLOAT) ENGINE=MEMORY;"
+    createTmpl = "CREATE TABLE IF NOT EXISTS %s (code SMALLINT, message CHAR(255), timeStamp FLOAT) ENGINE=MEMORY;"
     lockTmpl = "LOCK TABLES %s WRITE;"
-    writeTmpl = "INSERT INTO %s VALUES ('%s', %f);"
+    #writeTmpl = "INSERT INTO %s VALUES ('%s', %f);"
+    writeTmpl = "INSERT INTO %s VALUES (%d, '%s', %f);"
     unlockTmpl = "UNLOCK TABLES;"
 
     def __init__(self, tablename):
@@ -55,12 +57,16 @@ class Lock:
             return False
         self.db.applySql((Lock.createTmpl % self._tableName) 
                          + (Lock.lockTmpl % self._tableName)
-                         + (Lock.writeTmpl % (self._tableName, "dummy", 
+                         #+ (Lock.writeTmpl % (self._tableName, "dummy", 
+                         #                     time.time())))
+                         + (Lock.writeTmpl % (self._tableName, 0, "Query Initialized", 
                                               time.time())))
         return True
 
     def addError(self, error): # Deprecated. Use messages object instead.
-        self.db.applySql(Lock.writeTmpl % (self._tableName, "ERR "+ error, 
+        #self.db.applySql(Lock.writeTmpl % (self._tableName, "ERR "+ error, 
+        #                                   time.time()))
+        self.db.applySql(Lock.writeTmpl % (self._tableName, -1, "ERR "+ error, 
                                            time.time()))
         pass
     def setQueryMsgId(self, queryMsgId):
