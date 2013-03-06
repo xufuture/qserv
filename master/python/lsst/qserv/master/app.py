@@ -641,28 +641,6 @@ def results(tracker, handle):
             return "Some host with some port with some db"
         return None
 
-tokens_where = [ ['where', 
-                  [ ['RA', 'between', '2', 'and', '5'] ], 
-                  'and', 
-                  [ ['DECL', 'between', '1', 'and', '10'] ]
-                  ] 
-                 ]
-
-whereList = [ ( [
-            ( ['RA', 'between', '2', 'and', '5'], 
-              {'column': [('RA', 0)] }
-              )
-            ], {}),
-              ( [ 
-            ( ['DECL', 'between', '1', 'and', '10'], 
-              {'column': [('DECL', 0)]}
-              )
-            ], {})
-              ]
-#      partmin                   partmax 
-#  rmin           rmax
-# 
-
 def clauses(col, cmin, cmax):
     return ["%s between %smin and %smax" % (cmin, col, col),
             "%s between %smin and %smax" % (cmax, col, col),
