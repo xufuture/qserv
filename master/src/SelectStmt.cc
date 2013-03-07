@@ -135,12 +135,13 @@ boost::shared_ptr<qMaster::SelectStmt>
 qMaster::SelectStmt::copyMerge() const {
     boost::shared_ptr<SelectStmt> newS(new SelectStmt(*this));
     // Starting from a shallow copy, copy only the pieces that matter
-    // for the merge clause.  ooooooooooo
+    // for the merge clause. 
     copySyntaxIf(newS->_selectList, _selectList);
     copySyntaxIf(newS->_orderBy, _orderBy);
     copySyntaxIf(newS->_groupBy, _groupBy);
     copySyntaxIf(newS->_having, _having);
-    // For the other fields, default-copied versions are okay.
+    // Eliminate the parts that don't matter, e.g., the where clause
+    newS->_whereClause.reset();
     return newS;
 }
 

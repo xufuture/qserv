@@ -69,6 +69,7 @@ private:
     void _applyLogicPlugins();
     void _generateConcrete();
     void _applyConcretePlugins();
+    void _showFinal(); // Debug
 
     // Fields
     boost::shared_ptr<SelectStmt> _stmt;

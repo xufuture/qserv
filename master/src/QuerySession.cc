@@ -77,7 +77,9 @@ void QuerySession::setQuery(std::string const& q) {
     _applyLogicPlugins();
     _generateConcrete();
     _applyConcretePlugins();
-        
+    _showFinal(); // DEBUG
+    
+    /// OBSOLETE
     PlanWriter pw;
     pw.write(*_stmt, _chunks);
     // Perform parse.
@@ -181,6 +183,17 @@ void QuerySession::_applyConcretePlugins() {
     for(i=_plugins->begin(); i != _plugins->end(); ++i) {
         (**i).applyPhysical(p);
     }
+}
+
+
+/// Some code useful for debugging. 
+void QuerySession::_showFinal() {
+    // Print out the end result.
+    QueryTemplate par = _stmtParallel->getTemplate();
+    QueryTemplate mer = _stmtMerge->getTemplate();
+    
+    std::cout << "parallel: " << par.dbgStr() << std::endl;
+    std::cout << "merge: " << mer.dbgStr() << std::endl;
 }
 
 
