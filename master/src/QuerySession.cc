@@ -133,6 +133,8 @@ QuerySession::Iter QuerySession::cQueryEnd() {
 
 
 void QuerySession::_preparePlugins() {
+    _plugins.reset(new PluginList);
+
     _plugins->push_back(QueryPlugin::newInstance("Aggregate"));
     PluginList::iterator i;
     for(i=_plugins->begin(); i != _plugins->end(); ++i) {
@@ -202,5 +204,6 @@ void QuerySession::Iter::_buildCache() const {
 // initQuerySession
 ////////////////////////////////////////////////////////////////////////
 void lsst::qserv::master::initQuerySession() {
-    registerAggregatePlugin();
+    // Plugins should probably be registered once, at startup.
+    registerAggregatePlugin(); 
 }

@@ -22,9 +22,14 @@
 // QueryPlugin houses the implementation of the factory lookup code
 // for QueryPlugins. 
 #include "lsst/qserv/master/QueryPlugin.h"
-#include "lsst/qserv/master/PluginNotFoundError.h"
+
 
 #include <map>
+#include <boost/thread/locks.hpp>
+#include <boost/thread/mutex.hpp>
+//#include <boost/thread/call_once.hpp>
+
+#include "lsst/qserv/master/PluginNotFoundError.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::QueryPlugin;
@@ -32,12 +37,18 @@ using lsst::qserv::master::QueryPlugin;
 namespace { // File-scope helpers
 typedef std::map<std::string, QueryPlugin::FactoryPtr> FactoryMap;
 
+//boost::once_flag factoryMapFlag = BOOST_ONCE_INIT;
+boost::mutex factoryMapMutex;
+
 // Static local member
-static FactoryMap factoryMap; 
-}
+static FactoryMap factoryMap;
+
+} // anonymous namespace
 
 QueryPlugin::Ptr
 QueryPlugin::newInstance(std::string const& name) {
+    boost::lock_guard<boost::mutex> guard(factoryMapMutex);
+
     FactoryMap::iterator e = factoryMap.find(name);
     if(e == factoryMap.end()) { // No plugin.
         throw PluginNotFoundError(name);
@@ -49,6 +60,7 @@ QueryPlugin::newInstance(std::string const& name) {
 
 void
 QueryPlugin::registerClass(QueryPlugin::FactoryPtr f) {
+    boost::lock_guard<boost::mutex> guard(factoryMapMutex);
     if(!f.get()) return;    
     factoryMap[f->getName()] = f;
 }

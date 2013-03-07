@@ -40,6 +40,7 @@ using lsst::qserv::master::SqlSubstitution;
 using lsst::qserv::master::SqlParseRunner;
 using lsst::qserv::master::SelectParser;
 using lsst::qserv::master::SelectStmt;
+namespace qMaster = lsst::qserv::master;
 
 namespace test = boost::test_tools;
 
@@ -96,6 +97,11 @@ void testParse2(SelectParser::Ptr p) {
 }
 
 } // anonymous namespace
+
+struct StaticFixture {
+    StaticFixture() { qMaster::initQuerySession(); }
+    ~StaticFixture() {}
+};
 
 struct ParserFixture {
     ParserFixture(void) 
@@ -208,6 +214,7 @@ void tryAggregate() {
 ////////////////////////////////////////////////////////////////////////
 // CppParser basic tests
 ////////////////////////////////////////////////////////////////////////
+BOOST_GLOBAL_FIXTURE(StaticFixture)
 BOOST_FIXTURE_TEST_SUITE(CppParser, ParserFixture)
 
 BOOST_AUTO_TEST_CASE(TrivialSub) {

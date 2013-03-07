@@ -36,7 +36,7 @@ class PluginNotFoundError: public std::exception {
 public:
     explicit PluginNotFoundError(std::string const& name) {
         std::stringstream ss;
-        ss << "Plugin '" << name << " requested but not found.";
+        ss << "PluginNotFoundError '" << name << "' requested but not found.";
         _descr = ss.str();
     }
     virtual ~PluginNotFoundError() throw() {}
