@@ -27,26 +27,13 @@
 #include "lsst/qserv/master/dispatcher.h"
 #include "lsst/qserv/master/thread.h"
 #include "lsst/qserv/master/xrootd.h"
-#include "lsst/qserv/master/SessionManager.h"
+#include "lsst/qserv/master/SessionManagerAsync.h"
 #include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/QservPath.hh"
 
 namespace qMaster = lsst::qserv::master;
 
-using lsst::qserv::master::SessionManager;
-typedef SessionManager<qMaster::AsyncQueryManager::Ptr> SessionMgr;
-typedef boost::shared_ptr<SessionMgr> SessionMgrPtr;
 namespace {
-
-    SessionMgr& getSessionManager() {
-        // Singleton for now.
-        static SessionMgrPtr sm;
-        if(sm.get() == NULL) {
-            sm = boost::make_shared<SessionMgr>();
-        }
-        assert(sm.get() != NULL);
-        return *sm;
-    }
 
     // Deprecated
     qMaster::QueryManager& getManager(int session) {
@@ -56,10 +43,6 @@ namespace {
             qm = boost::make_shared<qMaster::QueryManager>();
         }
         return *qm;
-    }
-
-    qMaster::AsyncQueryManager& getAsyncManager(int session) {
-        return *(getSessionManager().getSession(session));
     }
 }
 
@@ -294,7 +277,7 @@ qMaster::getErrorDesc(int session) {
 int qMaster::newSession(std::map<std::string,std::string> const& config) {
     AsyncQueryManager::Ptr m = 
         boost::make_shared<qMaster::AsyncQueryManager>(config);
-    int id = getSessionManager().newSession(m);
+    int id = getSessionManagerAsync().newSession(m);
     return id;
 }
 
@@ -311,7 +294,7 @@ std::string qMaster::getSessionResultName(int session) {
 }
 
 void qMaster::discardSession(int session) {
-    getSessionManager().discardSession(session);
+    getSessionManagerAsync().discardSession(session);
     return; 
 }
 
