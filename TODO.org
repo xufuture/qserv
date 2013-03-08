@@ -1,3 +1,36 @@
+* TODO Outils python
+
+avant que j'oublie:
+
+- nommage: le mieux, c'est de suivre PEP8.
+http://www.python.org/dev/peps/pep-0008/
+y a meme un programme qui verife les coding rules de pep8:
+https://pypi.python.org/pypi/pep8
+
+pour les modules python ecrits en C, il y a pep7:
+http://www.python.org/dev/peps/pep-0007/
+
+y a aussi un py-lint like:
+https://pypi.python.org/pypi/pyflakes
+
+- refactoring: y a un module emacs (rope).
+je suppose que pydev (le module python pour eclipse) a egalement du
+support pour ca. (pas teste)
+
+- logger: le module de la stdlib nous (atlas) a suffi.
+
+- test unitaire: unittest (de la stdlib) nous a suffi, meme si j'ai
+entendu bcp de bien de "nose" (utilise par numpy/scipy)
+
+- IDE: emacs, vim ou eclipse (pour ceux qui ont de la RAM :P)
+
+- coverage (pypi)
+
+pour un peu de doc (en plus de celle officielle sur docs.python.org)
+sur les modules de la stdlib:
+http://pymotw.com
+
+-s
 * TODO ask SLAC how chunk number 7200 is computed depending on stripes and substripes, it seems it is  2*60*60, why ? 
 * TODO W13 :could you copy it at the CC-IN2P3 with the schema ??
 * TODO are they interested in generalizing our design used in tests : 
