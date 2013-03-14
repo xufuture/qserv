@@ -23,7 +23,7 @@
 // is responsible for constructing FromList from an ANTLR parse tree.
 
 #include "lsst/qserv/master/FromFactory.h"
-#include "lsst/qserv/master/SelectList.h" // for class FromList
+#include "lsst/qserv/master/FromList.h" // for class FromList
 // C++
 #include <deque>
 #include <iterator>

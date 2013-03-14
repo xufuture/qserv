@@ -45,6 +45,7 @@
 #include "lsst/qserv/master/ColumnRefH.h"
 #include "lsst/qserv/master/ColumnAliasMap.h"
 #include "lsst/qserv/master/SelectList.h"
+#include "lsst/qserv/master/FromList.h"
 #include "lsst/qserv/master/GroupByClause.h"
 #include "lsst/qserv/master/WhereClause.h"
 // myself

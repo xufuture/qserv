@@ -84,25 +84,6 @@ private:
     boost::shared_ptr<ColumnRefMap const> _aliasMap;
 };
 
-class FromList {
-public:
-    FromList() : _columnRefList(new ColumnRefList()) {}
-    ~FromList() {}
-    boost::shared_ptr<ColumnRefList> getColumnRefList() {
-        return _columnRefList;
-    }
-    std::string getGenerated();
-    void renderTo(QueryTemplate& qt) const;
-    boost::shared_ptr<FromList> copySyntax();
-
-private:
-    friend std::ostream& operator<<(std::ostream& os, FromList const& fl);
-    friend class FromFactory;
-
-    boost::shared_ptr<ColumnRefList> _columnRefList;
-    TableRefnListPtr _tableRefns;
-};
-
 class OrderByTerm {
 public:
     enum Order {DEFAULT, ASC, DESC};

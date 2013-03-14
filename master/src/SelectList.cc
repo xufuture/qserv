@@ -44,7 +44,6 @@ using lsst::qserv::master::ColumnRefList;
 using lsst::qserv::master::ValueExpr;
 using lsst::qserv::master::ValueExprPtr;
 using lsst::qserv::master::SelectList;
-using lsst::qserv::master::FromList;
 using lsst::qserv::master::OrderByClause;
 using lsst::qserv::master::HavingClause;
 namespace qMaster=lsst::qserv::master;
@@ -221,44 +220,6 @@ boost::shared_ptr<SelectList> qMaster::SelectList::copySyntax() {
     newS->_valueExprList.reset(new ValueExprList(*_valueExprList));
     // For the other fields, default-copied versions are okay.
     return newS;
-}
-////////////////////////////////////////////////////////////////////////
-// FromList
-////////////////////////////////////////////////////////////////////////
-std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::FromList const& fl) {
-    os << "FROM ";
-    if(fl._tableRefns.get() && fl._tableRefns->size() > 0) {
-        TableRefnList const& refList = *(fl._tableRefns);
-        std::copy(refList.begin(), refList.end(),
-                  std::ostream_iterator<TableRefN::Ptr>(os,", "));
-    } else {
-        os << "(empty)";
-    }
-    return os;
-}
-
-std::string
-qMaster::FromList::getGenerated() {
-    QueryTemplate qt;
-    renderTo(qt);
-    return qt.dbgStr();
-}
-
-void
-qMaster::FromList::renderTo(qMaster::QueryTemplate& qt) const {
-    if(_tableRefns.get() && _tableRefns->size() > 0) {
-        TableRefnList const& refList = *_tableRefns;
-        std::for_each(refList.begin(), refList.end(), TableRefN::render(qt));
-    } 
-}
-
-boost::shared_ptr<qMaster::FromList> qMaster::FromList::copySyntax() {
-    boost::shared_ptr<FromList> newL(new FromList(*this));
-    // Shallow copy of expr list is okay.
-    newL->_tableRefns.reset(new TableRefnList(*_tableRefns));
-    // For the other fields, default-copied versions are okay.
-    return newL;
 }
 ////////////////////////////////////////////////////////////////////////
 // OrderByTerm
