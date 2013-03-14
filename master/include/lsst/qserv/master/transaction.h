@@ -74,15 +74,6 @@ private:
     boost::shared_ptr<ConstraintVector> _vec;
 };
 
-class ChunkSpec {
-public:
-    int chunkId;
-    std::vector<int> subChunks;
-    void addSubChunk(int s) { subChunks.push_back(s); }
-};
-typedef std::list<ChunkSpec> ChunkSpecList;
-typedef std::vector<ChunkSpec> ChunkSpecVector;
-
 }}} // namespace lsst::qserv::master
 
 #endif // LSST_QSERV_MASTER_TRANSACTION_H

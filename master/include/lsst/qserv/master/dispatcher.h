@@ -34,7 +34,8 @@
 namespace lsst {
 namespace qserv {
 namespace master {
-    
+class ChunkSpec; // Forward    
+
 enum QueryState {UNKNOWN, WAITING, DISPATCHED, SUCCESS, ERROR};
 
 void initDispatcher();

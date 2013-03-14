@@ -20,31 +20,31 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// PlanWriter is a class that writes SelectPlan objects from SelectStmt
-// objects.
+// ChunkSpec is a type that bundles the per-chunk information that is used to
+// compose a concrete chunk query for a specific chunk from an input parsed
+// query statement. 
 
-#ifndef LSST_QSERV_MASTER_PLANWRITER_H
-#define LSST_QSERV_MASTER_PLANWRITER_H
-#include "lsst/qserv/master/transaction.h"
-#include "lsst/qserv/master/ChunkSpec.h"
-#include <boost/shared_ptr.hpp>
+#ifndef LSST_QSERV_MASTER_CHUNKSPEC_H
+#define LSST_QSERV_MASTER_CHUNKSPEC_H
+#include <iostream>
+#include <list>
+#include <vector>
 
 namespace lsst { namespace qserv { namespace master {
-class SelectPlan;
-class SelectStmt;
 
-class PlanWriter {
+class ChunkSpec {
 public:
-    PlanWriter() {}
-
-    boost::shared_ptr<SelectPlan> write(SelectStmt const& ss, 
-                                        ChunkSpecList const& specs);
-private:
-
+    int chunkId;
+    std::vector<int> subChunks;
+    void addSubChunk(int s) { subChunks.push_back(s); }
 };
+std::ostream& operator<<(std::ostream& os, ChunkSpec const& c);
+
+typedef std::list<ChunkSpec> ChunkSpecList;
+typedef std::vector<ChunkSpec> ChunkSpecVector;
 
 }}} // namespace lsst::qserv::master
 
 
-#endif // LSST_QSERV_MASTER_PLANWRITER_H
+#endif // LSST_QSERV_MASTER_CHUNKSPEC_H
 

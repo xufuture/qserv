@@ -29,6 +29,7 @@
 #include "lsst/qserv/master/xrootd.h"
 #include "lsst/qserv/master/SessionManager.h"
 #include "lsst/qserv/master/AsyncQueryManager.h"
+#include "lsst/qserv/master/ChunkSpec.h"
 #include "lsst/qserv/master/QuerySession.h"
 #include "lsst/qserv/QservPath.hh"
 #include <sstream>

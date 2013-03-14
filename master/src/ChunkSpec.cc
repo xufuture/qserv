@@ -1,7 +1,6 @@
-// -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2012 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,31 +19,23 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// PlanWriter is a class that writes SelectPlan objects from SelectStmt
-// objects.
-
-#ifndef LSST_QSERV_MASTER_PLANWRITER_H
-#define LSST_QSERV_MASTER_PLANWRITER_H
-#include "lsst/qserv/master/transaction.h"
+// Implementation of helper printers for ChunkSpec
 #include "lsst/qserv/master/ChunkSpec.h"
-#include <boost/shared_ptr.hpp>
+#include <iterator>
 
+namespace qMaster=lsst::qserv::master;
+
+namespace { // File-scope helpers
+}
 namespace lsst { namespace qserv { namespace master {
-class SelectPlan;
-class SelectStmt;
-
-class PlanWriter {
-public:
-    PlanWriter() {}
-
-    boost::shared_ptr<SelectPlan> write(SelectStmt const& ss, 
-                                        ChunkSpecList const& specs);
-private:
-
-};
-
+std::ostream& operator<<(std::ostream& os, ChunkSpec const& c) {
+    os << "ChunkSpec[" 
+       << "chunkId=" << c.chunkId
+       << " subChunks:";
+    std::copy(c.subChunks.begin(), c.subChunks.end(), 
+              std::ostream_iterator<int>(os, ","));
+    os << "]";
+    return os;
+}
 }}} // namespace lsst::qserv::master
-
-
-#endif // LSST_QSERV_MASTER_PLANWRITER_H
 
