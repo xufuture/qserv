@@ -69,7 +69,7 @@ void qMaster::ColumnRef::render(QueryTemplate& qt) const {
 ValueExprPtr ValueExpr::newColumnRefExpr(boost::shared_ptr<ColumnRef const> cr) {
     ValueExprPtr expr(new ValueExpr());
     expr->_type = COLUMNREF;
-    expr->_columnRef = cr;
+    expr->_columnRef.reset(new ColumnRef(*cr));
     return expr;
 }
 
@@ -92,6 +92,14 @@ ValueExprPtr ValueExpr::newAggExpr(boost::shared_ptr<FuncExpr> fe) {
     ValueExprPtr expr(new ValueExpr());
     expr->_type = AGGFUNC;
     expr->_funcExpr = fe;
+    return expr;
+}
+
+ValueExprPtr
+ValueExpr::newConstExpr(std::string const& alnum) {
+    ValueExprPtr expr(new ValueExpr());
+    expr->_type = CONST;
+    expr->_tableStar = alnum;
     return expr;
 }
 

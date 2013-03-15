@@ -43,8 +43,11 @@ class ValueExpr {
 public:
     enum Type { COLUMNREF, FUNCTION, AGGFUNC, STAR, CONST };
 
+    // May need non-const, otherwise, need new construction
     boost::shared_ptr<ColumnRef const> getColumnRef() const { return _columnRef; }
-    boost::shared_ptr<FuncExpr> getFuncExpr() const { return _funcExpr; }
+    boost::shared_ptr<ColumnRef> getColumnRef() { return _columnRef; }
+    boost::shared_ptr<FuncExpr const> getFuncExpr() const { return _funcExpr; }
+    boost::shared_ptr<FuncExpr> getFuncExpr() { return _funcExpr; }
     Type getType() const { return _type; }
     std::string const& getAlias() const { return _alias; }
     void setAlias(std::string const& a) { _alias = a; }
@@ -54,14 +57,15 @@ public:
     static ValueExprPtr newStarExpr(std::string const& table);
     static ValueExprPtr newAggExpr(boost::shared_ptr<FuncExpr> fe);
     static ValueExprPtr newFuncExpr(boost::shared_ptr<FuncExpr> fe);
+    static ValueExprPtr newConstExpr(std::string const& alnum);
     friend std::ostream& operator<<(std::ostream& os, ValueExpr const& ve);
     friend std::ostream& operator<<(std::ostream& os, ValueExpr const* ve);
 
     class render;
     friend class render;
-    //private:
+private:
     Type _type;
-    boost::shared_ptr<ColumnRef const> _columnRef;
+    boost::shared_ptr<ColumnRef> _columnRef;
     boost::shared_ptr<FuncExpr> _funcExpr;
     std::string _alias;
     std::string _tableStar; // Reused as const val (no tablestar)

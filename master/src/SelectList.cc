@@ -131,11 +131,10 @@ SelectList::dbgPrint() const {
     
 }
 ValueExprPtr _newColumnRef(antlr::RefAST v) {
-    ValueExprPtr e(new ValueExpr());
-    e->_type = ValueExpr::COLUMNREF;
-    e->_columnRef.reset(new qMaster::ColumnRef("","",qMaster::walkSiblingString(v) + "FIXME"));
+    std::string refStr = qMaster::walkSiblingString(v) + "FIXME";
+    boost::shared_ptr<ColumnRef> cr(new ColumnRef( "","", refStr));
+    return  ValueExpr::newColumnRefExpr(cr);
     //std::cout << "need to make column ref out of " << qMaster::tokenText(v) << std::endl;
-    return e;
 }
 
 ValueExprPtr _newValueExpr(antlr::RefAST v) {

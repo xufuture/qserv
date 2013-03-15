@@ -36,6 +36,7 @@ namespace qMaster = lsst::qserv::master;
 using qMaster::ValueExpr;
 using qMaster::FuncExpr;
 using qMaster::ValueExprFactory;
+using qMaster::ColumnRef;
 using qMaster::ColumnRefMap;
 using qMaster::tokenText;
 using antlr::RefAST;
@@ -72,20 +73,20 @@ newColumnExpr(antlr::RefAST expr, ColumnRefMap& cMap) {
     switch(expr->getType()) {
     case SqlSQL2TokenTypes::REGULAR_ID: 
         // make column ref. (no further children)
-        ve->_type = ValueExpr::COLUMNREF;
         {
             ColumnRefMap::Map::const_iterator it = cMap.map.find(expr);
             assert(it != cMap.map.end()); // Consider an exception instead
             ColumnRefMap::Ref r = it->second;
-            ve->_columnRef.reset(new qMaster::ColumnRef(tokenText(r.db),
-                                                        tokenText(r.table),
-                                                        tokenText(r.column)));
+            boost::shared_ptr<ColumnRef> newColumnRef;
+            newColumnRef.reset(new qMaster::ColumnRef(tokenText(r.db),
+                                                      tokenText(r.table),
+                                                      tokenText(r.column)));
+            ve = ValueExpr::newColumnRefExpr(newColumnRef);
         }
         return ve;    
     case SqlSQL2TokenTypes::FUNCTION_SPEC:
         //        std::cout << "col child (fct): " << child->getType() << " "
         //                  << child->getText() << std::endl;
-        ve->_type = ValueExpr::FUNCTION;
         fe.reset(new FuncExpr());
         last = walkToSiblingBefore(child, SqlSQL2TokenTypes::LEFT_PAREN);
         fe->name = getSiblingStringBounded(child, last);
@@ -106,7 +107,7 @@ newColumnExpr(antlr::RefAST expr, ColumnRefMap& cMap) {
             }
             fe->params.push_back(pve);
         }
-        ve->_funcExpr = fe;
+        ve = ValueExpr::newFuncExpr(fe);
         return ve;
         
         break;
@@ -119,7 +120,6 @@ newColumnExpr(antlr::RefAST expr, ColumnRefMap& cMap) {
 
 boost::shared_ptr<ValueExpr> 
 newSetFctSpec(RefAST expr, ColumnRefMap& cMap) {
-    boost::shared_ptr<ValueExpr> ve(new ValueExpr());
     boost::shared_ptr<FuncExpr> fe(new FuncExpr());
     //    std::cout << "set_fct_spec " << walkTreeString(expr) << std::endl;
     RefAST nNode = expr->getFirstChild();
@@ -137,26 +137,19 @@ newSetFctSpec(RefAST expr, ColumnRefMap& cMap) {
         pve = newColumnExpr(current->getFirstChild(), cMap);
         break;
     case SqlSQL2TokenTypes::ASTERISK: 
-        pve.reset(new ValueExpr());
-        pve->_type = ValueExpr::STAR;
+        pve = ValueExpr::newStarExpr("");
         break;
     default: break;
     }
     current = current->getNextSibling();
     assert(current->getType() == SqlSQL2TokenTypes::RIGHT_PAREN); 
     fe->params.push_back(pve);
-    // Now fill-out ValueExpr
-    ve->_type = ValueExpr::AGGFUNC;
-    ve->_funcExpr = fe;
-    return ve;
+    return ValueExpr::newAggExpr(fe);
 }
 
 boost::shared_ptr<ValueExpr> 
 newConstExpr(RefAST expr) {
-    boost::shared_ptr<ValueExpr> ve(new ValueExpr());
-    ve->_tableStar = qMaster::walkTreeString(expr);
-    ve->_type = ValueExpr::CONST;
-    return ve;
+    return ValueExpr::newConstExpr(qMaster::walkTreeString(expr));
 }
 
 

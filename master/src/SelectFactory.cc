@@ -234,7 +234,7 @@ SelectListFactory::_addSelectColumn(RefAST expr) {
     // Annotate if alias found.
     RefAST alias = _aliases->getAlias(expr);
     if(alias.get()) {
-        ve->_alias = tokenText(alias);
+        ve->setAlias(tokenText(alias));
     }
     _valueExprList->push_back(ve);
 }
