@@ -89,6 +89,9 @@ qMaster::GroupByClause::renderTo(qMaster::QueryTemplate& qt) const {
     qt.append(ss.str()); // FIXME
 }
 #endif
+boost::shared_ptr<GroupByClause> GroupByClause::copyDeep() {
+    return boost::make_shared<GroupByClause>(*this); // FIXME
+}
 boost::shared_ptr<GroupByClause> GroupByClause::copySyntax() {
     return boost::make_shared<GroupByClause>(*this);
 }

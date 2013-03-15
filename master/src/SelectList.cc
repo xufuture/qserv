@@ -212,6 +212,23 @@ qMaster::SelectList::renderTo(qMaster::QueryTemplate& qt) const {
                   ValueExpr::render(qt));
 
 }
+struct copyValueExpr {
+    qMaster::ValueExprPtr operator()(ValueExprPtr const& p) {
+        return p->clone();
+    }
+};
+boost::shared_ptr<SelectList> qMaster::SelectList::copyDeep() {
+    boost::shared_ptr<SelectList> newS(new SelectList(*this));
+    newS->_valueExprList.reset(new ValueExprList());
+    ValueExprList& src = *_valueExprList;
+    std::transform(src.begin(), src.end(), 
+                   std::back_inserter(*newS->_valueExprList),
+                   // std::mem_fun(&ValueExpr::clone));
+                   copyValueExpr());
+
+    // For the other fields, default-copied versions are okay.
+    return newS;
+}
 
 boost::shared_ptr<SelectList> qMaster::SelectList::copySyntax() {
     boost::shared_ptr<SelectList> newS(new SelectList(*this));
@@ -264,6 +281,9 @@ qMaster::OrderByClause::renderTo(qMaster::QueryTemplate& qt) const {
     qt.append(ss.str());
     // FIXME
 }
+boost::shared_ptr<OrderByClause> OrderByClause::copyDeep() {
+    return boost::make_shared<OrderByClause>(*this); // FIXME
+}
 boost::shared_ptr<OrderByClause> OrderByClause::copySyntax() {
     return boost::make_shared<OrderByClause>(*this);
 }
@@ -290,6 +310,9 @@ qMaster::HavingClause::renderTo(qMaster::QueryTemplate& qt) const {
     }
 }
 
+boost::shared_ptr<HavingClause> HavingClause::copyDeep() {
+    return boost::make_shared<HavingClause>(*this); // FIXME
+}
 boost::shared_ptr<HavingClause> HavingClause::copySyntax() {
     return boost::make_shared<HavingClause>(*this);
 }

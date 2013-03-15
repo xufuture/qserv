@@ -69,6 +69,7 @@ public:
     void dbgPrint() const;
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
+    boost::shared_ptr<SelectList> copyDeep();
     boost::shared_ptr<SelectList> copySyntax();
 
     // non-const accessor for query manipulation.
@@ -117,6 +118,7 @@ public:
 
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
+    boost::shared_ptr<OrderByClause> copyDeep();
     boost::shared_ptr<OrderByClause> copySyntax();
 
 private:
@@ -134,6 +136,7 @@ public:
 
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
+    boost::shared_ptr<HavingClause> copyDeep();
     boost::shared_ptr<HavingClause> copySyntax();
 
 private:

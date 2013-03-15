@@ -62,6 +62,7 @@ public:
 
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
+    boost::shared_ptr<GroupByClause> copyDeep();
     boost::shared_ptr<GroupByClause> copySyntax();
 
 private:

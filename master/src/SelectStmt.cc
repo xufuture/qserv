@@ -76,10 +76,15 @@ inline void renderTemplate(qMaster::QueryTemplate& qt,
 }
 template <typename T>
 inline void 
+copyDeepIf(boost::shared_ptr<T>& dest, boost::shared_ptr<T> source) {
+    if(source.get()) dest = source->copyDeep();
+}
+template <typename T>
+inline void 
 copySyntaxIf(boost::shared_ptr<T>& dest, boost::shared_ptr<T> source) {
     if(source.get()) dest = source->copySyntax();
 }
-}
+} // namespace
 ////////////////////////////////////////////////////////////////////////
 // class SelectStmt
 ////////////////////////////////////////////////////////////////////////
@@ -119,15 +124,15 @@ qMaster::SelectStmt::getWhere() const {
 }
 
 boost::shared_ptr<qMaster::SelectStmt> 
-qMaster::SelectStmt::copySyntax() const {
+qMaster::SelectStmt::copyDeep() const {
     boost::shared_ptr<SelectStmt> newS(new SelectStmt(*this));
     // Starting from a shallow copy, make a copy of the syntax portion.
-    copySyntaxIf(newS->_fromList, _fromList);
-    copySyntaxIf(newS->_selectList, _selectList);
-    copySyntaxIf(newS->_whereClause, _whereClause);
-    copySyntaxIf(newS->_orderBy, _orderBy);
-    copySyntaxIf(newS->_groupBy, _groupBy);
-    copySyntaxIf(newS->_having, _having);
+    copyDeepIf(newS->_fromList, _fromList);
+    copyDeepIf(newS->_selectList, _selectList);
+    copyDeepIf(newS->_whereClause, _whereClause);
+    copyDeepIf(newS->_orderBy, _orderBy);
+    copyDeepIf(newS->_groupBy, _groupBy);
+    copyDeepIf(newS->_having, _having);
     // For the other fields, default-copied versions are okay.
     return newS;
 }
@@ -143,6 +148,20 @@ qMaster::SelectStmt::copyMerge() const {
     copySyntaxIf(newS->_having, _having);
     // Eliminate the parts that don't matter, e.g., the where clause
     newS->_whereClause.reset();
+    return newS;
+}
+
+boost::shared_ptr<qMaster::SelectStmt> 
+qMaster::SelectStmt::copySyntax() const {
+    boost::shared_ptr<SelectStmt> newS(new SelectStmt(*this));
+    // Starting from a shallow copy, make a copy of the syntax portion.
+    copySyntaxIf(newS->_fromList, _fromList);
+    copySyntaxIf(newS->_selectList, _selectList);
+    copySyntaxIf(newS->_whereClause, _whereClause);
+    copySyntaxIf(newS->_orderBy, _orderBy);
+    copySyntaxIf(newS->_groupBy, _groupBy);
+    copySyntaxIf(newS->_having, _having);
+    // For the other fields, default-copied versions are okay.
     return newS;
 }
 

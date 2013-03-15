@@ -62,3 +62,12 @@ boost::shared_ptr<qMaster::FromList> qMaster::FromList::copySyntax() {
     // For the other fields, default-copied versions are okay.
     return newL;
 }
+
+boost::shared_ptr<qMaster::FromList> qMaster::FromList::copyDeep() const {
+    // FIXME
+    boost::shared_ptr<FromList> newL(new FromList(*this));
+    // Shallow copy of expr list is okay.
+    newL->_tableRefns.reset(new TableRefnList(*_tableRefns));
+    // For the other fields, default-copied versions are okay.
+    return newL;
+}

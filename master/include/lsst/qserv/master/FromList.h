@@ -38,8 +38,11 @@ public:
     boost::shared_ptr<ColumnRefList> getColumnRefList() {
         return _columnRefList;
     }
+    TableRefnList& getTableRefnList() { return *_tableRefns; }
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
+
+    boost::shared_ptr<FromList> copyDeep() const;
     boost::shared_ptr<FromList> copySyntax();
 
 private:

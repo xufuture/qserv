@@ -77,6 +77,18 @@ void WhereClause::renderTo(QueryTemplate& qt) const {
     }
 }
 
+boost::shared_ptr<WhereClause> WhereClause::copyDeep() const {
+    // FIXME
+    boost::shared_ptr<WhereClause> newC(new WhereClause(*this));
+    // Shallow copy of expr list is okay.
+    if(_tree.get()) {
+        newC->_tree = _tree->copySyntax();
+    }
+    // For the other fields, default-copied versions are okay.
+    return newC;
+
+}
+
 boost::shared_ptr<WhereClause> WhereClause::copySyntax() {
     boost::shared_ptr<WhereClause> newC(new WhereClause(*this));
     // Shallow copy of expr list is okay.

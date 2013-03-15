@@ -43,6 +43,10 @@ public:
     virtual std::string const& getTable() const = 0;
     virtual std::ostream& putStream(std::ostream& os) const = 0;
     virtual void putTemplate(QueryTemplate& qt) const = 0;
+
+    // Modifiers:
+    virtual void setAlias(std::string const& a) { alias=a; }
+
     class render;
 protected:
     TableRefN(std::string const& alias_) : alias(alias_) {}

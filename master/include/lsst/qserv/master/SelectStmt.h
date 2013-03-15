@@ -62,13 +62,20 @@ public:
 
     boost::shared_ptr<WhereClause const> getWhere() const;
     QueryTemplate getTemplate() const;
+    boost::shared_ptr<SelectStmt> copyDeep() const;
+    boost::shared_ptr<SelectStmt> copyMerge() const;    
     boost::shared_ptr<SelectStmt> copySyntax() const;
-    boost::shared_ptr<SelectStmt> copyMerge() const;
 
     SelectList const& getSelectList() const { return *_selectList; }
     SelectList& getSelectList() { return *_selectList; }
 
-// private: // public for now.
+    FromList const& getFromList() const { return *_fromList; }
+    FromList& getFromList() { return *_fromList; }
+
+    WhereClause const& getWhereClause() const { return *_whereClause; }
+    WhereClause& getWhereClause() { return *_whereClause; }
+
+ private: // public for now.
     // Declarations
     friend class SelectFactory;
 
