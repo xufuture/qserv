@@ -108,83 +108,99 @@ WhereClause::_resetRestrs() {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// BoolTerm section
+// WhereClause::ValueExprIter 
 ////////////////////////////////////////////////////////////////////////
-std::ostream& qMaster::OrTerm::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
-}
-std::ostream& qMaster::AndTerm::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
-}
-std::ostream& qMaster::BoolFactor::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
-}
-std::ostream& qMaster::UnknownTerm::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
-}
-std::ostream& qMaster::PassTerm::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
-}
-std::ostream& qMaster::ValueExprTerm::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
-}
-class qMaster::BoolTerm::render {
-public:
-    render(QueryTemplate& qt_) : qt(qt_) {}
-    void operator()(BoolTerm::Ptr const& t) {
-        t->renderTo(qt);
-    }
-    QueryTemplate& qt;
-};
-namespace {
-template <typename Plist>
-inline void renderList(qMaster::QueryTemplate& qt, 
-                       Plist const& lst, 
-                       std::string const& sep) {
-    int count=0;
-    typename Plist::const_iterator i;
-    for(i = lst.begin(); i != lst.end(); ++i) {
-        if(!sep.empty() && ++count > 1) { qt.append(sep); }
-        assert(i->get());
-        (**i).renderTo(qt);
-    }
-}
-}
-void qMaster::OrTerm::renderTo(QueryTemplate& qt) const {
-    renderList(qt, _terms, "OR");
-}
-void qMaster::AndTerm::renderTo(QueryTemplate& qt) const {
-    renderList(qt, _terms, "AND");
-}
-void qMaster::BoolFactor::renderTo(QueryTemplate& qt) const {
-    std::string s;
-    renderList(qt, _terms, s);
-}
-void qMaster::UnknownTerm::renderTo(QueryTemplate& qt) const {
-    qt.append("unknown");
-}
-void qMaster::PassTerm::renderTo(QueryTemplate& qt) const {
-    qt.append(_text);
-}
-void qMaster::ValueExprTerm::renderTo(QueryTemplate& qt) const {
-    ValueExpr::render r(qt);
-    r(_expr);
-    assert(_expr.get());
+WhereClause::ValueExprIter::ValueExprIter(boost::shared_ptr<WhereClause> wc, 
+                                          boost::shared_ptr<BoolTerm> bPos) 
+    : _wc(wc) {
+    // How to iterate: walk the bool term tree!
+    // Starting point: BoolTerm
+    // _bPos = tree
+    // _bIter = _bPos->iterBegin()
+    PosTuple p(bPos->iterBegin(), bPos->iterEnd()); // Initial position
+    _posStack.push(p); // Put it on the stack.
+    bool setupOk = _setupBfIter();
+    if(!setupOk) _posStack.pop(); // Nothing is valid.
 }
 
-boost::shared_ptr<qMaster::BoolTerm> qMaster::OrTerm::copySyntax() {
-    boost::shared_ptr<OrTerm> ot(new OrTerm());
-    ot->_terms = _terms; // shallow copy for now
-    return ot;
+    
+void WhereClause::ValueExprIter::increment() {
+    while(1) {
+        _incrementBfTerm(); // Advance
+        if(_posStack.empty()) return;
+        if(_checkForExpr()) return;
+    }
 }
-boost::shared_ptr<qMaster::BoolTerm> qMaster::AndTerm::copySyntax() {
-    boost::shared_ptr<AndTerm> at(new AndTerm());
-    at->_terms = _terms; // shallow copy for now
-    return at;
+
+qMaster::ValueExprTerm* WhereClause::ValueExprIter::_checkForExpr() {
+    ValueExprTerm* vet = dynamic_cast<ValueExprTerm*>(_bfIter->get());
+    return vet;
 }
+qMaster::ValueExprTerm const* WhereClause::ValueExprIter::_checkForExpr() const {
+    ValueExprTerm const* vet = 
+        dynamic_cast<ValueExprTerm const*>(_bfIter->get());
+    return vet;
+}
+
+void WhereClause::ValueExprIter::_incrementBfTerm() {
+    assert(_bfIter != _bfEnd);
+    ++_bfIter;
+    if(_bfIter == _bfEnd) {
+        _incrementBterm();
+        return;
+    } 
+}
+
+void WhereClause::ValueExprIter::_incrementBterm() {
+    assert(!_posStack.empty());
+    PosTuple& tuple = _posStack.top();
+    ++tuple.first; // Advance
+    if(tuple.first == tuple.second) { // At the end? then pop the stack
+        _posStack.pop();
+        if(_posStack.empty()) { // No more to traverse?
+            return;
+        } else {
+            _incrementBterm();
+            return;
+        }
+    }
+    if(!_setupBfIter()) { _incrementBterm(); }
+}
+bool WhereClause::ValueExprIter::equal(WhereClause::ValueExprIter const& other) const {
+    // Compare the posStack (only .first) and the bfIter.
+    if(this->_wc != other._wc) return false;
+    return _posStack == other._posStack;
+}
+
+qMaster::ValueExprPtr const& WhereClause::ValueExprIter::dereference() const {
+    static ValueExprPtr nullPtr;
+    ValueExprTerm const* vet = _checkForExpr();
+    assert(vet);
+    return vet->_expr;
+}
+
+qMaster::ValueExprPtr& WhereClause::ValueExprIter::dereference() {
+    static ValueExprPtr nullPtr;
+    ValueExprTerm* vet = _checkForExpr();
+    assert(vet);
+    return vet->_expr;
+}
+
+bool WhereClause::ValueExprIter::_setupBfIter() {
+    // Return true if we successfully setup a valid _bfIter;
+    assert(!_posStack.empty());
+    PosTuple& tuple = _posStack.top();
+    BoolTerm::Ptr tptr = *tuple.first;
+    assert(tptr.get());
+    BoolFactor* bf = dynamic_cast<BoolFactor*>(tptr.get());
+    if(bf) {
+        _bfIter = bf->_terms.begin();
+        _bfEnd = bf->_terms.end();
+        return true;
+    } else {
+        // Try recursing deeper.
+        // FIXME
+        return false;
+    }
+}
+

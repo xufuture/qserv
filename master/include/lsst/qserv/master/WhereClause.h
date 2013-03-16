@@ -29,11 +29,13 @@
 // Std
 #include <iostream>
 #include <list>
+#include <stack>
 // Boost
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 // Qserv
 #include "lsst/qserv/master/ColumnRefList.h"
+#include "lsst/qserv/master/BoolTerm.h"
 
 #if 0
 #include <map>
@@ -68,18 +70,21 @@ class WhereClause {
 public:
     WhereClause() : _columnRefList(new ColumnRefList()) {}
     ~WhereClause() {}
-    boost::shared_ptr<ColumnRefList> getColumnRefList() {
-        return _columnRefList;
-    }
+    class ValueExprIter; // iteratable interface.
+    friend class ValueExprIter; 
+
+    boost::shared_ptr<ColumnRefList> getColumnRefList() { 
+        return _columnRefList; }
     boost::shared_ptr<QsRestrictor::List const> getRestrs() const {
-        return _restrs;
-    }
+        return _restrs; }
+    ValueExprIter vBegin();
+    ValueExprIter vEnd();    
 
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
     boost::shared_ptr<WhereClause> copyDeep() const;
     boost::shared_ptr<WhereClause> copySyntax();
-
+    
 private:
     friend std::ostream& operator<<(std::ostream& os, WhereClause const& wc);
     friend class WhereFactory;
@@ -93,73 +98,39 @@ private:
 
 };
 
-class BoolTerm {
+class WhereClause::ValueExprIter : public boost::iterator_facade <
+    WhereClause::ValueExprIter, ValueExprPtr, boost::forward_traversal_tag> {
 public:
-    typedef boost::shared_ptr<BoolTerm> Ptr;
-    typedef std::list<Ptr> PtrList;
+    ValueExprIter() : _wc() {}
 
-    virtual ~BoolTerm() {}
+private:
+    explicit ValueExprIter(boost::shared_ptr<WhereClause> wc, 
+                           boost::shared_ptr<BoolTerm> bPos);
 
-    friend std::ostream& operator<<(std::ostream& os, BoolTerm const& bt);
-    virtual std::ostream& putStream(std::ostream& os) const = 0;
-    virtual void renderTo(QueryTemplate& qt) const = 0;
-    virtual boost::shared_ptr<BoolTerm> copySyntax() {
-        return boost::shared_ptr<BoolTerm>(); }
-    class render;
-};
-class OrTerm : public BoolTerm {
-public:    
-    typedef boost::shared_ptr<OrTerm> Ptr;
-    virtual std::ostream& putStream(std::ostream& os) const;
-    virtual void renderTo(QueryTemplate& qt) const;
-    virtual boost::shared_ptr<BoolTerm> copySyntax();
+    friend class WhereClause;
+    friend class boost::iterator_core_access;
 
-    class render;
-    BoolTerm::PtrList _terms;
+    void increment();
+    bool equal(ValueExprIter const& other) const;
+    ValueExprPtr const& dereference() const;
+    ValueExprPtr& dereference();
+
+    ValueExprTerm* _checkForExpr();
+    ValueExprTerm const* _checkForExpr() const;
+    void _incrementBfTerm();
+    void _incrementBterm();
+    bool _setupBfIter();
+    
+
+    boost::shared_ptr<WhereClause> _wc;
+    // A position tuple is: cursor, end
+    typedef std::pair<BoolTerm::PtrList::iterator,
+                      BoolTerm::PtrList::iterator> PosTuple;
+    std::stack<PosTuple> _posStack;
+    BfTerm::PtrList::iterator _bfIter;
+    BfTerm::PtrList::iterator _bfEnd;
 };
-class AndTerm : public BoolTerm {
-public:
-    typedef boost::shared_ptr<AndTerm> Ptr;
-    virtual std::ostream& putStream(std::ostream& os) const;
-    virtual void renderTo(QueryTemplate& qt) const;
-    virtual boost::shared_ptr<BoolTerm> copySyntax();
-    BoolTerm::PtrList _terms;
-};
-class BfTerm {
-public:
-    typedef boost::shared_ptr<BfTerm> Ptr;
-    typedef std::list<Ptr> PtrList;
-    virtual ~BfTerm() {}
-    virtual std::ostream& putStream(std::ostream& os) const = 0;
-    virtual void renderTo(QueryTemplate& qt) const = 0;
-};
-class BoolFactor : public BoolTerm {
-public:
-    typedef boost::shared_ptr<BoolFactor> Ptr;
-    virtual std::ostream& putStream(std::ostream& os) const;
-    virtual void renderTo(QueryTemplate& qt) const;
-    BfTerm::PtrList _terms;
-};
-class UnknownTerm : public BoolTerm {
-public:
-    typedef boost::shared_ptr<UnknownTerm> Ptr;
-    virtual std::ostream& putStream(std::ostream& os) const;
-    virtual void renderTo(QueryTemplate& qt) const;
-};
-class PassTerm : public BfTerm {
-public:
-    typedef boost::shared_ptr<PassTerm> Ptr;
-    virtual std::ostream& putStream(std::ostream& os) const;
-    virtual void renderTo(QueryTemplate& qt) const;
-    std::string _text;
-};
-class ValueExprTerm : public BfTerm {
-public:
-    typedef boost::shared_ptr<ValueExprTerm> Ptr;
-    virtual std::ostream& putStream(std::ostream& os) const;
-    virtual void renderTo(QueryTemplate& qt) const;
-    boost::shared_ptr<ValueExpr> _expr;
-};
+
 
 }}} // namespace lsst::qserv::master
 
