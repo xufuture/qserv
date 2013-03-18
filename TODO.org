@@ -1,5 +1,8 @@
 * TODO Outils python
 
+ah! et il y a egalement pycharm (comme IDE, avec refactorisation,
+etc...)
+
 avant que j'oublie:
 
 - nommage: le mieux, c'est de suivre PEP8.
