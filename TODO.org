@@ -1,3 +1,4 @@
+* TODO utiliser coverage
 * TODO allowedDb in local.qserv.cnf : scons template should patch it to add test dbs ? 
 * TODO Outils python
 
