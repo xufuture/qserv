@@ -34,6 +34,7 @@
 #include "lsst/qserv/master/transaction.h"
 #include "lsst/qserv/master/ChunkQuerySpec.h"
 #include "lsst/qserv/master/ChunkSpec.h"
+
 #include "lsst/qserv/master/QueryPlugin.h"
 
 namespace lsst { namespace qserv { namespace master {
@@ -92,7 +93,7 @@ public:
 
 private:
     Iter(QuerySession& qs, ChunkSpecList::iterator i) 
-        : _qs(&qs), _pos(i), _dirty(false) {}
+        : _qs(&qs), _pos(i), _dirty(true) {}
     friend class QuerySession;
     friend class boost::iterator_core_access;
 

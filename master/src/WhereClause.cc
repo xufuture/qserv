@@ -35,7 +35,7 @@ namespace { // File-scope helpers
 
 
 ////////////////////////////////////////////////////////////////////////
-// QsRestirctor::render
+// QsRestrictor::render
 ////////////////////////////////////////////////////////////////////////
 void QsRestrictor::render::operator()(QsRestrictor::Ptr const& p) {
     if(p.get()) {
@@ -59,6 +59,14 @@ std::ostream&
 qMaster::operator<<(std::ostream& os, WhereClause const& wc) {
     os << "WHERE " << wc._original;
     return os;
+}
+
+WhereClause::ValueExprIter WhereClause::vBegin() {
+    return ValueExprIter(this, _tree);
+}
+
+WhereClause::ValueExprIter WhereClause::vEnd() {
+    return ValueExprIter(); // end iterators == default-constructed iterators
 }
 
 std::string
@@ -110,35 +118,43 @@ WhereClause::_resetRestrs() {
 ////////////////////////////////////////////////////////////////////////
 // WhereClause::ValueExprIter 
 ////////////////////////////////////////////////////////////////////////
-WhereClause::ValueExprIter::ValueExprIter(boost::shared_ptr<WhereClause> wc, 
+WhereClause::ValueExprIter::ValueExprIter(WhereClause* wc, 
                                           boost::shared_ptr<BoolTerm> bPos) 
     : _wc(wc) {
     // How to iterate: walk the bool term tree!
     // Starting point: BoolTerm
     // _bPos = tree
     // _bIter = _bPos->iterBegin()
+    std::cout << "whereclause: " << *wc << std::endl;
     PosTuple p(bPos->iterBegin(), bPos->iterEnd()); // Initial position
     _posStack.push(p); // Put it on the stack.
-    bool setupOk = _setupBfIter();
-    if(!setupOk) _posStack.pop(); // Nothing is valid.
+    bool setupOk = _findFactor();
+    if(setupOk) {
+        setupOk = _setupBfIter();
+    }
+    if(!setupOk) { _posStack.pop(); _wc = NULL; } // Nothing is valid.
 }
 
-    
 void WhereClause::ValueExprIter::increment() {
     while(1) {
         _incrementBfTerm(); // Advance
-        if(_posStack.empty()) return;
+        if(_posStack.empty()) {
+            _wc = NULL; // Clear out WhereClause ptr
+            return; 
+        }
         if(_checkForExpr()) return;
     }
 }
 
 qMaster::ValueExprTerm* WhereClause::ValueExprIter::_checkForExpr() {
-    ValueExprTerm* vet = dynamic_cast<ValueExprTerm*>(_bfIter->get());
+    BfTerm::Ptr b = *_bfIter;
+    ValueExprTerm* vet = dynamic_cast<ValueExprTerm*>(b.get());
     return vet;
 }
-qMaster::ValueExprTerm const* WhereClause::ValueExprIter::_checkForExpr() const {
-    ValueExprTerm const* vet = 
-        dynamic_cast<ValueExprTerm const*>(_bfIter->get());
+
+qMaster::ValueExprTerm* WhereClause::ValueExprIter::_checkForExpr() const {
+    BfTerm::Ptr b = *_bfIter;
+    ValueExprTerm* vet = dynamic_cast<ValueExprTerm*>(b.get());
     return vet;
 }
 
@@ -172,9 +188,9 @@ bool WhereClause::ValueExprIter::equal(WhereClause::ValueExprIter const& other) 
     return _posStack == other._posStack;
 }
 
-qMaster::ValueExprPtr const& WhereClause::ValueExprIter::dereference() const {
+qMaster::ValueExprPtr & WhereClause::ValueExprIter::dereference() const {
     static ValueExprPtr nullPtr;
-    ValueExprTerm const* vet = _checkForExpr();
+    ValueExprTerm * vet = _checkForExpr();
     assert(vet);
     return vet->_expr;
 }
@@ -186,6 +202,20 @@ qMaster::ValueExprPtr& WhereClause::ValueExprIter::dereference() {
     return vet->_expr;
 }
 
+bool WhereClause::ValueExprIter::_findFactor() {
+    assert(!_posStack.empty());
+    while(true) {
+        PosTuple& tuple = _posStack.top();
+        BoolTerm::Ptr tptr = *tuple.first;
+        PosTuple p(tptr->iterBegin(), tptr->iterEnd()); 
+        if(p.first != p.second) { // Should go deeper
+            _posStack.push(p); // Put it on the stack.
+        } else { // Leaf BoolTerm, ready to setup BoolFactor.
+            return true;
+        }
+    }
+    return false; // Should not get here.
+}
 bool WhereClause::ValueExprIter::_setupBfIter() {
     // Return true if we successfully setup a valid _bfIter;
     assert(!_posStack.empty());

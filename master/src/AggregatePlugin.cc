@@ -22,7 +22,10 @@
 // AggregatePlugin houses the implementation of an implementation of a
 // QueryPlugin that primarily operates in the second phase of query
 // manipulation. It rewrites the select-list of a query in their
-// parallel and merging instances so that 
+// parallel and merging instances so that a SUM() becomes a SUM()
+// followed by another SUM(), AVG() becomes SUM() and COUNT() followed
+// by SUM()/SUM(), etc. 
+
 #include "lsst/qserv/master/AggregatePlugin.h"
 #include <string>
 #include "lsst/qserv/master/QueryPlugin.h"
@@ -65,12 +68,12 @@ public:
 
 private:
     void _makeRecord(lsst::qserv::master::ValueExpr const& e) {
+        if(e.getType() != ValueExpr::AGGFUNC) { 
+            pList.push_back(e.clone()); // Is this sufficient?
+            return; 
+        }
         AggRecord r;
         r.orig = e.clone();
-        if(e.getType() != ValueExpr::AGGFUNC) { 
-            // FIXME: Need to passthrough.
-            return; }
-
         assert(e.getFuncExpr().get());        
         AggRecord::Ptr p = aMgr.applyOp(e.getFuncExpr()->name, e);
         assert(p.get());

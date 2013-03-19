@@ -277,8 +277,8 @@ public:
             next();
             break;
         default:
-            std::cout << "next type is:" << _cursor->getType() 
-                      << " and text is:" << _cursor->getText() << std::endl;
+            // std::cout << "next type is:" << _cursor->getType() 
+            //           << " and text is:" << _cursor->getText() << std::endl;
             break;
         }
     }

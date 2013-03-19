@@ -313,7 +313,7 @@ BoolTermFactory::newOrTerm(antlr::RefAST a) {
     multiImport<OrTerm> oi(*this, *p);
     matchType matchOr(SqlSQL2TokenTypes::SQL2RW_or);
     applyExcept<multiImport<OrTerm>,matchType> ae(oi, matchOr);
-    forEachSibs(a, ae);   
+    forEachSibs(a, ae);
     return p;
 }
 qMaster::AndTerm::Ptr 
@@ -367,8 +367,8 @@ WhereFactory::_addOrSibs(antlr::RefAST a) {
 
     walkTreeVisit(a, p);
     std::cout << "Adding orsibs: " << p.result << std::endl;
-    BoolTermFactory::tagPrint tp(std::cout, "addOr");
-    forEachSibs(a, tp);
+    // BoolTermFactory::tagPrint tp(std::cout, "addOr");
+    // forEachSibs(a, tp);
     BoolTermFactory f(_vf);
     _clause->_tree = f.newOrTerm(a);
     _clause->_original = p.result;

@@ -38,6 +38,7 @@ public:
     typedef std::list<Ptr> PtrList;
 
     virtual ~BoolTerm() {}
+    virtual char const* getName() const { return "BoolTerm"; }
 
     virtual PtrList::iterator iterBegin() { return PtrList::iterator(); }
     virtual PtrList::iterator iterEnd() { return PtrList::iterator(); }
@@ -63,6 +64,7 @@ class OrTerm : public BoolTerm {
 public:    
     typedef boost::shared_ptr<OrTerm> Ptr;
 
+    virtual char const* getName() const { return "OrTerm"; }
     virtual PtrList::iterator iterBegin() { return _terms.begin(); }
     virtual PtrList::iterator iterEnd() { return _terms.end(); }
 
@@ -77,6 +79,8 @@ class AndTerm : public BoolTerm {
 public:
     typedef boost::shared_ptr<AndTerm> Ptr;
 
+    virtual char const* getName() const { return "AndTerm"; }
+
     virtual PtrList::iterator iterBegin() { return _terms.begin(); }
     virtual PtrList::iterator iterEnd() { return _terms.end(); }
 
@@ -89,6 +93,8 @@ public:
 class BoolFactor : public BoolTerm {
 public:
     typedef boost::shared_ptr<BoolFactor> Ptr;
+    virtual char const* getName() const { return "BoolFactor"; }
+
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
     BfTerm::PtrList _terms;

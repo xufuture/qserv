@@ -51,6 +51,9 @@ public:
     Type getType() const { return _type; }
     std::string const& getAlias() const { return _alias; }
     void setAlias(std::string const& a) { _alias = a; }
+    std::string const& getTableStar() const { return _tableStar; }
+    void setTableStar(std::string const& a) { _tableStar = a; }
+
     ValueExprPtr clone() const;
 
     static ValueExprPtr newColumnRefExpr(boost::shared_ptr<ColumnRef const> cr);

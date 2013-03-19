@@ -104,7 +104,7 @@ public:
     ValueExprIter() : _wc() {}
 
 private:
-    explicit ValueExprIter(boost::shared_ptr<WhereClause> wc, 
+    explicit ValueExprIter(WhereClause* wc, 
                            boost::shared_ptr<BoolTerm> bPos);
 
     friend class WhereClause;
@@ -112,17 +112,18 @@ private:
 
     void increment();
     bool equal(ValueExprIter const& other) const;
-    ValueExprPtr const& dereference() const;
+    ValueExprPtr& dereference() const;
     ValueExprPtr& dereference();
 
     ValueExprTerm* _checkForExpr();
-    ValueExprTerm const* _checkForExpr() const;
+    ValueExprTerm* _checkForExpr() const;
     void _incrementBfTerm();
     void _incrementBterm();
+    bool _findFactor();
     bool _setupBfIter();
     
 
-    boost::shared_ptr<WhereClause> _wc;
+    WhereClause* _wc; // no shared_ptr available
     // A position tuple is: cursor, end
     typedef std::pair<BoolTerm::PtrList::iterator,
                       BoolTerm::PtrList::iterator> PosTuple;

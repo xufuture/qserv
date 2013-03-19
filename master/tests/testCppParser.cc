@@ -588,16 +588,23 @@ BOOST_AUTO_TEST_CASE(Mods) {
     }
  }
 BOOST_AUTO_TEST_CASE(CountNew) {
-    std::string stmt = "SELECT count(*) from Source where qserv_areaspec_box(0,0,1,1);";
+    std::string stmt = "SELECT count(*), sum(Source.flux), flux2, Source.flux3 from Source where qserv_areaspec_box(0,0,1,1) and flux4=2 and Source.flux5=3;";
     QuerySession qs(qsTest);
     qs.setQuery(stmt);
-    qs.getConstraints();
-    SelectStmt const& stmt2 = qs.getStmt();
+    qs.getConstraints();    
+    // SelectStmt const& stmt2 = 
+    qs.getStmt();
     qs.addChunk(makeChunkSpec(100));
     qs.addChunk(makeChunkSpec(101));
     QuerySession::Iter i;
     QuerySession::Iter e = qs.cQueryEnd();
-    for(i = qs.cQueryBegin(); i != e; ++i) {        
+    for(i = qs.cQueryBegin(); i != e; ++i) {
+        qMaster::ChunkQuerySpec& cs = *i;
+        std::cout << "Spec: " 
+                  << cs.query << " db=" << cs.db
+                  << " chunkId=" << cs.chunkId 
+                  << std::endl;
+        //std::cout << *i << std::endl;
     }
     
 }

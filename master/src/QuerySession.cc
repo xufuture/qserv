@@ -31,6 +31,7 @@
 #include "lsst/qserv/master/WhereClause.h"
 #include "lsst/qserv/master/QueryPlugin.h"
 #include "lsst/qserv/master/AggregatePlugin.h"
+#include "lsst/qserv/master/TablePlugin.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::QuerySession;
@@ -138,6 +139,7 @@ void QuerySession::_preparePlugins() {
     _plugins.reset(new PluginList);
 
     _plugins->push_back(QueryPlugin::newInstance("Aggregate"));
+    _plugins->push_back(QueryPlugin::newInstance("Table"));
     PluginList::iterator i;
     for(i=_plugins->begin(); i != _plugins->end(); ++i) {
         (**i).prepare();
@@ -163,7 +165,7 @@ void QuerySession::_generateConcrete() {
     // results can be concatenated directly into the output table.
     //
     // Important parts of the merge statement are 
-    _stmtParallel = _stmt->copySyntax(); // Needs to copy SelectList, since the
+    _stmtParallel = _stmt->copyDeep(); // Needs to copy SelectList, since the
                            // parallel statement's version will get
                            // updated by plugins. Plugins probably
                            // need access to the original as a
@@ -219,4 +221,5 @@ void QuerySession::Iter::_buildCache() const {
 void lsst::qserv::master::initQuerySession() {
     // Plugins should probably be registered once, at startup.
     registerAggregatePlugin(); 
+    registerTablePlugin();
 }

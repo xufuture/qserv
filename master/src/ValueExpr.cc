@@ -105,6 +105,13 @@ ValueExpr::newConstExpr(std::string const& alnum) {
 
 ValueExprPtr ValueExpr::clone() const{
     ValueExprPtr expr(new ValueExpr(*this));
+    // Clone refs.
+    if(_columnRef.get()) {
+        expr->_columnRef.reset(new ColumnRef(*_columnRef));
+    }
+    if(_funcExpr.get()) {
+        expr->_funcExpr.reset(new FuncExpr(*_funcExpr));
+    }
     return expr;
 }
 
