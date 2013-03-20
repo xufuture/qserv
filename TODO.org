@@ -1,3 +1,15 @@
+* TODO a partir de git sur cqserv01, créer et mettre un tgz de ccqerv01 sur le maître et expliquer à Yannick la procédure, en mettant en copie la liste lsst-calcul.
+* TODO relire le code de fabrice et mettre des requêtes dans case02/queries/
+* TODO mettre le doc de benchmark des requêtes. 
+* TODO réunion SLAC 21/03 :
+  2ème partie :
+  - ticket 2014 à committer après relecture manu (test unitaires (nose, inittest ?), lancer tous les tests depuis scons : attention aux table LSST__, mettre un chrono ...)
+  - meta données : https://dev.lsstcorp.org/trac/wiki/db/Qserv/MetadataAdmin, https://dev.lsstcorp.org/trac/wiki/db/Qserv/RunTimeState
+  - fiche de questions
+  - quelles données installer aux CC W13 ou PT1.2 ? https://dev.lsstcorp.org/trac/wiki/db/Qserv/Winter2013SingleNode https://dev.lsstcorp.org/trac/wiki/dbPipeQAQueries
+    - script de chargement auto temporaire : voir avec le nouveau partitionneur de Serge (date de livraison ?)
+
+* TODO dans la procédure de chargement, ne pas mettre les indexes pour les sources (LSST__Sources) : cela devrait tout de même fonctionner
 * TODO utiliser coverage
 * TODO allowedDb in local.qserv.cnf : scons template should patch it to add test dbs ? 
 * TODO Outils python
