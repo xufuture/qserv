@@ -1,6 +1,4 @@
-* TODO a partir de git sur cqserv01, créer et mettre un tgz de ccqerv01 sur le maître et expliquer à Yannick la procédure, en mettant en copie la liste lsst-calcul.
 * TODO relire le code de fabrice et mettre des requêtes dans case02/queries/
-* TODO mettre le doc de benchmark des requêtes. 
 * TODO réunion SLAC 21/03 :
   2ème partie :
   - ticket 2014 à committer après relecture manu (test unitaires (nose, inittest ?), lancer tous les tests depuis scons : attention aux table LSST__, mettre un chrono ...)
@@ -102,6 +100,8 @@ but scons templates does not install it
 ** TODO AUDIT DE CODE
 bad quality code examples :  
 - qMaster::SqlParseRunner::_interpretBadDbs
+* DONE mettre le doc de benchmark des requêtes. 
+* DONE a partir de git sur cqserv01, créer et mettre un tgz de ccqerv01 sur le maître et expliquer à Yannick la procédure, en mettant en copie la liste lsst-calcul.
 * DONE tests/runTest.py works
 * DONE create symlinm for tmp dir if not in default location
 * DONE bug in qserv-stop (kill xrootd, cmsd, mysqld) 
