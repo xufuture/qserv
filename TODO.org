@@ -1,3 +1,5 @@
+* TODO : tester le client des metadata
+* TODO : utiliser unittest, paramètre de partitionnement à Douglas, lire les données dans un fichier de config/dataset 
 * TODO relire le code de fabrice et mettre des requêtes dans case02/queries/
 * TODO réunion SLAC 21/03 :
   2ème partie :
