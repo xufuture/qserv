@@ -503,7 +503,7 @@ char const * Editor::readRecord(char const * beg, char const * end) {
     }
     if (quoted || escaped) {
         throw runtime_error("CSV record contains an embedded line terminator, "
-                            "a trailing escape character, or quoted field "
+                            "a trailing escape character, or a quoted field "
                             "without a trailing quote character.");
     }
     if (f + 1 != fend) {
@@ -519,7 +519,7 @@ char const * Editor::readRecord(char const * beg, char const * end) {
     f->flags = (decode ? Field::DECODE : 0);
     // Set output values for remaining fields to NULL.
     fend = _fields.get() + _numFields;
-    for (fend = _fields.get() + _numFields; f != fend; ++f) {
+    for (++f; f != fend; ++f) {
         string const & null = _outputDialect.getNull();
         memcpy(f->outputValue, null.data(), null.size());
         f->outputSize = static_cast<uint16_t>(null.size());
