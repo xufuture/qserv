@@ -15,8 +15,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #ifndef LSST_QSERV_ADMIN_DUPR_INPUTLINES_H
@@ -84,7 +84,7 @@ public:
     /// Has all the input been read?
     bool empty() const;
 
-    /// Read consecutive lines of text into `buf`, and return a pointer range 
+    /// Read consecutive lines of text into `buf`, and return a pointer range
     /// `[i,end)` identifying the bytes in `buf` containing valid data. The
     /// pointers returned will both be NULL if and only if there is no more
     /// input left to read. Note that `buf` must have a capacity of at least

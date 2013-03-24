@@ -15,7 +15,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
+ * You should have received a copy of the LSST License Statement and
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
@@ -24,10 +24,10 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <algorithm>
 #include <iostream>
+#include <map>
 #include <set>
-#include <string>
-#include <utility>
 #include <vector>
 
 #include "FileUtils.h"
@@ -37,9 +37,11 @@ using std::cerr;
 using std::cout;
 using std::endl;
 using std::exit;
+using std::find;
 using std::free;
 using std::logic_error;
 using std::malloc;
+using std::map;
 using std::pair;
 using std::runtime_error;
 using std::set;
@@ -54,27 +56,38 @@ namespace po = boost::program_options;
 
 namespace {
 
-    // A configuration file parser that understands a very forgiving format
-    // resembling JSON. This is necessary because the INI file parser that
-    // ships with boost has no escaping mechanism and automatically strips
-    // whitespace from option values. This makes it impossible, as an example,
-    // to set the value of a field separator character option to the TAB
-    // character in a configuration file.
+    // A configuration file parser that understands a forgiving format
+    // based on JSON. The parser recognizes JSON, but allows short-cuts
+    // so that configuration files are easier to write.
     //
-    // The format consists of groups, values, and key-value pairs, where the
+    // This class exists because the INI file parser that ships with boost
+    // has no escaping mechanism and automatically strips whitespace from
+    // option values. As a consequence, setting an option value to e.g.
+    // the TAB character in a config file is impossible with stock boost.
+    //
+    // The format consists of groups, strings, and key-value pairs, where the
     // configuration file contents belong to an implicit top-level group.
-    // Keys and values are strings, and need not be quoted unless they contain
-    // whitespace, escape sequences, control characters or one of ",:=#[]{}()".
-    // Strings that need it may be quoted using either " or '. Character
-    // escaping rules are a laxer version of those defined by JSON.
+    // Keys are strings, and values are either strings or groups. A string
+    // does not have to be quoted unless it contains whitespace, escape
+    // sequences, control characters, a leading quote, or one of ",:=#[]{}()".
+    // Both " and ' are recognized as quote characters, and escape sequences
+    // are defined as in JSON.
     //
     // Groups contain values and/or key-value pairs (where ':' or '=' separate
     // keys from values). They are opened with '{', '[' or '(', and closed
-    // with ')', ']' or '}'. Groups are mapped to command line options by
-    // flattening. Values and key-value pairs may be separated by whitespace
-    // or commas; trailing commas are permitted. To illustrate:
+    // with ')', ']' or '}'. Values and key-value pairs may be separated by
+    // whitespace or commas; trailing commas are permitted.
     //
-    //     {a: {b:c, d,}}, e,
+    // These structures are mapped to command line options by flattening.
+    // To illustrate:
+    //
+    //     {
+    //         a: {
+    //             b:c,
+    //             d,
+    //         }
+    //     },
+    //     e,
     //
     // and
     //
@@ -84,23 +97,25 @@ namespace {
     //
     //     a=(b=c d) e
     //
-    // are all equivalent to specifying --a.b=c --a=d --e on the command line,
-    // assuming that the key-separator is set to '.'.
+    // are all equivalent to specifying --a.b=c --a=d --e on the command line.
+    // Nested key names are joined by a key-separator character to construct
+    // option names - in this case, '.' is being used.
     //
-    // Comments are allowed - they begin with a '#' character, and extend to
-    // the end of the line, where lines are terminated by either '\r' or
-    // '\n'.
+    // The '#' character begins a comment which extends to the end of the line
+    // it occurs on. CR, LF and CRLF are all recognized as line terminators.
     class Parser {
     public:
         explicit Parser(fs::path const & path, char keySeparator);
         ~Parser();
 
-        po::parsed_options const parse(po::options_description const & desc);
+        po::parsed_options const parse(po::options_description const & desc,
+                                       bool verbose);
 
     private:
         Parser(Parser const &);
         Parser & operator=(Parser const &);
 
+        fs::path _path;
         char * _data;
         char const * _beg;
         char const * _end;
@@ -130,7 +145,7 @@ namespace {
     };
 
     Parser::Parser(fs::path const & path, char keySeparator) :
-        _data(0), _beg(0), _end(0), _sep(keySeparator)
+        _path(path), _data(0), _beg(0), _end(0), _sep(keySeparator)
     {
         lsst::qserv::admin::dupr::InputFile f(path);
         size_t sz = static_cast<size_t>(f.size());
@@ -266,7 +281,9 @@ namespace {
         return val;
     }
 
-    po::parsed_options const Parser::parse(po::options_description const & desc) {
+    po::parsed_options const Parser::parse(
+        po::options_description const & desc, bool verbose)
+    {
         set<string> registered;
         for (vector<shared_ptr<po::option_description> >::const_iterator i =
              desc.options().begin(), e = desc.options().end(); i != e; ++i) {
@@ -332,7 +349,7 @@ namespace {
                 continue;
             }
             opt.value.clear();
-            opt.original_tokens.clear(); 
+            opt.original_tokens.clear();
             if (keys.empty()) {
                 opt.string_key = s;
             } else {
@@ -346,10 +363,15 @@ namespace {
             for (; lvl > groups.back().first; --lvl) {
                 keys.pop_back();
             }
+            if (opt.unregistered && verbose) {
+                cerr << "Skipping unrecognized option --" << opt.string_key
+                     <<  " in config file " << _path.native() << endl;
+            }
             parsed.options.push_back(opt);
         }
         if (!keys.empty() || lvl != 0 || groups.size() != 1u) {
-            throw runtime_error("Missing value for key, or unmatched (, [ or {.");
+            throw runtime_error("Missing value for key, "
+                                "or unmatched (, [ or {.");
         }
         return parsed;
     }
@@ -378,8 +400,9 @@ void parseCommandLine(po::variables_map & vm,
          "option is specified more than once, the first specification "
          "usually takes precedence. Command line options have the highest "
          "precedence, followed by configuration files, which are parsed in "
-         "the order specified on the command-line. Configuration files cannot "
-         "currently reference other configuration files.");
+         "the order specified on the command-line and should therefore be "
+         "listed in most to least specific order. Note that the config-file "
+         "option itself is not recognized inside of a configuration file.");
     po::options_description all;
     all.add(common).add(options);
     // Parse command line.
@@ -389,16 +412,122 @@ void parseCommandLine(po::variables_map & vm,
         cout << argv[0]  << " [options]\n\n" << help << "\n" << all << endl;
         exit(EXIT_SUCCESS);
     }
+    bool verbose = vm.count("verbose") != 0;
     // Parse configuration files, if any.
     if (vm.count("config-file") != 0) {
         typedef vector<string>::const_iterator Iter;
         vector<string> files = vm["config-file"].as<vector<string> >();
         for (Iter f = files.begin(), e = files.end(); f != e; ++f) {
             Parser p(fs::path(*f), '.');
-            po::store(p.parse(options), vm);
+            po::store(p.parse(options, verbose), vm);
             po::notify(vm);
         }
     }
+}
+
+namespace {
+    string const trim(string const & s) {
+        static string const WS("\t\n\r ");
+        size_t i = s.find_first_not_of(WS);
+        if (i == string::npos) {
+            return string();
+        }
+        return s.substr(i, s.find_last_not_of(WS) - i + 1);
+    }
+}
+
+pair<string, string> const parseFieldNamePair(string const & opt,
+                                              string const & val)
+{
+    pair<string, string> p;
+    size_t i = val.find_first_of(',');
+    if (i == string::npos) {
+        throw runtime_error("--" + opt + "=" + val +
+                            " is not a comma separated field name pair.");
+    }
+    if (val.find_first_of(',', i + 1) != string::npos) {
+        throw runtime_error("--" + opt + "=" + val +
+                            " is not a comma separated field name pair.");
+    }
+    p.first = trim(val.substr(0, i));
+    p.second = trim(val.substr(i + 1));
+    if (p.first.empty() || p.second.empty()) {
+        throw runtime_error("--" + opt + "=" + val +
+                            " is not a comma separated field name pair.");
+    }
+    return p;
+}
+
+
+void defineOutputOptions(po::options_description & opts) {
+    po::options_description output("\\_____________________ Output", 80);
+    output.add_options()
+        ("incremental", po::bool_switch(),
+         "Allow incrementally adding to an existing output directory.")
+        ("out.dir", po::value<string>(),
+         "The output file directory. Unless running incrementally, this "
+         "directory is not allowed to exist.")
+        ("out.num-nodes", po::value<uint32_t>()->default_value(1u),
+         "The number of down-stream nodes that will be using the output "
+         "files. If this is more than 1, then output files are assigned to "
+         "nodes by hashing and are placed into a sub-directory of out.dir "
+         "named node_XXXXX, where XXXXX is a logical ID for nodes between "
+         "0 and out.num-nodes - 1.");
+    opts.add(output);
+}
+
+
+void makeOutputDirectory(boost::program_options::variables_map & vm) {
+    fs::path outDir;
+    if (vm.count("out.dir") != 0) {
+        outDir = vm["out.dir"].as<string>();
+    }
+    if (outDir.empty()) {
+        cerr << "No output directory specified (use --out.dir)." << endl;
+        exit(EXIT_FAILURE);
+    }
+    outDir = fs::system_complete(outDir);
+    if (outDir.filename() == ".") {
+        // create_directories returns false for "does_not_exist/", even
+        // when "does_not_exist" must be created. This is because the
+        // trailing slash causes the last path component to be ".", which
+        // exists once it is iterated to.
+        outDir.remove_filename();
+    }
+    po::variable_value v = vm["out.dir"];
+    v.value() = outDir.native();
+    if (fs::create_directories(outDir) == false &&
+        !vm["incremental"].as<bool>()) {
+        cerr << "The output directory --out.dir=" << outDir.native()
+             << " already exists - please choose another." << endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+void ensureOutputFieldExists(boost::program_options::variables_map & vm,
+                             std::string const & opt)
+{
+    if (vm.count(opt) == 0) {
+        return;
+    }
+    po::variable_value v;
+    if (vm.count("out.csv.field") == 0) {
+        if (vm.count("in.csv.field") == 0) {
+            cerr << "Input CSV field names not specified." << endl;
+            exit(EXIT_FAILURE);
+        }
+        v = vm["in.csv.field"];
+    } else {
+        v = vm["out.csv.field"];
+    }
+    vector<string> names = v.as<vector<string> >();
+    string name = vm[opt].as<string>();
+    if (find(names.begin(), names.end(), name) == names.end()) {
+        names.push_back(name);
+    }
+    v.value() = names;
+    static_cast<map<string, po::variable_value> >(vm)["out.csv.field"] = v;
 }
 
 }}}} // namespace lsst::qserv::admin::dupr

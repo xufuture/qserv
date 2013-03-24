@@ -15,8 +15,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -64,7 +64,7 @@ double reduceRa(double ra);
 /// Both `r` and `centerDec` are assumed to be in units of degrees;
 /// `centerDec` is clamped to lie in `[-90, 90]` and `r` must
 /// lie in `[0, 90]`.
-double maxAlpha(double r, double centerDec); 
+double maxAlpha(double r, double centerDec);
 
 /// Compute the HTM ID of `v`.
 uint32_t htmId(Vector3d const &v, int level);

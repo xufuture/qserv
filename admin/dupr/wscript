@@ -45,20 +45,15 @@ def build(bld):
         includes='src/',
         target='objects'
     )
-    bld.program(
-        source=bld.path.ant_glob('src/QservHtmIndex.cc'),
-        includes='src/',
-        target='qserv-htm-index',
-        use='objects BOOST',
-        install_path='${PREFIX}/bin'
-    )
-    bld.program(
-        source=bld.path.ant_glob('src/QservPartition.cc'),
-        includes='src/',
-        target='qserv-partition',
-        use='objects BOOST',
-        install_path='${PREFIX}/bin'
-    )
+    for tgt in ('htm-index', 'partition', 'partition-matches',):
+        src = ''.join(map(lambda s: s.title(), tgt.split('-')))
+        bld.program(
+            source=bld.path.ant_glob('src/Qserv%s.cc' % src),
+            includes='src/',
+            target='qserv-' + tgt,
+            use='objects BOOST',
+            install_path='${PREFIX}/bin'
+        )
     #bld.program(
     #    source=bld.path.ant_glob('Duplicate.cc'),
     #    includes='.',

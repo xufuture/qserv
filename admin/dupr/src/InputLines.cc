@@ -15,8 +15,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -54,7 +54,7 @@ namespace fs = boost::filesystem;
 namespace this_thread = boost::this_thread;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr { 
+namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
 namespace {
 

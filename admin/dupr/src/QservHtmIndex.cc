@@ -15,7 +15,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
+ * You should have received a copy of the LSST License Statement and
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
@@ -109,7 +109,6 @@ class Worker : public WorkerBase<Key, HtmIndex> {
 public:
     Worker(po::variables_map const & vm);
 
-    // map-reduce API
     void map(char const * beg, char const * end, Silo & silo);
     void reduce(RecordIter beg, RecordIter end);
     void finish();
@@ -139,7 +138,7 @@ Worker::Worker(po::variables_map const & vm) :
     _idField(-1),
     _raField(-1),
     _decField(-1),
-    _level(vm["level"].as<int>()),
+    _level(vm["htm.level"].as<int>()),
     _index(make_shared<HtmIndex>(_level)),
     _triangle(),
     _numNodes(vm["out.num-nodes"].as<uint32_t>()),
@@ -152,8 +151,9 @@ Worker::Worker(po::variables_map const & vm) :
                             "between 1 and 99999.");
     }
     // Map field names of interest to field indexes.
-    if (vm.count("part.id") == 0) {
-        throw runtime_error("The --part.id option was not specified.");
+    if (vm.count("part.id") == 0 || vm.count("part.pos") == 0) {
+        throw runtime_error("The --part.id and/or --part.pos "
+                            "option was not specified.");
     }
     string s = vm["part.id"].as<string>();
     _idField = _editor.getFieldIndex(s);
@@ -161,17 +161,13 @@ Worker::Worker(po::variables_map const & vm) :
         throw runtime_error("--part.id=\"" + s + "\" is not a valid input "
                             "field name.");
     }
-    s = vm["part.ra"].as<string>();
-    _raField = _editor.getFieldIndex(s);
-    if (_raField < 0) {
-        throw runtime_error("--part.ra=\"" + s + "\" is not a valid "
-                            "input field name.");
-    }
-    s = vm["part.decl"].as<string>();
-    _decField = _editor.getFieldIndex(s);
-    if (_decField < 0) {
-        throw runtime_error("--part.decl=\"" + s + "\" is not a valid "
-                            "input field names.");
+    s = vm["part.pos"].as<string>();
+    pair<string,string> p = parseFieldNamePair("part.pos", s);
+    _raField = _editor.getFieldIndex(p.first);
+    _decField = _editor.getFieldIndex(p.second);
+    if (_raField < 0 || _decField < 0) {
+        throw runtime_error("--part.pos=\"" + s + "\" is not a valid "
+                            "pair of input field names.");
     }
 }
 
@@ -179,37 +175,29 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
     Key k;
     pair<double, double> sc;
     while (beg < end) {
-        // Parse input line.
         beg = _editor.readRecord(beg, end);
-        // Extract ID field and partitioning position.
         k.id = _editor.get<int64_t>(_idField);
         sc.first = _editor.get<double>(_raField);
         sc.second = _editor.get<double>(_decField);
-        // Compute HTM ID of partitioning position and store output record.
         k.htmId = htmId(cartesian(sc), _level);
         silo.add(k, _editor);
     }
 }
 
 void Worker::reduce(Worker::RecordIter beg, Worker::RecordIter end) {
-    // Records in [beg, end) all have the same HTM ID.
     if (beg == end) {
         return;
     }
     uint32_t const htmId = beg->htmId;
     if (htmId != _triangle.id) {
         if (_triangle.id != 0) {
-            // Update index with statistics for the current HTM ID, if any.
             _index->merge(_triangle);
         }
-        // Clear HTM triangle statistics.
         _triangle.numRecords = 0;
         _triangle.recordSize = 0;
-        // Open output files for the new HTM ID.
         _triangle.id = htmId;
         _openFiles(htmId);
     }
-    // Store records and their IDs.
     for (; beg != end; ++beg) {
         uint8_t buf[8];
         _triangle.numRecords += 1;
@@ -222,10 +210,8 @@ void Worker::reduce(Worker::RecordIter beg, Worker::RecordIter end) {
 
 void Worker::finish() {
     if (_triangle.id != 0) {
-        // Update index with statistics for the current HTM ID, if any.
         _index->merge(_triangle);
     }
-    // Reset HTM triangle statistics and close currently open files.
     _triangle.id = 0;
     _triangle.numRecords = 0;
     _triangle.recordSize = 0;
@@ -236,30 +222,17 @@ void Worker::finish() {
 void Worker::defineOptions(po::options_description & opts) {
     po::options_description indexing("\\_______________ HTM indexing", 80);
     indexing.add_options()
-        ("level", po::value<int>()->default_value(8),
-         "HTM index subdivision level.")
-        ("incremental", po::bool_switch(),
-         "Allow incrementally adding to an existing index.");
+        ("htm.level", po::value<int>()->default_value(8),
+         "HTM index subdivision level.");
     po::options_description part("\\_______________ Partitioning", 80);
     part.add_options()
         ("part.id", po::value<string>(),
          "The name of the record ID input field.")
-        ("part.ra", po::value<string>()->default_value("ra"),
-         "The partitioning right ascension field name.")
-        ("part.decl", po::value<string>()->default_value("decl"),
-         "The partitioning declination field name.");
-    po::options_description output("\\_____________________ Output", 80);
-    output.add_options()
-        ("out.dir", po::value<string>()->default_value("index/"),
-         "The output file directory. Unless running incrementally, this "
-         "directory is not allowed to exist.")
-        ("out.num-nodes", po::value<uint32_t>()->default_value(1u),
-         "The number of duplicator nodes that will be processing the output "
-         "files. If this is more than 1, then output files are assigned to "
-         "duplicators by hashing and are placed into a sub-directory of "
-         "out.dir named node_XXXXX, where XXXXX is a logical ID for the "
-         "duplicator node between 0 and out.num-nodes - 1.");
-    opts.add(indexing).add(part).add(output);
+        ("part.pos", po::value<string>(),
+         "The partitioning right ascension and declination field names, "
+         "separated by a comma.");
+    opts.add(indexing).add(part);
+    defineOutputOptions(opts);
     csv::Editor::defineOptions(opts);
 }
 
@@ -302,41 +275,19 @@ static char const * help =
     "index will be corrupt and/or useless.\n";
 
 int main(int argc, char const * const * argv) {
-    using lsst::qserv::admin::dupr::HtmIndex;
-    using lsst::qserv::admin::dupr::HtmIndexJob;
-    using lsst::qserv::admin::dupr::parseCommandLine;
-
+    namespace dupr = lsst::qserv::admin::dupr;
     try {
-        // Get job options and include some command-line only options.
-        po::options_description options;
-        HtmIndexJob::defineOptions(options);
-        po::variables_map vm;
-        parseCommandLine(vm, options, argc, argv, help);
-        // Create output directory
-        fs::path outDir = fs::system_complete(fs::path(vm["out.dir"].as<string>()));
-        if (outDir.filename() == ".") {
-            // create_directories returns false for "does_not_exist/", even
-            // when "does_not_exist" must be created. This is because the
-            // trailing slash causes the last path component to be ".", which
-            // exists once it is iterated to.
-            outDir.remove_filename();
-        }
-        po::variable_value v = vm["out.dir"];
-        v.value() = outDir.native();
-        static_cast<std::map<string, po::variable_value> >(vm)["out.dir"] = v;
-        if (fs::create_directories(outDir) == false &&
-            !vm["incremental"].as<bool>()) {
-            cerr << "The output directory --out.dir=" << outDir.native()
-                 << " already exists - please choose another." << endl;
-            return EXIT_FAILURE;
-        }
-        // Launch the HTM indexing job.
         cpu_timer t;
-        HtmIndexJob job(vm);
-        shared_ptr<HtmIndex> index = job.run();
-        // Write out results.
+        po::options_description options;
+        dupr::HtmIndexJob::defineOptions(options);
+        po::variables_map vm;
+        dupr::parseCommandLine(vm, options, argc, argv, help);
+        dupr::makeOutputDirectory(vm);
+        dupr::HtmIndexJob job(vm);
+        shared_ptr<dupr::HtmIndex> index = job.run();
         if (!index->empty()) {
-            index->write(outDir / fs::path("htm_index.bin"), false);
+            fs::path d(vm["out.dir"].as<string>());
+            index->write(d / "htm_index.bin", false);
         }
         if (vm.count("verbose") != 0) {
             cerr << "run-time: " << t.format() << endl;

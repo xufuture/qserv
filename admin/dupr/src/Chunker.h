@@ -15,8 +15,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -114,6 +114,10 @@ public:
     SphericalBox const getSubChunkBounds(int32_t chunkId,
                                          int32_t subChunkId) const;
 
+    /// Find the non-overlap location of the given position.
+    ChunkLocation const locate(
+        std::pair<double, double> const & position) const;
+
     /// Append the locations of the given position to the `locations` vector.
     /// If `chunkId` is negative, all locations are appended. Otherwise, only
     /// those in the corresponding chunk are appended.
@@ -123,17 +127,18 @@ public:
 
     /// Return IDs of all chunks overlapping the given box and belonging
     /// to the given node. The target node is specified as an integer in the
-    /// range `[0, numNodes)`. If `hash` is true, then chunk C is assigned to
-    /// the node given by hash(C) modulo `numNodes`. Otherwise, chunks are
-    /// assigned to nodes in round-robin fashion. The region argument has no
-    /// effect on which node a chunk C is assigned to.
+    /// range `[0, numNodes)`. If `hash` is true, then the chunk with ID C is
+    /// assigned to the node given by hash(C) modulo `numNodes`. Otherwise,
+    /// chunks are assigned to nodes in round-robin fashion. The region
+    /// argument has no effect on which node a chunk is assigned to.
     std::vector<int32_t> const getChunksFor(SphericalBox const & region,
                                             uint32_t node,
                                             uint32_t numNodes,
                                             bool hashChunks) const;
 
     /// Define configuration variables for partitioning.
-    static void defineOptions(boost::program_options::options_description & opts);
+    static void defineOptions(
+        boost::program_options::options_description & opts);
 
 private:
     // Disable copy construction and assignment.

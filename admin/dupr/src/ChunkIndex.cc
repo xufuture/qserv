@@ -15,8 +15,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -95,7 +95,7 @@ void ChunkIndex::Stats::set(vector<uint64_t> & counts) {
     Iter end = counts.end();
     nth_element(counts.begin(), q1, end);
     nth_element(q1, q2, end);
-    nth_element(q2, q3, end);    
+    nth_element(q2, q3, end);
     quartile[0] = *q1;
     quartile[1] = *q2;
     quartile[2] = *q3;
@@ -122,7 +122,7 @@ void ChunkIndex::Stats::write(ostream & os, string const & indent) const {
        << indent << "\"n\":        " << n << ",\n"
        << indent << "\"min\":      " << min << ",\n"
        << indent << "\"max\":      " << max << ",\n"
-       << indent << "\"quartile\": [" << quartile[0] << ", " 
+       << indent << "\"quartile\": [" << quartile[0] << ", "
                                       << quartile[1] << ", "
                                       << quartile[2] << "],\n"
        << indent << "\"mean\":     " << setprecision(2) << mean << ",\n"

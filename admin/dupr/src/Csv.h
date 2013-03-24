@@ -15,8 +15,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -48,7 +48,7 @@ namespace lsst { namespace qserv { namespace admin { namespace dupr {
 namespace csv {
 
 /// A description of a CSV dialect. The following assumptions must hold:
-/// 
+///
 /// - A record must be contained in exactly one line. Fields
 ///   with embedded line terminators are not parsed correctly.
 /// - Lines are terminated by LF, CR, or CRLF.
@@ -200,7 +200,7 @@ private:
 /// Prior to the first `readRecord()` call, all input and output fields have
 /// their values set to NULL. Output fields can be modified via `set()` and
 /// `setNull()`. To load new input fields and clear out any edits, supply a
-/// line of text to `readRecord()`. Subsequently, input fields for the line 
+/// line of text to `readRecord()`. Subsequently, input fields for the line
 /// can be accessed via `get()` and `isNull()`. An output record that combines
 /// input field values and any edits performed since the last `readRecord()`
 /// call or editor creation is written by `writeRecord()`.

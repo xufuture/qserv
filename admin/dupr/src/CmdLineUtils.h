@@ -15,7 +15,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
+ * You should have received a copy of the LSST License Statement and
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
@@ -24,7 +24,10 @@
 /// \brief Command-line utility functions.
 
 #ifndef LSST_QSERV_ADMIN_DUPR_CMDLINEUTILS_H
-#define LSST_QSERV_ADMIN_DUPR_CMDLINEUTILS_H 
+#define LSST_QSERV_ADMIN_DUPR_CMDLINEUTILS_H
+
+#include <string>
+#include <utility>
 
 #include "boost/program_options.hpp"
 
@@ -33,13 +36,31 @@ namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
 /// Parse the given command line according to the `options` given and store
 /// the results in `vm`. This function defines generic options `help`, `verbose`,
-/// `profile`, `config-file`. It handles `help` output and configuration file
-/// parsing for the caller.
+/// and `config-file`. It handles `help` output and configuration file parsing
+/// for the caller.
 void parseCommandLine(boost::program_options::variables_map & vm,
                       boost::program_options::options_description const & opts,
                       int argc,
                       char const * const * argv,
                       char const * help);
+
+/// Parse an option value that contains a comma separated pair of field names,
+/// Leading/trailing whitespace is stripped from each name; empty names are not
+/// allowed.
+std::pair<std::string, std::string> const parseFieldNamePair(
+     std::string const & opt, std::string const & val);
+
+/// Define the `incremental`, `out.dir` and `out.num-nodes` options.
+void defineOutputOptions(boost::program_options::options_description & opts);
+
+/// Handle output directory checking/creation. Assumes `defineOutputOptions()`
+/// has been used.
+void makeOutputDirectory(boost::program_options::variables_map & vm);
+
+/// Ensure that the field name given by the option `opt` is listed as an output
+/// field (in `out.csv.field`) by appending it if necessary.
+void ensureOutputFieldExists(boost::program_options::variables_map & vm,
+                             std::string const & opt);
 
 }}}} // namespace lsst::qserv::admin::dupr
 

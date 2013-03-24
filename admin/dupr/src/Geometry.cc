@@ -15,8 +15,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -405,7 +405,7 @@ double SphericalTriangle::area() const {
 //
 // Here K is the Gaussian curvature of M, dA is the area element of the
 // surface, and the first integral is over M. The second integral is over
-// ∂M, the boundary of M, where k is the geodesic curvature of ∂M and ds is 
+// ∂M, the boundary of M, where k is the geodesic curvature of ∂M and ds is
 // the line element along ∂M. Since K = 1 and χ(M) = 1, ∫K dA is just the
 // desired area A, and:
 //

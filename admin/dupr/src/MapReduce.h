@@ -15,8 +15,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -84,8 +84,8 @@ public:
 
     static size_t const ALLOC_SIZE = 32*MAX_LINE_SIZE - 16;
 
-    Silo() : _records(), _bytesUsed(0), _head(0), _cur(0), _end(0) { } 
- 
+    Silo() : _records(), _bytesUsed(0), _head(0), _cur(0), _end(0) { }
+
     ~Silo() {
         // Traverse linked-list, freeing each allocation. Forward
         // pointers are located at the beginning of each allocation.
@@ -129,7 +129,7 @@ public:
         }
     }
 
-    /// Sort the records in the silo. 
+    /// Sort the records in the silo.
     void sort() {
         std::sort(_records.begin(), _records.end());
     }
@@ -190,7 +190,7 @@ private:
     std::vector<Record> _records;
     size_t              _bytesUsed;
     char *              _head; // Head of linked allocation list.
-    char *              _cur; 
+    char *              _cur;
     char *              _end;  // End of current allocation.
 
     char                _padEnd[CACHE_LINE_SIZE];
@@ -247,7 +247,7 @@ template <typename K> void Silo<K>::_grow() {
 /// it, and the process repeats until the input is exhausted.
 ///
 /// A worker implementation can assume that it is being used by a single
-/// thread at a time, that no threads will be mapping while others are 
+/// thread at a time, that no threads will be mapping while others are
 /// reducing, and that no other workers will see the data its `map` and
 /// `reduce` calls receive. In addition, if a worker sees a record with key
 /// K, then it is guaranteed to see all records with that key (possibly over

@@ -15,8 +15,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -114,7 +114,7 @@ Dialect::Dialect(Dialect const & dialect) :
     _escape(dialect._escape),
     _quote(dialect._quote)
 {
-    memcpy(_scanLut.get(), dialect._scanLut.get(), 256 * sizeof(uint8_t)); 
+    memcpy(_scanLut.get(), dialect._scanLut.get(), 256 * sizeof(uint8_t));
 }
 
 Dialect::~Dialect() { }
@@ -459,7 +459,7 @@ char const * Editor::readRecord(char const * beg, char const * end) {
                 if (beg + 1 < end) {
                     char const next = beg[1];
                     if (next == c) {
-                        ++beg; 
+                        ++beg;
                     } else if (next == '\n' || next == '\r') {
                         ++beg;
                         quoted = false;
@@ -680,7 +680,7 @@ IMPLEMENT_SET(unsigned long long, llu)
 IMPLEMENT_SET_IMPL(float, double, .9g)
 IMPLEMENT_SET(double, .17g)
 
-#undef IMPLEMENT_SET_IMPL 
+#undef IMPLEMENT_SET_IMPL
 #undef IMPLEMENT_SET
 
 void Editor::defineOptions(po::options_description & opts) {

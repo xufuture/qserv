@@ -21,8 +21,29 @@
  */
 
 /// \file
-/// \brief The Qserv partitioner for tables which have a single
-///        partitioning position.
+/// \brief The Qserv partitioner for match tables.
+///
+/// A match table M contain foreign keys into a pair of identically partitioned
+/// positional tables U and V (containing e.g. objects and reference objects).
+/// A match in M is assigned to a partition P if either of the positions pointed
+/// to is assigned to P. If no positions in a match are separated by more than the
+/// partitioning overlap radius, then a 3-way equi-join between U, M and V can
+/// be decomposed into the union of 3-way joins over the set of partitions P:
+///
+///     (
+///         SELECT ...
+///         FROM Uᵨ INNER JOIN Mᵨ ON (Uᵨ.pk = Mᵨ.fkᵤ)
+///                 INNER JOIN Vᵨ ON (Mᵨ.fkᵥ = Vᵨ.pk)
+///         WHERE ...
+///     ) UNION ALL (
+///         SELECT ...
+///         FROM Uᵨ INNER JOIN Mᵨ ON (Uᵨ.pk = Mᵨ.fkᵤ)
+///                 INNER JOIN Vᵨ ON (Mᵨ.fkᵥ = OVᵨ.pk)
+///         WHERE ...
+///     )
+///
+/// Here, Uᵨ, Mᵨ and Vᵨ are the contents of S, M and T for partition p, and
+/// OVᵨ is the subset of V \ Vᵨ within the overlap radius of Vᵨ.
 
 #include <cstdio>
 #include <iostream>
@@ -65,15 +86,16 @@ namespace po = boost::program_options;
 
 namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
-/// Map-reduce worker class for partitioning.
+/// Map-reduce worker class for partitioning spatial match pairs.
 ///
-/// The `map` function computes all partitioning locations of each input
-/// record, and stores an output record per-location.
+/// The `map` function computes the non-overlap location of both
+/// positions in each match record, and stores the match in both
+/// locations.
 ///
 /// The `reduce` function saves output records to files, each containing
-/// data for a single chunk ID. Chunk IDs are assigned to down-stream nodes
-/// by hashing, and the corresponding output files are created in node
-/// specific sub-directories of the output directory.
+/// data for a single chunk ID. Each chunk ID is assigned to a down-stream
+/// node by hashing, and the corresponding output files are created in a
+/// node specific sub-directory of the output directory.
 ///
 /// A worker's result is a ChunkIndex object that contains the total
 /// record count for each chunk and sub-chunk seen by that worker.
@@ -90,79 +112,116 @@ public:
     static void defineOptions(po::options_description & opts);
 
 private:
-    void _makeFilePaths(int32_t chunkId);
+    void _openFile(int32_t chunkId);
 
     csv::Editor            _editor;
-    int                    _raField;
-    int                    _decField;
+    pair<int,int>          _pos1;
+    pair<int,int>          _pos2;
     int                    _chunkIdField;
     int                    _subChunkIdField;
+    int                    _flagsField;
     Chunker                _chunker;
-    vector<ChunkLocation>  _locations;
     shared_ptr<ChunkIndex> _index;
     int32_t                _chunkId;
     uint32_t               _numNodes;
     fs::path               _outputDir;
-    fs::path               _nonOverlapPath;
-    fs::path               _selfOverlapPath;
-    fs::path               _fullOverlapPath;
-    BufferedAppender       _nonOverlap;
-    BufferedAppender       _selfOverlap;
-    BufferedAppender       _fullOverlap;
+    BufferedAppender       _chunk;
 };
 
 Worker::Worker(po::variables_map const & vm) :
     _editor(vm),
-    _raField(-1),
-    _decField(-1),
+    _pos1(-1, -1),
+    _pos2(-1, -1),
     _chunkIdField(-1),
     _subChunkIdField(-1),
+    _flagsField(-1),
     _chunker(vm),
     _index(make_shared<ChunkIndex>()),
     _chunkId(-1),
     _numNodes(vm["out.num-nodes"].as<uint32_t>()),
     _outputDir(vm["out.dir"].as<string>()),
-    _nonOverlap(vm["mr.block-size"].as<size_t>()*MiB),
-    _selfOverlap(vm["mr.block-size"].as<size_t>()*MiB),
-    _fullOverlap(vm["mr.block-size"].as<size_t>()*MiB)
+    _chunk(vm["mr.block-size"].as<size_t>()*MiB)
 {
     if (_numNodes == 0 || _numNodes > 99999u) {
         throw runtime_error("The --out.num-nodes option value must be "
                             "between 1 and 99999.");
     }
     // Map field names of interest to field indexes.
-    if (vm.count("part.pos") == 0) {
-        throw runtime_error("The --part.pos option was not specified.");
+    if (vm.count("part.pos1") == 0 || vm.count("part.pos2") == 0) {
+        throw runtime_error("The --part.pos1 and/or --part.pos2 "
+                            "option was not specified.");
     }
-    string s = vm["part.pos"].as<string>();
-    pair<string,string> p = parseFieldNamePair("part.pos", s);
-    _raField = _editor.getFieldIndex(p.first);
-    _decField = _editor.getFieldIndex(p.second);
-    if (_raField < 0 || _decField < 0) {
-        throw runtime_error("--part.pos=\"" + s + "\" is not a valid "
+    string s = vm["part.pos1"].as<string>();
+    pair<string,string> p = parseFieldNamePair("part.pos1", s);
+    _pos1.first = _editor.getFieldIndex(p.first);
+    _pos1.second = _editor.getFieldIndex(p.second);
+    if (_pos1.first < 0 || _pos1.second < 0) {
+        throw runtime_error("--part.pos1=\"" + s + "\" is not a valid "
+                            "pair of input field names.");
+    }
+    s = vm["part.pos2"].as<string>();
+    p = parseFieldNamePair("part.pos2", s);
+    _pos2.first = _editor.getFieldIndex(p.first);
+    _pos2.second = _editor.getFieldIndex(p.second);
+    if (_pos2.first < 0 || _pos2.second < 0) {
+        throw runtime_error("--part.pos2=\"" + s + "\" is not a valid "
                             "pair of input field names.");
     }
     if (vm.count("part.chunk") != 0) {
         _chunkIdField = _editor.getFieldIndex(vm["part.chunk"].as<string>());
     }
     _subChunkIdField = _editor.getFieldIndex(vm["part.sub-chunk"].as<string>());
+    _flagsField = _editor.getFieldIndex(vm["part.flags"].as<string>());
 }
 
 void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
-    typedef vector<ChunkLocation>::const_iterator LocIter;
-    pair<double, double> sc;
+    pair<double, double> sc1, sc2;
+    ChunkLocation loc1, loc2;
     while (beg < end) {
         beg = _editor.readRecord(beg, end);
-        sc.first = _editor.get<double>(_raField);
-        sc.second = _editor.get<double>(_decField);
-        // Locate partitioning position and output a record for each location.
-        _locations.clear();
-        _chunker.locate(sc, -1, _locations);
-        assert(!_locations.empty());
-        for (LocIter i = _locations.begin(), e = _locations.end(); i != e; ++i) {
-            _editor.set(_chunkIdField, i->chunkId);
-            _editor.set(_subChunkIdField, i->subChunkId);
-            silo.add(*i, _editor);
+        bool null1 = _editor.isNull(_pos1.first) || _editor.isNull(_pos1.second);
+        bool null2 = _editor.isNull(_pos2.first) || _editor.isNull(_pos2.second);
+        if (null1 && null2) {
+            throw runtime_error("Both partitioning positions in a match "
+                                "record contain NULLs.");
+        }
+        if (!null1) {
+            sc1.first = _editor.get<double>(_pos1.first);
+            sc1.second = _editor.get<double>(_pos1.second);
+            loc1 = _chunker.locate(sc1);
+        }
+        if (!null2) {
+            sc2.first = _editor.get<double>(_pos2.first);
+            sc2.second = _editor.get<double>(_pos2.second);
+            loc2 = _chunker.locate(sc2);
+        }
+        if (!null1) {
+            _editor.set(_chunkIdField, loc1.chunkId);
+            _editor.set(_subChunkIdField, loc1.subChunkId);
+            if (!null2) {
+                // Both positions are valid.
+                if (angSep(cartesian(sc1), cartesian(sc2)) * DEG_PER_RAD >
+                    _chunker.getOverlap() - EPSILON_DEG) {
+                    throw runtime_error("Partitioning positions in match record "
+                                        "are separated by more than the overlap "
+                                        "radius.");
+                }
+                if (loc1.chunkId == loc2.chunkId &&
+                    loc1.subChunkId == loc2.subChunkId) {
+                    // Both positions are in the same partitioning location.
+                    _editor.set(_flagsField, '3');
+                    silo.add(loc1, _editor);
+                    continue;
+                }
+            }
+            _editor.set(_flagsField, '1');
+            silo.add(loc1, _editor);
+        }
+        if (!null2) {
+            _editor.set(_chunkIdField, loc2.chunkId);
+            _editor.set(_subChunkIdField, loc2.subChunkId);
+            _editor.set(_flagsField, '2');
+            silo.add(loc2, _editor);
         }
     }
 }
@@ -173,64 +232,49 @@ void Worker::reduce(Worker::RecordIter beg, Worker::RecordIter end) {
     }
     int32_t const chunkId = beg->key.chunkId;
     if (chunkId != _chunkId) {
-        finish();
         _chunkId = chunkId;
-        _makeFilePaths(chunkId);
+        _openFile(chunkId);
     }
-    // Store records and update statistics. Files are only created/
-    // opened if there is data to write to them.
     for (; beg != end; ++beg) {
         _index->add(beg->key);
-        if (beg->key.kind == ChunkLocation::NON_OVERLAP) {
-            if (!_nonOverlap.isOpen()) {
-                _nonOverlap.open(_nonOverlapPath, false);
-            }
-            _nonOverlap.append(beg->data, beg->size);
-        } else {
-            if (beg->key.kind == ChunkLocation::SELF_OVERLAP) {
-               if (!_selfOverlap.isOpen()) {
-                   _selfOverlap.open(_selfOverlapPath, false);
-               }
-               _selfOverlap.append(beg->data, beg->size);
-            }
-            // self-overlap locations are also full-overlap locations.
-            if (!_fullOverlap.isOpen()) {
-                _fullOverlap.open(_fullOverlapPath, false);
-            }
-            _fullOverlap.append(beg->data, beg->size);
-        }
+        _chunk.append(beg->data, beg->size);
     }
 }
 
 void Worker::finish() {
-    // Reset current chunk ID to an invalid ID and close all output files.
     _chunkId = -1;
-    _nonOverlap.close();
-    _selfOverlap.close();
-    _fullOverlap.close();
+    _chunk.close();
 }
 
 void Worker::defineOptions(po::options_description & opts) {
     po::options_description part("\\_______________ Partitioning", 80);
     part.add_options()
-        ("incremental", po::bool_switch(),
-         "Allow incrementally adding to a partitioned data set.")
         ("part.chunk", po::value<string>(),
          "Optional chunk ID output field name. This field name is appended "
          "to the output field name list if it isn't already included.")
         ("part.sub-chunk", po::value<string>()->default_value("subChunkId"),
          "Sub-chunk ID output field name. This field field name is appended "
          "to the output field name list if it isn't already included.")
-        ("part.pos", po::value<string>(),
-         "The partitioning right ascension and declination field names, "
-         "separated by a comma.");
+        ("part.pos1", po::value<string>(),
+         "The partitioning right ascension and declination field names of the "
+         "first matched entity, separated by a comma.")
+        ("part.pos2", po::value<string>(),
+         "The partitioning right ascension and declination field names of the "
+         "second matched entity, separated by a comma.")
+        ("part.flags", po::value<string>()->default_value("partitioningFlags"),
+         "The partitioning flags output field name. Bit 0, the LSB of the "
+         "field value, is set if the partition of the first entity in the "
+         "match is equal to the partition of the match pair. Likewise, bit "
+         "1 is set if the partition of the second entity is equal to the "
+         "partition of the match pair. This field name is appended to the "
+         "output field name list if it isn't already included.");
     Chunker::defineOptions(part);
     opts.add(part);
     defineOutputOptions(opts);
     csv::Editor::defineOptions(opts);
 }
 
-void Worker::_makeFilePaths(int32_t chunkId) {
+void Worker::_openFile(int32_t chunkId) {
     fs::path p = _outputDir;
     if (_numNodes > 1) {
         // Files go into a node-specific sub-directory.
@@ -244,28 +288,23 @@ void Worker::_makeFilePaths(int32_t chunkId) {
     char file[32];
     snprintf(file, sizeof(file), "chunk_%ld.txt",
              static_cast<long>(chunkId));
-    _nonOverlapPath = p / fs::path(file);
-    snprintf(file, sizeof(file), "chunk_%ld_self.txt",
-             static_cast<long>(chunkId));
-    _selfOverlapPath = p / fs::path(file);
-    snprintf(file, sizeof(file), "chunk_%ld_full.txt",
-             static_cast<long>(chunkId));
-    _fullOverlapPath = p / fs::path(file);
+    _chunk.open(p / fs::path(file), false);
 }
 
 
-typedef Job<Worker> PartitionJob;
+typedef Job<Worker> PartitionMatchesJob;
 
 }}}} // namespace lsst::qserv::admin::dupr
 
 
 static char const * help =
-    "The Qserv partitioner partitions one or more input CSV files in\n"
-    "preparation for loading by Qserv worker nodes. This boils down to\n"
-    "assigning each input position to locations in a 2-level subdivision\n"
+    "The Qserv match partitioner partitions one or more input CSV files in\n"
+    "preparation for loading by Qserv worker nodes. This involves assigning\n"
+    "both positions in a match pair to a location in a 2-level subdivision\n"
     "scheme, where a location consists of a chunk and sub-chunk ID, and\n"
-    "then bucket-sorting input records into output files by chunk ID.\n"
-    "Chunk files can then be distributed to Qserv worker nodes for loading.\n"
+    "outputting the match pair once for each distinct location. Match pairs\n"
+    "are bucket-sorted by chunk ID, resulting in chunk files that can then\n"
+    "be distributed to Qserv worker nodes for loading.\n"
     "\n"
     "A partitioned data-set can be built-up incrementally by running the\n"
     "partitioner with disjoint input file sets and the same output directory.\n"
@@ -277,17 +316,17 @@ static char const * help =
 
 int main(int argc, char const * const * argv) {
     namespace dupr = lsst::qserv::admin::dupr;
-
     try {
         cpu_timer t;
         po::options_description options;
-        dupr::PartitionJob::defineOptions(options);
+        dupr::PartitionMatchesJob::defineOptions(options);
         po::variables_map vm;
         dupr::parseCommandLine(vm, options, argc, argv, help);
         dupr::ensureOutputFieldExists(vm, "part.chunk");
         dupr::ensureOutputFieldExists(vm, "part.sub-chunk");
+        dupr::ensureOutputFieldExists(vm, "part.flags");
         dupr::makeOutputDirectory(vm);
-        dupr::PartitionJob job(vm);
+        dupr::PartitionMatchesJob job(vm);
         shared_ptr<dupr::ChunkIndex> index = job.run();
         if (!index->empty()) {
             fs::path d(vm["out.dir"].as<string>());

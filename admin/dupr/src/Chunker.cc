@@ -15,8 +15,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -115,6 +115,34 @@ SphericalBox const Chunker::getSubChunkBounds(int32_t chunkId,
     double decMin = clampDec(subStripe*_subStripeHeight - 90.0);
     double decMax = clampDec((subStripe + 1)*_subStripeHeight - 90.0);
     return SphericalBox(raMin, raMax, decMin, decMax);
+}
+
+ChunkLocation const Chunker::locate(
+    std::pair<double, double> const & position) const
+{
+    ChunkLocation loc;
+    double const ra = position.first;
+    double const dec = position.second;
+    int32_t subStripe = static_cast<int32_t>(
+        floor((dec + 90.0) / _subStripeHeight));
+    int32_t const numSubStripes = _numSubStripesPerStripe*_numStripes;
+    if (subStripe >= numSubStripes) {
+        subStripe = numSubStripes - 1;
+    }
+    int32_t const stripe = subStripe/_numSubStripesPerStripe;
+    int32_t subChunk = static_cast<int32_t>(
+        floor(ra / _subChunkWidth[subStripe]));
+    int32_t const numChunks = _numChunksPerStripe[stripe];
+    int32_t const numSubChunksPerChunk = _numSubChunksPerChunk[subStripe];
+    int32_t const numSubChunks = numChunks*numSubChunksPerChunk;
+    if (subChunk >= numSubChunks) {
+        subChunk = numSubChunks - 1;
+    }
+    int32_t const chunk = subChunk / numSubChunksPerChunk;
+    loc.chunkId = _getChunkId(stripe, chunk);
+    loc.subChunkId = _getSubChunkId(stripe, subStripe, chunk, subChunk);
+    loc.kind = ChunkLocation::NON_OVERLAP;
+    return loc;
 }
 
 void Chunker::locate(pair<double, double> const & position,
