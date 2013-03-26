@@ -646,9 +646,15 @@ namespace detail {
     class JobImpl : private JobBase<JobImpl<WorkerT, ResultT>, WorkerT> {
         typedef JobBase<JobImpl<WorkerT, ResultT>, WorkerT> Base;
 
-        void _storeResult(WorkerT & w) { _results.push_back(w.result()); }
+        void _storeResult(WorkerT & w) {
+            boost::shared_ptr<ResultT> r = w.result();
+            if (!_result) {
+                _result = r;
+            } else if (r) {
+                _result->merge(*r);
+            }
+        }
 
-        std::vector<boost::shared_ptr<ResultT> > _results;
         boost::shared_ptr<ResultT> _result;
         bool _done;
 
@@ -658,30 +664,15 @@ namespace detail {
     public:
         explicit JobImpl(boost::program_options::variables_map const & vm) :
             Base(vm), _done(false)
-        {
-            _results.reserve(vm["mr.num-workers"].as<uint32_t>());
-        }
+        { }
 
         boost::shared_ptr<ResultT> const run() {
-            typedef typename std::vector<boost::shared_ptr<ResultT> >::iterator Iter;
             if (_done) {
                 return _result;
             }
             _done = true;
             Base::run();
-            boost::shared_ptr<ResultT> r;
-            for (Iter i = _results.begin(), e = _results.end(); i != e; ++i) {
-                if (*i) {
-                    if (r) {
-                        r->merge(**i);
-                    } else {
-                        r = *i;
-                    }
-                }
-            }
-            _result = r;
-            _results.clear();
-            return r;
+            return _result;
         }
 
         using Base::defineOptions;

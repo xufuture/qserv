@@ -66,7 +66,7 @@ void ChunkIndex::Stats::clear() {
 namespace {
     vector<uint64_t>::iterator percentile(double p, vector<uint64_t> & v) {
         typedef vector<uint64_t>::size_type S;
-        S i = std::min(static_cast<S>(floor(p*v.size() + 0.5)), v.size());
+        S i = std::min(static_cast<S>(floor(p*v.size() + 0.5)), v.size() - 1);
         return v.begin() + i;
     }
 }
@@ -125,7 +125,7 @@ void ChunkIndex::Stats::write(ostream & os, string const & indent) const {
        << indent << "\"quartile\": [" << quartile[0] << ", "
                                       << quartile[1] << ", "
                                       << quartile[2] << "],\n"
-       << indent << "\"mean\":     " << setprecision(2) << mean << ",\n"
+       << indent << "\"mean\":     " << setprecision(3) << mean << ",\n"
        << indent << "\"sigma\":    " << setprecision(3) << sigma << ",\n"
        << indent << "\"skewness\": " << setprecision(3) << skewness << ",\n"
        << indent << "\"kurtosis\": " << setprecision(3) << kurtosis;
