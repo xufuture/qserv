@@ -494,7 +494,8 @@ void makeOutputDirectory(boost::program_options::variables_map & vm) {
         // exists once it is iterated to.
         outDir.remove_filename();
     }
-    po::variable_value v = vm["out.dir"];
+    map<string, po::variable_value> & m = vm;
+    po::variable_value & v = m["out.dir"];
     v.value() = outDir.native();
     if (fs::create_directories(outDir) == false &&
         !vm["incremental"].as<bool>()) {
@@ -511,23 +512,23 @@ void ensureOutputFieldExists(boost::program_options::variables_map & vm,
     if (vm.count(opt) == 0) {
         return;
     }
-    po::variable_value v;
+    vector<string> names;
     if (vm.count("out.csv.field") == 0) {
         if (vm.count("in.csv.field") == 0) {
             cerr << "Input CSV field names not specified." << endl;
             exit(EXIT_FAILURE);
         }
-        v = vm["in.csv.field"];
+        names = vm["in.csv.field"].as<vector<string> >();
     } else {
-        v = vm["out.csv.field"];
+        names = vm["out.csv.field"].as<vector<string> >();
     }
-    vector<string> names = v.as<vector<string> >();
     string name = vm[opt].as<string>();
     if (find(names.begin(), names.end(), name) == names.end()) {
         names.push_back(name);
     }
+    map<string, po::variable_value> & m = vm;
+    po::variable_value & v = m["out.csv.field"];
     v.value() = names;
-    static_cast<map<string, po::variable_value> >(vm)["out.csv.field"] = v;
 }
 
 }}}} // namespace lsst::qserv::admin::dupr
