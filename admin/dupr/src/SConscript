@@ -1,0 +1,13 @@
+Import('env')
+
+# Common source files
+sources = env.Glob('[!Q]*.cc')
+
+# Build utility programs
+for target in ('htm-index',
+               'partition',
+               'partition-matches',
+              ):
+    target = 'qserv-' + target
+    main = ''.join(map(lambda s: s.title(), target.split('-'))) + '.cc'
+    env.Install('$PREFIX/bin', env.Program(target, sources + [main]))

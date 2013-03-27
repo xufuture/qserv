@@ -1,0 +1,34 @@
+import sys
+
+# TODO: use Variables instead?
+AddOption('--prefix', dest='prefix', metavar='DIR',
+          help='Installation prefix')
+AddOption('--debug-build', dest='debug_build', action='store_true',
+          default=False, help='Debug build')
+AddOption('--boost-includes', dest='boost_includes', metavar='DIR',
+          help='Boost include directory')
+AddOption('--boost-libs', dest='boost_libs', metavar='DIR',
+          help='Boost library directory')
+
+env = Environment(PREFIX=GetOption('prefix'))
+env.Append(CPPPATH=[GetOption('boost_includes')])
+env.Append(LIBPATH=[GetOption('boost_libs')])
+env.Append(RPATH=[GetOption('boost_libs')])
+env.Append(CCFLAGS=['-g', '-Wall', '-Wextra'])
+if GetOption('debug'):
+    variant_dir = 'build/debug'
+else:
+    variant_dir = 'build/release'
+    env.Append(CCFLAGS=['-O2'])
+env.Alias('install', '$PREFIX/bin')
+env.Help("Qserv spatial partitioning and duplication utilities.")
+
+if not GetOption('help'):
+    if not GetOption('clean'):
+        conf = Configure(env)
+        pkgs = ["system", "chrono", "timer", "thread", "filesystem", "program_options",]
+        if filter(lambda p: not conf.CheckLib("boost_" + p, language="C++"), pkgs):
+            print >> sys.stderr, "Missing required boost libraries!"
+            Exit(1)
+        env=conf.Finish()
+    SConscript(dirs='.', variant_dir=variant_dir, duplicate=False, exports='env')
