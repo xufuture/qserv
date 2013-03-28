@@ -53,7 +53,9 @@ public:
                     WRITE_OPEN, WRITE_WRITE, 
                     READ_QUEUE,
 		    READ_OPEN, READ_READ,
-		    COMPLETE, CORRUPT, ABORTED};
+		    COMPLETE, 
+                    QUEUE_SQUASH,
+                    CORRUPT, ABORTED};
     static char const* getWaitStateStr(WaitState s);
 
     class ReadCallable;

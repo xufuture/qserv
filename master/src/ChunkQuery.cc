@@ -184,6 +184,7 @@ char const* qMaster::ChunkQuery::getWaitStateStr(WaitState s) {
     case READ_OPEN: return "READ_OPEN";
     case READ_READ: return "READ_READ";
     case COMPLETE : return "COMPLETE ";
+    case QUEUE_SQUASH : return "QUEUE_SQUASH ";
     case CORRUPT: return "CORRUPT";
     case ABORTED: return "ABORTED";
     default:
@@ -203,6 +204,21 @@ void qMaster::ChunkQuery::Complete(int Result) {
         return; // Anything else to do?
     }
     switch(_state) {
+    case WRITE_QUEUE: // Queued, but received a Complete()?
+        if(Result < 0) { // a squash message?
+            isReallyComplete = true;
+            ss << "ChunkQuery::Complete() squash for query id="
+               << _id << " chunkId=" << _spec.chunkId
+               << " while queued" << std::endl;
+            _state = QUEUE_SQUASH;
+        } else { // Bad transition.
+            isReallyComplete = true;
+            ss << "ERROR: Unexpected ChunkQuery::Complete(>=0) @ WRITE_QUEUE " 
+                "query id=" << _id << " chunkId=" << _spec.chunkId 
+               << std::endl;
+            _state = CORRUPT;
+        }
+        break;
     case WRITE_OPEN: // Opened, so we can send off the query
         _writeOpenTimer.stop();
         ss << _hash << " WriteOpen " << _writeOpenTimer << std::endl;
@@ -340,6 +356,9 @@ std::string qMaster::ChunkQuery::getDesc() const {
     case COMPLETE:
         ss << "complete";
         break;
+    case QUEUE_SQUASH:
+        ss << "queueSquashed";
+        break;
     case CORRUPT:
         ss << "corrupted";
         break;
@@ -361,8 +380,8 @@ void qMaster::ChunkQuery::requestSquash() {
     _shouldSquash = true; 
     switch(_state) {
     case WRITE_QUEUE: // Write is queued...
-        //FIXME: Remove the job from the work queue. 
-        // Actually, should just assume that other code will be clearing the queue.
+        _state = ABORTED; // Mark as aborted.
+        // Assume that other code will be clearing the queue.
         break;
     case WRITE_OPEN:
         // Do nothing. Will get squashed at callback.
@@ -383,6 +402,8 @@ void qMaster::ChunkQuery::requestSquash() {
     case COMPLETE:
         // Do nothing.  It's too late to squash
         break;
+    case QUEUE_SQUASH:
+        break; // Nothing more to do.
     case ABORTED:
         break; // Already squashed?
     case CORRUPT:
@@ -570,7 +591,8 @@ void qMaster::ChunkQuery::_readResults(int fd) {
 }
 
 void qMaster::ChunkQuery::_notifyManager() {
-    bool aborted = (_state==ABORTED) 
+    bool aborted = (_state==ABORTED)
+        || (_state==QUEUE_SQUASH)
         || _shouldSquash 
         || (_result.queryWrite < 0);
     //std::cout << "cqnotify " << _id  << " " << (void*) _manager 
