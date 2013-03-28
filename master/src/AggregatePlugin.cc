@@ -38,6 +38,7 @@
 #include "lsst/qserv/master/AggOp.h"
 
 namespace qMaster=lsst::qserv::master;
+using lsst::qserv::master::QueryContext;
 using lsst::qserv::master::QueryPlugin;
 using lsst::qserv::master::QueryTemplate;
 using lsst::qserv::master::ValueExpr;
@@ -101,10 +102,12 @@ public:
     virtual void prepare() {}
 
     /// Apply the plugin's actions to the parsed, but not planned query
-    virtual void applyLogical(lsst::qserv::master::SelectStmt& stmt) {}
+    virtual void applyLogical(lsst::qserv::master::SelectStmt& stmt,
+                              QueryContext&) {}
 
     /// Apply the plugins's actions to the concrete query plan.
-    virtual void applyPhysical(lsst::qserv::master::QueryPlugin::Plan& p);
+    virtual void applyPhysical(lsst::qserv::master::QueryPlugin::Plan& p,
+                               QueryContext&);
 private:
     AggOp::Mgr _aMgr;
 };
@@ -139,7 +142,7 @@ lsst::qserv::master::registerAggregatePlugin() {
 // AggregatePlugin implementation
 ////////////////////////////////////////////////////////////////////////
 void
-AggregatePlugin::applyPhysical(QueryPlugin::Plan& p) {
+AggregatePlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext&) {
     using lsst::qserv::master::SelectList;
     // For each entry in original's SelectList, modify the SelectList
     // for the parallel and merge versions.

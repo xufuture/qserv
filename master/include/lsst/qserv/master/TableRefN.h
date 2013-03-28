@@ -43,12 +43,31 @@ public:
     virtual std::string const& getTable() const = 0;
     virtual std::ostream& putStream(std::ostream& os) const = 0;
     virtual void putTemplate(QueryTemplate& qt) const = 0;
-
     // Modifiers:
     virtual void setAlias(std::string const& a) { alias=a; }
+    virtual void setDb(std::string const& db) = 0;
+    virtual void setTable(std::string const& table) = 0;
+
+    class Func {
+    public:
+        virtual void operator()(TableRefN& t) {}
+    };
+    template <class F>
+    class Fwrapper {
+    public:
+        Fwrapper(F& f_) : f(f_) {}
+        inline void operator()(TableRefN::Ptr& t) {
+            if(t.get()) { t->apply(f); } }
+        F& f;
+    };
+        
+    // apply f() over all all tableRefns in depth-first order (for compound
+    // tablerefs)
+    virtual void apply(Func& f) {}
 
     class render;
 protected:
+
     TableRefN(std::string const& alias_) : alias(alias_) {}
     inline void _putAlias(QueryTemplate& qt) const {
         if(!alias.empty()) { 
@@ -59,7 +78,6 @@ protected:
     std::string alias;
     
 };
-// (implemented in FromFactory.cc for now)
 std::ostream& operator<<(std::ostream& os, TableRefN const& refN);
 std::ostream& operator<<(std::ostream& os, TableRefN const* refN);
 
@@ -92,6 +110,10 @@ public:
         qt.append(*this);
         _putAlias(qt);
     }
+    // Modifiers
+    virtual void setDb(std::string const& db_) { db = db_; }
+    virtual void setTable(std::string const& table_) { table = table_; }
+    virtual void apply(Func& f) { f(*this); }
 protected:
 //    std::string alias; // inherited
     std::string db;
@@ -136,6 +158,11 @@ public:
         qt.append(SimpleTableN(db2, table2, ""));
         _putAlias(qt);
     }
+    // Modifiers
+    virtual void setDb(std::string const&) {} // FIXME: ignore?
+    virtual void setTable(std::string const&) {} // FIXME: ignore?
+    virtual void apply(Func& f);
+
 protected:
     std::string db1;
     std::string table1;

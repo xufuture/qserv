@@ -165,7 +165,7 @@ PlanWriter::write(SelectStmt const& ss, ChunkSpecList const& specs) {
     std::cout << "ORIGINAL: " << orig.dbgStr() << std::endl;
     MapPlan mp;
     mp(*mapS);
-
+    // OBSOLETE.
     SpatialRestr sr;
     sr(*mapS);
     

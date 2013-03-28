@@ -32,12 +32,11 @@
 // Object_2031, Object_s2 -> Object_2031_232} ) that was used to
 // perform the subsitution.
 // 
-// that can accept query components as an intermediate stage to
-// generated queries. The copy-to-output-iterator paradigm was a very
-// useful paradigm for outputting components, but it is clear that a
-// vanilla c++ stream iterator is not enough--there is a benefit to
-// using the paradigm for: a debugging (or machine-readable)
-// output, a human readable output, and a generated query.
+// A query template are intermediate stage to generated queries. The
+// copy-to-output-iterator paradigm was a very useful paradigm for outputting
+// components, but it is clear that a vanilla c++ stream iterator is not
+// enough--there is a benefit to using the paradigm for: a debugging (or
+// machine-readable) output, a human readable output, and a generated query.
 #ifndef LSST_QSERV_MASTER_QUERYTEMPLATE_H
 #define LSST_QSERV_MASTER_QUERYTEMPLATE_H
 #include <string>
@@ -55,7 +54,7 @@ public:
     public:
         virtual ~Entry() {}
         virtual std::string getValue() const = 0;
-        virtual bool getIsDynamic() const { return false; }
+        virtual bool isDynamic() const { return false; }
     };
     class EntryMapping {
     public:

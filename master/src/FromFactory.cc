@@ -146,21 +146,6 @@ private:
 };
 } // anonymous
 ////////////////////////////////////////////////////////////////////////
-// TableRefN misc impl. (to be placed in TableRefN.cc later)
-////////////////////////////////////////////////////////////////////////
-std::ostream& qMaster::operator<<(std::ostream& os, qMaster::TableRefN const& refN) {
-    return refN.putStream(os);
-}
-std::ostream& qMaster::operator<<(std::ostream& os, qMaster::TableRefN const* refN) {
-    return refN->putStream(os);
-}
-void qMaster::TableRefN::render::operator()(qMaster::TableRefN const& refN) {
-    std::stringstream ss;
-    refN.putTemplate(_qt);
-    if(_count++ > 0) _qt.append(",");
-    _qt.append(ss.str());
-}
-////////////////////////////////////////////////////////////////////////
 // ParseAliasMap misc impl. (to be placed in ParseAliasMap.cc later)
 ////////////////////////////////////////////////////////////////////////
 std::ostream& qMaster::operator<<(std::ostream& os, 

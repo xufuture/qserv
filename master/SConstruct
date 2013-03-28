@@ -197,7 +197,10 @@ parserSrcs = map(lambda x: os.path.join('src', x),
                   "ModFactory.cc",
                   "AggregatePlugin.cc",
                   "AggOp.cc",
-                  "TablePlugin.cc"])
+                  "TableCheckPlugin.cc",
+                  "TablePlugin.cc",
+                  "TableRefN.cc",
+                  "SphericalBoxStrategy.cc"])
 
 pyPath = 'python/lsst/qserv/master'
 pyLibName = os.path.join(pyPath, '_masterLib.so')

@@ -31,12 +31,11 @@
 #include "lsst/qserv/master/FromList.h"
 #include "lsst/qserv/master/WhereClause.h"
 #include "lsst/qserv/master/FuncExpr.h"
-#if 0
-#include "lsst/qserv/master/QueryTemplate.h"
-#include "lsst/qserv/master/ValueExpr.h"
-
-#include "lsst/qserv/master/AggOp.h"
-#endif
+#include "lsst/qserv/master/SphericalBoxStrategy.h"
+#include "lsst/qserv/master/TableRefChecker.h"
+#include "lsst/qserv/master/TableNamer.h"
+#include "lsst/qserv/master/QueryMapping.h"
+#include "lsst/qserv/master/QueryContext.h"
 
 namespace qMaster=lsst::qserv::master;
 
@@ -74,8 +73,8 @@ public:
     explicit addMap(ReverseAlias& r) : _reverseAlias(r) {}
     void operator()(std::string const& alias, 
                     std::string const& db, std::string const& table) {
-        std::cout << "set: " << alias << "->" 
-                  << db << "." << table << std::endl;
+        // std::cout << "set: " << alias << "->" 
+        //           << db << "." << table << std::endl;
         _reverseAlias.set(db, table, alias);
     }
     ReverseAlias& _reverseAlias;
@@ -91,15 +90,30 @@ public:
     }
     int& _seqN;
 };
+class addDbContext : public qMaster::TableRefN::Func {
+public:
+    addDbContext(qMaster::QueryContext const& c) : context(c) {}
+    void operator()(qMaster::TableRefN::Ptr t) {
+        if(t.get()) { t->apply(*this); }     
+    }
+    void operator()(qMaster::TableRefN& t) {
+        std::string table = t.getTable();
+        if(table.empty()) return; // Add context only to concrete refs
+        if(t.getDb().empty()) { t.setDb(context.defaultDb); }
+        if(dominantDb.empty()) { dominantDb = t.getDb(); }
+    }
+    qMaster::QueryContext const& context;
+    std::string dominantDb;
+};
 
 template <typename G, typename A>
 class addAlias {
 public:
     addAlias(G g, A a) : _generate(g), _addMap(a) {}
     void operator()(qMaster::TableRefN::Ptr t) {
-        std::cout << "tableref:";
-        t->putStream(std::cout);
-        std::cout << std::endl;
+        // std::cout << "tableref:";
+        // t->putStream(std::cout);
+        // std::cout << std::endl;
         // If no alias, then add one. 
         std::string alias = t->getAlias();
         if(alias.empty()) {
@@ -117,11 +131,14 @@ private:
 } // anonymous
 
 namespace lsst { namespace qserv { namespace master {
+
+////////////////////////////////////////////////////////////////////////
 // fixExprAlias is a functor that acts on ValueExpr objects and
 // modifys them in-place, altering table names to use an aliased name
 // that is mapped via ReverseAlias. 
 // It does not add table qualifiers where none already exist, because
 // there is no compelling reason to do so (yet).
+////////////////////////////////////////////////////////////////////////
 class fixExprAlias {
 public:
     explicit fixExprAlias(ReverseAlias& r) : _reverseAlias(r) {}
@@ -179,7 +196,6 @@ private:
     ReverseAlias& _reverseAlias;
 };
 
-
 ////////////////////////////////////////////////////////////////////////
 // TablePlugin declaration
 ////////////////////////////////////////////////////////////////////////
@@ -194,12 +210,12 @@ public:
     virtual void prepare() {}
 
     /// Apply the plugin's actions to the parsed, but not planned query
-    virtual void applyLogical(lsst::qserv::master::SelectStmt& stmt);
+    virtual void applyLogical(SelectStmt& stmt, QueryContext&);
 
     /// Apply the plugins's actions to the concrete query plan.
-    virtual void applyPhysical(lsst::qserv::master::QueryPlugin::Plan& p);
+    virtual void applyPhysical(QueryPlugin::Plan& p, QueryContext& context);
 private:
-
+    std::string _dominantDb;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -231,7 +247,8 @@ registerTablePlugin() {
 ////////////////////////////////////////////////////////////////////////
 // TablePlugin implementation
 ////////////////////////////////////////////////////////////////////////
-void TablePlugin::applyLogical(lsst::qserv::master::SelectStmt& stmt) {
+void 
+TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     // Idea: Add aliases to all table references in the from-list (if
     // they don't exist already) and then patch the other clauses so
     // that they refer to the aliases.
@@ -239,9 +256,10 @@ void TablePlugin::applyLogical(lsst::qserv::master::SelectStmt& stmt) {
     // from-list so that the later table-name substitution is confined
     // to modifying the from-list.
     FromList& fList = stmt.getFromList();
-    std::cout << "TABLE:Logical:orig fromlist "
-              << fList.getGenerated() << std::endl;
+    // std::cout << "TABLE:Logical:orig fromlist "
+    //           << fList.getGenerated() << std::endl;
     TableRefnList& tList = fList.getTableRefnList();
+    
     // For each tableref, modify to add alias.
     int seq=0;
     ReverseAlias reverseAlias;
@@ -261,14 +279,20 @@ void TablePlugin::applyLogical(lsst::qserv::master::SelectStmt& stmt) {
     WhereClause::ValueExprIter veI = wClause.vBegin();
     WhereClause::ValueExprIter veEnd = wClause.vEnd();
     std::for_each(veI, veEnd, fixExprAlias(reverseAlias));
+
+    // Fill-in default db context.
+    addDbContext adc(context);
+    std::for_each(tList.begin(), tList.end(), adc);
+    _dominantDb = adc.dominantDb;
+    
     // Apply function using the iterator...
     //wClause.walk(fixExprAlias(reverseAlias));
     // order by
-    // having
+    // having        
 }
 
 void
-TablePlugin::applyPhysical(QueryPlugin::Plan& p) {
+TablePlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext& context) {
     // For each entry in original's SelectList, modify the SelectList
     // for the parallel and merge versions.
     // Set hasMerge to true if aggregation is detected.
@@ -279,35 +303,47 @@ TablePlugin::applyPhysical(QueryPlugin::Plan& p) {
     vlist = oList.getValueExprList();
     assert(vlist.get());
     
+    p.dominantDb = _dominantDb;
+    
+
     // Idea: Rewrite table names in from-list of the parallel
     // query. This is sufficient because table aliases were added in
     // the logical plugin stage so that real table refs should only
     // exist in the from-list.
     FromList& fList = p.stmtParallel.getFromList();
-    std::cout << "orig fromlist " << fList.getGenerated() << std::endl;
-    // For each tableref, modify to replace tablename with substitutable.
+    //    std::cout << "orig fromlist " << fList.getGenerated() << std::endl;
+
+    // Before rewriting, compute the need for chunking and subchunking
+    // based entirely on the FROM list. Queries that involve chunked
+    // tables are necessarily chunked. Subchunking is inferred when
+    // two chunked tables are joined (often the same table) and not on
+    // a common key (key-equi-join). This check yields the decision:
+    // ** for each table:
+    //   availability of chunking and overlap
+    //   desired chunking-level, with/without overlap
+    // The QueryMapping abstraction provides a symbolic mapping so
+    // that a later query generation stage can generate queries from
+    // templatable queries a list of partition tuples.
+    TableRefChecker trc; // Lookup oracle for table characteristics
+    SphericalBoxStrategy s(fList, trc);
+    QueryMapping::Ptr qm = s.getMapping();
+    s.patchFromList(fList);
+    // std::cout << "post-patched fromlist " << fList.getGenerated() << std::endl;
+
+    // Now add/merge the mapping to the Plan
+    if(!p.queryMapping.get()) {
+        p.queryMapping = qm;
+    } else {
+        p.queryMapping->update(*qm);
+    }
+    // Query generation needs to be sensitive to this.
+    // If no subchunks are needed, 
     
-#if 0
-    // Clear out select lists, since we are rewriting them.
-    pList.getValueExprList()->clear();
-    mList.getValueExprList()->clear();
+    //
+    // For each tableref, modify to replace tablename with
+    // substitutable.
     
 
-    AggOp::Mgr m; // Eventually, this can be shared?
-    convertAgg<qMaster::ValueExprList> ca(*pList.getValueExprList(), 
-                                          *mList.getValueExprList(),
-                                          m);
-    
-    std::for_each(vlist->begin(), vlist->end(), ca);
-    
-    QueryTemplate qt;
-    pList.renderTo(qt);
-    std::cout << "pass: " << qt.dbgStr() << std::endl;
-    qt.clear();
-    mList.renderTo(qt);
-    std::cout << "fixup: " << qt.dbgStr() << std::endl;
 
-    // Also need to operate on GROUP BY.
-#endif
 }
 }}} // namespace lsst::qserv::master

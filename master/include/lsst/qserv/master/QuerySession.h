@@ -59,7 +59,8 @@ public:
     
     // For test harnesses.
     struct Test { int cfgNum; };
-    explicit QuerySession(Test const& t) {}
+    explicit QuerySession(Test const& t) {_initContext();}
+
 private:
     typedef std::list<ChunkSpec> ChunkSpecList;
     typedef std::list<QueryPlugin::Ptr> PluginList;
@@ -67,13 +68,18 @@ private:
     QuerySession();
 
     // Pipeline helpers
+    void _initContext();
     void _preparePlugins();
     void _applyLogicPlugins();
     void _generateConcrete();
     void _applyConcretePlugins();
     void _showFinal(); // Debug
 
+    // Iterator help
+    std::string _buildChunkQuery(int chunkId);
+
     // Fields
+    boost::shared_ptr<QueryContext> _context;
     boost::shared_ptr<SelectStmt> _stmt;
     boost::shared_ptr<SelectStmt> _stmtParallel;
     boost::shared_ptr<SelectStmt> _stmtMerge;

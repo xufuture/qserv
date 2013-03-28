@@ -27,12 +27,18 @@
 #ifndef LSST_QSERV_MASTER_QUERYPLUGIN_H
 #define LSST_QSERV_MASTER_QUERYPLUGIN_H
 
+#include <list>
 #include <string>
 #include <boost/shared_ptr.hpp>
 
 namespace lsst { namespace qserv { namespace master {
-class SelectStmt; // Forward
+// Forward
+class QueryContext;
+class QueryMapping;
+class SelectStmt; 
 
+typedef std::list<boost::shared_ptr<SelectStmt> > SelectStmtList;
+ 
 class QueryPlugin {
 public:
     // Types
@@ -47,10 +53,10 @@ public:
     virtual void prepare() {} 
 
     /// Apply the plugin's actions to the parsed, but not planned query
-    virtual void applyLogical(SelectStmt& stmt) {}
+    virtual void applyLogical(SelectStmt& stmt, QueryContext&) {}
 
     /// Apply the plugins's actions to the concrete query plan.
-    virtual void applyPhysical(Plan& phy) {} 
+    virtual void applyPhysical(Plan& phy, QueryContext& context) {} 
 
     static Ptr newInstance(std::string const& name);
     static void registerClass(FactoryPtr f);
@@ -77,9 +83,12 @@ public:
           stmtMerge(stmtMerge_), 
           hasMerge(hasMerge_) {}
 
-    SelectStmt& stmtOriginal;
-    SelectStmt& stmtParallel;
-    SelectStmt& stmtMerge;
+    // Each of these should become a sequence for two-step queries.
+    SelectStmt& stmtOriginal; 
+    SelectStmt& stmtParallel; 
+    SelectStmt& stmtMerge; 
+    std::string dominantDb;
+    boost::shared_ptr<QueryMapping> queryMapping;
     bool hasMerge;
 };
 

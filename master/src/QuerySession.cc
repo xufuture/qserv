@@ -29,6 +29,7 @@
 #include "lsst/qserv/master/SelectParser.h"
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/WhereClause.h"
+#include "lsst/qserv/master/QueryContext.h"
 #include "lsst/qserv/master/QueryPlugin.h"
 #include "lsst/qserv/master/AggregatePlugin.h"
 #include "lsst/qserv/master/TablePlugin.h"
@@ -66,10 +67,10 @@ void build(qMaster::SelectParser::Ptr p) {
 
 } // anonymous namespace
 
-QuerySession::QuerySession() 
-    : _plugins(new PluginList()) {}
+QuerySession::QuerySession() {} // do nothing.
 
 void QuerySession::setQuery(std::string const& q) {
+    assert(_context.get());
     SelectParser::Ptr p;
     p = SelectParser::newInstance(q);
     p->setup();
@@ -81,8 +82,8 @@ void QuerySession::setQuery(std::string const& q) {
     _showFinal(); // DEBUG
     
     /// OBSOLETE
-    PlanWriter pw;
-    pw.write(*_stmt, _chunks);
+    //PlanWriter pw;
+    //pw.write(*_stmt, _chunks);
     // Perform parse.
     //testParse2(p);    
     // Set error on parse problem; Query manager will check.
@@ -135,6 +136,11 @@ QuerySession::Iter QuerySession::cQueryEnd() {
 }
 
 
+void QuerySession::_initContext() {
+    _context.reset(new QueryContext()); 
+    _context->defaultDb = "LSST";
+    _context->username = "default";
+}
 void QuerySession::_preparePlugins() {
     _plugins.reset(new PluginList);
 
@@ -148,7 +154,7 @@ void QuerySession::_preparePlugins() {
 void QuerySession::_applyLogicPlugins() {
     PluginList::iterator i;
     for(i=_plugins->begin(); i != _plugins->end(); ++i) {
-        (**i).applyLogical(*_stmt);
+        (**i).applyLogical(*_stmt, *_context);
     }
 }
 void QuerySession::_generateConcrete() {
@@ -183,7 +189,7 @@ void QuerySession::_applyConcretePlugins() {
     QueryPlugin::Plan p(*_stmt, *_stmtParallel, *_stmtMerge, _hasMerge);
     PluginList::iterator i;
     for(i=_plugins->begin(); i != _plugins->end(); ++i) {
-        (**i).applyPhysical(p);
+        (**i).applyPhysical(p, *_context);
     }
 }
 
@@ -198,6 +204,14 @@ void QuerySession::_showFinal() {
     std::cout << "merge: " << mer.dbgStr() << std::endl;
 }
 
+std::string QuerySession::_buildChunkQuery(int chunkId) { 
+    // TODO: subchunk support
+    // This logic may be pushed over to the qserv worker in the future.
+    assert(_stmtParallel.get());
+    QueryTemplate cqTemp = _stmtParallel->getTemplate();
+    return cqTemp.dbgStr(); // This is the debug string
+    
+}
 
 ////////////////////////////////////////////////////////////////////////
 // QuerySession::Iter
@@ -211,9 +225,11 @@ void QuerySession::Iter::_buildCache() const {
     assert(_qs != NULL);
     _cache.db = "FIXME"; // _qs->_db;
     _cache.query = "QUERYFIXME"; // _qs._templateQuery();
+    _cache.query = _qs->_buildChunkQuery(_pos->chunkId);
     _cache.chunkId = _pos->chunkId;
     _cache.subChunks.assign(_pos->subChunks.begin(), _pos->subChunks.end());
 }
+
 
 ////////////////////////////////////////////////////////////////////////
 // initQuerySession

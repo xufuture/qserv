@@ -35,7 +35,7 @@ using lsst::qserv::master::QueryTemplate;
 namespace { // File-scope helpers
 struct SpacedOutput {
     SpacedOutput(std::ostream& os_, std::string sep_=" ") 
-        : os(os_), sep(sep_) {}
+        : os(os_), sep(sep_), count(0) {}
     void operator()(std::string const& s) {
         if(s.empty()) return;
         if(qMaster::sqlShouldSeparate(last, *(last.end()-1), s[0]))  {
@@ -46,12 +46,15 @@ struct SpacedOutput {
     }
     void operator()(boost::shared_ptr<QueryTemplate::Entry> e) {
         assert(e.get());
+        //if(e->isDynamic()) { os << "(" << count << ")"; }
         (*this)(e->getValue());
+        ++count;
     }
 
     std::ostream& os;
     std::string last;
     std::string sep;
+    int count;
 };
 
 template <typename C>
@@ -85,7 +88,7 @@ public:
         ss << table;
         return ss.str();
     }
-    virtual bool getIsDynamic() const { return true; }
+    virtual bool isDynamic() const { return true; }
 
     std::string db;
     std::string table;
@@ -102,7 +105,7 @@ public:
         ss << column;
         return ss.str();
     }
-    virtual bool getIsDynamic() const { return true; }
+    virtual bool isDynamic() const { return true; }
 
     std::string db;
     std::string table;
@@ -128,7 +131,7 @@ struct EntryMerger {
     void pack() { _mergeCurrent(); }
     bool _checkMergeable(boost::shared_ptr<QueryTemplate::Entry> left,
                          boost::shared_ptr<QueryTemplate::Entry> right) {
-        return !((left->getIsDynamic() || right->getIsDynamic()));
+        return !((left->isDynamic() || right->isDynamic()));
     }
     void _mergeCurrent() {
         if(_candidates.size() > 1) {
