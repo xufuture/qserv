@@ -20,11 +20,14 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
+#include <set>
 #include <stdexcept>
+#include <vector>
 
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE Vector
 #include "boost/test/unit_test.hpp"
+#include "boost/math/constants/constants.hpp"
 
 #include "Constants.h"
 #include "Geometry.h"
@@ -35,6 +38,11 @@ using std::fabs;
 using std::pair;
 using std::sin;
 using std::sqrt;
+using std::vector;
+
+using boost::math::constants::pi;
+
+using lsst::qserv::admin::dupr::Matrix3d;
 using lsst::qserv::admin::dupr::Vector3d;
 
 namespace dupr = lsst::qserv::admin::dupr;
@@ -131,6 +139,57 @@ namespace {
         N10, N01, N02, N00, S01, S00, S02, S11,
         S10, S12, S21, S20, S22, S31, S30, S32
     };
+
+    // Generate n points in a circle of radius r around (ra,dec).
+    vector<pair<double, double> > const ngon(
+        double ra, double dec, double r, int nv)
+    {
+        vector<pair<double, double> > points;
+        Vector3d n, e, v = dupr::cartesian(ra, dec);
+        northEast(n, e, v);
+        double sinr = sin(r * dupr::RAD_PER_DEG);
+        double cosr = cos(r * dupr::RAD_PER_DEG);
+        double da = 360.0/nv;
+        for (double a = 0; a < 360.0 - dupr::EPSILON_DEG; a += da) {
+            double sina = sin(a * dupr::RAD_PER_DEG);
+            double cosa = cos(a * dupr::RAD_PER_DEG);
+            Vector3d p = cosr * v + sinr * (cosa * e + sina * n);
+            points.push_back(spherical(p));
+        }
+        return points;
+    }
+
+    dupr::SphericalTriangle const tri(double ra, double dec, double r) {
+        vector<pair<double, double> > p = ngon(ra, dec, r, 3);
+        return dupr::SphericalTriangle(dupr::cartesian(p[0]),
+                                       dupr::cartesian(p[1]),
+                                       dupr::cartesian(p[2]));
+    }
+
+    // Find IDs of HTM triangles overlapping a box.
+    vector<uint32_t> const htmIds(dupr::SphericalBox const & b, int level) {
+         std::set<uint32_t> ids;
+         double ra = b.getRaMin(), dec = b.getDecMin();
+         double deltaRa = b.getRaExtent() / 128;
+         double deltaDec = (b.getDecMax() - b.getDecMin()) / 128;
+         for (int i = 0; i < 128; ++i) {
+             for (int j = 0; j < 128; ++j) {
+                 Vector3d v = dupr::cartesian(ra + deltaRa*i, dec + deltaDec*j);
+                 ids.insert(dupr::htmId(v, level)); 
+             }
+         }
+         return vector<uint32_t>(ids.begin(), ids.end());
+    }
+
+    bool isSubset(vector<uint32_t> const & v1, vector<uint32_t> const & v2) {
+        typedef vector<uint32_t>::const_iterator Iter;
+        Iter j = v2.begin(), je = v2.end();
+        for (Iter i = v1.begin(), ie = v1.end(); i != ie && j != je; ++i) {
+            for (; j != je && *i != *j; ++j) { }
+        }
+        return j != je;
+    }
+
 } // unnamed namespace
 
 
@@ -162,18 +221,10 @@ BOOST_AUTO_TEST_CASE(maxAlpha) {
     BOOST_CHECK_THROW(dupr::maxAlpha(91.0, 0.0), exception);
     // Generate points in a circle of radius 1 deg and check
     // that each point has RA within alpha of the center RA.
-    double const dec = 45.0;
-    double const r = 1.0;
-    double const alpha = dupr::maxAlpha(r, dec);
-    Vector3d n, e, v = dupr::cartesian(0.0, dec);
-    northEast(n, e, v);
-    double sinr = sin(r * dupr::RAD_PER_DEG);
-    double cosr = cos(r * dupr::RAD_PER_DEG);
-    for (double a = 0; a < 360.0; a += 0.0625) {
-        double sina = sin(a * dupr::RAD_PER_DEG);
-        double cosa = cos(a * dupr::RAD_PER_DEG);
-        Vector3d p = cosr * v + sinr * (cosa * n + sina * e);
-        double ra = dupr::minDeltaRa(0.0, dupr::spherical(p).first);
+    vector<pair<double, double> > circle = ngon(0.0, 45.0, 1.0, 360*16);
+    double alpha = dupr::maxAlpha(1.0, 45.0);
+    for (size_t i = 0; i < circle.size(); ++i) {
+        double ra = dupr::minDeltaRa(0.0, circle[i].first);
         BOOST_CHECK_LT(ra, alpha + dupr::EPSILON_DEG);
     }
 }
@@ -220,4 +271,195 @@ BOOST_AUTO_TEST_CASE(spherical) {
                dupr::spherical(1, 1, sqrt(2.)), 1e-15);
     checkClose(pair<double, double>(45, -45),
                dupr::spherical(1, 1, -sqrt(2.)), 1e-15);
+}
+
+BOOST_AUTO_TEST_CASE(angSep) {
+    double const f = 1e-15;
+    BOOST_CHECK_CLOSE(
+        dupr::angSep(Vector3d(1,0,0), Vector3d(0,0,1)), 0.5*pi<double>(), f);
+    BOOST_CHECK_CLOSE(
+        dupr::angSep(Vector3d(1,-1,1), Vector3d(-1,1,-1)), pi<double>(), f);
+    BOOST_CHECK_EQUAL(dupr::angSep(Vector3d(1,1,1), Vector3d(1,1,1)), 0);
+}
+
+BOOST_AUTO_TEST_CASE(sphericalTriangleTransforms) {
+    double const f = 1e-15;
+    Vector3d v;
+    dupr::SphericalTriangle s03(S03);
+    dupr::SphericalTriangle n13(N13);
+    Vector3d s03c( C0, C0,-C0);
+    Vector3d n13c(-C0,-C0, C0);
+    v = n13.getCartesianTransform() * (s03.getBarycentricTransform() * s03c);
+    checkClose(v, n13c, f);
+    v = s03.getCartesianTransform() * (n13.getBarycentricTransform() * n13c);
+    checkClose(v, s03c, f);
+    Matrix3d m = n13.getCartesianTransform() * s03.getBarycentricTransform();
+    for (int i = 0; i < 3; ++i) {
+        v = m * s03.vertex(i);
+        checkClose(v, n13.vertex(i), f);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(sphericalTriangleArea) {
+    double const f = 1e-15;
+    dupr::SphericalTriangle t(Vector3d(0,1,0),
+                              Vector3d(0,0,1),
+                              Vector3d(1,0,0));
+    dupr::SphericalTriangle s0(S0);
+    dupr::SphericalTriangle s00(S00);
+    dupr::SphericalTriangle s01(S01);
+    dupr::SphericalTriangle s02(S02);
+    dupr::SphericalTriangle s03(S03);
+    BOOST_CHECK_CLOSE_FRACTION(t.area(), s0.area(), f);
+    BOOST_CHECK_CLOSE_FRACTION(s0.area(), 0.5*pi<double>(), f);
+    BOOST_CHECK_CLOSE_FRACTION(s00.area(), s01.area(), f);
+    BOOST_CHECK_CLOSE_FRACTION(s01.area(), s02.area(), f);
+    BOOST_CHECK_CLOSE_FRACTION(
+        s0.area(), s00.area() + s01.area() + s02.area() + s03.area(), f);
+}
+
+BOOST_AUTO_TEST_CASE(sphericalBox) {
+    dupr::SphericalBox b;
+    BOOST_CHECK(b.isFull());
+    BOOST_CHECK(!b.isEmpty());
+    b = dupr::SphericalBox(-10, 10, 0, 0);
+    BOOST_CHECK(b.wraps());
+    BOOST_CHECK_EQUAL(b.getRaMin(), 350);
+    BOOST_CHECK_EQUAL(b.getRaMax(), 10);
+    BOOST_CHECK_EQUAL(b.getRaExtent(), 20);
+    b = dupr::SphericalBox(350, 370, -10, 10);
+    BOOST_CHECK(b.wraps());
+    BOOST_CHECK_EQUAL(b.getRaMin(), 350);
+    BOOST_CHECK_EQUAL(b.getRaMax(), 10);
+    BOOST_CHECK_EQUAL(b.getDecMin(), -10);
+    BOOST_CHECK_EQUAL(b.getDecMax(), 10);
+    BOOST_CHECK_EQUAL(b.getRaExtent(), 20);
+    b = dupr::SphericalBox(10, 20, 30, 40);
+    BOOST_CHECK(!b.wraps());
+    BOOST_CHECK_EQUAL(b.getRaExtent(), 10);
+    BOOST_CHECK_THROW(dupr::SphericalBox(0,1,1,-1), exception);
+    BOOST_CHECK_THROW(dupr::SphericalBox(370,0,0,1), exception);
+}
+
+BOOST_AUTO_TEST_CASE(sphericalBoxArea) {
+    dupr::SphericalBox b(0, 90, 0, 90);
+    BOOST_CHECK_CLOSE_FRACTION(b.area(), 0.5*pi<double>(), 1e-15);
+    b = dupr::SphericalBox(135, 180, -90, 90);
+    BOOST_CHECK_CLOSE_FRACTION(b.area(), 0.5*pi<double>(), 1e-15);
+    b = dupr::SphericalBox(-45, 45, -90, -45);
+    BOOST_CHECK_CLOSE_FRACTION(
+        b.area(), 0.5*pi<double>()*(1 - 0.5*sqrt(2.)), 1e-15);
+}
+
+BOOST_AUTO_TEST_CASE(sphericalBoxExpand) {
+    dupr::SphericalBox b(10, 20, 80, 85);
+    BOOST_CHECK_THROW(b.expand(-1), exception);
+    b.expand(0);
+    BOOST_CHECK_EQUAL(b.getRaMin(), 10);
+    BOOST_CHECK_EQUAL(b.getRaMax(), 20);
+    BOOST_CHECK_EQUAL(b.getDecMin(), 80);
+    BOOST_CHECK_EQUAL(b.getDecMax(), 85);
+    b.expand(6);
+    BOOST_CHECK_EQUAL(b.getRaMin(), 0);
+    BOOST_CHECK_EQUAL(b.getRaMax(), 360);
+    BOOST_CHECK_EQUAL(b.getDecMin(), 74);
+    BOOST_CHECK_EQUAL(b.getDecMax(), 90);
+    b = dupr::SphericalBox(1,2,-89,89);
+    b.expand(2);
+    BOOST_CHECK(b.isFull());
+    double const ra[2] = { 10, 20 };
+    double const dec[2] = { -35, 45 };
+    b = dupr::SphericalBox(ra[0], ra[1], dec[0], dec[1]);
+    b.expand(10);
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            vector<pair<double, double> > circle = ngon(
+                ra[i], dec[j], 10 - dupr::EPSILON_DEG, 360);
+            for (size_t k = 0; k < circle.size(); ++k) {
+                BOOST_CHECK(b.contains(circle[k]));
+            }
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(sphericalBoxContains) {
+    dupr::SphericalBox b(10, 20, -1, 1);
+    BOOST_CHECK(b.contains(15,0));
+    BOOST_CHECK(!b.contains(25,0));
+    BOOST_CHECK(!b.contains(5,0));
+    BOOST_CHECK(!b.contains(15,2));
+    BOOST_CHECK(!b.contains(15,-2));
+    b = dupr::SphericalBox(-1, 1, -1, 1);
+    BOOST_CHECK(b.contains(359.5,0));
+}
+
+BOOST_AUTO_TEST_CASE(sphericalBoxIntersects) {
+    dupr::SphericalBox b1(10, 20, -10, 10);
+    dupr::SphericalBox b2(-5, 5, -1, 1);
+    BOOST_CHECK(!b1.intersects(b2));
+    BOOST_CHECK(!b2.intersects(b1));
+    b2 = dupr::SphericalBox(20, 21, 10, 11);
+    BOOST_CHECK(b1.intersects(b2));
+    BOOST_CHECK(b2.intersects(b1));
+    b1 = dupr::SphericalBox(-10, 10, 1, 2);
+    b2 = dupr::SphericalBox(300, 350, 0, 1);
+    BOOST_CHECK(b1.intersects(b2));
+    BOOST_CHECK(b2.intersects(b1));
+    b2 = dupr::SphericalBox(-1, 1, 3, 4);
+    BOOST_CHECK(!b1.intersects(b2));
+    BOOST_CHECK(!b2.intersects(b1));
+    b1 = dupr::SphericalBox(-10, 10, 3.5, 90);
+    BOOST_CHECK(b1.intersects(b2));
+    BOOST_CHECK(b2.intersects(b1));
+}
+
+BOOST_AUTO_TEST_CASE(sphericalBoxHtmIds) {
+    dupr::SphericalBox b(135, 145, 88, 89);
+    BOOST_CHECK(isSubset(htmIds(b, 5), b.htmIds(5)));
+    b = dupr::SphericalBox(359, 1, -90, 0);
+    BOOST_CHECK(isSubset(htmIds(b, 3), b.htmIds(3)));
+    b = dupr::SphericalBox(1,2,-1,1);
+    BOOST_CHECK(isSubset(htmIds(b, 7), b.htmIds(7)));
+}
+
+BOOST_AUTO_TEST_CASE(intersectionArea) {
+    double a = 0.5*pi<double>()*(1 - 0.5*sqrt(2.));
+    dupr::SphericalBox b(0, 360, 45, 90);
+    dupr::SphericalTriangle t(N0);
+    BOOST_CHECK_CLOSE_FRACTION(t.intersectionArea(b), a, 1e-12);
+    b = dupr::SphericalBox(0, 360, -90, -45);
+    t = dupr::SphericalTriangle(S2);
+    BOOST_CHECK_CLOSE_FRACTION(t.intersectionArea(b), a, 1e-12);
+    t = tri(0, -90, 20);
+    BOOST_CHECK_CLOSE_FRACTION(t.intersectionArea(b), t.area(), 1e-12);
+    b = dupr::SphericalBox(10, 190, -90, -89);
+    BOOST_CHECK_CLOSE_FRACTION(t.intersectionArea(b), b.area(), 1e-12);
+    t = tri(45, 90, 10);
+    BOOST_CHECK_EQUAL(t.intersectionArea(b), 0.0);
+    b = dupr::SphericalBox(0, 360, 89, 90);
+    BOOST_CHECK_CLOSE_FRACTION(t.intersectionArea(b), b.area(), 1e-12);
+    b = dupr::SphericalBox(-5, 5, -5, 5);
+    t = dupr::SphericalTriangle(dupr::cartesian(1,6),
+                                dupr::cartesian(-6,0),
+                                dupr::cartesian(1,-6));
+    a = t.intersectionArea(b);
+    BOOST_CHECK_LT(a, t.area());
+    BOOST_CHECK_LT(a, b.area());
+    t = tri(0, 90, 30);
+    b = dupr::SphericalBox(0, 360, -90, 89);
+    a = t.area() - dupr::SphericalBox(0, 360, 89, 90).area();
+    BOOST_CHECK_CLOSE_FRACTION(t.intersectionArea(b), a, 1e-12);
+    b = dupr::SphericalBox(0, 360, 65, 90);
+    a = t.intersectionArea(b);
+    BOOST_CHECK_LT(a, t.area());
+    BOOST_CHECK_LT(a, b.area());
+    // TODO: intersectionArea() cannot handle the case where
+    // a triangle is split into disjoint pieces yet - it gets
+    // the Euler characteristic woefully wrong, and the area
+    // computation explodes.
+#if 0
+    b = dupr::SphericalBox(0, 360, 50, 65);
+    a += t.intersectionArea(b);
+    BOOST_CHECK_CLOSE(a, t.area(), 1e-10);
+#endif
 }

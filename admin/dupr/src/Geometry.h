@@ -103,17 +103,17 @@ class SphericalBox;
 /// given linearly independent triangle vertices V1, V2 and V3,
 /// are defined as the solution to:
 ///
-/// b1*V1 + b2*V2 + b3*V3 = V
+///     b1*V1 + b2*V2 + b3*V3 = V
 ///
 /// If we let the column vector B = transpose([b1 b2 b3]) and M be the
 /// 3x3 matrix with column vectors V1, V2 and V3, we can write the above
 /// more simply as:
 ///
-/// M * B = V
+///     M * B = V
 ///
 /// or
 ///
-/// B = M⁻¹ * V
+///     B = M⁻¹ * V
 ///
 /// What are such coordinates used for?
 ///
@@ -123,7 +123,7 @@ class SphericalBox;
 /// duplicator chooses a non-empty triangle v and copies all its points.
 /// For a point V in v, the position of the copy is set to
 ///
-/// Mᵤ * (Mᵥ⁻¹ * V) = (Mᵤ * Mᵥ⁻¹) * V
+///     Mᵤ * (Mᵥ⁻¹ * V) = (Mᵤ * Mᵥ⁻¹) * V
 ///
 /// In other words, V is transformed by the matrix that maps the vertices of
 /// v to the vertices of u. Since the area and proportions of different HTM
@@ -229,14 +229,18 @@ public:
     }
 
     /// Does this box contain the given spherical coordinates?
-    bool contains(std::pair<double, double> const & position) const {
-        if (position.second < _decMin || position.second > _decMax) {
+    bool contains(double ra, double dec) const {
+        if (dec < _decMin || dec > _decMax) {
             return false;
         }
         if (wraps()) {
-           return position.first >= _raMin || position.first <= _raMax;
+           return ra >= _raMin || ra <= _raMax;
         }
-        return position.first >= _raMin && position.first <= _raMax;
+        return ra >= _raMin && ra <= _raMax;
+    }
+
+    bool contains(std::pair<double, double> const & position) const {
+        return contains(position.first, position.second);
     }
 
     /// Does this box intersect the given box?

@@ -510,7 +510,7 @@ public:
     double extent() const;
 
 private:
-    pair<double, double> _ranges[3];
+    pair<double, double> _ranges[4];
     int _numRanges;
 };
 
@@ -521,61 +521,29 @@ void RaRangeList::clip(double ra0, double ra1) {
     for (int i = 0; i < _numRanges; ++i) {
         double cra0 = _ranges[i].first;
         double cra1 = _ranges[i].second;
-        assert(cra0 != cra1);
+        assert(cra0 < cra1);
         if (ra0 < ra1) {
-            if (cra0 < cra1) {
-                if (ra0 < cra1 && ra1 > cra0) {
-                    out[j].first = max(ra0, cra0);
-                    out[j].second = min(ra1, cra1);
-                    if (out[j].first != out[j].second) {
-                        ++j;
-                    }
-                }
-            } else {
-                if (ra0 < cra1) {
-                    out[j].first = ra0;
-                    out[j].second = min(ra1, cra1);
-                    ++j;
-                    if (ra1 > cra0) {
-                        out[j].first = cra0;
-                        out[j].second = ra1;
-                        ++j;
-                    }
-                } else if (ra1 > cra0) {
-                    out[j].first = min(ra0, cra0);
-                    out[j].second = ra1;
+            if (ra0 < cra1 && ra1 > cra0) {
+                out[j].first = max(ra0, cra0);
+                out[j].second = min(ra1, cra1);
+                if (out[j].first != out[j].second) {
                     ++j;
                 }
             }
         } else {
-            if (cra0 < cra1) {
-                if (cra0 < ra1) {
-                    out[j].first = cra0;
-                    out[j].second = min(cra1, ra1);
-                    ++j;
-                    if (cra1 > ra0) {
-                        out[j].first = ra0;
-                        out[j].second = cra1;
-                        ++j;
-                    }
-                } else if (cra1 > ra0) {
-                    out[j].first = min(cra0, ra0);
-                    out[j].second = cra1;
-                    ++j;
-                }
-            } else {
-                out[j].first = max(ra0, cra0);
-                out[j].second = min(ra1, cra1);
+            if (cra0 < ra1) {
+                out[j].first = cra0;
+                out[j].second = min(cra1, ra1);
                 ++j;
-                if (ra1 > cra0) {
-                    out[j].first = cra0;
-                    out[j].second = ra1;
-                    ++j;
-                } else if (ra0 < cra1) {
+                if (cra1 > ra0) {
                     out[j].first = ra0;
                     out[j].second = cra1;
                     ++j;
                 }
+            } else if (cra1 > ra0) {
+                out[j].first = max(cra0, ra0);
+                out[j].second = cra1;
+                ++j;
             }
         }
     }
@@ -589,9 +557,7 @@ double RaRangeList::extent() const {
     double e = 0.0;
     for (int i = 0; i < _numRanges; ++i) {
         double delta = _ranges[i].second - _ranges[i].first;
-        if (delta < 0.0) {
-            delta += 2.0*pi<double>();
-        }
+        assert(delta > 0.0);
         e += delta;
     }
     return e;
@@ -625,16 +591,17 @@ double zArea(Vector3d const * inVe,
             }
             continue;
         }
+        Vector3d const p(-n(0)*n(2), -n(1)*n(2), u);
+        Vector3d const nc(n(1), -n(0), 0.0);
+
         // Compare z = zmin and edge j,i.
         double z2 = zmin*zmin;
         double v = u - n2*z2;
         if (v > 0.0 && !bot.empty()) {
-            Vector3d p(-n(0)*n(2)*zmin, -n(1)*n(2)*zmin, u*zmin);
-            Vector3d nc(n(1), -n(0), 0.0);
             double lambda = sqrt(v);
             // Compute unnormalized intersection points v0, v1.
-            Vector3d v0 = p + lambda * nc;
-            Vector3d v1 = p - lambda * nc;
+            Vector3d v0 = zmin * p + lambda * nc;
+            Vector3d v1 = zmin * p - lambda * nc;
             if (angSep(v0, v1) <= RAD_PER_DEG/36000.0) {
                 // Angle between intersections is less than 100 milliarcsec;
                 // treat this as a single degenerate intersection point.
@@ -661,12 +628,10 @@ double zArea(Vector3d const * inVe,
         z2 = zmax*zmax;
         v = u - n2*z2;
         if (v > 0.0 && !top.empty()) {
-            Vector3d p(n(0)*n(2)*zmax, n(1)*n(2)*zmax, u*zmax);
-            Vector3d nc(-n(1), n(0), 0.0);
             double lambda = sqrt(v);
             // Compute unnormalized intersection points v0, v1.
-            Vector3d v0 = p + lambda * nc;
-            Vector3d v1 = p - lambda * nc;
+            Vector3d v0 = zmax * p - lambda * nc;
+            Vector3d v1 = zmax * p + lambda * nc;
             if (angSep(v0, v1) <= RAD_PER_DEG/36000.0) {
                 // Angle between intersections is less than 100 milliarcsec;
                 // treat this as a single degenerate intersection point.
@@ -691,7 +656,9 @@ double zArea(Vector3d const * inVe,
         }
     }
     double chi = 1.0; // Euler characteristic
-    if (bot.full() && top.full()) {
+    if (angle == 0.0 && bot.empty() && top.empty()) {
+        return 0.0;
+    } else if (bot.full() && top.full()) {
         assert(angle == 0.0);
         chi = 0.0;
     } else if (angle != 0.0 && (bot.full() || top.full())) {

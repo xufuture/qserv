@@ -29,7 +29,7 @@ def runTest(target, source, env):
         print green(str(source[0]) + ' : passed')
     else:
         print >>sys.stderr, red('%s : FAILED (see %s.fail)' % (source[0], tgt))
-
+    return retcode
 
 libs = ['dupr',
         'boost_system',
