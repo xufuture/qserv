@@ -91,24 +91,36 @@ public:
     {}
     virtual ~ReadCallable() {} // Must halt current operation.
     virtual void operator()() {
-        // Use blocking reads to prevent implicit thread creation by 
-        // XrdClient
-        _cq._state = ChunkQuery::READ_OPEN;
-        _cq._readOpenTimer.start();
-        _isRunning = true;
-        int result = qMaster::xrdOpen(_cq._resultUrl.c_str(), O_RDONLY);
-        if(result == -1 ) {
-            if(errno == EINPROGRESS) {
-                std::cout << "Synchronous open returned EINPROGRESS!!!! "
-                          << _cq._spec.chunkId
-                          << std::endl;
+
+        std::cout << "DBG: EXECUTING ReadCallable::operator()" << std::endl;
+        try {
+            // Use blocking reads to prevent implicit thread creation by 
+            // XrdClient
+            _cq._state = ChunkQuery::READ_OPEN;
+            _cq._readOpenTimer.start();
+            _isRunning = true;
+            int result = qMaster::xrdOpen(_cq._resultUrl.c_str(), O_RDONLY);
+            if(result == -1 ) {
+                if(errno == EINPROGRESS) {
+                    std::cout << "Synchronous open returned EINPROGRESS!!!! "
+                              << _cq._spec.chunkId
+                              << std::endl;
+                }
+                _cq._result.read = -errno;
+                _cq._state = ChunkQuery::COMPLETE;
+                _cq._notifyManager(); 
+                return;
             }
-            _cq._result.read = -errno;
-            _cq._state = ChunkQuery::COMPLETE;
-            _cq._notifyManager(); 
-            return;
+            std::cout << "DBG: CALLING ChunkQuery::Complete(" << result << ")" << std::endl;
+            _cq.Complete(result);
+            std::cout << "DBG: RETURNED ChunkQuery::Complete()" << std::endl;
+        } catch (const char *msg) {
+            std::cout << "DBG: Caught Exception during ReadCallable operator: " << msg << std::endl;
+            _cq._manager->reportError(_cq._id, errno, msg);
+            _cq._state = ChunkQuery::ABORTED;
+            _cq._notifyManager();
         }
-        _cq.Complete(result);
+        std::cout << "DBG: EXITING ReadCallable::operator()" << std::endl;
     }
     virtual void abort() {
         if(_isRunning) {
@@ -136,28 +148,39 @@ public:
     {}
     virtual ~WriteCallable() {} 
     virtual void operator()() {
-        // Use blocking calls to prevent implicit thread creation by 
-        // XrdClient
-        _cq._state = ChunkQuery::WRITE_OPEN;
-        int tries = 5; // Arbitrarily try 5 times.
-        int result;
-        while(tries > 0) {
-            --tries;
-            result = qMaster::xrdOpen(_cq._spec.path.c_str(), O_WRONLY);
-            if (result == -1) {
-                if(errno == ENOENT) {
-                    std::cout << "Chunk not found for path:"
-                              << _cq._spec.path << " , "
-                              << tries << " tries left " << std::endl;
-                    continue;
+
+        std::cout << "DBG: EXECUTING WriteCallable::operator()" << std::endl;
+
+        try {
+            // Use blocking calls to prevent implicit thread creation by 
+            // XrdClient
+            _cq._state = ChunkQuery::WRITE_OPEN;
+            int tries = 5; // Arbitrarily try 5 times.
+            int result;
+            while(tries > 0) {
+                --tries;
+                result = qMaster::xrdOpen(_cq._spec.path.c_str(), O_WRONLY);
+                if (result == -1) {
+                    if(errno == ENOENT) {
+                        std::cout << "Chunk not found for path:"
+                                  << _cq._spec.path << " , "
+                                  << tries << " tries left " << std::endl;
+                        continue;
+                    }
                 }
+                if ( result == -1 ) {
+                    result = -errno;
+                }
+                break;
             }
-            if ( result == -1 ) {
-                result = -errno;
-            }
-            break;
+            _cq.Complete(result);
+        } catch (const char *msg) {
+            std::cout << "DBG: Caught Exception during WriteCallable operator: " << msg << std::endl;
+            _cq._manager->reportError(_cq._id, errno, msg);
+            _cq._state = ChunkQuery::ABORTED;
+            _cq._notifyManager();
         }
-        _cq.Complete(result);
+        std::cout << "DBG: EXITING WriteCallable::operator()" << std::endl;
     }
     virtual void abort() {
         // Can't really squash myself.
@@ -192,6 +215,9 @@ char const* qMaster::ChunkQuery::getWaitStateStr(WaitState s) {
 }
 
 void qMaster::ChunkQuery::Complete(int Result) {
+
+    std::cout << "DBG: EXECUTING ChunkQuery::Complete(" << Result << ")" << std::endl;
+
     // Prevent multiple Complete() callbacks from stacking. 
     boost::shared_ptr<boost::mutex> m(_completeMutexP);
     boost::lock_guard<boost::mutex> lock(*m);
@@ -199,11 +225,13 @@ void qMaster::ChunkQuery::Complete(int Result) {
     std::stringstream ss;
     bool isReallyComplete = false;
     if(_shouldSquash) {        
+        std::cout << "DBG: CALLING _squashAtCallback()" << std::endl;
         _squashAtCallback(Result);
         return; // Anything else to do?
     }
     switch(_state) {
     case WRITE_OPEN: // Opened, so we can send off the query
+        std::cout << "DBG: _state = WRITE_OPEN" << std::endl;
         _writeOpenTimer.stop();
         ss << _hash << " WriteOpen " << _writeOpenTimer << std::endl;
         {
@@ -220,6 +248,7 @@ void qMaster::ChunkQuery::Complete(int Result) {
         }
         break;
     case READ_OPEN: // Opened, so we can read-back the results.
+        std::cout << "DBG: _state = READ_OPEN" << std::endl;
         _readOpenTimer.stop();
         ss << _hash << " ReadOpen " << _readOpenTimer << std::endl;
 
@@ -235,10 +264,13 @@ void qMaster::ChunkQuery::Complete(int Result) {
             _state = READ_READ;
             //_manager->getReadPermission();
             //_readResults(Result);
+            std::cout << "DBG: CALLING ChunkQuery::_readResultsDefer()" << std::endl;
             _readResultsDefer(Result);
+            std::cout << "DBG: RETURNED ChunkQuery::_readResultsDefer()" << std::endl;
         }
         break;
     default:
+        std::cout << "DBG: _state = CORRUPT" << std::endl;
         isReallyComplete = true;
         ss << "Bad transition (likely bug): ChunkQuery @ " << _state 
            << " Complete() -> CORRUPT " << CORRUPT << std::endl;
@@ -246,6 +278,7 @@ void qMaster::ChunkQuery::Complete(int Result) {
     }
     if(isReallyComplete) { _notifyManager(); }
     std::cout << ss.str();
+    std::cout << "DBG: EXITING ChunkQuery::Complete()" << std::endl;
 }
 
 qMaster::ChunkQuery::ChunkQuery(qMaster::TransactionSpec const& t, int id, 
@@ -272,6 +305,9 @@ qMaster::ChunkQuery::~ChunkQuery() {
 }
 
 void qMaster::ChunkQuery::run() {
+
+    std::cout << "DBG: EXECUTING ChunkQuery::run()" << std::endl;
+
     // This lock ensures that the remaining ChunkQuery::Complete() calls
     // do not proceed until this initial step completes.
     boost::unique_lock<boost::mutex> lock(_mutex);
@@ -302,7 +338,9 @@ void qMaster::ChunkQuery::run() {
 #elif 1
     _state = WRITE_QUEUE;
     WriteCallable w(*this);
+    std::cout << "DBG: CALLING _manager->getWriteQueue().add(WriteCallable::makeShared(*this))" << std::endl;
     _manager->getWriteQueue().add(WriteCallable::makeShared(*this));
+    std::cout << "DBG: RETURNED _manager->getWriteQueue().add(WriteCallable::makeShared(*this))" << std::endl;
 #else     //synchronous open:    
     result = qMaster::xrdOpen(_spec.path.c_str(), O_WRONLY);
     if (result == -1) {
@@ -312,6 +350,7 @@ void qMaster::ChunkQuery::run() {
     Complete(result);
 #endif
     // Callback(Complete) will handle the rest.
+    std::cout << "DBG: EXITING ChunkQuery::run()" << std::endl;
 }
 
 std::string qMaster::ChunkQuery::getDesc() const {
@@ -479,6 +518,9 @@ void qMaster::ChunkQuery::_sendQuery(int fd) {
     int len = _spec.query.length();
     _writeTimer.start();
     int writeCount = qMaster::xrdWrite(fd, _spec.query.c_str(), len);
+    if (writeCount < 0) {
+        throw "Remote I/O error during XRD write.";
+    }
     _writeTimer.stop();
     ss << _hash << " WriteQuery " << _writeTimer << std::endl;
     
@@ -529,6 +571,9 @@ void qMaster::ChunkQuery::_sendQuery(int fd) {
 }
 
 void qMaster::ChunkQuery::_readResultsDefer(int fd) {
+
+    std::cout << "DBG: EXECUTING ChunkQuery::_readResultsDefer(" << fd << ")" << std::endl;
+
     int const fragmentSize = 4*1024*1024; // 4MB fragment size (param?)
     // Should limit cumulative result size for merging.  Now is a
     // good time. Configurable, with default=1G?
@@ -537,15 +582,16 @@ void qMaster::ChunkQuery::_readResultsDefer(int fd) {
     // packetIter will close fd
     _packetIter.reset(new PacketIter(fd, fragmentSize)); 
 
-    if (_packetIter.get()->getErrno()) {
-        _manager->reportError(_id, _packetIter.get()->getErrno(), "Remote I/O error during XRD read.");
-    }
+    //if (_packetIter.get()->getErrno()) {
+    //    throw "Remote I/O error during XRD read.";
+    //}
 
     _result.localWrite = 1; // MAGIC: stuff the result so that it doesn't
     // look like an error to skip the local write.
     _state = COMPLETE;
     std::cout << _hash << " ReadResults defer " << std::endl;
     _notifyManager();
+    std::cout << "DBG: EXITING ChunkQuery::_readResultsDefer()" << std::endl;
 }
 
 void qMaster::ChunkQuery::_readResults(int fd) {
@@ -575,6 +621,9 @@ void qMaster::ChunkQuery::_readResults(int fd) {
 }
 
 void qMaster::ChunkQuery::_notifyManager() {
+
+    std::cout << "DBG: EXECUTING ChunkQuery::_notifyManager()" << std::endl;
+
     bool aborted = (_state==ABORTED) 
         || _shouldSquash 
         || (_result.queryWrite < 0);

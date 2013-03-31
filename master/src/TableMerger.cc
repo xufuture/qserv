@@ -149,6 +149,9 @@ bool TableMerger::merge(std::string const& dumpFile,
 
 bool TableMerger::merge(PacketIterPtr pacIter,
                         std::string const& tableName) {
+
+    std::cout << "DBG: EXECUTING TableMerger::merge(pacIter, " << tableName << ")" << std::endl;
+
     bool allowNull = false;
     {
         //std::cout << "Importing " << tableName << std::endl;
@@ -158,6 +161,8 @@ bool TableMerger::merge(PacketIterPtr pacIter,
             bool isOk = _importBufferCreate(pacIter, tableName);
             if(!isOk) {
                 --_tableCount; // We failed merging the table.
+                std::cout << "DBG: Table merging failed." << std::endl;
+                std::cout << "DBG: EXITING TableMerger::merge()" << std::endl;
                 return false;
             }
             allowNull = true;
@@ -166,7 +171,9 @@ bool TableMerger::merge(PacketIterPtr pacIter,
     // No locking needed if not first, after updating the counter.
     // Once the table is created, everyone should insert.
     SqlInsertIter sii(pacIter, tableName, allowNull);
-    return _importIter(sii, tableName);
+    bool returnVal = _importIter(sii, tableName);
+    std::cout << "DBG: EXITING TableMerger::merge() - " << returnVal << std::endl;
+    return returnVal;
 }
 
 bool TableMerger::finalize() {
@@ -192,6 +199,7 @@ bool TableMerger::finalize() {
 // private
 ////////////////////////////////////////////////////////////////////////
 bool TableMerger::_applySql(std::string const& sql) {
+
     return _applySqlLocal(sql); //try local impl now.
     FILE* fp;
     {
@@ -231,6 +239,9 @@ bool TableMerger::_applySql(std::string const& sql) {
 }
 
 bool TableMerger::_applySqlLocal(std::string const& sql) {
+
+    std::cout << "DBG: EXECUTING TableMerger::_applySqlLocal(sql)" << std::endl;
+
     boost::lock_guard<boost::mutex> m(_sqlMutex);
     SqlErrorObject errObj;
     if(!_sqlConn.get()) {
@@ -240,6 +251,7 @@ bool TableMerger::_applySqlLocal(std::string const& sql) {
             _error.errorCode = errObj.errNo();
             _error.description = "Error connecting to db. " + errObj.printErrMsg();
             _sqlConn.reset();
+            std::cout << "DBG: EXITING TableMerger::_applySqlLocal() - false" << std::endl;
             return false;
         } else {
             std::cout << "TableMerger " << (void*) this 
@@ -250,8 +262,10 @@ bool TableMerger::_applySqlLocal(std::string const& sql) {
         _error.status = TableMergerError::MYSQLEXEC;
         _error.errorCode = errObj.errNo();
         _error.description = "Error applying sql. " + errObj.printErrMsg();
+        std::cout << "DBG: EXITING TableMerger::_applySqlLocal() - false" << std::endl;
         return false;
-    }
+    }    
+    std::cout << "DBG: EXITING TableMerger::_applySqlLocal() - true" << std::endl;
     return true;
 }
 
@@ -396,6 +410,9 @@ bool TableMerger::_dropAndCreate(std::string const& tableName,
 
 bool TableMerger::_importIter(SqlInsertIter& sii, 
                               std::string const& tableName) {
+
+    std::cout << "DBG: EXECUTING TableMerger::_importIter(sii, " << tableName << ")" << std::endl;
+
     int insertsCompleted = 0;
     // Search the buffer for the insert statement, 
     // patch it (and future occurrences for the old table name, 
@@ -413,10 +430,12 @@ bool TableMerger::_importIter(SqlInsertIter& sii,
             if(_error.resultTooBig())
                 std::cout << "Failed importing! " << tableName 
                           << " " << _error.description << std::endl;
+            std::cout << "DBG: EXITING TableMerger::_importIter() - false" << std::endl;
             return false;
         }
         ++insertsCompleted;
     }
+    std::cout << "DBG: EXITING TableMerger::_importIter() - true" << std::endl;
     return true; //
 }
 

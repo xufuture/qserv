@@ -48,13 +48,16 @@ void MessageStore::addMessage(int chunkId, int code, std::string const& descript
     std::cout << "DBG: EXECUTING MessageStore::addMessage(" << chunkId << ", " << code << ", \"" << description << "\")" << std::endl;
     boost::lock_guard<boost::mutex> lock(_storeMutex);
     _queryMessages.insert(_queryMessages.end(), QueryMessage(chunkId, code, description));
+    std::cout << "DBG: EXITING  MessageStore::addMessage()" << std::endl;
 }
 
 qMaster::QueryMessage MessageStore::getMessage(int idx) {
+    std::cout << "DBG: EXECUTING MessageStore::getMessage(" << idx << ")" << std::endl;
     return _queryMessages.at(idx);
 }
 
 int MessageStore::messageCount() {
+    std::cout << "DBG: EXECUTING MessageStore::messageCount(), returning " << _queryMessages.size() << std::endl;
     return _queryMessages.size();
 }
 

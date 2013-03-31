@@ -182,18 +182,26 @@ void qMaster::resumeReadTrans(int session) {
 }
 
 qMaster::QueryState qMaster::joinSession(int session) {
-    AsyncQueryManager& qm = getAsyncManager(session);
-    qm.joinEverything();
-    AsyncQueryManager::ResultDeque const& d = qm.getFinalState();
-    bool successful;
-    std::for_each(d.begin(), d.end(), mergeStatus(successful));
-    
-    if(successful) {
-        std::cout << "Joined everything (success)" << std::endl;
-        return SUCCESS;
-    } else {
-        std::cout << "Joined everything (failure!)" << std::endl;
-        return ERROR;
+
+    std::cout << "DBG: EXECUTING qMaster::joinSession(" << session << ")" << std::endl;
+
+    try {
+        AsyncQueryManager& qm = getAsyncManager(session);
+        qm.joinEverything();
+        AsyncQueryManager::ResultDeque const& d = qm.getFinalState();
+        bool successful;
+        std::for_each(d.begin(), d.end(), mergeStatus(successful));
+        
+        if(successful) {
+            std::cout << "Joined everything (success)" << std::endl;
+            return SUCCESS;
+        } else {
+            std::cout << "Joined everything (failure!)" << std::endl;
+            return ERROR;
+        }
+    } catch (char *str) {
+        std::cout << "DBG: Exception Caught within qMaster::joinSession(" << session << ")" << std::endl;
+        throw;
     }
 }
 

@@ -86,6 +86,7 @@ public:
     void configureMerger(TableMergerConfig const& c);
 
     void reportError(int chunkId, int code, std::string const& description);
+    boost::shared_ptr<MessageStore> getMessageStore();
 
     int add(TransactionSpec const& t, std::string const& resultName);
     void join(int id);

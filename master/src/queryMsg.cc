@@ -23,6 +23,11 @@
 // queryMsg.h (SWIG-exported functions for accessing QueryMessages)
 
 #include <iostream>
+//#include "lsst/qserv/master/xrdfile.h"
+//#include "lsst/qserv/master/AsyncQueryManager.h"
+#include "lsst/qserv/master/SessionManagerAsync.h"
+#include "lsst/qserv/master/xrdfile.h"
+#include "lsst/qserv/master/MessageStore.h"
 #include "lsst/qserv/master/queryMsg.h"
 
 namespace qMaster=lsst::qserv::master;
@@ -33,7 +38,14 @@ namespace { // File-scope helpers
 int qMaster::queryMsgGetCount(int session) {
     // Get QueryMessages from session manager, call getCount()
     std::cout << "DBG: EXCUTING queryMsgGetCount(" << session << ")" << std::endl;
-    return 0; // No messages
+    qMaster::AsyncQueryManager& qm = qMaster::getAsyncManager(session);
+    //if (qm == NULL) return -1;
+    boost::shared_ptr<MessageStore> ms = qm.getMessageStore();
+    //if (ms == NULL) {
+    //    return 0;
+    //} else {
+        return ms->messageCount();
+    //}
 }
 
 // Python call: msg, code = queryMsgGetMsg(sessionId, msgNum)

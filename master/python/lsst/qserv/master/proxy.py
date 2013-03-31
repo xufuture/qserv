@@ -52,6 +52,7 @@ class Lock:
         self._queryMsgId = None
         pass
     def lock(self):
+        print "--py-- DBG: EXECUTING Lock.lock()"
         self.db = lsst.qserv.master.db.Db()
         if not self.db.check(): # Can't lock.
             return False
@@ -70,21 +71,29 @@ class Lock:
                                            time.time()))
         pass
     def setQueryMsgId(self, queryMsgId):
+        print "--py-- DBG: EXECUTING setQueryMsgId(", queryMsgId, ")"
         self._queryMsgId = queryMsgId
         pass
 
     def unlock(self):
+        print "--py-- DBG: EXECUTING Lock.unlock()"
+        self._readQueryMessages()
         self.db.applySql(Lock.unlockTmpl)
         pass
 
     def unlockAfter(self, threadCreateFunc, function):
+        print "--py-- DBG: EXECUTING unlockAfter()"
         def waitAndUnlock():
+            print "--py-- DBG: EXECUTING waitAndUnlock()"
             lock = self
             function()
             lock.unlock()
+        print "--py-- DBG: CALLING thread.start_new_thread()"
         threadid = thread.start_new_thread(waitAndUnlock, tuple())
+        print "--py-- DBG: RETURNED thread.start_new_thread()"
 
     def _readQueryMessages(self):
+        print "--py-- DBG: EXECUTING Lock._readQueryMessages()"
         if not self._queryMsgId: # No object to read.
             return
         msgCount = queryMsgGetCount(self._queryMsgId)
