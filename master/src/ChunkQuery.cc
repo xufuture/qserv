@@ -116,7 +116,7 @@ public:
             std::cout << "DBG: RETURNED ChunkQuery::Complete()" << std::endl;
         } catch (const char *msg) {
             std::cout << "DBG: Caught Exception during ReadCallable operator: " << msg << std::endl;
-            _cq._manager->reportError(_cq._id, errno, msg);
+            _cq._manager->reportError(_cq._id, -abs(errno), msg);
             _cq._state = ChunkQuery::ABORTED;
             _cq._notifyManager();
         }
@@ -176,7 +176,7 @@ public:
             _cq.Complete(result);
         } catch (const char *msg) {
             std::cout << "DBG: Caught Exception during WriteCallable operator: " << msg << std::endl;
-            _cq._manager->reportError(_cq._id, errno, msg);
+            _cq._manager->reportError(_cq._id, -abs(errno), msg);
             _cq._state = ChunkQuery::ABORTED;
             _cq._notifyManager();
         }

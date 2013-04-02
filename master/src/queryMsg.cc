@@ -48,13 +48,19 @@ int qMaster::queryMsgGetCount(int session) {
     //}
 }
 
-// Python call: msg, code = queryMsgGetMsg(sessionId, msgNum)
-std::string qMaster::queryMsgGetMsg(int session, int idx, int* code) {
-    // Get QueryMessages from session manager, call getMsg()
-    // Unpack code and message and return.
+// Python call: msg, chunkId, code = queryMsgGetMsg(sessionId, msgNum)
+std::string qMaster::queryMsgGetMsg(int session, int idx, int* chunkId, int* code) {
+    std::cout << "DBG: EXECUTING queryMsgGetMsg(" << session << ", " << idx << ", " << code << ")" << std::endl;
     // FIXME
-    *code = -1;
-    return "Invalid Message";
+    //*chunkId = -1;
+    //*code = -1;
+    //return "Invalid Message";
+    qMaster::AsyncQueryManager& qm = qMaster::getAsyncManager(session);
+    boost::shared_ptr<MessageStore> ms = qm.getMessageStore();
+    QueryMessage msg = ms->getMessage(idx);
+    *chunkId = msg.chunkId;
+    *code = msg.code;
+    return msg.description;
 }
 
 int qMaster::queryMsgAddMsg(int session, int msgCode, 

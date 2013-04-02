@@ -194,8 +194,8 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
 /*************************************************
  * TEST FAILURE MODE: Reading query result fails.
  * ***********************************************/
-    //std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
-    //readCount = -1;
+    std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
+    readCount = -1;
 /*************************************************/
 
     if (readCount < 0) {

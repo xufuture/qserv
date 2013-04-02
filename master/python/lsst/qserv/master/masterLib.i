@@ -113,7 +113,7 @@ namespace std {
 %apply (char *STRING, int LENGTH) { (char *str, int len) };
 //%apply (const char *STRING, int LENGTH) { (const char *str, int len) };
 %apply int *OUTPUT { int *write, int *read };
-%apply int *OUTPUT { int* msgCode };
+%apply int *OUTPUT { int* chunkId, int* code };
 
 %include "lsst/qserv/master/transaction.h"
 %include "lsst/qserv/master/xrdfile.h"

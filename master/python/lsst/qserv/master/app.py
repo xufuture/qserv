@@ -88,8 +88,8 @@ from lsst.qserv.master import pauseReadTrans, resumeReadTrans
 from lsst.qserv.master import ChunkMeta
 from lsst.qserv.master import ChunkMapping, SqlSubstitution
 # MessageHandler
-from lsst.qserv.master import MessageHandler,MessageHandlerError, MessageHandlerConfig
-from lsst.qserv.master import configureSessionMessageHandler
+#from lsst.qserv.master import MessageHandler,MessageHandlerError, MessageHandlerConfig
+#from lsst.qserv.master import configureSessionMessageHandler
 # Merger
 from lsst.qserv.master import TableMerger, TableMergerError, TableMergerConfig
 from lsst.qserv.master import configureSessionMerger, getSessionResultName
@@ -573,13 +573,14 @@ class QueryBabysitter:
     can be used by a client.  Unlike the collater, it doesn't do merging.
     """
     def __init__(self, sessionId, queryHash, fixup, 
-                 resultName="", messagesName=""):
+                 #resultName="", messagesName=""):
+                 resultName=""):
         self._sessionId = sessionId
         self._inFlight = {}
         # Scratch mgmt (Consider putting somewhere else)
         self._scratchPath = setupResultScratch()
 
-        self._setupMessageHandler(messagesName)
+        #self._setupMessageHandler(messagesName)
         self._setupMerger(fixup, resultName) 
         pass
 
@@ -588,18 +589,18 @@ class QueryBabysitter:
         # FIXME: error code is hardcoded to 1.
         queryMsgAddMsg(self._sessionId, 1, message)
 
-    def _setupMessageHandler(self, targetTable):
-        c = lsst.qserv.master.config.config
-        dbSock = c.get("resultdb", "unix_socket")
-        dbUser = c.get("resultdb", "user")
-        dbName = c.get("resultdb", "db")        
-
-        mysqlBin = c.get("mysql", "mysqlclient")
-        if not mysqlBin:
-            mysqlBin = "mysql"
-
-        messageHandlerConfig = MessageHandlerConfig(dbName, targetTable, dbUser, dbSock)
-        configureSessionMessageHandler(self._sessionId, messageHandlerConfig)
+#    def _setupMessageHandler(self, targetTable):
+#        c = lsst.qserv.master.config.config
+#        dbSock = c.get("resultdb", "unix_socket")
+#        dbUser = c.get("resultdb", "user")
+#        dbName = c.get("resultdb", "db")        
+#
+#        mysqlBin = c.get("mysql", "mysqlclient")
+#        if not mysqlBin:
+#            mysqlBin = "mysql"
+#
+#        messageHandlerConfig = MessageHandlerConfig(dbName, targetTable, dbUser, dbSock)
+#        configureSessionMessageHandler(self._sessionId, messageHandlerConfig)
 
     def _setupMerger(self, fixup, resultName):
         c = lsst.qserv.master.config.config
@@ -734,10 +735,11 @@ class HintedQueryAction:
                            handle (QueryMsgId) for the caller 
                            to access the query messages object.
     @param resultName - name of result table.
-    @param messagesName - name of messages table (deprecated. messages 
-                          should get written to QueryMessages object)
+#    @param messagesName - name of messages table (deprecated. messages 
+#                          should get written to QueryMessages object)
     """
-    def __init__(self, query, hints, pmap, setQueryMsgId, resultName="", messagesName=""):
+    #def __init__(self, query, hints, pmap, setQueryMsgId, resultName="", messagesName=""):
+    def __init__(self, query, hints, pmap, setQueryMsgId, resultName=""):
         self.queryStr = query.strip()# Pull trailing whitespace
         # Force semicolon to facilitate worker-side splitting
         if self.queryStr[-1] != ";":  # Add terminal semicolon
@@ -758,7 +760,8 @@ class HintedQueryAction:
             discardSession(self._sessionId)
             return
 
-        self._prepForExec(self._useMemory, resultName, messagesName)
+#        self._prepForExec(self._useMemory, resultName, messagesName)
+        self._prepForExec(self._useMemory, resultName)
 
     def _importQconfig(self, pmap, hints):
         """Import various config bits and initialize some private variables.
@@ -809,13 +812,15 @@ class HintedQueryAction:
             self._isValid = False
         return True
 
-    def _prepForExec(self, useMemory, resultName, messagesName):
+#    def _prepForExec(self, useMemory, resultName, messagesName):
+    def _prepForExec(self, useMemory, resultName):
         self._postFixChunkScope(self._substitution.getChunkLevel())
 
         # Query babysitter.
         self._babysitter = QueryBabysitter(self._sessionId, self.queryHash,
                                            self._substitution.getMergeFixup(),
-                                           resultName, messagesName)
+#                                           resultName, messagesName)
+                                           resultName)
         ## For generating subqueries
         if useMemory == "yes":
             print "Memory spec:", useMemory

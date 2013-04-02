@@ -289,9 +289,9 @@ int qMaster::newSession(std::map<std::string,std::string> const& config) {
     return id;
 }
 
-void qMaster::configureSessionMessageHandler(int session, MessageHandlerConfig const& c) {
-    getAsyncManager(session).configureMessageHandler(c);    
-}
+//void qMaster::configureSessionMessageHandler(int session, MessageHandlerConfig const& c) {
+//    getAsyncManager(session).configureMessageHandler(c);    
+//}
 
 void qMaster::configureSessionMerger(int session, TableMergerConfig const& c) {
     getAsyncManager(session).configureMerger(c);    

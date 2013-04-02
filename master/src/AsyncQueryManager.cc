@@ -33,7 +33,7 @@
 
 #include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/master/ChunkQuery.h"
-#include "lsst/qserv/master/MessageHandler.h"
+//#include "lsst/qserv/master/MessageHandler.h"
 #include "lsst/qserv/master/MessageStore.h"
 #include "lsst/qserv/master/TableMerger.h"
 #include "lsst/qserv/master/Timer.h"
@@ -272,9 +272,9 @@ void qMaster::AsyncQueryManager::joinEverything() {
     std::cout << "DBG: EXITING AsyncQueryManager::joinEverything()" << std::endl;
 }
 
-void qMaster::AsyncQueryManager::configureMessageHandler(MessageHandlerConfig const& c) {
-    _messageHandler = boost::make_shared<MessageHandler>(c);
-}
+//void qMaster::AsyncQueryManager::configureMessageHandler(MessageHandlerConfig const& c) {
+//    _messageHandler = boost::make_shared<MessageHandler>(c);
+//}
 
 void qMaster::AsyncQueryManager::configureMerger(TableMergerConfig const& c) {
     _merger = boost::make_shared<TableMerger>(c);
@@ -331,7 +331,7 @@ void qMaster::AsyncQueryManager::reportError(int chunkId, int code, std::string 
 
     std::cout << "DBG: EXECUTING AsyncQueryManager::reportError(" << chunkId << ", " << code << ", " << description << ")" << std::endl;
 
-    _messageHandler->writeMessage(code, (boost::format(_errorTmpl) % chunkId % description).str());
+    //_messageHandler->writeMessage(code, (boost::format(_errorTmpl) % chunkId % description).str());
     getMessageStore()->addMessage(chunkId, code, description);
     std::cout << "DBG: EXITING AsyncQueryManager::reportError()" << std::endl;
 }

@@ -45,8 +45,8 @@ namespace master {
 
 // Forward
 class ChunkQuery;
-class MessageHandler;
-class MessageHandlerConfig;
+//class MessageHandler;
+//class MessageHandlerConfig;
 class MessageStore;
 class TableMerger;
 class TableMergerConfig;
@@ -82,7 +82,7 @@ public:
     ~AsyncQueryManager()
     { _destroyPool(); }
 
-    void configureMessageHandler(MessageHandlerConfig const& c);
+    //void configureMessageHandler(MessageHandlerConfig const& c);
     void configureMerger(TableMergerConfig const& c);
 
     void reportError(int chunkId, int code, std::string const& description);
@@ -150,7 +150,7 @@ private:
     int _reliefFiles;
 
     std::string _xrootdHostPort;
-    boost::shared_ptr<MessageHandler> _messageHandler;
+    //boost::shared_ptr<MessageHandler> _messageHandler;
     boost::shared_ptr<MessageStore> _messageStore;
     boost::shared_ptr<TableMerger> _merger;
     boost::shared_ptr<lsst::qserv::common::WorkQueue> _readQueue;
