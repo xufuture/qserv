@@ -23,8 +23,6 @@
 // queryMsg.h (SWIG-exported functions for accessing QueryMessages)
 
 #include <iostream>
-//#include "lsst/qserv/master/xrdfile.h"
-//#include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/master/SessionManagerAsync.h"
 #include "lsst/qserv/master/xrdfile.h"
 #include "lsst/qserv/master/MessageStore.h"
@@ -36,25 +34,15 @@ namespace { // File-scope helpers
 }
 
 int qMaster::queryMsgGetCount(int session) {
-    // Get QueryMessages from session manager, call getCount()
     std::cout << "DBG: EXCUTING queryMsgGetCount(" << session << ")" << std::endl;
     qMaster::AsyncQueryManager& qm = qMaster::getAsyncManager(session);
-    //if (qm == NULL) return -1;
     boost::shared_ptr<MessageStore> ms = qm.getMessageStore();
-    //if (ms == NULL) {
-    //    return 0;
-    //} else {
-        return ms->messageCount();
-    //}
+    return ms->messageCount();
 }
 
-// Python call: msg, chunkId, code = queryMsgGetMsg(sessionId, msgNum)
+// Python call: msg, chunkId, code = queryMsgGetMsg(session, idx)
 std::string qMaster::queryMsgGetMsg(int session, int idx, int* chunkId, int* code) {
     std::cout << "DBG: EXECUTING queryMsgGetMsg(" << session << ", " << idx << ", " << code << ")" << std::endl;
-    // FIXME
-    //*chunkId = -1;
-    //*code = -1;
-    //return "Invalid Message";
     qMaster::AsyncQueryManager& qm = qMaster::getAsyncManager(session);
     boost::shared_ptr<MessageStore> ms = qm.getMessageStore();
     QueryMessage msg = ms->getMessage(idx);

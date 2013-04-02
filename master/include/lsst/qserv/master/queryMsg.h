@@ -30,8 +30,8 @@ namespace lsst { namespace qserv { namespace master {
 
 int queryMsgGetCount(int session);
 
-// Python call: msg, chunkId, code = queryMsgGetMsg(sessionId, msgNum)
-// int* code matches with %apply directive to help SWIG
+// Python call: msg, chunkId, code = queryMsgGetMsg(session, idx)
+// int* chunkId, int* code matches with %apply directive to help SWIG
 std::string queryMsgGetMsg(int session, int idx, int* chunkId, int* code);
 
 int queryMsgAddMsg(int session, int msgCode, std::string const& message);

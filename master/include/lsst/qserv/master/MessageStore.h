@@ -23,7 +23,6 @@
 /// MessageStore.h declares:
 /// 
 /// struct MessageStoreError
-/// class MesssageStoreConfig
 /// class MessageStore 
 
 /// The MessageStore classes are responsible for maintaining messages associated
@@ -48,18 +47,6 @@ public:
     std::string description;
 };
 
-/// class MessageStoreConfig - value class for configuring a MessageStore.
-/*
-class MessageStoreConfig {
-public:
-    MessageStoreConfig()
-        : 
-    {
-    }
-
-};
-*/
-
 struct QueryMessage {
 public:
     QueryMessage(int chunkId_,
@@ -78,15 +65,12 @@ public:
 
 class MessageStore {
 public:
-    //explicit MessageStore(MessageStoreConfig const& c);
-
     void addMessage(int chunkId, int code, std::string const& description);
     QueryMessage getMessage(int idx);
     int messageCount();
     int messageCount(int code);
 
 private:
-    //MessageStoreConfig _config;
     MessageStoreError _error;
     boost::mutex _storeMutex;
     std::vector<QueryMessage> _queryMessages;

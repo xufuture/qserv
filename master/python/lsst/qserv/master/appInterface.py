@@ -103,8 +103,6 @@ class AppInterface:
         # shorter than intermediate table names. 
         # This allows in-place name replacement optimization while merging.
         resultName = "%s.result_%d" % (self._resultDb, taskId)
-        #messagesName = "%s.messages_%d" % (self._resultDb, taskId)
-        #messages = proxy.Messages(messagesName)
         lockName = "%s.lock_%d" % (self._resultDb, taskId)
         lock = proxy.Lock(lockName)
         if not lock.lock():
@@ -113,7 +111,6 @@ class AppInterface:
 
         print "--py-- DBG: CALLING app.HintedQueryAction()"
         a = app.HintedQueryAction(query, conditions, self.pmap, 
-#                                  lock.setQueryMsgId, resultName, messagesName)
                                   lock.setQueryMsgId, resultName)
         print "--py-- DBG: RETURNED app.HintedQueryAction()"
         if a.getIsValid():
@@ -126,7 +123,6 @@ class AppInterface:
             return ("error","error",a.getError())
        
         print "--py-- DBG: EXITING submitQueryWithLock()"
-#        return (resultName, messagesName, lockName, "")
         return (resultName, lockName, "")
     
     def query(self, q, hints):

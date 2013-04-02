@@ -26,7 +26,6 @@
 #include "lsst/qserv/master/MessageStore.h"
 using lsst::qserv::master::MessageStore;
 using lsst::qserv::master::MessageStoreError;
-//using lsst::qserv::master::MessageStoreConfig;
 
 namespace qMaster=lsst::qserv::master;
 
@@ -37,12 +36,6 @@ namespace { // File-scope helpers
 ////////////////////////////////////////////////////////////////////////
 // public
 ////////////////////////////////////////////////////////////////////////
-/*
-MessageStore::MessageStore(MessageStoreConfig const& c)
-    : _config(c) {
-
-}
-*/
 
 void MessageStore::addMessage(int chunkId, int code, std::string const& description) {
     std::cout << "DBG: EXECUTING MessageStore::addMessage(" << chunkId << ", " << code << ", \"" << description << "\")" << std::endl;
