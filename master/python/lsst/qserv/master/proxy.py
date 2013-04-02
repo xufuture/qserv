@@ -47,7 +47,7 @@ class Lock:
 
     def __init__(self, tablename):
         self._tableName = tablename
-        self._queryMsgId = None
+        self._sessionId = None
         pass
     def lock(self):
         print "--py-- DBG: EXECUTING Lock.lock()"
@@ -55,14 +55,14 @@ class Lock:
         if not self.db.check(): # Can't lock.
             return False
         self.db.applySql((Lock.createTmpl % self._tableName) 
-                         + (Lock.lockTmpl % self._tableName)
-                         + (Lock.writeTmpl % (self._tableName, 0, 0, "Query Initialized", 
-                                              time.time())))
+                         + (Lock.lockTmpl % self._tableName))
+#                         + (Lock.writeTmpl % (self._tableName, 0, 0, "Query Initialized", 
+#                                              time.time())))
         return True
 
-    def setQueryMsgId(self, queryMsgId):
-        print "--py-- DBG: EXECUTING setQueryMsgId(", queryMsgId, ")"
-        self._queryMsgId = queryMsgId
+    def setSessionId(self, sessionId):
+        print "--py-- DBG: EXECUTING setSession(", sessionId, ")"
+        self._sessionId = sessionId
         pass
 
     def unlock(self):
@@ -84,12 +84,12 @@ class Lock:
 
     def _saveQueryMessages(self):
         print "--py-- DBG: EXECUTING Lock._saveQueryMessages()"
-        if not self._queryMsgId: # No object to read.
+        if not self._sessionId: # No object to read.
             return
-        msgCount = queryMsgGetCount(self._queryMsgId)
+        msgCount = queryMsgGetCount(self._sessionId)
         print "--py-- DBG: Processing ", msgCount, " messages."
         for i in range(msgCount):
-            msg, chunkId, code, timestamp = queryMsgGetMsg(self._queryMsgId, i)
+            msg, chunkId, code, timestamp = queryMsgGetMsg(self._sessionId, i)
             print "--py-- DBG: chunkId = ", chunkId, ", code = ", code, ",  msg = ", msg, ", timstamp = ", timestamp
             self.db.applySql(Lock.writeTmpl % (self._tableName, chunkId, code, msg, timestamp))
     pass

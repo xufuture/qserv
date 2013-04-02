@@ -579,9 +579,7 @@ class QueryBabysitter:
         pass
 
     def _reportError(self, message):
-        """Wrap existing reportError to call new error message object"""
-        # FIXME: error code is hardcoded to 1.
-        queryMsgAddMsg(self._sessionId, 1, message)
+        queryMsgAddMsg(self._sessionId, 0, -1, message)
 
     def _setupMerger(self, fixup, resultName):
         c = lsst.qserv.master.config.config
@@ -711,13 +709,12 @@ class HintedQueryAction:
     @param query - user query string
     @param hints - key-value for unstructured query hints
     @param pmap - partitioning map for spatial chunk mapping. caller-maintained
-    @param setQueryMsgId - unary function. a callback so this
-                           object can callback and provide a 
-                           handle (QueryMsgId) for the caller 
-                           to access the query messages object.
+    @param setSessionId - unary function. a callback so this object can provide
+                          a handle (sessionId) for the caller to access query
+                          messages.
     @param resultName - name of result table.
     """
-    def __init__(self, query, hints, pmap, setQueryMsgId, resultName=""):
+    def __init__(self, query, hints, pmap, setSessionId, resultName=""):
         self.queryStr = query.strip()# Pull trailing whitespace
         # Force semicolon to facilitate worker-side splitting
         if self.queryStr[-1] != ";":  # Add terminal semicolon
@@ -731,12 +728,15 @@ class HintedQueryAction:
 
         if not self._parseAndPrep(query, hints):
             return
-        # Pass up the sessionId (e.g. for QueryMessages access )
-        setQueryMsgId(self._sessionId) 
+        # Pass up the sessionId for query messages access.
+        setSessionId(self._sessionId) 
 
         if not self._isValid:
             discardSession(self._sessionId)
             return
+
+        # Create query initialization message.
+        queryMsgAddMsg(self._sessionId, 0, 0, 'Query Initialized');
 
         self._prepForExec(self._useMemory, resultName)
 

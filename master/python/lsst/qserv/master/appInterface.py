@@ -111,7 +111,7 @@ class AppInterface:
 
         print "--py-- DBG: CALLING app.HintedQueryAction()"
         a = app.HintedQueryAction(query, conditions, self.pmap, 
-                                  lock.setQueryMsgId, resultName)
+                                  lock.setSessionId, resultName)
         print "--py-- DBG: RETURNED app.HintedQueryAction()"
         if a.getIsValid():
             self._callWithThread(a.invoke)

@@ -41,7 +41,7 @@ int qMaster::queryMsgGetCount(int session) {
 }
 
 // Python call: msg, chunkId, code, timestamp = queryMsgGetMsg(session, idx)
-std::string qMaster::queryMsgGetMsg(int session, int idx, int* chunkId, int* code, uint* timestamp) {
+std::string qMaster::queryMsgGetMsg(int session, int idx, int* chunkId, int* code, time_t* timestamp) {
     std::cout << "DBG: EXECUTING queryMsgGetMsg(" << session << ", " << idx << ", " << code << ")" << std::endl;
     qMaster::AsyncQueryManager& qm = qMaster::getAsyncManager(session);
     boost::shared_ptr<MessageStore> ms = qm.getMessageStore();
@@ -52,9 +52,11 @@ std::string qMaster::queryMsgGetMsg(int session, int idx, int* chunkId, int* cod
     return msg.description;
 }
 
-int qMaster::queryMsgAddMsg(int session, int msgCode, 
+int qMaster::queryMsgAddMsg(int session, int chunkId, int code, 
                             std::string const& message) {
-    // Add the code and message.
-    // FIXME
-    return msgCode;
+    std::cout << "DBG: EXECUTING queryMsgAddMsg(" << session << ", " << chunkId << ", " << code << ", " << message << ")" << std::endl;
+    qMaster::AsyncQueryManager& qm = qMaster::getAsyncManager(session);
+    boost::shared_ptr<MessageStore> ms = qm.getMessageStore();
+    ms->addMessage(chunkId, code, message);
+    return 0;
 }
