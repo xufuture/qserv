@@ -67,7 +67,7 @@ class Lock:
 
     def unlock(self):
         print "--py-- DBG: EXECUTING Lock.unlock()"
-        self._readQueryMessages()
+        self._saveQueryMessages()
         self.db.applySql(Lock.unlockTmpl)
         pass
 
@@ -82,18 +82,16 @@ class Lock:
         threadid = thread.start_new_thread(waitAndUnlock, tuple())
         print "--py-- DBG: RETURNED thread.start_new_thread()"
 
-    def _readQueryMessages(self):
-        print "--py-- DBG: EXECUTING Lock._readQueryMessages()"
+    def _saveQueryMessages(self):
+        print "--py-- DBG: EXECUTING Lock._saveQueryMessages()"
         if not self._queryMsgId: # No object to read.
             return
         msgCount = queryMsgGetCount(self._queryMsgId)
         print "--py-- DBG: Processing ", msgCount, " messages."
         for i in range(msgCount):
-            msg, chunkId, code = queryMsgGetMsg(self._queryMsgId, i)
-            print "--py-- DBG: chunkId = ", chunkId, ", code = ", code, ",  msg = ", msg
-            self.db.applySql(Lock.writeTmpl % (self._tableName, chunkId, code, msg, time.time()))
-        
-
+            msg, chunkId, code, timestamp = queryMsgGetMsg(self._queryMsgId, i)
+            print "--py-- DBG: chunkId = ", chunkId, ", code = ", code, ",  msg = ", msg, ", timstamp = ", timestamp
+            self.db.applySql(Lock.writeTmpl % (self._tableName, chunkId, code, msg, timestamp))
     pass
 
 def clearLocks():

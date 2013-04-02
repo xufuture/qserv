@@ -40,7 +40,8 @@ namespace { // File-scope helpers
 void MessageStore::addMessage(int chunkId, int code, std::string const& description) {
     std::cout << "DBG: EXECUTING MessageStore::addMessage(" << chunkId << ", " << code << ", \"" << description << "\")" << std::endl;
     boost::lock_guard<boost::mutex> lock(_storeMutex);
-    _queryMessages.insert(_queryMessages.end(), QueryMessage(chunkId, code, description));
+    _queryMessages.insert(_queryMessages.end(), 
+        QueryMessage(chunkId, code, description, std::time(0)));
     std::cout << "DBG: EXITING  MessageStore::addMessage()" << std::endl;
 }
 

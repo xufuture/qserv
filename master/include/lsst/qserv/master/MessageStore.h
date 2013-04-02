@@ -32,6 +32,7 @@
 #define LSST_QSERV_MASTER_MESSAGE_STORE_H
 
 #include <string>
+#include <ctime>
 #include <boost/thread.hpp> // for mutex. 
 #include <boost/shared_ptr.hpp> // for mutex. 
 
@@ -51,16 +52,19 @@ struct QueryMessage {
 public:
     QueryMessage(int chunkId_,
                  int code_,
-                 std::string description_)
+                 std::string description_,
+                 std::time_t timestamp_)
         :  chunkId(chunkId_),
            code(code_),
-           description(description_)
+           description(description_),
+           timestamp(timestamp_)
     {
     }
 
     int chunkId;
     int code;
     std::string description;
+    std::time_t timestamp;
 };
 
 class MessageStore {
