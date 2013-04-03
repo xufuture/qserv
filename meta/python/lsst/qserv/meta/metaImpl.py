@@ -389,7 +389,7 @@ class MetaImpl:
         self._mdb.selectMetaDb()
         ret = self._mdb.execCommandN("SELECT dbName FROM DbMeta")
         if not ret:
-            return "No databases found"
+            return []
         return [x[0] for x in ret]
 
     ###########################################################################
