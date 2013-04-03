@@ -239,18 +239,21 @@ class MetadataCacheInterface:
         # retrieve info about each db
         x = qmsClient.retrieveTableInfo(dbName, tableName)
         # call the c++ function
-        if partStrategy == "sphBox":
-            ret = addTbInfoPartitionedSphBox(
-                sessionId, 
-                dbName,
-                tableName, 
-                float(x["overlap"]),
-                x["phiCol"],
-                x["thetaCol"],
-                int(x["phiColNo"]),
-                int(x["thetaColNo"]),
-                int(x["logicalPart"]),
-                int(x["physChunking"]))
+        if partStrategy == "sphBox": # db is partitioned
+            if "overlap" in x:       # but this table does not have to be
+                ret = addTbInfoPartitionedSphBox(
+                    sessionId, 
+                    dbName,
+                    tableName, 
+                    float(x["overlap"]),
+                    x["phiCol"],
+                    x["thetaCol"],
+                    int(x["phiColNo"]),
+                    int(x["thetaColNo"]),
+                    int(x["logicalPart"]),
+                    int(x["physChunking"]))
+            else:                    # db is not partitioned
+                ret = addTbInfoNonPartitioned(sessionId, dbName, tableName)
         elif partStrategy == "None":
             ret = addTbInfoNonPartitioned(sessionId, dbName, tableName)
         else:
