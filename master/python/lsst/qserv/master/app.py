@@ -796,6 +796,11 @@ class HintedQueryAction:
         if self.queryStr[-1] != ";":  # Add terminal semicolon
             self.queryStr += ";" 
 
+        # initialize metadata cache
+        mcI = MetadataCacheInterface()
+        self._metaCacheSession = mcI.newSession()
+        print "the metacachesession id i'll use: ", self._metaCacheSession
+
         # queryHash identifies the top-level query.
         self.queryHash = self._computeHash(self.queryStr)[:18]
         self.chunkLimit = 2**32 # something big
@@ -809,6 +814,10 @@ class HintedQueryAction:
             discardSession(self._sessionId)
             return
         self._prepForExec(self._useMemory, reportError, resultName)
+
+    def __destroy__(self):
+        mcI = MetadataCacheInterface()
+        mcI.discardSession(self._metaCacheSession)
 
     def _importQconfig(self, pmap, hints):
         self._dbContext = "LSST" # Later adjusted by hints.
@@ -843,7 +852,8 @@ class HintedQueryAction:
             cfg = self._prepareCppConfig(self._dbContext, hints)
             self._substitution = SqlSubstitution(query, 
                                                  self._pConfig.chunkMeta,
-                                                 cfg)
+                                                 cfg,
+                                                 self._metaCacheSession)
             if self._substitution.getError():
                 self._error = self._substitution.getError()
                 self._isValid = False

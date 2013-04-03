@@ -45,21 +45,19 @@ namespace qMaster = lsst::qserv::master;
 using lsst::qserv::master::SessionManager;
 typedef SessionManager<qMaster::MetadataCache::Ptr> SessionMgr;
 typedef boost::shared_ptr<SessionMgr> SessionMgrPtr;
-namespace {
-    SessionMgr&
-    getSessionManager() {
-        static SessionMgrPtr sm;
-        if(sm.get() == NULL) {
-            sm = boost::make_shared<SessionMgr>();
-        }
-        assert(sm.get() != NULL);
-        return *sm;
+SessionMgr&
+getSessionManager() {
+    static SessionMgrPtr sm;
+    if(sm.get() == NULL) {
+        sm = boost::make_shared<SessionMgr>();
     }
+    assert(sm.get() != NULL);
+    return *sm;
+}
 
-    boost::shared_ptr<qMaster::MetadataCache> 
-    getMetadataCache(int session) {
-        return getSessionManager().getSession(session);
-    }
+boost::shared_ptr<qMaster::MetadataCache> 
+getMetadataCache(int session) {
+    return getSessionManager().getSession(session);
 }
 
 /** Creates a new metadata session

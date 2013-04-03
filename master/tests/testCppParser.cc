@@ -35,6 +35,8 @@ using lsst::qserv::master::SqlSubstitution;
 using lsst::qserv::master::SqlParseRunner;
 namespace test = boost::test_tools;
 
+int metaCacheSessionId = -1;
+
 namespace {
 
 
@@ -55,7 +57,7 @@ ChunkMeta newTestCmeta(bool withSubchunks=true) {
 
 void tryStmt(std::string const& s, bool withSubchunks=false) {
     std::map<std::string,std::string> cfg; // dummy config
-    SqlSubstitution ss(s, newTestCmeta(withSubchunks), cfg);
+    SqlSubstitution ss(s, newTestCmeta(withSubchunks), cfg, metaCacheSessionId);
     if(!ss.getError().empty()) {
 	std::cout << "ERROR constructing substitution: " 
 		  << ss.getError() << std::endl;
@@ -112,7 +114,7 @@ struct ParserFixture {
                                   std::map<std::string,std::string> const& cfg) {
         SqlParseRunner::Ptr p;
         
-        p = SqlParseRunner::newInstance(stmt, delimiter, cfg);
+        p = SqlParseRunner::newInstance(stmt, delimiter, cfg, metaCacheSessionId);
         p->setup(tableNames);
         return p;
     }
@@ -148,7 +150,7 @@ void tryTriple() {
     std::map<std::string,std::string> cfg; // dummy config
     ChunkMeta c = newTestCmeta();
     c.add("LSST", "ObjectSub", 2);
-    SqlSubstitution ss(stmt, c, cfg);
+    SqlSubstitution ss(stmt, c, cfg, metaCacheSessionId);
     for(int i = 4; i < 6; ++i) {
 	std::cout << "--" << ss.transform(i,3) << std::endl;
     }
@@ -160,11 +162,11 @@ void tryAggregate() {
     std::map<std::string,std::string> cfg; // dummy config
 
     ChunkMeta c = newTestCmeta();
-    SqlSubstitution ss(stmt, c, cfg);
+    SqlSubstitution ss(stmt, c, cfg, metaCacheSessionId);
     for(int i = 4; i < 6; ++i) {
 	std::cout << "--" << ss.transform(i,3) << std::endl;
     }
-    SqlSubstitution ss2(stmt2, c, cfg);
+    SqlSubstitution ss2(stmt2, c, cfg, metaCacheSessionId);
     std::cout << "--" << ss2.transform(24,3) << std::endl;
     
 }
@@ -179,7 +181,8 @@ BOOST_AUTO_TEST_CASE(TrivialSub) {
     std::string stmt = "SELECT * FROM Object WHERE someField > 5.0;";
     SqlParseRunner::Ptr spr = SqlParseRunner::newInstance(stmt, 
                                                           delimiter,
-                                                          config);
+                                                          config,
+                                                          metaCacheSessionId);
     spr->setup(tableNames);
     std::string parseResult = spr->getParseResult();
     // std::cout << stmt << " is parsed into " << parseResult
@@ -195,7 +198,8 @@ BOOST_AUTO_TEST_CASE(NoSub) {
     std::string goodRes = "SELECT * FROM LSST.Filter WHERE filterId=4;";
     SqlParseRunner::Ptr spr(SqlParseRunner::newInstance(stmt, 
                                                         delimiter,
-                                                        config));
+                                                        config,
+                                                        metaCacheSessionId));
     spr->setup(tableNames);
     std::string parseResult = spr->getParseResult();
     // std::cout << stmt << " is parsed into " << parseResult 
@@ -211,7 +215,7 @@ BOOST_AUTO_TEST_CASE(NoSub) {
 BOOST_AUTO_TEST_CASE(Aggregate) {
     std::string stmt = "select sum(pm_declErr),chunkId, avg(bMagF2) bmf2 from LSST.Object where bMagF > 20.0 GROUP BY chunkId;";
 
-    SqlSubstitution ss(stmt, cMeta, config);
+    SqlSubstitution ss(stmt, cMeta, config, metaCacheSessionId);
     for(int i = 4; i < 6; ++i) {
 	// std::cout << "--" << ss.transform(cMeta.getMapping(i,3),i,3) 
         //           << std::endl;
@@ -229,7 +233,7 @@ BOOST_AUTO_TEST_CASE(Aggregate) {
 BOOST_AUTO_TEST_CASE(Limit) {
     std::string stmt = "select * from LSST.Object WHERE ra_PS BETWEEN 150 AND 150.2 and decl_PS between 1.6 and 1.7 limit 2;";
     
-    SqlSubstitution ss(stmt, cMeta, config);
+    SqlSubstitution ss(stmt, cMeta, config, metaCacheSessionId);
     for(int i = 4; i < 6; ++i) {
 	//std::cout << "--" << ss.transform(cMeta.getMapping(i,3),i,3) 
         //           << std::endl;
@@ -246,7 +250,7 @@ BOOST_AUTO_TEST_CASE(Limit) {
 BOOST_AUTO_TEST_CASE(OrderBy) {
     std::string stmt = "select * from LSST.Object WHERE ra_PS BETWEEN 150 AND 150.2 and decl_PS between 1.6 and 1.7 ORDER BY objectId;";
     
-    SqlSubstitution ss(stmt, cMeta, config);
+    SqlSubstitution ss(stmt, cMeta, config, metaCacheSessionId);
     for(int i = 4; i < 6; ++i) {
 	//std::cout << "--" << ss.transform(cMeta.getMapping(i,3),i,3) 
         //           << std::endl;

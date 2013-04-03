@@ -24,8 +24,12 @@
 #include "lsst/qserv/master/TableRefChecker.h"
 #include <string>
 #include <iostream> // debugging
-namespace qMaster =  lsst::qserv::master;
 
+
+#include <boost/make_shared.hpp>
+#include "lsst/qserv/master/MetadataCache.h"
+
+namespace qMaster =  lsst::qserv::master;
 
 ////////////////////////////////////////////////////////////////////////
 // anonymous helpers
@@ -68,8 +72,8 @@ namespace {
 ////////////////////////////////////////////////////////////////////////
 // class TableRefChecker (public)
 ////////////////////////////////////////////////////////////////////////
-qMaster::TableRefChecker::TableRefChecker(InfoPtr info) 
-    : _info(info) {
+qMaster::TableRefChecker::TableRefChecker(int metaCacheSessionId, InfoPtr info) 
+    : _metaCacheSessionId(metaCacheSessionId), _info(info) {
     if(!_info.get()) {
         _setDefaultInfo();
     }
@@ -89,8 +93,14 @@ qMaster::TableRefChecker::importDbWhitelist(qMaster::StringList const& wlist) {
     }
 }
 
+// forward declaration of getMetadataCache function
+boost::shared_ptr<qMaster::MetadataCache> getMetadataCache(int session);
+
 bool qMaster::TableRefChecker::isChunked(std::string const& db, 
                                          std::string const& table) const {
+    std::cout << "***** TableRefChecker::isChunked(" << db << ", " << table << ")" << std::endl;
+    std::cout << "**** get metacache for id " << _metaCacheSessionId << std::endl;
+    getMetadataCache(_metaCacheSessionId)->printSelf();
     bool isSc;
     return infoHasEntry(*_info, RefPair(db, table), isSc);
 }

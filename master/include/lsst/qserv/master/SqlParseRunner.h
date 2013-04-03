@@ -65,7 +65,8 @@ public:
 
     static Ptr newInstance(std::string const& statement, 
                            std::string const& delimiter,
-                           StringMap const& config);
+                           StringMap const& config,
+                           int metaCacheSessionId);
     void setup(std::list<std::string> const& names);
     std::string const& getStatement() const { return _statement; }
     std::string getParseResult();
@@ -102,7 +103,8 @@ private:
     // Setup and construction
     SqlParseRunner(std::string const& statement, 
                    std::string const& delimiter,
-                   StringMap const& config);
+                   StringMap const& config,
+                   int metaCacheSessionId);
     void _readConfig(StringMap const& m);
 
     // Helpers for operation

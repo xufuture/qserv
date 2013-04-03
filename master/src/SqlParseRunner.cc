@@ -278,15 +278,18 @@ private:
 boost::shared_ptr<qMaster::SqlParseRunner> 
 qMaster::SqlParseRunner::newInstance(std::string const& statement, 
                                      std::string const& delimiter,
-                                     qMaster::StringMap const& config) {
+                                     qMaster::StringMap const& config,
+                                     int metaCacheSessionId) {
     return boost::shared_ptr<SqlParseRunner>(new SqlParseRunner(statement, 
                                                                 delimiter,
-                                                                config));
+                                                                config,
+                                                                metaCacheSessionId));
 }
 
 qMaster::SqlParseRunner::SqlParseRunner(std::string const& statement, 
                                         std::string const& delimiter,
-                                        qMaster::StringMap const& config) :
+                                        qMaster::StringMap const& config,
+                                        int metaCacheSessionId) :
     _statement(statement),
     _stream(statement, stringstream::in | stringstream::out),
     _factory(new ASTFactory()),
@@ -296,7 +299,7 @@ qMaster::SqlParseRunner::SqlParseRunner(std::string const& statement,
     _templater(delimiter, _factory.get()),
     _aliasMgr(),
     _aggMgr(_aliasMgr),
-    _refChecker(new TableRefChecker()),
+    _refChecker(new TableRefChecker(metaCacheSessionId)),
     _tableNamer(new TableNamer(*_refChecker)),
     _spatialUdfHandler(new SpatialUdfHandler(_factory.get(),
                                              _tableConfigMap, 

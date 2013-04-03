@@ -49,7 +49,7 @@ public:
     typedef boost::shared_ptr<Info const> InfoConstPtr;
 
     // Should be able to construct info from qserv metadata
-    explicit TableRefChecker(InfoPtr info=InfoPtr());
+    explicit TableRefChecker(int MetaCacheSessionId, InfoPtr info=InfoPtr());
     void importDbWhitelist(StringList const& wlist);
 
     bool isChunked(std::string const& db, std::string const& table) const;
@@ -58,6 +58,7 @@ public:
 private:
     void _setDefaultInfo();
 
+    int _metaCacheSessionId;
     boost::shared_ptr<Info> _info;
 };
 
