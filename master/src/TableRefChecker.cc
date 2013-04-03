@@ -31,6 +31,7 @@
 
 namespace qMaster =  lsst::qserv::master;
 
+
 ////////////////////////////////////////////////////////////////////////
 // anonymous helpers
 ////////////////////////////////////////////////////////////////////////
@@ -98,11 +99,13 @@ boost::shared_ptr<qMaster::MetadataCache> getMetadataCache(int session);
 
 bool qMaster::TableRefChecker::isChunked(std::string const& db, 
                                          std::string const& table) const {
-    std::cout << "***** TableRefChecker::isChunked(" << db << ", " << table << ")" << std::endl;
-    std::cout << "**** get metacache for id " << _metaCacheSessionId << std::endl;
-    getMetadataCache(_metaCacheSessionId)->printSelf();
-    bool isSc;
-    return infoHasEntry(*_info, RefPair(db, table), isSc);
+    bool retNew = getMetadataCache(_metaCacheSessionId)->checkIfTableIsChunked(db, table);
+
+    bool isSc = infoHasEntry(*_info, RefPair(db, table), isSc);
+    std::cout << "***** TableRefChecker::isChunked(" << db << ", " << table 
+              << "), old=" << isSc << ", new=" << retNew << std::endl;
+    assert(isSc==retNew);
+    return retNew;
 }
 
 bool qMaster::TableRefChecker::isSubChunked(std::string const& db, 

@@ -90,6 +90,21 @@ qMaster::MetadataCache::DbInfo::checkIfContainsTable(std::string const& tableNam
     return itr != _tables.end();
 }
 
+/** Checks if a given table is chunked
+  *
+  * @param tableName table name
+  *
+  * @return returns true or false (false if the table does not exist)
+  */
+bool
+qMaster::MetadataCache::DbInfo::checkIfTableIsChunked(std::string const& tableName) const {
+    std::map<std::string, TableInfo>::const_iterator itr = _tables.find(tableName);
+    if (itr == _tables.end()) {
+        return false;
+    }
+    return itr->second.getIsPartitioned();
+}
+
 /** Constructs object representing a non-partitioned table.
   */
 qMaster::MetadataCache::TableInfo::TableInfo() :
@@ -257,6 +272,24 @@ qMaster::MetadataCache::checkIfContainsTable(std::string const& dbName,
         return false;
     }
     return itr->second.checkIfContainsTable(tableName);
+}
+
+/** Checks if a given table is chunked
+  *
+  * @param dbName database name
+  * @param tableName table name
+  *
+  * @return returns true or false
+  */
+bool
+qMaster::MetadataCache::checkIfTableIsChunked(std::string const& dbName,
+                                              std::string const& tableName) {
+    boost::lock_guard<boost::mutex> m(_mutex);
+    std::map<std::string, DbInfo>::const_iterator itr = _dbs.find(dbName);
+    if (itr == _dbs.end()) {
+        return false;
+    }
+    return itr->second.checkIfTableIsChunked(tableName);
 }
 
 /** Prints the contents of the qserv metadata cache. This is
