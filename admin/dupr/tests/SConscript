@@ -35,6 +35,7 @@ libs = ['dupr',
         'boost_system',
         'boost_thread',
         'boost_filesystem',
+        'boost_program_options',
         'boost_unit_test_framework',
        ]
 

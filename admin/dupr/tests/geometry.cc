@@ -193,26 +193,26 @@ namespace {
 } // unnamed namespace
 
 
-BOOST_AUTO_TEST_CASE(clampDec) {
+BOOST_AUTO_TEST_CASE(ClampDecTest) {
     BOOST_CHECK_EQUAL(dupr::clampDec(-91.0), -90.0);
     BOOST_CHECK_EQUAL(dupr::clampDec( 91.0),  90.0);
     BOOST_CHECK_EQUAL(dupr::clampDec( 89.0),  89.0);
 }
 
-BOOST_AUTO_TEST_CASE(minDeltaRa) {
+BOOST_AUTO_TEST_CASE(MinDeltaRaTest) {
     BOOST_CHECK_EQUAL(dupr::minDeltaRa(1.0, 2.0), 1.0);
     BOOST_CHECK_EQUAL(dupr::minDeltaRa(359.0, 1.0), 2.0);
     BOOST_CHECK_EQUAL(dupr::minDeltaRa(10.0, 350.0), 20.0);
 }
 
-BOOST_AUTO_TEST_CASE(reduceRa) {
+BOOST_AUTO_TEST_CASE(ReduceRaTest) {
     BOOST_CHECK_EQUAL(dupr::reduceRa(0.0), 0.0);
     BOOST_CHECK_EQUAL(dupr::reduceRa(360.0), 0.0);
     BOOST_CHECK_EQUAL(dupr::reduceRa(540.0), 180.0);
     BOOST_CHECK_EQUAL(dupr::reduceRa(-180.0), 180.0);
 }
 
-BOOST_AUTO_TEST_CASE(maxAlpha) {
+BOOST_AUTO_TEST_CASE(MaxAlphaTest) {
     // Check corner cases.
     BOOST_CHECK_EQUAL(dupr::maxAlpha(10.0, 85.0), 180.0);
     BOOST_CHECK_EQUAL(dupr::maxAlpha(10.0, -85.0), 180.0);
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(maxAlpha) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(htmId) {
+BOOST_AUTO_TEST_CASE(HtmIdTest) {
     // Check corner cases.
     Vector3d x(1,0,0);
     BOOST_CHECK_THROW(dupr::htmId(x, -1), exception);
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(htmId) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(htmLevel) {
+BOOST_AUTO_TEST_CASE(HtmLevelTest) {
     for (uint32_t i = 0; i < 8; ++i) {
         BOOST_CHECK_EQUAL(dupr::htmLevel(i), -1);
     }
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(htmLevel) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(cartesian) {
+BOOST_AUTO_TEST_CASE(CartesianTest) {
     double const f = 1e-15;
     checkClose(dupr::cartesian( 90,  0), Vector3d( 0, 1, 0), f);
     checkClose(dupr::cartesian(180,  0), Vector3d(-1, 0, 0), f);
@@ -266,14 +266,14 @@ BOOST_AUTO_TEST_CASE(cartesian) {
     checkClose(dupr::cartesian( 45, 45)*2, Vector3d(1, 1, sqrt(2.)), f);
 }
 
-BOOST_AUTO_TEST_CASE(spherical) {
+BOOST_AUTO_TEST_CASE(SphericalTest) {
     checkClose(pair<double, double>(45, 45),
                dupr::spherical(1, 1, sqrt(2.)), 1e-15);
     checkClose(pair<double, double>(45, -45),
                dupr::spherical(1, 1, -sqrt(2.)), 1e-15);
 }
 
-BOOST_AUTO_TEST_CASE(angSep) {
+BOOST_AUTO_TEST_CASE(AngSepTest) {
     double const f = 1e-15;
     BOOST_CHECK_CLOSE(
         dupr::angSep(Vector3d(1,0,0), Vector3d(0,0,1)), 0.5*pi<double>(), f);
@@ -282,7 +282,7 @@ BOOST_AUTO_TEST_CASE(angSep) {
     BOOST_CHECK_EQUAL(dupr::angSep(Vector3d(1,1,1), Vector3d(1,1,1)), 0);
 }
 
-BOOST_AUTO_TEST_CASE(sphericalTriangleTransforms) {
+BOOST_AUTO_TEST_CASE(SphericalTriangleTransformTest) {
     double const f = 1e-15;
     Vector3d v;
     dupr::SphericalTriangle s03(S03);
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(sphericalTriangleTransforms) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(sphericalTriangleArea) {
+BOOST_AUTO_TEST_CASE(SphericalTriangleAreaTest) {
     double const f = 1e-15;
     dupr::SphericalTriangle t(Vector3d(0,1,0),
                               Vector3d(0,0,1),
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(sphericalTriangleArea) {
         s0.area(), s00.area() + s01.area() + s02.area() + s03.area(), f);
 }
 
-BOOST_AUTO_TEST_CASE(sphericalBox) {
+BOOST_AUTO_TEST_CASE(SphericalBoxTest) {
     dupr::SphericalBox b;
     BOOST_CHECK(b.isFull());
     BOOST_CHECK(!b.isEmpty());
@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(sphericalBox) {
     BOOST_CHECK_THROW(dupr::SphericalBox(370,0,0,1), exception);
 }
 
-BOOST_AUTO_TEST_CASE(sphericalBoxArea) {
+BOOST_AUTO_TEST_CASE(SphericalBoxAreaTest) {
     dupr::SphericalBox b(0, 90, 0, 90);
     BOOST_CHECK_CLOSE_FRACTION(b.area(), 0.5*pi<double>(), 1e-15);
     b = dupr::SphericalBox(135, 180, -90, 90);
@@ -351,7 +351,7 @@ BOOST_AUTO_TEST_CASE(sphericalBoxArea) {
         b.area(), 0.5*pi<double>()*(1 - 0.5*sqrt(2.)), 1e-15);
 }
 
-BOOST_AUTO_TEST_CASE(sphericalBoxExpand) {
+BOOST_AUTO_TEST_CASE(SphericalBoxExpandTest) {
     dupr::SphericalBox b(10, 20, 80, 85);
     BOOST_CHECK_THROW(b.expand(-1), exception);
     b.expand(0);
@@ -382,7 +382,7 @@ BOOST_AUTO_TEST_CASE(sphericalBoxExpand) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(sphericalBoxContains) {
+BOOST_AUTO_TEST_CASE(SphericalBoxContainsTest) {
     dupr::SphericalBox b(10, 20, -1, 1);
     BOOST_CHECK(b.contains(15,0));
     BOOST_CHECK(!b.contains(25,0));
@@ -393,7 +393,7 @@ BOOST_AUTO_TEST_CASE(sphericalBoxContains) {
     BOOST_CHECK(b.contains(359.5,0));
 }
 
-BOOST_AUTO_TEST_CASE(sphericalBoxIntersects) {
+BOOST_AUTO_TEST_CASE(SphericalBoxIntersectsTest) {
     dupr::SphericalBox b1(10, 20, -10, 10);
     dupr::SphericalBox b2(-5, 5, -1, 1);
     BOOST_CHECK(!b1.intersects(b2));
@@ -413,7 +413,7 @@ BOOST_AUTO_TEST_CASE(sphericalBoxIntersects) {
     BOOST_CHECK(b2.intersects(b1));
 }
 
-BOOST_AUTO_TEST_CASE(sphericalBoxHtmIds) {
+BOOST_AUTO_TEST_CASE(SphericalBoxHtmIdsTest) {
     dupr::SphericalBox b(135, 145, 88, 89);
     BOOST_CHECK(isSubset(htmIds(b, 5), b.htmIds(5)));
     b = dupr::SphericalBox(359, 1, -90, 0);
@@ -422,7 +422,7 @@ BOOST_AUTO_TEST_CASE(sphericalBoxHtmIds) {
     BOOST_CHECK(isSubset(htmIds(b, 7), b.htmIds(7)));
 }
 
-BOOST_AUTO_TEST_CASE(intersectionArea) {
+BOOST_AUTO_TEST_CASE(IntersectionAreaTest) {
     double a = 0.5*pi<double>()*(1 - 0.5*sqrt(2.));
     dupr::SphericalBox b(0, 360, 45, 90);
     dupr::SphericalTriangle t(N0);

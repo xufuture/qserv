@@ -55,9 +55,9 @@ public:
     /// An index entry.
     struct Entry {
         /// Number of records:
-        ///     - 0: not in overlap region
-        ///     - 1: in self-overlap region
-        ///     - 2: in full-overlap region
+        /// - 0: not in overlap region
+        /// - 1: in self-overlap region
+        /// - 2: in full-overlap region
         uint64_t numRecords[ChunkLocation::NUM_KINDS];
 
         Entry() : numRecords() { }

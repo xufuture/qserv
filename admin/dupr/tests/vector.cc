@@ -46,7 +46,7 @@ namespace {
 }
 
 
-BOOST_AUTO_TEST_CASE(VectorComponentAccess) {
+BOOST_AUTO_TEST_CASE(VectorComponentAccessTest) {
     Vector3d v(1,2,3);
     BOOST_CHECK_EQUAL(v(0), 1);
     BOOST_CHECK_EQUAL(v(1), 2);
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(VectorComponentAccess) {
     BOOST_CHECK_EQUAL(v(1), -2);
 }
 
-BOOST_AUTO_TEST_CASE(VectorDotProduct) {
+BOOST_AUTO_TEST_CASE(VectorDotProductTest) {
     Vector3d x(1,0,0), y(0,1,0), z(0,0,1);
     BOOST_CHECK_EQUAL(x.dot(y), 0);
     BOOST_CHECK_EQUAL(y.dot(z), 0);
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(VectorDotProduct) {
     BOOST_CHECK_EQUAL(u.dot(v), 10);
 }
 
-BOOST_AUTO_TEST_CASE(VectorCrossProduct) {
+BOOST_AUTO_TEST_CASE(VectorCrossProductTest) {
     Vector3d x(1,0,0), y(0,1,0), z(0,0,1);
     BOOST_CHECK(x.cross(y) == z);
     BOOST_CHECK(y.cross(z) == x);
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(VectorCrossProduct) {
     BOOST_CHECK(u.cross(v) == Vector3d(.25,-1.75,1.5));
 }
 
-BOOST_AUTO_TEST_CASE(VectorNorm) {
+BOOST_AUTO_TEST_CASE(VectorNormTest) {
     Vector3d nil(0,0,0), x(1,0,0), v(2,3,6);
     BOOST_CHECK_EQUAL(nil.squaredNorm(), 0);
     BOOST_CHECK_EQUAL(nil.norm(), 0);
@@ -85,23 +85,23 @@ BOOST_AUTO_TEST_CASE(VectorNorm) {
     BOOST_CHECK_CLOSE(v.normalized().norm(), 1, 0.0000001);
 }
 
-BOOST_AUTO_TEST_CASE(VectorScalarProduct) {
+BOOST_AUTO_TEST_CASE(VectorScalarProductTest) {
     BOOST_CHECK(Vector3d(1, 2, -3)*2 == Vector3d(2, 4, -6));
     BOOST_CHECK(0.5*Vector3d(-8, 2, 4) == Vector3d(-4, 1, 2));
 }
 
-BOOST_AUTO_TEST_CASE(VectorSum) {
+BOOST_AUTO_TEST_CASE(VectorSumTest) {
     BOOST_CHECK(Vector3d(1, 2, 3) + Vector3d(-3, -2, -1) == Vector3d(-2, 0, 2));
     BOOST_CHECK(Vector3d(4, -1, 3) + Vector3d(-4, 1, -3) == Vector3d(0, 0, 0));
 }
 
-BOOST_AUTO_TEST_CASE(VectorDifference) {
+BOOST_AUTO_TEST_CASE(VectorDifferenceTest) {
     BOOST_CHECK(Vector3d(1, 2, 3) - Vector3d(-3, -2, -1) == Vector3d(4, 4, 4));
     BOOST_CHECK(Vector3d(4, -1, 3) - Vector3d(1, 2, 3) == Vector3d(3, -3, 0));
 }
 
 
-BOOST_AUTO_TEST_CASE(MatrixComponentAccess) {
+BOOST_AUTO_TEST_CASE(MatrixComponentAccessTest) {
     Matrix3d m;
     m.col(0) = Vector3d(0,1,2);
     m.col(1) = Vector3d(3,4,5);
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(MatrixComponentAccess) {
     BOOST_CHECK_EQUAL(m(1,1), 0);
 }
 
-BOOST_AUTO_TEST_CASE(MatrixVectorProduct) {
+BOOST_AUTO_TEST_CASE(MatrixVectorProductTest) {
     Vector3d v(1,2,3);
     Matrix3d m = Matrix3d::Identity();
     BOOST_CHECK(m*v == v);
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(MatrixVectorProduct) {
     BOOST_CHECK(n*(m*v) == Vector3d(2,4,3));
 }
 
-BOOST_AUTO_TEST_CASE(MatrixMatrixProduct) {
+BOOST_AUTO_TEST_CASE(MatrixMatrixProductTest) {
     Matrix3d m;
     m(0,0) =  1; m(0,1) = -1; m(0,2) =  1;
     m(1,0) =  2; m(1,1) =  1; m(1,2) = -1;
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(MatrixMatrixProduct) {
     BOOST_CHECK(p.col(2) == Vector3d(3,9,-7));
 }
 
-BOOST_AUTO_TEST_CASE(MatrixInverse) {
+BOOST_AUTO_TEST_CASE(MatrixInverseTest) {
     Matrix3d n;
     n(0,0) =  4; n(0,1) =  4; n(0,2) =  4;
     n(1,0) = -1; n(1,1) =  1; n(1,2) =  0;
