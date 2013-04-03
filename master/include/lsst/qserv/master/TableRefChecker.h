@@ -44,6 +44,7 @@ public:
     typedef boost::shared_ptr<DbInfo> DbInfoPtr;
 
     typedef std::pair<std::string, std::string> RefPair;
+    typedef std::pair<std::string, std::string> StringPair;
     typedef std::map<std::string, boost::shared_ptr<DbInfo> > Info;
     typedef boost::shared_ptr<Info> InfoPtr;
     typedef boost::shared_ptr<Info const> InfoConstPtr;
@@ -54,7 +55,10 @@ public:
 
     bool isChunked(std::string const& db, std::string const& table) const;
     bool isSubChunked(std::string const& db, std::string const& table) const;
+    
     bool isDbAllowed(std::string const& db) const;
+    StringPair getSpatialColumns(std::string const& db, std::string const& table) const;
+    std::string getKeyColumn(std::string const& db, std::string const& table) const { return "objectId"; } // FIXME
 private:
     void _setDefaultInfo();
 

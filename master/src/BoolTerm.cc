@@ -53,6 +53,10 @@ std::ostream& qMaster::PassTerm::putStream(std::ostream& os) const {
     // FIXME
     return os;
 }
+std::ostream& qMaster::PassListTerm::putStream(std::ostream& os) const {
+    // FIXME
+    return os;
+}
 std::ostream& qMaster::ValueExprTerm::putStream(std::ostream& os) const {
     // FIXME
     return os;
@@ -95,6 +99,19 @@ void qMaster::UnknownTerm::renderTo(QueryTemplate& qt) const {
 void qMaster::PassTerm::renderTo(QueryTemplate& qt) const {
     qt.append(_text);
 }
+void qMaster::PassListTerm::renderTo(QueryTemplate& qt) const {
+    qt.append("(");
+    StringList::const_iterator i;
+    bool isFirst=true;
+    for(i=_terms.begin(); i != _terms.end(); ++i) {
+        if(!isFirst) {
+            qt.append(",");
+        }
+        qt.append(*i);
+        isFirst = false;
+    }
+    qt.append(")");
+}
 void qMaster::ValueExprTerm::renderTo(QueryTemplate& qt) const {
     ValueExpr::render r(qt);
     r(_expr);
@@ -111,3 +128,4 @@ boost::shared_ptr<qMaster::BoolTerm> qMaster::AndTerm::copySyntax() {
     at->_terms = _terms; // shallow copy for now
     return at;
 }
+

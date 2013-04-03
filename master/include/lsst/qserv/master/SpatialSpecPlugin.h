@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,34 +20,17 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// ValueExprFactory constructs ValueExpr instances from antlr nodes.
+// TablePlugin is a query plugin that inserts placeholders for table name
+// substitution.
 
-#ifndef LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
-#define LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
+#ifndef LSST_QSERV_MASTER_SPATIALSPECPLUGIN_H
+#define LSST_QSERV_MASTER_SPATIALSPECPLUGIN_H
 
-#include <boost/shared_ptr.hpp>
-#include <antlr/AST.hpp>
-
-// Forward
-
-namespace lsst {
-namespace qserv {
-namespace master {
-// Forward
-class ColumnRefMap;
-class ValueExpr;
-
-class ValueExprFactory {
-public:
-    ValueExprFactory(boost::shared_ptr<ColumnRefMap> cMap);
-    boost::shared_ptr<ValueExpr> newExpr(antlr::RefAST a);
-                                         
-private:
-    boost::shared_ptr<ColumnRefMap> _columnRefMap;
-};
+namespace lsst { namespace qserv { namespace master {
+void registerSpatialSpecPlugin();
 
 }}} // namespace lsst::qserv::master
 
 
-#endif // LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
+#endif // LSST_QSERV_MASTER_SPATIALSPECPLUGIN_H
 

@@ -32,6 +32,7 @@
 #include "lsst/qserv/master/QueryContext.h"
 #include "lsst/qserv/master/QueryPlugin.h"
 #include "lsst/qserv/master/AggregatePlugin.h"
+#include "lsst/qserv/master/SpatialSpecPlugin.h"
 #include "lsst/qserv/master/TablePlugin.h"
 
 namespace qMaster=lsst::qserv::master;
@@ -118,10 +119,10 @@ qMaster::ConstraintVector QuerySession::getConstraints() const {
             cv[i] = c;
             ++i;
         }
-        printConstraints(cv);
+        //printConstraints(cv);
         return cv;
     }
-    // FIXME
+    // Empty vector: no constraints.
     return ConstraintVector();
 }
 
@@ -146,6 +147,7 @@ void QuerySession::_preparePlugins() {
 
     _plugins->push_back(QueryPlugin::newInstance("Aggregate"));
     _plugins->push_back(QueryPlugin::newInstance("Table"));
+    _plugins->push_back(QueryPlugin::newInstance("SpatialSpec"));
     PluginList::iterator i;
     for(i=_plugins->begin(); i != _plugins->end(); ++i) {
         (**i).prepare();
@@ -238,4 +240,5 @@ void lsst::qserv::master::initQuerySession() {
     // Plugins should probably be registered once, at startup.
     registerAggregatePlugin(); 
     registerTablePlugin();
+    registerSpatialSpecPlugin();
 }

@@ -106,11 +106,19 @@ public:
     virtual void renderTo(QueryTemplate& qt) const;
 };
 class PassTerm : public BfTerm {
-public:
+public: // text
     typedef boost::shared_ptr<PassTerm> Ptr;
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
     std::string _text;
+};
+class PassListTerm : public BfTerm {
+public: // ( term, term, term )
+    typedef std::list<std::string> StringList;
+    typedef boost::shared_ptr<PassListTerm> Ptr;
+    virtual std::ostream& putStream(std::ostream& os) const;
+    virtual void renderTo(QueryTemplate& qt) const;
+    StringList _terms;
 };
 class ValueExprTerm : public BfTerm {
 public:

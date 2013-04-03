@@ -210,7 +210,7 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     // FIXME: add restrictor spec to facilitate later synthesis of
     // bounding functions. 
     if(!_clause->_restrs.get()) {
-        _clause->_resetRestrs(); 
+        _clause->resetRestrs(); 
     }
     assert(_clause->_restrs.get());
     restr->_name = r;

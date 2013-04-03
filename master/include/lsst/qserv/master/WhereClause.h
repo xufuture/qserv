@@ -78,18 +78,19 @@ public:
     boost::shared_ptr<QsRestrictor::List const> getRestrs() const {
         return _restrs; }
     ValueExprIter vBegin();
-    ValueExprIter vEnd();    
-
+    ValueExprIter vEnd();
+    
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
     boost::shared_ptr<WhereClause> copyDeep() const;
     boost::shared_ptr<WhereClause> copySyntax();
+
+    void resetRestrs();
+    void prependAndTerm(boost::shared_ptr<BoolTerm> t);
     
 private:
     friend std::ostream& operator<<(std::ostream& os, WhereClause const& wc);
     friend class WhereFactory;
-
-    void _resetRestrs();
     
     std::string _original;
     boost::shared_ptr<ColumnRefList> _columnRefList;

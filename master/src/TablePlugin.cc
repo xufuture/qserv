@@ -325,7 +325,7 @@ TablePlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext& context) {
     // that a later query generation stage can generate queries from
     // templatable queries a list of partition tuples.
     TableRefChecker trc; // Lookup oracle for table characteristics
-    SphericalBoxStrategy s(fList, trc);
+    SphericalBoxStrategy s(fList, trc, context);
     QueryMapping::Ptr qm = s.getMapping();
     s.patchFromList(fList);
     // std::cout << "post-patched fromlist " << fList.getGenerated() << std::endl;

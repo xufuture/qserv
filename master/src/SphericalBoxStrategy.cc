@@ -49,7 +49,6 @@ std::ostream& operator<<(std::ostream& os, Tuple const& t) {
     return os;
 }
 
-
 } // anonymous namespace
 
 namespace lsst { namespace qserv { namespace master {
@@ -169,8 +168,12 @@ private:
 ////////////////////////////////////////////////////////////////////////
 // SphericalBoxStrategy public
 ////////////////////////////////////////////////////////////////////////
-SphericalBoxStrategy::SphericalBoxStrategy(FromList const& f, TableRefChecker& checker) 
-    : _checker(checker), _impl(new Impl()) {
+SphericalBoxStrategy::SphericalBoxStrategy(FromList const& f, 
+                                           TableRefChecker& checker,
+                                           QueryContext& context) 
+    : _checker(checker), 
+      _context(context), 
+      _impl(new Impl()) {
     _import(const_cast<FromList&>(f)); // FIXME: should make a copy.
     // FIXME
 }

@@ -33,11 +33,29 @@ using lsst::qserv::master::WhereClause;
 namespace { // File-scope helpers
 }
 
+namespace lsst { namespace qserv { namespace master {
+BoolTerm::Ptr findAndTerm(BoolTerm::Ptr tree) {
+    while(1) {
+        AndTerm* at = dynamic_cast<AndTerm*>(tree.get());
+        if(at) {
+            return tree;
+        } else {
+            OrTerm* ot = dynamic_cast<OrTerm*>(tree.get());
+            if(ot && (ot->_terms.size() == 1)) {
+                tree = ot->_terms.front();
+                continue;
+            } else {
+                return tree;
+            }
+        }
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////
 // QsRestrictor::render
 ////////////////////////////////////////////////////////////////////////
-void QsRestrictor::render::operator()(QsRestrictor::Ptr const& p) {
+void 
+QsRestrictor::render::operator()(QsRestrictor::Ptr const& p) {
     if(p.get()) {
         qt.append(p->_name);
         qt.append("(");
@@ -56,7 +74,7 @@ void QsRestrictor::render::operator()(QsRestrictor::Ptr const& p) {
 // WhereClause
 ////////////////////////////////////////////////////////////////////////
 std::ostream& 
-qMaster::operator<<(std::ostream& os, WhereClause const& wc) {
+operator<<(std::ostream& os, WhereClause const& wc) {
     os << "WHERE " << wc._original;
     return os;
 }
@@ -107,11 +125,35 @@ boost::shared_ptr<WhereClause> WhereClause::copySyntax() {
     return newC;
 }
 
+void 
+WhereClause::prependAndTerm(boost::shared_ptr<BoolTerm> t) {
+    // Walk to AndTerm and prepend new BoolTerm in front of the
+    // list. If the new BoolTerm is an instance of AndTerm, prepend
+    // its terms rather than the AndTerm itself.
+    boost::shared_ptr<BoolTerm> insertPos = findAndTerm(_tree);
+
+    // FIXME: Should deal with case where AndTerm is not found.
+    AndTerm* rootAnd = dynamic_cast<AndTerm*>(insertPos.get()); 
+    assert(rootAnd);
+    
+    AndTerm* incomingTerms = dynamic_cast<AndTerm*>(t.get());
+    if(incomingTerms) {
+        // Insert its elements then.
+        rootAnd->_terms.insert(rootAnd->_terms.begin(), 
+                               incomingTerms->_terms.begin(),
+                               incomingTerms->_terms.end());
+    } else {
+        // Just insert the term as-is.
+        rootAnd->_terms.insert(rootAnd->_terms.begin(), t);
+    }    
+}
+
+
 ////////////////////////////////////////////////////////////////////////
 // WhereClause (private)
 ////////////////////////////////////////////////////////////////////////
 void
-WhereClause::_resetRestrs() {
+WhereClause::resetRestrs() {
     _restrs.reset(new QsRestrictor::List());
 }
 
@@ -234,3 +276,4 @@ bool WhereClause::ValueExprIter::_setupBfIter() {
     }
 }
 
+}}} // namespace lsst::qserv::master

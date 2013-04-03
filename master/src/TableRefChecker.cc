@@ -107,6 +107,13 @@ bool qMaster::TableRefChecker::isDbAllowed(std::string const& db) const {
     return _info->find(db) != _info->end();
 }
 
+qMaster::TableRefChecker::StringPair
+qMaster::TableRefChecker::getSpatialColumns(std::string const& db, 
+                                            std::string const& table) const {
+    // FIXME: use metadata
+    return StringPair("ra_PS", "decl_PS");
+}
+
 /////////////////////////////////////////////////////////////////////////
 // class TableRefChecker (private)
 ////////////////////////////////////////////////////////////////////////

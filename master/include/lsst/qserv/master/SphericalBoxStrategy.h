@@ -33,12 +33,15 @@
 
 namespace lsst { namespace qserv { namespace master {
 class FromList;
+class QueryContext;
 class QueryMapping;
 class TableRefChecker;
 
 class SphericalBoxStrategy {
 public:
-    SphericalBoxStrategy(FromList const& f, TableRefChecker& t);
+    SphericalBoxStrategy(FromList const& f, 
+                         TableRefChecker& t,
+                         QueryContext& context);
     boost::shared_ptr<QueryMapping> getMapping();
     void patchFromList(FromList& f);
 
@@ -53,6 +56,7 @@ private:
     void _import(FromList& f);
 
     TableRefChecker& _checker;
+    QueryContext& _context;
     boost::shared_ptr<Impl> _impl;
 };
 
