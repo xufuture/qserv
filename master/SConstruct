@@ -172,7 +172,6 @@ parserSrcs = map(lambda x: os.path.join('src', x),
                   "SqlSQL2Lexer.cpp", 
                   "SqlSQL2Parser.cpp",
                   "TableNamer.cc",
-                  "TableRefChecker.cc",
                   "TableRemapper.cc",
                   "ifaceMeta.cc", "MetadataCache.cc"])
 

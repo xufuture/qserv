@@ -51,7 +51,6 @@ namespace master {
 class LimitHandler; // Parse handler
 class OrderByHandler; // Parse handler
 class SpatialUdfHandler; // 
-class TableRefChecker; // alias/ref checker.
 class TableNamer; // alias/ref namespace mgr
 
 /// class SqlParseRunner - drives the ANTLR-generated SQL parser.
@@ -141,8 +140,8 @@ private:
     Templater _templater;
     AliasMgr _aliasMgr;
     AggregateMgr _aggMgr;
+    int _metaCacheSessionId;
     boost::shared_ptr<Templater::TableListHandler>  _tableListHandler;
-    boost::shared_ptr<TableRefChecker> _refChecker;
     boost::shared_ptr<TableNamer> _tableNamer;
     boost::shared_ptr<SpatialUdfHandler> _spatialUdfHandler;
     

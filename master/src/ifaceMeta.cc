@@ -42,6 +42,10 @@ namespace qMaster = lsst::qserv::master;
 // ============================================================================
 // ===== session related
 // ============================================================================
+namespace lsst {
+namespace qserv {
+namespace master {
+        
 using lsst::qserv::master::SessionManager;
 typedef SessionManager<qMaster::MetadataCache::Ptr> SessionMgr;
 typedef boost::shared_ptr<SessionMgr> SessionMgrPtr;
@@ -59,6 +63,7 @@ boost::shared_ptr<qMaster::MetadataCache>
 getMetadataCache(int session) {
     return getSessionManager().getSession(session);
 }
+}}}
 
 /** Creates a new metadata session
   */

@@ -51,7 +51,6 @@
 #include "lsst/qserv/master/Substitution.h"
 #include "lsst/qserv/master/parseTreeUtil.h"
 #include "lsst/qserv/master/stringUtil.h"
-#include "lsst/qserv/master/TableRefChecker.h"
 #include "lsst/qserv/master/TableNamer.h"
 #include "lsst/qserv/master/TableRemapper.h"
 #include "lsst/qserv/master/SpatialUdfHandler.h"
@@ -299,8 +298,8 @@ qMaster::SqlParseRunner::SqlParseRunner(std::string const& statement,
     _templater(delimiter, _factory.get()),
     _aliasMgr(),
     _aggMgr(_aliasMgr),
-    _refChecker(new TableRefChecker(metaCacheSessionId)),
-    _tableNamer(new TableNamer(*_refChecker)),
+    _metaCacheSessionId(metaCacheSessionId),
+    _tableNamer(new TableNamer(metaCacheSessionId)),
     _spatialUdfHandler(new SpatialUdfHandler(_factory.get(),
                                              _tableConfigMap, 
                                              *_tableNamer))
@@ -376,7 +375,7 @@ void qMaster::SqlParseRunner::_computeParseResult() {
             //std::cout << "passSelect " << getPassSelect();
             // ";" is not in the AST, so add it back.
             // Apply substitution.
-            TableRemapper tr(*_tableNamer, *_refChecker, _delimiter);
+            TableRemapper tr(*_tableNamer, _metaCacheSessionId, _delimiter);
             //std::cout << "PRE:: " << walkTreeString(ast) << std::endl;
             walkTreeSubstitute(ast, tr.getMap());
             //std::cout << "POST:: " << walkTreeString(ast) << std::endl;;
@@ -506,8 +505,7 @@ void qMaster::SqlParseRunner::_readConfig(qMaster::StringMap const& m) {
         whiteList["LSST"] = 1;
     }    
 
-    _templater.setup(whiteList, _refChecker, defaultDb);
-    _refChecker->importDbWhitelist(tokens);
+    _templater.setup(whiteList, defaultDb, _metaCacheSessionId);
     _tableNamer->setDefaultDb(defaultDb);
     tokens.clear();
     tokenizeInto(getFromMap(m,"table.partitioncols", blank), ";", tokens,
