@@ -121,7 +121,12 @@ bool qMaster::TableRefChecker::isSubChunked(std::string const& db,
 }
 
 bool qMaster::TableRefChecker::isDbAllowed(std::string const& db) const {
-    return _info->find(db) != _info->end();
+    //bool retOld = _info->find(db) != _info->end();
+    bool retNew = getMetadataCache(_metaCacheSessionId)->checkIfContainsDb(db);
+    //std::cout << "***** TableRefChecker::isDbAllowed(" << db 
+    //          << "), old=" << retOld << ", new=" << retNew << std::endl;
+    //assert(retOld==retNew);
+    return retNew;
 }
 
 /////////////////////////////////////////////////////////////////////////
