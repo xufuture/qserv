@@ -150,8 +150,6 @@ private:
     boost::shared_ptr<TableMerger> _merger;
     boost::shared_ptr<lsst::qserv::common::WorkQueue> _readQueue;
     boost::shared_ptr<lsst::qserv::common::WorkQueue> _writeQueue;
-
-    static std::string const _errorTmpl;
 };
 }}} // lsst::qserv::master namespace
 
