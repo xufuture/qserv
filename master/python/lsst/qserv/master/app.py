@@ -736,7 +736,7 @@ class HintedQueryAction:
             return
 
         # Create query initialization message.
-        queryMsgAddMsg(self._sessionId, 0, 0, 'Query Initialized');
+        queryMsgAddMsg(self._sessionId, 0, 0, "Initialize Query: " + self.queryStr);
 
         self._prepForExec(self._useMemory, resultName)
 
@@ -940,6 +940,7 @@ class HintedQueryAction:
         msg = self._prepareMsg(chunkId, subIter)
         prepTime = time.time()
         print "DISPATCH: ", chunkId, self.queryStr # Limit printout spew
+        queryMsgAddMsg(self._sessionId, chunkId, 100, "Dispatch Chunk Query.")
         self._babysitter.submitMsg(self._factory.msg.db,
                                    chunkId, msg, 
                                    self._factory.resulttable)

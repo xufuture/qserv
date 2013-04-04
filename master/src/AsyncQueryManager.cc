@@ -138,6 +138,8 @@ int qMaster::AsyncQueryManager::add(TransactionSpec const& t,
         _queries[id] = qs;
         ++_queryCount;
     }
+    std::string msg = std::string("Query Added: url=") + ts.path + ", savePath=" + ts.savePath;
+    getMessageStore()->addMessage(id, 200, msg);
     std::cout << "Added query id=" << id << " url=" << ts.path 
               << " with save " << ts.savePath << "\n";
     qs.first->run();

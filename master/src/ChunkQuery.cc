@@ -44,6 +44,7 @@
 #include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/master/PacketIter.h"
 #include "lsst/qserv/common/WorkQueue.h"
+#include "lsst/qserv/master/MessageStore.h"
 
 // Namespace modifiers
 using boost::make_shared;
@@ -106,6 +107,7 @@ public:
                               << _cq._spec.chunkId
                               << std::endl;
                 }
+                _cq._manager->reportError(_cq._id, -abs(errno), "Remote I/O error during XRD open.");
                 _cq._result.read = -errno;
                 _cq._state = ChunkQuery::COMPLETE;
                 _cq._notifyManager(); 
@@ -114,6 +116,7 @@ public:
             std::cout << "DBG: CALLING ChunkQuery::Complete(" << result << ")" << std::endl;
             _cq.Complete(result);
             std::cout << "DBG: RETURNED ChunkQuery::Complete()" << std::endl;
+            _cq._manager->getMessageStore()->addMessage(_cq._id, 400, "Results Read.");
         } catch (const char *msg) {
             std::cout << "DBG: Caught Exception during ReadCallable operator: " << msg << std::endl;
             _cq._manager->reportError(_cq._id, -abs(errno), msg);
@@ -162,9 +165,12 @@ public:
                 result = qMaster::xrdOpen(_cq._spec.path.c_str(), O_WRONLY);
                 if (result == -1) {
                     if(errno == ENOENT) {
-                        std::cout << "Chunk not found for path:"
-                                  << _cq._spec.path << " , "
-                                  << tries << " tries left " << std::endl;
+                        std::stringstream msgStrm;
+                        msgStrm << std::string("Chunk not found for path:")
+                                << _cq._spec.path << " , "
+                                << tries << " tries left ";
+                        _cq._manager->getMessageStore()->addMessage(_cq._id, 290, msgStrm.str());
+                        std::cout << msgStrm.str() << std::endl;
                         continue;
                     }
                 }
@@ -174,6 +180,7 @@ public:
                 break;
             }
             _cq.Complete(result);
+            _cq._manager->getMessageStore()->addMessage(_cq._id, 300, "Query Written.");
         } catch (const char *msg) {
             std::cout << "DBG: Caught Exception during WriteCallable operator: " << msg << std::endl;
             _cq._manager->reportError(_cq._id, -abs(errno), msg);
