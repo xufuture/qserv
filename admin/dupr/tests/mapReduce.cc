@@ -68,35 +68,49 @@ namespace {
         bool operator<(Key const & k) const { return line < k.line; }
     };
 
-    /// 1-bit per line number, tracking whether a line was processed or not.
+    // 2-bits per line that indicate whether a line has been mapped/reduced.
+    // Failures are tracked with an overall pass/fail flag, since BOOST_CHECK 
+    // is extremely slow.
     class Lines {
     public:
-        Lines() : _bits(NUM_LINES, false), _failed(false) { }
+        Lines() : _mapped(NUM_LINES, false), _reduced(NUM_LINES, false),
+                  _failed(false) { }
         ~Lines() { }
 
-        void mark(uint32_t line) {
-            if (_bits[line]) { _failed = true; }
-            _bits[line] = true;
+        void markMapped(uint32_t line) {
+            if (_mapped[line]) { _failed = true; }
+            _mapped[line] = true;
+        }
+
+        void markReduced(uint32_t line) {
+            if (_reduced[line]) { _failed = true; }
+            _reduced[line] = true;
         }
 
         void merge(Lines const & lines) {
+            _failed = _failed || lines._failed;
             for (size_t i = 0; i < NUM_LINES; ++i) {
-                if (lines._bits[i]) {
-                    if (_bits[i]) { _failed = true; }
-                    _bits[i] = true;
+                if (lines._mapped[i]) {
+                    if (_mapped[i]) { _failed = true; }
+                    _mapped[i] = true;
+                }
+                if (lines._reduced[i]) {
+                    if (_reduced[i]) { _failed = true; }
+                    _reduced[i] = true;
                 }
             }
         }
 
         void verify() {
             for (size_t i = 0; i < NUM_LINES; ++i) {
-                if (!_bits[i]) { _failed = true; }
+                if (!_mapped[i] || !_reduced[i]) { _failed = true; }
             }
             BOOST_CHECK(!_failed);
         }
 
     private:
-        std::vector<bool> _bits;
+        std::vector<bool> _mapped;
+        std::vector<bool> _reduced;
         bool _failed;
     };
     
@@ -111,12 +125,13 @@ namespace {
                 beg = _editor.readRecord(beg, end);
                 k.line = _editor.get<uint32_t>(0);
                 silo.add(k, _editor);
+                _lines->markMapped(k.line);
             }
         }
 
         void reduce(RecordIter beg, RecordIter end) {
             for (; beg != end; ++beg) {
-                _lines->mark(beg->key.line);
+                _lines->markReduced(beg->key.line);
             }
         }
 

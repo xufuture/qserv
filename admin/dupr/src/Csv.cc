@@ -594,11 +594,13 @@ std::string const Editor::get(int i, bool decode) const {
     Field const & f = _fields[i];
     char const * val = f.inputValue;
     size_t sz = f.inputSize;
-    if (_inputDialect.isNull(val, sz)) {
-        throw runtime_error("Input field value is NULL.");
-    }
-    if (decode && (f.flags & Field::DECODE) != 0) {
-        return _inputDialect.decode(val, sz);
+    if (decode) {
+        if (_inputDialect.isNull(val, sz)) {
+            throw runtime_error("Input field value is NULL.");
+        }
+        if ((f.flags & Field::DECODE) != 0) {
+            return _inputDialect.decode(val, sz);
+        }
     }
     return string(val, sz);
 }
