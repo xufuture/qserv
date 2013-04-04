@@ -618,19 +618,11 @@ class QueryBabysitter:
         self._inFlight[chunk] = (handle, table)
 
     def finish(self):
-
-        print "--py-- DBG: EXECUTING QueryBabysitter.finish()"
-
         for (k,v) in self._inFlight.items():
-            print "--py-- DBG: CALLING (dispatcher) tryJoinQuery(", self._sessionId, ", v[0])"
             s = tryJoinQuery(self._sessionId, v[0])
             #print "State of", k, "is", getQueryStateString(s)
-            print "--py-- DBG: RETURNED (dispatcher) tryJoinQuery()"
-            print "--py-- DBG: State of", k, "is", getQueryStateString(s)
 
-        print "--py-- DBG: CALLING (dispatcher) joinSession(", self._sessionId, ")"
         s = joinSession(self._sessionId)
-        print "--py-- DBG: RETURNED (dispatcher) joinSession()"
         if s != QueryState_SUCCESS:
             self._reportError(getErrorDesc(self._sessionId))
         print "Final state of all queries", getQueryStateString(s)
@@ -1006,28 +998,14 @@ class HintedQueryAction:
             return ""
 
     def getResult(self):
-        print "--py-- DBG: EXECUTING HintedQueryAction.getResult()"
         """Wait for query to complete (as necessary) and then return 
         a handle to the result."""
-        print "--py-- DBG: CALLING HintedQueryAction._invokeLock.acquire()"
         self._invokeLock.acquire()
-        print "--py-- DBG: RETURNED HintedQueryAction._invokeLock.qcquire()"
-        try:
-            print "--py-- DBG: CALLING HintedQueryAction._babysitter.finish()"
-            self._babysitter.finish()
-            print "--py-- DBG: RETURNED HintedQueryAction._babysitter.finish()"
-        except:
-            print "--py-- DBG: Exception Caught!"
-            raise
-        print "--py-- DBG: CALLING HintedQueryAction._invokeLock.release()"
+        self._babysitter.finish()
         self._invokeLock.release()
-        print "--py-- DBG: RETURNED HintedQueryAction._invokeLock.release()"
-        print "--py-- DBG: CALLING HintedQueryAction._babysitter.getResultTableName()"
         table = self._babysitter.getResultTableName()
-        print "--py-- DBG: RETURNED  HintedQueryAction._babysitter.getResultTableName()"
         #self._collater.finish()
         #table = self._collater.getResultTableName()
-        print "--py-- DBG: EXITING HintedQueryAction.getResult()"
         return table
 
     def getIsValid(self):

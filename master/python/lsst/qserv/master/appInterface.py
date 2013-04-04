@@ -90,7 +90,6 @@ class AppInterface:
         return r
 
     def submitQueryWithLock(self, query, conditions):
-        print "--py-- DBG: EXECUTING submitQueryWithLock()"
         """Simplified mysqlproxy version.  
         @returns result table name, lock table name, but before completion."""
         # Short-circuit the standard proxy/client queries.
@@ -108,21 +107,14 @@ class AppInterface:
         if not lock.lock():
             return ("error", "error",
                     "error locking result, check qserv/db config.")
-
-        print "--py-- DBG: CALLING app.HintedQueryAction()"
         a = app.HintedQueryAction(query, conditions, self.pmap, 
                                   lock.setSessionId, resultName)
-        print "--py-- DBG: RETURNED app.HintedQueryAction()"
         if a.getIsValid():
             self._callWithThread(a.invoke)
-            print "--py-- DBG: CALLING lock.unlockAfter()"
             lock.unlockAfter(self._getThreadFunc(), a.getResult)
         else:
-            print "--py-- DBG: CALLING lock.unlock()"
             lock.unlock()
             return ("error","error",a.getError())
-       
-        print "--py-- DBG: EXITING submitQueryWithLock()"
         return (resultName, lockName, "")
     
     def query(self, q, hints):

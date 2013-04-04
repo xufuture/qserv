@@ -89,9 +89,6 @@ bool qMaster::PacketIter::incrementExtend() {
 // lsst::qserv::master::PacketIter private methods
 ////////////////////////////////////////////////////////////////////////
 void qMaster::PacketIter::_setup(bool debug) {
-
-    std::cout << "DBG: EXECUTING PacketIter::_setup()" << std::endl;
-
     _errno = 0; // Important to initialize for proper error handling.
     const int minFragment = 65536;
     _memo = false;
@@ -116,9 +113,7 @@ void qMaster::PacketIter::_setup(bool debug) {
     }
     _current.second = _fragSize;
     _current.first = static_cast<char*>(_buffer);
-    std::cout << "DBG: CALLING PacketIter::_fill()" << std::endl;
     _fill(_current);
-    std::cout << "DBG: EXITING PacketIter::_setup()" << std::endl;
 }
 
 void qMaster::PacketIter::_increment() {
@@ -127,15 +122,10 @@ void qMaster::PacketIter::_increment() {
 }
 
 void qMaster::PacketIter::_fill(Value& v) {
-
-    std::cout << "DBG: EXECUTING PacketIter::_fill()" << std::endl;
-
     int readRes = 0;
     if(_stop) { 
-        std::cout << "DBG: _stop is true!!" << std::endl;
         v.first = 0; 
         v.second = 0;
-        std::cout << "DBG: EXITING PacketIter::_fill()" << std::endl;
         return;
     }
     if(_xrdFd != 0) {
@@ -158,5 +148,4 @@ void qMaster::PacketIter::_fill(Value& v) {
         _stop = true;
     }
     v.second = readRes;
-    std::cout << "DBG: EXITING PacketIter::_fill()" << std::endl;
 }

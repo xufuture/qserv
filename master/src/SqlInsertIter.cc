@@ -86,9 +86,6 @@ qMaster::SqlInsertIter::SqlInsertIter(PacketIter::Ptr p,
                                       std::string const& tableName,
                                       bool allowNull) 
     : _allowNull(allowNull), _pacIterP(p) {
-
-    std::cout << "DBG: EXECUTING SqlInsertIter::SqlInsertIter(PacketIter::Ptr p, " << tableName << ", " << allowNull << ")" << std::endl;
-
     // We will need to keep our own buffer.  This is because the regex
     // iterator needs a continuous piece of memory. 
     
@@ -104,27 +101,16 @@ qMaster::SqlInsertIter::SqlInsertIter(PacketIter::Ptr p,
     // data into our buffer, and setup the regex match again.
     // Continue.  
     //
-    std::cout << "DBG: CALLING assert(!(*p).isDone())" << std::endl;
     assert(!(*p).isDone());
-    std::cout << "DBG: RETURNED assert(!(*p).isDone())" << std::endl;
     _pBufStart = 0;
     _pBufEnd = (*p)->second;
     _pBufSize = 2 * _pBufEnd; // Size to 2x first fragment size
     // (which may be bigger than average)
-    std::cout << "DBG: CALLING static_cast<char*>(malloc(_pBufSize))" << std::endl;
     _pBuffer = static_cast<char*>(malloc(_pBufSize));
-    std::cout << "DBG: RETURNED static_cast<char*>(malloc(_pBufSize))" << std::endl;
 
-    std::cout << "DBG: CALLING memcpy(_pBuffer,(*p)->first, _pBufEnd)" << std::endl;
     memcpy(_pBuffer,(*p)->first, _pBufEnd);  
-    std::cout << "DBG: RETURNED memcpy(_pBuffer,(*p)->first, _pBufEnd)" << std::endl;
-
-    std::cout << "DBG: CALLING lockExpr(makeLockInsertOpenRegex(" << tableName << ")" << std::endl;
     boost::regex lockExpr(makeLockInsertOpenRegex(tableName));
-    std::cout << "DBG: RETURNED lockExpr(makeLockInsertOpenRegex()" << std::endl;
-
     bool found = false;
-    std::cout << "DBG: Entering Loop." << std::endl;
     while(!found) {
         char const* buf = _pBuffer; // need to add const to help compiler
         found = boost::regex_search(buf, 
@@ -134,19 +120,13 @@ qMaster::SqlInsertIter::SqlInsertIter(PacketIter::Ptr p,
 
         //Add next fragment, if available.
         if(!_incrementFragment()) {
-            std::cout << "DBG: Failed to increment fragment." << std::endl;
-            std::cout << "DBG: EXITING SqlInsertIter::SqlInsertIter()" << std::endl;
             return;
         }
     }
-
-    std::cout << "DBG: Completed Loop." << std::endl;
     _blockFound = found;
     _initRegex(tableName); 
     // Might try _blockMatch[3].first, _blockMatch[3].second
     _setupIter();
-    std::cout << "DBG: EXITING SqlInsertIter::SqlInsertIter()" << std::endl;
-
 }
 
 qMaster::SqlInsertIter::~SqlInsertIter() {

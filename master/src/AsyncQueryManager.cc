@@ -149,9 +149,6 @@ int qMaster::AsyncQueryManager::add(TransactionSpec const& t,
 void qMaster::AsyncQueryManager::finalizeQuery(int id, 
                                                XrdTransResult r,
                                                bool aborted) {
-
-    std::cout << "DBG: EXECUTING AsyncQueryManager::finalizeQuery(" << id << ", XrdTransResult r, " << aborted << ")" << std::endl;
-
     std::stringstream ss;
     Timer t1;
     t1.start();
@@ -164,9 +161,6 @@ void qMaster::AsyncQueryManager::finalizeQuery(int id,
     // std::cout << "finalizing. read=" << r.read << " and status is "
     //           << (aborted ? "ABORTED" : "okay") << std::endl;
     //std::cout << ((void*)this) << "Finalizing query (" << id << ")" << std::endl;
-     std::cout << "DBG: finalizing. read=" << r.read << " and status is "
-               << (aborted ? "ABORTED" : "okay") << std::endl;
-    std::cout << "DBG: " << ((void*)this) << "Finalizing query (" << id << ")" << std::endl;
     if((!aborted) && (r.open >= 0) && (r.queryWrite >= 0) 
        && (r.read >= 0)) {
         Timer t2;
@@ -184,10 +178,8 @@ void qMaster::AsyncQueryManager::finalizeQuery(int id,
         } 
         // Lock-free merge
         if(resIter) {
-            std::cout << "DBG: CALLING _addNewResult(resIter, " << tableName << ")" << std::endl;
             _addNewResult(resIter, tableName);
         } else {
-            std::cout << "DBG: CALLING _addNewResult(" << dumpSize << ", " << dumpFile << ", " << tableName << ")" << std::endl;
             _addNewResult(dumpSize, dumpFile, tableName);
         }
         // Erase right before notifying.
@@ -229,11 +221,9 @@ void qMaster::AsyncQueryManager::finalizeQuery(int id,
     t3.stop();
     ss << id << " QmFinalizeResult " << t3 << std::endl;
     //std::cout << (void*)this << " Done finalizing query (" << id << ")" << std::endl;
-    std::cout << "DBG: " << (void*)this << " Done finalizing query (" << id << ")" << std::endl;
     t1.stop();
     ss << id << " QmFinalize " << t1 << std::endl;
     std::cout << ss.str();
-    std::cout << "DBG: EXITING AsyncQueryManager::finalizeQuery()" << std::endl;
 }
 
 // FIXME: With squashing, we should be able to return the result earlier.
@@ -242,9 +232,6 @@ void qMaster::AsyncQueryManager::finalizeQuery(int id,
 // ceased activity and can recycle resources.
 // This is a performance optimization.
 void qMaster::AsyncQueryManager::joinEverything() {
-
-    std::cout << "DBG: EXECUTING AsyncQueryManager::joinEverything()" << std::endl;
-
     boost::unique_lock<boost::mutex> lock(_queriesMutex);
     int lastCount = -1;
     int count;
@@ -270,7 +257,6 @@ void qMaster::AsyncQueryManager::joinEverything() {
     _merger.reset();
     std::cout << "Query finish. " << _queryCount << " dispatched." 
               << std::endl;
-    std::cout << "DBG: EXITING AsyncQueryManager::joinEverything()" << std::endl;
 }
 
 void qMaster::AsyncQueryManager::configureMerger(TableMergerConfig const& c) {
@@ -320,16 +306,6 @@ void qMaster::AsyncQueryManager::resumeReadTrans() {
     boost::unique_lock<boost::mutex> lock(_canReadMutex);
     _canRead = true;
     _canReadCondition.notify_all();
-}
-
-std::string const qMaster::AsyncQueryManager::_errorTmpl("ERROR: chunkId=%d, %s");
-
-void qMaster::AsyncQueryManager::reportError(int chunkId, int code, std::string const& description) {
-
-    std::cout << "DBG: EXECUTING AsyncQueryManager::reportError(" << chunkId << ", " << code << ", " << description << ")" << std::endl;
-
-    getMessageStore()->addMessage(chunkId, code, description);
-    std::cout << "DBG: EXITING AsyncQueryManager::reportError()" << std::endl;
 }
 
 boost::shared_ptr<qMaster::MessageStore> qMaster::AsyncQueryManager::getMessageStore() {
