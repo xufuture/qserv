@@ -67,6 +67,7 @@ public:
     bool checkIfContainsDb(std::string const&);
     bool checkIfContainsTable(std::string const&, std::string const&);
     bool checkIfTableIsChunked(std::string const&, std::string const&);
+    bool checkIfTableIsSubChunked(std::string const&, std::string const&);
     void printSelf();
 
     /** The class TableInfo encapsulates metadata information about single table.
@@ -116,6 +117,7 @@ public:
         float getDefOverlapNN() const { return _defOverlapNN; }
         bool checkIfContainsTable(std::string const&) const;
         bool checkIfTableIsChunked(std::string const&) const;
+        bool checkIfTableIsSubChunked(std::string const&) const;
 
     private:
         const bool _isPartitioned;

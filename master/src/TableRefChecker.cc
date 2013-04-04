@@ -100,20 +100,24 @@ boost::shared_ptr<qMaster::MetadataCache> getMetadataCache(int session);
 bool qMaster::TableRefChecker::isChunked(std::string const& db, 
                                          std::string const& table) const {
     bool retNew = getMetadataCache(_metaCacheSessionId)->checkIfTableIsChunked(db, table);
-
-    bool isSc = infoHasEntry(*_info, RefPair(db, table), isSc);
-    std::cout << "***** TableRefChecker::isChunked(" << db << ", " << table 
-              << "), old=" << isSc << ", new=" << retNew << std::endl;
-    assert(isSc==retNew);
+    //bool isSc = infoHasEntry(*_info, RefPair(db, table), isSc);
+    //std::cout << "***** TableRefChecker::isChunked(" << db << ", " << table 
+    //          << "), old=" << isSc << ", new=" << retNew << std::endl;
+    //assert(isSc==retNew);
     return retNew;
 }
 
 bool qMaster::TableRefChecker::isSubChunked(std::string const& db, 
                                             std::string const& table) const {
-    bool isSc;
-    if(infoHasEntry(*_info, RefPair(db, table), isSc)) {
-        return isSc;
-    } else return false;
+    bool retNew = getMetadataCache(_metaCacheSessionId)->checkIfTableIsSubChunked(db, table);
+    //bool isSc;
+    //if(infoHasEntry(*_info, RefPair(db, table), isSc)) {
+    //    ;//return isSc;
+    //} else isSc = false;
+    //std::cout << "***** TableRefChecker::isSubChunked(" << db << ", " << table 
+    //          << "), old=" << isSc << ", new=" << retNew << std::endl;
+    //assert(isSc==retNew);
+    return retNew;
 }
 
 bool qMaster::TableRefChecker::isDbAllowed(std::string const& db) const {
