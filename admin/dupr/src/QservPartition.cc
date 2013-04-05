@@ -24,7 +24,6 @@
 /// \brief The Qserv partitioner for tables which have a single
 ///        partitioning position.
 
-#include <cstdio>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -32,30 +31,24 @@
 #include <vector>
 
 #include "boost/filesystem.hpp"
-#include "boost/make_shared.hpp"
 #include "boost/program_options.hpp"
 #include "boost/shared_ptr.hpp"
 #include "boost/timer/timer.hpp"
 
 #include "Chunker.h"
-#include "ChunkIndex.h"
+#include "ChunkReducer.h"
 #include "CmdLineUtils.h"
 #include "Csv.h"
-#include "FileUtils.h"
-#include "MapReduce.h"
 
 using std::cerr;
 using std::cout;
 using std::endl;
 using std::exception;
-using std::find;
 using std::pair;
 using std::runtime_error;
-using std::snprintf;
 using std::string;
 using std::vector;
 
-using boost::make_shared;
 using boost::shared_ptr;
 using boost::timer::cpu_timer;
 
@@ -65,33 +58,17 @@ namespace po = boost::program_options;
 
 namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
-/// Map-reduce worker class for partitioning.
-///
-/// The `map` function computes all partitioning locations of each input
-/// record, and stores an output record per-location.
-///
-/// The `reduce` function saves output records to files, each containing
-/// data for a single chunk ID. Chunk IDs are assigned to down-stream nodes
-/// by hashing, and the corresponding output files are created in node
-/// specific sub-directories of the output directory.
-///
-/// A worker's result is a ChunkIndex object that contains the total
-/// record count for each chunk and sub-chunk seen by that worker.
-class Worker : public WorkerBase<ChunkLocation, ChunkIndex> {
+class Worker : public ChunkReducer {
 public:
     Worker(po::variables_map const & vm);
 
+    /// Compute all partitioning locations of each input
+    /// record and store an output record per-location.
     void map(char const * beg, char const * end, Silo & silo);
-    void reduce(RecordIter beg, RecordIter end);
-    void finish();
-
-    shared_ptr<ChunkIndex> const result() { return _index; }
 
     static void defineOptions(po::options_description & opts);
 
 private:
-    void _makeFilePaths(int32_t chunkId);
-
     csv::Editor            _editor;
     int                    _raField;
     int                    _decField;
@@ -99,37 +76,17 @@ private:
     int                    _subChunkIdField;
     Chunker                _chunker;
     vector<ChunkLocation>  _locations;
-    shared_ptr<ChunkIndex> _index;
-    int32_t                _chunkId;
-    uint32_t               _numNodes;
-    fs::path               _outputDir;
-    fs::path               _nonOverlapPath;
-    fs::path               _selfOverlapPath;
-    fs::path               _fullOverlapPath;
-    BufferedAppender       _nonOverlap;
-    BufferedAppender       _selfOverlap;
-    BufferedAppender       _fullOverlap;
 };
 
 Worker::Worker(po::variables_map const & vm) :
+    ChunkReducer(vm),
     _editor(vm),
     _raField(-1),
     _decField(-1),
     _chunkIdField(-1),
     _subChunkIdField(-1),
-    _chunker(vm),
-    _index(make_shared<ChunkIndex>()),
-    _chunkId(-1),
-    _numNodes(vm["out.num-nodes"].as<uint32_t>()),
-    _outputDir(vm["out.dir"].as<string>()),
-    _nonOverlap(vm["mr.block-size"].as<size_t>()*MiB),
-    _selfOverlap(vm["mr.block-size"].as<size_t>()*MiB),
-    _fullOverlap(vm["mr.block-size"].as<size_t>()*MiB)
+    _chunker(vm)
 {
-    if (_numNodes == 0 || _numNodes > 99999u) {
-        throw runtime_error("The --out.num-nodes option value must be "
-                            "between 1 and 99999.");
-    }
     // Map field names of interest to field indexes.
     if (vm.count("part.pos") == 0) {
         throw runtime_error("The --part.pos option was not specified.");
@@ -167,49 +124,6 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
     }
 }
 
-void Worker::reduce(Worker::RecordIter beg, Worker::RecordIter end) {
-    if (beg == end) {
-        return;
-    }
-    int32_t const chunkId = beg->key.chunkId;
-    if (chunkId != _chunkId) {
-        finish();
-        _chunkId = chunkId;
-        _makeFilePaths(chunkId);
-    }
-    // Store records and update statistics. Files are only created/
-    // opened if there is data to write to them.
-    for (; beg != end; ++beg) {
-        _index->add(beg->key);
-        if (beg->key.kind == ChunkLocation::NON_OVERLAP) {
-            if (!_nonOverlap.isOpen()) {
-                _nonOverlap.open(_nonOverlapPath, false);
-            }
-            _nonOverlap.append(beg->data, beg->size);
-        } else {
-            if (beg->key.kind == ChunkLocation::SELF_OVERLAP) {
-               if (!_selfOverlap.isOpen()) {
-                   _selfOverlap.open(_selfOverlapPath, false);
-               }
-               _selfOverlap.append(beg->data, beg->size);
-            }
-            // self-overlap locations are also full-overlap locations.
-            if (!_fullOverlap.isOpen()) {
-                _fullOverlap.open(_fullOverlapPath, false);
-            }
-            _fullOverlap.append(beg->data, beg->size);
-        }
-    }
-}
-
-void Worker::finish() {
-    // Reset current chunk ID to an invalid ID and close all output files.
-    _chunkId = -1;
-    _nonOverlap.close();
-    _selfOverlap.close();
-    _fullOverlap.close();
-}
-
 void Worker::defineOptions(po::options_description & opts) {
     po::options_description part("\\_______________ Partitioning", 80);
     part.add_options()
@@ -229,30 +143,6 @@ void Worker::defineOptions(po::options_description & opts) {
     defineOutputOptions(opts);
     csv::Editor::defineOptions(opts);
 }
-
-void Worker::_makeFilePaths(int32_t chunkId) {
-    fs::path p = _outputDir;
-    if (_numNodes > 1) {
-        // Files go into a node-specific sub-directory.
-        char subdir[32];
-        uint32_t node = mulveyHash(static_cast<uint32_t>(chunkId)) % _numNodes;
-        snprintf(subdir, sizeof(subdir), "node_%05lu",
-                 static_cast<unsigned long>(node));
-        p /= subdir;
-        fs::create_directory(p);
-    }
-    char file[32];
-    snprintf(file, sizeof(file), "chunk_%ld.txt",
-             static_cast<long>(chunkId));
-    _nonOverlapPath = p / fs::path(file);
-    snprintf(file, sizeof(file), "chunk_%ld_self.txt",
-             static_cast<long>(chunkId));
-    _selfOverlapPath = p / fs::path(file);
-    snprintf(file, sizeof(file), "chunk_%ld_full.txt",
-             static_cast<long>(chunkId));
-    _fullOverlapPath = p / fs::path(file);
-}
-
 
 typedef Job<Worker> PartitionJob;
 

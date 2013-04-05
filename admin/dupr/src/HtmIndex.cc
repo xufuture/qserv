@@ -34,6 +34,7 @@
 #include "Hash.h"
 
 using std::ostream;
+using std::pair;
 using std::runtime_error;
 using std::setw;
 using std::sort;
@@ -46,7 +47,6 @@ namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
 HtmIndex::HtmIndex(int level) :
     _numRecords(0),
-    _recordSize(0),
     _map(),
     _keys(),
     _level(level)
@@ -58,7 +58,6 @@ HtmIndex::HtmIndex(int level) :
 
 HtmIndex::HtmIndex(fs::path const & path) :
     _numRecords(0),
-    _recordSize(0),
     _map(),
     _keys(),
     _level(-1)
@@ -68,7 +67,6 @@ HtmIndex::HtmIndex(fs::path const & path) :
 
 HtmIndex::HtmIndex(vector<fs::path> const & paths) :
     _numRecords(0),
-    _recordSize(0),
     _map(),
     _keys(),
     _level(-1)
@@ -84,7 +82,6 @@ HtmIndex::HtmIndex(vector<fs::path> const & paths) :
 
 HtmIndex::HtmIndex(HtmIndex const & idx) :
     _numRecords(idx._numRecords),
-    _recordSize(idx._recordSize),
     _map(idx._map),
     _keys(idx._keys),
     _level(idx._level)
@@ -92,84 +89,71 @@ HtmIndex::HtmIndex(HtmIndex const & idx) :
 
 HtmIndex::~HtmIndex() { }
 
-HtmIndex::Triangle const & HtmIndex::mapToNonEmpty(uint32_t id) const {
+uint32_t HtmIndex::mapToNonEmpty(uint32_t id) const {
     if (_map.empty()) {
         throw runtime_error("HTM index is empty.");
     }
     Map::const_iterator i = _map.find(id);
-    if (i == _map.end()) {
-        if (_keys.empty()) {
-            // Build sorted list of non-empty HTM triangle IDs.
-            _keys.reserve(_map.size());
-            for (Map::const_iterator i = _map.begin(), e = _map.end(); i != e; ++i) {
-                _keys.push_back(i->first);
-            }
-            sort(_keys.begin(), _keys.end());
-        }
-        i = _map.find(_keys[mulveyHash(id) % _keys.size()]);
+    if (i != _map.end()) {
+        return i->first;
     }
-    return i->second;
+    if (_keys.empty()) {
+        // Build sorted list of non-empty HTM triangle IDs.
+        _keys.reserve(_map.size());
+        for (Map::const_iterator i = _map.begin(), e = _map.end(); i != e; ++i) {
+            _keys.push_back(i->first);
+        }
+        sort(_keys.begin(), _keys.end());
+    }
+    return _keys[mulveyHash(id) % _keys.size()];
 }
 
 void HtmIndex::write(fs::path const & path, bool truncate) const {
-    size_t const numBytes = _map.size()*(4 + 8 + 8);
+    size_t const numBytes = _map.size()*(4 + 8);
     boost::scoped_array<uint8_t> buf(new uint8_t[numBytes]);
     uint8_t * b = buf.get();
     for (Map::const_iterator i = _map.begin(), e = _map.end(); i != e; ++i) {
-        Triangle const & t = i->second;
-        b = encode(b, t.id);
-        b = encode(b, t.numRecords);
-        b = encode(b, t.recordSize);
+        b = encode(b, i->first);
+        b = encode(b, i->second);
     }
     OutputFile f(path, truncate);
     f.append(buf.get(), numBytes);
 }
 
 void HtmIndex::write(ostream & os) const {
-    typedef vector<Triangle>::const_iterator TriangleIter;
+    typedef vector<pair<uint32_t, uint64_t> >::const_iterator Iter;
     // Extract non-empty triangles and sort them by HTM ID.
-    vector<Triangle> tris;
+    vector<pair<uint32_t, uint64_t> > tris;
     tris.reserve(_map.size());
     for (Map::const_iterator i = _map.begin(), e = _map.end(); i != e; ++i) {
-        tris.push_back(i->second);
+        tris.push_back(pair<uint32_t, uint64_t>(i->first, i->second));
     }
     sort(tris.begin(), tris.end());
     // Pretty-print the index in JSON format.
     os << "{\n"
           "\"nrec\":      " << _numRecords << ",\n"
-          "\"recsz\":     " << _recordSize << ",\n"
           "\"triangles\": [\n";
-    for (TriangleIter b = tris.begin(), e = tris.end(), i = b; i != e; ++i) {
+    for (Iter b = tris.begin(), e = tris.end(), i = b; i != e; ++i) {
         if (i != b) {
             os << ",\n";
         }
-        os << "\t{\"id\":"   << setw(10) << i->id
-           << ", \"nrec\":"  << setw(8)  << i->numRecords
-           << ", \"recsz\":" << setw(10) << i->recordSize
+        os << "\t{\"id\":"   << setw(10) << i->first
+           << ", \"nrec\":"  << setw(8)  << i->second
            << "}";
     }
     os << "\n]\n}";
 }
 
-HtmIndex::Triangle const & HtmIndex::merge(HtmIndex::Triangle const & tri) {
-    if (htmLevel(tri.id) != _level) {
+void HtmIndex::add(uint32_t id, uint64_t numRecords) {
+    if (htmLevel(id) != _level) {
         throw runtime_error("HTM ID is invalid or has an inconsistent "
                             "subdivision level.");
     }
-    if (tri.numRecords == 0 || tri.recordSize == 0) {
-        throw runtime_error("Updating an HTM index with empty triangles is "
-                            "not allowed.");
-    }
-    Triangle * t = &_map[tri.id];
-    if (t->id != tri.id) {
+    if (numRecords > 0) {
         _keys.clear();
-        t->id = tri.id;
+        _map[id] += numRecords;
+        _numRecords += numRecords;
     }
-    t->numRecords += tri.numRecords;
-    _numRecords   += tri.numRecords;
-    t->recordSize += tri.recordSize;
-    _recordSize   += tri.recordSize;
-    return *t;
 }
 
 void HtmIndex::merge(HtmIndex const & idx) {
@@ -179,23 +163,16 @@ void HtmIndex::merge(HtmIndex const & idx) {
     if (idx._level != _level) {
         throw runtime_error("HTM index subdivision levels do not match.");
     }
+    _keys.clear();
     for (Map::const_iterator i = idx._map.begin(), e = idx._map.end();
          i != e; ++i) {
-        Triangle * t = &_map[i->second.id];
-        if (t->id != i->second.id) {
-            _keys.clear();
-            t->id = i->second.id;
-        }
-        t->numRecords += i->second.numRecords;
-        _numRecords   += i->second.numRecords;
-        t->recordSize += i->second.recordSize;
-        _recordSize   += i->second.recordSize;
+        _map[i->first] += i->second;
+        _numRecords += i->second;
     }
 }
 
 void HtmIndex::clear() {
     _numRecords = 0;
-    _recordSize = 0;
     _map.clear();
     _keys.clear();
 }
@@ -204,28 +181,25 @@ void HtmIndex::swap(HtmIndex & idx) {
     using std::swap;
     if (this != &idx) {
         swap(_numRecords, idx._numRecords);
-        swap(_recordSize, idx._recordSize);
         swap(_map, idx._map);
         swap(_keys, idx._keys);
         swap(_level, idx._level);
     }
 }
 
-HtmIndex::Triangle const HtmIndex::EMPTY;
-
 void HtmIndex::_read(fs::path const & path) {
     InputFile f(path);
-    if (f.size() == 0 || (f.size()) % (4 + 8 + 8) != 0) {
+    if (f.size() == 0 || (f.size()) % (4 + 8) != 0) {
         throw runtime_error("Invalid HTM index file.");
     }
     boost::scoped_array<uint8_t> data(new uint8_t[f.size()]);
     f.read(data.get(), 0, f.size());
     uint8_t const * b = data.get();
-    off_t const numTriangles = f.size()/(4 + 8 + 8);
-    for (off_t i = 0; i < numTriangles; ++i, b += 4 + 8 + 8) {
+    off_t const numTriangles = f.size()/(4 + 8);
+    _keys.clear();
+    for (off_t i = 0; i < numTriangles; ++i, b += 4 + 8) {
         uint32_t id = decode<uint32_t>(b);
         uint64_t numRecords = decode<uint64_t>(b + 4);
-        uint64_t recordSize = decode<uint64_t>(b + 12);
         int level = htmLevel(id);
         if (level < 0 || level > HTM_MAX_LEVEL) {
             throw runtime_error("Invalid HTM index file.");
@@ -235,15 +209,11 @@ void HtmIndex::_read(fs::path const & path) {
         } else if (level != _level) {
             throw runtime_error("HTM index subdivision levels do not match.");
         }
-        if (numRecords == 0 || recordSize ==0) {
+        if (numRecords == 0) {
             throw runtime_error("HTM index file contains an empty triangle.");
         }
-        Triangle * t = &_map[id];
-        t->id = id;
-        t->numRecords += numRecords;
-        _numRecords   += numRecords;
-        t->recordSize += recordSize;
-        _recordSize   += recordSize;
+        _map[id] += numRecords;
+        _numRecords += numRecords;
     }
 }
 

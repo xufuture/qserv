@@ -14,7 +14,8 @@ libs = ['dupr',
         'boost_program_options',
        ]
 buildEnv.StaticLibrary('dupr', sources)
-for target in ('qserv-htm-index',
+for target in ('qserv-duplicate',
+               'qserv-htm-index',
                'qserv-partition',
                'qserv-partition-matches',
               ):

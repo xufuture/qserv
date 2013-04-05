@@ -49,20 +49,6 @@ namespace lsst { namespace qserv { namespace admin { namespace dupr {
 /// index of the union of the original input data sets.
 class HtmIndex {
 public:
-    /// An index entry.
-    struct Triangle {
-        uint32_t id;         ///< HTM triangle ID.
-        uint64_t numRecords; ///< Number of records in the triangle.
-        uint64_t recordSize; ///< Size in bytes of triangle records.
-
-        Triangle() : id(0), numRecords(0), recordSize(0) { }
-
-        Triangle(uint32_t i, uint64_t n, uint64_t s) :
-            id(i), numRecords(n), recordSize(s) { }
-
-        bool operator<(Triangle const & t) const { return id < t.id; }
-    };
-
     /// Create an empty HTM index at the given subdivision level.
     explicit HtmIndex(int level);
     /// Read an HTM index from a file.
@@ -85,13 +71,11 @@ public:
     int getLevel() const { return _level; }
     /// Return the total number of records tracked by the index.
     uint64_t getNumRecords() const { return _numRecords; }
-    /// Return the size in bytes of all records tracked by the index.
-    uint64_t getRecordSize() const { return _recordSize; }
 
-    Triangle const & operator()(uint32_t id) const {
+    uint64_t operator()(uint32_t id) const {
         Map::const_iterator i = _map.find(id);
         if (i == _map.end()) {
-            return EMPTY;
+            return 0;
         }
         return i->second;
     }
@@ -100,7 +84,7 @@ public:
     bool empty() const { return size() == 0; }
 
     /// Map the given triangle to a non-empty triangle in a deterministic way.
-    Triangle const & mapToNonEmpty(uint32_t id) const;
+    uint32_t mapToNonEmpty(uint32_t id) const;
 
     /// Write or append the index to a binary file.
     void write(boost::filesystem::path const & path, bool truncate) const;
@@ -109,7 +93,7 @@ public:
 
     /// Add or merge the given triangle with this index, returning a reference
     /// to the newly added or updated triangle.
-    Triangle const & merge(Triangle const & tri);
+    void add(uint32_t id, uint64_t numRecords);
 
     /// Add or merge the triangles in the given index with the triangles in
     /// this one.
@@ -119,14 +103,11 @@ public:
     void swap(HtmIndex & idx);
 
 private:
-    typedef boost::unordered_map<uint32_t, Triangle> Map;
+    typedef boost::unordered_map<uint32_t, uint64_t> Map;
 
     void _read(boost::filesystem::path const & path);
 
-    static Triangle const EMPTY;
-
     uint64_t _numRecords;
-    uint64_t _recordSize;
     Map _map;
     std::vector<uint32_t> mutable _keys; // derived from _map on-demand
     int _level;

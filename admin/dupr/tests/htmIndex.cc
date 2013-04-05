@@ -39,108 +39,71 @@ using std::vector;
 using dupr::HtmIndex;
 using dupr::HTM_MAX_LEVEL;
 
-namespace {
-    bool operator==(HtmIndex::Triangle const & t1,
-                    HtmIndex::Triangle const & t2) {
-        return t1.id == t2.id &&
-               t1.numRecords == t2.numRecords &&
-               t1.recordSize == t2.recordSize;
-    }
-}
-
 BOOST_AUTO_TEST_CASE(HtmIndexTest) {
     BOOST_CHECK_THROW(HtmIndex(-1), exception);
     BOOST_CHECK_THROW(HtmIndex(HTM_MAX_LEVEL + 1), exception);
     HtmIndex idx(HTM_MAX_LEVEL);
-    HtmIndex::Triangle t;
-    t.id = static_cast<uint32_t>(0x8) << (2*HTM_MAX_LEVEL);
-    t.numRecords = 1;
-    t.recordSize = 10;
+    uint32_t id = static_cast<uint32_t>(0x8) << (2*HTM_MAX_LEVEL);
     BOOST_CHECK_EQUAL(idx.size(), 0u);
     BOOST_CHECK(idx.empty());
     BOOST_CHECK_EQUAL(idx.getLevel(), HTM_MAX_LEVEL);
     BOOST_CHECK_EQUAL(idx.getNumRecords(), 0u);
-    BOOST_CHECK_EQUAL(idx.getRecordSize(), 0u);
-    BOOST_CHECK_THROW(idx.mapToNonEmpty(t.id), exception);
-    BOOST_CHECK_EQUAL(idx(t.id).id, 0u);
-    BOOST_CHECK_EQUAL(idx(t.id).numRecords, 0u);
-    BOOST_CHECK_EQUAL(idx(t.id).recordSize, 0u);
-    idx.merge(t);
+    BOOST_CHECK_THROW(idx.mapToNonEmpty(id), exception);
+    BOOST_CHECK_EQUAL(idx(id), 0u);
+    idx.add(id, 1u);
     BOOST_CHECK_EQUAL(idx.size(), 1u);
     BOOST_CHECK(!idx.empty());
-    BOOST_CHECK_EQUAL(idx.getNumRecords(), t.numRecords);
-    BOOST_CHECK_EQUAL(idx.getRecordSize(), t.recordSize);
-    BOOST_CHECK(idx.mapToNonEmpty(t.id) == t);
-    BOOST_CHECK(idx.mapToNonEmpty(1234) == t);
-    BOOST_CHECK(idx(t.id) == t);
-    idx.merge(t);
-    t.id += 1;
-    idx.merge(t);
+    BOOST_CHECK_EQUAL(idx.getNumRecords(), 1u);
+    BOOST_CHECK_EQUAL(idx.mapToNonEmpty(id), id);
+    BOOST_CHECK_EQUAL(idx.mapToNonEmpty(123), id);
+    BOOST_CHECK_EQUAL(idx(id), 1u);
+    idx.add(id, 1u);
+    id += 1;
+    idx.add(id, 1u);
     BOOST_CHECK_EQUAL(idx.size(), 2u);
     BOOST_CHECK_EQUAL(idx.getNumRecords(), 3u);
-    BOOST_CHECK_EQUAL(idx.getRecordSize(), 30u);
-    BOOST_CHECK_EQUAL(idx(t.id - 1).numRecords, 2u);
-    BOOST_CHECK_EQUAL(idx(t.id - 1).recordSize, 20u);
-    BOOST_CHECK(idx(t.id) == t);
+    BOOST_CHECK_EQUAL(idx(id - 1), 2u);
+    BOOST_CHECK_EQUAL(idx(id), 1u);
     idx.clear();
     BOOST_CHECK_EQUAL(idx.size(), 0u);
     BOOST_CHECK(idx.empty());
-    BOOST_CHECK_THROW(idx.mapToNonEmpty(t.id), exception);
-    BOOST_CHECK_EQUAL(idx(t.id).numRecords, 0u);
+    BOOST_CHECK_THROW(idx.mapToNonEmpty(id), exception);
+    BOOST_CHECK_EQUAL(idx(id), 0u);
 }
 
 BOOST_AUTO_TEST_CASE(HtmIndexMergeTest) {
     HtmIndex i1(2);
     HtmIndex i2(2);
     HtmIndex i3(HTM_MAX_LEVEL);
-    HtmIndex::Triangle t;
     BOOST_CHECK_THROW(i1.merge(i3), exception);
-    t.id = 0x80;
-    t.numRecords = 3;
-    t.recordSize = 456;
-    i1.merge(t);
-    t.id = 0xf2;
-    i1.merge(t);
-    i2.merge(t);
-    t.id = 0x93;
-    i2.merge(t);
+    i1.add(0x80, 3u);
+    i1.add(0xf2, 3u);
+    i2.add(0xf2, 3u);
+    i2.add(0x93, 3u);
     i1.merge(i2);
     BOOST_CHECK_EQUAL(i1.size(), 3u);
     BOOST_CHECK_EQUAL(i1.getNumRecords(), 12u);
-    BOOST_CHECK_EQUAL(i1.getRecordSize(), 456u*4u);
-    BOOST_CHECK(i1(t.id) == t);
-    t.id = 0x80;
-    BOOST_CHECK(i1(t.id) == t);
-    t.id = 0xf2;
-    t.numRecords *= 2;
-    t.recordSize *= 2;
-    BOOST_CHECK(i1(t.id) == t);
+    BOOST_CHECK_EQUAL(i1(0x93), 3u);
+    BOOST_CHECK_EQUAL(i1(0x80), 3u);
+    BOOST_CHECK_EQUAL(i1(0xf2), 6u);
 }
 
 BOOST_AUTO_TEST_CASE(HtmIndexIoTest) {
     HtmIndex i1(2), i2(2), i3(2), i4(4);
     TempFile t1, t2, t3;
-    HtmIndex::Triangle t;
-    t.id = 0x80;
-    t.numRecords = 1;
-    t.recordSize = 10;
-    i1.merge(t);
-    t.id = 0x8f;
-    i1.merge(t);
-    i2.merge(t);
-    t.id = 0xc3;
-    i2.merge(t);
-    t.id = 0x800;
-    i4.merge(t);
+    i1.add(0x80, 1u);
+    i1.add(0x8f, 1u);
+    i2.add(0x8f, 1u);
+    i2.add(0xc3, 1u);
+    i4.add(0x800, 1u);
     i1.write(t1.path(), false);
     i2.write(t2.path(), false);
     i4.write(t3.path(), false);
     i3 = HtmIndex(t1.path());
     BOOST_CHECK_EQUAL(i1.size(), i3.size());
     BOOST_CHECK_EQUAL(i1.getNumRecords(), i3.getNumRecords());
-    BOOST_CHECK_EQUAL(i1.getRecordSize(), i3.getRecordSize());
-    BOOST_CHECK(i1(0x80) == i3(0x80));
-    BOOST_CHECK(i1(0x8f) == i3(0x8f));
+    BOOST_CHECK_EQUAL(i1(0x80), i3(0x80));
+    BOOST_CHECK_EQUAL(i1(0x8f), i3(0x8f));
     i3 = HtmIndex(2);
     i3.merge(i1);
     i3.merge(i2);
@@ -150,10 +113,9 @@ BOOST_AUTO_TEST_CASE(HtmIndexIoTest) {
     i4 = HtmIndex(v);
     BOOST_CHECK_EQUAL(i3.size(), i4.size());
     BOOST_CHECK_EQUAL(i3.getNumRecords(), i4.getNumRecords());
-    BOOST_CHECK_EQUAL(i3.getRecordSize(), i4.getRecordSize());
-    BOOST_CHECK(i3(0x80) == i4(0x80));
-    BOOST_CHECK(i3(0x8f) == i4(0x8f));
-    BOOST_CHECK(i3(0xc3) == i4(0xc3));
+    BOOST_CHECK_EQUAL(i3(0x80), i4(0x80));
+    BOOST_CHECK_EQUAL(i3(0x8f), i4(0x8f));
+    BOOST_CHECK_EQUAL(i3(0xc3), i4(0xc3));
     // t3 contains level 4 indexes, while t1 and t2 contain level 2 indexes.
     v.push_back(t3.path());
     BOOST_CHECK_THROW((HtmIndex(v)), exception);
@@ -163,8 +125,7 @@ BOOST_AUTO_TEST_CASE(HtmIndexIoTest) {
     i4 = HtmIndex(t3.path());
     BOOST_CHECK_EQUAL(i3.size(), i4.size());
     BOOST_CHECK_EQUAL(i3.getNumRecords(), i4.getNumRecords());
-    BOOST_CHECK_EQUAL(i3.getRecordSize(), i4.getRecordSize());
-    BOOST_CHECK(i3(0x80) == i4(0x80));
-    BOOST_CHECK(i3(0x8f) == i4(0x8f));
-    BOOST_CHECK(i3(0xc3) == i4(0xc3));
+    BOOST_CHECK_EQUAL(i3(0x80), i4(0x80));
+    BOOST_CHECK_EQUAL(i3(0x8f), i4(0x8f));
+    BOOST_CHECK_EQUAL(i3(0xc3), i4(0xc3));
 }

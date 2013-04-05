@@ -126,7 +126,8 @@ private:
     int                  _decField;
     int                  _level;
     shared_ptr<HtmIndex> _index;
-    HtmIndex::Triangle   _triangle;
+    uint32_t             _htmId;
+    uint64_t             _numRecords;
     uint32_t             _numNodes;
     fs::path             _outputDir;
     BufferedAppender     _records;
@@ -140,7 +141,8 @@ Worker::Worker(po::variables_map const & vm) :
     _decField(-1),
     _level(vm["htm.level"].as<int>()),
     _index(make_shared<HtmIndex>(_level)),
-    _triangle(),
+    _htmId(0),
+    _numRecords(0),
     _numNodes(vm["out.num-nodes"].as<uint32_t>()),
     _outputDir(vm["out.dir"].as<string>()),
     _records(vm["mr.block-size"].as<size_t>()*MiB),
@@ -189,19 +191,17 @@ void Worker::reduce(Worker::RecordIter beg, Worker::RecordIter end) {
         return;
     }
     uint32_t const htmId = beg->htmId;
-    if (htmId != _triangle.id) {
-        if (_triangle.id != 0) {
-            _index->merge(_triangle);
+    if (htmId != _htmId) {
+        if (_htmId != 0) {
+            _index->add(_htmId, _numRecords);
         }
-        _triangle.numRecords = 0;
-        _triangle.recordSize = 0;
-        _triangle.id = htmId;
+        _numRecords = 0;
+        _htmId = htmId;
         _openFiles(htmId);
     }
     for (; beg != end; ++beg) {
         uint8_t buf[8];
-        _triangle.numRecords += 1;
-        _triangle.recordSize += beg->size;
+        _numRecords += 1;
         _records.append(beg->data, beg->size);
         encode(buf, static_cast<uint64_t>(beg->id));
         _ids.append(buf, sizeof(buf));
@@ -209,12 +209,11 @@ void Worker::reduce(Worker::RecordIter beg, Worker::RecordIter end) {
 }
 
 void Worker::finish() {
-    if (_triangle.id != 0) {
-        _index->merge(_triangle);
+    if (_htmId != 0) {
+        _index->add(_htmId, _numRecords);
     }
-    _triangle.id = 0;
-    _triangle.numRecords = 0;
-    _triangle.recordSize = 0;
+    _htmId = 0;
+    _numRecords = 0;
     _records.close();
     _ids.close();
 }
