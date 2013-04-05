@@ -27,7 +27,9 @@
 #include <string>
 #include "lsst/qserv/master/SqlSubstitution.h"
 #include "lsst/qserv/master/ChunkMeta.h"
+#include "lsst/qserv/master/MetadataCache.h"
 #include "lsst/qserv/master/SqlParseRunner.h"
+#include "lsst/qserv/master/ifaceMeta.h"
 
 using lsst::qserv::master::ChunkMapping;
 using lsst::qserv::master::ChunkMeta;
@@ -35,10 +37,17 @@ using lsst::qserv::master::SqlSubstitution;
 using lsst::qserv::master::SqlParseRunner;
 namespace test = boost::test_tools;
 
-int metaCacheSessionId = -1;
+// Forward declarations
+namespace lsst {
+namespace qserv {
+namespace master {
+    boost::shared_ptr<lsst::qserv::master::MetadataCache> getMetadataCache(int);
+}}}
+
 
 namespace {
 
+int metaCacheSessionId = -1;
 
 std::auto_ptr<ChunkMapping> newTestMapping() {
     std::auto_ptr<ChunkMapping> cm(new ChunkMapping());
@@ -54,19 +63,16 @@ ChunkMeta newTestCmeta(bool withSubchunks=true) {
     return m;
 }
 
-
 void tryStmt(std::string const& s, bool withSubchunks=false) {
     std::map<std::string,std::string> cfg; // dummy config
     SqlSubstitution ss(s, newTestCmeta(withSubchunks), cfg, metaCacheSessionId);
     if(!ss.getError().empty()) {
-	std::cout << "ERROR constructing substitution: " 
-		  << ss.getError() << std::endl;
-	return;
+        std::cout << "ERROR constructing substitution: " 
+                  << ss.getError() << std::endl;
+        return;
     }
-
     for(int i = 4; i < 6; ++i) {
-	std::cout << "--" << ss.transform(i, 3) 
-                  << std::endl;
+        std::cout << "--" << ss.transform(i, 3) << std::endl;
     }
 }
 
@@ -86,7 +92,7 @@ void testStmt2(SqlParseRunner::Ptr spr, bool shouldFail=false) {
         BOOST_CHECK(!parseResult.empty());
     }
 }
-
+    
 } // anonymous namespace
 
 struct ParserFixture {
@@ -94,8 +100,8 @@ struct ParserFixture {
         : delimiter("%$#") {
         cMeta.add("LSST", "Source", 1);
         cMeta.add("LSST", "Object", 2);
-	cMapping.addChunkKey("Source");
-	cMapping.addSubChunkKey("Object");
+        cMapping.addChunkKey("Source");
+        cMapping.addSubChunkKey("Object");
         tableNames.push_back("Object");
         tableNames.push_back("Source");
         config["table.defaultdb"] ="LSST";
@@ -103,6 +109,26 @@ struct ParserFixture {
         config["table.partitioncols"] = "Object:ra_Test,decl_Test,objectIdObjTest;"
             "Source:raObjectTest,declObjectTest,objectIdSourceTest";
 
+        metaCacheSessionId = lsst::qserv::master::newMetadataSession();
+        boost::shared_ptr<lsst::qserv::master::MetadataCache> mc =
+            lsst::qserv::master::getMetadataCache(metaCacheSessionId);
+        mc->addDbInfoPartitionedSphBox("LSST",
+                                       60,        // number of stripes
+                                       18,        // number of substripes
+                                       0.01,      // default overlap fuzziness
+                                       0.025);    // default overlap near neighbor
+        mc->addTbInfoPartitionedSphBox("LSST", "Object",
+                                       0.025,     // actual overlap
+                                       "ra", "decl",
+                                       1, 2,      // positions of ra, decl
+                                       2,         // 2-level chunking
+                                       0x0011);   // 1-level persisted
+        mc->addTbInfoPartitionedSphBox("LSST", "Source",
+                                       0,         // actual overlap
+                                       "raObjectTest", "declObjectTest",
+                                       1, 2,      // positions of ra, decl
+                                       1,         // 1-level chunking
+                                       0x0011);   // 1-level persisted
     };
     ~ParserFixture(void) { };
 
@@ -128,7 +154,6 @@ struct ParserFixture {
 };
 
 
-
 //BOOST_FIXTURE_TEST_SUITE(QservSuite, ParserFixture)
 
 
@@ -152,7 +177,7 @@ void tryTriple() {
     c.add("LSST", "ObjectSub", 2);
     SqlSubstitution ss(stmt, c, cfg, metaCacheSessionId);
     for(int i = 4; i < 6; ++i) {
-	std::cout << "--" << ss.transform(i,3) << std::endl;
+        std::cout << "--" << ss.transform(i,3) << std::endl;
     }
 }
 
@@ -164,11 +189,10 @@ void tryAggregate() {
     ChunkMeta c = newTestCmeta();
     SqlSubstitution ss(stmt, c, cfg, metaCacheSessionId);
     for(int i = 4; i < 6; ++i) {
-	std::cout << "--" << ss.transform(i,3) << std::endl;
+        std::cout << "--" << ss.transform(i,3) << std::endl;
     }
     SqlSubstitution ss2(stmt2, c, cfg, metaCacheSessionId);
     std::cout << "--" << ss2.transform(24,3) << std::endl;
-    
 }
 
 #if 1
