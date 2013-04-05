@@ -231,11 +231,9 @@ lsst::qserv::master::Constraint getC(int base) {
 
 lsst::qserv::master::ConstraintVec
 lsst::qserv::master::getConstraints(int session) {
-    boost::shared_ptr<ConstraintVector> v(new ConstraintVector());
-    v->push_back(getC(1)); // FIXME
-    v->push_back(getC(2)); 
-    v->push_back(getC(3)); 
-    return ConstraintVec(v);
+    AsyncQueryManager& qm = getAsyncManager(session);
+    QuerySession& qs = qm.getQuerySession();
+    return ConstraintVec(qs.getConstraints());
 }
 
 

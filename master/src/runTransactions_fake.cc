@@ -6,8 +6,9 @@ QuerySession::QuerySession() {}
 
 void QuerySession::setQuery(std::string const& q) {}
 bool QuerySession::getHasAggregate() const { return false; }
-lsst::qserv::master::ConstraintVector QuerySession::getConstraints() const {
-    return ConstraintVector(); }
+boost::shared_ptr<lsst::qserv::master::ConstraintVector> 
+QuerySession::getConstraints() const { 
+    return boost::shared_ptr<ConstraintVector>(); }
 void QuerySession::addChunk(ChunkSpec const& cs) {}
 void lsst::qserv::master::initQuerySession() {}
 

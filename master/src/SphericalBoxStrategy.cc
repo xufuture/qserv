@@ -25,6 +25,7 @@
 
 #include "lsst/qserv/master/FromList.h"
 #include "lsst/qserv/master/QueryMapping.h"
+#include "lsst/qserv/master/QueryContext.h"
 #include "lsst/qserv/master/TableRefChecker.h"
 
 #define CHUNKTAG "%CC%"
@@ -52,13 +53,23 @@ std::ostream& operator<<(std::ostream& os, Tuple const& t) {
 } // anonymous namespace
 
 namespace lsst { namespace qserv { namespace master {
+inline void addChunkMap(QueryMapping& m) {
+    m.addEntry(CHUNKTAG, QueryMapping::CHUNK);
+}
+
+inline void addSubChunkMap(QueryMapping& m) {
+    m.addEntry(SUBCHUNKTAG, QueryMapping::SUBCHUNK);
+}
+
 class SphericalBoxStrategy::Impl {
 public:
     friend class SphericalBoxStrategy;
     Tuples tuples;
+    int chunkLevel;
 };
 
-void patchTuples(Tuples& tuples) {
+// @return count of chunked tables.
+int patchTuples(Tuples& tuples) {
     
     // Are multiple subchunked tables involved? Then do
     // overlap... which requires creating a query sequence.
@@ -81,8 +92,7 @@ void patchTuples(Tuples& tuples) {
             i->table = SphericalBoxStrategy::makeChunkTableTemplate(i->table);
             break;
         case 2:
-            if(chunkedCount > 1) {
-                
+            if(chunkedCount > 1) {                
                 i->db = SphericalBoxStrategy::makeSubChunkDbTemplate(i->db);
                 i->table = SphericalBoxStrategy::makeSubChunkTableTemplate(i->table);
             } else {
@@ -93,7 +103,7 @@ void patchTuples(Tuples& tuples) {
             break;
         }
     }
-    
+    return chunkedCount; 
 }
 class lookupTuple {
 public:
@@ -178,8 +188,24 @@ SphericalBoxStrategy::SphericalBoxStrategy(FromList const& f,
     // FIXME
 }
 boost::shared_ptr<QueryMapping> SphericalBoxStrategy::getMapping() {
-    return boost::shared_ptr<QueryMapping>(); // FIXME
+    assert(_impl.get());
+    boost::shared_ptr<QueryMapping> qm(new QueryMapping());
+    switch(_impl->chunkLevel) {
+    case 0:
+        break;
+    case 1:
+        addChunkMap(*qm);
+        break;
+    case 2:
+        addChunkMap(*qm);
+        addSubChunkMap(*qm);
+        break;
+    default:
+        break;
+    }
+    return qm;
 }
+
 void SphericalBoxStrategy::patchFromList(FromList& f) {
     TableRefnList& tList = f.getTableRefnList();
     patchTable pt(_impl->tuples);
@@ -264,8 +290,17 @@ void SphericalBoxStrategy::_import(FromList& f) {
     std::cout << std::endl;
 #endif
     // Patch tuples in preparation for patching the FromList
-    patchTuples(_impl->tuples);
-    
+    int cTableCount = patchTuples(_impl->tuples);
+    if(cTableCount > 1) { _impl->chunkLevel = 2; }
+    else if(cTableCount == 1) { _impl->chunkLevel = 1; }
+    else { _impl->chunkLevel = 0; }
+
+    // Patch context with mapping.
+    if(_context.queryMapping.get()) {
+        _context.queryMapping->update(*getMapping());
+    } else {
+        _context.queryMapping = getMapping();
+    }
 }
 
 }}} // lsst::qserv::master

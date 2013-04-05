@@ -26,13 +26,17 @@
 
 #ifndef LSST_QSERV_MASTER_QUERYCONTEXT_H
 #define LSST_QSERV_MASTER_QUERYCONTEXT_H
+#include <string>
+#include <boost/shared_ptr.hpp>
 
 namespace lsst { namespace qserv { namespace master {
+class QueryMapping;
 
 class QueryContext {
 public:
     std::string defaultDb;
-    std::string username; // unused.
+    std::string username; // unused, but reserved.
+    boost::shared_ptr<QueryMapping> queryMapping;
 };
 
 }}} // namespace lsst::qserv::master

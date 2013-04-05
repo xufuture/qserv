@@ -70,7 +70,7 @@ public:
     void append(boost::shared_ptr<Entry> e);
 
     std::string dbgStr() const;
-    std::string generate(EntryMapping const& em);
+    std::string generate(EntryMapping const& em) const;
     void clear();
 private:
     void _optimize() const; // not really const.

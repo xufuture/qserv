@@ -30,13 +30,13 @@
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/WhereClause.h"
 #include "lsst/qserv/master/QueryContext.h"
+#include "lsst/qserv/master/QueryMapping.h"
 #include "lsst/qserv/master/QueryPlugin.h"
 #include "lsst/qserv/master/AggregatePlugin.h"
 #include "lsst/qserv/master/SpatialSpecPlugin.h"
 #include "lsst/qserv/master/TablePlugin.h"
 
 namespace qMaster=lsst::qserv::master;
-using lsst::qserv::master::QuerySession;
 
 namespace { // File-scope helpers
 struct printConstraintHelper {
@@ -67,6 +67,8 @@ void build(qMaster::SelectParser::Ptr p) {
 }
 
 } // anonymous namespace
+
+namespace lsst { namespace qserv  { namespace master {
 
 QuerySession::QuerySession() {} // do nothing.
 
@@ -101,11 +103,14 @@ bool QuerySession::getHasAggregate() const {
     // FIXME
     return false;
 }
-qMaster::ConstraintVector QuerySession::getConstraints() const {
+
+boost::shared_ptr<ConstraintVector> QuerySession::getConstraints() const {
     boost::shared_ptr<WhereClause const> wc = _stmt->getWhere();
     boost::shared_ptr<QsRestrictor::List const> p = wc->getRestrs();
+    boost::shared_ptr<ConstraintVector> cv;
+
     if(p.get()) {
-        ConstraintVector cv(p->size());
+        cv.reset(new ConstraintVector(p->size()));
         int i=0;
         QsRestrictor::List::const_iterator li;
         for(li = p->begin(); li != p->end(); ++li) {
@@ -116,14 +121,14 @@ qMaster::ConstraintVector QuerySession::getConstraints() const {
             for(si = r._params.begin(); si != r._params.end(); ++si) {
                 c.params.push_back(*si);
             }
-            cv[i] = c;
+            (*cv)[i] = c;
             ++i;
         }
         //printConstraints(cv);
         return cv;
     }
-    // Empty vector: no constraints.
-    return ConstraintVector();
+    // No constraint vector
+    return cv;
 }
 
 void QuerySession::addChunk(qMaster::ChunkSpec const& cs) {
@@ -206,28 +211,27 @@ void QuerySession::_showFinal() {
     std::cout << "merge: " << mer.dbgStr() << std::endl;
 }
 
-std::string QuerySession::_buildChunkQuery(int chunkId) { 
+std::string QuerySession::_buildChunkQuery(ChunkSpec const& s) { 
     // TODO: subchunk support
     // This logic may be pushed over to the qserv worker in the future.
     assert(_stmtParallel.get());
     QueryTemplate cqTemp = _stmtParallel->getTemplate();
-    return cqTemp.dbgStr(); // This is the debug string
-    
+    assert(_context->queryMapping.get());
+    return _context->queryMapping->apply(s, cqTemp);
 }
 
 ////////////////////////////////////////////////////////////////////////
 // QuerySession::Iter
 ////////////////////////////////////////////////////////////////////////
-qMaster::ChunkQuerySpec& QuerySession::Iter::dereference() const {
+ChunkQuerySpec& QuerySession::Iter::dereference() const {
     if(_dirty) { _updateCache(); }
     return _cache;
 }
 
 void QuerySession::Iter::_buildCache() const {
     assert(_qs != NULL);
-    _cache.db = "FIXME"; // _qs->_db;
-    _cache.query = "QUERYFIXME"; // _qs._templateQuery();
-    _cache.query = _qs->_buildChunkQuery(_pos->chunkId);
+    _cache.db = _qs->_context->defaultDb;
+    _cache.query = _qs->_buildChunkQuery(*_pos);
     _cache.chunkId = _pos->chunkId;
     _cache.subChunks.assign(_pos->subChunks.begin(), _pos->subChunks.end());
 }
@@ -236,9 +240,11 @@ void QuerySession::Iter::_buildCache() const {
 ////////////////////////////////////////////////////////////////////////
 // initQuerySession
 ////////////////////////////////////////////////////////////////////////
-void lsst::qserv::master::initQuerySession() {
+void initQuerySession() {
     // Plugins should probably be registered once, at startup.
     registerAggregatePlugin(); 
     registerTablePlugin();
     registerSpatialSpecPlugin();
 }
+
+}}} // namespace lsst::qserv::master

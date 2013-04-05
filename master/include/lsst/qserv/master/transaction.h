@@ -68,6 +68,7 @@ public:
         return (*_vec)[i];
     }
     int size() const {
+        if(!_vec.get()) return 0; // NULL vector -> 0 size
         return _vec->size();
     }
 private:

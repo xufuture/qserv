@@ -181,7 +181,7 @@ void qMaster::QueryTemplate::append(qMaster::TableRefN const& tr) {
 void qMaster::QueryTemplate::append(boost::shared_ptr<QueryTemplate::Entry> e) {
     _entries.push_back(e);
 }
-std::string qMaster::QueryTemplate::generate(EntryMapping const& em) {
+std::string qMaster::QueryTemplate::generate(EntryMapping const& em) const {
     QueryTemplate newQt;
     std::for_each(_entries.begin(), _entries.end(), MappingWrapper(em, newQt));
     return outputString(newQt._entries);

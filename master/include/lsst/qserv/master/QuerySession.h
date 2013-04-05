@@ -49,7 +49,8 @@ public:
 
     void setQuery(std::string const& q);
     bool getHasAggregate() const;
-    ConstraintVector getConstraints() const;
+
+    boost::shared_ptr<ConstraintVector> getConstraints() const;
     void addChunk(ChunkSpec const& cs);
     
     SelectStmt const& getStmt() const { return *_stmt; }
@@ -76,7 +77,7 @@ private:
     void _showFinal(); // Debug
 
     // Iterator help
-    std::string _buildChunkQuery(int chunkId);
+    std::string _buildChunkQuery(ChunkSpec const& s);
 
     // Fields
     boost::shared_ptr<QueryContext> _context;
