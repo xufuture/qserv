@@ -217,6 +217,7 @@ dispatchSrcs = map(lambda x: os.path.join('src', x),
                     "AsyncQueryManager.cc",
                     "ChunkQuery.cc",
                     "WorkQueue.cc",
+                    "TaskMsgFactory2.cc",
                     "Timer.cc"])
 
 srcPaths = dispatchSrcs + [os.path.join(pyPath, 'masterLib.i')] + parserSrcs
@@ -283,7 +284,7 @@ def installTo(env, targetDir, pyLib):
 if canBuild:
     pylib = env.SharedLibrary(pyLibName, srcPaths)
     Depends(pylib, env["antlrdeps"])
-    env.Program(runTrans['bin'], runTrans["srcPaths"])
+    #env.Program(runTrans['bin'], runTrans["srcPaths"]) # Deprecated.
     parseEnv.Program(testParser['bin'], testParser["srcPaths"])
     installTo(env, "dist", pylib)
 
