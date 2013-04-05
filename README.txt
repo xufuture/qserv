@@ -80,6 +80,15 @@ Launch unit tests :
 
 Code coverage of unit tests still need to be improved.
 
+
+Launch benchmarking :
+---------------------
+
+  $ qserv-benchmark.py -i 03 -l 
+
+Load and execute queries from the 03 test case and compare MySQL and Qserv
+results.
+
 Cleaning and uninstalling Qserv :
 ---------------------------------
 
