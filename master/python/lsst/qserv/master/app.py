@@ -800,9 +800,12 @@ class HintedQueryAction:
             self.queryStr += ";" 
 
         # initialize metadata cache
-        mcI = MetadataCacheInterface()
-        self._metaCacheSession = mcI.newSession()
-        print "the metacachesession id i'll use: ", self._metaCacheSession
+        try:
+            self._metaCacheSession = MetadataCacheInterface().newSession()
+        except QmsException as qe:
+            print qe.getErrMsg()
+            self._isValid = False
+            return
 
         # queryHash identifies the top-level query.
         self.queryHash = self._computeHash(self.queryStr)[:18]
