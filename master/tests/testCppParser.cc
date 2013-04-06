@@ -129,6 +129,26 @@ struct ParserFixture {
                                        1, 2,      // positions of ra, decl
                                        1,         // 1-level chunking
                                        0x0011);   // 1-level persisted
+
+
+        mc->addDbInfoPartitionedSphBox("rplante_PT1_2_u_pt12prod_im3000_qserv",
+                                       60,        // number of stripes
+                                       18,        // number of substripes
+                                       0.01,      // default overlap fuzziness
+                                       0.025);    // default overlap near neighbor
+        mc->addTbInfoPartitionedSphBox("rplante_PT1_2_u_pt12prod_im3000_qserv", "Object",
+                                       0.025,     // actual overlap
+                                       "ra", "decl",
+                                       1, 2,      // positions of ra, decl
+                                       2,         // 2-level chunking
+                                       0x0011);   // 1-level persisted
+        mc->addTbInfoPartitionedSphBox("rplante_PT1_2_u_pt12prod_im3000_qserv", "Source",
+                                       0,         // actual overlap
+                                       "raObjectTest", "declObjectTest",
+                                       1, 2,      // positions of ra, decl
+                                       1,         // 1-level chunking
+                                       0x0011);   // 1-level persisted
+
     };
     ~ParserFixture(void) { };
 
