@@ -65,7 +65,7 @@ public:
     static Ptr newInstance(std::string const& statement, 
                            std::string const& delimiter,
                            StringMap const& config,
-                           int metaCacheSessionId);
+                           int metaCacheId);
     void setup(std::list<std::string> const& names);
     std::string const& getStatement() const { return _statement; }
     std::string getParseResult();
@@ -103,7 +103,7 @@ private:
     SqlParseRunner(std::string const& statement, 
                    std::string const& delimiter,
                    StringMap const& config,
-                   int metaCacheSessionId);
+                   int metaCacheId);
     void _readConfig(StringMap const& m);
 
     // Helpers for operation
@@ -140,7 +140,7 @@ private:
     Templater _templater;
     AliasMgr _aliasMgr;
     AggregateMgr _aggMgr;
-    int _metaCacheSessionId;
+    int _metaCacheId;
     boost::shared_ptr<Templater::TableListHandler>  _tableListHandler;
     boost::shared_ptr<TableNamer> _tableNamer;
     boost::shared_ptr<SpatialUdfHandler> _spatialUdfHandler;

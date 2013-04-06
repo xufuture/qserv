@@ -230,10 +230,10 @@ Templater::Templater(std::string const& delimiter,
 
 void Templater::setup(Templater::IntMap const& dbWhiteList,
                       std::string const& defaultDb,
-                      int metaCacheSessionId) {
+                      int metaCacheId) {
     _dbWhiteList = dbWhiteList;
     _defaultDb = defaultDb;
-    _metaCacheSessionId = metaCacheSessionId;
+    _metaCacheId = metaCacheId;
 }
 
 void Templater::processNames() {
@@ -302,7 +302,7 @@ void Templater::_processName(Templater::RefAstPair& dbn) {
             _markBadDb(dbName);
         }
     }
-    if(getMetadataCache(_metaCacheSessionId)->checkIfTableIsChunked(dbName, tableName)) {
+    if(getMetadataCache(_metaCacheId)->checkIfTableIsChunked(dbName, tableName)) {
         std::string mungedName = mungeName(tableName);
         n->setText(mungedName);
     }

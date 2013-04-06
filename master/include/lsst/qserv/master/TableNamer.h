@@ -66,7 +66,7 @@ public:
     friend std::ostream& operator<<(std::ostream& os, AliasedRef const& ar);
     typedef std::deque<AliasedRef> RefDeque;
 
-    explicit TableNamer(int metaCacheSessionId);
+    explicit TableNamer(int metaCacheId);
     
     void setDefaultDb(std::string const& db) {
         _defaultDb = db; }
@@ -101,7 +101,7 @@ private:
                                   bool isAlias); 
     void _computeChunking() const;
 
-    int _metaCacheSessionId;
+    int _metaCacheId;
     RefDeque _refs;
     
     std::string _defaultDb;

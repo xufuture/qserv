@@ -204,7 +204,7 @@ public:
     ~Templater() { }
     void setup(IntMap const& dbWhiteList=IntMap(),
                std::string const& defaultDb=std::string(),
-               int metaCacheSessionId=-1);
+               int metaCacheId=-1);
 
     template <typename Iter>
     void setKeynames(Iter begin, Iter end) {
@@ -269,7 +269,7 @@ private:
     antlr::ASTFactory* _factory;
     std::string _defaultDb;
     StringList _badDbs;
-    int _metaCacheSessionId;
+    int _metaCacheId;
     bool _fromStmtActive;
     bool _shouldDefer;
     

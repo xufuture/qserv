@@ -35,14 +35,14 @@ class TableNamer; // Forward
 class TableRemapper {
 public:
     TableRemapper(TableNamer const& tn, 
-                  int metaCacheSessionId, 
+                  int metaCacheId, 
                   std::string const& delim);
 
     StringMap getMap(bool overlap=false);
     StringMap getPatchMap();
 private:
     TableNamer const& _tableNamer;
-    const int _metaCacheSessionId;
+    const int _metaCacheId;
     std::string const _delim; // transitional. Shouldn't need in the future.
 
 };

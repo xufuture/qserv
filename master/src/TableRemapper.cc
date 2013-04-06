@@ -118,9 +118,9 @@ public:
 
 
 qMaster::TableRemapper::TableRemapper(TableNamer const& tn,
-                                      int metaCacheSessionId,
+                                      int metaCacheId,
                                       std::string const& delim) 
-    : _tableNamer(tn), _metaCacheSessionId(metaCacheSessionId), _delim(delim) {
+    : _tableNamer(tn), _metaCacheId(metaCacheId), _delim(delim) {
 }
 
 qMaster::StringMap qMaster::TableRemapper::TableRemapper::getMap(bool overlap) {
@@ -139,9 +139,9 @@ qMaster::StringMap qMaster::TableRemapper::TableRemapper::getMap(bool overlap) {
         // For now, map back to original naming scheme.
         std::string db = i->db;
         std::string table = i->table;
-        if(subC && getMetadataCache(_metaCacheSessionId)->checkIfTableIsSubChunked(db, table)) {
+        if(subC && getMetadataCache(_metaCacheId)->checkIfTableIsSubChunked(db, table)) {
             g->writeSubChunkName(ss, db, table);
-        } else if(getMetadataCache(_metaCacheSessionId)->checkIfTableIsChunked(db, table)) {
+        } else if(getMetadataCache(_metaCacheId)->checkIfTableIsChunked(db, table)) {
             g->writeChunkName(ss, db, table);
         } else {
             g->writePlainName(ss, db, table);

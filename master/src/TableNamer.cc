@@ -105,8 +105,8 @@ private:
 ////////////////////////////////////////////////////////////////////////
 // class TableNamer (public)
 ////////////////////////////////////////////////////////////////////////
-qMaster::TableNamer::TableNamer(int metaCacheSessionId) 
-    : _metaCacheSessionId(metaCacheSessionId) {
+qMaster::TableNamer::TableNamer(int metaCacheId) 
+    : _metaCacheId(metaCacheId) {
     resetTransient();
 }
 
@@ -160,7 +160,7 @@ qMaster::StringList qMaster::TableNamer::getBadDbs() const {
     for(RefDeque::const_iterator i=_refs.begin();
         i != _refs.end();
         ++i) {
-        if(!getMetadataCache(_metaCacheSessionId)->checkIfContainsDb(i->db)) {
+        if(!getMetadataCache(_metaCacheId)->checkIfContainsDb(i->db)) {
             result.push_back(i->db);
         }
     }
@@ -169,7 +169,7 @@ qMaster::StringList qMaster::TableNamer::getBadDbs() const {
 
 /// @return true if the ref refers to a chunked table.
 bool qMaster::TableNamer::isChunked(AliasedRef const& r) const{
-    return getMetadataCache(_metaCacheSessionId)->checkIfTableIsChunked(r.db, r.table);
+    return getMetadataCache(_metaCacheId)->checkIfTableIsChunked(r.db, r.table);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -206,11 +206,11 @@ void qMaster::TableNamer::_computeChunking() const {
     for(RefDeque::const_iterator i=_refs.begin();
         i != _refs.end();
         ++i) {
-        if(getMetadataCache(_metaCacheSessionId)->checkIfTableIsChunked(i->db, i->table)) {
+        if(getMetadataCache(_metaCacheId)->checkIfTableIsChunked(i->db, i->table)) {
             // if(canSubChunk) {
             //     _hasSubChunks = true;
             // }
-            bool subC = getMetadataCache(_metaCacheSessionId)->checkIfTableIsSubChunked(i->db, i->table);
+            bool subC = getMetadataCache(_metaCacheId)->checkIfTableIsSubChunked(i->db, i->table);
             if(canSubChunk && subC) {
                 _hasSubChunks = true;
             }
