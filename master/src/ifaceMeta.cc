@@ -59,10 +59,10 @@ getSessionManager() {
     return *sm;
 }
 
-boost::shared_ptr<qMaster::MetadataCache> 
+typedef boost::shared_ptr<qMaster::MetadataCache> MetaCachePtr;
+MetaCachePtr
 getMetadataCache(int session) {
-    boost::shared_ptr<qMaster::MetadataCache> x = 
-        getSessionManager().getSession(session);
+    MetaCachePtr x = getSessionManager().getSession(session);
     assert(x != NULL); // if you get an assert here, you passed an invalid session
     return x;
 }
