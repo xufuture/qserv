@@ -178,14 +178,26 @@ def getResultTable(tableName):
 ## Classes
 ######################################################################
 
+_defaultMetadataCacheSessionId = None
+
 class MetadataCacheInterface:
     """MetadataCacheInterface encapsulates logic to prepare, metadata 
        information by fetching it from qserv metadata server into 
        C++ memory structure. It is stateless. Throws exceptions on
        failure."""
 
+    def getDefaultSessionId(self):
+        """Returns default sessionId. It will initialize it if needed.
+           Note: initialization involves contacting qserv metadata
+           server (qms). This is the only time qserv talks to qms. 
+           This function throws QmsException if case of problems."""
+        global _defaultMetadataCacheSessionId
+        if _defaultMetadataCacheSessionId is None:
+            _defaultMetadataCacheSessionId = self.newSession()
+        return _defaultMetadataCacheSessionId
+
     def newSession(self):
-        """Creates new session: assigns sessionId, populates the C++
+        """Creates a new session: assigns sessionId, populates the C++
            cache and returns the sessionId."""
         sessionId = newMetadataSession()
         qmsClient = Client(
@@ -799,13 +811,7 @@ class HintedQueryAction:
         if self.queryStr[-1] != ";":  # Add terminal semicolon
             self.queryStr += ";" 
 
-        # initialize metadata cache
-        try:
-            self._metaCacheSession = MetadataCacheInterface().newSession()
-        except QmsException as qe:
-            print qe.getErrMsg()
-            self._isValid = False
-            return
+        self._metaCacheSession = MetadataCacheInterface().getDefaultSessionId()
 
         # queryHash identifies the top-level query.
         self.queryHash = self._computeHash(self.queryStr)[:18]
@@ -820,10 +826,6 @@ class HintedQueryAction:
             discardSession(self._sessionId)
             return
         self._prepForExec(self._useMemory, reportError, resultName)
-
-    def __destroy__(self):
-        mcI = MetadataCacheInterface()
-        mcI.discardSession(self._metaCacheSession)
 
     def _importQconfig(self, pmap, hints):
         self._dbContext = "LSST" # Later adjusted by hints.
