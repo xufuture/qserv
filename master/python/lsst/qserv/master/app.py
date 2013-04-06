@@ -180,8 +180,8 @@ def getResultTable(tableName):
 
 _defaultMetadataCacheSessionId = None
 
-class MetadataCacheInterface:
-    """MetadataCacheInterface encapsulates logic to prepare, metadata 
+class MetadataCacheIface:
+    """MetadataCacheIface encapsulates logic to prepare, metadata 
        information by fetching it from qserv metadata server into 
        C++ memory structure. It is stateless. Throws exceptions on
        failure."""
@@ -811,7 +811,7 @@ class HintedQueryAction:
         if self.queryStr[-1] != ";":  # Add terminal semicolon
             self.queryStr += ";" 
 
-        self._metaCacheSession = MetadataCacheInterface().getDefaultSessionId()
+        self._metaCacheSession = MetadataCacheIface().getDefaultSessionId()
 
         # queryHash identifies the top-level query.
         self.queryHash = self._computeHash(self.queryStr)[:18]

@@ -71,7 +71,7 @@ class AppInterface:
     def initMetadataCache(self):
         """Initializes default session for metadata cache.
            Throws QmsExeption on failure."""
-        app.MetadataCacheInterface().getDefaultSessionId()
+        app.MetadataCacheIface().getDefaultSessionId()
 
     def queryNow(self, q, hints):
         """Issue a query. q=querystring, h=hint list
