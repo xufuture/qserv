@@ -91,6 +91,7 @@ public:
     void finalizeQuery(int id,  XrdTransResult r, bool aborted); 
     std::string getMergeResultName() const;
     std::string const& getXrootdHostPort() const { return _xrootdHostPort; };
+    std::string const& getScratchPath() const { return _scratchPath; };
 
     void getReadPermission();
     void getWritePermission();
@@ -147,6 +148,7 @@ private:
     int _reliefFiles;
 
     std::string _xrootdHostPort;
+    std::string _scratchPath;
     boost::shared_ptr<TableMerger> _merger;
     boost::shared_ptr<lsst::qserv::common::WorkQueue> _readQueue;
     boost::shared_ptr<lsst::qserv::common::WorkQueue> _writeQueue;

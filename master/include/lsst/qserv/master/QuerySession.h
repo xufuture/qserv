@@ -54,6 +54,13 @@ public:
     void addChunk(ChunkSpec const& cs);
     
     SelectStmt const& getStmt() const { return *_stmt; }
+
+    // Resulttable concept will be obsolete after we implement query result
+    // marshalling/transfer (at which point, table dump and restore will also be
+    // obsolete).
+    void setResultTable(std::string const& resultTable);
+    std::string const& getResultTable() const { return _resultTable; }
+
     // Iteration
     Iter cQueryBegin();
     Iter cQueryEnd();

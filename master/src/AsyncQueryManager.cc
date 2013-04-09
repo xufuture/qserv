@@ -321,16 +321,30 @@ void qMaster::AsyncQueryManager::_destroyPool() {
     _writeQueue.reset();
 }
 
+inline std::string getConfigElement(std::map<std::string, 
+                                             std::string> const& cfg,
+                                    std::string const& key,
+                                    std::string const& errorMsg,
+                                    std::string const& defaultValue) {
+    std::map<std::string,std::string>::const_iterator i = cfg.find(key);
+    if(i != cfg.end()) { 
+        return i->second;
+    } else { 
+        std::cout << errorMsg << std::endl; 
+        return defaultValue; 
+    }
+}
+
 void qMaster::AsyncQueryManager::_readConfig(std::map<std::string,
                                                       std::string> const& cfg) {
-    StringMap::const_iterator i = cfg.find("frontend.xrootd");
-    if(i != cfg.end()) {
-        _xrootdHostPort = i->second;
-    } else {
-        std::cout << "WARNING! No xrootd spec. Using lsst-dev01:1094" 
-                  << std::endl;
-        _xrootdHostPort = "lsst-dev01:1094";
-    }
+    _xrootdHostPort = getConfigElement(
+        cfg, "frontend.xrootd", 
+        "WARNING! No xrootd spec. Using lsst-dev01:1094", 
+        "lsst-dev01:1094");
+    _scratchPath =  getConfigElement(
+        cfg, "frontend.scratch_path", 
+        "Error, no scratch path found. Using /tmp.",
+        "/tmp");
     // Setup session
     _qSession.reset(new QuerySession());
 }

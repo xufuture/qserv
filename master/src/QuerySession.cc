@@ -72,6 +72,10 @@ namespace lsst { namespace qserv  { namespace master {
 
 QuerySession::QuerySession() {} // do nothing.
 
+void QuerySession::setResultTable(std::string const& resultTable) {
+    _resultTable = resultTable;
+}
+
 void QuerySession::setQuery(std::string const& q) {
     assert(_context.get());
     SelectParser::Ptr p;
@@ -82,14 +86,7 @@ void QuerySession::setQuery(std::string const& q) {
     _applyLogicPlugins();
     _generateConcrete();
     _applyConcretePlugins();
-    _showFinal(); // DEBUG
-    
-    /// OBSOLETE
-    //PlanWriter pw;
-    //pw.write(*_stmt, _chunks);
-    // Perform parse.
-    //testParse2(p);    
-    // Set error on parse problem; Query manager will check.
+    _showFinal(); // DEBUG    
 }
 
 bool QuerySession::getHasAggregate() const {

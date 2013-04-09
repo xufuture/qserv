@@ -41,6 +41,7 @@
 #include "lsst/qserv/master/ChunkSpec.h"
 #include "lsst/qserv/master/QuerySession.h"
 #include "lsst/qserv/QservPath.hh"
+#include "lsst/qserv/master/TaskMsgFactory2.h"
 #include <sstream>
 
 namespace qMaster = lsst::qserv::master;
@@ -74,7 +75,16 @@ namespace {
     qMaster::AsyncQueryManager& getAsyncManager(int session) {
         return *(getSessionManager().getSession(session));
     }
-}
+
+   std::string makeSavePath(std::string const& dir,
+                            int sessionId,
+                            int chunkId,
+                            unsigned seq=0) {
+       std::stringstream ss;
+       ss << dir << "/" << sessionId << "_" << chunkId << "_" << seq;
+       return ss.str();
+   }
+} // anonymous namespace
 
 void qMaster::initDispatcher() {
     xrdInit();
@@ -211,18 +221,19 @@ void qMaster::resumeReadTrans(int session) {
     qm.resumeReadTrans();
 }
 
-void qMaster::setupQuery(int session, std::string const& query) {
-    
-    // FIXME
+void qMaster::setupQuery(int session, std::string const& query,
+                         std::string const& resultTable) {
     AsyncQueryManager& qm = getAsyncManager(session);
     QuerySession& qs = qm.getQuerySession();
+    qs.setResultTable(resultTable);
     qs.setQuery(query);
+
 }
 
 
 std::string const& qMaster::getSessionError3(int session) {
     static const std::string empty;
-    // FIXME
+    // TODO: Retrieve from QuerySession.
     return empty;
 }
 
@@ -271,8 +282,29 @@ qMaster::submitQuery3(int session) {
     // create query messages and send them to the async query manager.
     AsyncQueryManager& qm = getAsyncManager(session);
     QuerySession& qs = qm.getQuerySession();
-    //qs.submit(qm);    
-    // FIXME: Should construct msgs using TaskMsgFactory, and hand them to AsyncQueryMgr.
+    TaskMsgFactory2 f(session);
+
+    std::string resultTable = qs.getResultTable();
+    std::string const hp = qm.getXrootdHostPort();
+
+    std::stringstream ss;
+    QuerySession::Iter i;
+    QuerySession::Iter e = qs.cQueryEnd();
+    for(i = qs.cQueryBegin(); i != e; ++i) {
+        qMaster::ChunkQuerySpec& cs = *i;
+        f.serializeMsg(cs, ss);
+        TransactionSpec t;
+        QservPath qp;
+        qp.setAsCquery(cs.db, cs.chunkId);
+        std::string path=qp.path();
+        t.chunkId = cs.chunkId;
+        t.query = ss.str();
+        t.bufferSize = 8192000;
+        t.path = qMaster::makeUrl(hp.c_str(), qp.path());
+        t.savePath = makeSavePath(qm.getScratchPath(), session, cs.chunkId);
+        ss.str(""); // reset stream
+        submitQuery(session, t, resultTable);    
+    }
 }
 
 

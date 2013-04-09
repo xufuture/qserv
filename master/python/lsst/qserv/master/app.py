@@ -666,12 +666,14 @@ class InbandQueryAction:
         self._applyHints(self.hints)
         cfg = self._prepareCppConfig()
         self.sessionId = newSession(self._cppConfig)
-        setupQuery(self.sessionId, self.queryStr)
+        setupQuery(self.sessionId, self.queryStr, self._resultName)
         errorMsg = getSessionError3(self.sessionId)
         # TODO: Handle error more gracefully.
         assert not getSessionError3(self.sessionId)
 
         self._applyConstraints()
+        self._prepareMerger()
+        pass
 
     def _evaluateHints(self, hints, pmap):
         """Modify self.fullSky and self.partitionCoverage according to 
@@ -772,6 +774,7 @@ class InbandQueryAction:
         """Construct a C++ stringmap for passing settings and context
         to the C++ layer."""
         cfg = lsst.qserv.master.config.getStringMap()
+        cfg["frontend.scratchPath"] = setupResultScratch()
         cfg["table.defaultdb"] = self._dbContext
         cfg["query.hints"] = ";".join(
             map(lambda (k,v): k + "," + v, hintCopy.items()))
@@ -790,9 +793,6 @@ class InbandQueryAction:
             return []
         pass
     def _prepareMerger(self):
-        # Scratch mgmt (Consider putting somewhere else)
-        self._scratchPath = setupResultScratch()
-
         c = lsst.qserv.master.config.config
         dbSock = c.get("resultdb", "unix_socket")
         dbUser = c.get("resultdb", "user")
