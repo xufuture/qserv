@@ -621,6 +621,197 @@ class HintedQueryAction:
     def _computeHash(self, bytes):
         return hashlib.md5(bytes).hexdigest()
 
+class InbandQueryAction:
+    def __init_(self, query, hints, pmap, reportError, resultName==""):
+        self.queryStr = query.strip()# Pull trailing whitespace
+        # Force semicolon to facilitate worker-side splitting
+        if self.queryStr[-1] != ";":  # Add terminal semicolon
+            self.queryStr += ";" 
+
+        # queryHash identifies the top-level query.
+        self.queryHash = self._computeHash(self.queryStr)[:18]
+        self.chunkLimit = 2**32 # something big
+
+        self.hints = hints
+        self.pmap = pmap
+
+        self._importQconfig()
+        self._invokeLock = threading.Semaphore()
+        self._invokeLock.acquire() # Prevent res-retrieval before invoke
+        self._resultName = resultName
+        pass
+
+    def invoke(self):
+        self._prepareForExec()
+        self._execAndJoin()
+
+    def getError(self):
+        try:
+            return self._error
+        except:
+            return ""
+
+    def getResult(self):
+        """Wait for query to complete (as necessary) and then return 
+        a handle to the result."""
+        self._invokeLock.acquire()
+        # Make sure it's joined.
+        self._invokeLock.release()
+        return self._resultName
+
+    def getIsValid(self):
+        return self._isValid
+
+    def _prepareForExec(self):
+        self._applyHints(self.hints)
+        cfg = self._prepareCppConfig()
+        self.sessionId = newSession(self._cppConfig)
+        setupQuery(self.sessionId, self.queryStr)
+        errorMsg = getSessionError3(self.sessionId)
+        # TODO: Handle error more gracefully.
+        assert not getSessionError3(self.sessionId)
+
+        self._applyConstraints()
+
+    def _evaluateHints(self, hints, pmap):
+        """Modify self.fullSky and self.partitionCoverage according to 
+        spatial hints. This is copied from older parser model"""
+        self._isFullSky = True
+        self._intersectIter = pmap
+
+        if hints:
+            regions = self._parseRegions(hints)
+            self._dbContext = hints.get("db", "")
+            ids = hints.get("objectId", "")
+            if regions != []:
+                self._intersectIter = pmap.intersect(regions)
+                self._isFullSky = False
+            if ids:
+                chunkIds = self._getChunkIdsFromObjs(ids)
+                if regions != []:
+                    self._intersectIter = chain(self._intersectIter, chunkIds)
+                else:
+                    self._intersectIter = map(lambda i: (i,[]), chunkIds)
+                self._isFullSky = False
+                if not self._intersectIter:
+                    self._intersectIter = [(dummyEmptyChunk, [])]
+        # _isFullSky indicates that no spatial hints were found.
+        # However, if spatial tables are not found in the query, then
+        # we should use the dummy chunk so the query can be dispatched
+        # once to a node of the balancer's choosing.
+                    
+        # If hints only apply when partitioned tables are in play.
+        # FIXME: we should check if partitionined tables are being accessed,
+        # and then act to support the heaviest need (e.g., if a chunked table
+        # is being used, then issue chunked queries).
+        #print "Affected chunks: ", [x[0] for x in self._intersectIter]
+        pass
+
+    def _applyConstraints(self):
+        # Retrieve constraints as (name, [param1,param2,param3,...])
+        self.constraints = getConstraints(self.sessionId)
+        # Apply constraints
+        def iterateConstraints(constraintVec):
+            for i in range(constraintVec.size()):
+                yield constraintVec.get(i)
+        for constraint in iterateConstraints(self.constraints):            
+            pass # TODO: Prepare hints for region factory
+        # TODO: hand off to spatial module and indexing
+        self._evaluateHints(self.hints, self.pmap)
+        
+        count = 0
+        chunkLimit = self.chunkLimit
+        for chunkId, subIter in self._intersectIter:
+            if chunkId in self._emptyChunks:
+                continue
+            #prepare chunkspec
+            c = ChunkSpec()
+            c.chunkId = chunkId
+            map(c.addSubChunk, subIter)
+            addChunk(self.sessionId, c)
+            count += 1
+            if count >= chunkLimit: break
+        if count == 0:
+            addChunk(dummyEmpty)
+        pass
+
+    def _execAndJoin(self):
+        submitQuery3(self.sessionId)
+        joinSession(self.sessionId)
+
+        if not self._isValid:
+            discardSession(self._sessionId)
+            return
+
+    def _importQconfig(self):
+        """Import config file settings into self"""
+        # Config preparation
+        cModule = lsst.qserv.master.config
+        # Empty chunks. TODO: use parsed dominant db to select emptychunks
+        cf = cModule.config.get("partitioner", "emptyChunkListFile")
+        self._emptyChunks = self._loadEmptyChunks(cf)
+
+        # chunk limit: For debugging
+        cfgLimit = int(cModule.config.get("debug", "chunkLimit"))
+        if cfgLimit > 0:
+            self.chunkLimit = cfgLimit
+            print "Using debugging chunklimit:",cfgLimit
+
+        # Memory engine(unimplemented): Buffer results/temporaries in
+        # memory on the master. (no control over worker) 
+        self._useMemory = cModule.config.get("tuning", "memoryEngine")
+        return True
+    
+    def _applyHints(self, hints):
+        """Apply user/proxy supplied context"""
+        # Use hints for query context (i.e. default db, etc)
+        self._dbContext = hints.get("db", "")
+        pass
+
+    def _prepareCppConfig(self):
+        """Construct a C++ stringmap for passing settings and context
+        to the C++ layer."""
+        cfg = lsst.qserv.master.config.getStringMap()
+        cfg["table.defaultdb"] = self._dbContext
+        cfg["query.hints"] = ";".join(
+            map(lambda (k,v): k + "," + v, hintCopy.items()))
+        return cfg
+
+    def _parseRegions(self, hints):
+        r = getRegionFactory()
+        regs = r.getRegionFromHint(hints)
+        if regs != None:
+            return regs
+        else:
+            if r.errorDesc:
+                # How can we give a good error msg to the client?
+                s = "Error parsing hint string %s"
+                raise QueryHintError(s % r.errorDesc)
+            return []
+        pass
+    def _prepareMerger(self):
+        # Scratch mgmt (Consider putting somewhere else)
+        self._scratchPath = setupResultScratch()
+
+        c = lsst.qserv.master.config.config
+        dbSock = c.get("resultdb", "unix_socket")
+        dbUser = c.get("resultdb", "user")
+        dbName = c.get("resultdb", "db")        
+        dropMem = c.get("resultdb","dropMem")
+
+        mysqlBin = c.get("mysql", "mysqlclient")
+        if not mysqlBin:
+            mysqlBin = "mysql"
+
+        mergeConfig = TableMergerConfig(dbName, resultName, 
+                                        fixup,
+                                        dbUser, dbSock, 
+                                        mysqlBin, dropMem)
+        configureSessionMerger(self._sessionId, mergeConfig)
+        pass
+        
+    pass # class InbandQueryAction
+
 class CheckAction:
     def __init__(self, tracker, handle):
         self.tracker = tracker
