@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
@@ -56,6 +57,8 @@ lsst::qserv::master::ConstraintVec getConstraints(int session);
 
 void addChunk(int session, lsst::qserv::master::ChunkSpec const& cs );
 void submitQuery3(int session);
+// TODO: need pokes into running state for debugging.
+QueryState joinSession3(int session);
 
 QueryState joinQuery(int session, int id);
 QueryState tryJoinQuery(int session, int id);

@@ -21,7 +21,16 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// See dispatcher.h 
+// See also: dispatcher.h 
+// Basic usage: 
+//
+// initDispatcher() // Set things up.
+// newSession() // Init a new session
+// setupQuery(int session, std::string const& query) // setup the session with a query. This triggers a parse.
+// getSessionError3(int session) // See if there are errors
+// getConstraints(int session)  // Retrieve the detected constraints so that we can apply them to see which chunks we need. (done in Python)
+// addChunk(int session, lsst::qserv::master::ChunkSpec const& cs ) // add the computed chunks to the query
+// submitQuery3(int session)  // Trigger the dispatch of all chunk queries for the session.
 
 #include "lsst/qserv/master/xrdfile.h"
 #include "lsst/qserv/master/dispatcher.h"
@@ -258,7 +267,12 @@ qMaster::addChunk(int session, lsst::qserv::master::ChunkSpec const& cs ) {
 /// Submit the query.
 void 
 qMaster::submitQuery3(int session) {
-
+    // Using the QuerySession, generate query specs (text, db, chunkId) and then
+    // create query messages and send them to the async query manager.
+    AsyncQueryManager& qm = getAsyncManager(session);
+    QuerySession& qs = qm.getQuerySession();
+    //qs.submit(qm);    
+    // FIXME: Should construct msgs using TaskMsgFactory, and hand them to AsyncQueryMgr.
 }
 
 
