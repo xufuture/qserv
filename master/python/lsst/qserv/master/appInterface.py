@@ -108,7 +108,9 @@ class AppInterface:
         if not lock.lock():
             return ("error", "error",
                     "error locking result, check qserv/db config.")
-        a = app.HintedQueryAction(query, conditions, self.pmap, 
+        # a = app.HintedQueryAction(query, conditions, self.pmap, 
+        #                           lambda e: lock.addError(e), resultName)
+        a = app.InbandQueryAction(query, conditions, self.pmap, 
                                   lambda e: lock.addError(e), resultName)
         if a.getIsValid():
             self._callWithThread(a.invoke)

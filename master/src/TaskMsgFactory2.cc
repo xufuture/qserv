@@ -46,15 +46,18 @@ public:
     Impl(int session, std::string const& resultTable) 
         : _session(session), _resultTable(resultTable) {
     }
-    boost::shared_ptr<TaskMsg> makeMsg(ChunkQuerySpec const& s);
+    boost::shared_ptr<TaskMsg> makeMsg(ChunkQuerySpec const& s,
+                                       std::string const& chunkResultName);
 private:
     template <class C>
-    void addFragment(TaskMsg& m, C const& subChunks, std::string const& query) {
+    void addFragment(TaskMsg& m, std::string const& resultName,
+                     C const& subChunks, std::string const& query) {
         TaskMsg::Fragment* frag = m.add_fragment();
-        frag->set_resulttable(_resultTable);
+        frag->set_resulttable(resultName);
         frag->set_query(query);
         // For each int in subChunks, apply: frag->add_subchunk(1000000); 
-        std::for_each(subChunks.begin(), subChunks.end(), frag->add_subchunk);
+        std::for_each(subChunks.begin(), subChunks.end(), 
+                      std::bind1st(std::mem_fun(&TaskMsg_Fragment::add_subchunk), frag));
     }
     
     int _session;
@@ -63,7 +66,11 @@ private:
 };
 
 boost::shared_ptr<TaskMsg> 
-TaskMsgFactory2::Impl::makeMsg(ChunkQuerySpec const& s) {
+TaskMsgFactory2::Impl::makeMsg(ChunkQuerySpec const& s, 
+                               std::string const& chunkResultName) {
+    
+    std::string resultTable = _resultTable;
+    if(!chunkResultName.empty()) { resultTable = chunkResultName; }
     _taskMsg.reset(new TaskMsg);
     // shared
     _taskMsg->set_session(_session);
@@ -71,10 +78,7 @@ TaskMsgFactory2::Impl::makeMsg(ChunkQuerySpec const& s) {
     // per-chunk
     _taskMsg->set_chunkid(s.chunkId);
     // per-fragment
-    TaskMsg::Fragment* frag = _taskMsg->add_fragment();
-    frag->add_subchunk(1000000); // FIXME: iterate over subchunks
-    frag->set_resulttable(_resultTable);
-    frag->set_query(s.query);
+    addFragment(*_taskMsg, resultTable, s.subChunks, s.query);
     return _taskMsg;
 }
 
@@ -86,8 +90,10 @@ TaskMsgFactory2::TaskMsgFactory2(int session)
     : _impl(new Impl(session, "Asdfasfd" )) {
 
 }
-void TaskMsgFactory2::serializeMsg(ChunkQuerySpec const& s, std::ostream& os) {
-    boost::shared_ptr<TaskMsg> m = _impl->makeMsg(s);
+void TaskMsgFactory2::serializeMsg(ChunkQuerySpec const& s,
+                                   std::string const& chunkResultName,
+                                   std::ostream& os) {
+    boost::shared_ptr<TaskMsg> m = _impl->makeMsg(s, chunkResultName);    
     m->SerializeToOstream(&os);
 }
       

@@ -45,12 +45,13 @@ namespace master {
 
 // Forward
 class ChunkQuery;
-class TableMerger;
-class TableMergerConfig;
-class XrdTransResult;
-class TransactionSpec;
+class MergeFixup;
 class PacketIter;
 class QuerySession;
+class TableMerger;
+class TableMergerConfig;
+class TransactionSpec;
+class XrdTransResult;
 
 //////////////////////////////////////////////////////////////////////
 // class AsyncQueryManager 
@@ -81,6 +82,8 @@ public:
     { _destroyPool(); }
 
     void configureMerger(TableMergerConfig const& c);
+    void configureMerger(MergeFixup const& m, 
+                         std::string const& resultTable);
 
     int add(TransactionSpec const& t, std::string const& resultName);
     void join(int id);
@@ -146,6 +149,11 @@ private:
     ssize_t _totalSize;
     bool _canRead;
     int _reliefFiles;
+    
+    // For merger configuration
+    std::string _resultDbSocket;
+    std::string _resultDbUser;
+    std::string _resultDbDb;
 
     std::string _xrootdHostPort;
     std::string _scratchPath;

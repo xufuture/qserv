@@ -65,6 +65,8 @@ public:
     boost::shared_ptr<SelectStmt> copyDeep() const;
     boost::shared_ptr<SelectStmt> copyMerge() const;    
     boost::shared_ptr<SelectStmt> copySyntax() const;
+    
+    void fillEmpty(); // Add placeholders for NULL parts
 
     SelectList const& getSelectList() const { return *_selectList; }
     SelectList& getSelectList() { return *_selectList; }

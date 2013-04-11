@@ -80,6 +80,10 @@ from lsst.qserv.master import TransactionSpec
 # Dispatcher 
 from lsst.qserv.master import newSession, discardSession
 from lsst.qserv.master import setupQuery, getSessionError
+from lsst.qserv.master import getConstraints, addChunk, ChunkSpec
+from lsst.qserv.master import configureSessionMerger3, submitQuery3
+
+
 from lsst.qserv.master import submitQuery, submitQueryMsg
 from lsst.qserv.master import initDispatcher
 from lsst.qserv.master import tryJoinQuery, joinSession
@@ -153,6 +157,22 @@ def getResultTable(tableName):
     if p.wait() != 0:
         return "Error getting table %s." % tableName, outdata
     return outdata
+
+def loadEmptyChunks(filename):
+    def tolerantInt(i):
+        try:
+            return int(i)
+        except:
+            return None
+    empty = set()
+    try:
+        if filename:
+            s = open(filename).read()
+            empty = set(map(tolerantInt, s.split("\n")))
+    except:
+        print filename, "not found while loading empty chunks file."
+        return None
+    return empty
     
     
 ######################################################################
@@ -184,6 +204,12 @@ class SleepingThread(threading.Thread):
         time.sleep(self.howlong)
 
 ########################################################################
+class QueryHintError(Exception):
+    """An error in handling query hints"""
+    def __init__(self, reason):
+        self.reason = reason
+    def __str__(self):
+        return repr(self.reason)
 
 def setupResultScratch():
     # Make sure scratch directory exists.
@@ -294,6 +320,7 @@ class HintedQueryAction:
         # queryHash identifies the top-level query.
         self.queryHash = self._computeHash(self.queryStr)[:18]
         self.chunkLimit = 2**32 # something big
+        self._isValid = False
         if not self._importQconfig(pmap, hints):
             return
 
@@ -319,12 +346,15 @@ class HintedQueryAction:
 
         # Config preparation
         qConfig = self._prepareCppConfig(self._dbContext, hints)
-        self._sessionId = newSession(qConfig)
-        setupQuery(self._sessionId, query, cfg) # new parser
         assert not getSessionError(self._sessionId)
         cModule = lsst.qserv.master.config
         cf = cModule.config.get("partitioner", "emptyChunkListFile")
-        self._emptyChunks = self._loadEmptyChunks(cf)
+        self._emptyChunks = loadEmptyChunks(cf)
+        if self._emptyChunks == None:
+            print "WARNING: error with partitioner.emptyChunkListFile"
+            print "Continuing with no empty chunks."
+            self._emptyChunks = set()
+
         cfgLimit = int(cModule.config.get("debug", "chunkLimit"))
         if cfgLimit > 0:
             self.chunkLimit = cfgLimit
@@ -406,20 +436,6 @@ class HintedQueryAction:
             return []
         pass
 
-    def _loadEmptyChunks(self, filename):
-        def tolerantInt(i):
-            try:
-                return int(i)
-            except:
-                return None
-        empty = set()
-        try:
-            if filename:
-                s = open(filename).read()
-                empty = set(map(tolerantInt, s.split("\n")))
-        except:
-            print "ERROR: partitioner.emptyChunkListFile specified bad or missing chunk file"
-        return empty
 
     def _postFixChunkScope(self, chunkLevel):
         if chunkLevel == 0:
@@ -622,7 +638,12 @@ class HintedQueryAction:
         return hashlib.md5(bytes).hexdigest()
 
 class InbandQueryAction:
-    def __init_(self, query, hints, pmap, reportError, resultName==""):
+    """InbandQueryAction is an action which represents a user-query
+    that is executed using qserv in many pieces. It borrows a little
+    from HintedQueryAction, but uses different abstractions
+    underneath.
+    """
+    def __init__(self, query, hints, pmap, reportError, resultName=""):
         self.queryStr = query.strip()# Pull trailing whitespace
         # Force semicolon to facilitate worker-side splitting
         if self.queryStr[-1] != ";":  # Add terminal semicolon
@@ -631,6 +652,7 @@ class InbandQueryAction:
         # queryHash identifies the top-level query.
         self.queryHash = self._computeHash(self.queryStr)[:18]
         self.chunkLimit = 2**32 # something big
+        self.isValid = False
 
         self.hints = hints
         self.pmap = pmap
@@ -639,17 +661,20 @@ class InbandQueryAction:
         self._invokeLock = threading.Semaphore()
         self._invokeLock.acquire() # Prevent res-retrieval before invoke
         self._resultName = resultName
+        self._reportError = reportError
+        self.isValid = True
         pass
 
     def invoke(self):
         self._prepareForExec()
         self._execAndJoin()
+        self._invokeLock.release()
 
     def getError(self):
         try:
             return self._error
         except:
-            return ""
+            return "Unknown error InbandQueryAction"
 
     def getResult(self):
         """Wait for query to complete (as necessary) and then return 
@@ -660,16 +685,19 @@ class InbandQueryAction:
         return self._resultName
 
     def getIsValid(self):
-        return self._isValid
+        return self.isValid
+
+    def _computeHash(self, bytes):
+        return hashlib.md5(bytes).hexdigest()
 
     def _prepareForExec(self):
         self._applyHints(self.hints)
         cfg = self._prepareCppConfig()
-        self.sessionId = newSession(self._cppConfig)
+        self.sessionId = newSession(cfg)
         setupQuery(self.sessionId, self.queryStr, self._resultName)
-        errorMsg = getSessionError3(self.sessionId)
+        errorMsg = getSessionError(self.sessionId)
         # TODO: Handle error more gracefully.
-        assert not getSessionError3(self.sessionId)
+        assert not getSessionError(self.sessionId)
 
         self._applyConstraints()
         self._prepareMerger()
@@ -716,7 +744,7 @@ class InbandQueryAction:
         def iterateConstraints(constraintVec):
             for i in range(constraintVec.size()):
                 yield constraintVec.get(i)
-        for constraint in iterateConstraints(self.constraints):            
+        for constraint in iterateConstraints(self.constraints):
             pass # TODO: Prepare hints for region factory
         # TODO: hand off to spatial module and indexing
         self._evaluateHints(self.hints, self.pmap)
@@ -739,10 +767,12 @@ class InbandQueryAction:
 
     def _execAndJoin(self):
         submitQuery3(self.sessionId)
-        joinSession(self.sessionId)
+        s = joinSession(self.sessionId)
+        if s != QueryState_SUCCESS:
+            self._reportError(getErrorDesc(self.sessionId))
 
-        if not self._isValid:
-            discardSession(self._sessionId)
+        if not self.isValid:
+            discardSession(self.sessionId)
             return
 
     def _importQconfig(self):
@@ -751,7 +781,11 @@ class InbandQueryAction:
         cModule = lsst.qserv.master.config
         # Empty chunks. TODO: use parsed dominant db to select emptychunks
         cf = cModule.config.get("partitioner", "emptyChunkListFile")
-        self._emptyChunks = self._loadEmptyChunks(cf)
+        self._emptyChunks = loadEmptyChunks(cf)
+        if self._emptyChunks == None:
+            print "WARNING: error with partitioner.emptyChunkListFile"
+            print "Continuing with no empty chunks."
+            self._emptyChunks = set()
 
         # chunk limit: For debugging
         cfgLimit = int(cModule.config.get("debug", "chunkLimit"))
@@ -768,6 +802,7 @@ class InbandQueryAction:
         """Apply user/proxy supplied context"""
         # Use hints for query context (i.e. default db, etc)
         self._dbContext = hints.get("db", "")
+        self._hints = hints.copy()
         pass
 
     def _prepareCppConfig(self):
@@ -777,7 +812,8 @@ class InbandQueryAction:
         cfg["frontend.scratchPath"] = setupResultScratch()
         cfg["table.defaultdb"] = self._dbContext
         cfg["query.hints"] = ";".join(
-            map(lambda (k,v): k + "," + v, hintCopy.items()))
+            map(lambda (k,v): k + "," + v, self._hints.items()))
+        cfg["table.result"] = self._resultName
         return cfg
 
     def _parseRegions(self, hints):
@@ -792,6 +828,7 @@ class InbandQueryAction:
                 raise QueryHintError(s % r.errorDesc)
             return []
         pass
+
     def _prepareMerger(self):
         c = lsst.qserv.master.config.config
         dbSock = c.get("resultdb", "unix_socket")
@@ -802,12 +839,7 @@ class InbandQueryAction:
         mysqlBin = c.get("mysql", "mysqlclient")
         if not mysqlBin:
             mysqlBin = "mysql"
-
-        mergeConfig = TableMergerConfig(dbName, resultName, 
-                                        fixup,
-                                        dbUser, dbSock, 
-                                        mysqlBin, dropMem)
-        configureSessionMerger(self._sessionId, mergeConfig)
+        configureSessionMerger3(self.sessionId)
         pass
         
     pass # class InbandQueryAction

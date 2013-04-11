@@ -167,14 +167,19 @@ WhereClause::ValueExprIter::ValueExprIter(WhereClause* wc,
     // Starting point: BoolTerm
     // _bPos = tree
     // _bIter = _bPos->iterBegin()
-    std::cout << "whereclause: " << *wc << std::endl;
-    PosTuple p(bPos->iterBegin(), bPos->iterEnd()); // Initial position
-    _posStack.push(p); // Put it on the stack.
-    bool setupOk = _findFactor();
+    bool setupOk = bPos.get();
+    if(setupOk) {
+        PosTuple p(bPos->iterBegin(), bPos->iterEnd()); // Initial position
+        _posStack.push(p); // Put it on the stack.
+        setupOk = _findFactor();
+    }
     if(setupOk) {
         setupOk = _setupBfIter();
     }
-    if(!setupOk) { _posStack.pop(); _wc = NULL; } // Nothing is valid.
+    if(!setupOk) {
+        while(_posStack.size() > 0) { _posStack.pop(); }
+        _wc = NULL; 
+    } // Nothing is valid.
 }
 
 void WhereClause::ValueExprIter::increment() {
@@ -227,6 +232,7 @@ void WhereClause::ValueExprIter::_incrementBterm() {
 bool WhereClause::ValueExprIter::equal(WhereClause::ValueExprIter const& other) const {
     // Compare the posStack (only .first) and the bfIter.
     if(this->_wc != other._wc) return false;
+    if(!this->_wc) return true; // Both are NULL
     return _posStack == other._posStack;
 }
 

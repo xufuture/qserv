@@ -29,14 +29,19 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 
+#include "lsst/qserv/master/QueryMapping.h"
+
 namespace lsst { namespace qserv { namespace master {
-class QueryMapping;
 
 class QueryContext {
 public:
     std::string defaultDb;
     std::string username; // unused, but reserved.
     boost::shared_ptr<QueryMapping> queryMapping;
+    bool hasChunks() const { 
+        return queryMapping.get() && queryMapping->hasChunks(); }
+    bool hasSubChunks() const { 
+        return queryMapping.get() && queryMapping->hasSubChunks(); }
 };
 
 }}} // namespace lsst::qserv::master

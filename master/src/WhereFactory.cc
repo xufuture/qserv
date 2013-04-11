@@ -161,6 +161,10 @@ boost::shared_ptr<WhereClause> WhereFactory::getProduct() {
     return _clause;
 }
 
+boost::shared_ptr<WhereClause> WhereFactory::newEmpty() {
+    return boost::shared_ptr<WhereClause>(new WhereClause());
+}
+
 void 
 WhereFactory::attachTo(SqlSQL2Parser& p) {
     boost::shared_ptr<WhereCondH> wch(new WhereCondH(*this));

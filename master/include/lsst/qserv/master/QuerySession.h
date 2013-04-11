@@ -36,6 +36,7 @@
 #include "lsst/qserv/master/ChunkSpec.h"
 
 #include "lsst/qserv/master/QueryPlugin.h"
+#include "lsst/qserv/master/mergeTypes.h"
 
 namespace lsst { namespace qserv { namespace master {
 class SelectStmt; // forward
@@ -47,6 +48,7 @@ public:
     friend class Iter;
     friend class AsyncQueryManager; // factory for QuerySession.
 
+    std::string const& getOriginal() const { return _original; }
     void setQuery(std::string const& q);
     bool getHasAggregate() const;
 
@@ -60,6 +62,8 @@ public:
     // obsolete).
     void setResultTable(std::string const& resultTable);
     std::string const& getResultTable() const { return _resultTable; }
+    
+    MergeFixup makeMergeFixup() const;
 
     // Iteration
     Iter cQueryBegin();
@@ -87,6 +91,7 @@ private:
     std::string _buildChunkQuery(ChunkSpec const& s);
 
     // Fields
+    std::string _original;
     boost::shared_ptr<QueryContext> _context;
     boost::shared_ptr<SelectStmt> _stmt;
     boost::shared_ptr<SelectStmt> _stmtParallel;
@@ -106,8 +111,7 @@ public:
     Iter() : _qs(NULL) {}
 
 private:
-    Iter(QuerySession& qs, ChunkSpecList::iterator i) 
-        : _qs(&qs), _pos(i), _dirty(true) {}
+    Iter(QuerySession& qs, ChunkSpecList::iterator i);
     friend class QuerySession;
     friend class boost::iterator_core_access;
 
@@ -129,6 +133,8 @@ private:
 
     QuerySession* _qs;
     ChunkSpecList::const_iterator _pos;
+    bool _hasChunks;
+    bool _hasSubChunks;
     mutable ChunkQuerySpec _cache;
     mutable bool _dirty;
 };

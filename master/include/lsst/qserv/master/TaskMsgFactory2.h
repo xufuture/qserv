@@ -39,7 +39,9 @@ class TaskMsgFactory2 {
 public:
     TaskMsgFactory2(int session);
     
-    void serializeMsg(ChunkQuerySpec const& s, std::ostream& os);
+    void serializeMsg(ChunkQuerySpec const& s, 
+                      std::string const& chunkResultName,
+                      std::ostream& os);
 private:
     class Impl;
 

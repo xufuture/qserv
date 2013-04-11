@@ -58,6 +58,7 @@ public:
     WhereFactory(boost::shared_ptr<ValueExprFactory> vf);
 
     boost::shared_ptr<WhereClause> getProduct();
+    static boost::shared_ptr<WhereClause> newEmpty();
 private:
     void attachTo(SqlSQL2Parser& p);
     void _import(antlr::RefAST a);

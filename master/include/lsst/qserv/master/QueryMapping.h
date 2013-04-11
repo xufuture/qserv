@@ -46,6 +46,10 @@ public:
 
     void addEntry(std::string const& s, Parameter p) { _subs[s] = p; }
     void update(QueryMapping const& qm);
+    bool hasChunks() const { return hasParameter(CHUNK); }
+    bool hasSubChunks() const { return hasParameter(SUBCHUNK); }
+    bool hasParameter(Parameter p) const;
+
 private:
     ParameterMap _subs;
 };

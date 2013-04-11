@@ -257,7 +257,27 @@ void qMaster::AsyncQueryManager::joinEverything() {
 }
 
 void qMaster::AsyncQueryManager::configureMerger(TableMergerConfig const& c) {
+    
     _merger = boost::make_shared<TableMerger>(c);
+}
+
+void qMaster::AsyncQueryManager::configureMerger(MergeFixup const& m, 
+                                                 std::string const& resultTable) {
+    // Can we configure the merger without involving settings
+    // from the python layer? Historically, the Python layer was
+    // needed to generate the merging SQL statements, but we are now
+    // creating them without Python.
+    std::string mysqlBin="obsolete";
+    std::string dropMem;
+    TableMergerConfig cfg(_resultDbDb,  // cfg result db
+                          resultTable, // cfg resultname
+                          m, // merge fixup obj
+                          _resultDbUser, // result db credentials
+                          _resultDbSocket, // result db credentials
+                          mysqlBin,  // Obsolete
+                          dropMem // cfg
+        );
+    _merger = boost::make_shared<TableMerger>(cfg);
 }
 
 std::string qMaster::AsyncQueryManager::getMergeResultName() const {
@@ -345,6 +365,19 @@ void qMaster::AsyncQueryManager::_readConfig(std::map<std::string,
         cfg, "frontend.scratch_path", 
         "Error, no scratch path found. Using /tmp.",
         "/tmp");
+    _resultDbSocket =  getConfigElement(
+        cfg, "resultdb.unix_socket", 
+        "Error, resultdb.unix_socket not found. Using /u1/local/mysql.sock.",
+        "/u1/local/mysql.sock");
+    _resultDbUser =  getConfigElement(
+        cfg, "resultdb.user", 
+        "Error, resultdb.user not found. Using qsmaster.",
+        "qsmaster");
+    _resultDbDb =  getConfigElement(
+        cfg, "resultdb.db", 
+        "Error, resultdb.db not found. Using qservResult.",
+        "qservResult");
+    
     // Setup session
     _qSession.reset(new QuerySession());
 }

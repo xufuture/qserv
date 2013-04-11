@@ -53,13 +53,12 @@ void resumeReadTrans(int session);
 // Parser model 3:
 void setupQuery(int session, std::string const& query,
                 std::string const& resultTable); // new model.
-std::string const& getSessionError3(int session);
+std::string const& getSessionError(int session);
 lsst::qserv::master::ConstraintVec getConstraints(int session);
 
 void addChunk(int session, lsst::qserv::master::ChunkSpec const& cs );
 void submitQuery3(int session);
 // TODO: need pokes into running state for debugging.
-QueryState joinSession3(int session);
 
 QueryState joinQuery(int session, int id);
 QueryState tryJoinQuery(int session, int id);
@@ -69,6 +68,7 @@ std::string getErrorDesc(int session);
 int newSession(std::map<std::string,std::string> const& cfg);
 void configureSessionMerger(int session, 
                             lsst::qserv::master::TableMergerConfig const& c);
+void configureSessionMerger3(int session);
 std::string getSessionResultName(int session);
 void discardSession(int session);
 lsst::qserv::master::XrdTransResult getQueryResult(int session, int chunk);

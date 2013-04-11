@@ -124,6 +124,9 @@ env.Append(LIBPATH = ["../common/lib"])
 if not conf.CheckLib("qserv_common", language="C++"):
     print >> sys.stderr, "Could not find qserv_common lib"
     canBuild = False
+if not conf.CheckLib("qserv_proto", language="C++"):
+    print >> sys.stderr, "Could not find qserv_proto lib"
+    canBuild = False
 
 # boost library reqs
 if not (detect_deps.checkAddBoost(conf, "boost_thread")
@@ -134,6 +137,7 @@ if not (detect_deps.checkAddBoost(conf, "boost_thread")
 
 # ANTLR
 foundAntlr = detect_deps.checkAddAntlr(conf)
+
 if not foundAntlr: canBuild = False
 
 
@@ -283,7 +287,8 @@ def installTo(env, targetDir, pyLib):
     
 if canBuild:
     pylib = env.SharedLibrary(pyLibName, srcPaths)
-    Depends(pylib, env["antlrdeps"])
+    Depends(pylib, env["antlrdeps"]) # ANTLR
+    Depends(pylib, env["antlrdeps"]) # 
     #env.Program(runTrans['bin'], runTrans["srcPaths"]) # Deprecated.
     parseEnv.Program(testParser['bin'], testParser["srcPaths"])
     installTo(env, "dist", pylib)

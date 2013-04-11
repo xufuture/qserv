@@ -97,6 +97,7 @@ SelectFactory::getStatement() {
     stmt->_groupBy = _mFactory->getGroupBy();
     stmt->_having = _mFactory->getHaving();
     stmt->_limit = _mFactory->getLimit();
+    stmt->fillEmpty();
     return stmt;
 }
 

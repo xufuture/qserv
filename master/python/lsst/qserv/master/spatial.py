@@ -203,6 +203,7 @@ def getSpatialConfig():
     return _spatialConfig
 
 def getRegionFactory():
+    global _rFactory
     if not _rFactory:
         _rFactory = RegionFactory()
-    return _rFactory()
+    return _rFactory

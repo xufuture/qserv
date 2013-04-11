@@ -72,11 +72,9 @@ namespace lsst { namespace qserv  { namespace master {
 
 QuerySession::QuerySession() {} // do nothing.
 
-void QuerySession::setResultTable(std::string const& resultTable) {
-    _resultTable = resultTable;
-}
-
 void QuerySession::setQuery(std::string const& q) {
+    _original = q;
+    _initContext();
     assert(_context.get());
     SelectParser::Ptr p;
     p = SelectParser::newInstance(q);
@@ -131,6 +129,18 @@ boost::shared_ptr<ConstraintVector> QuerySession::getConstraints() const {
 void QuerySession::addChunk(qMaster::ChunkSpec const& cs) {
     _chunks.push_back(cs);
 }
+
+
+void QuerySession::setResultTable(std::string const& resultTable) {
+    _resultTable = resultTable;
+}
+
+MergeFixup QuerySession::makeMergeFixup() const {
+    MergeFixup mf;
+    // TODO
+    return mf;
+}
+
 QuerySession::Iter QuerySession::cQueryBegin() {
     return Iter(*this, _chunks.begin());
 }
@@ -220,6 +230,13 @@ std::string QuerySession::_buildChunkQuery(ChunkSpec const& s) {
 ////////////////////////////////////////////////////////////////////////
 // QuerySession::Iter
 ////////////////////////////////////////////////////////////////////////
+QuerySession::Iter::Iter(QuerySession& qs, ChunkSpecList::iterator i)
+    : _qs(&qs), _pos(i), _dirty(true) {
+    assert(qs._context.get());
+    _hasChunks = qs._context->hasChunks();
+    _hasSubChunks = qs._context->hasSubChunks();
+}
+
 ChunkQuerySpec& QuerySession::Iter::dereference() const {
     if(_dirty) { _updateCache(); }
     return _cache;
@@ -230,7 +247,9 @@ void QuerySession::Iter::_buildCache() const {
     _cache.db = _qs->_context->defaultDb;
     _cache.query = _qs->_buildChunkQuery(*_pos);
     _cache.chunkId = _pos->chunkId;
-    _cache.subChunks.assign(_pos->subChunks.begin(), _pos->subChunks.end());
+    if(_hasSubChunks) {
+        _cache.subChunks.assign(_pos->subChunks.begin(), _pos->subChunks.end());
+    }
 }
 
 

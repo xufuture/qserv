@@ -39,6 +39,7 @@ Access to the classes from the qserv_master library
 #include "lsst/qserv/master/Substitution.h"
 #include "lsst/qserv/master/ChunkMapping.h"
 #include "lsst/qserv/master/ChunkMeta.h"
+#include "lsst/qserv/master/ChunkSpec.h"
 #include "lsst/qserv/master/SqlSubstitution.h"
 #include "lsst/qserv/master/TableMerger.h"
 #include "lsst/qserv/master/common.h"
@@ -119,6 +120,7 @@ namespace std {
 %include "lsst/qserv/master/Substitution.h"
 %include "lsst/qserv/master/ChunkMeta.h"
 %include "lsst/qserv/master/ChunkMapping.h"
+%include "lsst/qserv/master/ChunkSpec.h"
 %include "lsst/qserv/master/SqlSubstitution.h"
 %include "lsst/qserv/master/TableMerger.h"
 

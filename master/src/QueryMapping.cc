@@ -131,4 +131,12 @@ void QueryMapping::update(QueryMapping const& m) {
     }
 }
 
+bool QueryMapping::hasParameter(Parameter p) const {
+    ParameterMap::const_iterator i;
+    for(i=_subs.begin(); i != _subs.end(); ++i) {
+        if(i->second == p) return true;
+    }
+    return false;
+}
+
 }}} // namespace lsst::qserv::master
