@@ -52,6 +52,7 @@ public:
     AggRecord::Ptr applyOp(std::string const& name, ValueExpr const& orig);
     int getNextSeq() { return ++_seq; }
     std::string getAggName(std::string const& name);
+    bool hasAggregate() const { return _seq > 0; };
 private:
     OpMap _map;
     int _seq;

@@ -297,8 +297,6 @@ TablePlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext& context) {
     // for the parallel and merge versions.
     // Set hasMerge to true if aggregation is detected.
     SelectList& oList = p.stmtOriginal.getSelectList();
-    SelectList& pList = p.stmtParallel.getSelectList();
-    SelectList& mList = p.stmtMerge.getSelectList();
     boost::shared_ptr<qMaster::ValueExprList> vlist;
     vlist = oList.getValueExprList();
     assert(vlist.get());

@@ -19,7 +19,6 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// X houses the implementation of 
 #include "lsst/qserv/master/AggOp.h"
 
 #include <sstream>

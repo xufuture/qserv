@@ -38,6 +38,8 @@ public:
     std::string defaultDb;
     std::string username; // unused, but reserved.
     boost::shared_ptr<QueryMapping> queryMapping;
+    bool needsMerge;
+
     bool hasChunks() const { 
         return queryMapping.get() && queryMapping->hasChunks(); }
     bool hasSubChunks() const { 

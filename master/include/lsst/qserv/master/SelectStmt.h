@@ -76,6 +76,10 @@ public:
 
     WhereClause const& getWhereClause() const { return *_whereClause; }
     WhereClause& getWhereClause() { return *_whereClause; }
+    
+    int getLimit() const { return _limit; }
+    OrderByClause const& getOrderBy() const { return *_orderBy; }
+    OrderByClause& getOrderBy() { return *_orderBy; }
 
  private: // public for now.
     // Declarations

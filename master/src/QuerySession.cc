@@ -28,6 +28,7 @@
 #include "lsst/qserv/master/PlanWriter.h"
 #include "lsst/qserv/master/SelectParser.h"
 #include "lsst/qserv/master/SelectStmt.h"
+#include "lsst/qserv/master/SelectList.h"
 #include "lsst/qserv/master/WhereClause.h"
 #include "lsst/qserv/master/QueryContext.h"
 #include "lsst/qserv/master/QueryMapping.h"
@@ -136,9 +137,21 @@ void QuerySession::setResultTable(std::string const& resultTable) {
 }
 
 MergeFixup QuerySession::makeMergeFixup() const {
+    // Make MergeFixup to adapt new query parser/generation framework
+    // to older merging code. 
+    assert(_stmt.get());
     MergeFixup mf;
-    // TODO
-    return mf;
+    if(_stmtMerge)
+    boost::shared_ptr<SelectStmt> _stmtMerge;
+    SelectList const& mergeSelect = _stmtMerge->getSelectList();
+    QueryTemplate t;
+    mergeSelect.renderTo(t);
+    std::string select = t.generate();
+    t.clear();
+    std::string post; // TODO: handle GroupBy, etc.
+    std::string orderBy; // TODO
+    int limit = _stmt->getLimit();
+    return MergeFixup (select, post, orderBy, limit, _context->needsMerge);
 }
 
 QuerySession::Iter QuerySession::cQueryBegin() {
@@ -153,6 +166,7 @@ void QuerySession::_initContext() {
     _context.reset(new QueryContext()); 
     _context->defaultDb = "LSST";
     _context->username = "default";
+    _context->needsMerge = false;
 }
 void QuerySession::_preparePlugins() {
     _plugins.reset(new PluginList);

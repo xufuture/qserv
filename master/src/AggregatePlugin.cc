@@ -28,6 +28,7 @@
 
 #include "lsst/qserv/master/AggregatePlugin.h"
 #include <string>
+#include "lsst/qserv/master/QueryContext.h"
 #include "lsst/qserv/master/QueryPlugin.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include "lsst/qserv/master/ValueExpr.h"
@@ -142,7 +143,8 @@ lsst::qserv::master::registerAggregatePlugin() {
 // AggregatePlugin implementation
 ////////////////////////////////////////////////////////////////////////
 void
-AggregatePlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext&) {
+AggregatePlugin::applyPhysical(QueryPlugin::Plan& p, 
+                               QueryContext&  context) {
     using lsst::qserv::master::SelectList;
     // For each entry in original's SelectList, modify the SelectList
     // for the parallel and merge versions.
@@ -164,7 +166,7 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext&) {
                                           m);
     
     std::for_each(vlist->begin(), vlist->end(), ca);
-    
+
     QueryTemplate qt;
     pList.renderTo(qt);
     std::cout << "pass: " << qt.dbgStr() << std::endl;
@@ -173,5 +175,6 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext&) {
     std::cout << "fixup: " << qt.dbgStr() << std::endl;
 
     // Also need to operate on GROUP BY.
-
+    // update context.
+    if(m.hasAggregate()) { context.needsMerge = true; }
 }
