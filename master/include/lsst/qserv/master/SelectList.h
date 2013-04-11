@@ -35,7 +35,6 @@
 
 #include "lsst/qserv/master/ColumnRef.h"
 #include "lsst/qserv/master/ColumnRefList.h"
-#include "lsst/qserv/master/TableRefN.h"
 #include "lsst/qserv/master/ValueExpr.h"
 
 namespace lsst {
@@ -83,66 +82,6 @@ private:
     boost::shared_ptr<ColumnRefList> _columnRefList;
     boost::shared_ptr<ValueExprList> _valueExprList;
     boost::shared_ptr<ColumnRefMap const> _aliasMap;
-};
-
-class OrderByTerm {
-public:
-    enum Order {DEFAULT, ASC, DESC};
-        
-    OrderByTerm() {}
-    OrderByTerm(boost::shared_ptr<ValueExpr> val,
-                Order _order,
-                std::string _collate);
-
-    ~OrderByTerm() {}
-
-    boost::shared_ptr<const ValueExpr> getExpr();
-    Order getOrder() const;
-    std::string getCollate() const;
-
-private:
-    friend std::ostream& operator<<(std::ostream& os, OrderByTerm const& ob);
-    friend class ModFactory;
-
-    boost::shared_ptr<ValueExpr> _expr;
-    Order _order;
-    std::string _collate;
-};
-
-class OrderByClause {
-public:
-    typedef std::deque<OrderByTerm> List;
-
-    OrderByClause() : _terms (new List()) {}
-    ~OrderByClause() {}
-
-    std::string getGenerated();
-    void renderTo(QueryTemplate& qt) const;
-    boost::shared_ptr<OrderByClause> copyDeep();
-    boost::shared_ptr<OrderByClause> copySyntax();
-
-private:
-    friend std::ostream& operator<<(std::ostream& os, OrderByClause const& oc);
-    friend class ModFactory;
-
-    void _addTerm(OrderByTerm const& t) {_terms->push_back(t); }
-    boost::shared_ptr<List> _terms;
-};
-
-class HavingClause {
-public:
-    HavingClause() {}
-    ~HavingClause() {}
-
-    std::string getGenerated();
-    void renderTo(QueryTemplate& qt) const;
-    boost::shared_ptr<HavingClause> copyDeep();
-    boost::shared_ptr<HavingClause> copySyntax();
-
-private:
-    friend std::ostream& operator<<(std::ostream& os, HavingClause const& h);
-    friend class ModFactory;
-    std::string _expr;
 };
 
 }}} // namespace lsst::qserv::master

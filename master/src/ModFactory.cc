@@ -36,8 +36,8 @@
 #include "lsst/qserv/master/parserBase.h" // Handler base classes
 #include "lsst/qserv/master/parseTreeUtil.h" 
 #include "lsst/qserv/master/ValueExprFactory.h"
-#include "lsst/qserv/master/SelectListFactory.h" // ValueExpr
-#include "lsst/qserv/master/SelectList.h" // Clauses
+#include "lsst/qserv/master/OrderByClause.h" // Clauses
+#include "lsst/qserv/master/GroupByClause.h" // Clauses
 
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;

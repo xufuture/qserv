@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2012-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -35,7 +35,6 @@
 #include "lsst/qserv/master/FuncExpr.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include <iterator>
-#include <boost/make_shared.hpp>
 
 #include "SqlSQL2TokenTypes.hpp" // For ANTLR typing.
 
@@ -44,8 +43,6 @@ using lsst::qserv::master::ColumnRefList;
 using lsst::qserv::master::ValueExpr;
 using lsst::qserv::master::ValueExprPtr;
 using lsst::qserv::master::SelectList;
-using lsst::qserv::master::OrderByClause;
-using lsst::qserv::master::HavingClause;
 namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers
@@ -236,83 +233,4 @@ boost::shared_ptr<SelectList> qMaster::SelectList::copySyntax() {
     newS->_valueExprList.reset(new ValueExprList(*_valueExprList));
     // For the other fields, default-copied versions are okay.
     return newS;
-}
-////////////////////////////////////////////////////////////////////////
-// OrderByTerm
-////////////////////////////////////////////////////////////////////////
-std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::OrderByTerm const& t) {
-    os << *(t._expr);
-    if(!t._collate.empty()) os << " COLLATE " << t._collate;
-    switch(t._order) {
-    case qMaster::OrderByTerm::ASC: os << " ASC"; break;
-    case qMaster::OrderByTerm::DESC: os << " DESC"; break;
-    case qMaster::OrderByTerm::DEFAULT: break;
-    }
-    return os;
-}
-////////////////////////////////////////////////////////////////////////
-// OrderByClause
-////////////////////////////////////////////////////////////////////////
-std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::OrderByClause const& c) {
-    if(c._terms.get()) {
-        os << "ORDER BY ";
-        std::copy(c._terms->begin(),c._terms->end(),
-                  std::ostream_iterator<qMaster::OrderByTerm>(os,", "));
-    }
-    return os;
-}
-
-std::string
-qMaster::OrderByClause::getGenerated() {
-    QueryTemplate qt;
-    renderTo(qt);
-    return qt.dbgStr();
-}
-
-void
-qMaster::OrderByClause::renderTo(qMaster::QueryTemplate& qt) const {
-    std::stringstream ss;
-    if(_terms.get()) {
-        std::copy(_terms->begin(), _terms->end(),
-                  std::ostream_iterator<qMaster::OrderByTerm>(ss,", "));
-    }
-    qt.append(ss.str());
-    // FIXME
-}
-boost::shared_ptr<OrderByClause> OrderByClause::copyDeep() {
-    return boost::make_shared<OrderByClause>(*this); // FIXME
-}
-boost::shared_ptr<OrderByClause> OrderByClause::copySyntax() {
-    return boost::make_shared<OrderByClause>(*this);
-}
-////////////////////////////////////////////////////////////////////////
-// HavingClause
-////////////////////////////////////////////////////////////////////////
-std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::HavingClause const& c) {
-    if(!c._expr.empty()) {
-        os << "HAVING " << c._expr;
-    }
-    return os;
-}
-std::string
-qMaster::HavingClause::getGenerated() {
-    QueryTemplate qt;
-    renderTo(qt);
-    return qt.dbgStr();
-}
-void
-qMaster::HavingClause::renderTo(qMaster::QueryTemplate& qt) const {
-    if(!_expr.empty()) {
-        qt.append(_expr);
-    }
-}
-
-boost::shared_ptr<HavingClause> HavingClause::copyDeep() {
-    return boost::make_shared<HavingClause>(*this); // FIXME
-}
-boost::shared_ptr<HavingClause> HavingClause::copySyntax() {
-    return boost::make_shared<HavingClause>(*this);
 }
