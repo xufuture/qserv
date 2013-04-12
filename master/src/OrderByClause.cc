@@ -36,18 +36,40 @@ namespace { // File-scope helpers
 
 } // anonymous namespace
 
+namespace lsst { namespace qserv { namespace master {
 
+char const* getOrderStr(OrderByTerm::Order o) {
+    switch(o) {
+    case OrderByTerm::ASC: return "ASC";
+    case OrderByTerm::DESC: return "DESC";
+    case OrderByTerm::DEFAULT: return "";
+    default: return "UNKNOWN_ORDER";
+    }
+}
 ////////////////////////////////////////////////////////////////////////
 // OrderByTerm
 ////////////////////////////////////////////////////////////////////////
+void
+OrderByTerm::renderTo(QueryTemplate& qt) const {
+    ValueExpr::render r(qt);
+    r(_expr);
+    if(!_collate.empty()) { 
+        qt.append("COLLATE"); 
+        qt.append(_collate); 
+    }
+    char const* orderStr = getOrderStr(_order);
+    if(orderStr && orderStr[0] != '\0') {
+        qt.append(orderStr);
+    }
+}
+
 std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::OrderByTerm const& t) {
+operator<<(std::ostream& os, OrderByTerm const& t) {
     os << *(t._expr);
     if(!t._collate.empty()) os << " COLLATE " << t._collate;
-    switch(t._order) {
-    case qMaster::OrderByTerm::ASC: os << " ASC"; break;
-    case qMaster::OrderByTerm::DESC: os << " DESC"; break;
-    case qMaster::OrderByTerm::DEFAULT: break;
+    char const* orderStr = getOrderStr(t._order);
+    if(orderStr && orderStr[0] != '\0') {
+        os << " " << orderStr << " ";
     }
     return os;
 }
@@ -55,32 +77,29 @@ qMaster::operator<<(std::ostream& os, qMaster::OrderByTerm const& t) {
 // OrderByClause
 ////////////////////////////////////////////////////////////////////////
 std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::OrderByClause const& c) {
+operator<<(std::ostream& os, OrderByClause const& c) {
     if(c._terms.get()) {
         os << "ORDER BY ";
         std::copy(c._terms->begin(),c._terms->end(),
-                  std::ostream_iterator<qMaster::OrderByTerm>(os,", "));
+                  std::ostream_iterator<OrderByTerm>(os,", "));
     }
     return os;
 }
 
 std::string
-qMaster::OrderByClause::getGenerated() {
+OrderByClause::getGenerated() {
     QueryTemplate qt;
     renderTo(qt);
     return qt.dbgStr();
 }
 
 void
-qMaster::OrderByClause::renderTo(qMaster::QueryTemplate& qt) const {
-    std::stringstream ss;
-    if(_terms.get()) {
-        std::copy(_terms->begin(), _terms->end(),
-                  std::ostream_iterator<qMaster::OrderByTerm>(ss,", "));
-    }
-    qt.append(ss.str());
-    // FIXME
+OrderByClause::renderTo(QueryTemplate& qt) const {
+    if(_terms.get() && _terms->size() > 0) {
+        std::for_each(_terms->begin(), _terms->end(), OrderByTerm::render(qt));
+    } 
 }
+
 boost::shared_ptr<OrderByClause> OrderByClause::copyDeep() {
     return boost::make_shared<OrderByClause>(*this); // FIXME
 }
@@ -91,20 +110,20 @@ boost::shared_ptr<OrderByClause> OrderByClause::copySyntax() {
 // HavingClause
 ////////////////////////////////////////////////////////////////////////
 std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::HavingClause const& c) {
+operator<<(std::ostream& os, HavingClause const& c) {
     if(!c._expr.empty()) {
         os << "HAVING " << c._expr;
     }
     return os;
 }
 std::string
-qMaster::HavingClause::getGenerated() {
+HavingClause::getGenerated() {
     QueryTemplate qt;
     renderTo(qt);
     return qt.dbgStr();
 }
 void
-qMaster::HavingClause::renderTo(qMaster::QueryTemplate& qt) const {
+HavingClause::renderTo(QueryTemplate& qt) const {
     if(!_expr.empty()) {
         qt.append(_expr);
     }
@@ -116,3 +135,5 @@ boost::shared_ptr<HavingClause> HavingClause::copyDeep() {
 boost::shared_ptr<HavingClause> HavingClause::copySyntax() {
     return boost::make_shared<HavingClause>(*this);
 }
+
+}}} // lsst::qserv::master

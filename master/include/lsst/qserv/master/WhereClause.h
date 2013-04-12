@@ -80,7 +80,7 @@ public:
     ValueExprIter vBegin();
     ValueExprIter vEnd();
     
-    std::string getGenerated();
+    std::string getGenerated() const;
     void renderTo(QueryTemplate& qt) const;
     boost::shared_ptr<WhereClause> copyDeep() const;
     boost::shared_ptr<WhereClause> copySyntax();

@@ -58,6 +58,8 @@ public:
     boost::shared_ptr<const ValueExpr> getExpr();
     Order getOrder() const;
     std::string getCollate() const;
+    void renderTo(QueryTemplate& qt) const;
+    class render;
 
 private:
     friend std::ostream& operator<<(std::ostream& os, OrderByTerm const& ob);
@@ -67,6 +69,14 @@ private:
     Order _order;
     std::string _collate;
 };
+class OrderByTerm::render : public std::unary_function<OrderByTerm, void> {
+public:
+    render(QueryTemplate& qt) : _qt(qt), _count(0) {}
+    void operator()(OrderByTerm const& t) { t.renderTo(_qt); }
+    QueryTemplate& _qt;
+    int _count;
+};
+
 
 class OrderByClause {
 public:

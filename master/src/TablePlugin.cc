@@ -275,11 +275,12 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     std::for_each(exprList.begin(), exprList.end(), 
                   fixExprAlias(reverseAlias));
     // where
-    WhereClause wClause = stmt.getWhereClause();
-    WhereClause::ValueExprIter veI = wClause.vBegin();
-    WhereClause::ValueExprIter veEnd = wClause.vEnd();
-    std::for_each(veI, veEnd, fixExprAlias(reverseAlias));
-
+    if(stmt.hasWhereClause()) {
+        WhereClause& wClause = stmt.getWhereClause();
+        WhereClause::ValueExprIter veI = wClause.vBegin();
+        WhereClause::ValueExprIter veEnd = wClause.vEnd();
+        std::for_each(veI, veEnd, fixExprAlias(reverseAlias));
+    }
     // Fill-in default db context.
     addDbContext adc(context);
     std::for_each(tList.begin(), tList.end(), adc);

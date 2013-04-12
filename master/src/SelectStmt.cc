@@ -168,6 +168,7 @@ qMaster::SelectStmt::copySyntax() const {
 }
 
 void qMaster::SelectStmt::fillEmpty() {
+    // Not sure this is a good idea.
     if(!_whereClause.get()) {
         _whereClause = WhereFactory::newEmpty();
     }

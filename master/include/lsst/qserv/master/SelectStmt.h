@@ -73,11 +73,13 @@ public:
 
     FromList const& getFromList() const { return *_fromList; }
     FromList& getFromList() { return *_fromList; }
-
+    
+    bool hasWhereClause() { return _whereClause.get(); }
     WhereClause const& getWhereClause() const { return *_whereClause; }
     WhereClause& getWhereClause() { return *_whereClause; }
     
     int getLimit() const { return _limit; }
+    bool hasOrderBy() { return _orderBy.get(); }
     OrderByClause const& getOrderBy() const { return *_orderBy; }
     OrderByClause& getOrderBy() { return *_orderBy; }
 

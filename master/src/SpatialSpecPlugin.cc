@@ -317,6 +317,8 @@ SpatialSpecPlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     getTable gt(trc, entries);
     std::for_each(tList.begin(), tList.end(), gt);
     
+    if(!stmt.hasWhereClause()) { return; }
+
     // Prepare to patch the WHERE clause
     WhereClause& wc = stmt.getWhereClause();
 

@@ -75,7 +75,7 @@ QsRestrictor::render::operator()(QsRestrictor::Ptr const& p) {
 ////////////////////////////////////////////////////////////////////////
 std::ostream& 
 operator<<(std::ostream& os, WhereClause const& wc) {
-    os << "WHERE " << wc._original;
+    os << "WHERE " << wc.getGenerated();
     return os;
 }
 
@@ -88,10 +88,10 @@ WhereClause::ValueExprIter WhereClause::vEnd() {
 }
 
 std::string
-WhereClause::getGenerated() {
+WhereClause::getGenerated() const {
     QueryTemplate qt;
     renderTo(qt);
-    return qt.dbgStr();
+    return qt.generate();
 }
 void WhereClause::renderTo(QueryTemplate& qt) const {
     if(_restrs.get()) {

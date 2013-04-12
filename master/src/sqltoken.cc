@@ -65,5 +65,8 @@ bool qMaster::sqlShouldSeparate(std::string const& s, int last, int next) {
 	    || ((last == '#') && nextAlnum) // #asdf
 	    || ((last == '%') && nextAlnum) // %asdf
 	    || ((next == '%') && lastAlnum) // asdf%
+	    || ((last == '_') && nextAlnum) // _asdf
+	    || ((next == '_') && lastAlnum) // asdf_
+
 	    ;
 }
