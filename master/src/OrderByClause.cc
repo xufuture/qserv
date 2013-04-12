@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2012-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -19,7 +19,7 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// OrderByClause, OrderByTerm, HavingClause implementations
+// OrderByClause, OrderByTerm implementations
 #include "lsst/qserv/master/OrderByClause.h"
 #include <iostream>
 #include <iterator>
@@ -29,7 +29,6 @@
 #include "lsst/qserv/master/QueryTemplate.h"
 
 using lsst::qserv::master::OrderByClause;
-using lsst::qserv::master::HavingClause;
 namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers
@@ -105,35 +104,6 @@ boost::shared_ptr<OrderByClause> OrderByClause::copyDeep() {
 }
 boost::shared_ptr<OrderByClause> OrderByClause::copySyntax() {
     return boost::make_shared<OrderByClause>(*this);
-}
-////////////////////////////////////////////////////////////////////////
-// HavingClause
-////////////////////////////////////////////////////////////////////////
-std::ostream& 
-operator<<(std::ostream& os, HavingClause const& c) {
-    if(!c._expr.empty()) {
-        os << "HAVING " << c._expr;
-    }
-    return os;
-}
-std::string
-HavingClause::getGenerated() {
-    QueryTemplate qt;
-    renderTo(qt);
-    return qt.dbgStr();
-}
-void
-HavingClause::renderTo(QueryTemplate& qt) const {
-    if(!_expr.empty()) {
-        qt.append(_expr);
-    }
-}
-
-boost::shared_ptr<HavingClause> HavingClause::copyDeep() {
-    return boost::make_shared<HavingClause>(*this); // FIXME
-}
-boost::shared_ptr<HavingClause> HavingClause::copySyntax() {
-    return boost::make_shared<HavingClause>(*this);
 }
 
 }}} // lsst::qserv::master

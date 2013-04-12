@@ -35,7 +35,9 @@
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
 #include "lsst/qserv/master/parserBase.h" // Handler base classes
 #include "lsst/qserv/master/parseTreeUtil.h" 
+#include "lsst/qserv/master/BoolTermFactory.h"
 #include "lsst/qserv/master/ValueExprFactory.h"
+#include "lsst/qserv/master/HavingClause.h" // Clauses
 #include "lsst/qserv/master/OrderByClause.h" // Clauses
 #include "lsst/qserv/master/GroupByClause.h" // Clauses
 
@@ -204,6 +206,25 @@ void ModFactory::_importHaving(antlr::RefAST a) {
     assert(a.get());
     //std::cout << "having got " << walkTreeString(a) << std::endl;
     // For now, we will silently traverse and recognize but ignore.
-    _having->_expr = walkTreeString(a); // FIXME
     
+    // TODO:
+    // Find boolean statement. Use it. 
+    // Record a failure if multiple boolean statements are found.
+    // Render the bool terms just like WhereClause bool terms.
+    if(a.get() && (a->getType() == SqlSQL2TokenTypes::OR_OP)) {
+        antlr::RefAST first = a->getFirstChild();        
+        if(first.get() 
+           && (first->getType() == SqlSQL2TokenTypes::AND_OP)) {
+            antlr::RefAST second = first->getFirstChild();
+            std::cout << "HAVING root child child=" << tokenText(second) << std::endl;
+            if(second.get()) {
+                BoolTermFactory f(_vFactory);
+                _having->_tree = f.newBoolTerm(a);
+                return;
+            }
+        }
+    }
+    _having->_tree.reset(); // NULL-out. Unhandled syntax.
+    std::cout << "Parse warning: HAVING clause unhandled." << std::endl;
+    // FIXME: Should we report an error?
 }

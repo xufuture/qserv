@@ -97,23 +97,6 @@ private:
     void _addTerm(OrderByTerm const& t) {_terms->push_back(t); }
     boost::shared_ptr<List> _terms;
 };
-
-class HavingClause {
-public:
-    HavingClause() {}
-    ~HavingClause() {}
-
-    std::string getGenerated();
-    void renderTo(QueryTemplate& qt) const;
-    boost::shared_ptr<HavingClause> copyDeep();
-    boost::shared_ptr<HavingClause> copySyntax();
-
-private:
-    friend std::ostream& operator<<(std::ostream& os, HavingClause const& h);
-    friend class ModFactory;
-    std::string _expr;
-};
-
 }}} // namespace lsst::qserv::master
 
 

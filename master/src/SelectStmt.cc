@@ -48,6 +48,7 @@
 #include "lsst/qserv/master/FromList.h"
 #include "lsst/qserv/master/GroupByClause.h"
 #include "lsst/qserv/master/OrderByClause.h"
+#include "lsst/qserv/master/HavingClause.h"
 #include "lsst/qserv/master/WhereClause.h"
 #include "lsst/qserv/master/WhereFactory.h"
 // myself
