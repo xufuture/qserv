@@ -40,10 +40,8 @@ std::ostream& operator<<(std::ostream& os, TableRefN const* refN) {
 }
 
 void TableRefN::render::operator()(TableRefN const& refN) {
-    std::stringstream ss;
-    refN.putTemplate(_qt);
     if(_count++ > 0) _qt.append(",");
-    _qt.append(ss.str());
+    refN.putTemplate(_qt);
 }
 
 void JoinRefN::apply(TableRefN::Func& f) {
