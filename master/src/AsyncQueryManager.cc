@@ -38,6 +38,7 @@
 #include "lsst/qserv/master/Timer.h"
 #include "lsst/qserv/common/WorkQueue.h"
 #include "lsst/qserv/master/PacketIter.h"
+#include "lsst/qserv/master/msgCode.h"
 
 // Namespace modifiers
 using boost::make_shared;
@@ -139,7 +140,7 @@ int qMaster::AsyncQueryManager::add(TransactionSpec const& t,
         ++_queryCount;
     }
     std::string msg = std::string("Query Added: url=") + ts.path + ", savePath=" + ts.savePath;
-    getMessageStore()->addMessage(id, 200, msg);
+    getMessageStore()->addMessage(id, MSG_MGR_ADD, msg);
     std::cout << "Added query id=" << id << " url=" << ts.path 
               << " with save " << ts.savePath << "\n";
     qs.first->run();

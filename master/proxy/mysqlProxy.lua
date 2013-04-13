@@ -455,7 +455,7 @@ qType = queryType()
 
 function queryProcessing()
 
-    local self = { lockTableName = nil, resultTableName = nil, qservError = "" }
+    local self = { msgTableName = nil, resultTableName = nil, qservError = "" }
 
     ---------------------------------------------------------------------------
 
@@ -508,7 +508,7 @@ function queryProcessing()
         end
 
         resultTableName = res[1]
-        lockTableName = res[2]
+        msgTableName = res[2]
         qservError = res[3]
 
         if resultTableName == "error" then
@@ -550,16 +550,16 @@ function queryProcessing()
             return err.set(ERR_BAD_RES_TNAME, "Invalid result table name ")
         end
 
-        print ("got via rpc " .. resultTableName .. " lock " .. lockTableName)
+        print ("got via rpc " .. resultTableName .. " message " .. msgTableName)
 
-        q1 = "SELECT * FROM " .. lockTableName
+        q1 = "SELECT * FROM " .. msgTableName
         proxy.queries:append(1, string.char(proxy.COM_QUERY) .. q1,
                              {resultset_is_needed = true})
 
         q2 = "SELECT * FROM " .. resultTableName
         proxy.queries:append(2, string.char(proxy.COM_QUERY) .. q2,
                              {resultset_is_needed = true})
-	q3 = "DROP TABLE " .. lockTableName
+	q3 = "DROP TABLE " .. msgTableName
         proxy.queries:append(3, string.char(proxy.COM_QUERY) .. q3,
                              {resultset_is_needed = true})
 
@@ -638,7 +638,7 @@ function read_query(packet)
 end
 
 function read_query_result(inj)
-    -- we injected query with the id=1 (for locking purpose)
+    -- we injected query with the id=1 (for messaging and locking purposes)
     if (inj.type == 1) then
         print("q1 - ignoring")
         for row in inj.resultset.rows do

@@ -55,6 +55,7 @@ import time
 from string import Template
 
 # Package imports
+import msgCode
 import metadata
 import lsst.qserv.master.config
 from lsst.qserv.master import geometry
@@ -579,7 +580,7 @@ class QueryBabysitter:
         pass
 
     def _reportError(self, message):
-        queryMsgAddMsg(self._sessionId, 0, -1, message)
+        queryMsgAddMsg(self._sessionId, -1, -1, message)
 
     def _setupMerger(self, fixup, resultName):
         c = lsst.qserv.master.config.config
@@ -728,7 +729,8 @@ class HintedQueryAction:
             return
 
         # Create query initialization message.
-        queryMsgAddMsg(self._sessionId, 0, 0, "Initialize Query: " + self.queryStr);
+        queryMsgAddMsg(self._sessionId, -1, msgCode.MSG_QUERY_INIT, 
+                       "Initialize Query: " + self.queryStr);
 
         self._prepForExec(self._useMemory, resultName)
 
@@ -932,7 +934,8 @@ class HintedQueryAction:
         msg = self._prepareMsg(chunkId, subIter)
         prepTime = time.time()
         print "DISPATCH: ", chunkId, self.queryStr # Limit printout spew
-        queryMsgAddMsg(self._sessionId, chunkId, 100, "Dispatch Chunk Query.")
+        queryMsgAddMsg(self._sessionId, chunkId, msgCode.MSG_CHUNK_DISPATCH, 
+                       "Dispatch Chunk Query.")
         self._babysitter.submitMsg(self._factory.msg.db,
                                    chunkId, msg, 
                                    self._factory.resulttable)

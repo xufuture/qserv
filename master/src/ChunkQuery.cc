@@ -45,6 +45,7 @@
 #include "lsst/qserv/master/PacketIter.h"
 #include "lsst/qserv/common/WorkQueue.h"
 #include "lsst/qserv/master/MessageStore.h"
+#include "lsst/qserv/master/msgCode.h"
 
 // Namespace modifiers
 using boost::make_shared;
@@ -113,7 +114,7 @@ public:
                 return;
             }
             _cq.Complete(result);
-            _cq._manager->getMessageStore()->addMessage(_cq._id, 400, "Results Read.");
+            _cq._manager->getMessageStore()->addMessage(_cq._id, MSG_XRD_READ, "Results Read.");
         } catch (const char *msg) {
             _cq._manager->getMessageStore()->addMessage(_cq._id, -abs(errno), msg);
             _cq._state = ChunkQuery::ABORTED;
@@ -162,7 +163,8 @@ public:
                         msgStrm << std::string("Chunk not found for path:")
                                 << _cq._spec.path << " , "
                                 << tries << " tries left ";
-                        _cq._manager->getMessageStore()->addMessage(_cq._id, 290, msgStrm.str());
+                        _cq._manager->getMessageStore()->
+                            addMessage(_cq._id, MSG_XRD_OPEN_FAIL, msgStrm.str());
                         std::cout << msgStrm.str() << std::endl;
                         continue;
                     }
@@ -173,7 +175,8 @@ public:
                 break;
             }
             _cq.Complete(result);
-            _cq._manager->getMessageStore()->addMessage(_cq._id, 300, "Query Written.");
+            _cq._manager->getMessageStore()->
+                addMessage(_cq._id, MSG_XRD_WRITE, "Query Written.");
         } catch (const char *msg) {
             _cq._manager->getMessageStore()->addMessage(_cq._id, -abs(errno), msg);
             _cq._state = ChunkQuery::ABORTED;
