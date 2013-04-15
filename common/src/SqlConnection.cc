@@ -302,11 +302,13 @@ SqlConnection::runQuery(char const* query,
                         int qSize,
                         SqlResults& results,
                         SqlErrorObject& errObj) {
+    std::string queryPiece(query, qSize);
     if (!_connected) if (!connectToDb(errObj)) return false;
     if (mysql_real_query(_conn, query, qSize) != 0) {
         MYSQL_RES* result = mysql_store_result(_conn);
         if (result) mysql_free_result(result);
-        std::string msg = std::string("Unable to execute query: ") + query;
+        std::string msg = std::string("Unable to execute query: ") 
+            + queryPiece;
         //    + "\nQuery = " + std::string(query, qSize);
         return _setErrorObject(errObj, msg);
     }
@@ -317,12 +319,12 @@ SqlConnection::runQuery(char const* query,
             results.addResult(result);
         } else if (mysql_field_count(_conn) != 0) {
             return _setErrorObject(errObj, 
-                    std::string("Unable to store result for query: ") + query);
+                    std::string("Unable to store result for query: ") + queryPiece);
         }
         status = mysql_next_result(_conn);
         if (status > 0) {
             return _setErrorObject(errObj,
-                  std::string("Error retrieving results for query: ") + query);
+                  std::string("Error retrieving results for query: ") + queryPiece);
         }
     } while (status == 0);
     return true;
