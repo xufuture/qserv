@@ -55,6 +55,21 @@ struct ProtocolFixture {
 
     void addSubChunk(lsst::qserv::TaskMsg_Fragment& f, int scId) {
         f.add_subchunk(scId);  // Update to do fancy db+table+list ops
+        // Add the scgroup field (normally, we have either the
+        // subchunk field or the scgroup field. scgroup should take
+        // precedence.)
+        lsst::qserv::TaskMsg_Subchunk* s;
+        if(!f.has_scgroup()) {
+            lsst::qserv::TaskMsg_Subchunk subc;
+            // f.add_scgroup(); // How do I add optional objects?
+            subc.set_database("subdatabase");
+            subc.set_table("subtable");
+            f.mutable_scgroup()->CopyFrom(subc);
+            s = f.mutable_scgroup();
+        } else { 
+            s = f.mutable_scgroup(); 
+        }
+        s->add_id(scId);
     }
 
     bool compareTaskMsgs(lsst::qserv::TaskMsg& t1, lsst::qserv::TaskMsg& t2) {
@@ -85,6 +100,18 @@ struct ProtocolFixture {
         return r;
     }    
 
+    bool compareSubchunk(lsst::qserv::TaskMsg_Subchunk const& s1,
+                         lsst::qserv::TaskMsg_Subchunk const& s2) {
+        if(s1.database() != s2.database() || s1.table() != s2.table()) {
+            return false; 
+        }
+        if(s1.id_size() != s2.id_size()) { return false; }
+        for(int i=0; i < s1.id_size(); ++i) {
+            if(s1.id(i) != s2.id(i)) return false;
+        }
+        return true;        
+    }
+
     bool compareFragment(lsst::qserv::TaskMsg_Fragment const& f1, 
                          lsst::qserv::TaskMsg_Fragment const& f2) {
         bool qEqual = (f1.query() == f2.query());
@@ -92,6 +119,11 @@ struct ProtocolFixture {
         for(int i=0; i < f1.subchunk_size(); ++i) {
             sEqual = sEqual && (f1.subchunk(i) == f2.subchunk(i));
         }
+        if(f1.has_scgroup()) {
+            if(f2.has_scgroup()) {
+                sEqual = sEqual && compareSubchunk(f1.scgroup(), f2.scgroup());
+            } else { sEqual = false; }
+        } else if(f2.has_scgroup()) { sEqual = false; }
         return qEqual && sEqual;
     }
 
@@ -167,7 +199,7 @@ BOOST_AUTO_TEST_CASE(MsgBuffer) {
 BOOST_AUTO_TEST_CASE(ProtoHashDigest) {
     boost::scoped_ptr<lsst::qserv::TaskMsg> t1(makeTaskMsg());
     std::string hash = hashTaskMsg(*t1);
-    std::string expected = "9f6fecff39ce2a96f2eedff451fe86e4";
+    std::string expected = "6d1f2ee393113b4e148a8c41b4c49e61";
     BOOST_CHECK_EQUAL(hash, expected);
 }
 
