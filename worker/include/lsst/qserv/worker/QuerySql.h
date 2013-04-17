@@ -40,9 +40,10 @@ public:
     QuerySql() {}
 
     StringList buildList;
-    StringList executeList;
+    StringList executeList; // Consider using SqlFragmenter to break this up into fragments.
     StringList cleanupList;
     class Factory;
+    class Batch;
     friend std::ostream& operator<<(std::ostream& os, QuerySql const& q);
 };
 
@@ -50,7 +51,7 @@ class QuerySql::Factory {
 public:
     boost::shared_ptr<QuerySql> make(std::string const& db, 
                                      int chunkId,
-                                     Task::Fragment& f,
+                                     Task::Fragment const& f,
                                      bool needCreate,
                                      std::string const& defaultResultTable);
 };

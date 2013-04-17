@@ -78,7 +78,7 @@ std::ostream& operator<<(std::ostream& os, QuerySql const& q) {
 boost::shared_ptr<QuerySql>
 QuerySql::Factory::make(std::string const& db, 
                         int chunkId,
-                        Task::Fragment& f, 
+                        Task::Fragment const& f, 
                         bool needCreate,
                         std::string const& defaultResultTable) {
     boost::shared_ptr<QuerySql> qSql(new QuerySql);

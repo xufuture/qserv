@@ -24,6 +24,7 @@
 #define BOOST_TEST_MODULE QuerySql_1
 #include "boost/test/included/unit_test.hpp"
 #include "lsst/qserv/worker/QuerySql.h"
+#include "lsst/qserv/worker/QuerySql_Batch.h"
 
 namespace test = boost::test_tools;
 namespace qWorker = lsst::qserv::worker;
@@ -75,5 +76,21 @@ BOOST_AUTO_TEST_CASE(Basic) {
     BOOST_CHECK(qSql.get());    
     printQsql(*qSql);
 }
+
+BOOST_AUTO_TEST_CASE(QueryBatch) {
+    boost::shared_ptr<QuerySql>  qSql;
+    Task::Fragment frag = makeFragment();
+    qSql = factory.make(defaultDb, 1001, frag, true, defaultResult);
+    BOOST_CHECK(qSql.get());    
+
+    QuerySql::Batch build("QueryBuildSub", qSql->buildList);
+    QuerySql::Batch& batch=build;
+    int i=0;
+    while(!batch.isDone()) {
+        std::string piece = batch.current();
+        batch.next();
+    }
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
