@@ -33,6 +33,7 @@
 #include "lsst/qserv/worker/Base.h"
 #include "lsst/qserv/worker/Config.h"
 #include "lsst/qserv/worker/SqlFragmenter.h"
+#include "lsst/qserv/constants.h"
 using lsst::qserv::SqlErrorObject;
 using lsst::qserv::SqlConfig;
 using lsst::qserv::SqlConnection;
@@ -150,9 +151,6 @@ void forEachSubChunk(std::string const& script, F& func) {
         ++subChunkCount;
     }
 }
-
-// FIXME: should be metadata or constant somewhere else.
-const char SUB_CHUNK_COLUMN[] = "subChunkId";
 
 template <typename T>
 class ScScriptBuilder {
