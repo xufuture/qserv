@@ -78,7 +78,16 @@ TaskMsgFactory2::Impl::makeMsg(ChunkQuerySpec const& s,
     // per-chunk
     _taskMsg->set_chunkid(s.chunkId);
     // per-fragment
-    addFragment(*_taskMsg, resultTable, s.subChunks, s.query);
+    if(s.nextFragment.get()) {
+        ChunkQuerySpec const* sPtr = &s;
+        while(sPtr) {
+            addFragment(*_taskMsg, resultTable, 
+                        sPtr->subChunks, sPtr->query);
+            sPtr = sPtr->nextFragment.get();
+        }
+    } else {
+        addFragment(*_taskMsg, resultTable, s.subChunks, s.query);
+    }
     return _taskMsg;
 }
 

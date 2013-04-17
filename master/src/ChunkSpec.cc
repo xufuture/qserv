@@ -26,6 +26,7 @@
 namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers
+int const GOOD_SUBCHUNK_COUNT = 5;
 }
 namespace lsst { namespace qserv { namespace master {
 std::ostream& operator<<(std::ostream& os, ChunkSpec const& c) {
@@ -37,5 +38,39 @@ std::ostream& operator<<(std::ostream& os, ChunkSpec const& c) {
     os << "]";
     return os;
 }
+
+////////////////////////////////////////////////////////////////////////
+// ChunkSpec
+////////////////////////////////////////////////////////////////////////
+bool ChunkSpec::shouldSplit() const {
+    return subChunks.size() > (unsigned)GOOD_SUBCHUNK_COUNT;
+}
+////////////////////////////////////////////////////////////////////////
+// ChunkSpec
+////////////////////////////////////////////////////////////////////////
+ChunkSpecFragmenter::ChunkSpecFragmenter(ChunkSpec const& s) 
+    : _original(s), _pos(0) {
+}
+ChunkSpec ChunkSpecFragmenter::get() const {
+    ChunkSpec c;
+    c.chunkId = _original.chunkId;
+    int posEnd = _pos + GOOD_SUBCHUNK_COUNT;
+    int end = _original.subChunks.size();
+    if(posEnd >= end) posEnd = end;
+    c.subChunks.resize(posEnd - _pos);
+    std::copy(_original.subChunks.begin()+_pos,
+              _original.subChunks.begin()+posEnd,
+              c.subChunks.begin());
+    return c;
+}
+
+void ChunkSpecFragmenter::next() {
+    _pos += GOOD_SUBCHUNK_COUNT;
+}
+
+bool ChunkSpecFragmenter::isDone() {
+    return _pos >= _original.subChunks.size();
+}
+
 }}} // namespace lsst::qserv::master
 

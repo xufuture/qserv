@@ -757,7 +757,9 @@ class InbandQueryAction:
             #prepare chunkspec
             c = ChunkSpec()
             c.chunkId = chunkId
-            map(c.addSubChunk, subIter)
+            for s in subIter:
+                c.addSubChunk(s)
+                scount += 1
             addChunk(self.sessionId, c)
             count += 1
             if count >= chunkLimit: break

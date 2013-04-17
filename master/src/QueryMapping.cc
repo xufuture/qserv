@@ -24,6 +24,8 @@
 #include <deque>
 #include <sstream>
 
+#include <boost/regex.hpp>
+
 #include "lsst/qserv/master/ChunkSpec.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 
@@ -35,9 +37,20 @@ inline std::string intToString(int i) {
     ss << i;
     return ss.str();
 }
+
 }
 namespace lsst { namespace qserv { namespace master { 
 
+class MapTuple {
+public:
+    MapTuple(std::string const& pat, 
+             std::string const target,
+             QueryMapping::Parameter p) 
+        : reg(pat), tgt(target), param(p) {}
+    boost::regex reg;
+    std::string tgt;
+    QueryMapping::Parameter param;
+};
 class Entry : public QueryTemplate::Entry { 
 public:
     Entry(std::string const& text_) : text(text_) {}
@@ -50,29 +63,32 @@ public:
 class Mapping : public QueryTemplate::EntryMapping {
 public:
     typedef std::deque<int> IntDeque;
+    typedef std::deque<MapTuple> Map;
+
     Mapping(QueryMapping::ParameterMap const& m, ChunkSpec const& s) 
         : _m(m), _subChunks(s.subChunks.begin(), s.subChunks.end()) {
         _chunkString = intToString(s.chunkId);
         if(!_subChunks.empty()) {
             _subChunkString = intToString(_subChunks.front());            
         }
+        QueryMapping::ParameterMap::const_iterator i;
+        for(i = m.begin(); i != m.end(); ++i) {
+            _map.push_back(MapTuple(i->first, lookup(i->second), i->second));
+        }
     }
     virtual ~Mapping() {}
     virtual boost::shared_ptr<QueryTemplate::Entry> mapEntry(QueryTemplate::Entry const& e) const {
         boost::shared_ptr<Entry> newE(new Entry(e.getValue()));
-        QueryMapping::ParameterMap::const_iterator i;
-        for(i=_m.begin(); i != _m.end(); ++i) {
-            std::string::size_type pos = newE->text.find(i->first);
-            std::string::size_type sz = i->first.size();
-            if(pos != std::string::npos) {
-                newE->text.replace(pos, sz, lookup(i->second));
-                if(i->second == QueryMapping::SUBCHUNK) {
-                    // Remember that we mapped a subchunk,
+        Map::const_iterator i;
+        for(i=_map.begin(); i != _map.end(); ++i) {
+            newE->text = boost::regex_replace(newE->text, i->reg, i->tgt);
+            if(i->param == QueryMapping::SUBCHUNK) {
+                // Remember that we mapped a subchunk,
                     // so we know to iterate over subchunks.
                     // Or... the plugins could signal that subchunks
                     // are needed somehow. FIXME.
-                }
             }
+            
         }
         return newE;
     } 
@@ -103,6 +119,8 @@ private:
     std::string _chunkString;
     std::string _subChunkString;
     IntDeque _subChunks;
+    Map _map;
+
 };
 
 ////////////////////////////////////////////////////////////////////////

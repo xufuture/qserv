@@ -61,6 +61,17 @@ ChunkMeta newTestCmeta(bool withSubchunks=true) {
     return m;
 }
 
+ChunkSpec makeChunkSpec(int chunkNum, bool withSubChunks=false) {
+    ChunkSpec cs;
+    cs.chunkId = chunkNum;
+    if(withSubChunks) {
+        int base = 1000 * chunkNum;
+        cs.subChunks.push_back(base);
+        cs.subChunks.push_back(base+10);
+        cs.subChunks.push_back(base+20);
+    }
+    return cs;
+}
 
 void tryStmt(std::string const& s, bool withSubchunks=false) {
     std::map<std::string,std::string> cfg; // dummy config
@@ -95,6 +106,27 @@ void testStmt2(SqlParseRunner::Ptr spr, bool shouldFail=false) {
 }
 void testParse2(SelectParser::Ptr p) {
 }
+
+void testStmt3(QuerySession::Test& t,  std::string const& stmt) {
+    QuerySession qs(t);
+    qs.setQuery(stmt);
+    qs.getConstraints();    
+    // SelectStmt const& stmt2 = 
+    qs.getStmt();
+    qs.addChunk(makeChunkSpec(100));
+    qs.addChunk(makeChunkSpec(101));
+    QuerySession::Iter i;
+    QuerySession::Iter e = qs.cQueryEnd();
+    for(i = qs.cQueryBegin(); i != e; ++i) {
+        qMaster::ChunkQuerySpec& cs = *i;
+        std::cout << "Spec: " 
+                  << cs.query << " db=" << cs.db
+                  << " chunkId=" << cs.chunkId 
+                  << std::endl;
+        //std::cout << *i << std::endl;
+    }    
+}
+ 
 
 } // anonymous namespace
 
@@ -142,17 +174,6 @@ struct ParserFixture {
         p = SelectParser::newInstance(stmt);
         p->setup();
         return p;
-    }
-    ChunkSpec makeChunkSpec(int chunkNum, bool withSubChunks=false) {
-        ChunkSpec cs;
-        cs.chunkId = chunkNum;
-        if(withSubChunks) {
-            int base = 1000 * chunkNum;
-            cs.subChunks.push_back(base);
-            cs.subChunks.push_back(base+10);
-            cs.subChunks.push_back(base+20);
-        }
-        return cs;
     }
 
     ChunkMapping cMapping;
@@ -581,34 +602,14 @@ BOOST_AUTO_TEST_CASE(Mods) {
     };
     for(int i=0; i < 3; ++i) {
         std::string stmt = stmts[i];
-        std::cout << "----" << stmt << "----" << std::endl;
-        SelectParser::Ptr p = getParser(stmt);
-        testParse2(p);
-        
+        testStmt3(qsTest, stmt);        
     }
  }
+
 BOOST_AUTO_TEST_CASE(CountNew) {
     std::string stmt = "SELECT count(*), sum(Source.flux), flux2, Source.flux3 from Source where qserv_areaspec_box(0,0,1,1) and flux4=2 and Source.flux5=3;";
-    QuerySession qs(qsTest);
-    qs.setQuery(stmt);
-    qs.getConstraints();    
-    // SelectStmt const& stmt2 = 
-    qs.getStmt();
-    qs.addChunk(makeChunkSpec(100));
-    qs.addChunk(makeChunkSpec(101));
-    QuerySession::Iter i;
-    QuerySession::Iter e = qs.cQueryEnd();
-    for(i = qs.cQueryBegin(); i != e; ++i) {
-        qMaster::ChunkQuerySpec& cs = *i;
-        std::cout << "Spec: " 
-                  << cs.query << " db=" << cs.db
-                  << " chunkId=" << cs.chunkId 
-                  << std::endl;
-        //std::cout << *i << std::endl;
-    }
-    
-}
- 
+    testStmt3(qsTest, stmt);
+} 
 
 BOOST_AUTO_TEST_SUITE_END()
 ////////////////////////////////////////////////////////////////////////

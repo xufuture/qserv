@@ -263,9 +263,40 @@ void QuerySession::Iter::_buildCache() const {
     _cache.db = _qs->_context->defaultDb;
     _cache.query = _qs->_buildChunkQuery(*_pos);
     _cache.chunkId = _pos->chunkId;
+    _cache.nextFragment.reset();
+
     if(_hasSubChunks) {
-        _cache.subChunks.assign(_pos->subChunks.begin(), _pos->subChunks.end());
+        if(_pos->shouldSplit()) {
+            ChunkSpecFragmenter frag(*_pos);
+            ChunkSpec s = frag.get();
+            _cache.query = _qs->_buildChunkQuery(s);
+            _cache.subChunks.assign(s.subChunks.begin(), s.subChunks.end());
+            frag.next();
+            _cache.nextFragment = _buildFragment(frag);                
+        } else {
+            _cache.subChunks.assign(_pos->subChunks.begin(), 
+                                    _pos->subChunks.end());
+        }
     }
+}
+boost::shared_ptr<ChunkQuerySpec> 
+QuerySession::Iter::_buildFragment(ChunkSpecFragmenter& f) const {
+    boost::shared_ptr<ChunkQuerySpec> first;
+    boost::shared_ptr<ChunkQuerySpec> last;
+    while(!f.isDone()) {
+        if(last.get()) {
+            last->nextFragment.reset(new ChunkQuerySpec);
+            last = last->nextFragment;
+        } else {
+            last.reset(new ChunkQuerySpec);
+            first = last;
+        }
+        ChunkSpec s = f.get();
+        last->subChunks.assign(s.subChunks.begin(), s.subChunks.end());
+        last->query = _qs->_buildChunkQuery(s);
+        f.next();
+    }
+    return first;
 }
 
 
