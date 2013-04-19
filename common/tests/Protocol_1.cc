@@ -45,7 +45,7 @@ struct ProtocolFixture {
         t->set_db("elephant");
         for(int i=0; i < 3; ++i) {
             lsst::qserv::TaskMsg::Fragment* f = t->add_fragment();
-            f->set_query("Hello, this is a query.");
+            f->add_query("Hello, this is a query.");
             addSubChunk(*f, 100+i); 
             f->set_resulttable("r_341");
         }
@@ -54,20 +54,16 @@ struct ProtocolFixture {
     }
 
     void addSubChunk(lsst::qserv::TaskMsg_Fragment& f, int scId) {
-        f.add_subchunk(scId);  // Update to do fancy db+table+list ops
-        // Add the scgroup field (normally, we have either the
-        // subchunk field or the scgroup field. scgroup should take
-        // precedence.)
         lsst::qserv::TaskMsg_Subchunk* s;
-        if(!f.has_scgroup()) {
+        if(!f.has_subchunks()) {
             lsst::qserv::TaskMsg_Subchunk subc;
             // f.add_scgroup(); // How do I add optional objects?
             subc.set_database("subdatabase");
-            subc.set_table("subtable");
-            f.mutable_scgroup()->CopyFrom(subc);
-            s = f.mutable_scgroup();
+            subc.add_table("subtable");
+            f.mutable_subchunks()->CopyFrom(subc);
+            s = f.mutable_subchunks();
         } else { 
-            s = f.mutable_scgroup(); 
+            s = f.mutable_subchunks(); 
         }
         s->add_id(scId);
     }
@@ -102,8 +98,10 @@ struct ProtocolFixture {
 
     bool compareSubchunk(lsst::qserv::TaskMsg_Subchunk const& s1,
                          lsst::qserv::TaskMsg_Subchunk const& s2) {
-        if(s1.database() != s2.database() || s1.table() != s2.table()) {
-            return false; 
+        if(s1.database() != s2.database()) { return false; }
+        if(s1.table_size() != s2.table_size()) { return false; }
+        for(int i=0; i < s1.table_size(); ++i) {
+            if(s1.table(i) != s2.table(i)) return false;
         }
         if(s1.id_size() != s2.id_size()) { return false; }
         for(int i=0; i < s1.id_size(); ++i) {
@@ -114,16 +112,18 @@ struct ProtocolFixture {
 
     bool compareFragment(lsst::qserv::TaskMsg_Fragment const& f1, 
                          lsst::qserv::TaskMsg_Fragment const& f2) {
-        bool qEqual = (f1.query() == f2.query());
-        bool sEqual = (f1.subchunk_size() == f2.subchunk_size());
-        for(int i=0; i < f1.subchunk_size(); ++i) {
-            sEqual = sEqual && (f1.subchunk(i) == f2.subchunk(i));
-        }
-        if(f1.has_scgroup()) {
-            if(f2.has_scgroup()) {
-                sEqual = sEqual && compareSubchunk(f1.scgroup(), f2.scgroup());
+        bool qEqual = true;
+        if(f1.query_size() == f2.query_size()) {
+            for(int i=0; i < f1.query_size(); ++i) {
+                if(f1.query(i) != f2.query(i)) return false;
+            }            
+        } else { return false; }
+        bool sEqual = true;
+        if(f1.has_subchunks()) {
+            if(f2.has_subchunks()) {
+                sEqual = sEqual && compareSubchunk(f1.subchunks(), f2.subchunks());
             } else { sEqual = false; }
-        } else if(f2.has_scgroup()) { sEqual = false; }
+        } else if(f2.has_subchunks()) { sEqual = false; }
         return qEqual && sEqual;
     }
 
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(MsgBuffer) {
 BOOST_AUTO_TEST_CASE(ProtoHashDigest) {
     boost::scoped_ptr<lsst::qserv::TaskMsg> t1(makeTaskMsg());
     std::string hash = hashTaskMsg(*t1);
-    std::string expected = "6d1f2ee393113b4e148a8c41b4c49e61";
+    std::string expected = "bdb5380e0cfd5696034c969ee3111785";
     BOOST_CHECK_EQUAL(hash, expected);
 }
 
