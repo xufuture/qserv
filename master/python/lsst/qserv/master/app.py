@@ -738,15 +738,19 @@ class InbandQueryAction:
         pass
 
     def _applyConstraints(self):
-        # Retrieve constraints as (name, [param1,param2,param3,...])
+        # Retrieve constraints as (name, [param1,param2,param3,...])        
         self.constraints = getConstraints(self.sessionId)
+        print "Getting constraints", self.constraints, "size=",self.constraints.size()
         # Apply constraints
         def iterateConstraints(constraintVec):
             for i in range(constraintVec.size()):
                 yield constraintVec.get(i)
         for constraint in iterateConstraints(self.constraints):
-            pass # TODO: Prepare hints for region factory
-        # TODO: hand off to spatial module and indexing
+            print "constraint=", constraint
+            params = [constraint.paramsGet(i) 
+                      for i in range(constraint.paramsSize())]
+            self.hints[constraint.name] = params
+            pass 
         self._evaluateHints(self.hints, self.pmap)
         
         count = 0

@@ -97,14 +97,24 @@ class RegionFactory:
             "ellipse" : self._handleEllipse,
             "poly": self._handleConvexPolygon,
             "hull": self._handleConvexHull,
+            "qserv_areaspec_box" : self._handleBox,
+            "qserv_areaspec_circle" : self._handleCircle,
+            "qserv_areaspec_ellipse" : self._handleEllipse,
+            "qserv_areaspec_poly": self._handleConvexPolygon,
+            "qserv_areaspec_hull": self._handleConvexHull,
             # Handled elsewhere
             "db" : self._handleNop,
-            "objectId" : self._handleNop
+            "objectId" : self._handleNop,
+            "qserv_areaspec_objectid" : self._handleNop
             }
         pass
 
     def _splitParams(self, name, tupleSize, param):
-        hList = map(float,param.split(","))
+        hList = []
+        if type(param) == type([]):
+            hList = map(float, param)
+        else:
+            hList = map(float,param.split(","))
         assert 0 == (len(hList) % tupleSize), "Wrong # for %s." % name
         # Split a long param list into tuples.
         return map(lambda x: hList[tupleSize*x : tupleSize*(x+1)],

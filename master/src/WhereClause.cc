@@ -110,6 +110,9 @@ boost::shared_ptr<WhereClause> WhereClause::copyDeep() const {
     if(_tree.get()) {
         newC->_tree = _tree->copySyntax();
     }
+    if(_restrs.get()) {
+        newC->_restrs.reset(new QsRestrictor::List(*_restrs));
+    }
     // For the other fields, default-copied versions are okay.
     return newC;
 
@@ -134,7 +137,18 @@ WhereClause::prependAndTerm(boost::shared_ptr<BoolTerm> t) {
 
     // FIXME: Should deal with case where AndTerm is not found.
     AndTerm* rootAnd = dynamic_cast<AndTerm*>(insertPos.get()); 
+    if(!rootAnd) {
+        boost::shared_ptr<AndTerm> a(new AndTerm());
+        boost::shared_ptr<BoolTerm> oldTree(_tree);
+        _tree = a;
+        if(oldTree.get()) { // Only add oldTree root if non-NULL
+            a->_terms.push_back(oldTree);
+        }
+        rootAnd = a.get();
+        
+    }
     assert(rootAnd);
+    
     
     AndTerm* incomingTerms = dynamic_cast<AndTerm*>(t.get());
     if(incomingTerms) {

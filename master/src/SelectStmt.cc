@@ -151,6 +151,7 @@ qMaster::SelectStmt::copyMerge() const {
     copySyntaxIf(newS->_having, _having);
     // Eliminate the parts that don't matter, e.g., the where clause
     newS->_whereClause.reset();
+    newS->_fromList.reset();
     return newS;
 }
 

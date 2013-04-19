@@ -26,18 +26,23 @@
 
 #ifndef LSST_QSERV_MASTER_QUERYCONTEXT_H
 #define LSST_QSERV_MASTER_QUERYCONTEXT_H
+#include <list>
 #include <string>
 #include <boost/shared_ptr.hpp>
 
 #include "lsst/qserv/master/QueryMapping.h"
 
 namespace lsst { namespace qserv { namespace master {
+class QsRestrictor;
 
 class QueryContext {
 public:
+    typedef std::list<boost::shared_ptr<QsRestrictor> > RestrList;
+
     std::string defaultDb;
     std::string username; // unused, but reserved.
     boost::shared_ptr<QueryMapping> queryMapping;
+    boost::shared_ptr<RestrList> restrictors;
     bool needsMerge;
 
     bool hasChunks() const { 

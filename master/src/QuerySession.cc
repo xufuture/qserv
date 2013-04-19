@@ -89,10 +89,7 @@ bool QuerySession::getHasAggregate() const {
 
 boost::shared_ptr<ConstraintVector> QuerySession::getConstraints() const {
     boost::shared_ptr<ConstraintVector> cv;
-    boost::shared_ptr<WhereClause const> wc = _stmt->getWhere();
-    if(!wc.get()) return cv;
-
-    boost::shared_ptr<QsRestrictor::List const> p = wc->getRestrs();
+    boost::shared_ptr<QsRestrictor::List const> p = _context->restrictors;
 
     if(p.get()) {
         cv.reset(new ConstraintVector(p->size()));
@@ -109,8 +106,10 @@ boost::shared_ptr<ConstraintVector> QuerySession::getConstraints() const {
             (*cv)[i] = c;
             ++i;
         }
-        //printConstraints(cv);
+        printConstraints(*cv);
         return cv;
+    } else {
+        std::cout << "No constraints." << std::endl;
     }
     // No constraint vector
     return cv;

@@ -76,16 +76,19 @@ PassListTerm::Ptr newPassList(C& c) {
 
 template <typename C>
 ValueExprTerm::Ptr newFunc(char const fName[], 
+                           std::string const& tableAlias,
                            StringPair const& chunkColumns, 
                            C& c) {
     typedef boost::shared_ptr<ColumnRef> CrPtr;
     FuncExpr::Ptr fe(new FuncExpr);
     fe->name = UDF_PREFIX + fName;
     fe->params.push_back(ValueExpr::newColumnRefExpr(
-                             CrPtr(new ColumnRef("", "", chunkColumns.first))
+                             CrPtr(new ColumnRef("", tableAlias, 
+                                                 chunkColumns.first))
                              ));
     fe->params.push_back(ValueExpr::newColumnRefExpr(
-                             CrPtr(new ColumnRef("", "", chunkColumns.second))
+                             CrPtr(new ColumnRef("", tableAlias, 
+                                                 chunkColumns.second))
                              ));
 
     typename C::const_iterator i;
@@ -227,6 +230,7 @@ private:
             BfTerm::PtrList& terms = newFactor->_terms;
             
             terms.push_back(newFunc(fName, 
+                                    e.alias,
                                     e.chunkColumns,
                                     params));
             terms.push_back(newPass("="));
@@ -323,6 +327,7 @@ SpatialSpecPlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     WhereClause& wc = stmt.getWhereClause();
 
     boost::shared_ptr<QsRestrictor::List const> rListP = wc.getRestrs();
+    context.restrictors.reset(new QueryContext::RestrList);
     if(!rListP.get()) return; // No spatial restrictions -> nothing to do
 
     QsRestrictor::List const& rList = *rListP;
@@ -337,7 +342,10 @@ SpatialSpecPlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
             j != entries.end(); ++j) {
             newTerm->_terms.push_back(_makeCondition(*i, *j));
         }
+        // Save restrictor in QueryContext.
+        context.restrictors->push_back(*i);
     }
+    
     wc.resetRestrs();
     wc.prependAndTerm(newTerm);
 }

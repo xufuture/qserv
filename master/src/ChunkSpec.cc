@@ -27,7 +27,7 @@
 namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers
-int const GOOD_SUBCHUNK_COUNT = 5;
+int const GOOD_SUBCHUNK_COUNT = 20;
 }
 namespace lsst { namespace qserv { namespace master {
 std::ostream& operator<<(std::ostream& os, ChunkSpec const& c) {
