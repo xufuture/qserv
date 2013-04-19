@@ -28,30 +28,42 @@
 #ifndef LSST_QSERV_MASTER_QUERYMAPPING_H
 #define LSST_QSERV_MASTER_QUERYMAPPING_H
 #include <boost/shared_ptr.hpp>
+#include <set>
 #include <map>
 
 namespace lsst { namespace qserv { namespace master {
 class ChunkSpec;
+class ChunkSpecSingle;
 class QueryTemplate;
 
 class QueryMapping {
 public:
+    class MapTuple;
     typedef boost::shared_ptr<QueryMapping> Ptr;
     enum Parameter {INVALID, CHUNK=100, SUBCHUNK, HTM1=200};
     typedef std::map<std::string,Parameter> ParameterMap;
+    typedef std::set<std::string> StringSet;
 
     explicit QueryMapping();
 
     std::string apply(ChunkSpec const& s, QueryTemplate const& t);
+    std::string apply(ChunkSpecSingle const& s, QueryTemplate const& t);
 
+    // Modifiers
+    void insertSubChunkTable(std::string const& table) { 
+        _subChunkTables.insert(table); }
     void addEntry(std::string const& s, Parameter p) { _subs[s] = p; }
     void update(QueryMapping const& qm);
+
+    // Accessors
     bool hasChunks() const { return hasParameter(CHUNK); }
     bool hasSubChunks() const { return hasParameter(SUBCHUNK); }
     bool hasParameter(Parameter p) const;
+    StringSet const& getSubChunkTables() const { return _subChunkTables; }
 
 private:
     ParameterMap _subs;
+    StringSet _subChunkTables;
 };
 }}} // namespace lsst::qserv::master
 

@@ -71,10 +71,14 @@ public:
         if(!_subChunks.empty()) {
             _subChunkString = intToString(_subChunks.front());            
         }
-        QueryMapping::ParameterMap::const_iterator i;
-        for(i = m.begin(); i != m.end(); ++i) {
-            _map.push_back(MapTuple(i->first, lookup(i->second), i->second));
-        }
+        _initMap(m);
+    }
+    Mapping(QueryMapping::ParameterMap const& m, ChunkSpecSingle const& s) 
+        : _m(m)  {
+        _chunkString = intToString(s.chunkId);
+        _subChunkString = intToString(s.subChunkId);
+        _subChunks.push_back(s.subChunkId);
+        _initMap(m);
     }
     virtual ~Mapping() {}
     virtual boost::shared_ptr<QueryTemplate::Entry> mapEntry(QueryTemplate::Entry const& e) const {
@@ -97,6 +101,13 @@ public:
             || (!_subChunkString.empty() && !_subChunks.empty());
     }
 private:
+    inline void _initMap(QueryMapping::ParameterMap const& m) {
+        QueryMapping::ParameterMap::const_iterator i;
+        for(i = m.begin(); i != m.end(); ++i) {
+            _map.push_back(MapTuple(i->first, lookup(i->second), i->second));
+        }
+    }
+
     inline std::string lookup(QueryMapping::Parameter const& p) const {
         switch(p) {
         case QueryMapping::INVALID:
@@ -132,6 +143,10 @@ std::string QueryMapping::apply(ChunkSpec const& s, QueryTemplate const& t) {
     Mapping m(_subs, s);
     return t.generate(m);
 }
+std::string QueryMapping::apply(ChunkSpecSingle const& s, QueryTemplate const& t) {
+    Mapping m(_subs, s);
+    return t.generate(m);
+}
 
 void QueryMapping::update(QueryMapping const& m) {
     // Update this mapping to reflect the union of the two mappings.
@@ -147,6 +162,7 @@ void QueryMapping::update(QueryMapping const& m) {
             _subs.insert(*i);
         }
     }
+    _subChunkTables.insert(m._subChunkTables.begin(), m._subChunkTables.end());
 }
 
 bool QueryMapping::hasParameter(Parameter p) const {

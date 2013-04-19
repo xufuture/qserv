@@ -53,19 +53,6 @@ struct printConstraintHelper {
 void printConstraints(qMaster::ConstraintVector const& cv) {
     std::for_each(cv.begin(), cv.end(), printConstraintHelper(std::cout));
 }
-void build(qMaster::SelectParser::Ptr p) {
-    // Perform parse
-
-    // Extract characteristics
-
-    // Need hints to be sent back up to python for scope calculation.
-    // hints in sequence of pairs:
-    // constraint name --> paramstr (comma separated values)
-    // sequences will be passed back up and be re-split. 
-
-    // Prepare templates (2-phase --> 2 templates)
-
-}
 
 } // anonymous namespace
 
@@ -234,13 +221,23 @@ void QuerySession::_showFinal() {
     std::cout << "merge: " << mer.dbgStr() << std::endl;
 }
 
-std::string QuerySession::_buildChunkQuery(ChunkSpec const& s) { 
-    // TODO: subchunk support
+std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) { 
+    std::vector<std::string> q;
     // This logic may be pushed over to the qserv worker in the future.
     assert(_stmtParallel.get());
     QueryTemplate cqTemp = _stmtParallel->getTemplate();
     assert(_context->queryMapping.get());
-    return _context->queryMapping->apply(s, cqTemp);
+    QueryMapping const& queryMapping = *_context->queryMapping;
+    if(!queryMapping.hasSubChunks()) { // Non-subchunked?
+        q.push_back(_context->queryMapping->apply(s, cqTemp));
+    } else { // subchunked:
+        ChunkSpecSingle::List sList = ChunkSpecSingle::makeList(s);
+        ChunkSpecSingle::List::const_iterator i;
+        for(i=sList.begin(); i != sList.end(); ++i) {
+            q.push_back(_context->queryMapping->apply(*i, cqTemp));
+        }
+    }
+    return q;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -261,21 +258,25 @@ ChunkQuerySpec& QuerySession::Iter::dereference() const {
 void QuerySession::Iter::_buildCache() const {
     assert(_qs != NULL);
     _cache.db = _qs->_context->defaultDb;
-    _cache.query = _qs->_buildChunkQuery(*_pos);
+    _cache.queries = _qs->_buildChunkQueries(*_pos);
     _cache.chunkId = _pos->chunkId;
     _cache.nextFragment.reset();
-
+    _cache.subChunkTables.clear();
+    QueryMapping const& queryMapping = *(_qs->_context->queryMapping);
+    QueryMapping::StringSet const& sTables = queryMapping.getSubChunkTables();
+    _cache.subChunkTables.insert(_cache.subChunkTables.begin(),
+                                 sTables.begin(), sTables.end());    
     if(_hasSubChunks) {
         if(_pos->shouldSplit()) {
             ChunkSpecFragmenter frag(*_pos);
             ChunkSpec s = frag.get();
-            _cache.query = _qs->_buildChunkQuery(s);
-            _cache.subChunks.assign(s.subChunks.begin(), s.subChunks.end());
+            _cache.queries = _qs->_buildChunkQueries(s);
+            _cache.subChunkIds.assign(s.subChunks.begin(), s.subChunks.end());
             frag.next();
             _cache.nextFragment = _buildFragment(frag);                
         } else {
-            _cache.subChunks.assign(_pos->subChunks.begin(), 
-                                    _pos->subChunks.end());
+            _cache.subChunkIds.assign(_pos->subChunks.begin(), 
+                                      _pos->subChunks.end());
         }
     }
 }
@@ -292,8 +293,8 @@ QuerySession::Iter::_buildFragment(ChunkSpecFragmenter& f) const {
             first = last;
         }
         ChunkSpec s = f.get();
-        last->subChunks.assign(s.subChunks.begin(), s.subChunks.end());
-        last->query = _qs->_buildChunkQuery(s);
+        last->subChunkIds.assign(s.subChunks.begin(), s.subChunks.end());
+        last->queries = _qs->_buildChunkQueries(s);
         f.next();
     }
     return first;

@@ -88,7 +88,7 @@ private:
     void _showFinal(); // Debug
 
     // Iterator help
-    std::string _buildChunkQuery(ChunkSpec const& s);
+    std::vector<std::string> _buildChunkQueries(ChunkSpec const& s);
 
     // Fields
     std::string _original;
@@ -130,6 +130,7 @@ private:
             _dirty = false;
         }
     }
+    boost::shared_ptr<ChunkQuerySpec> _buildFragment(ChunkSpecFragmenter& f) const;
 
     QuerySession* _qs;
     ChunkSpecList::const_iterator _pos;

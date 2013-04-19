@@ -22,6 +22,7 @@
 // Implementation of helper printers for ChunkSpec
 #include "lsst/qserv/master/ChunkSpec.h"
 #include <iterator>
+#include <cassert>
 
 namespace qMaster=lsst::qserv::master;
 
@@ -46,7 +47,7 @@ bool ChunkSpec::shouldSplit() const {
     return subChunks.size() > (unsigned)GOOD_SUBCHUNK_COUNT;
 }
 ////////////////////////////////////////////////////////////////////////
-// ChunkSpec
+// ChunkSpecFragmenter
 ////////////////////////////////////////////////////////////////////////
 ChunkSpecFragmenter::ChunkSpecFragmenter(ChunkSpec const& s) 
     : _original(s), _pos(0) {
@@ -70,6 +71,28 @@ void ChunkSpecFragmenter::next() {
 
 bool ChunkSpecFragmenter::isDone() {
     return _pos >= _original.subChunks.size();
+}
+////////////////////////////////////////////////////////////////////////
+// ChunkSpecSingle
+////////////////////////////////////////////////////////////////////////
+// precondition: !spec.subChunks.empty() 
+ChunkSpecSingle::List ChunkSpecSingle::makeList(ChunkSpec const& spec) {
+    List list;
+    assert(!spec.subChunks.empty());
+    ChunkSpecSingle s;
+    s.chunkId = spec.chunkId;
+    std::vector<int>::const_iterator i;
+    for(i = spec.subChunks.begin();
+        i != spec.subChunks.end(); ++i) {
+        s.subChunkId = *i;
+        list.push_back(s);
+    }    
+    return list;
+}
+
+std::ostream& operator<<(std::ostream& os, ChunkSpecSingle const& c) {
+    os << "(" << c.chunkId << "," << c.subChunkId << ")";
+    return os;
 }
 
 }}} // namespace lsst::qserv::master

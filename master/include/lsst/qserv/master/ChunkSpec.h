@@ -37,11 +37,33 @@ public:
     int chunkId;
     std::vector<int> subChunks;
     void addSubChunk(int s) { subChunks.push_back(s); }
+    bool shouldSplit() const;
 };
 std::ostream& operator<<(std::ostream& os, ChunkSpec const& c);
 
 typedef std::list<ChunkSpec> ChunkSpecList;
 typedef std::vector<ChunkSpec> ChunkSpecVector;
+
+class ChunkSpecFragmenter {
+public:
+    ChunkSpecFragmenter(ChunkSpec const& s);
+    ChunkSpec get() const;
+    void next();
+    bool isDone();
+private:
+    ChunkSpec _original;
+    unsigned _pos;
+    
+};
+class ChunkSpecSingle {
+public:
+    typedef std::list<ChunkSpecSingle> List;
+    int chunkId;
+    int subChunkId;
+    static List makeList(ChunkSpec const& spec);
+};
+std::ostream& operator<<(std::ostream& os, ChunkSpecSingle const& c);
+
 
 }}} // namespace lsst::qserv::master
 

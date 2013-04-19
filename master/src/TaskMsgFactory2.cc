@@ -49,15 +49,28 @@ public:
     boost::shared_ptr<TaskMsg> makeMsg(ChunkQuerySpec const& s,
                                        std::string const& chunkResultName);
 private:
-    template <class C>
+    template <class C1, class C2, class C3>
     void addFragment(TaskMsg& m, std::string const& resultName,
-                     C const& subChunks, std::string const& query) {
+                     C1 const& subChunkTables,
+                     C2 const& subChunkIds,
+                     C3 const& queries) {
         TaskMsg::Fragment* frag = m.add_fragment();
         frag->set_resulttable(resultName);
-        frag->set_query(query);
-        // For each int in subChunks, apply: frag->add_subchunk(1000000); 
-        std::for_each(subChunks.begin(), subChunks.end(), 
-                      std::bind1st(std::mem_fun(&TaskMsg_Fragment::add_subchunk), frag));
+        // For each query, apply: frag->add_query(q)
+        for(typename C3::const_iterator i=queries.begin(); 
+            i != queries.end(); ++i) {
+            frag->add_query(*i); 
+        }
+        TaskMsg_Subchunk sc;
+        for(typename C1::const_iterator i=subChunkTables.begin();
+            i != subChunkTables.end(); ++i) {
+            sc.add_table(*i);
+        }
+        // For each int in subChunks, apply: sc.add_subchunk(1000000); 
+        std::for_each(
+            subChunkIds.begin(), subChunkIds.end(), 
+            std::bind1st(std::mem_fun(&TaskMsg_Subchunk::add_id), &sc));
+        frag->mutable_subchunks()->CopyFrom(sc);
     }
     
     int _session;
@@ -68,7 +81,7 @@ private:
 boost::shared_ptr<TaskMsg> 
 TaskMsgFactory2::Impl::makeMsg(ChunkQuerySpec const& s, 
                                std::string const& chunkResultName) {
-    
+        
     std::string resultTable = _resultTable;
     if(!chunkResultName.empty()) { resultTable = chunkResultName; }
     _taskMsg.reset(new TaskMsg);
@@ -81,12 +94,17 @@ TaskMsgFactory2::Impl::makeMsg(ChunkQuerySpec const& s,
     if(s.nextFragment.get()) {
         ChunkQuerySpec const* sPtr = &s;
         while(sPtr) {
+            // Linked fragments will not have valid subChunkTables vectors,
+            // So, we reuse the root fragment's vector.
             addFragment(*_taskMsg, resultTable, 
-                        sPtr->subChunks, sPtr->query);
+                        s.subChunkTables,    
+                        sPtr->subChunkIds, 
+                        sPtr->queries);
             sPtr = sPtr->nextFragment.get();
         }
     } else {
-        addFragment(*_taskMsg, resultTable, s.subChunks, s.query);
+        addFragment(*_taskMsg, resultTable, 
+                    s.subChunkTables, s.subChunkIds, s.queries);
     }
     return _taskMsg;
 }
@@ -102,7 +120,7 @@ TaskMsgFactory2::TaskMsgFactory2(int session)
 void TaskMsgFactory2::serializeMsg(ChunkQuerySpec const& s,
                                    std::string const& chunkResultName,
                                    std::ostream& os) {
-    boost::shared_ptr<TaskMsg> m = _impl->makeMsg(s, chunkResultName);    
+    boost::shared_ptr<TaskMsg> m = _impl->makeMsg(s, chunkResultName);
     m->SerializeToOstream(&os);
 }
       

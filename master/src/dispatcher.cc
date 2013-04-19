@@ -307,14 +307,13 @@ qMaster::submitQuery3(int session) {
 
     std::string const hp = qm.getXrootdHostPort();
     TmpTableName ttn(session, qs.getOriginal());
-    std::stringstream ss;
+    std::ostringstream ss;
     QuerySession::Iter i;
     QuerySession::Iter e = qs.cQueryEnd();
     for(i = qs.cQueryBegin(); i != e; ++i) {
         qMaster::ChunkQuerySpec& cs = *i;
         std::string chunkResultName = ttn.make(cs.chunkId);
-        f.serializeMsg(cs, chunkResultName, ss);
-
+        f.serializeMsg(cs, chunkResultName, ss);        
         
         TransactionSpec t;
         QservPath qp;
@@ -322,6 +321,8 @@ qMaster::submitQuery3(int session) {
         std::string path=qp.path();
         t.chunkId = cs.chunkId;
         t.query = ss.str();
+        std::cout << "Msg cid=" << cs.chunkId << " with size=" 
+                  << t.query.size() << std::endl;
         t.bufferSize = 8192000;
         t.path = qMaster::makeUrl(hp.c_str(), qp.path());
         t.savePath = makeSavePath(qm.getScratchPath(), session, cs.chunkId);

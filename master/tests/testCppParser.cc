@@ -119,10 +119,7 @@ void testStmt3(QuerySession::Test& t,  std::string const& stmt) {
     QuerySession::Iter e = qs.cQueryEnd();
     for(i = qs.cQueryBegin(); i != e; ++i) {
         qMaster::ChunkQuerySpec& cs = *i;
-        std::cout << "Spec: " 
-                  << cs.query << " db=" << cs.db
-                  << " chunkId=" << cs.chunkId 
-                  << std::endl;
+        std::cout << "Spec: " << cs << std::endl;
         //std::cout << *i << std::endl;
     }    
 }

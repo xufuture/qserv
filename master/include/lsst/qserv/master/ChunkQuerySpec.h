@@ -27,15 +27,21 @@
 #define LSST_QSERV_MASTER_CHUNKQUERYSPEC_H
 #include <string>
 #include <vector>
+#include <boost/shared_ptr.hpp>
+
 namespace lsst { namespace qserv { namespace master {
 // This is pretty tentative.
 class ChunkQuerySpec {
 public:
-    std::string query;
     std::string db;
     int chunkId;
-    std::vector<int> subChunks;
+    std::vector<std::string> subChunkTables;
+    std::vector<int> subChunkIds;
+    std::vector<std::string> queries;
+    boost::shared_ptr<ChunkQuerySpec> nextFragment;
 };
+// Implementation in TaskMsgFactory2.cc
+std::ostream& operator<<(std::ostream& os, ChunkQuerySpec const& c);
 }}} // namespace lsst::qserv::master
 
 

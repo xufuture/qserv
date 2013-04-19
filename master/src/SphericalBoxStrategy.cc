@@ -40,9 +40,11 @@ struct Tuple {
         : db(db_), table(table_), chunkLevel(-1) {}
     std::string db;
     std::string table;
+    std::string prePatchTable;
     int allowed;
     int chunkLevel;
 };
+
 typedef std::deque<Tuple> Tuples;
 std::ostream& operator<<(std::ostream& os, Tuple const& t) {
     os << t.db << "." << t.table << "_c" << t.chunkLevel << "_";
@@ -66,6 +68,26 @@ public:
     friend class SphericalBoxStrategy;
     Tuples tuples;
     int chunkLevel;
+    template <class C>
+    inline void getSubChunkTables(C& tables) {
+        for(Tuples::const_iterator i=tuples.begin();
+            i != tuples.end(); ++i) {
+            if(i->chunkLevel == 2) { 
+                tables.push_back(i->table);
+            }
+        }
+    }
+    inline void updateMapping(QueryMapping& m) {
+        for(Tuples::const_iterator i=tuples.begin();
+            i != tuples.end(); ++i) {
+            if(i->chunkLevel == 2) { 
+                std::string const& table = i->prePatchTable;
+                assert(!table.empty());
+                m.insertSubChunkTable(table);
+            }
+        }
+    }
+
 };
 
 // @return count of chunked tables.
@@ -89,14 +111,16 @@ int patchTuples(Tuples& tuples) {
         case 0:
             break;
         case 1:
+            i->prePatchTable = i->table;
             i->table = SphericalBoxStrategy::makeChunkTableTemplate(i->table);
             break;
         case 2:
+            i->prePatchTable = i->table;
             if(chunkedCount > 1) {                
                 i->db = SphericalBoxStrategy::makeSubChunkDbTemplate(i->db);
                 i->table = SphericalBoxStrategy::makeSubChunkTableTemplate(i->table);
             } else {
-            i->table = SphericalBoxStrategy::makeChunkTableTemplate(i->table);
+                i->table = SphericalBoxStrategy::makeChunkTableTemplate(i->table);
             }
             break;
         default:
@@ -199,6 +223,7 @@ boost::shared_ptr<QueryMapping> SphericalBoxStrategy::getMapping() {
     case 2:
         addChunkMap(*qm);
         addSubChunkMap(*qm);
+        _impl->updateMapping(*qm);
         break;
     default:
         break;
