@@ -24,7 +24,7 @@
 # at the Python master/frontend level. This contains only the parts
 # needed to prepare the lower C++ code to rewrite the query properly.
 import lsst.qserv.master.config
-from lsst.qserv.master.geometry import SphericalBoxPartitionMap
+from lsst.qserv.master.geometry import SphericalBoxPartitionMap, SphericalBox
 
 def makePmap():
     c = lsst.qserv.master.config.config
