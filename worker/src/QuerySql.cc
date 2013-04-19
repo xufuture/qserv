@@ -25,6 +25,7 @@
 #include "lsst/qserv/worker/QuerySql.h"
 #include "lsst/qserv/worker/Base.h"
 #include "lsst/qserv/constants.h"
+#include <iostream>
 
 namespace qWorker = lsst::qserv::worker;
 
@@ -90,30 +91,31 @@ QuerySql::Factory::make(std::string const& db,
     // Create executable statement.
     // Obsolete when results marshalling is implemented
     std::stringstream ss;
-    if(needCreate) { 
-        ss << "CREATE TABLE " << resultTable << " ";
-    } else {
-        ss << "INSERT INTO " << resultTable << " "; 
+    for(int i=0; i < f.query_size(); ++i) {
+        if(needCreate) { 
+            ss << "CREATE TABLE " << resultTable << " ";
+            needCreate = false;
+        } else {
+            ss << "INSERT INTO " << resultTable << " "; 
+        }
+        ss << f.query(i);
+        qSql->executeList.push_back(ss.str());
+        ss.str("");
     }
-    ss << f.query();
-    qSql->executeList.push_back(ss.str());
-    ss.str("");
 
     std::string table("Object");
-    if(f.has_scgroup()) {
-        table = f.scgroup().table();
-    }
-    ScScriptBuilder<int> scb(*qSql, db, table, 
-                             SUB_CHUNK_COLUMN, chunkId);
-    if(f.has_scgroup()) {
-        for(int i=0; i < f.scgroup().id_size(); ++i) {
-            scb(f.scgroup().id(i));
+    if(f.has_subchunks()) {
+        TaskMsg_Subchunk const& sc = f.subchunks();
+        for(int i=0; i < sc.table_size(); ++i) {
+//            std::cout << "Building subchunks for table=" << sc.table(i) << std::endl;
+            table = sc.table(i);
+            ScScriptBuilder<int> scb(*qSql, db, table, 
+                                     SUB_CHUNK_COLUMN, chunkId);
+            for(int i=0; i < sc.id_size(); ++i) {
+                scb(sc.id(i));
+            }
         }
-    } else {
-        for(int j=0; j < f.subchunk_size(); ++j) {
-            scb(f.subchunk(j));
-        }
-    }
+    } 
     return qSql;
 }
 

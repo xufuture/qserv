@@ -45,16 +45,14 @@ struct Fixture {
         Task::Fragment f;
         // "Real" subchunk query text should include 
         // pre-substituted subchunk query text.
-        f.set_query("SELECT o1.*, o2.* FROM Object_1001 o1, Object_1001 o2;");
-        f.add_subchunk(1111);
-        f.add_subchunk(1222);
+        f.add_query("SELECT o1.*, o2.* FROM Object_1001 o1, Object_1001 o2;");
         f.set_resulttable("fragResult");
         TaskMsg_Subchunk sc;
         sc.set_database(defaultDb);
-        sc.set_table("Object");
+        sc.add_table("Object");
         sc.add_id(1111);
         sc.add_id(1222);
-        f.mutable_scgroup()->CopyFrom(sc);
+        f.mutable_subchunks()->CopyFrom(sc);
         return f;
     }
 

@@ -108,7 +108,8 @@ runScriptPieces(boost::shared_ptr<qWorker::Logger> log,
             ok = true;
         }
     }
-    // Always destroy subchunks, no aborting (use NULL checkflag)
+    // TODO: Should drop "exec" result tables too.
+    // Always destroy subchunks, no aborting (use NULL checkflag)    
     return ok && runBatch(log, sqlConn, errObj, scriptId, clean, NULL);
 }
 

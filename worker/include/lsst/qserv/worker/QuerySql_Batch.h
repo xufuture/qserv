@@ -36,8 +36,19 @@ struct QuerySql::Batch {
     // simple one) or to a certain overall query string length 
     Batch(std::string const& name_,
           QuerySql::StringList const& sequence_, int batchSize_=10)
-        : name(name_), sequence(sequence_), batchSize(batchSize_),
-          pos(0) {}
+        : name(name_), batchSize(batchSize_),
+          pos(0) {
+        for(QuerySql::StringList::const_iterator i = sequence_.begin();
+            i != sequence_.end(); ++i) {
+            std::string::const_iterator last = i->begin() + (i->length() - 1);
+            if(';' == *last) { // Clip trailing semicolon which
+                // is added during batching.
+                sequence.push_back(std::string(i->begin(), last));
+            } else { 
+                sequence.push_back(*i); 
+            }
+        }
+    }
     bool isDone() const {
         return sequence.empty() || (pos >= sequence.size());
     }
@@ -48,17 +59,17 @@ struct QuerySql::Batch {
         begin = sequence.begin() + pos;
         if(sequence.size() < (pos + batchSize)) {
             std::copy(begin, sequence.end(), 
-                      std::ostream_iterator<std::string>(os, "\n"));
+                      std::ostream_iterator<std::string>(os, ";\n"));
         } else {
             std::copy(begin, begin + batchSize,
-                      std::ostream_iterator<std::string>(os, "\n"));
+                      std::ostream_iterator<std::string>(os, ";\n"));
         }
         return os.str();
     }
     void next() { pos += batchSize; }
 
     std::string name;
-    QuerySql::StringList const& sequence;
+    QuerySql::StringList sequence;
     int batchSize;
     int pos;
 };
