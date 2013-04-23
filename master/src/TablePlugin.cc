@@ -290,6 +290,7 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     //wClause.walk(fixExprAlias(reverseAlias));
     // order by
     // having        
+    context.dominantDb = _dominantDb;
 }
 
 void

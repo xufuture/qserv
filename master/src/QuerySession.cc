@@ -124,6 +124,10 @@ void QuerySession::setResultTable(std::string const& resultTable) {
     _resultTable = resultTable;
 }
 
+std::string const& QuerySession::getDominantDb() const {
+    return _context->dominantDb; // parsed query's dominant db (via TablePlugin)
+}
+
 MergeFixup QuerySession::makeMergeFixup() const {
     // Make MergeFixup to adapt new query parser/generation framework
     // to older merging code. 

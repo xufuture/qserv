@@ -174,6 +174,7 @@ WhereFactory::attachTo(SqlSQL2Parser& p) {
 void 
 WhereFactory::_import(antlr::RefAST a) {
     _clause.reset(new WhereClause());
+    _clause->_restrs.reset(new QsRestrictor::List);
     // std::cout << "WHERE starts with: " << a->getText() 
     //           << " (" << a->getType() << ")" << std::endl;    
 
@@ -211,11 +212,6 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     std::copy(pg.begin(), pg.end(), std::back_inserter(params));
     std::copy(params.begin(), params.end(),
               std::ostream_iterator<std::string>(std::cout,", "));
-    // FIXME: add restrictor spec to facilitate later synthesis of
-    // bounding functions. 
-    if(!_clause->_restrs.get()) {
-        _clause->resetRestrs(); 
-    }
     assert(_clause->_restrs.get());
     restr->_name = r;
     _clause->_restrs->push_back(restr);

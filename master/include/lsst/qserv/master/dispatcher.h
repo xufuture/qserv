@@ -55,6 +55,7 @@ void setupQuery(int session, std::string const& query,
                 std::string const& resultTable); // new model.
 std::string const& getSessionError(int session);
 lsst::qserv::master::ConstraintVec getConstraints(int session);
+std::string const& getDominantDb(int session);
 
 void addChunk(int session, lsst::qserv::master::ChunkSpec const& cs );
 void submitQuery3(int session);

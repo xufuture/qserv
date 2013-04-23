@@ -276,6 +276,12 @@ lsst::qserv::master::getConstraints(int session) {
     return ConstraintVec(qs.getConstraints());
 }
 
+std::string const&
+lsst::qserv::master::getDominantDb(int session) {
+    AsyncQueryManager& qm = getAsyncManager(session);
+    QuerySession& qs = qm.getQuerySession();
+    return qs.getDominantDb();
+}
 
 void 
 qMaster::addChunk(int session, lsst::qserv::master::ChunkSpec const& cs ) {

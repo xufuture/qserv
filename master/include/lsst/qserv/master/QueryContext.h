@@ -40,6 +40,7 @@ public:
     typedef std::list<boost::shared_ptr<QsRestrictor> > RestrList;
 
     std::string defaultDb;
+    std::string dominantDb;
     std::string username; // unused, but reserved.
     boost::shared_ptr<QueryMapping> queryMapping;
     boost::shared_ptr<RestrList> restrictors;

@@ -63,6 +63,8 @@ public:
     void setResultTable(std::string const& resultTable);
     std::string const& getResultTable() const { return _resultTable; }
     
+    std::string const& getDominantDb() const;
+    
     MergeFixup makeMergeFixup() const;
 
     // Iteration
