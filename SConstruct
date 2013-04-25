@@ -113,6 +113,7 @@ def get_template_targets():
     target_lst = []
 
     script_dict = {
+        '%\(QMS_HOST\)s': config['qserv']['master'],
         '%\(QSERV_BASE_DIR\)s': config['qserv']['base_dir'],
         '%\(QSERV_LOG_DIR\)s': config['qserv']['log_dir'],
         '%\(QSERV_STRIPES\)s': config['qserv']['stripes'],
