@@ -1,0 +1,22 @@
+#!/bin/bash
+
+QMS_BASE_DIR=%(QSERV_BASE_DIR)s/qserv/meta
+OSPYTHON=/usr/bin/python
+QMS_START=${QMS_BASE_DIR}/bin/startQMS.py
+QMS_CONFIG=%(QSERV_BASE_DIR)s/etc/qms.cnf
+
+export PYTHONPATH=%(QSERV_BASE_DIR)s/lib/python2.6/site-packages/:${QMS_BASE_DIR}/dist
+
+echo PYTHONPATH=${PYTHONPATH}
+
+${OSPYTHON} ${QMS_START} -c ${QMS_CONFIG}
+
+
+
+
+
+
+
+
+
+

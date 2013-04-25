@@ -91,6 +91,7 @@ if( $opts{'status'} ) {
 
 	start_proxy();
 	start_mysqld();
+        start_qms();        
         # xrootd will launch mysql queries at startup
         sleep(2);
 	start_xrootd();
@@ -333,6 +334,12 @@ sub start_proxy {
 sub start_mysqld {
 
 	system("$install_dir/bin/mysqld_safe &");
+
+}
+
+sub start_qms {
+
+	system("$install_dir/start_qms &");
 
 }
 

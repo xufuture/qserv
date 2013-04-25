@@ -163,6 +163,7 @@ def get_template_targets():
             path = os.path.dirname(target_name)
             if os.path.basename(path) == "bin" or os.path.basename(target_name) in [
                 "start_xrootd",
+                "start_qms",
                 "start_qserv",
                 "start_mysqlproxy"
                 ]:

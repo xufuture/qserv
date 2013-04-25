@@ -6,6 +6,9 @@ yum install scons
 # data partitioning dependency
 yum install numpy;
 
+# Twisted
+yum install python-twisted python-twisted-names python-twisted-runner python-twisted-web 
+
 # xrootd
 yum install gcc-c++ git zlib-devel
 
@@ -13,7 +16,7 @@ yum install gcc-c++ git zlib-devel
 yum install python-devel
 
 # mysql
-yum install ncurses-devel
+yum install ncurses-devel MySQL-python
 
 # qserv
 yum install boost-devel openssl-devel antlr swig
