@@ -1,10 +1,10 @@
 
 [qmsdb]
-db = QMS
-unix_socket = %(QSERV_BASE_DIR)s/var/lib/mysql/mysql/mysql.sock
-host = %(MYSQLD_HOST)s
-user= %(MYSQLD_USER)s
-passwd = %(MYSQLD_PASS)s
+db = %(QMS_HOST)s
+unix_socket = %(MYSQLD_SOCK)s
+host = %(QMS_HOST)s
+user= %(QMS_USER)s
+passwd = %(QMS_PASS)s
 
 [logging]
 outFile = %(QSERV_LOG_DIR)s/qmsServer.log
