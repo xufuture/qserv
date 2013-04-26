@@ -45,6 +45,10 @@ def read_config(config_file, default_config_file):
     for dir in ['base_dir', 'tmp_dir', 'log_dir']:
         config['qserv'][dir] = os.path.normpath(config['qserv'][dir])
     config['qserv']['bin_dir'] = os.path.join(config['qserv']['base_dir'], "bin")
+    section='qms'
+    config[section] = dict()    
+    for option in parser.options(section):
+        config[section][option] = parser.get(section,option)
 
     section='mysqld'
     config[section] = dict()

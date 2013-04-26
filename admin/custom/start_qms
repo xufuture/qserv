@@ -9,7 +9,8 @@ export PYTHONPATH=%(QSERV_BASE_DIR)s/lib/python2.6/site-packages/:${QMS_BASE_DIR
 
 echo PYTHONPATH=${PYTHONPATH}
 
-${OSPYTHON} ${QMS_START} -c ${QMS_CONFIG}
+${OSPYTHON} ${QMS_START} -c ${QMS_CONFIG} &
+echo $! > %(QSERV_PID_DIR)s/qms.pid
 
 
 

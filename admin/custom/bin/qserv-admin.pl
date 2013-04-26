@@ -80,6 +80,8 @@ if( $opts{'status'} ) {
 	
 	print "Stopping mysql-proxy\n";
 	stop_proxy();
+	print "Stopping QMS\n";
+	stop_qms();
 	print "Stopping xrootd\n";
 	stop_xrootd();
 	print "Stopping mysqld\n"; 
@@ -264,6 +266,10 @@ sub check_ps {
 #Stop the qserv process
 sub stop_qserv {
     killpid("$install_dir/var/run/qserv.pid");
+}
+
+sub stop_qms {
+    killpid("$install_dir/var/run/qms.pid");
 }
 
 #stop the xrootd process
