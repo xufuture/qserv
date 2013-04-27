@@ -285,7 +285,7 @@ lsst::qserv::master::getDominantDb(int session) {
 
 void 
 qMaster::addChunk(int session, lsst::qserv::master::ChunkSpec const& cs ) {
-#if 1 // SWIG plumbing debug
+#if 0 // SWIG plumbing debug
     std::cout << "Received chunk=" << cs.chunkId << " ";
     typedef std::vector<int> Vect;
     int count=0;

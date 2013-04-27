@@ -36,6 +36,7 @@
 #include "lsst/qserv/master/AggregatePlugin.h"
 #include "lsst/qserv/master/SpatialSpecPlugin.h"
 #include "lsst/qserv/master/TablePlugin.h"
+#include "lsst/qserv/master/PostPlugin.h"
 
 namespace qMaster=lsst::qserv::master;
 
@@ -132,9 +133,6 @@ MergeFixup QuerySession::makeMergeFixup() const {
     // Make MergeFixup to adapt new query parser/generation framework
     // to older merging code. 
     assert(_stmt.get());
-    MergeFixup mf;
-    if(_stmtMerge)
-    boost::shared_ptr<SelectStmt> _stmtMerge;
     SelectList const& mergeSelect = _stmtMerge->getSelectList();
     QueryTemplate t;
     mergeSelect.renderTo(t);
@@ -142,8 +140,9 @@ MergeFixup QuerySession::makeMergeFixup() const {
     t.clear();
     std::string post; // TODO: handle GroupBy, etc.
     std::string orderBy; // TODO
-    int limit = _stmt->getLimit();
-    return MergeFixup (select, post, orderBy, limit, _context->needsMerge);
+    bool needsMerge = _context->needsMerge;
+    return MergeFixup(select, post, orderBy, 
+                      _stmtMerge->getLimit(), needsMerge);
 }
 
 QuerySession::Iter QuerySession::cQueryBegin() {
@@ -166,6 +165,7 @@ void QuerySession::_preparePlugins() {
     _plugins->push_back(QueryPlugin::newInstance("Aggregate"));
     _plugins->push_back(QueryPlugin::newInstance("Table"));
     _plugins->push_back(QueryPlugin::newInstance("SpatialSpec"));
+    _plugins->push_back(QueryPlugin::newInstance("Post"));
     PluginList::iterator i;
     for(i=_plugins->begin(); i != _plugins->end(); ++i) {
         (**i).prepare();
@@ -312,6 +312,7 @@ void initQuerySession() {
     registerAggregatePlugin(); 
     registerTablePlugin();
     registerSpatialSpecPlugin();
+    registerPostPlugin();
 }
 
 }}} // namespace lsst::qserv::master

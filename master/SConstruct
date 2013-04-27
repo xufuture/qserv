@@ -207,6 +207,7 @@ parserSrcs = map(lambda x: os.path.join('src', x),
                   "AggOp.cc",
                   "SpatialSpecPlugin.cc",
 #                  "TableCheckPlugin.cc", # Not used.
+                  "PostPlugin.cc",
                   "TablePlugin.cc",
                   "TableRefN.cc",
                   "SphericalBoxStrategy.cc"])

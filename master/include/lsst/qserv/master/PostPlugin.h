@@ -1,6 +1,7 @@
+// -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -19,36 +20,15 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
-#ifndef LSST_QSERV_MASTER_MERGETYPES_H
-#define LSST_QSERV_MASTER_MERGETYPES_H
-#include <string>
 
-namespace lsst {
-namespace qserv {
-namespace master {
+#ifndef LSST_QSERV_MASTER_POSTPLUGIN_H
+#define LSST_QSERV_MASTER_POSTPLUGIN_H
 
-/// class MergeFixup - A value class that specifies the SQL predicates
-/// to use when merging subqueries into final results. 
-class MergeFixup {
-public:
-    MergeFixup(std::string select_,
-               std::string post_,
-               std::string orderBy_,
-               int limit_, 
-               bool needsFixup_) 
-        : select(select_), post(post_),
-          orderBy(orderBy_), limit(limit_), 
-          needsFixup(needsFixup_)
-    {}
-    MergeFixup() : limit(-1), needsFixup(false) {}
-
-    std::string select;
-    std::string post;
-    std::string orderBy;
-    int limit;
-    bool needsFixup;
-};
+namespace lsst { namespace qserv { namespace master {
+void registerPostPlugin();
 
 }}} // namespace lsst::qserv::master
-#endif // LSST_QSERV_MASTER_MERGETYPES_H
+
+
+#endif // LSST_QSERV_MASTER_POSTPLUGIN_H
+

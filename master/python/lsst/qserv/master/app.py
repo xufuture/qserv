@@ -348,7 +348,7 @@ class InbandQueryAction:
     def _applyConstraints(self):
         # Retrieve constraints as (name, [param1,param2,param3,...])        
         self.constraints = getConstraints(self.sessionId)
-        print "Getting constraints", self.constraints, "size=",self.constraints.size()
+        #print "Getting constraints", self.constraints, "size=",self.constraints.size()
         # Apply constraints
         def iterateConstraints(constraintVec):
             for i in range(constraintVec.size()):
