@@ -86,7 +86,7 @@ template <> struct Record<Key> {
         id(k.id), htmId(k.htmId), size(0), data(0) { }
 
     /// Hash records by HTM ID.
-    uint32_t hash() const { return mulveyHash(htmId); }
+    uint32_t hash() const { return dupr::hash(htmId); }
 
     /// Order records by HTM ID.
     bool operator<(Record const & r) const { return htmId < r.htmId; }
@@ -153,24 +153,17 @@ Worker::Worker(po::variables_map const & vm) :
                             "between 1 and 99999.");
     }
     // Map field names of interest to field indexes.
-    if (vm.count("part.id") == 0 || vm.count("part.pos") == 0) {
-        throw runtime_error("The --part.id and/or --part.pos "
+    if (vm.count("id") == 0 || vm.count("part.pos") == 0) {
+        throw runtime_error("The --id and/or --part.pos "
                             "option was not specified.");
     }
-    string s = vm["part.id"].as<string>();
-    _idField = _editor.getFieldIndex(s);
-    if (_idField == -1) {
-        throw runtime_error("--part.id=\"" + s + "\" is not a valid input "
-                            "field name.");
-    }
+    FieldNameResolver fields(_editor);
+    string s = vm["id"].as<string>();
+    _idField = fields.resolve("id", s);
     s = vm["part.pos"].as<string>();
     pair<string,string> p = parseFieldNamePair("part.pos", s);
-    _raField = _editor.getFieldIndex(p.first);
-    _decField = _editor.getFieldIndex(p.second);
-    if (_raField < 0 || _decField < 0) {
-        throw runtime_error("--part.pos=\"" + s + "\" is not a valid "
-                            "pair of input field names.");
-    }
+    _raField = fields.resolve("part.pos", s, p.first);
+    _decField = fields.resolve("part.pos", s, p.second);
 }
 
 void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
@@ -225,7 +218,7 @@ void Worker::defineOptions(po::options_description & opts) {
          "HTM index subdivision level.");
     po::options_description part("\\_______________ Partitioning", 80);
     part.add_options()
-        ("part.id", po::value<string>(),
+        ("id", po::value<string>(),
          "The name of the record ID input field.")
         ("part.pos", po::value<string>(),
          "The partitioning right ascension and declination field names, "
@@ -233,6 +226,7 @@ void Worker::defineOptions(po::options_description & opts) {
     opts.add(indexing).add(part);
     defineOutputOptions(opts);
     csv::Editor::defineOptions(opts);
+    defineInputOptions(opts);
 }
 
 void Worker::_openFiles(uint32_t htmId) {
@@ -240,7 +234,7 @@ void Worker::_openFiles(uint32_t htmId) {
     if (_numNodes > 1) {
         // Files go into a node-specific sub-directory.
         char subdir[32];
-        uint32_t node = mulveyHash(htmId) % _numNodes;
+        uint32_t node = hash(htmId) % _numNodes;
         snprintf(subdir, sizeof(subdir), "node_%05lu",
                  static_cast<unsigned long>(node));
         p /= subdir;
@@ -281,9 +275,9 @@ int main(int argc, char const * const * argv) {
         dupr::HtmIndexJob::defineOptions(options);
         po::variables_map vm;
         dupr::parseCommandLine(vm, options, argc, argv, help);
-        dupr::makeOutputDirectory(vm);
+        dupr::makeOutputDirectory(vm, true);
         dupr::HtmIndexJob job(vm);
-        shared_ptr<dupr::HtmIndex> index = job.run();
+        shared_ptr<dupr::HtmIndex> index = job.run(dupr::makeInputLines(vm));
         if (!index->empty()) {
             fs::path d(vm["out.dir"].as<string>());
             index->write(d / "htm_index.bin", false);

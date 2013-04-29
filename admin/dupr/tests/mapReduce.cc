@@ -32,6 +32,7 @@
 #include "MapReduce.h"
 #include "TempFile.h"
 
+namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace dupr = lsst::qserv::admin::dupr;
 
@@ -69,7 +70,7 @@ namespace {
     };
 
     // 2-bits per line that indicate whether a line has been mapped/reduced.
-    // Failures are tracked with an overall pass/fail flag, since BOOST_CHECK 
+    // Failures are tracked with an overall pass/fail flag because BOOST_CHECK
     // is extremely slow.
     class Lines {
     public:
@@ -154,31 +155,28 @@ namespace {
 
 
 BOOST_AUTO_TEST_CASE(MapReduceTest) {
-    char const * argv[7] = {
+    char const * argv[4] = {
         "dummy",
         "--in.csv.field=line",
-        "--mr.block-size=1",
         "--mr.pool-size=8",
         0,
-        0,
-        0
     };
     TempFile t1, t2;
     buildInput(t1, t2);
-    string const s1("--in=" + t1.path().native());
-    string const s2("--in=" + t2.path().native());
-    argv[4] = s1.c_str();
-    argv[5] = s2.c_str();
+    std::vector<fs::path> paths;
+    paths.push_back(t1.path());
+    paths.push_back(t2.path());
     po::options_description options;
     TestJob::defineOptions(options);
     for (char n = '1'; n < '8'; ++n) {
         string s("--mr.num-workers="); s += n;
-        argv[6] = s.c_str();
+        argv[3] = s.c_str();
         po::variables_map vm;
-        po::store(po::parse_command_line(7, argv, options), vm);
+        po::store(po::parse_command_line(4, argv, options), vm);
         po::notify(vm);
         TestJob job(vm);
-        shared_ptr<Lines> lines = job.run();
+        dupr::InputLines input(paths, 1*dupr::MiB, false);
+        shared_ptr<Lines> lines = job.run(input);
         lines->verify();
     }
 }

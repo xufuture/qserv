@@ -45,6 +45,7 @@ ChunkReducer::ChunkReducer(po::variables_map const & vm) :
     _index(make_shared<ChunkIndex>()),
     _chunkId(-1),
     _numNodes(vm["out.num-nodes"].as<uint32_t>()),
+    _prefix(vm["part.prefix"].as<string>()),
     _outputDir(vm["out.dir"].as<string>()),
     _nonOverlap(vm["mr.block-size"].as<size_t>()*MiB),
     _selfOverlap(vm["mr.block-size"].as<size_t>()*MiB),
@@ -106,22 +107,22 @@ void ChunkReducer::_makeFilePaths(int32_t chunkId) {
     if (_numNodes > 1) {
         // Files go into a node-specific sub-directory.
         char subdir[32];
-        uint32_t node = mulveyHash(static_cast<uint32_t>(chunkId)) % _numNodes;
+        uint32_t node = hash(static_cast<uint32_t>(chunkId)) % _numNodes;
         snprintf(subdir, sizeof(subdir), "node_%05lu",
                  static_cast<unsigned long>(node));
         p /= subdir;
         fs::create_directory(p);
     }
-    char file[32];
-    snprintf(file, sizeof(file), "chunk_%ld.txt",
+    char suffix[32];
+    snprintf(suffix, sizeof(suffix), "_%ld.txt",
              static_cast<long>(chunkId));
-    _nonOverlapPath = p / fs::path(file);
-    snprintf(file, sizeof(file), "chunk_%ld_self.txt",
+    _nonOverlapPath = p / (_prefix+ suffix);
+    snprintf(suffix, sizeof(suffix), "_%ld_self.txt",
              static_cast<long>(chunkId));
-    _selfOverlapPath = p / fs::path(file);
-    snprintf(file, sizeof(file), "chunk_%ld_full.txt",
+    _selfOverlapPath = p / (_prefix + suffix);
+    snprintf(suffix, sizeof(suffix), "_%ld_full.txt",
              static_cast<long>(chunkId));
-    _fullOverlapPath = p / fs::path(file);
+    _fullOverlapPath = p / (_prefix + suffix);
 }
 
 }}}} // namespace lsst::qserv::admin::dupr

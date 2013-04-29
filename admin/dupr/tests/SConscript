@@ -7,7 +7,7 @@ Import('env')
 def _run(cmd):
     try:
         process = subprocess.Popen(args=cmd.split(), stdout=subprocess.PIPE)
-        output,_ = process.communicate()
+        output, _ = process.communicate()
         return '' if process.poll() else output
     except:
         return ''

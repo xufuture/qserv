@@ -37,11 +37,10 @@
 
 namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
-/// An HTM index tracks which HTM triangles at a given subdivision level
-/// contain records of an input data set, as well as the number and total
-/// size of records in each triangle. It also provides a mapping from the
-/// set of all HTM IDs to the set of HTM IDs for triangles containing at
-/// least one record.
+/// An HTM index tracks how many records of an input data set are contained
+/// in all HTM triangles of a given subdivision level L. It also provides a
+/// mapping from the set of all level-L HTM IDs to the set of level-L HTM
+/// IDs for non-empty triangles.
 ///
 /// An HTM index has an implementation-defined binary file format with the
 /// following property: the concatenation of two index files with the same

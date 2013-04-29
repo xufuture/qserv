@@ -32,7 +32,7 @@ namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
 /// 32-bit integer hash function from Brett Mulvey.
 /// See http://home.comcast.net/~bretm/hash/4.html
-inline uint32_t mulveyHash(uint32_t x) {
+inline uint32_t hash(uint32_t x) {
     x += x << 16;
     x ^= x >> 13;
     x += x << 4;
@@ -41,6 +41,19 @@ inline uint32_t mulveyHash(uint32_t x) {
     x ^= x >> 5;
     x += x << 8;
     x ^= x >> 16;
+    return x;
+}
+
+/// 64-bit integer hash function by Thomas Wang.
+/// See http://www.cris.com/~Ttwang/tech/inthash.htm
+inline uint64_t hash(uint64_t x) {
+    x = (~x) + (x << 21);
+    x = x ^ (x >> 24);
+    x = (x + (x << 3)) + (x << 8);
+    x = x ^ (x >> 14);
+    x = (x + (x << 2)) + (x << 4);
+    x = x ^ (x >> 28);
+    x = x + (x << 31);
     return x;
 }
 

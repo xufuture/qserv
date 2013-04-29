@@ -125,6 +125,7 @@ private:
     int32_t                _chunkId;
     uint32_t               _numNodes;
     fs::path               _outputDir;
+    string                 _prefix;
     BufferedAppender       _chunk;
 };
 
@@ -140,6 +141,7 @@ Worker::Worker(po::variables_map const & vm) :
     _chunkId(-1),
     _numNodes(vm["out.num-nodes"].as<uint32_t>()),
     _outputDir(vm["out.dir"].as<string>()),
+    _prefix(vm["part.prefix"].as<string>()),
     _chunk(vm["mr.block-size"].as<size_t>()*MiB)
 {
     if (_numNodes == 0 || _numNodes > 99999u) {
@@ -151,27 +153,23 @@ Worker::Worker(po::variables_map const & vm) :
         throw runtime_error("The --part.pos1 and/or --part.pos2 "
                             "option was not specified.");
     }
+    FieldNameResolver fields(_editor);
     string s = vm["part.pos1"].as<string>();
     pair<string,string> p = parseFieldNamePair("part.pos1", s);
-    _pos1.first = _editor.getFieldIndex(p.first);
-    _pos1.second = _editor.getFieldIndex(p.second);
-    if (_pos1.first < 0 || _pos1.second < 0) {
-        throw runtime_error("--part.pos1=\"" + s + "\" is not a valid "
-                            "pair of input field names.");
-    }
+    _pos1.first = fields.resolve("part.pos1", s, p.first);
+    _pos1.second = fields.resolve("part.pos1", s, p.second);
     s = vm["part.pos2"].as<string>();
     p = parseFieldNamePair("part.pos2", s);
-    _pos2.first = _editor.getFieldIndex(p.first);
-    _pos2.second = _editor.getFieldIndex(p.second);
-    if (_pos2.first < 0 || _pos2.second < 0) {
-        throw runtime_error("--part.pos2=\"" + s + "\" is not a valid "
-                            "pair of input field names.");
-    }
+    _pos2.first = fields.resolve("part.pos2", s, p.first);
+    _pos2.second = fields.resolve("part.pos2", s, p.second);
     if (vm.count("part.chunk") != 0) {
-        _chunkIdField = _editor.getFieldIndex(vm["part.chunk"].as<string>());
+        s = vm["part.chunk"].as<string>();
+        _chunkIdField = fields.resolve("part.chunk", s);
     }
-    _subChunkIdField = _editor.getFieldIndex(vm["part.sub-chunk"].as<string>());
-    _flagsField = _editor.getFieldIndex(vm["part.flags"].as<string>());
+    s = vm["part.sub-chunk"].as<string>();
+    _subChunkIdField = fields.resolve("part.sub-chunk", s);
+    s = vm["part.flags"].as<string>();
+    _flagsField = fields.resolve("part.flags", s);
 }
 
 void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
@@ -249,6 +247,8 @@ void Worker::finish() {
 void Worker::defineOptions(po::options_description & opts) {
     po::options_description part("\\_______________ Partitioning", 80);
     part.add_options()
+        ("part.prefix", po::value<string>()->default_value("chunk"),
+         "Chunk file name prefix.")
         ("part.chunk", po::value<string>(),
          "Optional chunk ID output field name. This field name is appended "
          "to the output field name list if it isn't already included.")
@@ -272,6 +272,7 @@ void Worker::defineOptions(po::options_description & opts) {
     opts.add(part);
     defineOutputOptions(opts);
     csv::Editor::defineOptions(opts);
+    defineInputOptions(opts);
 }
 
 void Worker::_openFile(int32_t chunkId) {
@@ -279,16 +280,15 @@ void Worker::_openFile(int32_t chunkId) {
     if (_numNodes > 1) {
         // Files go into a node-specific sub-directory.
         char subdir[32];
-        uint32_t node = mulveyHash(static_cast<uint32_t>(chunkId)) % _numNodes;
+        uint32_t node = hash(static_cast<uint32_t>(chunkId)) % _numNodes;
         snprintf(subdir, sizeof(subdir), "node_%05lu",
                  static_cast<unsigned long>(node));
         p /= subdir;
         fs::create_directory(p);
     }
-    char file[32];
-    snprintf(file, sizeof(file), "chunk_%ld.txt",
-             static_cast<long>(chunkId));
-    _chunk.open(p / fs::path(file), false);
+    char suffix[32];
+    snprintf(suffix, sizeof(suffix), "_%ld.txt", static_cast<long>(chunkId));
+    _chunk.open(p / (_prefix + suffix), false);
 }
 
 
@@ -325,9 +325,9 @@ int main(int argc, char const * const * argv) {
         dupr::ensureOutputFieldExists(vm, "part.chunk");
         dupr::ensureOutputFieldExists(vm, "part.sub-chunk");
         dupr::ensureOutputFieldExists(vm, "part.flags");
-        dupr::makeOutputDirectory(vm);
+        dupr::makeOutputDirectory(vm, true);
         dupr::PartitionMatchesJob job(vm);
-        shared_ptr<dupr::ChunkIndex> index = job.run();
+        shared_ptr<dupr::ChunkIndex> index = job.run(dupr::makeInputLines(vm));
         if (!index->empty()) {
             fs::path d(vm["out.dir"].as<string>());
             index->write(d / "chunk_index.bin", false);

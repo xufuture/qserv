@@ -276,8 +276,8 @@ template <typename K> void Silo<K>::_grow() {
 /// never have a result, `void` should be used as the result type - in this
 /// case the `result()` function need not be defined at all.
 ///
-/// A worker implementation need not be copy-constrible or assignable. It
-/// must however provied a constructor taking a
+/// A worker implementation need not be copy-constructible or assignable. It
+/// must however provide a constructor taking a
 /// `boost::program_options::variables_map const &`, as well as:
 ///
 ///     static void defineOptions(boost::program_options::options_description & opts)
@@ -338,7 +338,7 @@ namespace detail {
         JobBase(boost::program_options::variables_map const & vm);
         ~JobBase();
 
-        void run();
+        void run(InputLines input);
         void operator()();
 
         static void defineOptions(
@@ -349,6 +349,8 @@ namespace detail {
         JobBase & operator=(JobBase const &);
 
         void _work();
+        void _cleanup();
+        void _fail(std::exception const & ex);
 
         typedef typename Worker::Key                          Key;
         typedef detail::SortedRecordRange<Key>                SortedRecordRange;
@@ -374,6 +376,8 @@ namespace detail {
         std::vector<SiloPtr>      _sorted;
         boost::condition_variable _mapCond;
         boost::condition_variable _reduceCond;
+        bool                      _failed;
+        std::string               _errorMessage;
 
         char                      _pad1[CACHE_LINE_SIZE];
 
@@ -389,86 +393,83 @@ namespace detail {
         boost::program_options::variables_map const & vm
     ) : _vm(&vm),
         _threshold(0),
-        _numWorkers(0),
+        _numWorkers(vm["mr.num-workers"].as<uint32_t>()),
         _inputExhausted(false),
         _numMappers(0),
-        _numReducers(0)
+        _numReducers(0),
+        _failed(false)
     {
-        namespace fs = boost::filesystem;
-        typedef std::vector<std::string>::const_iterator StringIter;
-
-        // Sanity check arguments.
-        if (vm.count("in") == 0) {
-            throw std::runtime_error("No input files or directories "
-                                     "specified via --in.");
-        }
-        size_t blockSize = vm["mr.block-size"].as<size_t>();
-        if (blockSize < 1 || blockSize > 1024) {
-            throw std::runtime_error("The IO block size given by "
-                                     "--mr.block-size must be between "
-                                     "1 and 1024 MiB.");
-        }
-        uint32_t numWorkers = vm["mr.num-workers"].as<uint32_t>();
-        if (numWorkers < 1 || numWorkers > 256) {
+        if (_numWorkers < 1 || _numWorkers > 256) {
             throw std::runtime_error("The number of worker threads given by "
                                      "--mr.num-workers must be between "
                                      "1 and 256.");
         }
         size_t poolSize = vm["mr.pool-size"].as<size_t>();
-        // Create numWorkers Silo instances.
-        std::vector<SiloPtr> silos;
-        silos.reserve(numWorkers);
-        for (uint32_t i = 0; i < numWorkers; ++i) {
-            silos.push_back(boost::make_shared<Silo>());
-        }
-        // Build input file list, filtering out zero-size/non-existent files,
-        // and listing any directories encountered.
-        std::vector<fs::path> paths;
-        std::vector<std::string> const & in =
-            vm["in"].as<std::vector<std::string> >();
-        for (StringIter s = in.begin(), se = in.end(); s != se; ++s) {
-            fs::path p(*s);
-            fs::file_status stat = fs::status(p);
-            if (stat.type() == fs::regular_file && fs::file_size(p) > 0) {
-                paths.push_back(p);
-            } else if (stat.type() == fs::directory_file) {
-                for (fs::directory_iterator d(p), de; d != de; ++d) {
-                    if (d->status().type() == fs::regular_file &&
-                        fs::file_size(p) > 0) {
-                        paths.push_back(d->path());
-                    }
-                }
-            }
-        }
-        if (paths.empty()) {
-            throw std::runtime_error("No non-empty input files found among "
-                                     "the files and directories specified via "
-                                     "--in.");
-        }
-        // Set internal state.
-        _input = InputLines(paths, blockSize*MiB, false);
-        _numWorkers = numWorkers;
-        _threshold = (poolSize*MiB) / numWorkers;
-        _silos.swap(silos);
+        _threshold = (poolSize*MiB) / _numWorkers;
     }
 
     template <typename DerivedT, typename WorkerT>
     JobBase<DerivedT, WorkerT>::~JobBase() { }
 
     template <typename DerivedT, typename WorkerT>
-    void JobBase<DerivedT, WorkerT>::run() {
+    void JobBase<DerivedT, WorkerT>::_cleanup() {
+        _input = InputLines();
+        _inputExhausted = false;
+        _numMappers = 0;
+        _numReducers = 0;
+        _silos.clear();
+        _sorted.clear();
+        _failed = false;
+        _errorMessage.clear();
+    }
+
+    template <typename DerivedT, typename WorkerT>
+    void JobBase<DerivedT, WorkerT>::_fail(std::exception const & ex) {
+        boost::unique_lock<boost::mutex> lock(_mutex);
+        if (!_failed) {
+            // Mark job as failed, and set error message.
+            _failed = true;
+            _errorMessage = ex.what();
+            lock.unlock();
+            // Wake up any waiting threads.
+            _mapCond.notify_all();
+            _reduceCond.notify_all();
+        }
+    }
+
+    template <typename DerivedT, typename WorkerT>
+    void JobBase<DerivedT, WorkerT>::run(InputLines input) {
         boost::scoped_array<boost::thread> threads(
             new boost::thread[_numWorkers - 1]);
+        std::vector<SiloPtr> silos;
+        silos.reserve(_numWorkers);
+        for (uint32_t i = 0; i < _numWorkers; ++i) {
+            silos.push_back(boost::make_shared<Silo>());
+        }
+        _silos.swap(silos);
+        _input = input;
         // Launch threads.
-        for (uint32_t i = 0; i < _numWorkers - 1; ++i) {
-            threads[i] = boost::thread(boost::ref(*this));
+        uint32_t i = 0;
+        try {
+            for (; i < _numWorkers - 1; ++i) {
+                threads[i] = boost::thread(boost::ref(*this));
+            }
+        } catch (std::exception const & ex) {
+            _fail(ex);
         }
         // The caller participates in job execution, avoiding thread
         // creation/join overhead in the single-threaded case.
         (*this)();
-        // Wait for all threads to complete.
-        for (uint32_t i = 0; i < _numWorkers - 1; ++i) {
-            threads[i].join();
+        // Wait for all launched threads to complete.
+        for (uint32_t j = 0; j < i; ++j) {
+            threads[j].join();
+        }
+        // Cleanup internal state. If any thread failed, raise an exception.
+        bool failed = _failed;
+        std::string msg = _errorMessage;
+        _cleanup();
+        if (failed) {
+            throw std::runtime_error(msg);
         }
     }
 
@@ -478,8 +479,7 @@ namespace detail {
         try {
             _work();
         } catch (std::exception const & ex) {
-            std::cerr << ex.what() << std::endl;
-            std::exit(EXIT_FAILURE);
+            _fail(ex);
         }
     }
 
@@ -493,24 +493,14 @@ namespace detail {
             ("mr.block-size", po::value<size_t>()->default_value(4),
              "The IO block size in MiB. Must be between 1 and 1024.")
             ("mr.num-workers", po::value<uint32_t>()->default_value(1),
-             "The number of worker threads to use - must be at least 1. "
-             "Setting this to a number greater than the number of cores "
-             "available does not make much sense.")
+             "The number of worker threads to use - must be at least 1.")
             ("mr.pool-size", po::value<size_t>()->default_value(1024),
              "Map-reduce memory pool size in MiB. This determines how much "
              "data will be accumulated in memory prior to data reduction / "
              "output. This is a soft limit, and so should probably not be "
              "set to more than 75% of available system memory.");
-        po::options_description input("\\______________________ Input", 80);
-        input.add_options()
-            ("in,i", po::value<std::vector<std::string> >()->composing(),
-             "An input file or directory name. If the name identifies a "
-             "directory, then all the files and symbolic links to files in "
-             "the directory are treated as inputs. This option must be "
-             "specified at least once.");
         opts.add(mr);
         WorkerT::defineOptions(opts);
-        opts.add(input);
     }
 
     // This implementation could be improved by decoupling disk reads from
@@ -543,6 +533,7 @@ namespace detail {
             // -------------
 
             while (!_silos.empty()) {
+                if (_failed) { return; }
                 // Grab the emptiest silo.
                 std::pop_heap(_silos.begin(), _silos.end(), SiloPtrCmp());
                 SiloPtr silo = _silos.back();
@@ -570,6 +561,7 @@ namespace detail {
                 std::push_heap(_silos.begin(), _silos.end(), SiloPtrCmp());
             }
             // Wait until all mappers have finished.
+            if (_failed) { return; }
             ++_numReducers;
             if (_numReducers == _numWorkers) {
                 assert(_sorted.size() == _numWorkers);
@@ -577,6 +569,7 @@ namespace detail {
             } else {
                 do {
                     _reduceCond.wait(lock);
+                    if (_failed) { return; }
                 } while (_numReducers != _numWorkers);
             }
             _reduceCond.notify_one();
@@ -618,6 +611,7 @@ namespace detail {
             worker.finish();
 
             lock.lock();
+            if (_failed) { return; }
             // If no further input is available, store work results and exit.
             if (_inputExhausted) {
                 _storeResultImpl(worker);
@@ -635,6 +629,7 @@ namespace detail {
             } else {
                 do {
                     _mapCond.wait(lock);
+                    if (_failed) { return; }
                 } while (_numMappers != _numWorkers);
             }
             _mapCond.notify_one();
@@ -656,23 +651,24 @@ namespace detail {
         }
 
         boost::shared_ptr<ResultT> _result;
-        bool _done;
 
         // Allow JobBase to call _storeResult.
         friend class JobBase<JobImpl<WorkerT, ResultT>, WorkerT>;
 
     public:
         explicit JobImpl(boost::program_options::variables_map const & vm) :
-            Base(vm), _done(false)
-        { }
+            Base(vm) { }
 
-        boost::shared_ptr<ResultT> const run() {
-            if (_done) {
-                return _result;
+        boost::shared_ptr<ResultT> const run(InputLines input) {
+            try {
+                Base::run(input);
+            } catch (...) {
+                _result.reset();
+                throw;
             }
-            _done = true;
-            Base::run();
-            return _result;
+            boost::shared_ptr<ResultT> r;
+            r.swap(_result);
+            return r;
         }
 
         using Base::defineOptions;
@@ -684,21 +680,15 @@ namespace detail {
         typedef JobBase<JobImpl<WorkerT, void>, WorkerT> Base;
 
         void _storeResult(WorkerT & w) { }
-        bool _done;
 
         // Allow JobBase to call _storeResult.
         friend class JobBase<JobImpl<WorkerT, void>, WorkerT>;
 
     public:
         explicit JobImpl(boost::program_options::variables_map const & vm) :
-            Base(vm), _done(false) { }
+            Base(vm) { }
 
-        void run() {
-            if (!_done) {
-                _done = true;
-                Base::run();
-            }
-        }
+        void run(InputLines input) { Base::run(input); }
 
         using Base::defineOptions;
     };
@@ -710,26 +700,21 @@ namespace detail {
 /// type `WorkerT` has no results (the `WorkerT::Result` typedef is `void`),
 /// then the job API is:
 ///
-///     void run();
+///     void run(InputLines input);
 ///
 /// Otherwise, it is:
 ///
-///     boost::shared_ptr<typename WorkerT::Result> const run();
+///     boost::shared_ptr<typename WorkerT::Result> const run(InputLines input);
 ///
-/// Only the first call to `run` will have any effect - subsequent calls
-/// will either do nothing or simply return the results of the first call.
-/// If job execution fails, there is no way to recover besides creating
-/// another job. Note that if a failure occurs inside a worker thread, then
-/// `std::exit(EXIT_FAILURE)` is called, so even that may not be possible.
+/// Multiple calls to `run` with different inputs are perfectly legal, and `run`
+/// provides the strong exception safety guarantee, at least as far as in-memory
+/// program state is concerned. If a worker class performs any writes, external
+/// data integrity guarantees are the responsibility of the worker class;
+/// generally speaking, none are provided.
 ///
-/// This severe and inflexible treatment of errors reflects the fact that the
-/// design is targetted at command line applications which read and write
-/// files. In other words, the reaction to an error will generally consist
-/// of a user tweaking command line options and/or input files, and exception
-/// safety provides little gain for the added implementation complexity.
-///
-/// This design target is also the reason why job and worker classes must be
-/// constructible from a `boost::program_options::variables_map`.
+/// The design is targeted at command line applications, which
+/// is why job and worker classes must be constructible from a
+/// `boost::program_options::variables_map`.
 template <typename WorkerT>
 class Job : public detail::JobImpl<WorkerT, typename WorkerT::Result> {
 public:

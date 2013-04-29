@@ -1,5 +1,5 @@
 # -*- python -*-
-import sys
+import os, sys
 
 # TODO: use Variables instead?
 AddOption('--prefix', dest='prefix', metavar='DIR',
@@ -12,10 +12,13 @@ AddOption('--boost-libs', dest='boost_libs', metavar='DIR',
           help='Boost library directory')
 
 env = Environment(PREFIX=GetOption('prefix'))
+
+env['ENV']['PATH'] = os.environ['PATH']
+
 env.Append(CPPPATH=[GetOption('boost_includes')])
 env.Append(LIBPATH=[GetOption('boost_libs')])
 env.Append(RPATH=[GetOption('boost_libs')])
-env.Append(CCFLAGS=['-g', '-Wall', '-Wextra'])
+env.Append(CCFLAGS=['-g', '-Wall', '-Wextra', '-Wno-unused-local-typedefs'])
 if GetOption('debug_build'):
     variant_dir = 'build/debug'
 else:

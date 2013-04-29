@@ -26,13 +26,45 @@
 #ifndef LSST_QSERV_ADMIN_DUPR_CMDLINEUTILS_H
 #define LSST_QSERV_ADMIN_DUPR_CMDLINEUTILS_H
 
+#include <set>
 #include <string>
 #include <utility>
 
 #include "boost/program_options.hpp"
 
+#include "Csv.h"
+#include "InputLines.h"
+
 
 namespace lsst { namespace qserv { namespace admin { namespace dupr {
+
+/// Helper class for mapping field names to indexes. The `resolve` method
+/// checks that a field exists, and optionally that the field name has not
+/// previously been resolved to an index. This is useful when there are many
+/// command line options taking field names and passing the same name to more
+/// than one of them doesn't make sense.
+class FieldNameResolver {
+public:
+     FieldNameResolver(csv::Editor const & editor) : _editor(&editor) { }
+     ~FieldNameResolver();
+     /// Retrieve index of `fieldName`, where `fieldName` has been extracted
+     /// from the value of the given option.
+     int resolve(std::string const & option,
+                 std::string const & value,
+                 std::string const & fieldName,
+                 bool unique=true);
+     /// Retrieve index of `fieldName`, where `fieldName` is the value of the
+     /// given option.
+     int resolve(std::string const & option,
+                 std::string const & fieldName,
+                 bool unique=true) {
+         return resolve(option, fieldName, fieldName, unique);
+     }
+
+private:
+     csv::Editor const * _editor;
+     std::set<int> _fields;
+};
 
 /// Parse the given command line according to the `options` given and store
 /// the results in `vm`. This function defines generic options `help`, `verbose`,
@@ -45,17 +77,23 @@ void parseCommandLine(boost::program_options::variables_map & vm,
                       char const * help);
 
 /// Parse an option value that contains a comma separated pair of field names,
-/// Leading/trailing whitespace is stripped from each name; empty names are not
-/// allowed.
+/// Leading/trailing whitespace is stripped from each name, and empty names are
+/// rejected.
 std::pair<std::string, std::string> const parseFieldNamePair(
      std::string const & opt, std::string const & val);
 
-/// Define the `incremental`, `out.dir` and `out.num-nodes` options.
+/// Define the `in` option.
+void defineInputOptions(boost::program_options::options_description & opts);
+
+/// Construct an InputLines object from input files and directories.
+InputLines const makeInputLines(boost::program_options::variables_map & vm);
+
+/// Define the `out.dir` and `out.num-nodes` options.
 void defineOutputOptions(boost::program_options::options_description & opts);
 
 /// Handle output directory checking/creation. Assumes `defineOutputOptions()`
 /// has been used.
-void makeOutputDirectory(boost::program_options::variables_map & vm);
+void makeOutputDirectory(boost::program_options::variables_map & vm, bool mayExist);
 
 /// Ensure that the field name given by the option `opt` is listed as an output
 /// field (in `out.csv.field`) by appending it if necessary.

@@ -248,36 +248,32 @@ void Chunker::locate(pair<double, double> const & position,
     }
 }
 
-vector<int32_t> const Chunker::getChunksFor(SphericalBox const & region,
-                                            uint32_t node,
-                                            uint32_t numNodes,
-                                            bool hashChunks) const
+vector<int32_t> const Chunker::getChunksIn(SphericalBox const & region,
+                                           uint32_t node,
+                                           uint32_t numNodes) const
 {
     if (numNodes == 0) {
-        throw runtime_error("There must be at least one node to assign chunks to");
+        throw runtime_error("There must be at least one node "
+                            "to assign chunks to");
     }
     if (node >= numNodes) {
         throw runtime_error("Node number must be in range [0, numNodes)");
     }
     vector<int32_t> chunks;
-    uint32_t n = 0;
+    int32_t const minStripe = _getStripe(
+        locate(pair<double,double>(0.0, region.getDecMin())).chunkId);
+    int32_t const maxStripe = _getStripe(
+        locate(pair<double,double>(0.0, region.getDecMax())).chunkId);
     // The slow and easy route - loop over every chunk, see if it belongs to
     // the given node, and if it also intersects with region, return it.
-    for (int32_t stripe = 0; stripe < _numStripes; ++stripe) {
-        for (int32_t chunk = 0; chunk < _numChunksPerStripe[stripe]; ++chunk, ++n) {
+    for (int32_t stripe = minStripe; stripe <= maxStripe; ++stripe) {
+        for (int32_t chunk = 0; chunk < _numChunksPerStripe[stripe]; ++chunk) {
             int32_t const chunkId = _getChunkId(stripe, chunk);
-            if (hashChunks) {
-                if (mulveyHash(static_cast<uint32_t>(chunkId)) % numNodes != node) {
-                    continue;
+            if (hash(static_cast<uint32_t>(chunkId)) % numNodes == node) {
+                SphericalBox box = getChunkBounds(chunkId);
+                if (region.intersects(box)) {
+                    chunks.push_back(chunkId);
                 }
-            } else {
-                if (n % numNodes != node) {
-                    continue;
-                }
-            }
-            SphericalBox box = getChunkBounds(_getChunkId(stripe, chunk));
-            if (region.intersects(box)) {
-                chunks.push_back(chunkId);
             }
         }
     }

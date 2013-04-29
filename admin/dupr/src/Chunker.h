@@ -83,7 +83,7 @@ struct ChunkLocation {
     ChunkLocation() : chunkId(-1), subChunkId(-1), kind(NON_OVERLAP) { }
 
     /// Hash chunk locations by chunk ID.
-    uint32_t hash() const { return mulveyHash(chunkId); }
+    uint32_t hash() const { return dupr::hash(static_cast<uint32_t>(chunkId)); }
 
     /// Order chunk locations by chunk ID.
     bool operator<(ChunkLocation const & loc) const {
@@ -125,16 +125,18 @@ public:
                 int32_t chunkId,
                 std::vector<ChunkLocation> & locations) const;
 
-    /// Return IDs of all chunks overlapping the given box and belonging
+    /// Return the IDs of all chunks overlapping the given box and belonging
     /// to the given node. The target node is specified as an integer in the
-    /// range `[0, numNodes)`. If `hash` is true, then the chunk with ID C is
-    /// assigned to the node given by hash(C) modulo `numNodes`. Otherwise,
-    /// chunks are assigned to nodes in round-robin fashion. The region
-    /// argument has no effect on which node a chunk is assigned to.
-    std::vector<int32_t> const getChunksFor(SphericalBox const & region,
-                                            uint32_t node,
-                                            uint32_t numNodes,
-                                            bool hashChunks) const;
+    /// range `[0, numNodes)` and a chunk with ID C belongs to the node given
+    /// by hash(C) modulo `numNodes`.
+    std::vector<int32_t> const getChunksIn(SphericalBox const & region,
+                                           uint32_t node,
+                                           uint32_t numNodes) const;
+
+    /// Return the IDs of all chunks overlapping the given box.
+    std::vector<int32_t> const getChunksIn(SphericalBox const & region) const {
+        return getChunksIn(region, 0u, 1u);
+    }
 
     /// Define configuration variables for partitioning.
     static void defineOptions(

@@ -61,6 +61,7 @@ private:
     boost::shared_ptr<ChunkIndex> _index;
     int32_t                       _chunkId;
     uint32_t                      _numNodes;
+    std::string                   _prefix;
     boost::filesystem::path       _outputDir;
     boost::filesystem::path       _nonOverlapPath;
     boost::filesystem::path       _selfOverlapPath;

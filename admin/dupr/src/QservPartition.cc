@@ -91,18 +91,17 @@ Worker::Worker(po::variables_map const & vm) :
     if (vm.count("part.pos") == 0) {
         throw runtime_error("The --part.pos option was not specified.");
     }
+    FieldNameResolver fields(_editor);
     string s = vm["part.pos"].as<string>();
     pair<string,string> p = parseFieldNamePair("part.pos", s);
-    _raField = _editor.getFieldIndex(p.first);
-    _decField = _editor.getFieldIndex(p.second);
-    if (_raField < 0 || _decField < 0) {
-        throw runtime_error("--part.pos=\"" + s + "\" is not a valid "
-                            "pair of input field names.");
-    }
+    _raField = fields.resolve("part.pos", s, p.first);
+    _decField = fields.resolve("part.pos", s, p.second);
     if (vm.count("part.chunk") != 0) {
-        _chunkIdField = _editor.getFieldIndex(vm["part.chunk"].as<string>());
+        s = vm["part.chunk"].as<string>();
+        _chunkIdField = fields.resolve("part.chunk", s);
     }
-    _subChunkIdField = _editor.getFieldIndex(vm["part.sub-chunk"].as<string>());
+    s = vm["part.sub-chunk"].as<string>();
+    _subChunkIdField = fields.resolve("part.sub-chunk", s);
 }
 
 void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
@@ -127,8 +126,8 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
 void Worker::defineOptions(po::options_description & opts) {
     po::options_description part("\\_______________ Partitioning", 80);
     part.add_options()
-        ("incremental", po::bool_switch(),
-         "Allow incrementally adding to a partitioned data set.")
+        ("part.prefix", po::value<string>()->default_value("chunk"),
+         "Chunk file name prefix.")
         ("part.chunk", po::value<string>(),
          "Optional chunk ID output field name. This field name is appended "
          "to the output field name list if it isn't already included.")
@@ -142,6 +141,7 @@ void Worker::defineOptions(po::options_description & opts) {
     opts.add(part);
     defineOutputOptions(opts);
     csv::Editor::defineOptions(opts);
+    defineInputOptions(opts);
 }
 
 typedef Job<Worker> PartitionJob;
@@ -176,9 +176,9 @@ int main(int argc, char const * const * argv) {
         dupr::parseCommandLine(vm, options, argc, argv, help);
         dupr::ensureOutputFieldExists(vm, "part.chunk");
         dupr::ensureOutputFieldExists(vm, "part.sub-chunk");
-        dupr::makeOutputDirectory(vm);
+        dupr::makeOutputDirectory(vm, true);
         dupr::PartitionJob job(vm);
-        shared_ptr<dupr::ChunkIndex> index = job.run();
+        shared_ptr<dupr::ChunkIndex> index = job.run(dupr::makeInputLines(vm));
         if (!index->empty()) {
             fs::path d(vm["out.dir"].as<string>());
             index->write(d / "chunk_index.bin", false);

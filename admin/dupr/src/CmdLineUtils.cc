@@ -30,6 +30,7 @@
 #include <set>
 #include <vector>
 
+#include "Constants.h"
 #include "FileUtils.h"
 
 using std::bad_alloc;
@@ -365,7 +366,7 @@ namespace {
             }
             if (opt.unregistered && verbose) {
                 cerr << "Skipping unrecognized option --" << opt.string_key
-                     <<  " in config file " << _path.native() << endl;
+                     <<  " in config file " << _path.string() << endl;
             }
             parsed.options.push_back(opt);
         }
@@ -380,6 +381,29 @@ namespace {
 
 
 namespace lsst { namespace qserv { namespace admin { namespace dupr {
+
+
+FieldNameResolver::~FieldNameResolver() {
+    _editor = 0;
+}
+
+int FieldNameResolver::resolve(string const & option,
+                               string const & value,
+                               string const & fieldName,
+                               bool unique)
+{
+    int i = _editor->getFieldIndex(fieldName);
+    if (i < 0) {
+        throw runtime_error("--" + option + "=\"" + value +
+                            "\" specifies an unrecognized field.");
+    }
+    if (!_fields.insert(i).second && unique) {
+        throw runtime_error("--" + option + "=\"" + value +
+                            "\" specifies a duplicate field.");
+    }
+    return i;
+}
+
 
 void parseCommandLine(po::variables_map & vm,
                       po::options_description const & options,
@@ -459,25 +483,67 @@ pair<string, string> const parseFieldNamePair(string const & opt,
 }
 
 
+void defineInputOptions(po::options_description & opts) {
+    po::options_description input("\\______________________ Input", 80);
+    input.add_options()
+        ("in,i", po::value<std::vector<std::string> >()->composing(),
+         "An input file or directory name. If the name identifies a "
+         "directory, then all the files and symbolic links to files in "
+         "the directory are treated as inputs. This option must be "
+         "specified at least once.");
+    opts.add(input);
+}
+
+
+InputLines const makeInputLines(po::variables_map & vm) {
+    typedef vector<string>::const_iterator Iter;
+    size_t blockSize = vm["mr.block-size"].as<size_t>();
+    if (blockSize < 1 || blockSize > 1024) {
+        throw runtime_error("The IO block size given by --mr.block-size "
+                            "must be between 1 and 1024 MiB.");
+    }
+    vector<fs::path> paths;
+    vector<string> const & in = vm["in"].as<vector<string> >();
+    for (Iter s = in.begin(), se = in.end(); s != se; ++s) {
+        fs::path p(*s);
+        fs::file_status stat = fs::status(p);
+        if (stat.type() == fs::regular_file && fs::file_size(p) > 0) {
+            paths.push_back(p);
+        } else if (stat.type() == fs::directory_file) {
+            for (fs::directory_iterator d(p), de; d != de; ++d) {
+                if (d->status().type() == fs::regular_file &&
+                    fs::file_size(p) > 0) {
+                    paths.push_back(d->path());
+                }
+            }
+        }
+    }
+    if (paths.empty()) {
+        throw runtime_error("No non-empty input files found among the "
+                            "files and directories specified via --in.");
+    }
+    return InputLines(paths, blockSize*MiB, false);
+}
+
+
 void defineOutputOptions(po::options_description & opts) {
     po::options_description output("\\_____________________ Output", 80);
     output.add_options()
-        ("incremental", po::bool_switch(),
-         "Allow incrementally adding to an existing output directory.")
         ("out.dir", po::value<string>(),
-         "The output file directory. Unless running incrementally, this "
-         "directory is not allowed to exist.")
+         "The directory to write output files to.")
         ("out.num-nodes", po::value<uint32_t>()->default_value(1u),
          "The number of down-stream nodes that will be using the output "
          "files. If this is more than 1, then output files are assigned to "
          "nodes by hashing and are placed into a sub-directory of out.dir "
-         "named node_XXXXX, where XXXXX is a logical ID for nodes between "
-         "0 and out.num-nodes - 1.");
+         "named node_XXXXX, where XXXXX is a logical node ID between 0 and "
+         "out.num-nodes - 1.");
     opts.add(output);
 }
 
 
-void makeOutputDirectory(boost::program_options::variables_map & vm) {
+void makeOutputDirectory(boost::program_options::variables_map & vm,
+                         bool mayExist)
+{
     fs::path outDir;
     if (vm.count("out.dir") != 0) {
         outDir = vm["out.dir"].as<string>();
@@ -488,7 +554,7 @@ void makeOutputDirectory(boost::program_options::variables_map & vm) {
     }
     outDir = fs::system_complete(outDir);
     if (outDir.filename() == ".") {
-        // create_directories returns false for "does_not_exist/", even
+        // fs::create_directories returns false for "does_not_exist/", even
         // when "does_not_exist" must be created. This is because the
         // trailing slash causes the last path component to be ".", which
         // exists once it is iterated to.
@@ -496,10 +562,9 @@ void makeOutputDirectory(boost::program_options::variables_map & vm) {
     }
     map<string, po::variable_value> & m = vm;
     po::variable_value & v = m["out.dir"];
-    v.value() = outDir.native();
-    if (fs::create_directories(outDir) == false &&
-        !vm["incremental"].as<bool>()) {
-        cerr << "The output directory --out.dir=" << outDir.native()
+    v.value() = outDir.string();
+    if (fs::create_directories(outDir) == false && !mayExist) {
+        cerr << "The output directory --out.dir=" << outDir.string()
              << " already exists - please choose another." << endl;
         exit(EXIT_FAILURE);
     }

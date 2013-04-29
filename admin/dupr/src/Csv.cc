@@ -703,8 +703,7 @@ void Editor::defineOptions(po::options_description & opts) {
          "or that the order of input and output fields match. To remove an "
          "input field from the output, simply omit it from the output field "
          "list. To introduce a new output field, specify a name not in the "
-         "input field list - it will receive a default value of NULL, unless "
-         "otherwise set by the application.");
+         "input field list - it will receive a default value of NULL.");
     opts.add(in).add(out);
 }
 

@@ -73,7 +73,7 @@ namespace {
             }
             if1.read(buf.get(), 0, if1.size());
             of.append(buf.get(), static_cast<size_t>(if1.size()));
-            if2.read(buf.get(), 0 , if2.size());
+            if2.read(buf.get(), 0, if2.size());
             of.append(buf.get(), static_cast<size_t>(if2.size()));
         }
     };
