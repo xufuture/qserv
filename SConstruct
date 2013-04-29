@@ -129,7 +129,9 @@ def get_template_targets():
         '%\(QMS_DB\)s': config['qms']['db'],
         '%\(QMS_USER\)s': config['qms']['user'],
         '%\(QMS_PASS\)s': config['qms']['pass'],
+        '%\(QMS_PORT\)s': config['qms']['port'],
         '%\(QSERV_BASE_DIR\)s': config['qserv']['base_dir'],
+        '%\(QSERV_SRC_DIR\)s': config['src_dir'],
         '%\(QSERV_LOG_DIR\)s': config['qserv']['log_dir'],
         '%\(QSERV_STRIPES\)s': config['qserv']['stripes'],
         '%\(QSERV_SUBSTRIPES\)s': config['qserv']['substripes'],
@@ -183,7 +185,8 @@ def get_template_targets():
                 "start_xrootd",
                 "start_qserv",
                 "start_mysqlproxy",
-                "scisql.sh"
+                "scisql.sh",
+                "qms.sh"
                 ]:
                 env.AddPostAction(target_node, Chmod("$TARGET", 0760))
             # all other files are configuration files
@@ -201,12 +204,16 @@ env.Alias("templates", get_template_targets())
 #########################
 python_path_prefix=config['qserv']['base_dir']
 
+env['python_path_prefix']=python_path_prefix
+
 python_admin = env.InstallPythonModule(target=python_path_prefix, source='admin/python')
 #python_targets=utils.build_python_module(source='admin/python',target='/opt/qserv-dev',env=env)
 env.Alias("python-admin", python_admin)
 
 python_tests = env.InstallPythonModule(target=python_path_prefix, source='tests/python')
 env.Alias("python-tests", python_tests)
+
+SConscript('meta/SConscript', exports = 'env')
 
 #########################
 #

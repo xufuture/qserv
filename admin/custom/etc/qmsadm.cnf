@@ -2,7 +2,7 @@
 # meta/bin/metaClientTool.py -a %(QSERV_BASE_DIR)s/etc/qmsadm.cnf
 
 [qmsConn]
-host: %(MYSQLD_HOST)s
-port: %(MYSQLD_PORT)s
-user: %(MYSQLD_USER)s
-pass: %(MYSQLD_PASS)s
+host: %(QMS_HOST)s
+port: %(QMS_PORT)s
+user: %(QMS_USER)s
+pass: %(QMS_PASS)s
