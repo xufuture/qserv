@@ -1,5 +1,5 @@
 # -*- python -*-
-import actions 
+import actions
 import commons
 import ConfigParser
 import errno
@@ -80,7 +80,7 @@ env.Default(env.Alias('install'))
 
 # TODO :
 #env.CleanAction(env.Alias('perl-install'),env.Alias('perl-clean-all'))
-        
+
 ###########################
 #
 # Defining Download Alias
@@ -109,7 +109,7 @@ env.Alias('download', download_cmd_lst)
 #
 #########################
 
-for perl_option in ('install', 'init-mysql-db', 'qserv-only', 'clean-all'): 
+for perl_option in ('install', 'init-mysql-db', 'qserv-only', 'clean-all'):
     scons_target = "perl-%s" % perl_option
     env.Alias(scons_target, env.Command(scons_target+'-dummy-target', [], actions.build_cmd_with_opts(config,perl_option)))
 
@@ -129,7 +129,9 @@ def get_template_targets():
         '%\(QMS_DB\)s': config['qms']['db'],
         '%\(QMS_USER\)s': config['qms']['user'],
         '%\(QMS_PASS\)s': config['qms']['pass'],
+        '%\(QMS_PORT\)s': config['qms']['port'],
         '%\(QSERV_BASE_DIR\)s': config['qserv']['base_dir'],
+        '%\(QSERV_SRC_DIR\)s': config['src_dir'],
         '%\(QSERV_LOG_DIR\)s': config['qserv']['log_dir'],
         '%\(QSERV_STRIPES\)s': config['qserv']['stripes'],
         '%\(QSERV_SUBSTRIPES\)s': config['qserv']['substripes'],
@@ -188,6 +190,7 @@ def get_template_targets():
                 "start_qserv",
                 "start_mysqlproxy",
                 "scidb.sh"
+                "qms.sh"
                 ]:
                 env.AddPostAction(target_node, Chmod("$TARGET", 0760))
             # all other files are configuration files
@@ -205,6 +208,8 @@ env.Alias("templates", get_template_targets())
 #########################
 python_path_prefix=config['qserv']['base_dir']
 
+env['python_path_prefix']=python_path_prefix
+
 python_admin = env.InstallPythonModule(target=python_path_prefix, source='admin/python')
 #python_targets=utils.build_python_module(source='admin/python',target='/opt/qserv-dev',env=env)
 env.Alias("python-admin", python_admin)
@@ -212,16 +217,18 @@ env.Alias("python-admin", python_admin)
 python_tests = env.InstallPythonModule(target=python_path_prefix, source='tests/python')
 env.Alias("python-tests", python_tests)
 
+SConscript('meta/SConscript', exports = 'env')
+
 #########################
 #
 # Install admin commands
 #
 #########################
 bin_basename_lst=[
-    "qserv-benchmark.py","qserv-testdata.py", 
+    "qserv-benchmark.py","qserv-testdata.py",
     "qserv-testunit.py"
 ]
-bin_target_lst = [] 
+bin_target_lst = []
 for f in bin_basename_lst:
     source = os.path.join("admin","bin",f)
     target = os.path.join(config['qserv']['base_dir'],"bin",f)
