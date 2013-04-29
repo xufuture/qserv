@@ -1,8 +1,5 @@
-#  https://dev.lsstcorp.org/cgit/LSST/DMS/qserv.git/tree/meta/examples/permissions.sql
+# cf https://dev.lsstcorp.org/cgit/LSST/DMS/qserv.git/tree/meta/examples/permissions.sql
  
 DROP DATABASE IF EXISTS `qms_%(QMS_DB)s`;
-CREATE DATABASE  `qms_%(QMS_DB)s`;
-DROP DATABASE IF EXISTS `qms_%(QMS_HOST)s`;
-CREATE DATABASE  `qms_%(QMS_HOST)s`;
 GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE ON  `qms\_%`.* TO '%(QMS_USER)s'@'%(QMS_HOST)s' IDENTIFIED BY '%(QMS_PASS)s';
 FLUSH PRIVILEGES;
