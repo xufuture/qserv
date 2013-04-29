@@ -24,9 +24,9 @@ env = Environment(tools=['textfile', 'clean', 'pymod'])
 #########################
 
 # this file must be placed in main scons directory
-src_dir=Dir('.').srcnode().abspath+"/"
-config_file_name=src_dir+"qserv-build.conf"
-default_config_file_name=src_dir+"qserv-build.default.conf"
+src_dir=Dir('.').srcnode().abspath
+config_file_name=os.path.join(src_dir,"qserv-build.conf")
+default_config_file_name=os.path.join(src_dir,"qserv-build.default.conf")
 
 if not os.path.exists(config_file_name):
     logging.fatal("Your configuration file is missing: %s" % config_file_name)
@@ -189,7 +189,7 @@ def get_template_targets():
                 "start_qms",
                 "start_qserv",
                 "start_mysqlproxy",
-                "scidb.sh"
+                "scidb.sh",
                 "qms.sh"
                 ]:
                 env.AddPostAction(target_node, Chmod("$TARGET", 0760))
