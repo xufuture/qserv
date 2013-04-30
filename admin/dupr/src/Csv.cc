@@ -408,18 +408,19 @@ Editor::Editor(po::variables_map const & vm) :
     if (vm.count("in.csv.field") == 0) {
         throw runtime_error("Input CSV field names not specified.");
     }
-    vector<string> inputFieldNames = vm["in.csv.field"].as<vector<string> >();
-    vector<string> outputFieldNames;
+    vector<string> const * inputFieldNames =
+        &vm["in.csv.field"].as<vector<string> >();
+    vector<string> const * outputFieldNames;
     if (vm.count("out.csv.field") == 0) {
         outputFieldNames = inputFieldNames;
     } else {
-        outputFieldNames = vm["out.csv.field"].as<vector<string> >();
+        outputFieldNames = &vm["out.csv.field"].as<vector<string> >();
     }
-    _numInputFields = static_cast<int>(inputFieldNames.size());
-    _numOutputFields = static_cast<int>(outputFieldNames.size()),
-    _fields.reset(new Field[inputFieldNames.size() + outputFieldNames.size()]);
-    _outputs.reset(new int[outputFieldNames.size()]);
-    _initialize(inputFieldNames, outputFieldNames);
+    _numInputFields = static_cast<int>(inputFieldNames->size());
+    _numOutputFields = static_cast<int>(outputFieldNames->size()),
+    _fields.reset(new Field[inputFieldNames->size() + outputFieldNames->size()]);
+    _outputs.reset(new int[outputFieldNames->size()]);
+    _initialize(*inputFieldNames, *outputFieldNames);
 }
 
 Editor::~Editor() { }
