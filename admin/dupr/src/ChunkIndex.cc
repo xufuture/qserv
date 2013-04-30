@@ -35,7 +35,6 @@
 #include "FileUtils.h"
 
 using std::floor;
-using std::nth_element;
 using std::numeric_limits;
 using std::ostream;
 using std::pair;
@@ -64,10 +63,10 @@ void ChunkIndex::Stats::clear() {
 }
 
 namespace {
-    vector<uint64_t>::iterator percentile(double p, vector<uint64_t> & v) {
+    uint64_t percentile(double p, vector<uint64_t> & v) {
         typedef vector<uint64_t>::size_type S;
         S i = std::min(static_cast<S>(floor(p*v.size() + 0.5)), v.size() - 1);
-        return v.begin() + i;
+        return v[i];
     }
 }
 
@@ -88,17 +87,11 @@ void ChunkIndex::Stats::set(vector<uint64_t> & counts) {
         if (c < min) { min = c; }
         if (c > max) { max = c; }
     }
+    sort(counts.begin(), counts.end());
     n = counts.size();
-    Iter q1 = percentile(0.25, counts);
-    Iter q2 = percentile(0.5,  counts);
-    Iter q3 = percentile(0.75, counts);
-    Iter end = counts.end();
-    nth_element(counts.begin(), q1, end);
-    nth_element(q1, q2, end);
-    nth_element(q2, q3, end);
-    quartile[0] = *q1;
-    quartile[1] = *q2;
-    quartile[2] = *q3;
+    quartile[0] = percentile(0.25, counts);
+    quartile[1] = percentile(0.5,  counts);
+    quartile[2] = percentile(0.75, counts);
     mean = static_cast<double>(nrec) / static_cast<double>(n);
     // Compute moments of the record count distribution.
     double m2 = 0.0, m3 = 0.0, m4 = 0.0;

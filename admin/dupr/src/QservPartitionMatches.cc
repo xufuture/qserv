@@ -140,8 +140,8 @@ Worker::Worker(po::variables_map const & vm) :
     _index(make_shared<ChunkIndex>()),
     _chunkId(-1),
     _numNodes(vm["out.num-nodes"].as<uint32_t>()),
-    _outputDir(vm["out.dir"].as<string>()),
-    _prefix(vm["part.prefix"].as<string>()),
+    _outputDir(vm["out.dir"].as<string>().c_str()),  // defend against GCC PR21334
+    _prefix(vm["part.prefix"].as<string>().c_str()), // defend against GCC PR21334
     _chunk(vm["mr.block-size"].as<size_t>()*MiB)
 {
     if (_numNodes == 0 || _numNodes > 99999u) {

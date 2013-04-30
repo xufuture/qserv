@@ -45,8 +45,8 @@ ChunkReducer::ChunkReducer(po::variables_map const & vm) :
     _index(make_shared<ChunkIndex>()),
     _chunkId(-1),
     _numNodes(vm["out.num-nodes"].as<uint32_t>()),
-    _prefix(vm["part.prefix"].as<string>()),
-    _outputDir(vm["out.dir"].as<string>()),
+    _prefix(vm["part.prefix"].as<string>().c_str()), // defend against GCC PR21334
+    _outputDir(vm["out.dir"].as<string>().c_str()),  // defend against GCC PR21334
     _nonOverlap(vm["mr.block-size"].as<size_t>()*MiB),
     _selfOverlap(vm["mr.block-size"].as<size_t>()*MiB),
     _fullOverlap(vm["mr.block-size"].as<size_t>()*MiB)
@@ -116,7 +116,7 @@ void ChunkReducer::_makeFilePaths(int32_t chunkId) {
     char suffix[32];
     snprintf(suffix, sizeof(suffix), "_%ld.txt",
              static_cast<long>(chunkId));
-    _nonOverlapPath = p / (_prefix+ suffix);
+    _nonOverlapPath = p / (_prefix + suffix);
     snprintf(suffix, sizeof(suffix), "_%ld_self.txt",
              static_cast<long>(chunkId));
     _selfOverlapPath = p / (_prefix + suffix);

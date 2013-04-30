@@ -261,6 +261,8 @@ private:
     int                   _chunkIdField;
     int                   _subChunkIdField;
     vector<ChunkLocation> _locations;
+    fs::path              _partIndexDir;
+    fs::path              _indexDir;
     shared_ptr<LessThanCounter> _partIdsLessThan;
     shared_ptr<LessThanCounter> _idsLessThan;
 };
@@ -270,11 +272,14 @@ Worker::Worker(po::variables_map const & vm) :
     _editor(vm),
     _partPos(),
     _sourceHtmId(0),
-    _level(-1),
+    _level(dup()._index->getLevel()),
     _partIdField(-1),
     _idField(-1),
     _chunkIdField(-1),
-    _subChunkIdField(-1)
+    _subChunkIdField(-1),
+    // defend against GCC PR21334
+    _partIndexDir(dup()._partIndexDir.string().c_str()),
+    _indexDir(dup()._indexDir.string().c_str())
 {
     typedef vector<string>::const_iterator StringIter;
 
@@ -338,23 +343,6 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
     uint32_t sourceHtmId = 0;
     while (beg < end) {
         beg = _editor.readRecord(beg, end);
-        // Remap IDs and discard records to match the sampling rate.
-        int64_t partId = 0;
-        bool partIdIsNull = _editor.isNull(_partIdField);
-        if (!partIdIsNull) {
-            partId = (*_partIdsLessThan)(_editor.get<int64_t>(_partIdField));
-            if (_discard(partId)) {
-                continue;
-            }
-        }
-        int64_t id = 0;
-        bool idIsNull = _editor.isNull(_idField);
-        if (!idIsNull && _idField != _partIdField) {
-            id = (*_idsLessThan)(_editor.get<int64_t>(_idField));
-            if (partIdIsNull && _discard(id)) {
-                continue;
-            }
-        }
         // Extract positions.
         pair<double, double> sc;
         for (PosIter p = _pos.begin(), pe = _pos.end(); p != pe; ++p) {
@@ -373,7 +361,24 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
         _partPos.v = cartesian(sc);
         if (sourceHtmId == 0) {
             sourceHtmId = htmId(_partPos.v, _level);
-            _setup(sourceHtmId); 
+            _setup(sourceHtmId);
+        }
+        // Remap IDs and discard records to match the sampling rate.
+        int64_t partId = 0;
+        bool partIdIsNull = _editor.isNull(_partIdField);
+        if (!partIdIsNull) {
+            partId = (*_partIdsLessThan)(_editor.get<int64_t>(_partIdField));
+            if (_discard(partId)) {
+                continue;
+            }
+        }
+        int64_t id = 0;
+        bool idIsNull = _editor.isNull(_idField);
+        if (!idIsNull && _idField != _partIdField) {
+            id = (*_idsLessThan)(_editor.get<int64_t>(_idField));
+            if (partIdIsNull && _discard(id)) {
+                continue;
+            }
         }
         // Loop over target HTM triangles/chunks
         for (TgtIter t = _targets.begin(), te = _targets.end(); t != te; ++t) {
@@ -403,7 +408,7 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
             if (!partIdIsNull) {
                 _editor.set(_partIdField, baseId + partId);
             }
-            if (!idIsNull) {
+            if (!idIsNull && _idField != _partIdField) {
                 _editor.set(_idField, baseId + id);
             }
             // Output a record for each location.
@@ -423,11 +428,10 @@ void Worker::_setup(uint32_t htmId) {
         return;
     }
     if (_partIdField >= 0) {
-        _partIdsLessThan->setup(
-            *dup()._partIndex, dup()._partIndexDir, htmId);
+        _partIdsLessThan->setup(*dup()._partIndex, _partIndexDir, htmId);
     }
     if (_idField >= 0 && _idField != _partIdField) {
-        _idsLessThan->setup(*dup()._index, dup()._indexDir, htmId);
+        _idsLessThan->setup(*dup()._index, _indexDir, htmId);
     }
     Duplicator::TargetList const & list = dup()._targets.at(htmId);
     Matrix3d const m = SphericalTriangle(htmId).getBarycentricTransform();
@@ -461,6 +465,11 @@ void Worker::defineOptions(po::options_description & opts) {
          "Optional ID field name associated with input records. Note "
          "that if --index and --part.index are identical, then either "
          "--id and --part.id must match, or one must be omitted.")
+        ("pos", po::value<vector<string> >(),
+         "Optional right ascension and declination field names, "
+         "separated by a comma. May be specified any number of times. "
+         "These field name pairs identify positions in addition to the "
+         "partitioning position fields (identified via --part.pos).")
         ("ra-min", po::value<double>()->default_value(0.0),
          "Minimum right ascension bound (deg) for the duplication region.")
         ("ra-max", po::value<double>()->default_value(360.0),
@@ -469,7 +478,7 @@ void Worker::defineOptions(po::options_description & opts) {
          "Minimum declination bound (deg) for the duplication region.")
         ("dec-max", po::value<double>()->default_value(90.0),
          "Maximum declination bound (deg) for the duplication region.")
-        ("chunk-id", po::value<std::vector<int32_t> >(),
+        ("chunk-id", po::value<vector<int32_t> >(),
          "Optionally limit duplication to one or more chunks. If specified, "
          "data will be duplicated for the given chunk(s) regardless of the "
          "the duplication region and node.")

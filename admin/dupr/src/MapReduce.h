@@ -520,9 +520,19 @@ namespace detail {
         // Pre-allocate space for sorted record ranges.
         std::vector<SortedRecordRange> ranges;
         ranges.reserve(_numWorkers);
-        // Create worker.
-        Worker worker(*_vm);
+        // BEWARE: a lock on _mutex is held while constructing Worker.
+        // This is because _vm contains strings and the current GCC libstc++
+        // basic_string doesn't seem to allow multiple threads to safely read
+        // a shared const string concurrently without locking. Double frees
+        // coming from ~basic_string (and other other heap corruptions) have
+        // been observed when the Worker constructor is unprotected. See:
+        //
+        // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=21334
+        // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=33394
+        //
+        // for details on the likely root cause.
         boost::unique_lock<boost::mutex> lock(_mutex);
+        Worker worker(*_vm);
         // Get a rank in [0, _numWorkers) for this thread.
         uint32_t const rank = _numMappers;
         ++_numMappers;
