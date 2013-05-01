@@ -29,7 +29,6 @@ require ("xmlrpc.http")
 --  * hintString: "box", "1,2,11,12", "box", "5,55,6,66", 
 --    "objectId", "3", "objectId", "5,6,7,8" and so on
 
-
 -------------------------------------------------------------------------------
 --                        global variables (yuck)                            --
 -------------------------------------------------------------------------------
@@ -60,7 +59,6 @@ hintsToPassArr = {}
 -- global variables have per-session(client) scope
 -- queryErrorCount -- number of run-time errors detected during query exec.
 queryErrorCount = 0
-
 
 -------------------------------------------------------------------------------
 --                             error handling                                --
