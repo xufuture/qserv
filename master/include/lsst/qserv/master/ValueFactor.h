@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,7 +20,7 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// ValueTerm is a term in a ValueExpr's "term (term_op term)*" phrase
+// ValueFactor is a term in a ValueExpr's "term (term_op term)*" phrase
 // This needs to be reconciled with the WhereClause's ValueExprTerm
 
 #ifndef LSST_QSERV_MASTER_VALUEEXPR_H
@@ -36,11 +36,11 @@ class ColumnRef;
 class QueryTemplate;
 class FuncExpr;
 
-class ValueTerm; 
-typedef boost::shared_ptr<ValueTerm> ValueTermPtr;
-typedef std::list<ValueTermPtr> ValueTermList;
+class ValueFactor; 
+typedef boost::shared_ptr<ValueFactor> ValueFactorPtr;
+typedef std::list<ValueFactorPtr> ValueFactorList;
 
-class ValueTerm {
+class ValueFactor {
 public:
     enum Type { COLUMNREF, FUNCTION, AGGFUNC, STAR, CONST };
 
@@ -55,15 +55,15 @@ public:
     std::string const& getTableStar() const { return _tableStar; }
     void setTableStar(std::string const& a) { _tableStar = a; }
 
-    ValueTermPtr clone() const;
+    ValueFactorPtr clone() const;
 
-    static ValueTermPtr newColumnRefTerm(boost::shared_ptr<ColumnRef const> cr);
-    static ValueTermPtr newStarTerm(std::string const& table);
-    static ValueTermPtr newAggTerm(boost::shared_ptr<FuncExpr> fe);
-    static ValueTermPtr newFuncTerm(boost::shared_ptr<FuncExpr> fe);
-    static ValueTermPtr newConstTerm(std::string const& alnum);
-    friend std::ostream& operator<<(std::ostream& os, ValueTerm const& ve);
-    friend std::ostream& operator<<(std::ostream& os, ValueTerm const* ve);
+    static ValueFactorPtr newColumnRefFactor(boost::shared_ptr<ColumnRef const> cr);
+    static ValueFactorPtr newStarFactor(std::string const& table);
+    static ValueFactorPtr newAggFactor(boost::shared_ptr<FuncExpr> fe);
+    static ValueFactorPtr newFuncFactor(boost::shared_ptr<FuncExpr> fe);
+    static ValueFactorPtr newConstFactor(std::string const& alnum);
+    friend std::ostream& operator<<(std::ostream& os, ValueFactor const& ve);
+    friend std::ostream& operator<<(std::ostream& os, ValueFactor const* ve);
 
     class render;
     friend class render;
@@ -75,13 +75,13 @@ private:
     std::string _tableStar; // Reused as const val (no tablestar)
 };
 
-class ValueTerm::render : public std::unary_function<ValueTerm, void> {
+class ValueFactor::render : public std::unary_function<ValueFactor, void> {
 public:
     render(QueryTemplate& qt) : _qt(qt) {}
-    void operator()(ValueTerm const& ve);
-    void operator()(ValueTerm const* vep) { 
+    void operator()(ValueFactor const& ve);
+    void operator()(ValueFactor const* vep) { 
         if(vep) (*this)(*vep); }
-    void operator()(boost::shared_ptr<ValueTerm> const& vep) { 
+    void operator()(boost::shared_ptr<ValueFactor> const& vep) { 
         (*this)(vep.get()); }
     QueryTemplate& _qt;
 };

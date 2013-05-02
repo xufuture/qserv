@@ -25,7 +25,7 @@
 
 #include "lsst/qserv/master/ColumnRef.h"
 #include "lsst/qserv/master/ValueExpr.h"
-#include "lsst/qserv/master/ValueTerm.h"
+#include "lsst/qserv/master/ValueFactor.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include <iostream>
 namespace qMaster=lsst::qserv::master;
@@ -48,7 +48,7 @@ FuncExpr::newArg1(std::string const& newName, std::string const& arg1) {
     e->name = newName;
     boost::shared_ptr<ColumnRef> cr(new ColumnRef("","",arg1));
     e->params.push_back(ValueExpr::newSimple(
-                            ValueTerm::newColumnRefTerm(cr)));
+                            ValueFactor::newColumnRefFactor(cr)));
     return e;
 }
 

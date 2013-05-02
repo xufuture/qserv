@@ -20,7 +20,7 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// ValueTermFactory constructs ValueTerm instances from antlr nodes.
+// ValueFactorFactory constructs ValueFactor instances from antlr nodes.
 
 #ifndef LSST_QSERV_MASTER_VALUETERMFACTORY_H
 #define LSST_QSERV_MASTER_VALUETERMFACTORY_H
@@ -35,12 +35,12 @@ namespace qserv {
 namespace master {
 // Forward
 class ColumnRefMap;
-class ValueTerm;
+class ValueFactor;
 
-class ValueTermFactory {
+class ValueFactorFactory {
 public:
-    ValueTermFactory(boost::shared_ptr<ColumnRefMap> cMap);
-    boost::shared_ptr<ValueTerm> newTerm(antlr::RefAST a);
+    ValueFactorFactory(boost::shared_ptr<ColumnRefMap> cMap);
+    boost::shared_ptr<ValueFactor> newFactor(antlr::RefAST a);
                                          
 private:
     boost::shared_ptr<ColumnRefMap> _columnRefMap;

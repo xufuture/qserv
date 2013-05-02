@@ -36,7 +36,7 @@ namespace master {
 // Forward
 class ColumnRefMap;
 class ValueExpr;
-class ValueTermFactory;
+class ValueFactorFactory;
 
 class ValueExprFactory {
 public:
@@ -44,7 +44,7 @@ public:
     boost::shared_ptr<ValueExpr> newExpr(antlr::RefAST a);
                                          
 private:
-    boost::shared_ptr<ValueTermFactory> _valueTermFactory;
+    boost::shared_ptr<ValueFactorFactory> _valueFactorFactory;
 };
 
 }}} // namespace lsst::qserv::master

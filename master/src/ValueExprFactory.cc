@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2012 LSST Corporation.
+ * Copyright 2012-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -23,7 +23,7 @@
 // subtrees.
 
 #include "lsst/qserv/master/ValueExprFactory.h"
-#include "lsst/qserv/master/ValueTermFactory.h"
+#include "lsst/qserv/master/ValueFactorFactory.h"
 #include "lsst/qserv/master/ColumnRefH.h"
 #if 0
 #include "lsst/qserv/master/ColumnRef.h"
@@ -31,7 +31,7 @@
 #include "lsst/qserv/master/parseTreeUtil.h"
 #endif
 #include "lsst/qserv/master/ValueExpr.h" // For ValueExpr, FuncExpr
-#include "lsst/qserv/master/ValueTerm.h" // For ValueTerm
+#include "lsst/qserv/master/ValueFactor.h" // For ValueFactor
 #include "SqlSQL2TokenTypes.hpp" 
 
 
@@ -50,7 +50,7 @@ namespace lsst { namespace qserv { namespace master {
 // ValueExprFactory implementation
 ////////////////////////////////////////////////////////////////////////
 ValueExprFactory::ValueExprFactory(boost::shared_ptr<ColumnRefMap> cMap) 
-    : _valueTermFactory(new ValueTermFactory(cMap)) {
+    : _valueFactorFactory(new ValueFactorFactory(cMap)) {
 }
 
 // VALUE_EXP                     //
@@ -58,67 +58,38 @@ ValueExprFactory::ValueExprFactory(boost::shared_ptr<ColumnRefMap> cMap)
 // TERM   (TERM_OP TERM)*        //
 boost::shared_ptr<ValueExpr> 
 ValueExprFactory::newExpr(antlr::RefAST a) {
-#if 0
-    boost::shared_ptr<ValueExpr> root;
-    boost::shared_ptr<ValueExpr> parent;
-    boost::shared_ptr<ValueExpr> currentVe;
-    std::cout << walkIndentedString(a) << std::endl;
-    while(a.get()) {
-        currentVe.reset(new ValueExpr);
-        if(parent.get()) { // attach to parent.
-            parent->_next = currentVe;
-        } else { // No parent, so set the root.
-            root = currentVe;
-        }
-        currentVe->_term = _valueTermFactory->newTerm(a);
-        RefAST op = a->getNextSibling();
-        if(!op.get()) { // No more ops?
-            break;
-        }
-        int eType = op->getType();
-        switch(op->getType()) {
-        case SqlSQL2TokenTypes::PLUS_SIGN:
-            currentVe->_op = ValueExpr::PLUS;
-            break;
-        case SqlSQL2TokenTypes::MINUS_SIGN:
-            currentVe->_op = ValueExpr::MINUS;
-            break;
-        default: 
-            currentVe->_op = ValueExpr::UNKNOWN;
-            throw std::string("unhandled term_op type.");
-        }
-        a = op->getNextSibling();
-        parent = currentVe;
-    }
-    return root;
-#else
     boost::shared_ptr<ValueExpr> expr(new ValueExpr);
     std::cout << walkIndentedString(a) << std::endl;
     while(a.get()) {
-        ValueExpr::TermOp newTermOp;
-        newTermOp.term = _valueTermFactory->newTerm(a);
+        ValueExpr::FactorOp newFactorOp;
+        newFactorOp.term = _valueFactorFactory->newFactor(a);
         RefAST op = a->getNextSibling();
         if(!op.get()) { // No more ops?
             break;
         }
+        std::cout << "expected op: " << tokenText(op) << std::endl;
         int eType = op->getType();
         switch(op->getType()) {
         case SqlSQL2TokenTypes::PLUS_SIGN:
-            newTermOp.op = ValueExpr::PLUS;
+            newFactorOp.op = ValueExpr::PLUS;
             break;
         case SqlSQL2TokenTypes::MINUS_SIGN:
-            newTermOp.op = ValueExpr::MINUS;
+            newFactorOp.op = ValueExpr::MINUS;
+            break;
+        case SqlSQL2TokenTypes::ASTERISK:
+            newFactorOp.op = ValueExpr::MULTIPLY;
+            break;
+        case SqlSQL2TokenTypes::SOLIDUS:
+            newFactorOp.op = ValueExpr::DIVIDE;
             break;
         default: 
-            newTermOp.op = ValueExpr::UNKNOWN;
+            newFactorOp.op = ValueExpr::UNKNOWN;
             throw std::string("unhandled term_op type.");
         }
         a = op->getNextSibling();
-        expr->_termOps.push_back(newTermOp);
+        expr->_factorOps.push_back(newFactorOp);
     }
     return expr;
-
-#endif
 }
 }}} // lsst::qserv::master
 

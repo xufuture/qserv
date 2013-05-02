@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2012 LSST Corporation.
+ * Copyright 2012-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -24,13 +24,13 @@
 #include <sstream>
 #include "lsst/qserv/master/FuncExpr.h"
 #include "lsst/qserv/master/ValueExpr.h"
-#include "lsst/qserv/master/ValueTerm.h"
+#include "lsst/qserv/master/ValueFactor.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::AggOp;
 using lsst::qserv::master::AggRecord;
 using lsst::qserv::master::ValueExpr;
-using lsst::qserv::master::ValueTerm;
+using lsst::qserv::master::ValueFactor;
 using lsst::qserv::master::FuncExpr;
 
 namespace { // File-scope helpers
@@ -44,7 +44,7 @@ class PassAggOp : public AggOp {
 public:
     explicit PassAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
 
-    virtual AggRecord2::Ptr operator()(ValueTerm const& orig) {
+    virtual AggRecord2::Ptr operator()(ValueFactor const& orig) {
         AggRecord2::Ptr arp(new AggRecord2());
         arp->orig = orig.clone();
         arp->pass.push_back(ValueExpr::newSimple(orig.clone()));
@@ -57,12 +57,12 @@ class CountAggOp : public AggOp {
 public:
     explicit CountAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
 
-    virtual AggRecord2::Ptr operator()(ValueTerm const& orig) {
+    virtual AggRecord2::Ptr operator()(ValueFactor const& orig) {
         AggRecord2::Ptr arp(new AggRecord2());
         std::string interName = _mgr.getAggName("COUNT");
         arp->orig = orig.clone();
         boost::shared_ptr<FuncExpr> fe;
-        boost::shared_ptr<ValueTerm> vt;
+        boost::shared_ptr<ValueFactor> vt;
         boost::shared_ptr<ValueExpr> passExpr;
         
         passExpr = ValueExpr::newSimple(orig.clone());
@@ -70,7 +70,7 @@ public:
         arp->pass.push_back(passExpr);
 
         fe = FuncExpr::newArg1("SUM", interName);
-        vt = ValueTerm::newFuncTerm(fe);
+        vt = ValueFactor::newFuncFactor(fe);
         // orig alias handled by caller.
         arp->fixup = vt;
         return arp;
@@ -80,7 +80,7 @@ class AvgAggOp : public AggOp {
 public:
     explicit AvgAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
 
-    virtual AggRecord2::Ptr operator()(ValueTerm const& orig) {
+    virtual AggRecord2::Ptr operator()(ValueFactor const& orig) {
         return AggRecord2::Ptr();
 # if 0
         AggRecord::Ptr arp(new AggRecord());
@@ -88,17 +88,17 @@ public:
 
         // FIXME: For each term in orig.
         boost::shared_ptr<FuncExpr> fe;
-        boost::shared_ptr<ValueTerm const> origVt(orig);
+        boost::shared_ptr<ValueFactor const> origVt(orig);
         boost::shared_ptr<ValueExpr> ve;
         std::string cName = _mgr.getAggName("COUNT");
         fe = FuncExpr::newLike(*origVt->getFuncExpr(), "COUNT");
-        ve = ValueExpr::newSimple(ValueTerm::newFuncTerm(fe));
+        ve = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe));
         ve->setAlias(cName);
         arp->pass.push_back(ve);
 
         std::string sName = _mgr.getAggName("SUM");
         fe = FuncExpr::newLike(*origVt->getFuncExpr(), "SUM");
-        ve = ValueExpr::newSimple(ValueTerm::newFuncTerm(fe));
+        ve = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe));
         ve->setAlias(sName);
         arp->pass.push_back(ve);
         
@@ -110,7 +110,7 @@ public:
 #if 0        // FIXME!!
         // ArithExpr::newExpr(fe1,fe2);
 #else // Broken placeholder
-        ve = ValueExpr::newSimple(ValueTerm::newFuncTerm(fe1));
+        ve = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe1));
         ve->setAlias(orig.getAlias());
         arp->fixup.push_back(ve);
 #endif
@@ -143,7 +143,7 @@ AggOp::Mgr::getOp(std::string const& name) {
 }
 
 AggRecord2::Ptr 
-AggOp::Mgr::applyOp(std::string const& name, ValueTerm const& orig) {
+AggOp::Mgr::applyOp(std::string const& name, ValueFactor const& orig) {
     std::string n(name);
     std::transform(name.begin(), name.end(), n.begin(), ::toupper);
     AggOp::Ptr p = getOp(n);

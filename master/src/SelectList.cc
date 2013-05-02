@@ -33,7 +33,7 @@
 // For now, just build the syntax tree without evaluating.
 #include "lsst/qserv/master/SelectList.h"
 #include "lsst/qserv/master/FuncExpr.h"
-#include "lsst/qserv/master/ValueTerm.h"
+#include "lsst/qserv/master/ValueFactor.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include <iterator>
 
@@ -87,7 +87,7 @@ SelectList::addStar(antlr::RefAST table) {
     if(table.get()) {
         tParam = qMaster::tokenText(table);
     }
-    ve = ValueExpr::newSimple(ValueTerm::newStarTerm(tParam));
+    ve = ValueExpr::newSimple(ValueFactor::newStarFactor(tParam));
     _valueExprList->push_back(ve);
 }
 
@@ -103,7 +103,7 @@ SelectList::addFunc(antlr::RefAST a) {
    fe->name = tokenText(a);
    _fillParams(fe->params, a->getNextSibling());
    _valueExprList->push_back(ValueExpr::newSimple(
-                                 ValueTerm::newFuncExpr(fe)));
+                                 ValueFactor::newFuncExpr(fe)));
 }
 
 void
@@ -113,7 +113,7 @@ SelectList::addAgg(antlr::RefAST a) {
    fe->name = tokenText(a);
    _fillParams(fe->params, a->getFirstChild());
    _valueExprList->push_back(ValueExpr::newSimple(
-                                 ValueTerm::newAggExpr(fe)));
+                                 ValueFactor::newAggExpr(fe)));
 }
 
 void
@@ -121,7 +121,7 @@ SelectList::addRegular(antlr::RefAST a) {
     assert(_valueExprList.get());
     boost::shared_ptr<ColumnRef const> cr(_columnRefList->getRef(a));
     _valueExprList->push_back(ValueExpr::newSimple(
-                                  ValueTerm::newColumnRefExpr(cr)));
+                                  ValueFactor::newColumnRefExpr(cr)));
 }
 #endif
 void

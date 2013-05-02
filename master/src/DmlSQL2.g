@@ -1453,7 +1453,6 @@ term_op :
 //{ Rule #584 <term> was refined to avoid infinite recursion
 term : 
 	factor (options{greedy=true;}:factor_op factor)* 
-        {#term = #([TERM,"TERM"], #term);}
 ;
 //}
 
@@ -1467,6 +1466,7 @@ factor_op :
 //{ Rule #255 <factor> incorporates the rules #141 <datetime_factor> and #307 <interval_factor>
 factor : 
 	(sign)? gen_primary ("at" time_zone_specifier | collate_clause)? 
+        {#factor = #([FACTOR,"FACTOR"], #factor);}
 ;
 //}
 

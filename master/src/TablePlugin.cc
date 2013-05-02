@@ -36,7 +36,7 @@
 #include "lsst/qserv/master/TableNamer.h"
 #include "lsst/qserv/master/QueryMapping.h"
 #include "lsst/qserv/master/QueryContext.h"
-#include "lsst/qserv/master/ValueTerm.h"
+#include "lsst/qserv/master/ValueFactor.h"
 
 namespace qMaster=lsst::qserv::master;
 
@@ -148,25 +148,25 @@ public:
             return;
         }
         // For each term in the expr, patch for aliasing:
-        ValueExpr::TermOpList& termOps = vep->getTermOps();
-        for(ValueExpr::TermOpList::iterator i=termOps.begin();
+        ValueExpr::FactorOpList& termOps = vep->getFactorOps();
+        for(ValueExpr::FactorOpList::iterator i=termOps.begin();
             i != termOps.end(); ++i) {
             assert(i->term.get());
-            ValueTerm& t = *i->term;
+            ValueFactor& t = *i->term;
             //std::cout << "fixing term: " << *vep << std::endl;
             std::string newAlias;
             
             switch(t.getType()) {
-            case ValueTerm::COLUMNREF:
+            case ValueFactor::COLUMNREF:
                 // check columnref.
                 _patchColumnRef(*t.getColumnRef());
                 break;
-            case ValueTerm::FUNCTION:
-            case ValueTerm::AGGFUNC:
+            case ValueFactor::FUNCTION:
+            case ValueFactor::AGGFUNC:
                 // recurse for func params (aggfunc is special case of function)
                 _patchFuncExpr(*t.getFuncExpr());
                 break;
-            case ValueTerm::STAR: 
+            case ValueFactor::STAR: 
                 // Patch db/table name if applicable
                 _patchStar(t);
                 break;
@@ -187,7 +187,7 @@ private:
         std::for_each(fe.params.begin(), fe.params.end(), 
                       fixExprAlias(_reverseAlias));
     }
-    inline void _patchStar(ValueTerm& vt) {
+    inline void _patchStar(ValueFactor& vt) {
         // TODO: No support for <db>.<table>.* in framework
         // Only <table>.* is supported.
         std::string newAlias = _getAlias("", vt.getTableStar());

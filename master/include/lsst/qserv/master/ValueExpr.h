@@ -37,78 +37,36 @@ class QueryTemplate;
 class ValueExpr; 
 typedef boost::shared_ptr<ValueExpr> ValueExprPtr;
 typedef std::list<ValueExprPtr> ValueExprList;
-class ValueTerm; 
+class ValueFactor; 
 
 class ValueExpr {
 public:
-    enum Op {NONE=200, UNKNOWN, PLUS, MINUS};
-    struct TermOp {
-        boost::shared_ptr<ValueTerm> term;
+    enum Op {NONE=200, UNKNOWN, PLUS, MINUS, MULTIPLY, DIVIDE};
+    struct FactorOp {
+        boost::shared_ptr<ValueFactor> term;
         Op op;
     };
-    typedef std::list<TermOp> TermOpList;
+    typedef std::list<FactorOp> FactorOpList;
 
     std::string const& getAlias() const { return _alias; }
     void setAlias(std::string const& a) { _alias = a; }
 
-#if 0
-    boost::shared_ptr<ValueTerm> getTerm() { return _term; }
-    boost::shared_ptr<ValueTerm const> getTerm() const { return _term; }
-    void setTerm(boost::shared_ptr<ValueTerm> t) { _term = t; }
-
-    Op getOp() const { return _op; }
-    void setOp(Op op) { _op = op; }
-#endif
-
-    TermOpList& getTermOps() { return _termOps; }
-    TermOpList const& getTermOps() const { return _termOps; }
+    FactorOpList& getFactorOps() { return _factorOps; }
+    FactorOpList const& getFactorOps() const { return _factorOps; }
 
     ValueExprPtr clone() const;
     friend std::ostream& operator<<(std::ostream& os, ValueExpr const& vt);
     friend std::ostream& operator<<(std::ostream& os, ValueExpr const* vt);
 
-    static ValueExprPtr newSimple(boost::shared_ptr<ValueTerm> vt);
+    static ValueExprPtr newSimple(boost::shared_ptr<ValueFactor> vt);
    
-#if 0
-    // Convenience navigators
-    template <class F> 
-    class copyTransformExpr {
-    public:
-        copyTransformExpr(F& f) : _f(f) {}
-        void acceptTerm(ValueTerm const* vtp) {
-            currentVe.reset(new ValueExpr);
-            if(parent.get()) { // attach to parent.
-                parent->_next = currentVe;
-            } else { // No parent, so set the root.
-                root = currentVe;
-            }
-            currentVe->_term = _f(*vtp);
-        }
-        void acceptOp(Op op) { currentVe->_op = op; }
-        F& _f;
-        boost::shared_ptr<ValueExpr> root;
-        boost::shared_ptr<ValueExpr> parent;
-        boost::shared_ptr<ValueExpr> currentVe;
-    };
-
-    template <class F>
-    void mapTerms(F& f) const {
-        for(ValueExpr const* ep = this;
-            ep;
-            ep = ep->getNext().get()) {
-            f.acceptTerm(ep->getTerm().get());
-            f.acceptOp(ep->getOp());
-        }
-    }
-#endif
-
     friend class ValueExprFactory;
     class render;
     friend class render;
 private:
     ValueExpr();
     std::string _alias;
-    std::list<TermOp> _termOps;
+    std::list<FactorOp> _factorOps;
 };
 
 class ValueExpr::render : public std::unary_function<ValueExpr, void> {

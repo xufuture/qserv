@@ -22,7 +22,7 @@
 // ValueExpr.cc houses the implementation of ValueExpr, a object
 // containing elements of a SQL value expresssion (construct that
 // evaluates to a [non-boolean] SQL primitive value)
-#include "lsst/qserv/master/ValueTerm.h"
+#include "lsst/qserv/master/ValueFactor.h"
 #include <iostream>
 #include <sstream>
 #include <iterator>
@@ -31,50 +31,50 @@
 #include "lsst/qserv/master/FuncExpr.h"
 
 namespace qMaster=lsst::qserv::master;
-using lsst::qserv::master::ValueTerm;
-using lsst::qserv::master::ValueTermPtr;
+using lsst::qserv::master::ValueFactor;
+using lsst::qserv::master::ValueFactorPtr;
 
 namespace lsst { namespace qserv { namespace master {
 
-ValueTermPtr ValueTerm::newColumnRefTerm(boost::shared_ptr<ColumnRef const> cr) {
-    ValueTermPtr term(new ValueTerm());
+ValueFactorPtr ValueFactor::newColumnRefFactor(boost::shared_ptr<ColumnRef const> cr) {
+    ValueFactorPtr term(new ValueFactor());
     term->_type = COLUMNREF;
     term->_columnRef.reset(new ColumnRef(*cr));
     return term;
 }
 
-ValueTermPtr ValueTerm::newStarTerm(std::string const& table) {
-    ValueTermPtr term(new ValueTerm());
+ValueFactorPtr ValueFactor::newStarFactor(std::string const& table) {
+    ValueFactorPtr term(new ValueFactor());
     term->_type = STAR;
     if(!table.empty()) {
         term->_tableStar = table;
     }
     return term;
 }
-ValueTermPtr ValueTerm::newFuncTerm(boost::shared_ptr<FuncExpr> fe) {
-    ValueTermPtr term(new ValueTerm());
+ValueFactorPtr ValueFactor::newFuncFactor(boost::shared_ptr<FuncExpr> fe) {
+    ValueFactorPtr term(new ValueFactor());
     term->_type = FUNCTION;
     term->_funcExpr = fe;
     return term;
 }
 
-ValueTermPtr ValueTerm::newAggTerm(boost::shared_ptr<FuncExpr> fe) {
-    ValueTermPtr term(new ValueTerm());
+ValueFactorPtr ValueFactor::newAggFactor(boost::shared_ptr<FuncExpr> fe) {
+    ValueFactorPtr term(new ValueFactor());
     term->_type = AGGFUNC;
     term->_funcExpr = fe;
     return term;
 }
 
-ValueTermPtr
-ValueTerm::newConstTerm(std::string const& alnum) {
-    ValueTermPtr term(new ValueTerm());
+ValueFactorPtr
+ValueFactor::newConstFactor(std::string const& alnum) {
+    ValueFactorPtr term(new ValueFactor());
     term->_type = CONST;
     term->_tableStar = alnum;
     return term;
 }
 
-ValueTermPtr ValueTerm::clone() const{
-    ValueTermPtr expr(new ValueTerm(*this));
+ValueFactorPtr ValueFactor::clone() const{
+    ValueFactorPtr expr(new ValueFactor(*this));
     // Clone refs.
     if(_columnRef.get()) {
         expr->_columnRef.reset(new ColumnRef(*_columnRef));
@@ -85,43 +85,43 @@ ValueTermPtr ValueTerm::clone() const{
     return expr;
 }
 
-std::ostream& operator<<(std::ostream& os, ValueTerm const& ve) {
+std::ostream& operator<<(std::ostream& os, ValueFactor const& ve) {
     switch(ve._type) {
-    case ValueTerm::COLUMNREF: os << "CREF: " << *(ve._columnRef); break;
-    case ValueTerm::FUNCTION: os << "FUNC: " << *(ve._funcExpr); break;
-    case ValueTerm::AGGFUNC: os << "AGGFUNC: " << *(ve._funcExpr); break;
-    case ValueTerm::STAR:
+    case ValueFactor::COLUMNREF: os << "CREF: " << *(ve._columnRef); break;
+    case ValueFactor::FUNCTION: os << "FUNC: " << *(ve._funcExpr); break;
+    case ValueFactor::AGGFUNC: os << "AGGFUNC: " << *(ve._funcExpr); break;
+    case ValueFactor::STAR:
         os << "<";
         if(!ve._tableStar.empty()) os << ve._tableStar << ".";
         os << "*>"; 
         break;
-    case ValueTerm::CONST: 
+    case ValueFactor::CONST: 
         os << "CONST: " << ve._tableStar;
         break;
-    default: os << "UnknownTerm"; break;
+    default: os << "UnknownFactor"; break;
     }
     if(!ve._alias.empty()) { os << " [" << ve._alias << "]"; }
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, ValueTerm const* ve) {
+std::ostream& operator<<(std::ostream& os, ValueFactor const* ve) {
     if(!ve) return os << "<NULL>";
     return os << *ve;
 }
 
-void ValueTerm::render::operator()(qMaster::ValueTerm const& ve) {
+void ValueFactor::render::operator()(qMaster::ValueFactor const& ve) {
     switch(ve._type) {
-    case ValueTerm::COLUMNREF: ve._columnRef->render(_qt); break;
-    case ValueTerm::FUNCTION: ve._funcExpr->render(_qt); break;
-    case ValueTerm::AGGFUNC: ve._funcExpr->render(_qt); break;
-    case ValueTerm::STAR: 
+    case ValueFactor::COLUMNREF: ve._columnRef->render(_qt); break;
+    case ValueFactor::FUNCTION: ve._funcExpr->render(_qt); break;
+    case ValueFactor::AGGFUNC: ve._funcExpr->render(_qt); break;
+    case ValueFactor::STAR: 
         if(!ve._tableStar.empty()) {
             _qt.append(ColumnRef("",ve._tableStar, "*"));
         } else {
             _qt.append("*");
         }
         break;
-    case ValueTerm::CONST: _qt.append(ve._tableStar); break;
+    case ValueFactor::CONST: _qt.append(ve._tableStar); break;
     default: break;
     }
     if(!ve._alias.empty()) { _qt.append("AS"); _qt.append(ve._alias); }

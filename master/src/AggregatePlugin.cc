@@ -32,7 +32,7 @@
 #include "lsst/qserv/master/QueryPlugin.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include "lsst/qserv/master/ValueExpr.h"
-#include "lsst/qserv/master/ValueTerm.h"
+#include "lsst/qserv/master/ValueFactor.h"
 #include "lsst/qserv/master/FuncExpr.h"
 
 #include "lsst/qserv/master/SelectList.h"
@@ -76,29 +76,29 @@ private:
     class checkAgg {
     public: // Simply check for aggregation functions
         checkAgg(bool& hasAgg_) : hasAgg(hasAgg_) {}
-        inline void operator()(ValueExpr::TermOp const& to) {
+        inline void operator()(ValueExpr::FactorOp const& to) {
             if(!to.term.get());
-            if(to.term->getType() = ValueTerm::AGGFUNC) { 
+            if(to.term->getType() = ValueFactor::AGGFUNC) { 
                 hasAgg = true; }
         }
         bool& hasAgg;
     };
     class applyAgg {
     public:
-        inline ValueTermPtr operator()(ValueTerm const& t) {
-            ValueTermPtr newTerm(new ValueTerm(t));
-            if(t.getType() != ValueTerm::AGGFUNC) {                  
+        inline ValueFactorPtr operator()(ValueFactor const& t) {
+            ValueFactorPtr newFactor(new ValueFactor(t));
+            if(t.getType() != ValueFactor::AGGFUNC) {                  
                 return t.clone();
             }
             // FIXME
-            return newTerm;
+            return newFactor;
         }
     };
 
     void _makeRecord2(ValueExpr const& e) {
         bool hasAgg = false;
         checkAgg ca(hasAgg);
-        ValueExpr::TermOpList const& termOps = e.getTermOps();
+        ValueExpr::FactorOpList const& termOps = e.getFactorOps();
         std::for_each(termOps.begin(), termOps.end(), ca);
 
         if(!ca.hasAgg) {
@@ -108,44 +108,44 @@ private:
         // For exprs with aggregation, we must separate out the
         // expression into pieces.
         // Split the elements of a ValueExpr into its
-        // constituent ValueTerms, compute the lists in parallel, and
+        // constituent ValueFactors, compute the lists in parallel, and
         // then compute the expression result from the parallel
         // results during merging.
         ValueExprPtr mergeExpr(new ValueExpr);
-        ValueExpr::TermOpList& mergeTermOps = mergeExpr->getTermOps();
-        for(ValueExpr::TermOpList::const_iterator i=termOps.begin();
+        ValueExpr::FactorOpList& mergeFactorOps = mergeExpr->getFactorOps();
+        for(ValueExpr::FactorOpList::const_iterator i=termOps.begin();
             i != termOps.end(); ++i) {
-            ValueTermPtr newTerm = i->term->clone();
-            if(newTerm->getType() != ValueTerm::AGGFUNC) {
-                pList.push_back = ValueExpr::newSimple(newTerm);
+            ValueFactorPtr newFactor = i->term->clone();
+            if(newFactor->getType() != ValueFactor::AGGFUNC) {
+                pList.push_back = ValueExpr::newSimple(newFactor);
             } else {
                 AggRecord2 r;
-                r.orig = newTerm;
-                assert(newTerm->getFuncExpr().get());        
-                AggRecord2::Ptr p = aMgr.applyOp(newTerm->getFuncExpr()->name,
-                                                 *newTerm);
+                r.orig = newFactor;
+                assert(newFactor->getFuncExpr().get());        
+                AggRecord2::Ptr p = aMgr.applyOp(newFactor->getFuncExpr()->name,
+                                                 *newFactor);
                 assert(p.get());
                 pList.insert(pList.end(), p->pass.begin(), p->pass.end());
-                ValueExpr::TermOp m;
+                ValueExpr::FactorOp m;
                 m.term = p->fixup;
                 m.op = i->op;
-                mergeTermOps.push_back(m);
+                mergeFactorOps.push_back(m);
             }
         }
         mList.push_back(mergeExpr);
     }
     
     void _makeRecord(lsst::qserv::master::ValueExpr const& e) {
-        using lsst::qserv::master::ValueTerm;
-        ValueExpr::TermOpList const& termOps = e.getTermOps();
+        using lsst::qserv::master::ValueFactor;
+        ValueExpr::FactorOpList const& termOps = e.getFactorOps();
         assert(!termOps.empty());
-        boost::shared_ptr<ValueTerm const> t = termOps.front();
+        boost::shared_ptr<ValueFactor const> t = termOps.front();
         // Not sure how to deal with expr right now.
         // This gets more complicated if aggregations have
         // non-trivial expressions        
         if(termOps.size() > 1) {
             throw std::string("Unexpected expr in aggregate"); }
-        if(t->getType() != ValueTerm::AGGFUNC) { 
+        if(t->getType() != ValueFactor::AGGFUNC) { 
             pList.push_back(e.clone()); // Is this sufficient?
             return; 
         }

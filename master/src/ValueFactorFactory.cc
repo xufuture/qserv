@@ -19,25 +19,25 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// ValueTermFactory.cc constructs ValueTerm instances from an ANTLR
+// ValueFactorFactory.cc constructs ValueFactor instances from an ANTLR
 // subtrees.
 
-#include "lsst/qserv/master/ValueTermFactory.h"
+#include "lsst/qserv/master/ValueFactorFactory.h"
 #include "lsst/qserv/master/ColumnRefH.h"
 #include "lsst/qserv/master/ColumnRef.h"
 #include "lsst/qserv/master/FuncExpr.h"
 #include "lsst/qserv/master/parseTreeUtil.h"
 #include "lsst/qserv/master/ValueExpr.h" // For ValueExpr
-#include "lsst/qserv/master/ValueTerm.h" // For ValueTerm
+#include "lsst/qserv/master/ValueFactor.h" // For ValueFactor
 #include "SqlSQL2TokenTypes.hpp" 
 
 
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;
-using qMaster::ValueTerm;
+using qMaster::ValueFactor;
 using qMaster::ValueExpr;
 using qMaster::FuncExpr;
-using qMaster::ValueTermFactory;
+using qMaster::ValueFactorFactory;
 using qMaster::ColumnRef;
 using qMaster::ColumnRefMap;
 using qMaster::tokenText;
@@ -66,12 +66,18 @@ inline std::string getSiblingStringBounded(RefAST left, RefAST right) {
     return p.result;
 }
 
-boost::shared_ptr<ValueTerm> 
-newColumnTerm(antlr::RefAST t, ColumnRefMap& cMap) {
+boost::shared_ptr<ValueFactor> 
+newColumnFactor(antlr::RefAST t, ColumnRefMap& cMap) {
     RefAST child = t->getFirstChild();
-    boost::shared_ptr<ValueTerm> vt(new ValueTerm());
+    if(t->getType() == SqlSQL2TokenTypes::FACTOR) {
+        t = child;
+        child = t->getFirstChild();
+    } 
+    boost::shared_ptr<ValueFactor> vt(new ValueFactor());
     boost::shared_ptr<FuncExpr> fe;
     RefAST last;
+    //std::cout << "colterm: " << t->getType() << " "
+    //          << t->getText() << std::endl;
     switch(t->getType()) {
     case SqlSQL2TokenTypes::REGULAR_ID: 
         // make column ref. (no further children)
@@ -83,12 +89,12 @@ newColumnTerm(antlr::RefAST t, ColumnRefMap& cMap) {
             newColumnRef.reset(new qMaster::ColumnRef(tokenText(r.db),
                                                       tokenText(r.table),
                                                       tokenText(r.column)));
-            vt = ValueTerm::newColumnRefTerm(newColumnRef);
+            vt = ValueFactor::newColumnRefFactor(newColumnRef);
         }
         return vt;    
     case SqlSQL2TokenTypes::FUNCTION_SPEC:
-        //        std::cout << "col child (fct): " << child->getType() << " "
-        //                  << child->getText() << std::endl;
+        //std::cout << "col child (fct): " << child->getType() << " "
+        //          << child->getText() << std::endl;
         fe.reset(new FuncExpr());
         last = walkToSiblingBefore(child, SqlSQL2TokenTypes::LEFT_PAREN);
         fe->name = getSiblingStringBounded(child, last);
@@ -98,10 +104,13 @@ newColumnTerm(antlr::RefAST t, ColumnRefMap& cMap) {
         for(antlr::RefAST current = last->getNextSibling();
             current.get(); current = current->getNextSibling()) {
             // Should be a * or a value expr.
-            boost::shared_ptr<ValueTerm> pvt;
+            boost::shared_ptr<ValueFactor> pvt;
+            //std::cout << "fctspec param: " << current->getType() << " "
+            //          << current->getText() << std::endl;
+        
             switch(current->getType()) {
             case SqlSQL2TokenTypes::VALUE_EXP: 
-                pvt = newColumnTerm(current->getFirstChild(), cMap);
+                pvt = newColumnFactor(current->getFirstChild(), cMap);
                 break;
             case SqlSQL2TokenTypes::COMMA: continue;
             case SqlSQL2TokenTypes::RIGHT_PAREN: continue;
@@ -109,7 +118,7 @@ newColumnTerm(antlr::RefAST t, ColumnRefMap& cMap) {
             }
             fe->params.push_back(ValueExpr::newSimple(pvt));
         }
-        vt = ValueTerm::newFuncTerm(fe);
+        vt = ValueFactor::newFuncFactor(fe);
         return vt;
         
         break;
@@ -117,10 +126,10 @@ newColumnTerm(antlr::RefAST t, ColumnRefMap& cMap) {
         // throw ParseException(expr);// FIXME, need to unify exceptions.
         break;
     }
-    return boost::shared_ptr<ValueTerm>();
+    return boost::shared_ptr<ValueFactor>();
 }
 
-boost::shared_ptr<ValueTerm> 
+boost::shared_ptr<ValueFactor> 
 newSetFctSpec(RefAST expr, ColumnRefMap& cMap) {
     boost::shared_ptr<FuncExpr> fe(new FuncExpr());
     //    std::cout << "set_fct_spec " << walkTreeString(expr) << std::endl;
@@ -133,34 +142,34 @@ newSetFctSpec(RefAST expr, ColumnRefMap& cMap) {
     assert(current->getType() == SqlSQL2TokenTypes::LEFT_PAREN); 
     current = current->getNextSibling();
     // Should be a * or a value expr.
-    boost::shared_ptr<ValueTerm> pvt;
+    boost::shared_ptr<ValueFactor> pvt;
     switch(current->getType()) {
     case SqlSQL2TokenTypes::VALUE_EXP: 
-        pvt = newColumnTerm(current->getFirstChild(), cMap);
+        pvt = newColumnFactor(current->getFirstChild(), cMap);
         break;
     case SqlSQL2TokenTypes::ASTERISK: 
-        pvt = ValueTerm::newStarTerm("");
+        pvt = ValueFactor::newStarFactor("");
         break;
     default: break;
     }
     current = current->getNextSibling();
     assert(current->getType() == SqlSQL2TokenTypes::RIGHT_PAREN); 
     fe->params.push_back(ValueExpr::newSimple(pvt));
-    return ValueTerm::newAggTerm(fe);
+    return ValueFactor::newAggFactor(fe);
 }
 
-boost::shared_ptr<ValueTerm> 
-newConstTerm(RefAST t) {
-    return ValueTerm::newConstTerm(qMaster::walkTreeString(t));
+boost::shared_ptr<ValueFactor> 
+newConstFactor(RefAST t) {
+    return ValueFactor::newConstFactor(qMaster::walkTreeString(t));
 }
 
 
 } // anonymous
 namespace lsst { namespace qserv { namespace master { 
 ////////////////////////////////////////////////////////////////////////
-// ValueTermFactory implementation
+// ValueFactorFactory implementation
 ////////////////////////////////////////////////////////////////////////
-ValueTermFactory::ValueTermFactory(boost::shared_ptr<ColumnRefMap> cMap) 
+ValueFactorFactory::ValueFactorFactory(boost::shared_ptr<ColumnRefMap> cMap) 
     : _columnRefMap(cMap) {
 }
 
@@ -168,25 +177,25 @@ ValueTermFactory::ValueTermFactory(boost::shared_ptr<ColumnRefMap> cMap)
 /* VALUE_EXP               */
 /* |             \         */
 /* TERM   (TERM_OP TERM)*  */
-boost::shared_ptr<ValueTerm> 
-ValueTermFactory::newTerm(antlr::RefAST a) {
+boost::shared_ptr<ValueFactor> 
+ValueFactorFactory::newFactor(antlr::RefAST a) {
     assert(_columnRefMap.get());
-    boost::shared_ptr<ValueTerm> vt;
+    boost::shared_ptr<ValueFactor> vt;
     int eType = a->getType();
-    if(a->getType() == SqlSQL2TokenTypes::TERM) {
-        a = a->getFirstChild(); // TERM is a parent placeholder element
+    if(a->getType() == SqlSQL2TokenTypes::FACTOR) {
+        a = a->getFirstChild(); // FACTOR is a parent placeholder element
     }
     std::cout << "new term: " << tokenText(a) << std::endl;
     switch(a->getType()) {
     case SqlSQL2TokenTypes::REGULAR_ID:
     case SqlSQL2TokenTypes::FUNCTION_SPEC:
-        vt = newColumnTerm(a, *_columnRefMap);
+        vt = newColumnFactor(a, *_columnRefMap);
         break;
     case SqlSQL2TokenTypes::SET_FCT_SPEC:
         vt = newSetFctSpec(a, *_columnRefMap);
         break;
     default: 
-        vt = newConstTerm(a);
+        vt = newConstFactor(a);
         break;
     }
     assert(vt.get());

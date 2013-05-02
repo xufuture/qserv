@@ -41,7 +41,7 @@
 #include "lsst/qserv/master/WhereFactory.h"
 #include "lsst/qserv/master/ModFactory.h"
 #include "lsst/qserv/master/ValueExprFactory.h"
-#include "lsst/qserv/master/ValueTerm.h"
+#include "lsst/qserv/master/ValueFactor.h"
 
 #include "lsst/qserv/master/ParseAliasMap.h" 
 #include "lsst/qserv/master/parseTreeUtil.h"
@@ -247,7 +247,7 @@ SelectListFactory::_addSelectStar(RefAST child) {
     // If child.get(), this means that it's in the form of
     // "table.*". There might be sibling handling (i.e., multiple
     // table.* expressions).
-    ValueTermPtr vt;
+    ValueFactorPtr vt;
     std::string tableName;
     if(child.get()) {
         // child should be QUALIFIED_NAME, so its child should be a
@@ -257,7 +257,7 @@ SelectListFactory::_addSelectStar(RefAST child) {
         tableName = tokenText(table);
         std::cout << "table ref'd for *: " << tableName << std::endl;
     } 
-    vt = ValueTerm::newStarTerm(tableName);
+    vt = ValueFactor::newStarFactor(tableName);
     _valueExprList->push_back(ValueExpr::newSimple(vt));
 }
 

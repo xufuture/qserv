@@ -27,7 +27,7 @@
 #include <iostream>
 #include <sstream>
 #include <iterator>
-#include "lsst/qserv/master/ValueTerm.h"
+#include "lsst/qserv/master/ValueFactor.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include "lsst/qserv/master/FuncExpr.h"
 
@@ -52,19 +52,19 @@ renderList(QueryTemplate& qt, ValueExprList const& vel) {
 
 class trivialCopy {
 public:
-    inline ValueTermPtr operator()(ValueTerm const& t) {
-        return ValueTermPtr(new ValueTerm(t));
+    inline ValueFactorPtr operator()(ValueFactor const& t) {
+        return ValueFactorPtr(new ValueFactor(t));
     }
 };
 
 ////////////////////////////////////////////////////////////////////////
 // ValueExpr statics
 ////////////////////////////////////////////////////////////////////////
-ValueExprPtr ValueExpr::newSimple(boost::shared_ptr<ValueTerm> vt)  {
+ValueExprPtr ValueExpr::newSimple(boost::shared_ptr<ValueFactor> vt)  {
     assert(vt.get());
     boost::shared_ptr<ValueExpr> ve(new ValueExpr);
-    TermOp t = {vt, NONE};
-    ve->_termOps.push_back(t);
+    FactorOp t = {vt, NONE};
+    ve->_factorOps.push_back(t);
     return ve;
 }
 ////////////////////////////////////////////////////////////////////////
@@ -74,39 +74,24 @@ ValueExpr::ValueExpr() {
 }
 
 ValueExprPtr ValueExpr::clone() const {
-#if 0
-    ValueExprPtr expr(new ValueExpr);
-    if(_term.get()) { expr->_term.reset(new ValueTerm(*_term)); }
-    expr->_op = _op;
-    // FIXME: Convert tail-recursion to iterative
-    if(_next.get()) { expr->_next = _next->clone(); }
-    return expr;
-#elif 0
-    copyTransformExpr copyF(trivialCopy());
-    mapTerms(*this, copyF);
-    return copyF.root;
-#else
     // First, make a shallow copy
     ValueExprPtr expr(new ValueExpr(*this)); 
-    TermOpList::iterator ti = expr->_termOps.begin();
-    for(TermOpList::const_iterator i=_termOps.begin();
-        i != _termOps.end(); ++i, ++ti) {
+    FactorOpList::iterator ti = expr->_factorOps.begin();
+    for(FactorOpList::const_iterator i=_factorOps.begin();
+        i != _factorOps.end(); ++i, ++ti) {
         // Deep copy (clone) each term.
         ti->term = i->term->clone();
     }
     return expr;
-#endif
 }
 
 
 std::ostream& operator<<(std::ostream& os, ValueExpr const& ve) {
-    // FIXME: Currently only considers first term.
-    if(!ve._termOps.empty()) {
-        os << *(ve._termOps.front().term);
-    } else {
-        os << "EmptyValueExpr";
-    }
-    if(!ve._alias.empty()) { os << " [" << ve._alias << "]"; }
+    // Reuse QueryTemplate-based rendering
+    QueryTemplate qt;
+    ValueExpr::render render(qt, false);
+    render(ve);
+    os << qt.dbgStr();
     return os;
 }
 
@@ -119,15 +104,17 @@ std::ostream& operator<<(std::ostream& os, ValueExpr const* ve) {
 ////////////////////////////////////////////////////////////////////////
 void ValueExpr::render::operator()(qMaster::ValueExpr const& ve) {
     if(_needsComma && _count++ > 0) { _qt.append(","); }
-    ValueTerm::render render(_qt);
-    for(TermOpList::const_iterator i=ve._termOps.begin();
-        i != ve._termOps.end(); ++i) {
+    ValueFactor::render render(_qt);
+    for(FactorOpList::const_iterator i=ve._factorOps.begin();
+        i != ve._factorOps.end(); ++i) {
         render(i->term);
         switch(i->op) {
         case ValueExpr::NONE: break;
         case ValueExpr::UNKNOWN: _qt.append("<UNKNOWN_OP>"); break;
         case ValueExpr::PLUS: _qt.append("+"); break;
         case ValueExpr::MINUS: _qt.append("-"); break;
+        case ValueExpr::MULTIPLY: _qt.append("*"); break;
+        case ValueExpr::DIVIDE: _qt.append("/"); break;
         default:
             std::ostringstream ss;
             ss << "Corruption: bad _op in ValueExpr optype=" << i->op;
