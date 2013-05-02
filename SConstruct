@@ -185,6 +185,7 @@ def get_template_targets():
                 "start_xrootd",
                 "start_qserv",
                 "start_mysqlproxy",
+                "start_qms",
                 "scisql.sh",
                 "qms.sh"
                 ]:
