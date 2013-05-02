@@ -451,7 +451,7 @@ void parseCommandLine(po::variables_map & vm,
 
 namespace {
     string const trim(string const & s) {
-        static string const WS("\t\n\r ");
+        static char const * const WS = "\t\n\r ";
         size_t i = s.find_first_not_of(WS);
         if (i == string::npos) {
             return string();
@@ -486,7 +486,7 @@ pair<string, string> const parseFieldNamePair(string const & opt,
 void defineInputOptions(po::options_description & opts) {
     po::options_description input("\\______________________ Input", 80);
     input.add_options()
-        ("in,i", po::value<std::vector<std::string> >()->composing(),
+        ("in,i", po::value<std::vector<std::string> >(),
          "An input file or directory name. If the name identifies a "
          "directory, then all the files and symbolic links to files in "
          "the directory are treated as inputs. This option must be "
@@ -501,6 +501,10 @@ InputLines const makeInputLines(po::variables_map & vm) {
     if (blockSize < 1 || blockSize > 1024) {
         throw runtime_error("The IO block size given by --mr.block-size "
                             "must be between 1 and 1024 MiB.");
+    }
+    if (vm.count("in") == 0) {
+        throw runtime_error("At least one input file must be provided "
+                            "using --in.");
     }
     vector<fs::path> paths;
     vector<string> const & in = vm["in"].as<vector<string> >();
@@ -541,9 +545,7 @@ void defineOutputOptions(po::options_description & opts) {
 }
 
 
-void makeOutputDirectory(boost::program_options::variables_map & vm,
-                         bool mayExist)
-{
+void makeOutputDirectory(po::variables_map & vm, bool mayExist) {
     fs::path outDir;
     if (vm.count("out.dir") != 0) {
         outDir = vm["out.dir"].as<string>();
@@ -571,9 +573,7 @@ void makeOutputDirectory(boost::program_options::variables_map & vm,
 }
 
 
-void ensureOutputFieldExists(boost::program_options::variables_map & vm,
-                             std::string const & opt)
-{
+void ensureOutputFieldExists(po::variables_map & vm, std::string const & opt) {
     if (vm.count(opt) == 0) {
         return;
     }
@@ -594,6 +594,30 @@ void ensureOutputFieldExists(boost::program_options::variables_map & vm,
     map<string, po::variable_value> & m = vm;
     po::variable_value & v = m["out.csv.field"];
     v.value() = names;
+}
+
+
+vector<int32_t> const chunksToDuplicate(Chunker const & chunker,
+                                        po::variables_map const & vm)
+{
+    if (vm.count("chunk-id") != 0) {
+        return vm["chunk-id"].as<vector<int32_t> >();
+    }
+    SphericalBox region(vm["ra-min"].as<double>(),
+                        vm["ra-max"].as<double>(),
+                        vm["dec-min"].as<double>(),
+                        vm["dec-max"].as<double>());
+    uint32_t node = 0;
+    uint32_t numNodes = 1;
+    if (vm.count("out.node") != 0) {
+        node = vm["out.node"].as<uint32_t>();
+        numNodes = vm["out.num-nodes"].as<uint32_t>();
+        if (node >= numNodes) {
+            runtime_error("The --out.node option value "
+                          "must be less than --out.num-nodes.");
+        }
+    }
+    return chunker.getChunksIn(region, node, numNodes);
 }
 
 }}}} // namespace lsst::qserv::admin::dupr

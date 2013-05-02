@@ -82,7 +82,7 @@ class Silo {
 public:
     typedef dupr::Record<K> Record;
 
-    static size_t const ALLOC_SIZE = 32*MAX_LINE_SIZE - 16;
+    static size_t const ALLOC_SIZE = 8*MiB - 32;
 
     Silo() : _records(), _bytesUsed(0), _head(0), _cur(0), _end(0) { }
 
@@ -143,7 +143,7 @@ public:
         if (end - buf < MAX_LINE_SIZE) {
             // The size of the line being written isn't known in advance, so
             // the silo must always present MAX_LINE_SIZE or more contiguous
-            // bytes to editor. Memory waste is ~3%.
+            // bytes to editor. Memory waste is <1%.
             _grow();
             buf = _cur;
         }
@@ -528,9 +528,8 @@ namespace detail {
         // been observed when the Worker constructor is unprotected. See:
         //
         // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=21334
-        // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=33394
         //
-        // for details on the likely root cause.
+        // for details on what I think may be the root cause.
         boost::unique_lock<boost::mutex> lock(_mutex);
         Worker worker(*_vm);
         // Get a rank in [0, _numWorkers) for this thread.

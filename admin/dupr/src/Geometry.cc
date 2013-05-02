@@ -386,11 +386,11 @@ double SphericalTriangle::area() const {
 // is computed as follows:
 //
 // 1. Intersect the triangle with the ra >= box.getRaMin() and
-//    ra <= box.getRaMax() half-spaces. These half-spaces correspond to great
-//    circles on the sphere, and the result is a spherical convex polygon so
-//    long as the RA extent of the box is <= 180 deg.
+//    ra <= box.getRaMax() half-spaces, which correspond to great
+//    circles on the sphere. The result is a spherical convex polygon
+//    so long as the RA extent of the box is <= 180 deg.
 //
-// 2. Intersect the triangle with the z >= sin(box.getDecMin()) and
+// 2. Intersect the polygon from 1. with the z >= sin(box.getDecMin()) and
 //    z <= sin(box.getDecMax()) half-spaces, which correspond to small circles.
 //
 // The resulting surface M has constant Gaussian curvature of 1 (because the
@@ -449,10 +449,10 @@ double SphericalTriangle::area() const {
 
 namespace {
 
-// Intersect the input spherical convex polygon with the given plane.
+// Intersect the input spherical convex polygon with the given half-space.
 size_t intersect(Vector3d const * inVe,  // input (vertex, edge) pair array
                  size_t numVerts,        // # of input vertices
-                 Vector3d const & plane, // half-space to intersect with
+                 Vector3d const & plane, // plane normal of half-space
                  Vector3d * outVe)       // output (vertex, edge) pair array
 {
     assert(numVerts > 1 && inVe != 0 && outVe != 0);
@@ -664,7 +664,8 @@ double zArea(Vector3d const * inVe,
     } else if (angle != 0.0 && (bot.full() || top.full())) {
         chi = 0.0;
     }
-    return 2.0*pi<double>()*chi - angle + top.extent()*zmax - bot.extent()*zmin;
+    double area = 2.0*pi<double>()*chi - angle + top.extent()*zmax - bot.extent()*zmin;
+    return area < 0.0 ? 0.0 : area;
 }
 
 } // unnamed namespace
@@ -821,8 +822,7 @@ double SphericalBox::area() const {
            (sin(RAD_PER_DEG*_decMax) - sin(RAD_PER_DEG*_decMin));
 }
 
-vector<uint32_t> const SphericalBox::htmIds(int level) const {
-    vector<uint32_t> ids;
+void SphericalBox::htmIds(vector<uint32_t> & ids, int level) const {
     if (level < 0 || level > HTM_MAX_LEVEL) {
         throw runtime_error("Invalid HTM subdivision level.");
     }
@@ -831,19 +831,18 @@ vector<uint32_t> const SphericalBox::htmIds(int level) const {
         m.col(0) = *htmRootVert[r*3];
         m.col(1) = *htmRootVert[r*3 + 1];
         m.col(2) = *htmRootVert[r*3 + 2];
-        findIds(r + 8, level, m, ids);
+        findIds(ids, r + 8, level, m);
     }
-    return ids;
 }
 
 // Slow method for finding triangles overlapping a box. For the subdivision
 // levels and box sizes encountered in practice, this is very unlikely to be
 // a performance problem.
 void SphericalBox::findIds(
+    vector<uint32_t> & ids,
     uint32_t id,
     int level,
-    Matrix3d const & m,
-    vector<uint32_t> & ids
+    Matrix3d const & m
 ) const {
     if (!intersects(SphericalBox(m.col(0), m.col(1), m.col(2)))) {
         return;
@@ -858,19 +857,19 @@ void SphericalBox::findIds(
     mChild.col(0) = m.col(0);
     mChild.col(1) = sv2;
     mChild.col(2) = sv1;
-    findIds(id*4, level - 1, mChild, ids);
+    findIds(ids, id*4, level - 1, mChild);
     mChild.col(0) = m.col(1);
     mChild.col(1) = sv0;
     mChild.col(2) = sv2;
-    findIds(id*4 + 1, level - 1, mChild, ids);
+    findIds(ids, id*4 + 1, level - 1, mChild);
     mChild.col(0) = m.col(2);
     mChild.col(1) = sv1;
     mChild.col(2) = sv0;
-    findIds(id*4 + 2, level - 1, mChild, ids);
+    findIds(ids, id*4 + 2, level - 1, mChild);
     mChild.col(0) = sv0;
     mChild.col(1) = sv1;
     mChild.col(2) = sv2;
-    findIds(id*4 + 3, level - 1, mChild, ids);
+    findIds(ids, id*4 + 3, level - 1, mChild);
 }
 
 }}}} // namespace lsst::qserv::admin::dupr

@@ -415,11 +415,17 @@ BOOST_AUTO_TEST_CASE(SphericalBoxIntersectsTest) {
 
 BOOST_AUTO_TEST_CASE(SphericalBoxHtmIdsTest) {
     dupr::SphericalBox b(135, 145, 88, 89);
-    BOOST_CHECK(isSubset(htmIds(b, 5), b.htmIds(5)));
+    vector<uint32_t> ids;
+    b.htmIds(ids, 5);
+    BOOST_CHECK(isSubset(htmIds(b, 5), ids));
     b = dupr::SphericalBox(359, 1, -90, 0);
-    BOOST_CHECK(isSubset(htmIds(b, 3), b.htmIds(3)));
+    ids.clear();
+    b.htmIds(ids, 3);
+    BOOST_CHECK(isSubset(htmIds(b, 3), ids));
     b = dupr::SphericalBox(1,2,-1,1);
-    BOOST_CHECK(isSubset(htmIds(b, 7), b.htmIds(7)));
+    ids.clear();
+    b.htmIds(ids, 7);
+    BOOST_CHECK(isSubset(htmIds(b, 7), ids));
 }
 
 BOOST_AUTO_TEST_CASE(IntersectionAreaTest) {

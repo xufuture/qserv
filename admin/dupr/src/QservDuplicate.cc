@@ -80,7 +80,6 @@ private:
     // A map from source HTM triangles to duplication target triangles/chunks.
     typedef boost::unordered_map<uint32_t, TargetList> TargetMap;
 
-    vector<int32_t> const _getChunks(po::variables_map const & vm) const;
     void _makeTargets(int32_t chunkId);
     InputLines const _makeInput() const;
 
@@ -96,30 +95,6 @@ private:
     friend class Worker;
 };
 
-// Return the list of chunks to generate data for.
-vector<int32_t> const Duplicator::_getChunks(
-    po::variables_map const & vm) const
-{
-    if (vm.count("chunk-id") != 0) {
-        return vm["chunk-id"].as<vector<int32_t> >();
-    }
-    SphericalBox region(vm["ra-min"].as<double>(),
-                        vm["ra-max"].as<double>(),
-                        vm["dec-min"].as<double>(),
-                        vm["dec-max"].as<double>());
-    uint32_t node = 0;
-    uint32_t numNodes = 1;
-    if (vm.count("out.node") != 0) {
-        node = vm["out.node"].as<uint32_t>();
-        numNodes = vm["out.num-nodes"].as<uint32_t>();
-        if (node >= numNodes) {
-            runtime_error("The --out.node option value "
-                          "must be less than --out.num-nodes.");
-        }
-    }
-    return _chunker->getChunksIn(region, node, numNodes);
-}
-
 // Find non-empty source triangles for the HTM triangles overlapping
 // the given chunk, and add corresponding source to target triangle
 // mappings to the duplication target map.
@@ -127,7 +102,8 @@ void Duplicator::_makeTargets(int32_t chunkId) {
     typedef vector<uint32_t>::const_iterator Iter;
     SphericalBox box(_chunker->getChunkBounds(chunkId));
     box.expand(_chunker->getOverlap() + 1/3600.0); // 1 arcsec epsilon
-    vector<uint32_t> ids = box.htmIds(_level);
+    vector<uint32_t> ids;
+    box.htmIds(ids, _level);
     for (Iter i = ids.begin(), e = ids.end(); i != e; ++i) {
         uint32_t sourceHtmId = _partIndex->mapToNonEmpty(*i);
         _targets[sourceHtmId].push_back(pair<uint32_t, int32_t>(*i, chunkId));
@@ -156,9 +132,7 @@ Duplicator duplicator;
 inline Duplicator const & dup() { return duplicator; }
 
 
-/// Functor for counting the number of IDs less than a given value. Used to
-/// consistently remap IDs from an input data set such that output IDs remain
-/// unique.
+/// Functor for counting the number of IDs less than a given value.
 class LessThanCounter {
 public:
     LessThanCounter() : _htmId(0) { }
@@ -523,8 +497,8 @@ typedef Job<Worker> DuplicateJob;
 shared_ptr<ChunkIndex> const Duplicator::run(po::variables_map const & vm) {
     // Initialize state
     shared_ptr<Chunker> chunker(new Chunker(vm));
+    vector<int32_t> chunks = chunksToDuplicate(*chunker, vm);
     _chunker.swap(chunker);
-    vector<int32_t> chunks = _getChunks(vm);
     DuplicateJob job(vm);
     shared_ptr<ChunkIndex> chunkIndex;
     if (vm.count("id") == 0 && vm.count("part.id") == 0) {
@@ -602,7 +576,8 @@ int main(int argc, char const * const * argv) {
         shared_ptr<dupr::ChunkIndex> index = dupr::duplicator.run(vm);
         if (!index->empty()) {
             fs::path d(vm["out.dir"].as<string>());
-            index->write(d / "chunk_index.bin", false);
+            fs::path f = vm["part.prefix"].as<string>() + "_index.bin";
+            index->write(d / f, false);
         }
         if (vm.count("verbose") != 0) {
             cerr << "run-time: " << t.format() << endl;

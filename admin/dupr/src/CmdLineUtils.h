@@ -29,9 +29,11 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "boost/program_options.hpp"
 
+#include "Chunker.h"
 #include "Csv.h"
 #include "InputLines.h"
 
@@ -66,7 +68,7 @@ private:
      std::set<int> _fields;
 };
 
-/// Parse the given command line according to the `options` given and store
+/// Parse the given command line according to the options given and store
 /// the results in `vm`. This function defines generic options `help`, `verbose`,
 /// and `config-file`. It handles `help` output and configuration file parsing
 /// for the caller.
@@ -85,7 +87,7 @@ std::pair<std::string, std::string> const parseFieldNamePair(
 /// Define the `in` option.
 void defineInputOptions(boost::program_options::options_description & opts);
 
-/// Construct an InputLines object from input files and directories.
+/// Construct an InputLines object from input files and/or directories.
 InputLines const makeInputLines(boost::program_options::variables_map & vm);
 
 /// Define the `out.dir` and `out.num-nodes` options.
@@ -99,6 +101,12 @@ void makeOutputDirectory(boost::program_options::variables_map & vm, bool mayExi
 /// field (in `out.csv.field`) by appending it if necessary.
 void ensureOutputFieldExists(boost::program_options::variables_map & vm,
                              std::string const & opt);
+
+/// Compute the IDs of chunks for which data must be generated, or for which
+/// the record count must be estimated.
+std::vector<int32_t> const chunksToDuplicate(
+    Chunker const & chunker,
+    boost::program_options::variables_map const & vm);
 
 }}}} // namespace lsst::qserv::admin::dupr
 

@@ -261,14 +261,14 @@ public:
     }
 
     /// Compute a conservative approximation to the list of HTM triangles
-    /// potentially overlapping this box.
-    std::vector<uint32_t> const htmIds(int level) const;
+    /// potentially overlapping this box and store them in `ids`.
+    void htmIds(std::vector<uint32_t> & ids, int level) const;
 
 private:
-    void findIds(uint32_t id,
+    void findIds(std::vector<uint32_t> & ids,
+                 uint32_t id,
                  int level,
-                 Matrix3d const & m,
-                 std::vector<uint32_t> & ids) const;
+                 Matrix3d const & m) const;
 
     double _raMin;
     double _raMax;

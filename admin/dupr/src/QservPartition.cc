@@ -181,7 +181,8 @@ int main(int argc, char const * const * argv) {
         shared_ptr<dupr::ChunkIndex> index = job.run(dupr::makeInputLines(vm));
         if (!index->empty()) {
             fs::path d(vm["out.dir"].as<string>());
-            index->write(d / "chunk_index.bin", false);
+            fs::path f = vm["part.prefix"].as<string>() + "_index.bin";
+            index->write(d / f, false);
         }
         if (vm.count("verbose") != 0) {
             cerr << "run-time: " << t.format() << endl;

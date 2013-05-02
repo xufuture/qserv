@@ -274,11 +274,11 @@ void Dialect::defineOptions(po::options_description & opts,
          "CSV field delimiter character. Cannot be '\\n' or '\\r'.")
         ((prefix + ".quote").c_str(), po::value<char>()->default_value('"'),
          "CSV field quoting character.")
-        ((prefix + ".no-quote").c_str(),
+        ((prefix + ".no-quote").c_str(), po::value<string>()->default_value(""),
          "Disable CSV field quoting.")
         ((prefix + ".escape").c_str(), po::value<char>()->default_value('\\'),
          "CSV escape character.")
-        ((prefix + ".no-escape").c_str(),
+        ((prefix + ".no-escape").c_str(), po::value<string>()->default_value(""),
          "Disable CSV character escaping.");
 }
 
@@ -690,14 +690,14 @@ void Editor::defineOptions(po::options_description & opts) {
     po::options_description in("\\___________ Input CSV format", 80);
     Dialect::defineOptions(in, "in.csv");
     in.add_options()
-        ("in.csv.field", po::value<vector<string> >()->composing(),
+        ("in.csv.field", po::value<vector<string> >(),
          "Input CSV field names, in order of occurrence. Specify this "
          "option as many times as there are input fields. Input field "
          "names must be unique.");
     po::options_description out("\\_________ Output CSV format", 80);
     Dialect::defineOptions(out, "out.csv");
     out.add_options()
-        ("out.csv.field", po::value<vector<string> >()->composing(),
+        ("out.csv.field", po::value<vector<string> >(),
          "Output CSV field names, in order of occurrence. To retain an "
          "input field in the output, include it in the output field list. "
          "There is no requirement that an input field be listed only once, "

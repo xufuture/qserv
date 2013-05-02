@@ -23,7 +23,7 @@
 /// \file
 /// \brief The Qserv partitioner for match tables.
 ///
-/// A match table M contain foreign keys into a pair of identically partitioned
+/// A match table M contains foreign keys into a pair of identically partitioned
 /// positional tables U and V (containing e.g. objects and reference objects).
 /// A match in M is assigned to a partition P if either of the positions pointed
 /// to is assigned to P. If no positions in a match are separated by more than the
@@ -38,11 +38,11 @@
 ///     ) UNION ALL (
 ///         SELECT ...
 ///         FROM Uᵨ INNER JOIN Mᵨ ON (Uᵨ.pk = Mᵨ.fkᵤ)
-///                 INNER JOIN Vᵨ ON (Mᵨ.fkᵥ = OVᵨ.pk)
+///                 INNER JOIN OVᵨ ON (Mᵨ.fkᵥ = OVᵨ.pk)
 ///         WHERE ...
 ///     )
 ///
-/// Here, Uᵨ, Mᵨ and Vᵨ are the contents of S, M and T for partition p, and
+/// Here, Uᵨ, Mᵨ and Vᵨ are the contents of U, M and V for partition p, and
 /// OVᵨ is the subset of V \ Vᵨ within the overlap radius of Vᵨ.
 
 #include <cstdio>
@@ -330,7 +330,8 @@ int main(int argc, char const * const * argv) {
         shared_ptr<dupr::ChunkIndex> index = job.run(dupr::makeInputLines(vm));
         if (!index->empty()) {
             fs::path d(vm["out.dir"].as<string>());
-            index->write(d / "chunk_index.bin", false);
+            fs::path f = vm["part.prefix"].as<string>() + "_index.bin";
+            index->write(d / f, false);
         }
         if (vm.count("verbose") != 0) {
             cerr << "run-time: " << t.format() << endl;

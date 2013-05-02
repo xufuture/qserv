@@ -18,6 +18,7 @@ for target in ('qserv-htm-index',
                'qserv-partition',
                'qserv-partition-matches',
                'qserv-duplicate',
+               'qserv-estimate-stats',
               ):
     source = ''.join(map(lambda s: s.title(), target.split('-'))) + '.cc'
     program = buildEnv.Program(target, [source], LIBS=libs)

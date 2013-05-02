@@ -138,6 +138,9 @@ public:
         return getChunksIn(region, 0u, 1u);
     }
 
+    /// Append IDs for all sub-chunks of `chunkId` to `subChunks`.
+    void getSubChunks(std::vector<int32_t> & subChunks, int32_t chunkId) const;
+
     /// Define configuration variables for partitioning.
     static void defineOptions(
         boost::program_options::options_description & opts);

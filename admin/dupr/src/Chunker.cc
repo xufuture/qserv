@@ -280,6 +280,15 @@ vector<int32_t> const Chunker::getChunksIn(SphericalBox const & region,
     return chunks;
 }
 
+void Chunker::getSubChunks(vector<int32_t> & subChunks, int32_t chunkId) const {
+    int32_t subStripe = _getStripe(chunkId)*_numSubStripesPerStripe;
+    for (int32_t ss = 0; ss < _numSubStripesPerStripe; ++ss) {
+        for (int32_t sc = 0; sc < _numSubChunksPerChunk[subStripe + ss]; ++sc) {
+            subChunks.push_back(ss*_maxSubChunksPerChunk + sc);
+        }
+    }
+}
+
 void Chunker::defineOptions(po::options_description & opts) {
     opts.add_options()
         ("part.num-stripes", po::value<int32_t>()->default_value(18),
