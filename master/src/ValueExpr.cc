@@ -22,141 +22,120 @@
 // ValueExpr.cc houses the implementation of ValueExpr, a object
 // containing elements of a SQL value expresssion (construct that
 // evaluates to a [non-boolean] SQL primitive value)
+// ValueExpr elements are formed as 'term (op term)*' .
 #include "lsst/qserv/master/ValueExpr.h"
 #include <iostream>
 #include <sstream>
 #include <iterator>
-#include "lsst/qserv/master/ColumnRef.h"
+#include "lsst/qserv/master/ValueTerm.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include "lsst/qserv/master/FuncExpr.h"
 
 namespace qMaster=lsst::qserv::master;
-using lsst::qserv::master::ValueExpr;
-using lsst::qserv::master::ValueExprPtr;
 
+
+namespace lsst { namespace qserv { namespace master {
 std::ostream& 
-qMaster::output(std::ostream& os, qMaster::ValueExprList const& vel) {
+output(std::ostream& os, ValueExprList const& vel) {
     std::copy(vel.begin(), vel.end(),
               std::ostream_iterator<qMaster::ValueExprPtr>(os, ";"));    
     return os;
 }
 void 
-qMaster::renderList(qMaster::QueryTemplate& qt, 
-                    qMaster::ValueExprList const& vel) {
-    std::for_each(vel.begin(), vel.end(), ValueExpr::render(qt));
+renderList(QueryTemplate& qt, ValueExprList const& vel) {
+    std::for_each(vel.begin(), vel.end(), ValueExpr::render(qt, true));
 }
 
-namespace { // File-scope helpers
+////////////////////////////////////////////////////////////////////////
+// ValueExpr::
+////////////////////////////////////////////////////////////////////////
 
+class trivialCopy {
+public:
+    inline ValueTermPtr operator()(ValueTerm const& t) {
+        return ValueTermPtr(new ValueTerm(t));
+    }
+};
+
+////////////////////////////////////////////////////////////////////////
+// ValueExpr statics
+////////////////////////////////////////////////////////////////////////
+ValueExprPtr ValueExpr::newSimple(boost::shared_ptr<ValueTerm> vt)  {
+    assert(vt.get());
+    boost::shared_ptr<ValueExpr> ve(new ValueExpr);
+    TermOp t = {vt, NONE};
+    ve->_termOps.push_back(t);
+    return ve;
+}
+////////////////////////////////////////////////////////////////////////
+// ValueExpr 
+////////////////////////////////////////////////////////////////////////
+ValueExpr::ValueExpr() {
 }
 
-std::ostream& qMaster::operator<<(std::ostream& os, qMaster::ColumnRef const& cr) {
-    return os << "(" << cr.db << "," << cr.table << "," << cr.column << ")";
-}
-std::ostream& qMaster::operator<<(std::ostream& os, qMaster::ColumnRef const* cr) {
-    return os << *cr;
-}
-void qMaster::ColumnRef::render(QueryTemplate& qt) const {
+ValueExprPtr ValueExpr::clone() const {
 #if 0
-    if(!db.empty()) { qt.append(db); qt.append("."); }
-    if(!table.empty()) {qt.append(table); qt.append("."); }
-    qt.append(column);
+    ValueExprPtr expr(new ValueExpr);
+    if(_term.get()) { expr->_term.reset(new ValueTerm(*_term)); }
+    expr->_op = _op;
+    // FIXME: Convert tail-recursion to iterative
+    if(_next.get()) { expr->_next = _next->clone(); }
+    return expr;
+#elif 0
+    copyTransformExpr copyF(trivialCopy());
+    mapTerms(*this, copyF);
+    return copyF.root;
+#else
+    // First, make a shallow copy
+    ValueExprPtr expr(new ValueExpr(*this)); 
+    TermOpList::iterator ti = expr->_termOps.begin();
+    for(TermOpList::const_iterator i=_termOps.begin();
+        i != _termOps.end(); ++i, ++ti) {
+        // Deep copy (clone) each term.
+        ti->term = i->term->clone();
+    }
+    return expr;
 #endif
-    qt.append(*this);
 }
 
 
-ValueExprPtr ValueExpr::newColumnRefExpr(boost::shared_ptr<ColumnRef const> cr) {
-    ValueExprPtr expr(new ValueExpr());
-    expr->_type = COLUMNREF;
-    expr->_columnRef.reset(new ColumnRef(*cr));
-    return expr;
-}
-
-ValueExprPtr ValueExpr::newStarExpr(std::string const& table) {
-    ValueExprPtr expr(new ValueExpr());
-    expr->_type = STAR;
-    if(!table.empty()) {
-        expr->_tableStar = table;
-    }
-    return expr;
-}
-ValueExprPtr ValueExpr::newFuncExpr(boost::shared_ptr<FuncExpr> fe) {
-    ValueExprPtr expr(new ValueExpr());
-    expr->_type = FUNCTION;
-    expr->_funcExpr = fe;
-    return expr;
-}
-
-ValueExprPtr ValueExpr::newAggExpr(boost::shared_ptr<FuncExpr> fe) {
-    ValueExprPtr expr(new ValueExpr());
-    expr->_type = AGGFUNC;
-    expr->_funcExpr = fe;
-    return expr;
-}
-
-ValueExprPtr
-ValueExpr::newConstExpr(std::string const& alnum) {
-    ValueExprPtr expr(new ValueExpr());
-    expr->_type = CONST;
-    expr->_tableStar = alnum;
-    return expr;
-}
-
-ValueExprPtr ValueExpr::clone() const{
-    ValueExprPtr expr(new ValueExpr(*this));
-    // Clone refs.
-    if(_columnRef.get()) {
-        expr->_columnRef.reset(new ColumnRef(*_columnRef));
-    }
-    if(_funcExpr.get()) {
-        expr->_funcExpr.reset(new FuncExpr(*_funcExpr));
-    }
-    return expr;
-}
-
-
-std::ostream& qMaster::operator<<(std::ostream& os, ValueExpr const& ve) {
-    switch(ve._type) {
-    case ValueExpr::COLUMNREF: os << "CREF: " << *(ve._columnRef); break;
-    case ValueExpr::FUNCTION: os << "FUNC: " << *(ve._funcExpr); break;
-    case ValueExpr::AGGFUNC: os << "AGGFUNC: " << *(ve._funcExpr); break;
-    case ValueExpr::STAR:
-        os << "<";
-        if(!ve._tableStar.empty()) os << ve._tableStar << ".";
-        os << "*>"; 
-        break;
-    case ValueExpr::CONST: 
-        os << "CONST: " << ve._tableStar;
-        break;
-    default: os << "UnknownExpr"; break;
+std::ostream& operator<<(std::ostream& os, ValueExpr const& ve) {
+    // FIXME: Currently only considers first term.
+    if(!ve._termOps.empty()) {
+        os << *(ve._termOps.front().term);
+    } else {
+        os << "EmptyValueExpr";
     }
     if(!ve._alias.empty()) { os << " [" << ve._alias << "]"; }
     return os;
 }
 
-std::ostream& qMaster::operator<<(std::ostream& os, ValueExpr const* ve) {
+std::ostream& operator<<(std::ostream& os, ValueExpr const* ve) {
     if(!ve) return os << "<NULL>";
     return os << *ve;
 }
-
-void qMaster::ValueExpr::render::operator()(qMaster::ValueExpr const& ve) {
-    std::stringstream ss;
-    if(_count++ > 0) _qt.append(",");
-    switch(ve._type) {
-    case ValueExpr::COLUMNREF: ve._columnRef->render(_qt); break;
-    case ValueExpr::FUNCTION: ve._funcExpr->render(_qt); break;
-    case ValueExpr::AGGFUNC: ve._funcExpr->render(_qt); break;
-    case ValueExpr::STAR: 
-        if(!ve._tableStar.empty()) {
-            _qt.append(ColumnRef("",ve._tableStar, "*"));
-        } else {
-            _qt.append("*");
+////////////////////////////////////////////////////////////////////////
+// ValueExpr::render
+////////////////////////////////////////////////////////////////////////
+void ValueExpr::render::operator()(qMaster::ValueExpr const& ve) {
+    if(_needsComma && _count++ > 0) { _qt.append(","); }
+    ValueTerm::render render(_qt);
+    for(TermOpList::const_iterator i=ve._termOps.begin();
+        i != ve._termOps.end(); ++i) {
+        render(i->term);
+        switch(i->op) {
+        case ValueExpr::NONE: break;
+        case ValueExpr::UNKNOWN: _qt.append("<UNKNOWN_OP>"); break;
+        case ValueExpr::PLUS: _qt.append("+"); break;
+        case ValueExpr::MINUS: _qt.append("-"); break;
+        default:
+            std::ostringstream ss;
+            ss << "Corruption: bad _op in ValueExpr optype=" << i->op;
+            // FIXME: Make sure this never happens.
+            throw ss.str();
         }
-        break;
-    case ValueExpr::CONST: _qt.append(ve._tableStar); break;
-    default: break;
     }
     if(!ve._alias.empty()) { _qt.append("AS"); _qt.append(ve._alias); }
 }
 
+}}} // lsst::qserv::master

@@ -607,6 +607,10 @@ BOOST_AUTO_TEST_CASE(CountNew) {
     std::string stmt = "SELECT count(*), sum(Source.flux), flux2, Source.flux3 from Source where qserv_areaspec_box(0,0,1,1) and flux4=2 and Source.flux5=3;";
     testStmt3(qsTest, stmt);
 } 
+BOOST_AUTO_TEST_CASE(ArithNew) {
+    std::string stmt = "SELECT 1+zE1_SG FROM  Object where qserv_areaspec_box(0,0,1,1);";
+    testStmt3(qsTest, stmt);
+} 
 
 BOOST_AUTO_TEST_SUITE_END()
 ////////////////////////////////////////////////////////////////////////

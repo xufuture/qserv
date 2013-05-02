@@ -24,16 +24,19 @@
 #include <sstream>
 #include "lsst/qserv/master/FuncExpr.h"
 #include "lsst/qserv/master/ValueExpr.h"
+#include "lsst/qserv/master/ValueTerm.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::AggOp;
 using lsst::qserv::master::AggRecord;
 using lsst::qserv::master::ValueExpr;
+using lsst::qserv::master::ValueTerm;
 using lsst::qserv::master::FuncExpr;
 
 namespace { // File-scope helpers
 
 }
+namespace lsst { namespace qserv {namespace master {
 ////////////////////////////////////////////////////////////////////////
 // AggOp specializations
 ////////////////////////////////////////////////////////////////////////
@@ -41,12 +44,12 @@ class PassAggOp : public AggOp {
 public:
     explicit PassAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
 
-    virtual AggRecord::Ptr operator()(ValueExpr const& orig) {
-        AggRecord::Ptr arp(new AggRecord());
+    virtual AggRecord2::Ptr operator()(ValueTerm const& orig) {
+        AggRecord2::Ptr arp(new AggRecord2());
         arp->orig = orig.clone();
-        arp->pass.push_back(orig.clone());
-        arp->fixup.push_back(orig.clone());
-        arp->origAlias = orig.getAlias();
+        arp->pass.push_back(ValueExpr::newSimple(orig.clone()));
+        arp->fixup = orig.clone();
+        // Alias handling left to caller.
         return arp;
     } 
 };
@@ -54,23 +57,22 @@ class CountAggOp : public AggOp {
 public:
     explicit CountAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
 
-    virtual AggRecord::Ptr operator()(ValueExpr const& orig) {
-        AggRecord::Ptr arp(new AggRecord());
+    virtual AggRecord2::Ptr operator()(ValueTerm const& orig) {
+        AggRecord2::Ptr arp(new AggRecord2());
         std::string interName = _mgr.getAggName("COUNT");
         arp->orig = orig.clone();
         boost::shared_ptr<FuncExpr> fe;
-        boost::shared_ptr<ValueExpr> ve;
+        boost::shared_ptr<ValueTerm> vt;
+        boost::shared_ptr<ValueExpr> passExpr;
         
-        ve = orig.clone();
-        ve->setAlias(interName);
-        arp->pass.push_back(ve);
+        passExpr = ValueExpr::newSimple(orig.clone());
+        passExpr->setAlias(interName);
+        arp->pass.push_back(passExpr);
 
         fe = FuncExpr::newArg1("SUM", interName);
-        ve = ValueExpr::newFuncExpr(fe);
-        ve->setAlias(orig.getAlias());
-        arp->fixup.push_back(ve);
-
-        arp->origAlias = orig.getAlias();
+        vt = ValueTerm::newFuncTerm(fe);
+        // orig alias handled by caller.
+        arp->fixup = vt;
         return arp;
     }
 };
@@ -78,21 +80,25 @@ class AvgAggOp : public AggOp {
 public:
     explicit AvgAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
 
-    virtual AggRecord::Ptr operator()(ValueExpr const& orig) {
+    virtual AggRecord2::Ptr operator()(ValueTerm const& orig) {
+        return AggRecord2::Ptr();
+# if 0
         AggRecord::Ptr arp(new AggRecord());
         arp->orig = orig.clone();
 
+        // FIXME: For each term in orig.
         boost::shared_ptr<FuncExpr> fe;
+        boost::shared_ptr<ValueTerm const> origVt(orig);
         boost::shared_ptr<ValueExpr> ve;
         std::string cName = _mgr.getAggName("COUNT");
-        fe = FuncExpr::newLike(*orig.getFuncExpr(), "COUNT");
-        ve = ValueExpr::newFuncExpr(fe);
+        fe = FuncExpr::newLike(*origVt->getFuncExpr(), "COUNT");
+        ve = ValueExpr::newSimple(ValueTerm::newFuncTerm(fe));
         ve->setAlias(cName);
         arp->pass.push_back(ve);
 
         std::string sName = _mgr.getAggName("SUM");
-        fe = FuncExpr::newLike(*orig.getFuncExpr(), "SUM");
-        ve = ValueExpr::newFuncExpr(fe);
+        fe = FuncExpr::newLike(*origVt->getFuncExpr(), "SUM");
+        ve = ValueExpr::newSimple(ValueTerm::newFuncTerm(fe));
         ve->setAlias(sName);
         arp->pass.push_back(ve);
         
@@ -101,14 +107,17 @@ public:
         fe1 = FuncExpr::newArg1("SUM", sName);
         fe2 = FuncExpr::newArg1("SUM", cName);
 
-        // FIXME!!
+#if 0        // FIXME!!
         // ArithExpr::newExpr(fe1,fe2);
-        ve = ValueExpr::newFuncExpr(fe1);
+#else // Broken placeholder
+        ve = ValueExpr::newSimple(ValueTerm::newFuncTerm(fe1));
         ve->setAlias(orig.getAlias());
         arp->fixup.push_back(ve);
+#endif
 
         arp->origAlias = orig.getAlias();
         return arp;
+#endif
     }
 };
 
@@ -133,8 +142,8 @@ AggOp::Mgr::getOp(std::string const& name) {
     else return AggOp::Ptr();
 }
 
-AggRecord::Ptr 
-AggOp::Mgr::applyOp(std::string const& name, ValueExpr const& orig) {
+AggRecord2::Ptr 
+AggOp::Mgr::applyOp(std::string const& name, ValueTerm const& orig) {
     std::string n(name);
     std::transform(name.begin(), name.end(), n.begin(), ::toupper);
     AggOp::Ptr p = getOp(n);
@@ -148,3 +157,4 @@ std::string AggOp::Mgr::getAggName(std::string const& name) {
     ss << "QS" << s << "_" << name;
     return ss.str();
 }
+}}} // lsst::qserv::master

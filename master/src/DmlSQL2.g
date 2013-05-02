@@ -1453,6 +1453,7 @@ term_op :
 //{ Rule #584 <term> was refined to avoid infinite recursion
 term : 
 	factor (options{greedy=true;}:factor_op factor)* 
+        {#term = #([TERM,"TERM"], #term);}
 ;
 //}
 

@@ -1,7 +1,6 @@
-// -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2012-2013 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,35 +19,25 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// ValueExprFactory constructs ValueExpr instances from antlr nodes.
+// class ColumnRef implementation 
+#include "lsst/qserv/master/ColumnRef.h"
+#include <iostream>
+#include "lsst/qserv/master/QueryTemplate.h"
 
-#ifndef LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
-#define LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
+namespace qMaster=lsst::qserv::master;
 
-#include <boost/shared_ptr.hpp>
-#include <antlr/AST.hpp>
+namespace lsst { namespace qserv { namespace master {
 
-// Forward
+std::ostream& operator<<(std::ostream& os, ColumnRef const& cr) {
+    return os << "(" << cr.db << "," << cr.table << "," << cr.column << ")";
+}
 
-namespace lsst {
-namespace qserv {
-namespace master {
-// Forward
-class ColumnRefMap;
-class ValueExpr;
-class ValueTermFactory;
+std::ostream& operator<<(std::ostream& os, ColumnRef const* cr) {
+    return os << *cr;
+}
 
-class ValueExprFactory {
-public:
-    ValueExprFactory(boost::shared_ptr<ColumnRefMap> cMap);
-    boost::shared_ptr<ValueExpr> newExpr(antlr::RefAST a);
-                                         
-private:
-    boost::shared_ptr<ValueTermFactory> _valueTermFactory;
-};
+void ColumnRef::render(QueryTemplate& qt) const {
+    qt.append(*this);
+}
 
-}}} // namespace lsst::qserv::master
-
-
-#endif // LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
-
+}}} // lsst::qserv::master

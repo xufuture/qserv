@@ -113,7 +113,7 @@ void qMaster::PassListTerm::renderTo(QueryTemplate& qt) const {
     qt.append(")");
 }
 void qMaster::ValueExprTerm::renderTo(QueryTemplate& qt) const {
-    ValueExpr::render r(qt);
+    ValueExpr::render r(qt, false);
     r(_expr);
     assert(_expr.get());
 }

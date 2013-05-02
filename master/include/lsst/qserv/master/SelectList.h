@@ -59,12 +59,12 @@ public:
     boost::shared_ptr<ColumnRefList> getColumnRefList() {
         return _columnRefList;
     }
-
     void addStar(antlr::RefAST table);
+#if 0
     void addRegular(antlr::RefAST n);
     void addFunc(antlr::RefAST n);
     void addAgg(antlr::RefAST n);
-    
+#endif
     void dbgPrint() const;
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
@@ -78,7 +78,7 @@ public:
     friend class SelectListFactory;
 private:
     friend std::ostream& operator<<(std::ostream& os, SelectList const& sl);
-    void _fillParams(ValueExprList& p, antlr::RefAST pnodes);
+//    void _fillParams(ValueExprList& p, antlr::RefAST pnodes);
     boost::shared_ptr<ColumnRefList> _columnRefList;
     boost::shared_ptr<ValueExprList> _valueExprList;
     boost::shared_ptr<ColumnRefMap const> _aliasMap;

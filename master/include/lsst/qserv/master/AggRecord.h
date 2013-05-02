@@ -25,6 +25,7 @@
 #ifndef LSST_QSERV_MASTER_AGGRECORD_H
 #define LSST_QSERV_MASTER_AGGRECORD_H
 #include "lsst/qserv/master/ValueExpr.h"
+#include "lsst/qserv/master/ValueTerm.h"
 
 namespace lsst { namespace qserv { namespace master {
 
@@ -40,6 +41,16 @@ public:
     lsst::qserv::master::ValueExprPtr orig;
     lsst::qserv::master::ValueExprList pass;
     lsst::qserv::master::ValueExprList fixup;
+    std::ostream& printTo(std::ostream& os);
+    std::string getFuncParam() const;
+    std::string getLabelText() const;
+};
+class AggRecord2 { // Test
+public:
+    typedef boost::shared_ptr<AggRecord2> Ptr;
+    lsst::qserv::master::ValueTermPtr orig;
+    lsst::qserv::master::ValueExprList pass;
+    lsst::qserv::master::ValueTermPtr fixup;
     std::ostream& printTo(std::ostream& os);
     std::string getFuncParam() const;
     std::string getLabelText() const;

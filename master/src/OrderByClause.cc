@@ -50,7 +50,7 @@ char const* getOrderStr(OrderByTerm::Order o) {
 ////////////////////////////////////////////////////////////////////////
 void
 OrderByTerm::renderTo(QueryTemplate& qt) const {
-    ValueExpr::render r(qt);
+    ValueExpr::render r(qt, true);
     r(_expr);
     if(!_collate.empty()) { 
         qt.append("COLLATE"); 

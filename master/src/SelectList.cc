@@ -33,6 +33,7 @@
 // For now, just build the syntax tree without evaluating.
 #include "lsst/qserv/master/SelectList.h"
 #include "lsst/qserv/master/FuncExpr.h"
+#include "lsst/qserv/master/ValueTerm.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include <iterator>
 
@@ -82,23 +83,27 @@ SelectList::addStar(antlr::RefAST table) {
     assert(_valueExprList.get());
 
     ValueExprPtr ve;
+    std::string tParam;
     if(table.get()) {
-        ve = ValueExpr::newStarExpr(qMaster::tokenText(table));
-    } else {
-        ve = ValueExpr::newStarExpr(std::string());
+        tParam = qMaster::tokenText(table);
     }
+    ve = ValueExpr::newSimple(ValueTerm::newStarTerm(tParam));
     _valueExprList->push_back(ve);
 }
 
+#if 0
 void
 SelectList::addFunc(antlr::RefAST a) {
     assert(_valueExprList.get());
-   boost::shared_ptr<FuncExpr> fe(new FuncExpr());
-   if(a->getType() == SqlSQL2TokenTypes::FUNCTION_SPEC) { a = a->getFirstChild(); }
+    boost::shared_ptr<FuncExpr> fe(new FuncExpr());
+   if(a->getType() == SqlSQL2TokenTypes::FUNCTION_SPEC) { 
+       a = a->getFirstChild(); 
+   }
    //std::cout << "fspec name:" << tokenText(a) << std::endl;
    fe->name = tokenText(a);
    _fillParams(fe->params, a->getNextSibling());
-   _valueExprList->push_back(ValueExpr::newFuncExpr(fe));
+   _valueExprList->push_back(ValueExpr::newSimple(
+                                 ValueTerm::newFuncExpr(fe)));
 }
 
 void
@@ -107,16 +112,18 @@ SelectList::addAgg(antlr::RefAST a) {
    boost::shared_ptr<FuncExpr> fe(new FuncExpr());
    fe->name = tokenText(a);
    _fillParams(fe->params, a->getFirstChild());
-   _valueExprList->push_back(ValueExpr::newAggExpr(fe));
+   _valueExprList->push_back(ValueExpr::newSimple(
+                                 ValueTerm::newAggExpr(fe)));
 }
 
 void
 SelectList::addRegular(antlr::RefAST a) {
     assert(_valueExprList.get());
     boost::shared_ptr<ColumnRef const> cr(_columnRefList->getRef(a));
-    _valueExprList->push_back(ValueExpr::newColumnRefExpr(cr));
+    _valueExprList->push_back(ValueExpr::newSimple(
+                                  ValueTerm::newColumnRefExpr(cr)));
 }
-
+#endif
 void
 SelectList::dbgPrint() const {
     assert(_valueExprList.get());
@@ -127,6 +134,7 @@ SelectList::dbgPrint() const {
 
     
 }
+#if 0
 ValueExprPtr _newColumnRef(antlr::RefAST v) {
     std::string refStr = qMaster::walkSiblingString(v) + "FIXME";
     boost::shared_ptr<ColumnRef> cr(new ColumnRef( "","", refStr));
@@ -186,7 +194,7 @@ SelectList::_fillParams(ValueExprList& p, antlr::RefAST pnodes) {
     //printIndented(pnodes);
     // FIXME
 }
-
+#endif
 std::ostream& 
 qMaster::operator<<(std::ostream& os, qMaster::SelectList const& sl) {
     os << "SELECT ";
@@ -206,7 +214,7 @@ qMaster::SelectList::getGenerated() {
 void
 qMaster::SelectList::renderTo(qMaster::QueryTemplate& qt) const {
     std::for_each(_valueExprList->begin(), _valueExprList->end(),
-                  ValueExpr::render(qt));
+                  ValueExpr::render(qt, true));
 
 }
 struct copyValueExpr {

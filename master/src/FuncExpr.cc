@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2012 LSST Corporation.
+ * Copyright 2012-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -25,6 +25,7 @@
 
 #include "lsst/qserv/master/ColumnRef.h"
 #include "lsst/qserv/master/ValueExpr.h"
+#include "lsst/qserv/master/ValueTerm.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include <iostream>
 namespace qMaster=lsst::qserv::master;
@@ -46,7 +47,8 @@ FuncExpr::newArg1(std::string const& newName, std::string const& arg1) {
     FuncExpr::Ptr e(new FuncExpr()); 
     e->name = newName;
     boost::shared_ptr<ColumnRef> cr(new ColumnRef("","",arg1));
-    e->params.push_back(ValueExpr::newColumnRefExpr(cr));
+    e->params.push_back(ValueExpr::newSimple(
+                            ValueTerm::newColumnRefTerm(cr)));
     return e;
 }
 

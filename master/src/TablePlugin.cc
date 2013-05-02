@@ -36,6 +36,7 @@
 #include "lsst/qserv/master/TableNamer.h"
 #include "lsst/qserv/master/QueryMapping.h"
 #include "lsst/qserv/master/QueryContext.h"
+#include "lsst/qserv/master/ValueTerm.h"
 
 namespace qMaster=lsst::qserv::master;
 
@@ -146,23 +147,31 @@ public:
         if(!vep.get()) {
             return;
         }
-        //std::cout << "fixing expr: " << *vep << std::endl;
-        std::string newAlias;
-        switch(vep->getType()) {
-        case ValueExpr::COLUMNREF:
-            // check columnref.
-            _patchColumnRef(*vep->getColumnRef());
-            break;
-        case ValueExpr::FUNCTION:
-        case ValueExpr::AGGFUNC:
-            // recurse for func params (aggfunc is special case of function)
-            _patchFuncExpr(*vep->getFuncExpr());
-            break;
-        case ValueExpr::STAR: 
-            // Patch db/table name if applicable
-            _patchStar(*vep);
-            break;
-        default: break;
+        // For each term in the expr, patch for aliasing:
+        ValueExpr::TermOpList& termOps = vep->getTermOps();
+        for(ValueExpr::TermOpList::iterator i=termOps.begin();
+            i != termOps.end(); ++i) {
+            assert(i->term.get());
+            ValueTerm& t = *i->term;
+            //std::cout << "fixing term: " << *vep << std::endl;
+            std::string newAlias;
+            
+            switch(t.getType()) {
+            case ValueTerm::COLUMNREF:
+                // check columnref.
+                _patchColumnRef(*t.getColumnRef());
+                break;
+            case ValueTerm::FUNCTION:
+            case ValueTerm::AGGFUNC:
+                // recurse for func params (aggfunc is special case of function)
+                _patchFuncExpr(*t.getFuncExpr());
+                break;
+            case ValueTerm::STAR: 
+                // Patch db/table name if applicable
+                _patchStar(t);
+                break;
+            default: break;
+            }
         }
     }
 private:
@@ -178,13 +187,13 @@ private:
         std::for_each(fe.params.begin(), fe.params.end(), 
                       fixExprAlias(_reverseAlias));
     }
-    inline void _patchStar(ValueExpr& ve) {
+    inline void _patchStar(ValueTerm& vt) {
         // TODO: No support for <db>.<table>.* in framework
         // Only <table>.* is supported.
-        std::string newAlias = _getAlias("", ve.getTableStar());
+        std::string newAlias = _getAlias("", vt.getTableStar());
         if(newAlias.empty()) { return; } //  Ignore if no replacement
                                          //  exists.
-        else { ve.setTableStar(newAlias); }
+        else { vt.setTableStar(newAlias); }
     }
 
 

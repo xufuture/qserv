@@ -37,10 +37,9 @@
 #include "lsst/qserv/master/FromList.h"
 #include "lsst/qserv/master/FuncExpr.h"
 #include "lsst/qserv/master/WhereClause.h"
-
+#include "lsst/qserv/master/ValueTerm.h"
 #if 0
 #include "lsst/qserv/master/SelectList.h"
-#include "lsst/qserv/master/FuncExpr.h"
 #include "lsst/qserv/master/SphericalBoxStrategy.h"
 #include "lsst/qserv/master/TableNamer.h"
 #include "lsst/qserv/master/QueryMapping.h"
@@ -59,7 +58,7 @@ ValueExprTerm::Ptr newColRef(std::string const& key) {
     // FIXME: should apply QueryContext.
     boost::shared_ptr<ColumnRef> cr(new ColumnRef("","", key));
     ValueExprTerm::Ptr p(new ValueExprTerm);
-    p->_expr = ValueExpr::newColumnRefExpr(cr);
+    p->_expr = ValueExpr::newSimple(ValueTerm::newColumnRefTerm(cr));
     return p;
 }
 PassTerm::Ptr newPass(std::string const& s) {
@@ -82,22 +81,24 @@ ValueExprTerm::Ptr newFunc(char const fName[],
     typedef boost::shared_ptr<ColumnRef> CrPtr;
     FuncExpr::Ptr fe(new FuncExpr);
     fe->name = UDF_PREFIX + fName;
-    fe->params.push_back(ValueExpr::newColumnRefExpr(
-                             CrPtr(new ColumnRef("", tableAlias, 
-                                                 chunkColumns.first))
+    fe->params.push_back(ValueExpr::newSimple(
+                             ValueTerm::newColumnRefTerm(
+                                 CrPtr(new ColumnRef("", tableAlias, 
+                                                     chunkColumns.first)))
                              ));
-    fe->params.push_back(ValueExpr::newColumnRefExpr(
-                             CrPtr(new ColumnRef("", tableAlias, 
-                                                 chunkColumns.second))
+    fe->params.push_back(ValueExpr::newSimple(
+                             ValueTerm::newColumnRefTerm(
+                                 CrPtr(new ColumnRef("", tableAlias, 
+                                                     chunkColumns.second)))
                              ));
 
     typename C::const_iterator i;
     for(i = c.begin(); i != c.end(); ++i) {
-        fe->params.push_back(ValueExpr::newConstExpr(*i));
+        fe->params.push_back(ValueExpr::newSimple(ValueTerm::newConstTerm(*i)));
     }
 
     ValueExprTerm::Ptr p(new ValueExprTerm);
-    p->_expr = ValueExpr::newFuncExpr(fe);
+    p->_expr = ValueExpr::newSimple(ValueTerm::newFuncTerm(fe));
     return p;
 }
 

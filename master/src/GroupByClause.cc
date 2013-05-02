@@ -37,7 +37,7 @@ namespace { // File-scope helpers
 
 class GroupByTerm::render {
 public:
-    render(QueryTemplate& qt) : vr(qt) {}
+    render(QueryTemplate& qt) : vr(qt, true) {}
     void operator()(GroupByTerm const& t) {
         vr(t._expr);
     }

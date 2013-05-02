@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2012 LSST Corporation.
+ * Copyright 2012-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -41,6 +41,7 @@
 #include "lsst/qserv/master/WhereFactory.h"
 #include "lsst/qserv/master/ModFactory.h"
 #include "lsst/qserv/master/ValueExprFactory.h"
+#include "lsst/qserv/master/ValueTerm.h"
 
 #include "lsst/qserv/master/ParseAliasMap.h" 
 #include "lsst/qserv/master/parseTreeUtil.h"
@@ -246,19 +247,18 @@ SelectListFactory::_addSelectStar(RefAST child) {
     // If child.get(), this means that it's in the form of
     // "table.*". There might be sibling handling (i.e., multiple
     // table.* expressions).
-    ValueExprPtr ve;
+    ValueTermPtr vt;
+    std::string tableName;
     if(child.get()) {
         // child should be QUALIFIED_NAME, so its child should be a
         // table name.
         RefAST table = child->getFirstChild();
         assert(table.get());
-        std::cout << "table ref'd for *: " << tokenText(table) << std::endl;
-        ve = ValueExpr::newStarExpr(qMaster::tokenText(table));
-    } else {
-        // just add * to the selectList.
-        ve = ValueExpr::newStarExpr(std::string());
-    }
-    _valueExprList->push_back(ve);
+        tableName = tokenText(table);
+        std::cout << "table ref'd for *: " << tableName << std::endl;
+    } 
+    vt = ValueTerm::newStarTerm(tableName);
+    _valueExprList->push_back(ValueExpr::newSimple(vt));
 }
 
 ////////////////////////////////////////////////////////////////////////

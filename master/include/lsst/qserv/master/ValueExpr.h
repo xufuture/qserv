@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,69 +20,108 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// ColumnRef is a representation of a parsed column reference in SQL.
+// ValueExpr is a parse element commonly found in SelectList elements.
 
-#ifndef LSST_QSERV_MASTER_VALUEEXPR_H
-#define LSST_QSERV_MASTER_VALUEEXPR_H
+#ifndef LSST_QSERV_MASTER_VALUETERM_H
+#define LSST_QSERV_MASTER_VALUETERM_H
 
+#include <iostream>
 #include <list>
 #include <string>
 #include <boost/shared_ptr.hpp>
 
 namespace lsst { namespace qserv { namespace master {
 // Forward
-class ColumnRef;
 class QueryTemplate;
-class FuncExpr;
 
 class ValueExpr; 
 typedef boost::shared_ptr<ValueExpr> ValueExprPtr;
 typedef std::list<ValueExprPtr> ValueExprList;
+class ValueTerm; 
 
 class ValueExpr {
 public:
-    enum Type { COLUMNREF, FUNCTION, AGGFUNC, STAR, CONST };
+    enum Op {NONE=200, UNKNOWN, PLUS, MINUS};
+    struct TermOp {
+        boost::shared_ptr<ValueTerm> term;
+        Op op;
+    };
+    typedef std::list<TermOp> TermOpList;
 
-    // May need non-const, otherwise, need new construction
-    boost::shared_ptr<ColumnRef const> getColumnRef() const { return _columnRef; }
-    boost::shared_ptr<ColumnRef> getColumnRef() { return _columnRef; }
-    boost::shared_ptr<FuncExpr const> getFuncExpr() const { return _funcExpr; }
-    boost::shared_ptr<FuncExpr> getFuncExpr() { return _funcExpr; }
-    Type getType() const { return _type; }
     std::string const& getAlias() const { return _alias; }
     void setAlias(std::string const& a) { _alias = a; }
-    std::string const& getTableStar() const { return _tableStar; }
-    void setTableStar(std::string const& a) { _tableStar = a; }
+
+#if 0
+    boost::shared_ptr<ValueTerm> getTerm() { return _term; }
+    boost::shared_ptr<ValueTerm const> getTerm() const { return _term; }
+    void setTerm(boost::shared_ptr<ValueTerm> t) { _term = t; }
+
+    Op getOp() const { return _op; }
+    void setOp(Op op) { _op = op; }
+#endif
+
+    TermOpList& getTermOps() { return _termOps; }
+    TermOpList const& getTermOps() const { return _termOps; }
 
     ValueExprPtr clone() const;
+    friend std::ostream& operator<<(std::ostream& os, ValueExpr const& vt);
+    friend std::ostream& operator<<(std::ostream& os, ValueExpr const* vt);
 
-    static ValueExprPtr newColumnRefExpr(boost::shared_ptr<ColumnRef const> cr);
-    static ValueExprPtr newStarExpr(std::string const& table);
-    static ValueExprPtr newAggExpr(boost::shared_ptr<FuncExpr> fe);
-    static ValueExprPtr newFuncExpr(boost::shared_ptr<FuncExpr> fe);
-    static ValueExprPtr newConstExpr(std::string const& alnum);
-    friend std::ostream& operator<<(std::ostream& os, ValueExpr const& ve);
-    friend std::ostream& operator<<(std::ostream& os, ValueExpr const* ve);
+    static ValueExprPtr newSimple(boost::shared_ptr<ValueTerm> vt);
+   
+#if 0
+    // Convenience navigators
+    template <class F> 
+    class copyTransformExpr {
+    public:
+        copyTransformExpr(F& f) : _f(f) {}
+        void acceptTerm(ValueTerm const* vtp) {
+            currentVe.reset(new ValueExpr);
+            if(parent.get()) { // attach to parent.
+                parent->_next = currentVe;
+            } else { // No parent, so set the root.
+                root = currentVe;
+            }
+            currentVe->_term = _f(*vtp);
+        }
+        void acceptOp(Op op) { currentVe->_op = op; }
+        F& _f;
+        boost::shared_ptr<ValueExpr> root;
+        boost::shared_ptr<ValueExpr> parent;
+        boost::shared_ptr<ValueExpr> currentVe;
+    };
 
+    template <class F>
+    void mapTerms(F& f) const {
+        for(ValueExpr const* ep = this;
+            ep;
+            ep = ep->getNext().get()) {
+            f.acceptTerm(ep->getTerm().get());
+            f.acceptOp(ep->getOp());
+        }
+    }
+#endif
+
+    friend class ValueExprFactory;
     class render;
     friend class render;
 private:
-    Type _type;
-    boost::shared_ptr<ColumnRef> _columnRef;
-    boost::shared_ptr<FuncExpr> _funcExpr;
+    ValueExpr();
     std::string _alias;
-    std::string _tableStar; // Reused as const val (no tablestar)
+    std::list<TermOp> _termOps;
 };
 
 class ValueExpr::render : public std::unary_function<ValueExpr, void> {
 public:
-    render(QueryTemplate& qt) : _qt(qt), _count(0) {}
+    render(QueryTemplate& qt, bool needsComma) 
+        : _qt(qt), _needsComma(needsComma), _count(0) {}
     void operator()(ValueExpr const& ve);
     void operator()(ValueExpr const* vep) { 
         if(vep) (*this)(*vep); }
     void operator()(boost::shared_ptr<ValueExpr> const& vep) { 
         (*this)(vep.get()); }
     QueryTemplate& _qt;
+    bool _needsComma;
     int _count;
 };
 

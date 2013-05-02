@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
- * Copyright 2012 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,7 +20,6 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// X is a ...
 
 #ifndef LSST_QSERV_MASTER_AGGOP_H
 #define LSST_QSERV_MASTER_AGGOP_H
@@ -36,7 +35,7 @@ public:
     typedef boost::shared_ptr<AggOp> Ptr;
     class Mgr;
     
-    virtual AggRecord::Ptr operator()(ValueExpr const& orig) = 0;
+    virtual AggRecord2::Ptr operator()(ValueTerm const& orig) = 0;
     virtual ~AggOp() {}
 protected:
     explicit AggOp(Mgr&m) : _mgr(m) {}
@@ -49,7 +48,7 @@ public:
 
     Mgr();
     AggOp::Ptr getOp(std::string const& name);
-    AggRecord::Ptr applyOp(std::string const& name, ValueExpr const& orig);
+    AggRecord2::Ptr applyOp(std::string const& name, ValueTerm const& orig);
     int getNextSeq() { return ++_seq; }
     std::string getAggName(std::string const& name);
     bool hasAggregate() const { return _seq > 0; };

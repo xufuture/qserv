@@ -32,6 +32,7 @@
 #include "lsst/qserv/master/QueryPlugin.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include "lsst/qserv/master/ValueExpr.h"
+#include "lsst/qserv/master/ValueTerm.h"
 #include "lsst/qserv/master/FuncExpr.h"
 
 #include "lsst/qserv/master/SelectList.h"
@@ -57,6 +58,9 @@ void printList(char const* label, C const& c) {
     }
     std::cout << std::endl;
 }
+} // Anonymous namespace
+
+namespace lsst { namespace qserv { namespace master {
 
 template <class C>
 class convertAgg {
@@ -69,15 +73,86 @@ public:
     }
 
 private:
+    class checkAgg {
+    public: // Simply check for aggregation functions
+        checkAgg(bool& hasAgg_) : hasAgg(hasAgg_) {}
+        inline void operator()(ValueExpr::TermOp const& to) {
+            if(!to.term.get());
+            if(to.term->getType() = ValueTerm::AGGFUNC) { 
+                hasAgg = true; }
+        }
+        bool& hasAgg;
+    };
+    class applyAgg {
+    public:
+        inline ValueTermPtr operator()(ValueTerm const& t) {
+            ValueTermPtr newTerm(new ValueTerm(t));
+            if(t.getType() != ValueTerm::AGGFUNC) {                  
+                return t.clone();
+            }
+            // FIXME
+            return newTerm;
+        }
+    };
+
+    void _makeRecord2(ValueExpr const& e) {
+        bool hasAgg = false;
+        checkAgg ca(hasAgg);
+        ValueExpr::TermOpList const& termOps = e.getTermOps();
+        std::for_each(termOps.begin(), termOps.end(), ca);
+
+        if(!ca.hasAgg) {
+            pList.push_back(e.clone()); // Is this sufficient?
+            return;
+        } 
+        // For exprs with aggregation, we must separate out the
+        // expression into pieces.
+        // Split the elements of a ValueExpr into its
+        // constituent ValueTerms, compute the lists in parallel, and
+        // then compute the expression result from the parallel
+        // results during merging.
+        ValueExprPtr mergeExpr(new ValueExpr);
+        ValueExpr::TermOpList& mergeTermOps = mergeExpr->getTermOps();
+        for(ValueExpr::TermOpList::const_iterator i=termOps.begin();
+            i != termOps.end(); ++i) {
+            ValueTermPtr newTerm = i->term->clone();
+            if(newTerm->getType() != ValueTerm::AGGFUNC) {
+                pList.push_back = ValueExpr::newSimple(newTerm);
+            } else {
+                AggRecord2 r;
+                r.orig = newTerm;
+                assert(newTerm->getFuncExpr().get());        
+                AggRecord2::Ptr p = aMgr.applyOp(newTerm->getFuncExpr()->name,
+                                                 *newTerm);
+                assert(p.get());
+                pList.insert(pList.end(), p->pass.begin(), p->pass.end());
+                ValueExpr::TermOp m;
+                m.term = p->fixup;
+                m.op = i->op;
+                mergeTermOps.push_back(m);
+            }
+        }
+        mList.push_back(mergeExpr);
+    }
+    
     void _makeRecord(lsst::qserv::master::ValueExpr const& e) {
-        if(e.getType() != ValueExpr::AGGFUNC) { 
+        using lsst::qserv::master::ValueTerm;
+        ValueExpr::TermOpList const& termOps = e.getTermOps();
+        assert(!termOps.empty());
+        boost::shared_ptr<ValueTerm const> t = termOps.front();
+        // Not sure how to deal with expr right now.
+        // This gets more complicated if aggregations have
+        // non-trivial expressions        
+        if(termOps.size() > 1) {
+            throw std::string("Unexpected expr in aggregate"); }
+        if(t->getType() != ValueTerm::AGGFUNC) { 
             pList.push_back(e.clone()); // Is this sufficient?
             return; 
         }
         AggRecord r;
         r.orig = e.clone();
-        assert(e.getFuncExpr().get());        
-        AggRecord::Ptr p = aMgr.applyOp(e.getFuncExpr()->name, e);
+        assert(t->getFuncExpr().get());        
+        AggRecord::Ptr p = aMgr.applyOp(t->getFuncExpr()->name, *t);
         assert(p.get());
         pList.insert(pList.end(), p->pass.begin(), p->pass.end());
         mList.insert(mList.end(), p->fixup.begin(), p->fixup.end());
@@ -87,12 +162,10 @@ private:
     AggOp::Mgr& aMgr;
 };
 
-} // anonymous
-
 ////////////////////////////////////////////////////////////////////////
 // AggregatePlugin declaration
 ////////////////////////////////////////////////////////////////////////
-class AggregatePlugin : public lsst::qserv::master::QueryPlugin {
+class AggregatePlugin : public QueryPlugin {
 public:
     // Types
     typedef boost::shared_ptr<AggregatePlugin> Ptr;
@@ -103,11 +176,11 @@ public:
     virtual void prepare() {}
 
     /// Apply the plugin's actions to the parsed, but not planned query
-    virtual void applyLogical(lsst::qserv::master::SelectStmt& stmt,
+    virtual void applyLogical(SelectStmt& stmt,
                               QueryContext&) {}
 
     /// Apply the plugins's actions to the concrete query plan.
-    virtual void applyPhysical(lsst::qserv::master::QueryPlugin::Plan& p,
+    virtual void applyPhysical(QueryPlugin::Plan& p,
                                QueryContext&);
 private:
     AggOp::Mgr _aMgr;
@@ -116,7 +189,7 @@ private:
 ////////////////////////////////////////////////////////////////////////
 // AggregatePluginFactory declaration+implementation
 ////////////////////////////////////////////////////////////////////////
-class AggregatePluginFactory : public lsst::qserv::master::QueryPlugin::Factory {
+class AggregatePluginFactory : public QueryPlugin::Factory {
 public:
     // Types
     typedef boost::shared_ptr<AggregatePluginFactory> Ptr;
@@ -130,11 +203,11 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////
-// registarAggregatePlugin implementation
+// registerAggregatePlugin implementation
 ////////////////////////////////////////////////////////////////////////
 // factory registration
 void 
-lsst::qserv::master::registerAggregatePlugin() {
+registerAggregatePlugin() {
     AggregatePluginFactory::Ptr f(new AggregatePluginFactory());
     lsst::qserv::master::QueryPlugin::registerClass(f);
 }
@@ -145,7 +218,6 @@ lsst::qserv::master::registerAggregatePlugin() {
 void
 AggregatePlugin::applyPhysical(QueryPlugin::Plan& p, 
                                QueryContext&  context) {
-    using lsst::qserv::master::SelectList;
     // For each entry in original's SelectList, modify the SelectList
     // for the parallel and merge versions.
     // Set hasMerge to true if aggregation is detected.
@@ -161,12 +233,13 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
     pList.getValueExprList()->clear();
     mList.getValueExprList()->clear();
     AggOp::Mgr m; // Eventually, this can be shared?
+#if 0 // FIXME
     convertAgg<qMaster::ValueExprList> ca(*pList.getValueExprList(), 
                                           *mList.getValueExprList(),
                                           m);
     
     std::for_each(vlist->begin(), vlist->end(), ca);
-
+#endif
     QueryTemplate qt;
     pList.renderTo(qt);
     std::cout << "pass: " << qt.dbgStr() << std::endl;
@@ -178,3 +251,4 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
     // update context.
     if(m.hasAggregate()) { context.needsMerge = true; }
 }
+}}} // lsst::qserv::master

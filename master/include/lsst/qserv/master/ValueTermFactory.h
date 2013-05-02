@@ -20,10 +20,10 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// ValueExprFactory constructs ValueExpr instances from antlr nodes.
+// ValueTermFactory constructs ValueTerm instances from antlr nodes.
 
-#ifndef LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
-#define LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
+#ifndef LSST_QSERV_MASTER_VALUETERMFACTORY_H
+#define LSST_QSERV_MASTER_VALUETERMFACTORY_H
 
 #include <boost/shared_ptr.hpp>
 #include <antlr/AST.hpp>
@@ -35,20 +35,19 @@ namespace qserv {
 namespace master {
 // Forward
 class ColumnRefMap;
-class ValueExpr;
-class ValueTermFactory;
+class ValueTerm;
 
-class ValueExprFactory {
+class ValueTermFactory {
 public:
-    ValueExprFactory(boost::shared_ptr<ColumnRefMap> cMap);
-    boost::shared_ptr<ValueExpr> newExpr(antlr::RefAST a);
+    ValueTermFactory(boost::shared_ptr<ColumnRefMap> cMap);
+    boost::shared_ptr<ValueTerm> newTerm(antlr::RefAST a);
                                          
 private:
-    boost::shared_ptr<ValueTermFactory> _valueTermFactory;
+    boost::shared_ptr<ColumnRefMap> _columnRefMap;
 };
 
 }}} // namespace lsst::qserv::master
 
 
-#endif // LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
+#endif // LSST_QSERV_MASTER_VALUETERMFACTORY_H
 
