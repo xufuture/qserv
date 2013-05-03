@@ -25,11 +25,6 @@
 #include "lsst/qserv/master/ValueExprFactory.h"
 #include "lsst/qserv/master/ValueFactorFactory.h"
 #include "lsst/qserv/master/ColumnRefH.h"
-#if 0
-#include "lsst/qserv/master/ColumnRef.h"
-#include "lsst/qserv/master/FuncExpr.h"
-#include "lsst/qserv/master/parseTreeUtil.h"
-#endif
 #include "lsst/qserv/master/ValueExpr.h" // For ValueExpr, FuncExpr
 #include "lsst/qserv/master/ValueFactor.h" // For ValueFactor
 #include "SqlSQL2TokenTypes.hpp" 
@@ -59,36 +54,45 @@ ValueExprFactory::ValueExprFactory(boost::shared_ptr<ColumnRefMap> cMap)
 boost::shared_ptr<ValueExpr> 
 ValueExprFactory::newExpr(antlr::RefAST a) {
     boost::shared_ptr<ValueExpr> expr(new ValueExpr);
-    std::cout << walkIndentedString(a) << std::endl;
+    //std::cout << walkIndentedString(a) << std::endl;
     while(a.get()) {
         ValueExpr::FactorOp newFactorOp;
-        newFactorOp.term = _valueFactorFactory->newFactor(a);
+        //std::cout << "factor: " << tokenText(a) << std::endl;
+        newFactorOp.factor = _valueFactorFactory->newFactor(a);
         RefAST op = a->getNextSibling();
-        if(!op.get()) { // No more ops?
-            break;
+        if(op.get()) { // No more ops?
+            //std::cout << "expected op: " << tokenText(op) << std::endl;
+            int eType = op->getType();
+            switch(op->getType()) {
+            case SqlSQL2TokenTypes::PLUS_SIGN:
+                newFactorOp.op = ValueExpr::PLUS;
+                break;
+            case SqlSQL2TokenTypes::MINUS_SIGN:
+                newFactorOp.op = ValueExpr::MINUS;
+                break;
+            case SqlSQL2TokenTypes::ASTERISK:
+                newFactorOp.op = ValueExpr::MULTIPLY;
+                break;
+            case SqlSQL2TokenTypes::SOLIDUS:
+                newFactorOp.op = ValueExpr::DIVIDE;
+                break;
+            default: 
+                newFactorOp.op = ValueExpr::UNKNOWN;
+                throw std::string("unhandled factor_op type:" + tokenText(op));
+            }
+            a = op->getNextSibling();
+        } else {
+            newFactorOp.op = ValueExpr::NONE;
+            a = RefAST(); // set to NULL.
         }
-        std::cout << "expected op: " << tokenText(op) << std::endl;
-        int eType = op->getType();
-        switch(op->getType()) {
-        case SqlSQL2TokenTypes::PLUS_SIGN:
-            newFactorOp.op = ValueExpr::PLUS;
-            break;
-        case SqlSQL2TokenTypes::MINUS_SIGN:
-            newFactorOp.op = ValueExpr::MINUS;
-            break;
-        case SqlSQL2TokenTypes::ASTERISK:
-            newFactorOp.op = ValueExpr::MULTIPLY;
-            break;
-        case SqlSQL2TokenTypes::SOLIDUS:
-            newFactorOp.op = ValueExpr::DIVIDE;
-            break;
-        default: 
-            newFactorOp.op = ValueExpr::UNKNOWN;
-            throw std::string("unhandled term_op type.");
-        }
-        a = op->getNextSibling();
         expr->_factorOps.push_back(newFactorOp);
     }
+#if 0
+    std::cout << "Imported expr: ";
+    std::copy(expr->_factorOps.begin(), expr->_factorOps.end(), 
+              std::ostream_iterator<ValueExpr::FactorOp>(std::cout, ","));
+    std::cout << std::endl;
+#endif
     return expr;
 }
 }}} // lsst::qserv::master

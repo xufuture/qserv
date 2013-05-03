@@ -69,37 +69,26 @@ public:
     convertAgg(C& pList_, C& mList_, AggOp::Mgr& aMgr_) 
         : pList(pList_), mList(mList_), aMgr(aMgr_) {}
     void operator()(T const& e) {
-        _makeRecord(*e);
+        _makeRecord2(*e);
     }
 
 private:
     class checkAgg {
     public: // Simply check for aggregation functions
         checkAgg(bool& hasAgg_) : hasAgg(hasAgg_) {}
-        inline void operator()(ValueExpr::FactorOp const& to) {
-            if(!to.term.get());
-            if(to.term->getType() = ValueFactor::AGGFUNC) { 
+        inline void operator()(ValueExpr::FactorOp const& fo) {
+            if(!fo.factor.get());
+            if(fo.factor->getType() == ValueFactor::AGGFUNC) { 
                 hasAgg = true; }
         }
         bool& hasAgg;
-    };
-    class applyAgg {
-    public:
-        inline ValueFactorPtr operator()(ValueFactor const& t) {
-            ValueFactorPtr newFactor(new ValueFactor(t));
-            if(t.getType() != ValueFactor::AGGFUNC) {                  
-                return t.clone();
-            }
-            // FIXME
-            return newFactor;
-        }
     };
 
     void _makeRecord2(ValueExpr const& e) {
         bool hasAgg = false;
         checkAgg ca(hasAgg);
-        ValueExpr::FactorOpList const& termOps = e.getFactorOps();
-        std::for_each(termOps.begin(), termOps.end(), ca);
+        ValueExpr::FactorOpList const& factorOps = e.getFactorOps();
+        std::for_each(factorOps.begin(), factorOps.end(), ca);
 
         if(!ca.hasAgg) {
             pList.push_back(e.clone()); // Is this sufficient?
@@ -113,11 +102,11 @@ private:
         // results during merging.
         ValueExprPtr mergeExpr(new ValueExpr);
         ValueExpr::FactorOpList& mergeFactorOps = mergeExpr->getFactorOps();
-        for(ValueExpr::FactorOpList::const_iterator i=termOps.begin();
-            i != termOps.end(); ++i) {
-            ValueFactorPtr newFactor = i->term->clone();
+        for(ValueExpr::FactorOpList::const_iterator i=factorOps.begin();
+            i != factorOps.end(); ++i) {
+            ValueFactorPtr newFactor = i->factor->clone();
             if(newFactor->getType() != ValueFactor::AGGFUNC) {
-                pList.push_back = ValueExpr::newSimple(newFactor);
+                pList.push_back(ValueExpr::newSimple(newFactor));
             } else {
                 AggRecord2 r;
                 r.orig = newFactor;
@@ -127,7 +116,7 @@ private:
                 assert(p.get());
                 pList.insert(pList.end(), p->pass.begin(), p->pass.end());
                 ValueExpr::FactorOp m;
-                m.term = p->fixup;
+                m.factor = p->fixup;
                 m.op = i->op;
                 mergeFactorOps.push_back(m);
             }
@@ -137,13 +126,13 @@ private:
     
     void _makeRecord(lsst::qserv::master::ValueExpr const& e) {
         using lsst::qserv::master::ValueFactor;
-        ValueExpr::FactorOpList const& termOps = e.getFactorOps();
-        assert(!termOps.empty());
-        boost::shared_ptr<ValueFactor const> t = termOps.front();
+        ValueExpr::FactorOpList const& factorOps = e.getFactorOps();
+        assert(!factorOps.empty());
+        boost::shared_ptr<ValueFactor const> t = factorOps.front();
         // Not sure how to deal with expr right now.
         // This gets more complicated if aggregations have
         // non-trivial expressions        
-        if(termOps.size() > 1) {
+        if(factorOps.size() > 1) {
             throw std::string("Unexpected expr in aggregate"); }
         if(t->getType() != ValueFactor::AGGFUNC) { 
             pList.push_back(e.clone()); // Is this sufficient?
@@ -233,13 +222,10 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
     pList.getValueExprList()->clear();
     mList.getValueExprList()->clear();
     AggOp::Mgr m; // Eventually, this can be shared?
-#if 0 // FIXME
     convertAgg<qMaster::ValueExprList> ca(*pList.getValueExprList(), 
                                           *mList.getValueExprList(),
                                           m);
-    
     std::for_each(vlist->begin(), vlist->end(), ca);
-#endif
     QueryTemplate qt;
     pList.renderTo(qt);
     std::cout << "pass: " << qt.dbgStr() << std::endl;

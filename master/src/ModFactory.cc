@@ -135,7 +135,7 @@ void ModFactory::_importOrderBy(antlr::RefAST a) {
         ob._order = OrderByTerm::DEFAULT;
         boost::shared_ptr<ValueExpr> ve;
         if(key->getType() == SqlSQL2TokenTypes::SORT_KEY) {
-            ob._expr = _vFactory->newExpr(key->getFirstChild());
+            ob._expr = _vFactory->newExpr(key); //->getFirstChild());
             RefAST sib = key->getNextSibling();
             if(sib.get() 
                && (sib->getType() == SqlSQL2TokenTypes::COLLATE_CLAUSE)) {

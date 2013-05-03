@@ -47,15 +47,24 @@ renderList(QueryTemplate& qt, ValueExprList const& vel) {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// ValueExpr::
+// ValueExpr::FactorOp
 ////////////////////////////////////////////////////////////////////////
-
-class trivialCopy {
-public:
-    inline ValueFactorPtr operator()(ValueFactor const& t) {
-        return ValueFactorPtr(new ValueFactor(t));
+std::ostream& 
+operator<<(std::ostream& os, ValueExpr::FactorOp const& fo) {
+    os << "FACT:" << fo.factor << " OP:";
+    char const* opStr;
+    switch(fo.op) {
+    case ValueExpr::NONE: opStr = "NONE"; break;
+    case ValueExpr::UNKNOWN: opStr = "UNKNOWN"; break;
+    case ValueExpr::PLUS: opStr = "PLUS"; break;
+    case ValueExpr::MINUS: opStr = "MINUS"; break;
+    case ValueExpr::MULTIPLY: opStr = "MULTIPLY"; break;
+    case ValueExpr::DIVIDE: opStr = "DIVIDE"; break;
+    default: opStr = "broken"; break;
     }
-};
+    os << opStr;
+    return os;
+}
 
 ////////////////////////////////////////////////////////////////////////
 // ValueExpr statics
@@ -79,8 +88,8 @@ ValueExprPtr ValueExpr::clone() const {
     FactorOpList::iterator ti = expr->_factorOps.begin();
     for(FactorOpList::const_iterator i=_factorOps.begin();
         i != _factorOps.end(); ++i, ++ti) {
-        // Deep copy (clone) each term.
-        ti->term = i->term->clone();
+        // Deep copy (clone) each factor.
+        ti->factor = i->factor->clone();
     }
     return expr;
 }
@@ -104,10 +113,16 @@ std::ostream& operator<<(std::ostream& os, ValueExpr const* ve) {
 ////////////////////////////////////////////////////////////////////////
 void ValueExpr::render::operator()(qMaster::ValueExpr const& ve) {
     if(_needsComma && _count++ > 0) { _qt.append(","); }
-    ValueFactor::render render(_qt);
+    int count=0;
+    ValueFactor::render render(_qt);    
     for(FactorOpList::const_iterator i=ve._factorOps.begin();
         i != ve._factorOps.end(); ++i) {
-        render(i->term);
+#if 0
+        std::cout << "Rendering ve " << (void*)&ve << " "
+                  << ++count << " factor type=" 
+                  << i->factor->getType() << std::endl;
+#endif
+        render(i->factor);
         switch(i->op) {
         case ValueExpr::NONE: break;
         case ValueExpr::UNKNOWN: _qt.append("<UNKNOWN_OP>"); break;

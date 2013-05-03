@@ -23,6 +23,8 @@
 // subtrees.
 
 #include "lsst/qserv/master/ValueFactorFactory.h"
+#include <stdexcept>
+
 #include "lsst/qserv/master/ColumnRefH.h"
 #include "lsst/qserv/master/ColumnRef.h"
 #include "lsst/qserv/master/FuncExpr.h"
@@ -30,7 +32,6 @@
 #include "lsst/qserv/master/ValueExpr.h" // For ValueExpr
 #include "lsst/qserv/master/ValueFactor.h" // For ValueFactor
 #include "SqlSQL2TokenTypes.hpp" 
-
 
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;
@@ -91,7 +92,7 @@ newColumnFactor(antlr::RefAST t, ColumnRefMap& cMap) {
                                                       tokenText(r.column)));
             vt = ValueFactor::newColumnRefFactor(newColumnRef);
         }
-        return vt;    
+        return vt;
     case SqlSQL2TokenTypes::FUNCTION_SPEC:
         //std::cout << "col child (fct): " << child->getType() << " "
         //          << child->getText() << std::endl;
@@ -114,7 +115,10 @@ newColumnFactor(antlr::RefAST t, ColumnRefMap& cMap) {
                 break;
             case SqlSQL2TokenTypes::COMMA: continue;
             case SqlSQL2TokenTypes::RIGHT_PAREN: continue;
-            default: break;
+            default: 
+                throw std::runtime_error(
+                    "ValueFactorFactory::newColumnFactor fct spec with " + current->getText());
+                break;
             }
             fe->params.push_back(ValueExpr::newSimple(pvt));
         }
@@ -123,7 +127,9 @@ newColumnFactor(antlr::RefAST t, ColumnRefMap& cMap) {
         
         break;
     default: 
-        // throw ParseException(expr);// FIXME, need to unify exceptions.
+        // FIXME, need to unify exceptions.
+        throw std::runtime_error(
+            "ValueFactorFactory::newColumnFactor with " + t->getText());
         break;
     }
     return boost::shared_ptr<ValueFactor>();
@@ -185,7 +191,7 @@ ValueFactorFactory::newFactor(antlr::RefAST a) {
     if(a->getType() == SqlSQL2TokenTypes::FACTOR) {
         a = a->getFirstChild(); // FACTOR is a parent placeholder element
     }
-    std::cout << "new term: " << tokenText(a) << std::endl;
+    //std::cout << "new term: " << tokenText(a) << std::endl;
     switch(a->getType()) {
     case SqlSQL2TokenTypes::REGULAR_ID:
     case SqlSQL2TokenTypes::FUNCTION_SPEC:

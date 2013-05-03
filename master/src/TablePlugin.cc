@@ -147,13 +147,13 @@ public:
         if(!vep.get()) {
             return;
         }
-        // For each term in the expr, patch for aliasing:
-        ValueExpr::FactorOpList& termOps = vep->getFactorOps();
-        for(ValueExpr::FactorOpList::iterator i=termOps.begin();
-            i != termOps.end(); ++i) {
-            assert(i->term.get());
-            ValueFactor& t = *i->term;
-            //std::cout << "fixing term: " << *vep << std::endl;
+        // For each factor in the expr, patch for aliasing:
+        ValueExpr::FactorOpList& factorOps = vep->getFactorOps();
+        for(ValueExpr::FactorOpList::iterator i=factorOps.begin();
+            i != factorOps.end(); ++i) {
+            assert(i->factor.get());
+            ValueFactor& t = *i->factor;
+            //std::cout << "fixing factor: " << *vep << std::endl;
             std::string newAlias;
             
             switch(t.getType()) {

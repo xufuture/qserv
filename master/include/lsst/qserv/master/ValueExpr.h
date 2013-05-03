@@ -41,12 +41,14 @@ class ValueFactor;
 
 class ValueExpr {
 public:
+    ValueExpr();
     enum Op {NONE=200, UNKNOWN, PLUS, MINUS, MULTIPLY, DIVIDE};
     struct FactorOp {
-        boost::shared_ptr<ValueFactor> term;
+        boost::shared_ptr<ValueFactor> factor;
         Op op;
     };
     typedef std::list<FactorOp> FactorOpList;
+    friend std::ostream& operator<<(std::ostream& os, FactorOp const& fo);
 
     std::string const& getAlias() const { return _alias; }
     void setAlias(std::string const& a) { _alias = a; }
@@ -55,8 +57,8 @@ public:
     FactorOpList const& getFactorOps() const { return _factorOps; }
 
     ValueExprPtr clone() const;
-    friend std::ostream& operator<<(std::ostream& os, ValueExpr const& vt);
-    friend std::ostream& operator<<(std::ostream& os, ValueExpr const* vt);
+    friend std::ostream& operator<<(std::ostream& os, ValueExpr const& ve);
+    friend std::ostream& operator<<(std::ostream& os, ValueExpr const* ve);
 
     static ValueExprPtr newSimple(boost::shared_ptr<ValueFactor> vt);
    
@@ -64,7 +66,6 @@ public:
     class render;
     friend class render;
 private:
-    ValueExpr();
     std::string _alias;
     std::list<FactorOp> _factorOps;
 };
