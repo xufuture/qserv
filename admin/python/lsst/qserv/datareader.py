@@ -16,6 +16,7 @@ class DataReader():
     def readInputData(self):
         self.analyze()
         self.readTableList()
+        #self.setMetaFileLocation()
 
     def analyze(self):
 
@@ -27,41 +28,56 @@ class DataReader():
         self.log.debug("DataReader.analyze() : Data name is : %s" %self.dataName )
 
         self.dataConfig['sql-views'] = []
+        self.dataConfig['meta-extension']='.params'
 
         if self.dataName=="case01":
-            
+
             self.dataConfig['partitionned-tables'] = ["Object", "Source"]
-       
+
+            self.dataConfig['num-stripes'] = 85
+            self.dataConfig['num-substripes'] = 12
+
             """ Fill column position (zero-based index) """
             self.dataConfig['Object']=dict()
             self.dataConfig['Source']=dict()
-            
+
             self.dataConfig['schema-extension']='.schema'
             self.dataConfig['data-extension']='.tsv'
             self.dataConfig['zip-extension']='.gz'
             self.dataConfig['delimiter']='\t'
-            
+
             self.dataConfig['Object']['ra-column'] = 2
             self.dataConfig['Object']['decl-column'] = 4
             self.dataConfig['Object']['chunk-column-id'] = 227
-            
+
             self.dataConfig['Source']['ra-column'] = 33
             self.dataConfig['Source']['decl-column'] = 34
-            
+
              # chunkId and subChunkId will be added
             self.dataConfig['Source']['chunk-column-id'] = None
-            
+
+            # for QMS
+            self.dataConfig['Object']['objIdColName'] =  "objectId",
+            self.dataConfig['Object']['thetaColName'] = 'ra_PS'
+            self.dataConfig['Object']['phiColName'] = 'decl_PS'
+            self.dataConfig['Object']['overlap'] = 0.025
+
+            self.dataConfig['Source']['objIdColName'] =  "sourceId"
+            self.dataConfig['Source']['thetaColName'] = 'raObject'
+            self.dataConfig['Source']['phiColName'] = 'declObject'
+            self.dataConfig['Source']['overlap'] = 0
+
             self.log.debug("Data configuration : %s" % self.dataConfig)
-            
+
         # for PT1.1
         elif self.dataName=="case02":
-            
+
             self.dataConfig['partitionned-tables'] = ["Object", "Source"]
-       
+
             """ Fill column position (zero-based index) """
             self.dataConfig['Object']=dict()
             self.dataConfig['Source']=dict()
-            
+
             self.dataConfig['schema-extension']='.sql'
             self.dataConfig['data-extension']='.txt'
             self.dataConfig['zip-extension']='.gz'
@@ -81,10 +97,10 @@ class DataReader():
 
             self.dataConfig['partitionned-tables'] = ["AvgForcedPhot",
                                                 "AvgForcedPhotYearly",
-                                                "RefObject", 
+                                                "RefObject",
                                                 "RunDeepSource",
                                                 "RunDeepForcedSource"]
- 
+
             for table in self.dataConfig['partitionned-tables']:
                 self.dataConfig[table]=dict()
                 # chunkId and subChunkId will be added
@@ -100,7 +116,7 @@ class DataReader():
 
             self.dataConfig['AvgForcedPhotYearly']['ra-column'] = 2
             self.dataConfig['AvgForcedPhotYearly']['decl-column'] = 3
-            
+
             self.dataConfig['RefObject']['ra-column'] = 12
             self.dataConfig['RefObject']['decl-column'] = 13
 
@@ -113,7 +129,7 @@ class DataReader():
             self.tables=['Science_Ccd_Exposure_Metadata_coadd_r', 'AvgForcedPhotYearly', 'Science_Ccd_Exposure_Metadata', 'RunDeepSource',  'RunDeepForcedSource', 'DeepForcedSource', 'ZZZ_Db_Description', 'RefObject', 'RefDeepSrcMatch', 'Science_Ccd_Exposure_coadd_r', 'Science_Ccd_Exposure', 'AvgForcedPhot', 'DeepCoadd_To_Htm10', 'Science_Ccd_Exposure_To_Htm10_coadd_r', 'LeapSeconds', 'DeepCoadd', 'DeepCoadd_Metadata', 'DeepSource', 'Filter']
 
             self.dataConfig['sql-views'] = ['DeepForcedSource','DeepSource']
-        
+
     def readTableList(self):
         files = os.listdir(self.dataDirName)
         if self.tables==[]:
@@ -122,6 +138,11 @@ class DataReader():
                 if fileext == self.dataConfig['schema-extension']:
                     self.tables.append(filename)
         self.log.debug("%s.readTableList() found : %s" %  (self.__class__.__name__, self.tables))
+
+    #def setMetaFileLocation(self):
+    #    for table_name in self.tables:
+    #        prefix = os.path.join(self.dataDirName, table_name)
+    #        self.dataConfig[table_name]['meta-file']=  prefix + self.dataConfig['meta-extension']
 
     def getSchemaAndDataFilenames(self, table_name):
         zipped_data_filename = None
