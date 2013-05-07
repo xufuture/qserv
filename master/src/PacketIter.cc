@@ -70,9 +70,8 @@ bool qMaster::PacketIter::incrementExtend() {
     //std::cout << "packetiter Realloc to " << _current.second + _fragSize << std::endl;
     void* ptr = ::realloc(_current.first, _current.second + _fragSize);
     if(!ptr) {
-        std::cerr << "Can't realloc for PacketIter. Raising exception." 
-                  << std::endl;
-        assert(ptr);
+        errno = ENOMEM;
+        throw "Failed to realloc for PacketIter.";
     }    
     _buffer = ptr;
     _current.first = static_cast<char*>(ptr);
@@ -99,9 +98,8 @@ void qMaster::PacketIter::_setup(bool debug) {
     assert(_fragSize > 0);
     _buffer = malloc(_fragSize); 
     if(_buffer == NULL) {
-        std::cerr << "Can't malloc for PacketIter. Raising exception." 
-                  << std::endl;
-        assert(_buffer != NULL);
+        errno = ENOMEM;
+        throw "Failed to malloc for PacketIter.";
     }
     if(!_fileName.empty()) {
         _realFd = open(_fileName.c_str(), O_RDONLY);

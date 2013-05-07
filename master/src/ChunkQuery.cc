@@ -116,7 +116,7 @@ public:
             _cq.Complete(result);
             _cq._manager->getMessageStore()->addMessage(_cq._id, MSG_XRD_READ, "Results Read.");
         } catch (const char *msg) {
-            _cq._manager->getMessageStore()->addMessage(_cq._id, -abs(errno), msg);
+            _cq._manager->getMessageStore()->addMessage(_cq._id, errno != 0 ? -abs(errno) : -1, msg);
             _cq._state = ChunkQuery::ABORTED;
             _cq._notifyManager();
         }
@@ -178,7 +178,7 @@ public:
             _cq._manager->getMessageStore()->
                 addMessage(_cq._id, MSG_XRD_WRITE, "Query Written.");
         } catch (const char *msg) {
-            _cq._manager->getMessageStore()->addMessage(_cq._id, -abs(errno), msg);
+            _cq._manager->getMessageStore()->addMessage(_cq._id, errno != 0 ? -abs(errno) : -1, msg);
             _cq._state = ChunkQuery::ABORTED;
             _cq._notifyManager();
         }

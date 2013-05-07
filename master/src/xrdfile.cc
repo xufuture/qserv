@@ -198,6 +198,23 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     //readCount = -1;
 /*************************************************/
 
+/*************************************************
+ * TEST FAILURE MODE: Incorrect readCount returned.
+ * ***********************************************/
+    //std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
+    //readCount /= 2;
+/*************************************************/
+
+/*************************************************
+ * TEST FAILURE MODE: Fuzz testing - simulate corrupted byte.
+ * ***********************************************/
+    //std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
+    //std::cout << "DBG: XrdPosixXrootd::Read() returned: " << readCount << std::endl;
+    //int position = rand()%readCount;
+    //char value = (char)(rand()%256);
+    //*((char *)buf + position) = value;
+/*************************************************/
+
     if (readCount < 0) {
          if (errno == 0)
              errno = EREMOTEIO;
