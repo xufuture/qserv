@@ -107,7 +107,8 @@ public:
                               << _cq._spec.chunkId
                               << std::endl;
                 }
-                _cq._manager->getMessageStore()->addMessage(_cq._id, -abs(errno), "Remote I/O error during XRD open.");
+                _cq._manager->getMessageStore()->addMessage(_cq._id, -abs(errno), 
+                                                      "Remote I/O error during XRD open.");
                 _cq._result.read = -errno;
                 _cq._state = ChunkQuery::COMPLETE;
                 _cq._notifyManager(); 
@@ -116,7 +117,8 @@ public:
             _cq.Complete(result);
             _cq._manager->getMessageStore()->addMessage(_cq._id, MSG_XRD_READ, "Results Read.");
         } catch (const char *msg) {
-            _cq._manager->getMessageStore()->addMessage(_cq._id, errno != 0 ? -abs(errno) : -1, msg);
+            _cq._manager->getMessageStore()->addMessage(_cq._id, errno != 0 ? -abs(errno) : -1, 
+                                                        msg);
             _cq._state = ChunkQuery::ABORTED;
             _cq._notifyManager();
         }

@@ -354,6 +354,8 @@ void qMaster::AsyncQueryManager::_addNewResult(PacIterPtr pacIter,
     }
     if(!mergeResult) {
         TableMergerError e = _merger->getError();
+        getMessageStore()->addMessage(-1, e.errorCode != 0 ? -abs(e.errorCode) : -1, 
+                                      "Failed to merge results.");
         if(e.resultTooBig()) {
             _squashRemaining();
         }
@@ -382,6 +384,8 @@ void qMaster::AsyncQueryManager::_addNewResult(ssize_t dumpSize,
         }        
         if(!mergeResult) {
             TableMergerError e = _merger->getError();
+            getMessageStore()->addMessage(-1, e.errorCode != 0 ? -abs(e.errorCode) : -1, 
+                                          "Failed to merge results.");
             if(e.resultTooBig()) {
                 _squashRemaining();
             }
