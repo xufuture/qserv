@@ -55,6 +55,7 @@ import time
 from string import Template
 
 # Package imports
+import msgCode
 import metadata
 import lsst.qserv.master.config
 from lsst.qserv.master import geometry
@@ -100,6 +101,9 @@ from lsst.qserv.master import addDbInfoPartitionedSphBox
 from lsst.qserv.master import addTbInfoNonPartitioned
 from lsst.qserv.master import addTbInfoPartitionedSphBox
 from lsst.qserv.master import printMetadataCache
+
+# queryMsg
+from lsst.qserv.master import queryMsgAddMsg
 
 # Experimental interactive prompt (not currently working)
 import code, traceback, signal
@@ -662,16 +666,17 @@ class QueryBabysitter:
     """Watches over queries in-flight.  An instrument of query care that 
     can be used by a client.  Unlike the collater, it doesn't do merging.
     """
-    def __init__(self, sessionId, queryHash, fixup, 
-                 reportError=lambda e:None, resultName=""):
+    def __init__(self, sessionId, queryHash, fixup, resultName=""):
         self._sessionId = sessionId
         self._inFlight = {}
         # Scratch mgmt (Consider putting somewhere else)
         self._scratchPath = setupResultScratch()
 
         self._setupMerger(fixup, resultName) 
-        self._reportError = reportError
         pass
+
+    def _reportError(self, message):
+        queryMsgAddMsg(self._sessionId, -1, -1, message)
 
     def _setupMerger(self, fixup, resultName):
         c = lsst.qserv.master.config.config
@@ -789,8 +794,16 @@ class QueryHintError(Exception):
 ########################################################################
 class HintedQueryAction:
     """A HintedQueryAction encapsulates logic to prepare, execute, and 
-    retrieve results of a query that has a hint string."""
-    def __init__(self, query, hints, pmap, reportError, resultName=""):
+    retrieve results of a query that has a hint string.
+    @param query - user query string
+    @param hints - key-value for unstructured query hints
+    @param pmap - partitioning map for spatial chunk mapping. caller-maintained
+    @param setSessionId - unary function. a callback so this object can provide
+                          a handle (sessionId) for the caller to access query
+                          messages.
+    @param resultName - name of result table.
+    """
+    def __init__(self, query, hints, pmap, setSessionId, resultName=""):
         self.queryStr = query.strip()# Pull trailing whitespace
         # Force semicolon to facilitate worker-side splitting
         if self.queryStr[-1] != ";":  # Add terminal semicolon
@@ -804,14 +817,25 @@ class HintedQueryAction:
 
         if not self._parseAndPrep(query, hints):
             return
+        # Pass up the sessionId for query messages access.
+        setSessionId(self._sessionId) 
 
         if not self._isValid:
             discardSession(self._sessionId)
             return
-        self._prepForExec(self._useMemory, reportError, resultName)
+
+        # Create query initialization message.
+        queryMsgAddMsg(self._sessionId, -1, msgCode.MSG_QUERY_INIT, 
+                       "Initialize Query: " + self.queryStr);
+
+        self._prepForExec(self._useMemory, resultName)
 
     def _importQconfig(self, pmap, hints):
-        self._dbContext = "LSST" # Later adjusted by hints.
+        """Import various config bits and initialize some private variables.
+        Gets a sessionId.
+        """
+
+        self._dbContext = "LSST" # Later adjusted by hints.        
         # Hint evaluation
         self._pmap = pmap            
         self._isFullSky = False # Does query involves whole sky
@@ -854,14 +878,13 @@ class HintedQueryAction:
             self._isValid = False
         return True
 
-    def _prepForExec(self, useMemory, reportError, resultName):
+    def _prepForExec(self, useMemory, resultName):
         self._postFixChunkScope(self._substitution.getChunkLevel())
 
         # Query babysitter.
         self._babysitter = QueryBabysitter(self._sessionId, self.queryHash,
                                            self._substitution.getMergeFixup(),
-                                           reportError, resultName)
-        self._reportError = reportError
+                                           resultName)
         ## For generating subqueries
         if useMemory == "yes":
             print "Memory spec:", useMemory
@@ -1004,6 +1027,8 @@ class HintedQueryAction:
         msg = self._prepareMsg(chunkId, subIter)
         prepTime = time.time()
         print "DISPATCH: ", chunkId, self.queryStr # Limit printout spew
+        queryMsgAddMsg(self._sessionId, chunkId, msgCode.MSG_CHUNK_DISPATCH, 
+                       "Dispatch Chunk Query.")
         self._babysitter.submitMsg(self._factory.msg.db,
                                    chunkId, msg, 
                                    self._factory.resulttable)

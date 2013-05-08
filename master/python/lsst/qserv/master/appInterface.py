@@ -91,7 +91,7 @@ class AppInterface:
 
     def submitQueryWithLock(self, query, conditions):
         """Simplified mysqlproxy version.  
-        @returns result table name, lock table name, but before completion."""
+        @returns result table name, lock/message table name, but before completion."""
         # Short-circuit the standard proxy/client queries.
         quickResult = app.computeShortCircuitQuery(query, conditions)
         if quickResult: return quickResult
@@ -102,13 +102,13 @@ class AppInterface:
         # shorter than intermediate table names. 
         # This allows in-place name replacement optimization while merging.
         resultName = "%s.result_%d" % (self._resultDb, taskId)
-        lockName = "%s.lock_%d" % (self._resultDb, taskId)
+        lockName = "%s.message_%d" % (self._resultDb, taskId)
         lock = proxy.Lock(lockName)
         if not lock.lock():
             return ("error", "error",
                     "error locking result, check qserv/db config.")
         a = app.HintedQueryAction(query, conditions, self.pmap, 
-                                  lambda e: lock.addError(e), resultName)
+                                  lock.setSessionId, resultName)
         if a.getIsValid():
             self._callWithThread(a.invoke)
             lock.unlockAfter(self._getThreadFunc(), a.getResult)

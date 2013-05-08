@@ -27,15 +27,18 @@
 // required some state management and liberal use of callbacks.
 #include <iostream>
 
+#include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include "boost/date_time/posix_time/posix_time_types.hpp" 
 
 #include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/master/ChunkQuery.h"
+#include "lsst/qserv/master/MessageStore.h"
 #include "lsst/qserv/master/TableMerger.h"
 #include "lsst/qserv/master/Timer.h"
 #include "lsst/qserv/common/WorkQueue.h"
 #include "lsst/qserv/master/PacketIter.h"
+#include "lsst/qserv/master/msgCode.h"
 
 // Namespace modifiers
 using boost::make_shared;
@@ -136,6 +139,8 @@ int qMaster::AsyncQueryManager::add(TransactionSpec const& t,
         _queries[id] = qs;
         ++_queryCount;
     }
+    std::string msg = std::string("Query Added: url=") + ts.path + ", savePath=" + ts.savePath;
+    getMessageStore()->addMessage(id, MSG_MGR_ADD, msg);
     std::cout << "Added query id=" << id << " url=" << ts.path 
               << " with save " << ts.savePath << "\n";
     qs.first->run();
@@ -304,6 +309,13 @@ void qMaster::AsyncQueryManager::resumeReadTrans() {
     _canReadCondition.notify_all();
 }
 
+boost::shared_ptr<qMaster::MessageStore> qMaster::AsyncQueryManager::getMessageStore() {
+    if (_messageStore == NULL) {
+        // Lazy instantiation of MessageStore.
+        _messageStore = boost::make_shared<qMaster::MessageStore>();
+    }
+    return _messageStore;
+}
 
 ////////////////////////////////////////////////////////////////////////
 // private: ////////////////////////////////////////////////////////////

@@ -24,6 +24,7 @@
 // mysqldump output and iterates over them.
 #include "lsst/qserv/master/SqlInsertIter.h"
 #include <iostream>
+#include <errno.h>
 
 namespace qMaster = lsst::qserv::master;
 
@@ -150,7 +151,10 @@ bool qMaster::SqlInsertIter::_incrementFragment() {
             // std::cout << _pBufSize << " is too small" << std::endl
             //           << "sqliter Realloc to " << needSize << std::endl;
             void* res = realloc(_pBuffer, needSize);
-            assert(res);
+            if (!res) {
+                errno = ENOMEM;
+                throw "Failed to realloc for SqlInsertIter.";
+            }
             _pBufSize = needSize;
             _pBuffer = static_cast<char*>(res);
         }

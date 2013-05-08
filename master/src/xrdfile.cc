@@ -190,6 +190,37 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     long long readCount;
     readCount = XrdPosixXrootd::Read(fildes, buf, nbyte); 
     QSM_TIMESTOP("Read", fildes);
+
+/*************************************************
+ * TEST FAILURE MODE: Reading query result fails.
+ * ***********************************************/
+    //std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
+    //readCount = -1;
+/*************************************************/
+
+/*************************************************
+ * TEST FAILURE MODE: Incorrect readCount returned.
+ * ***********************************************/
+    //std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
+    //readCount /= 2;
+/*************************************************/
+
+/*************************************************
+ * TEST FAILURE MODE: Fuzz testing - simulate corrupted byte.
+ * ***********************************************/
+    //std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
+    //std::cout << "DBG: XrdPosixXrootd::Read() returned: " << readCount << std::endl;
+    //int position = rand()%readCount;
+    //char value = (char)(rand()%256);
+    //*((char *)buf + position) = value;
+/*************************************************/
+
+    if (readCount < 0) {
+         if (errno == 0)
+             errno = EREMOTEIO;
+         return -1;
+    }
+
     return readCount;
 }
 
@@ -202,6 +233,20 @@ long long qMaster::xrdWrite(int fildes, const void *buf,
     QSM_TIMESTART("Write", fildes);
     long long res = XrdPosixXrootd::Write(fildes, buf, nbyte);
     QSM_TIMESTOP("Write", fildes);
+
+/*************************************************
+ * TEST FAILURE MODE: Writing query result fails.
+ * ***********************************************/
+    //std::cout << "DBG: SABOTAGING XRD WRITE!!!!" << std::endl;
+    //res = -1;
+/*************************************************/
+
+    if (res < 0) {
+         if (errno == 0)
+             errno = EREMOTEIO;
+         return -1;
+    }
+
     return res;
 }
 
