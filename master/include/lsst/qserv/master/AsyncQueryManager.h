@@ -118,9 +118,9 @@ private:
     void _destroyPool();
     void _readConfig(std::map<std::string,std::string> const& cfg);
     void _printState(std::ostream& os);
-    void _addNewResult(ssize_t dumpSize, std::string const& dumpFile, 
+    void _addNewResult(int id, ssize_t dumpSize, std::string const& dumpFile, 
                        std::string const& tableName);
-    void _addNewResult(PacIterPtr pacIter, std::string const& tableName);
+    void _addNewResult(int id, PacIterPtr pacIter, std::string const& tableName);
     void _squashExecution();
     void _squashRemaining();
 

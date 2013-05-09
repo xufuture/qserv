@@ -107,19 +107,18 @@ public:
                               << _cq._spec.chunkId
                               << std::endl;
                 }
-                _cq._manager->getMessageStore()->addMessage(_cq._id, -abs(errno), 
-                                                      "Remote I/O error during XRD open.");
                 _cq._result.read = -errno;
                 _cq._state = ChunkQuery::COMPLETE;
+                _cq._manager->getMessageStore()->addMessage(_cq._id, -abs(errno), 
+                                                      "Remote I/O error during XRD open.");
                 _cq._notifyManager(); 
                 return;
             }
             _cq.Complete(result);
-            _cq._manager->getMessageStore()->addMessage(_cq._id, MSG_XRD_READ, "Results Read.");
         } catch (const char *msg) {
-            _cq._manager->getMessageStore()->addMessage(_cq._id, errno != 0 ? -abs(errno) : -1, 
-                                                        msg);
             _cq._state = ChunkQuery::ABORTED;
+            _cq._manager->getMessageStore()->addMessage(_cq._id, 
+                errno != 0 ? -abs(errno) : -1, msg);
             _cq._notifyManager();
         }
     }
@@ -177,11 +176,10 @@ public:
                 break;
             }
             _cq.Complete(result);
-            _cq._manager->getMessageStore()->
-                addMessage(_cq._id, MSG_XRD_WRITE, "Query Written.");
         } catch (const char *msg) {
-            _cq._manager->getMessageStore()->addMessage(_cq._id, errno != 0 ? -abs(errno) : -1, msg);
             _cq._state = ChunkQuery::ABORTED;
+            _cq._manager->getMessageStore()->addMessage(_cq._id, 
+                 errno != 0 ? -abs(errno) : -1, msg);
             _cq._notifyManager();
         }
     }
@@ -510,6 +508,7 @@ void qMaster::ChunkQuery::_sendQuery(int fd) {
     }
     _writeTimer.stop();
     ss << _hash << " WriteQuery " << _writeTimer << std::endl;
+    _manager->getMessageStore()->addMessage(_id, MSG_XRD_WRITE, "Query Written.");
     
     // Get rid of the query string to save space
     _spec.query.clear();
@@ -568,6 +567,7 @@ void qMaster::ChunkQuery::_readResultsDefer(int fd) {
     _result.localWrite = 1; // MAGIC: stuff the result so that it doesn't
     // look like an error to skip the local write.
     _state = COMPLETE;
+    _manager->getMessageStore()->addMessage(_id, MSG_XRD_READ, "Results Read.");
     std::cout << _hash << " ReadResults defer " << std::endl;
     _notifyManager();
 }

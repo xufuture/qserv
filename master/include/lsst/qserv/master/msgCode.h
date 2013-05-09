@@ -26,10 +26,14 @@
 
 // Codes for C++ layer are >= 1000.
 // (<1000 reserved for Python layer.)
-#define MSG_MGR_ADD       1200
-#define MSG_XRD_OPEN_FAIL 1290
-#define MSG_XRD_WRITE     1300
-#define MSG_XRD_READ      1400
+#define MSG_MGR_ADD        1200
+#define MSG_XRD_OPEN_FAIL  1290
+#define MSG_XRD_WRITE      1300
+#define MSG_XRD_READ       1400
+#define MSG_MERGED         1500
+#define MSG_ERASED         1600
+#define MSG_EXEC_SQUASHED  1990
+#define MSG_FINALIZED      2000
 
 #endif // LSST_QSERV_MASTER_MSGCODE_H
 

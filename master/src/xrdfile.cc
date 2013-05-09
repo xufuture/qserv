@@ -199,10 +199,12 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
 /*************************************************/
 
 /*************************************************
- * TEST FAILURE MODE: Incorrect readCount returned.
+ * TEST FAILURE MODE: Fuzz testing - simulate incomplete results.
  * ***********************************************/
     //std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
-    //readCount /= 2;
+    //std::cout << "DBG: XrdPosixXrootd::Read() returned: " << readCount << std::endl;
+    //readCount = rand()%readCount;
+    //std::cout << "Dbg: Set readCount = " << readCount << std::endl;
 /*************************************************/
 
 /*************************************************

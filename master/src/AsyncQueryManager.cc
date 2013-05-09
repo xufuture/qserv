@@ -179,13 +179,14 @@ void qMaster::AsyncQueryManager::finalizeQuery(int id,
         } 
         // Lock-free merge
         if(resIter) {
-            _addNewResult(resIter, tableName);
+            _addNewResult(id, resIter, tableName);
         } else {
-            _addNewResult(dumpSize, dumpFile, tableName);
+            _addNewResult(id, dumpSize, dumpFile, tableName);
         }
         // Erase right before notifying.
         t2.stop();
         ss << id << " QmFinalizeMerge " << t2 << std::endl;
+        getMessageStore()->addMessage(id, MSG_MERGED, "Results Merged.");
     } // end if 
     else { 
         Timer t2e;
@@ -217,6 +218,7 @@ void qMaster::AsyncQueryManager::finalizeQuery(int id,
             if(_queries.empty()) _queriesEmpty.notify_all();
             t2e1.stop();
             ss << id << " QmFinalizeErase " << t2e1 << std::endl;
+            getMessageStore()->addMessage(id, MSG_ERASED, "Query Resources Erased.");
         } 
     }
     t3.stop();
@@ -225,6 +227,7 @@ void qMaster::AsyncQueryManager::finalizeQuery(int id,
     t1.stop();
     ss << id << " QmFinalize " << t1 << std::endl;
     std::cout << ss.str();
+    getMessageStore()->addMessage(id, MSG_FINALIZED, "Query Finalized.");
 }
 
 // FIXME: With squashing, we should be able to return the result earlier.
@@ -344,7 +347,7 @@ void qMaster::AsyncQueryManager::_readConfig(std::map<std::string,
     }
 }
 
-void qMaster::AsyncQueryManager::_addNewResult(PacIterPtr pacIter,
+void qMaster::AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,
                                                std::string const& tableName) {
     bool mergeResult = _merger->merge(pacIter, tableName);
     _totalSize += pacIter->getTotalSize();
@@ -354,7 +357,7 @@ void qMaster::AsyncQueryManager::_addNewResult(PacIterPtr pacIter,
     }
     if(!mergeResult) {
         TableMergerError e = _merger->getError();
-        getMessageStore()->addMessage(-1, e.errorCode != 0 ? -abs(e.errorCode) : -1, 
+        getMessageStore()->addMessage(id, e.errorCode != 0 ? -abs(e.errorCode) : -1, 
                                       "Failed to merge results.");
         if(e.resultTooBig()) {
             _squashRemaining();
@@ -362,7 +365,7 @@ void qMaster::AsyncQueryManager::_addNewResult(PacIterPtr pacIter,
     }            
 }
 
-void qMaster::AsyncQueryManager::_addNewResult(ssize_t dumpSize, 
+void qMaster::AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize, 
                                                std::string const& dumpFile, 
                                                std::string const& tableName) {
     assert(dumpSize >= 0);
@@ -384,7 +387,7 @@ void qMaster::AsyncQueryManager::_addNewResult(ssize_t dumpSize,
         }        
         if(!mergeResult) {
             TableMergerError e = _merger->getError();
-            getMessageStore()->addMessage(-1, e.errorCode != 0 ? -abs(e.errorCode) : -1, 
+            getMessageStore()->addMessage(id, e.errorCode != 0 ? -abs(e.errorCode) : -1, 
                                           "Failed to merge results.");
             if(e.resultTooBig()) {
                 _squashRemaining();
@@ -429,6 +432,8 @@ void qMaster::AsyncQueryManager::_squashExecution() {
     t.stop();
     std::cout << "AsyncQM squashExec " << t << std::endl;
     _isSquashed = true; // Ensure that flag wasn't trampled.
+
+    getMessageStore()->addMessage(-1, MSG_EXEC_SQUASHED, "Query Execution Squashed.");
 }
 
 void qMaster::AsyncQueryManager::_squashRemaining() {
