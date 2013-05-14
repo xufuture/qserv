@@ -115,6 +115,9 @@ void ValueExpr::render::operator()(qMaster::ValueExpr const& ve) {
     if(_needsComma && _count++ > 0) { _qt.append(","); }
     int count=0;
     ValueFactor::render render(_qt);    
+    if(ve._factorOps.size() > 1) { // Need opening parenthesis
+        _qt.append("(");
+    }
     for(FactorOpList::const_iterator i=ve._factorOps.begin();
         i != ve._factorOps.end(); ++i) {
 #if 0
@@ -136,6 +139,9 @@ void ValueExpr::render::operator()(qMaster::ValueExpr const& ve) {
             // FIXME: Make sure this never happens.
             throw ss.str();
         }
+    }
+    if(ve._factorOps.size() > 1) { // Need closing parenthesis
+        _qt.append(")");
     }
     if(!ve._alias.empty()) { _qt.append("AS"); _qt.append(ve._alias); }
 }

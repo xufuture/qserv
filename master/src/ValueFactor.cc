@@ -29,6 +29,7 @@
 #include "lsst/qserv/master/ColumnRef.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include "lsst/qserv/master/FuncExpr.h"
+#include "lsst/qserv/master/ValueExpr.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::ValueFactor;
@@ -73,6 +74,14 @@ ValueFactor::newConstFactor(std::string const& alnum) {
     return term;
 }
 
+ValueFactorPtr
+ValueFactor::newExprFactor(boost::shared_ptr<ValueExpr> ve) {
+    ValueFactorPtr factor(new ValueFactor());
+    factor->_type = EXPR;
+    factor->_valueExpr = ve;
+    return factor;
+}
+
 ValueFactorPtr ValueFactor::clone() const{
     ValueFactorPtr expr(new ValueFactor(*this));
     // Clone refs.
@@ -80,6 +89,9 @@ ValueFactorPtr ValueFactor::clone() const{
         expr->_columnRef.reset(new ColumnRef(*_columnRef));
     }
     if(_funcExpr.get()) {
+        expr->_funcExpr.reset(new FuncExpr(*_funcExpr));
+    }
+    if(_valueExpr.get()) {
         expr->_funcExpr.reset(new FuncExpr(*_funcExpr));
     }
     return expr;
@@ -98,6 +110,7 @@ std::ostream& operator<<(std::ostream& os, ValueFactor const& ve) {
     case ValueFactor::CONST: 
         os << "CONST: " << ve._tableStar;
         break;
+    case ValueFactor::EXPR: os << "EXPR: " << *(ve._valueExpr); break;
     default: os << "UnknownFactor"; break;
     }
     if(!ve._alias.empty()) { os << " [" << ve._alias << "]"; }
@@ -122,6 +135,11 @@ void ValueFactor::render::operator()(qMaster::ValueFactor const& ve) {
         }
         break;
     case ValueFactor::CONST: _qt.append(ve._tableStar); break;
+    case ValueFactor::EXPR: 
+        { ValueExpr::render r(_qt, false);
+            r(ve._valueExpr);
+        } 
+        break;
     default: break;
     }
     if(!ve._alias.empty()) { _qt.append("AS"); _qt.append(ve._alias); }

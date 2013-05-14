@@ -35,6 +35,7 @@ namespace lsst { namespace qserv { namespace master {
 class ColumnRef;
 class QueryTemplate;
 class FuncExpr;
+class ValueExpr; // To support nested expressions.
 
 class ValueFactor; 
 typedef boost::shared_ptr<ValueFactor> ValueFactorPtr;
@@ -42,14 +43,17 @@ typedef std::list<ValueFactorPtr> ValueFactorList;
 
 class ValueFactor {
 public:
-    enum Type { COLUMNREF, FUNCTION, AGGFUNC, STAR, CONST };
+    enum Type { COLUMNREF, FUNCTION, AGGFUNC, STAR, CONST, EXPR };
 
     // May need non-const, otherwise, need new construction
     boost::shared_ptr<ColumnRef const> getColumnRef() const { return _columnRef; }
     boost::shared_ptr<ColumnRef> getColumnRef() { return _columnRef; }
     boost::shared_ptr<FuncExpr const> getFuncExpr() const { return _funcExpr; }
     boost::shared_ptr<FuncExpr> getFuncExpr() { return _funcExpr; }
+    boost::shared_ptr<ValueExpr const> getExpr() const { return _valueExpr; }
+    boost::shared_ptr<ValueExpr> getExpr() { return _valueExpr; }
     Type getType() const { return _type; }
+
     std::string const& getAlias() const { return _alias; }
     void setAlias(std::string const& a) { _alias = a; }
     std::string const& getTableStar() const { return _tableStar; }
@@ -62,6 +66,8 @@ public:
     static ValueFactorPtr newAggFactor(boost::shared_ptr<FuncExpr> fe);
     static ValueFactorPtr newFuncFactor(boost::shared_ptr<FuncExpr> fe);
     static ValueFactorPtr newConstFactor(std::string const& alnum);
+    static ValueFactorPtr newExprFactor(boost::shared_ptr<ValueExpr> ve);
+
     friend std::ostream& operator<<(std::ostream& os, ValueFactor const& ve);
     friend std::ostream& operator<<(std::ostream& os, ValueFactor const* ve);
 
@@ -71,6 +77,7 @@ private:
     Type _type;
     boost::shared_ptr<ColumnRef> _columnRef;
     boost::shared_ptr<FuncExpr> _funcExpr;
+    boost::shared_ptr<ValueExpr> _valueExpr;
     std::string _alias;
     std::string _tableStar; // Reused as const val (no tablestar)
 };

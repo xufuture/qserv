@@ -81,43 +81,53 @@ public:
     explicit AvgAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
 
     virtual AggRecord2::Ptr operator()(ValueFactor const& orig) {
-        return AggRecord2::Ptr();
-# if 0
-        AggRecord::Ptr arp(new AggRecord());
-        arp->orig = orig.clone();
-
-        // FIXME: For each term in orig.
-        boost::shared_ptr<FuncExpr> fe;
-        boost::shared_ptr<ValueFactor const> origVt(orig);
-        boost::shared_ptr<ValueExpr> ve;
-        std::string cName = _mgr.getAggName("COUNT");
-        fe = FuncExpr::newLike(*origVt->getFuncExpr(), "COUNT");
-        ve = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe));
-        ve->setAlias(cName);
-        arp->pass.push_back(ve);
-
-        std::string sName = _mgr.getAggName("SUM");
-        fe = FuncExpr::newLike(*origVt->getFuncExpr(), "SUM");
-        ve = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe));
-        ve->setAlias(sName);
-        arp->pass.push_back(ve);
         
-        boost::shared_ptr<FuncExpr> fe1;
-        boost::shared_ptr<FuncExpr> fe2;
-        fe1 = FuncExpr::newArg1("SUM", sName);
-        fe2 = FuncExpr::newArg1("SUM", cName);
+        AggRecord2::Ptr arp(new AggRecord2());
+        arp->orig = orig.clone();
+        // Pass: get each aggregation subterm.
+        boost::shared_ptr<FuncExpr> fe;
+        boost::shared_ptr<ValueFactor const> origVf(orig.clone());
+        boost::shared_ptr<ValueExpr> ve;
+        std::string cAlias = _mgr.getAggName("COUNT"); 
+        fe = FuncExpr::newLike(*origVf->getFuncExpr(), "COUNT");
+        ve = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe));
+        ve->setAlias(cAlias);
+        arp->pass.push_back(ve);
 
+        std::string sAlias = _mgr.getAggName("SUM"); 
+        fe = FuncExpr::newLike(*origVf->getFuncExpr(), "SUM");
+        ve = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe));
+        ve->setAlias(sAlias);
+        arp->pass.push_back(ve);
+
+        boost::shared_ptr<FuncExpr> feSum;
+        boost::shared_ptr<FuncExpr> feCount;
+        feSum = FuncExpr::newArg1("SUM", sAlias);
+        feCount = FuncExpr::newArg1("SUM", cAlias);
+        ve.reset(new ValueExpr());
+        ve->setAlias(orig.getAlias());
+        ValueExpr::FactorOpList& factorOps = ve->getFactorOps();
+        factorOps.clear();
+        ValueExpr::FactorOp fo;
+        fo.factor = ValueFactor::newFuncFactor(feSum);
+        fo.op = ValueExpr::DIVIDE;
+        factorOps.push_back(fo);
+        fo.factor = ValueFactor::newFuncFactor(feCount);
+        fo.op = ValueExpr::NONE;
+        factorOps.push_back(fo);
+        arp->fixup = ValueFactor::newExprFactor(ve);
+        
 #if 0        // FIXME!!
         // ArithExpr::newExpr(fe1,fe2);
-#else // Broken placeholder
+        // Broken placeholder
+
         ve = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe1));
         ve->setAlias(orig.getAlias());
         arp->fixup.push_back(ve);
 #endif
 
-        arp->origAlias = orig.getAlias();
+        // arp->origAlias = orig.getAlias(); // No longer needed
         return arp;
-#endif
     }
 };
 
