@@ -27,7 +27,8 @@
 #include "lsst/qserv/master/ColumnRefH.h"
 #include "lsst/qserv/master/ValueExpr.h" // For ValueExpr, FuncExpr
 #include "lsst/qserv/master/ValueFactor.h" // For ValueFactor
-#include "SqlSQL2TokenTypes.hpp" 
+#include "lsst/qserv/master/ParseException.h" // 
+#include "SqlSQL2TokenTypes.hpp" // antlr-generated
 
 
 // namespace modifiers
@@ -78,7 +79,7 @@ ValueExprFactory::newExpr(antlr::RefAST a) {
                 break;
             default: 
                 newFactorOp.op = ValueExpr::UNKNOWN;
-                throw std::string("unhandled factor_op type:" + tokenText(op));
+                throw ParseException("unhandled factor_op type:", op);
             }
             a = op->getNextSibling();
         } else {

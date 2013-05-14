@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2012 LSST Corporation.
+ * Copyright 2012-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -35,6 +35,7 @@
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
 #include "lsst/qserv/master/parserBase.h" // Handler base classes
 #include "lsst/qserv/master/parseTreeUtil.h" 
+#include "lsst/qserv/master/ParseException.h" 
 #include "lsst/qserv/master/BoolTermFactory.h"
 #include "lsst/qserv/master/ValueExprFactory.h"
 #include "lsst/qserv/master/HavingClause.h" // Clauses
@@ -153,15 +154,15 @@ void ModFactory::_importOrderBy(antlr::RefAST a) {
                     ob._order = OrderByTerm::DESC;
                     break;
                 default:
-                    // throw "unknown order-by syntax";
+                    throw ParseException("unknown order-by syntax", a);
                     break;
                 }
             }
             _orderBy->_addTerm(ob);
         } else if(key->getType() == SqlSQL2TokenTypes::UNSIGNED_INTEGER) {
-            // throw "positional order-by not allowed";
+            throw ParseException("positional order-by not allowed", a);
         } else {
-            // throw "unknown order-by syntax";
+            throw ParseException("unknown order-by syntax", a);
         }
         a = a->getNextSibling();
     }
@@ -187,7 +188,7 @@ void ModFactory::_importGroupBy(antlr::RefAST a) {
                 sib = sib->getNextSibling();
             }
         } else {
-            // throw an exception
+            throw ParseException("group-by import error", a);
         }
         _groupBy->_addTerm(gb);
         a = a->getNextSibling();

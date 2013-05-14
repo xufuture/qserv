@@ -29,6 +29,7 @@
 #include "lsst/qserv/master/ColumnRef.h"
 #include "lsst/qserv/master/FuncExpr.h"
 #include "lsst/qserv/master/parseTreeUtil.h"
+#include "lsst/qserv/master/ParseException.h" 
 #include "lsst/qserv/master/ValueExpr.h" // For ValueExpr
 #include "lsst/qserv/master/ValueFactor.h" // For ValueFactor
 #include "SqlSQL2TokenTypes.hpp" 
@@ -66,6 +67,8 @@ inline std::string getSiblingStringBounded(RefAST left, RefAST right) {
     }
     return p.result;
 }
+} // anonymous
+namespace lsst { namespace qserv { namespace master { 
 
 boost::shared_ptr<ValueFactor> 
 newColumnFactor(antlr::RefAST t, ColumnRefMap& cMap) {
@@ -116,8 +119,9 @@ newColumnFactor(antlr::RefAST t, ColumnRefMap& cMap) {
             case SqlSQL2TokenTypes::COMMA: continue;
             case SqlSQL2TokenTypes::RIGHT_PAREN: continue;
             default: 
-                throw std::runtime_error(
-                    "ValueFactorFactory::newColumnFactor fct spec with " + current->getText());
+                throw ParseException(
+                    "ValueFactorFactory::newColumnFactor fct spec with ", 
+                    current);
                 break;
             }
             fe->params.push_back(ValueExpr::newSimple(pvt));
@@ -128,8 +132,7 @@ newColumnFactor(antlr::RefAST t, ColumnRefMap& cMap) {
         break;
     default: 
         // FIXME, need to unify exceptions.
-        throw std::runtime_error(
-            "ValueFactorFactory::newColumnFactor with " + t->getText());
+        throw ParseException("ValueFactorFactory::newColumnFactor with ", t);
         break;
     }
     return boost::shared_ptr<ValueFactor>();
@@ -169,9 +172,6 @@ newConstFactor(RefAST t) {
     return ValueFactor::newConstFactor(qMaster::walkTreeString(t));
 }
 
-
-} // anonymous
-namespace lsst { namespace qserv { namespace master { 
 ////////////////////////////////////////////////////////////////////////
 // ValueFactorFactory implementation
 ////////////////////////////////////////////////////////////////////////

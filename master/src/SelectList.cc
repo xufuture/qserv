@@ -185,8 +185,8 @@ SelectList::_fillParams(ValueExprList& p, antlr::RefAST pnodes) {
         if(current->getType() == SqlSQL2TokenTypes::RIGHT_PAREN) { break; }
         ValueExprPtr ve = _newValueExpr(current);
         if(!ve.get()) {
-            throw std::string("Qserv internal error: Couldn't build valueExpr from " 
-                              + tokenText(current));
+            throw ParseException("Qserv internal error: ValueExpr construction",
+                                 current);
         }
         p.push_back(ve);
     }
