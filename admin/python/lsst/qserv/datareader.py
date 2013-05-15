@@ -61,12 +61,11 @@ class DataReader():
             self.dataConfig['Object']['thetaColName'] = 'ra_PS'
             self.dataConfig['Object']['phiColName'] = 'decl_PS'
             self.dataConfig['Object']['overlap'] = 0.025
-
             # TODO use in qservdataloader
             self.dataConfig['Object']['logicalPart'] = 1
             self.dataConfig['Object']['physChunking'] = 0x0021
 
-            self.dataConfig['Source']['objIdColName'] =  "sourceId"
+            self.dataConfig['Source']['objIdColName'] =  "objectId",
             self.dataConfig['Source']['thetaColName'] = 'raObject'
             self.dataConfig['Source']['phiColName'] = 'declObject'
             self.dataConfig['Source']['overlap'] = 0.025
