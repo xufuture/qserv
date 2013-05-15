@@ -35,15 +35,6 @@ substripes=%(QSERV_SUBSTRIPES)s
 stripes=%(QSERV_STRIPES)s
 emptyChunkListFile=%(QSERV_BASE_DIR)s/etc/emptyChunks.txt
 
-[table]
-#chunked=Source,ForcedSource
-#subchunked=Object
-#alloweddbs=LSST
-chunked=Source,FaintSource
-subchunked=Object
-alloweddbs=LSST,qservTest_case01_qserv,qservTest_case02_qserv,qservTest_case03_qserv
-partitionCols=Object:ra_PS,decl_PS,objectId;Source:raObject,declObject,objectId
-
 #[tuning]
 #memoryEngine=yes
 
