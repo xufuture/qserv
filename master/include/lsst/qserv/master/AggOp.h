@@ -35,7 +35,7 @@ public:
     typedef boost::shared_ptr<AggOp> Ptr;
     class Mgr;
     
-    virtual AggRecord2::Ptr operator()(ValueFactor const& orig) = 0;
+    virtual AggRecord::Ptr operator()(ValueFactor const& orig) = 0;
     virtual ~AggOp() {}
 protected:
     explicit AggOp(Mgr&m) : _mgr(m) {}
@@ -48,7 +48,7 @@ public:
 
     Mgr();
     AggOp::Ptr getOp(std::string const& name);
-    AggRecord2::Ptr applyOp(std::string const& name, ValueFactor const& orig);
+    AggRecord::Ptr applyOp(std::string const& name, ValueFactor const& orig);
     int getNextSeq() { return ++_seq; }
     std::string getAggName(std::string const& name);
     bool hasAggregate() const { return _seq > 0; };

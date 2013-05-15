@@ -34,20 +34,9 @@ namespace lsst { namespace qserv { namespace master {
 // needed to successfully perform aggregation of distributed queries.
 // lbl and meaning record the original aggregation invocation (+alias)
 // orig, pass, and fixup record SQL expressions
-class AggRecord {
+class AggRecord { // Test
 public:
     typedef boost::shared_ptr<AggRecord> Ptr;
-    std::string origAlias;
-    lsst::qserv::master::ValueExprPtr orig;
-    lsst::qserv::master::ValueExprList pass;
-    lsst::qserv::master::ValueExprList fixup;
-    std::ostream& printTo(std::ostream& os);
-    std::string getFuncParam() const;
-    std::string getLabelText() const;
-};
-class AggRecord2 { // Test
-public:
-    typedef boost::shared_ptr<AggRecord2> Ptr;
     lsst::qserv::master::ValueFactorPtr orig;
     lsst::qserv::master::ValueExprList pass;
     lsst::qserv::master::ValueFactorPtr fixup;

@@ -108,10 +108,10 @@ private:
             if(newFactor->getType() != ValueFactor::AGGFUNC) {
                 pList.push_back(ValueExpr::newSimple(newFactor));
             } else {
-                AggRecord2 r;
+                AggRecord r;
                 r.orig = newFactor;
                 assert(newFactor->getFuncExpr().get());        
-                AggRecord2::Ptr p = aMgr.applyOp(newFactor->getFuncExpr()->name,
+                AggRecord::Ptr p = aMgr.applyOp(newFactor->getFuncExpr()->name,
                                                  *newFactor);
                 assert(p.get());
                 pList.insert(pList.end(), p->pass.begin(), p->pass.end());
@@ -124,28 +124,6 @@ private:
         mList.push_back(mergeExpr);
     }
     
-    void _makeRecord(lsst::qserv::master::ValueExpr const& e) {
-        using lsst::qserv::master::ValueFactor;
-        ValueExpr::FactorOpList const& factorOps = e.getFactorOps();
-        assert(!factorOps.empty());
-        boost::shared_ptr<ValueFactor const> t = factorOps.front();
-        // Not sure how to deal with expr right now.
-        // This gets more complicated if aggregations have
-        // non-trivial expressions        
-        if(factorOps.size() > 1) {
-            throw std::string("Unexpected expr in aggregate"); }
-        if(t->getType() != ValueFactor::AGGFUNC) { 
-            pList.push_back(e.clone()); // Is this sufficient?
-            return; 
-        }
-        AggRecord r;
-        r.orig = e.clone();
-        assert(t->getFuncExpr().get());        
-        AggRecord::Ptr p = aMgr.applyOp(t->getFuncExpr()->name, *t);
-        assert(p.get());
-        pList.insert(pList.end(), p->pass.begin(), p->pass.end());
-        mList.insert(mList.end(), p->fixup.begin(), p->fixup.end());
-    }
     C& pList;
     C& mList;
     AggOp::Mgr& aMgr;

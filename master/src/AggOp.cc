@@ -44,8 +44,8 @@ class PassAggOp : public AggOp {
 public:
     explicit PassAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
 
-    virtual AggRecord2::Ptr operator()(ValueFactor const& orig) {
-        AggRecord2::Ptr arp(new AggRecord2());
+    virtual AggRecord::Ptr operator()(ValueFactor const& orig) {
+        AggRecord::Ptr arp(new AggRecord());
         arp->orig = orig.clone();
         arp->pass.push_back(ValueExpr::newSimple(orig.clone()));
         arp->fixup = orig.clone();
@@ -57,12 +57,12 @@ class CountAggOp : public AggOp {
 public:
     explicit CountAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
 
-    virtual AggRecord2::Ptr operator()(ValueFactor const& orig) {
-        AggRecord2::Ptr arp(new AggRecord2());
+    virtual AggRecord::Ptr operator()(ValueFactor const& orig) {
+        AggRecord::Ptr arp(new AggRecord());
         std::string interName = _mgr.getAggName("COUNT");
         arp->orig = orig.clone();
         boost::shared_ptr<FuncExpr> fe;
-        boost::shared_ptr<ValueFactor> vt;
+        boost::shared_ptr<ValueFactor> vf;
         boost::shared_ptr<ValueExpr> passExpr;
         
         passExpr = ValueExpr::newSimple(orig.clone());
@@ -70,19 +70,52 @@ public:
         arp->pass.push_back(passExpr);
 
         fe = FuncExpr::newArg1("SUM", interName);
-        vt = ValueFactor::newFuncFactor(fe);
+        vf = ValueFactor::newFuncFactor(fe);
         // orig alias handled by caller.
-        arp->fixup = vt;
+        arp->fixup = vf;
         return arp;
     }
 };
+class AccumulateOp : public AggOp {
+public:
+    typedef enum {MIN, MAX, SUM} Type;
+    explicit AccumulateOp(AggOp::Mgr& mgr, Type t) : AggOp(mgr) {
+        switch(t) {
+        case MIN: accName = "MIN"; break;
+        case MAX: accName = "MAX"; break;
+        case SUM: accName = "SUM"; break;            
+        }
+    }
+
+    virtual AggRecord::Ptr operator()(ValueFactor const& orig) {
+        AggRecord::Ptr arp(new AggRecord());
+        std::string interName = _mgr.getAggName(accName);
+        arp->orig = orig.clone();
+        boost::shared_ptr<FuncExpr> fe;
+        boost::shared_ptr<ValueFactor> vf;
+        boost::shared_ptr<ValueExpr> passExpr;
+        
+        passExpr = ValueExpr::newSimple(orig.clone());
+        passExpr->setAlias(interName);
+        arp->pass.push_back(passExpr);
+
+        fe = FuncExpr::newArg1(accName, interName);
+        vf = ValueFactor::newFuncFactor(fe);
+        // orig alias handled by caller.
+        arp->fixup = vf;
+        return arp;
+    }
+    std::string accName;
+};
+
+
 class AvgAggOp : public AggOp {
 public:
     explicit AvgAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
 
-    virtual AggRecord2::Ptr operator()(ValueFactor const& orig) {
+    virtual AggRecord::Ptr operator()(ValueFactor const& orig) {
         
-        AggRecord2::Ptr arp(new AggRecord2());
+        AggRecord::Ptr arp(new AggRecord());
         arp->orig = orig.clone();
         // Pass: get each aggregation subterm.
         boost::shared_ptr<FuncExpr> fe;
@@ -116,17 +149,6 @@ public:
         fo.op = ValueExpr::NONE;
         factorOps.push_back(fo);
         arp->fixup = ValueFactor::newExprFactor(ve);
-        
-#if 0        // FIXME!!
-        // ArithExpr::newExpr(fe1,fe2);
-        // Broken placeholder
-
-        ve = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe1));
-        ve->setAlias(orig.getAlias());
-        arp->fixup.push_back(ve);
-#endif
-
-        // arp->origAlias = orig.getAlias(); // No longer needed
         return arp;
     }
 };
@@ -139,9 +161,9 @@ AggOp::Mgr::Mgr() {
     AggOp::Ptr pass(new PassAggOp(*this));
     _map["COUNT"].reset(new CountAggOp(*this));
     _map["AVG"].reset(new AvgAggOp(*this));
-    _map["MAX"] = pass;
-    _map["MIN"] = pass;
-    _map["SUM"] = pass;
+    _map["MAX"].reset(new AccumulateOp(*this, AccumulateOp::MAX));
+    _map["MIN"].reset(new AccumulateOp(*this, AccumulateOp::MIN));
+    _map["SUM"].reset(new AccumulateOp(*this, AccumulateOp::SUM));
     _seq = 0; // Note: accessor return ++_seq
 }
 
@@ -152,7 +174,7 @@ AggOp::Mgr::getOp(std::string const& name) {
     else return AggOp::Ptr();
 }
 
-AggRecord2::Ptr 
+AggRecord::Ptr 
 AggOp::Mgr::applyOp(std::string const& name, ValueFactor const& orig) {
     std::string n(name);
     std::transform(name.begin(), name.end(), n.begin(), ::toupper);
