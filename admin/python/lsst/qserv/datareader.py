@@ -58,16 +58,17 @@ class DataReader():
 
             # for QMS
             self.dataConfig['Object']['objIdColName'] =  "objectId",
-            self.dataConfig['Object']['thetaColName'] = 'ra_PS'
-            self.dataConfig['Object']['phiColName'] = 'decl_PS'
+            self.dataConfig['Object']['thetaColName'] = 'decl_PS'
+            self.dataConfig['Object']['phiColName'] = 'ra_PS'
             self.dataConfig['Object']['overlap'] = 0.025
             # TODO use in qservdataloader
             self.dataConfig['Object']['logicalPart'] = 1
             self.dataConfig['Object']['physChunking'] = 0x0021
 
             self.dataConfig['Source']['objIdColName'] =  "objectId",
-            self.dataConfig['Source']['thetaColName'] = 'raObject'
-            self.dataConfig['Source']['phiColName'] = 'declObject'
+            # raObject and declObject management ?
+            self.dataConfig['Source']['thetaColName'] = 'declObject'
+            self.dataConfig['Source']['phiColName'] = 'raObject'
             self.dataConfig['Source']['overlap'] = 0.025
             self.dataConfig['Source']['logicalPart'] = 1
             self.dataConfig['Source']['physChunking'] = 0x0021
