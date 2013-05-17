@@ -1,3 +1,4 @@
+
 from lsst.qserv.admin import commons
 import logging
 import os
@@ -34,8 +35,6 @@ class DataReader():
 
             self.dataConfig['partitionned-tables'] = ["Object", "Source"]
 
-            self.dataConfig['num-stripes'] = 85
-            self.dataConfig['num-substripes'] = 12
 
             """ Fill column position (zero-based index) """
             self.dataConfig['Object']=dict()
@@ -57,6 +56,8 @@ class DataReader():
             self.dataConfig['Source']['chunk-column-id'] = None
 
             # for QMS
+            self.dataConfig['num-stripes'] = 85
+            self.dataConfig['num-substripes'] = 12
             self.dataConfig['Object']['objIdColName'] =  "objectId",
             self.dataConfig['Object']['thetaColName'] = 'decl_PS'
             self.dataConfig['Object']['phiColName'] = 'ra_PS'
@@ -97,6 +98,27 @@ class DataReader():
             self.dataConfig['Source']['decl-column'] = 33
              # chunkId and subChunkId will be added
             self.dataConfig['Source']['chunk-column-id'] = None
+            
+            # for QMS
+            self.dataConfig['num-stripes'] = 85
+            self.dataConfig['num-substripes'] = 12
+            self.dataConfig['Object']['objIdColName'] =  "objectId",
+            self.dataConfig['Object']['thetaColName'] = 'decl_PS'
+            self.dataConfig['Object']['phiColName'] = 'ra_PS'
+            self.dataConfig['Object']['overlap'] = 0.025
+            # TODO use in qservdataloader
+            self.dataConfig['Object']['logicalPart'] = 1
+            self.dataConfig['Object']['physChunking'] = 0x0021
+
+            self.dataConfig['Source']['objIdColName'] =  "objectId",
+            # raObject and declObject management ?
+            self.dataConfig['Source']['thetaColName'] = 'declObject'
+            self.dataConfig['Source']['phiColName'] = 'raObject'
+            self.dataConfig['Source']['overlap'] = 0.025
+            self.dataConfig['Source']['logicalPart'] = 1
+            self.dataConfig['Source']['physChunking'] = 0x0021
+
+            self.log.debug("Data configuration : %s" % self.dataConfig)
 
         # for W13
         elif self.dataName=="case03":
