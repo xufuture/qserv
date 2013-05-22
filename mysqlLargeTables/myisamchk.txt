@@ -1,0 +1,18 @@
+/usr/local//mysql/bin/mysqld_safe&
+nohup time /usr/local/mysql/bin/mysql -u root w13 -e "ALTER TABLE RunDeepForcedSource DISABLE KEYS"
+/usr/local/mysql/bin/mysql -u root w13 < W13-params.sql 
+killall mysqld
+
+time /usr/local/mysql/bin/myisamchk
+   -v -t <tmp_dir>
+   --force
+   -o
+   --update-state
+   -p
+   --key_buffer_size=8M
+   --sort_buffer_size= <~1/2 of your RAM available>
+   --read_buffer_size=16M
+   --write_buffer_size=16M
+   <mysql data dir>/<db>/RunDeepForcedSource.MYI 
+
+nohup time /usr/local/mysql/bin/myisamchk -v -t /data/qserv/tmp/ --force -o --update-state -p --key_buffer_size=8M --sort_buffer_size=32G --read_buffer_size=16M  --write_buffer_size=16M /data/qserv/mysql/w13/RunDeepForcedSource.MYI
