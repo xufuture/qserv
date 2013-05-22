@@ -1,0 +1,2 @@
+fails with 8 threads and by load data/indexing at each x??
+
