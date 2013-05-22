@@ -1,0 +1,200 @@
+time /usr/local/mysql/bin/mysql -u root -e "ALTER TABLE RunDeepForcedSource DISABLE KEYS" w13
+stdout and stderr : 
+stdout and stderr : real	0m0.009s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaa' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	47m51.141s
+stdout and stderr : user	0m0.005s
+stdout and stderr : sys	0m0.002s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xab' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	48m45.323s
+stdout and stderr : user	0m0.005s
+stdout and stderr : sys	0m0.001s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xac' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	48m46.463s
+stdout and stderr : user	0m0.002s
+stdout and stderr : sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xad' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	48m43.124s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xae' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	50m30.961s
+stdout and stderr : user	0m0.006s
+stdout and stderr : sys	0m0.001s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaf' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	50m34.120s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xag' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m40.558s
+stdout and stderr : user	0m0.002s
+stdout and stderr : sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xah' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	48m59.334s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xai' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m28.420s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaj' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m9.512s
+stdout and stderr : user	0m0.002s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xak' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	48m50.037s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xal' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m25.489s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xam' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m53.594s
+stdout and stderr : user	0m0.001s
+stdout and stderr : sys	0m0.006s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xan' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m25.760s
+stdout and stderr : user	0m0.004s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xao' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	48m57.172s
+stdout and stderr : user	0m0.004s
+stdout and stderr : sys	0m0.002s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xap' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	50m11.800s
+stdout and stderr : user	0m0.006s
+stdout and stderr : sys	0m0.000s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaq' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m42.953s
+stdout and stderr : user	0m0.005s
+stdout and stderr : sys	0m0.002s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xar' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	50m11.991s
+stdout and stderr : user	0m0.005s
+stdout and stderr : sys	0m0.001s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xas' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m37.320s
+stdout and stderr : user	0m0.004s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xat' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	51m0.387s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xau' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	50m20.365s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xav' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m49.553s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaw' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	50m46.129s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xax' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m54.681s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xay' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m47.864s
+stdout and stderr : user	0m0.005s
+stdout and stderr : sys	0m0.002s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaz' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	50m18.682s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xba' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m10.316s
+stdout and stderr : user	0m0.005s
+stdout and stderr : sys	0m0.002s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbb' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m18.533s
+stdout and stderr : user	0m0.004s
+stdout and stderr : sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbc' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	48m59.770s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbd' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m33.598s
+stdout and stderr : user	0m0.004s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbe' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m34.778s
+stdout and stderr : user	0m0.004s
+stdout and stderr : sys	0m0.002s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbf' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	50m2.376s
+stdout and stderr : user	0m0.005s
+stdout and stderr : sys	0m0.001s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbg' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m29.380s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.005s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbh' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m23.083s
+stdout and stderr : user	0m0.002s
+stdout and stderr : sys	0m0.005s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbi' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m43.517s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbj' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	50m9.409s
+stdout and stderr : user	0m0.004s
+stdout and stderr : sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbk' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	50m39.036s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbl' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	49m27.521s
+stdout and stderr : user	0m0.002s
+stdout and stderr : sys	0m0.005s
+time /usr/local/mysql/bin/mysql -u root -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xbm' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr : 
+stdout and stderr : real	34m34.727s
+stdout and stderr : user	0m0.003s
+stdout and stderr : sys	0m0.004s

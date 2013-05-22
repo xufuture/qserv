@@ -1,0 +1,235 @@
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaa' INTO TABLE RunDeepForcedSource" w13
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaa' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaa' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (1 hour 18 min 26.15 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	78m26.883s
+stdout and stderr from pipe: user	0m0.002s
+stdout and stderr from pipe: sys	0m0.006s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xab' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xab' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 10 min 51.05 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	190m52.855s
+stdout and stderr from pipe: user	0m0.002s
+stdout and stderr from pipe: sys	0m0.006s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xac' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xac' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 19 min 42.63 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	199m44.535s
+stdout and stderr from pipe: user	0m0.002s
+stdout and stderr from pipe: sys	0m0.005s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xad' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xad' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 23 min 39.16 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	203m41.091s
+stdout and stderr from pipe: user	0m0.004s
+stdout and stderr from pipe: sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xae' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xae' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 24 min 51.71 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	204m53.658s
+stdout and stderr from pipe: user	0m0.004s
+stdout and stderr from pipe: sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaf' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaf' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 26 min 49.99 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	206m51.951s
+stdout and stderr from pipe: user	0m0.002s
+stdout and stderr from pipe: sys	0m0.006s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xag' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xag' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 28 min 26.60 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	208m28.578s
+stdout and stderr from pipe: user	0m0.005s
+stdout and stderr from pipe: sys	0m0.002s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xah' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xah' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 30 min 20.60 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	210m22.584s
+stdout and stderr from pipe: user	0m0.005s
+stdout and stderr from pipe: sys	0m0.005s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xai' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xai' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 32 min 3.91 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	212m5.920s
+stdout and stderr from pipe: user	0m0.005s
+stdout and stderr from pipe: sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaj' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaj' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 32 min 55.61 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	212m57.632s
+stdout and stderr from pipe: user	0m0.003s
+stdout and stderr from pipe: sys	0m0.005s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xak' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xak' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 30 min 38.75 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	210m40.748s
+stdout and stderr from pipe: user	0m0.005s
+stdout and stderr from pipe: sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xal' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xal' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 32 min 30.30 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	212m32.346s
+stdout and stderr from pipe: user	0m0.007s
+stdout and stderr from pipe: sys	0m0.003s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xam' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xam' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 33 min 14.84 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	213m16.875s
+stdout and stderr from pipe: user	0m0.004s
+stdout and stderr from pipe: sys	0m0.004s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xan' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xan' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 35 min 30.48 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	215m32.538s
+stdout and stderr from pipe: user	0m0.002s
+stdout and stderr from pipe: sys	0m0.006s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xao' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xao' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 35 min 20.94 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	215m22.995s
+stdout and stderr from pipe: user	0m0.003s
+stdout and stderr from pipe: sys	0m0.005s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xap' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xap' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 32 min 41.29 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	212m43.330s
+stdout and stderr from pipe: user	0m0.003s
+stdout and stderr from pipe: sys	0m0.006s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaq' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xaq' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Query OK, 100000000 rows affected, 65535 warnings (3 hours 32 min 42.64 sec)
+stdout and stderr from pipe: Records: 100000000  Deleted: 0  Skipped: 0  Warnings: 110065408
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	212m44.677s
+stdout and stderr from pipe: user	0m0.002s
+stdout and stderr from pipe: sys	0m0.006s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xar' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: ./load-data.sh: line 12: 29596 Terminated              /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xar' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: 
+stdout and stderr from pipe: real	195m54.554s
+stdout and stderr from pipe: user	0m0.008s
+stdout and stderr from pipe: sys	0m0.002s
+time /usr/local/mysql/bin/mysql -u root --progress-reports -vvv -e "LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xas' INTO TABLE RunDeepForcedSource" w13
+stdout and stderr from pipe: ERROR 1053 (08S01) at line 1: Server shutdown in progress
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: LOAD DATA INFILE '/data/LSST/Winter2013/RunDeepForcedSource/xas' INTO TABLE RunDeepForcedSource
+stdout and stderr from pipe: --------------
+stdout and stderr from pipe: 
+stdout and stderr from pipe: Bye
