@@ -1,3 +1,10 @@
+# WARNING : index file (RunDeepForcedSource.MYI) size differ for a few GB between this procedure (258GB) and the Mysqld one (270GB)
+
+# WITH COMMAND : 
+# nohup time /usr/local/mysql/bin/myisamchk -v -t /data/qserv/tmp/ --force -o --update-state -p --key_buffer_size=8M --sort_buffer_size=32G --read_buffer_size=16M  --write_buffer_size=16M /data/qserv/mysql/w13/RunDeepForcedSource.MYI
+#
+# ---------------------------
+
 - parallel recovering (with sort) MyISAM-table '/data/qserv/mysql/w13/RunDeepForcedSource.MYI'
 Data records: 3870141868
 - Fixing index 1
