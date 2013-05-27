@@ -1,0 +1,29 @@
+# WITH COMMAND : 
+# nohup time /usr/local/mysql/bin/myisamchk -v -t /data/qserv/tmp/ --force -o --update-state -p --key_buffer_size=8M --sort_buffer_size=32G --read_buffer_size=16M  --write_buffer_size=16M /data/qserv/mysql/w13/RunDeepForcedSource.MYI
+#
+# ---------------------------
+
+- parallel recovering (with sort) MyISAM-table '/data/qserv/mysql/w13/RunDeepForcedSource.MYI'
+Data records: 3870141868
+- Fixing index 1
+- Fixing index 2
+- Fixing index 3
+- Fixing index 4
+- Fixing index 5
+- Fixing index 6
+- Fixing index 7
+- Fixing index 8
+myisamchk: error: myisam_sort_buffer_size is too small
+MyISAM-table '/data/qserv/mysql/w13/RunDeepForcedSource.MYI' is not fixed because of errors
+Try fixing it by using the --safe-recover (-o), the --force (-f) option or by not using the --quick (-q) flag
+- recovering (with sort) MyISAM-table '/data/qserv/mysql/w13/RunDeepForcedSource.MYI'
+Data records: 0
+- Fixing index 1
+  - Searching for keys, allocating buffer for 1561806282 keys
+  - Last merge and dumping keys
+/usr/local/mysql/bin/myisamchk: Unexpected eof found when reading file '/data/qserv/tmp/SToD5LTi' (Errcode: 175)
+myisamchk: error: Couldn't fix table with create_index_by_sort(). Error: 175
+MyISAM-table '/data/qserv/mysql/w13/RunDeepForcedSource.MYI' is not fixed because of errors
+Try fixing it by using the --safe-recover (-o), the --force (-f) option or by not using the --quick (-q) flag
+4370.57user 3486.18system 3:08:55elapsed 69%CPU (0avgtext+0avgdata 134355136maxresident)k
+3715697898inputs+3817229816outputs (6major+6772265minor)pagefaults 0swaps

@@ -1,0 +1,28 @@
+- parallel recovering (with sort) MyISAM-table '/data/qserv/mysql/w13/RunDeepForcedSource.MYI'
+Data records: 3870141868
+- Fixing index 1
+- Fixing index 2
+- Fixing index 3
+- Fixing index 4
+- Fixing index 5
+- Fixing index 6
+- Fixing index 7
+- Fixing index 8
+Key 1 - Allocating buffer for 195225742 keys
+Key 2 - Allocating buffer for 186737664 keys
+Key 3 - Allocating buffer for 186737664 keys
+Key 4 - Allocating buffer for 186737664 keys
+Key 5 - Allocating buffer for 195225742 keys
+Key 6 - Allocating buffer for 238609248 keys
+Key 7 - Allocating buffer for 195225742 keys
+Key 8 - Allocating buffer for 186737664 keys
+Key 1  - Last merge and dumping keys
+Key 2  - Last merge and dumping keys
+Key 3  - Last merge and dumping keys
+Key 4  - Last merge and dumping keys
+Key 5  - Last merge and dumping keys
+Key 6  - Last merge and dumping keys
+Key 7  - Last merge and dumping keys
+Key 8  - Last merge and dumping keys
+43055.72user 16049.32system 11:28:32elapsed 143%CPU (0avgtext+0avgdata 134453104maxresident)k
+4376329776inputs+4916503096outputs (33major+7158117minor)pagefaults 0swaps
