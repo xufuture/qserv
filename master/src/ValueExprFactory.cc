@@ -43,7 +43,7 @@ namespace master {
 ////////////////////////////////////////////////////////////////////////
 // ValueExprFactory implementation
 ////////////////////////////////////////////////////////////////////////
-ValueExprFactory::ValueExprFactory(boost::shared_ptr<ColumnRefMap> cMap) 
+ValueExprFactory::ValueExprFactory(boost::shared_ptr<ColumnRefNodeMap> cMap) 
     : _valueFactorFactory(new ValueFactorFactory(cMap)) {
 }
 

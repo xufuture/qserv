@@ -39,7 +39,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 // Qserv
-#include "lsst/qserv/master/ColumnRefList.h"
+#include "lsst/qserv/master/ColumnRefMap.h"
 #include "lsst/qserv/master/BoolTerm.h"
 #include "lsst/qserv/master/ValueExpr.h"
 
@@ -69,13 +69,11 @@ public:
 /// WhereClause is a SQL WHERE containing QsRestrictors and a BoolTerm tree.
 class WhereClause {
 public:
-    WhereClause() : _columnRefList(new ColumnRefList()) {}
+    WhereClause() {} 
     ~WhereClause() {}
     class ValueExprIter; // iteratable interface.
     friend class ValueExprIter; 
 
-    boost::shared_ptr<ColumnRefList> getColumnRefList() { 
-        return _columnRefList; }
     boost::shared_ptr<QsRestrictor::List const> getRestrs() const {
         return _restrs; }
     ValueExprIter vBegin();
@@ -94,7 +92,6 @@ private:
     friend class WhereFactory;
     
     std::string _original;
-    boost::shared_ptr<ColumnRefList> _columnRefList;
     boost::shared_ptr<BoolTerm> _tree;
     boost::shared_ptr<QsRestrictor::List> _restrs;
 

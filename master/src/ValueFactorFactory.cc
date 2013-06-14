@@ -46,7 +46,7 @@ using qMaster::ValueExpr;
 using qMaster::FuncExpr;
 using qMaster::ValueFactorFactory;
 using qMaster::ColumnRef;
-using qMaster::ColumnRefMap;
+using qMaster::ColumnRefNodeMap;
 using qMaster::tokenText;
 using antlr::RefAST;
 
@@ -76,7 +76,7 @@ inline std::string getSiblingStringBounded(RefAST left, RefAST right) {
 namespace lsst { namespace qserv { namespace master { 
 
 boost::shared_ptr<ValueFactor> 
-newColumnFactor(antlr::RefAST t, ColumnRefMap& cMap) {
+newColumnFactor(antlr::RefAST t, ColumnRefNodeMap& cMap) {
     RefAST child = t->getFirstChild();
     if(t->getType() == SqlSQL2TokenTypes::FACTOR) {
         t = child;
@@ -91,11 +91,12 @@ newColumnFactor(antlr::RefAST t, ColumnRefMap& cMap) {
     case SqlSQL2TokenTypes::REGULAR_ID: 
         // make column ref. (no further children)
         {
-            ColumnRefMap::Map::const_iterator it = cMap.map.find(t);
+            ColumnRefNodeMap::Map::const_iterator it = cMap.map.find(t);
             if(it == cMap.map.end()) {
                 throw std::logic_error("Expected to find REGULAR_ID in table map");
             }
-            ColumnRefMap::Ref r = it->second;
+            ColumnRefNodeMap::Ref r = it->second;
+
             boost::shared_ptr<ColumnRef> newColumnRef;
             newColumnRef.reset(new qMaster::ColumnRef(tokenText(r.db),
                                                       tokenText(r.table),
@@ -148,7 +149,7 @@ newColumnFactor(antlr::RefAST t, ColumnRefMap& cMap) {
 }
 
 boost::shared_ptr<ValueFactor> 
-newSetFctSpec(RefAST expr, ColumnRefMap& cMap) {
+newSetFctSpec(RefAST expr, ColumnRefNodeMap& cMap) {
     boost::shared_ptr<FuncExpr> fe(new FuncExpr());
     //    std::cout << "set_fct_spec " << walkTreeString(expr) << std::endl;
     RefAST nNode = expr->getFirstChild();
@@ -190,8 +191,8 @@ newConstFactor(RefAST t) {
 ////////////////////////////////////////////////////////////////////////
 // ValueFactorFactory implementation
 ////////////////////////////////////////////////////////////////////////
-ValueFactorFactory::ValueFactorFactory(boost::shared_ptr<ColumnRefMap> cMap) 
-    : _columnRefMap(cMap) {
+ValueFactorFactory::ValueFactorFactory(boost::shared_ptr<ColumnRefNodeMap> cMap) 
+    : _columnRefNodeMap(cMap) {
 }
 
 
@@ -200,9 +201,13 @@ ValueFactorFactory::ValueFactorFactory(boost::shared_ptr<ColumnRefMap> cMap)
 /* TERM   (TERM_OP TERM)*  */
 boost::shared_ptr<ValueFactor> 
 ValueFactorFactory::newFactor(antlr::RefAST a) {
+<<<<<<< HEAD
     if(!_columnRefMap) {
         throw std::logic_error("ValueFactorFactory missing _columnRefMap");
     }
+=======
+    assert(_columnRefNodeMap.get());
+>>>>>>> master: Clean up: rename ColumnRefMap->ColumnRefNodeMap and ColumnRefList->ColumnRefMap
     boost::shared_ptr<ValueFactor> vt;
     int eType = a->getType();
     if(a->getType() == SqlSQL2TokenTypes::FACTOR) {
@@ -212,10 +217,10 @@ ValueFactorFactory::newFactor(antlr::RefAST a) {
     switch(a->getType()) {
     case SqlSQL2TokenTypes::REGULAR_ID:
     case SqlSQL2TokenTypes::FUNCTION_SPEC:
-        vt = newColumnFactor(a, *_columnRefMap);
+        vt = newColumnFactor(a, *_columnRefNodeMap);
         break;
     case SqlSQL2TokenTypes::SET_FCT_SPEC:
-        vt = newSetFctSpec(a, *_columnRefMap);
+        vt = newSetFctSpec(a, *_columnRefNodeMap);
         break;
     default: 
         vt = newConstFactor(a);

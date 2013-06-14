@@ -32,17 +32,17 @@
 
 namespace lsst { namespace qserv { namespace master {
 // Forward
-class ColumnRefMap;
+class ColumnRefNodeMap;
 class ValueFactor;
 
 /// ValueFactorFactory constructs ValueFactor instances from antlr nodes.
 class ValueFactorFactory {
 public:
-    ValueFactorFactory(boost::shared_ptr<ColumnRefMap> cMap);
+    ValueFactorFactory(boost::shared_ptr<ColumnRefNodeMap> cMap);
     boost::shared_ptr<ValueFactor> newFactor(antlr::RefAST a);
                                          
 private:
-    boost::shared_ptr<ColumnRefMap> _columnRefMap;
+    boost::shared_ptr<ColumnRefNodeMap> _columnRefNodeMap;
 };
 
 }}} // namespace lsst::qserv::master

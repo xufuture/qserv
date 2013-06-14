@@ -71,9 +71,9 @@ using qMaster::SelectStmt;
 SelectFactory::SelectFactory() 
     : _columnAliases(new ParseAliasMap()),
       _tableAliases(new ParseAliasMap()),
-      _columnRefMap(new ColumnRefMap()),
+      _columnRefNodeMap(new ColumnRefNodeMap()),
       _fFactory(new FromFactory(_tableAliases)),
-      _vFactory(new ValueExprFactory(_columnRefMap)) {
+      _vFactory(new ValueExprFactory(_columnRefNodeMap)) {
 
     _slFactory.reset(new SelectListFactory(_columnAliases, _vFactory));
     _mFactory.reset(new ModFactory(_vFactory));
@@ -106,7 +106,7 @@ SelectFactory::getStatement() {
 void 
 SelectFactory::_attachShared(SqlSQL2Parser& p) {
     boost::shared_ptr<ColumnRefH> crh(new ColumnRefH());
-    crh->setListener(_columnRefMap);
+    crh->setListener(_columnRefNodeMap);
     p._columnRefHandler = crh;
 }
 
