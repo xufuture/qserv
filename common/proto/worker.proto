@@ -31,6 +31,7 @@ message TaskMsg {
     // Future: might have multiple db/chunk dependencies.
     optional string db = 2; 
     optional int32 chunkid = 3;
+    repeated string scanTables = 4;
     message Subchunk {
         required string database = 1; // database
         repeated string table = 2; // subchunked tables
@@ -48,7 +49,8 @@ message TaskMsg {
         // in which case the table contains a concatenation of the 
         // contributing fragments' rows.
     }
-    repeated Fragment fragment = 4;
+    repeated Fragment fragment = 5;
+    
 }
 
 // Result message received from worker
