@@ -52,6 +52,8 @@ public:
     std::string anonymousTable; ///< Implicit table context
     std::string username; ///< unused, but reserved.
 
+    std::list<std::string> scanTables; // Tables scanned (for shared scans)
+
     // Owned QueryMapping and query restrictors
     boost::shared_ptr<QueryMapping> queryMapping;
     boost::shared_ptr<RestrList> restrictors;

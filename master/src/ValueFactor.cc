@@ -91,9 +91,29 @@ ValueFactor::newExprFactor(boost::shared_ptr<ValueExpr> ve) {
     return factor;
 }
 
+void ValueFactor::findColumnRefs(ColumnRef::List& list) {
+    switch(_type) {
+    case COLUMNREF:
+        list.push_back(_columnRef);
+        break;
+    case FUNCTION: 
+    case AGGFUNC:        
+        _funcExpr->findColumnRefs(list);
+        break;
+    case STAR:
+    case CONST:
+        break;
+    case EXPR:
+        _valueExpr->findColumnRefs(list);
+        break;
+    default: break;
+    }
+}
+
 ValueFactorPtr ValueFactor::clone() const{
     ValueFactorPtr expr(new ValueFactor(*this));
     // Clone refs.
+    // FIXME: not sure these are deep copies.
     if(_columnRef.get()) {
         expr->_columnRef.reset(new ColumnRef(*_columnRef));
     }

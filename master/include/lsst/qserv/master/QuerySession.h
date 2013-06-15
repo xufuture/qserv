@@ -82,8 +82,9 @@ public:
     Iter cQueryEnd();
     
     // For test harnesses.
-    struct Test { int cfgNum; };
-    explicit QuerySession(Test const& t) {_initContext();}
+    struct Test { int cfgNum; int metaSession; };
+    explicit QuerySession(Test const& t) 
+        : _metaCacheSession(t.metaSession) { _initContext(); }
 
 private:
     typedef std::list<QueryPlugin::Ptr> PluginList;

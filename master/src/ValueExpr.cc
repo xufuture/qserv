@@ -92,6 +92,14 @@ ValueExprPtr ValueExpr::newSimple(boost::shared_ptr<ValueFactor> vt)  {
 ValueExpr::ValueExpr() {
 }
 
+void ValueExpr::findColumnRefs(ColumnRef::List& list) {
+    for(FactorOpList::iterator i=_factorOps.begin();
+        i != _factorOps.end(); ++i) {
+        assert(i->factor); // FactorOps should never have null ValueFactors
+        i->factor->findColumnRefs(list); 
+    }    
+}
+
 ValueExprPtr ValueExpr::clone() const {
     // First, make a shallow copy
     ValueExprPtr expr(new ValueExpr(*this)); 

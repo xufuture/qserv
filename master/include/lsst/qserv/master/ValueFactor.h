@@ -32,6 +32,7 @@
 #include <list>
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include "lsst/qserv/master/ColumnRef.h"
 
 namespace lsst { 
 namespace qserv { 
@@ -65,6 +66,8 @@ public:
     void setAlias(std::string const& a) { _alias = a; }
     std::string const& getTableStar() const { return _tableStar; }
     void setTableStar(std::string const& a) { _tableStar = a; }
+
+    void findColumnRefs(ColumnRef::List& list);
 
     ValueFactorPtr clone() const;
 

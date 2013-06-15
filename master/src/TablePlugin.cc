@@ -127,6 +127,7 @@ private:
 } // anonymous
 
 namespace lsst { namespace qserv { namespace master {
+typedef std::list<std::string> StringList;
 
 ////////////////////////////////////////////////////////////////////////
 // fixExprAlias is a functor that acts on ValueExpr objects and
@@ -180,10 +181,12 @@ private:
         ref.db.assign("");
         ref.table.assign(newAlias);
     }
+
     inline void _patchFuncExpr(FuncExpr& fe) {
         std::for_each(fe.params.begin(), fe.params.end(), 
                       fixExprAlias(_reverseAlias));
     }
+
     inline void _patchStar(ValueFactor& vt) {
         // TODO: No support for <db>.<table>.* in framework
         // Only <table>.* is supported.
@@ -193,12 +196,12 @@ private:
         else { vt.setTableStar(newAlias); }
     }
 
-
     inline std::string _getAlias(std::string const& db,
                                  std::string const& table) {
         //std::cout << "lookup: " << db << "." << table << std::endl;
         return _reverseAlias.get(db, table);
     }
+
     ReverseAlias& _reverseAlias;
 };
 
@@ -216,9 +219,11 @@ public:
 
     virtual void prepare() {}
 
-    virtual void applyLogical(SelectStmt& stmt, QueryContext&);
+    virtual void applyLogical(SelectStmt& stmt, QueryContext& context);
     virtual void applyPhysical(QueryPlugin::Plan& p, QueryContext& context);
 private:
+    StringList _findScanTables(SelectStmt& stmt, QueryContext& context);
+    
     std::string _dominantDb;
 };
 
@@ -304,6 +309,7 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     // order by
     // having        
     context.dominantDb = _dominantDb;
+    context.scanTables = _findScanTables(stmt, context);
 }
 
 void
@@ -355,8 +361,70 @@ TablePlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext& context) {
     //
     // For each tableref, modify to replace tablename with
     // substitutable.
-    
-
-
 }
+
+bool testIfSecondary(BoolTerm& t) {
+    std::cout << "Testing "; 
+    t.putStream(std::cout) << std::endl;
+    return false;
+}
+
+StringList
+TablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
+    // Might be better as a separate plugin
+
+    // All tables of a query are scan tables if the statement both:
+    // a. has non-trivial spatial scope (all chunks? >1 chunk?)
+    // b. requires column reading
+    
+    // a. means that the there is a spatial scope specification in the
+    // WHERE clause or none at all (everything matches). However, an
+    // objectId specification counts as a trivial spatial scope,
+    // because it evaluates to a specific set of subchunks. We limit
+    // the objectId specification, but the limit can be large--each
+    // concrete objectId incurs at most the cost of one subchunk.
+    
+    // b. means that columns are needed to process the query. 
+    // In the SelectList, count(*) does not need columns, but *
+    // does. So do ra_PS and iFlux_SG*10
+    // In the WhereClause, this means that we have expressions that
+    // require columns to evaluate.
+
+    // When there is no WHERE clause that requires column reading,
+    // the presence of a small-valued LIMIT should be enough to
+    // de-classify a query as a scanning query.
+
+    bool hasSpatialSelect = false;
+    bool hasWhereColumnRef = false;
+    bool hasSecondaryKey = false;
+
+    if(stmt.hasWhereClause()) {
+        WhereClause& wc = stmt.getWhereClause();
+        // Check WHERE for spatial select
+        boost::shared_ptr<QsRestrictor::List const> restrs = wc.getRestrs();
+        hasSpatialSelect = restrs && !restrs->empty();
+
+        // Look for column refs
+        boost::shared_ptr<ColumnRefMap::List const> crl = wc.getColumnRefs();
+        if(crl) {
+            hasWhereColumnRef = !crl->empty();
+            boost::shared_ptr<AndTerm> aterm = wc.getRootAndTerm();
+            if(aterm) {
+                // Look for secondary key matches
+                typedef BoolTerm::PtrList PtrList;
+                for(PtrList::iterator i = aterm->iterBegin();
+                    i != aterm->iterEnd(); ++i) {
+                    if(testIfSecondary(**i)) {
+                        hasSecondaryKey = true;
+                        break;
+                    }
+                }
+            }
+        }
+        
+    }
+
+    return StringList(); // FIXME
+}
+
 }}} // namespace lsst::qserv::master

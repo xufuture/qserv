@@ -76,6 +76,12 @@ public:
 
     boost::shared_ptr<QsRestrictor::List const> getRestrs() const {
         return _restrs; }
+    boost::shared_ptr<BoolTerm const> getRootTerm() const {
+        return _tree;
+    }
+    boost::shared_ptr<ColumnRefMap::List const> getColumnRefs() const;
+    boost::shared_ptr<AndTerm> getRootAndTerm();
+    
     ValueExprIter vBegin();
     ValueExprIter vEnd();
     
@@ -83,7 +89,7 @@ public:
     void renderTo(QueryTemplate& qt) const;
     boost::shared_ptr<WhereClause> copyDeep() const;
     boost::shared_ptr<WhereClause> copySyntax();
-
+    
     void resetRestrs();
     void prependAndTerm(boost::shared_ptr<BoolTerm> t);
     

@@ -47,6 +47,9 @@ public:
     virtual ~ColumnRefMap() {}
     virtual void acceptColumnRef(antlr::RefAST d, antlr::RefAST t, 
                                  antlr::RefAST c);
+
+    List exportList();
+
     boost::shared_ptr<ColumnRef const> getRef(antlr::RefAST r);
     void printRefs() const;
 

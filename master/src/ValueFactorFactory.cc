@@ -201,13 +201,9 @@ ValueFactorFactory::ValueFactorFactory(boost::shared_ptr<ColumnRefNodeMap> cMap)
 /* TERM   (TERM_OP TERM)*  */
 boost::shared_ptr<ValueFactor> 
 ValueFactorFactory::newFactor(antlr::RefAST a) {
-<<<<<<< HEAD
-    if(!_columnRefMap) {
-        throw std::logic_error("ValueFactorFactory missing _columnRefMap");
+    if(!_columnRefNodeMap) {
+        throw std::logic_error("ValueFactorFactory missing _columnRefNodeMap");
     }
-=======
-    assert(_columnRefNodeMap.get());
->>>>>>> master: Clean up: rename ColumnRefMap->ColumnRefNodeMap and ColumnRefList->ColumnRefMap
     boost::shared_ptr<ValueFactor> vt;
     int eType = a->getType();
     if(a->getType() == SqlSQL2TokenTypes::FACTOR) {

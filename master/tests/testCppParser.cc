@@ -116,9 +116,9 @@ struct ParserFixture {
             "Source:raObjectTest,declObjectTest,objectIdSourceTest";
         qsTest.cfgNum = 0;
 
-        metaCacheSessionId = lsst::qserv::master::newMetadataSession();
+        qsTest.metaSession = lsst::qserv::master::newMetadataSession();
         boost::shared_ptr<lsst::qserv::master::MetadataCache> mc =
-            lsst::qserv::master::getMetadataCache(metaCacheSessionId);
+            lsst::qserv::master::getMetadataCache(qsTest.metaSession);
         mc->addDbInfoPartitionedSphBox("LSST",
                                        60,        // number of stripes
                                        18,        // number of substripes

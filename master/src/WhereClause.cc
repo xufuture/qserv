@@ -81,6 +81,61 @@ operator<<(std::ostream& os, WhereClause const& wc) {
     os << "WHERE " << wc.getGenerated();
     return os;
 }
+void findColumnRefs(boost::shared_ptr<BoolFactor> f, ColumnRefMap::List& list) {
+    if(f) { // FIXME
+        std::cout << "bfterm";
+        f->putStream(std::cout) << std::endl;
+    }
+}
+
+void findColumnRefs(boost::shared_ptr<ValueExprTerm> vet, ColumnRefMap::List& list) {
+    if(vet) {
+        ValueExpr& expr = *vet->_expr;
+        expr.findColumnRefs(list);        
+    }
+}
+
+void findColumnRefs(boost::shared_ptr<BoolTerm> t, ColumnRefMap::List& list) {
+    if(!t) { return; }
+    BoolTerm::PtrList::iterator i = t->iterBegin();
+    BoolTerm::PtrList::iterator e = t->iterEnd();
+    if(i == e) { // Leaf. 
+        // Bool factor?
+        boost::shared_ptr<BoolFactor> bf = boost::dynamic_pointer_cast<BoolFactor>(t);
+        if(bf) {
+            findColumnRefs(bf, list);
+        } else {
+            boost::shared_ptr<ValueExprTerm> vet = boost::dynamic_pointer_cast<ValueExprTerm>(t);
+            findColumnRefs(vet, list);
+        }
+    } else {
+        for(; i != e; ++i) {
+            findColumnRefs(*i, list); // Recurse
+        }
+    }    
+}
+
+boost::shared_ptr<ColumnRefMap::List const> 
+WhereClause::getColumnRefs() const {
+    boost::shared_ptr<ColumnRefMap::List> list(new ColumnRefMap::List());
+
+    // Idea: Walk the expression tree and add all column refs to the
+    // list. We will walk in depth-first order, but the interface spec
+    // doesn't require any particular order.
+    findColumnRefs(_tree, *list);
+    
+    return boost::shared_ptr<ColumnRefMap::List const>();
+}
+
+
+boost::shared_ptr<AndTerm> 
+WhereClause::getRootAndTerm() {
+    // Walk the list to find the global AND. If an OR term is root,
+    // and has multiple terms, there is no global AND which means we
+    // should return NULL. 
+    BoolTerm::Ptr t = findAndTerm(_tree);
+    return boost::dynamic_pointer_cast<AndTerm>(t);
+}
 
 WhereClause::ValueExprIter WhereClause::vBegin() {
     return ValueExprIter(this, _tree);
@@ -192,9 +247,9 @@ WhereClause::ValueExprIter::ValueExprIter(WhereClause* wc,
         PosTuple p(bPos->iterBegin(), bPos->iterEnd()); // Initial position
         _posStack.push(p); // Put it on the stack.
         setupOk = _findFactor();
-    }
-    if(setupOk) {
-        setupOk = _setupBfIter();
+        if(setupOk) {
+            setupOk = _setupBfIter();
+        }
     }
     if(!setupOk) {
         while(_posStack.size() > 0) { _posStack.pop(); }
