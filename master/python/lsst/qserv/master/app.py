@@ -55,7 +55,6 @@ import time
 from string import Template
 
 # Package imports
-import msgCode
 import metadata
 import lsst.qserv.master.config
 from lsst.qserv.master import geometry
@@ -103,6 +102,7 @@ from lsst.qserv.master import addTbInfoPartitionedSphBox
 from lsst.qserv.master import printMetadataCache
 
 # queryMsg
+from lsst.qserv.master import msgCode
 from lsst.qserv.master import queryMsgAddMsg
 
 # Experimental interactive prompt (not currently working)
@@ -663,7 +663,7 @@ def setupResultScratch():
 ########################################################################    
 
 class QueryBabysitter:
-    """Watches over queries in-flight.  An instrument of query care that 
+    """Watches over queries in-flight.  An instrument of query care that
     can be used by a client.  Unlike the collater, it doesn't do merging.
     """
     def __init__(self, sessionId, queryHash, fixup, resultName=""):
@@ -672,7 +672,7 @@ class QueryBabysitter:
         # Scratch mgmt (Consider putting somewhere else)
         self._scratchPath = setupResultScratch()
 
-        self._setupMerger(fixup, resultName) 
+        self._setupMerger(fixup, resultName)
         pass
 
     def _reportError(self, message):
@@ -793,7 +793,7 @@ class QueryHintError(Exception):
 
 ########################################################################
 class HintedQueryAction:
-    """A HintedQueryAction encapsulates logic to prepare, execute, and 
+    """A HintedQueryAction encapsulates logic to prepare, execute, and
     retrieve results of a query that has a hint string.
     @param query - user query string
     @param hints - key-value for unstructured query hints
@@ -807,7 +807,7 @@ class HintedQueryAction:
         self.queryStr = query.strip()# Pull trailing whitespace
         # Force semicolon to facilitate worker-side splitting
         if self.queryStr[-1] != ";":  # Add terminal semicolon
-            self.queryStr += ";" 
+            self.queryStr += ";"
 
         # queryHash identifies the top-level query.
         self.queryHash = self._computeHash(self.queryStr)[:18]
@@ -818,14 +818,14 @@ class HintedQueryAction:
         if not self._parseAndPrep(query, hints):
             return
         # Pass up the sessionId for query messages access.
-        setSessionId(self._sessionId) 
+        setSessionId(self._sessionId)
 
         if not self._isValid:
             discardSession(self._sessionId)
             return
 
         # Create query initialization message.
-        queryMsgAddMsg(self._sessionId, -1, msgCode.MSG_QUERY_INIT, 
+        queryMsgAddMsg(self._sessionId, -1, msgCode.MSG_QUERY_INIT,
                        "Initialize Query: " + self.queryStr);
 
         self._prepForExec(self._useMemory, resultName)
@@ -835,16 +835,16 @@ class HintedQueryAction:
         Gets a sessionId.
         """
 
-        self._dbContext = "LSST" # Later adjusted by hints.        
+        self._dbContext = "LSST" # Later adjusted by hints.
         # Hint evaluation
-        self._pmap = pmap            
+        self._pmap = pmap
         self._isFullSky = False # Does query involves whole sky
         try:
             self._evaluateHints(hints, pmap) # Also gets new dbContext
         except QueryHintError, e:
             self._isValid = False
             self._error = e.reason
-            return 
+            return
 
         # Config preparation
         qConfig = self._prepareCppConfig(self._dbContext, hints)
@@ -895,7 +895,7 @@ class HintedQueryAction:
         self._resultTableTmpl = "r_%s_%s" % (self._sessionId,
                                              self.queryHash) + "_%s"
         # Should use db from query, not necessarily context.
-        self._factory = protocol.TaskMsgFactory(self._sessionId, 
+        self._factory = protocol.TaskMsgFactory(self._sessionId,
                                                 self._dbContext)
         # We want result table names longer than result-merging table names.
         self._isValid = True

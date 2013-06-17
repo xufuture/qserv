@@ -143,23 +143,23 @@ private:
 class lsst::qserv::master::ChunkQuery::WriteCallable : public WorkQueue::Callable {
 public:
     typedef boost::shared_ptr<WorkQueue::Callable> CPtr;
-    explicit WriteCallable(qMaster::ChunkQuery& cq) : 
+    explicit WriteCallable(qMaster::ChunkQuery& cq) :
         _cq(cq)
     {}
-    virtual ~WriteCallable() {} 
+    virtual ~WriteCallable() {}
     virtual void operator()() {
 
         try {
-            // Use blocking calls to prevent implicit thread creation by 
+            // Use blocking calls to prevent implicit thread creation by
             // XrdClient
             _cq._state = ChunkQuery::WRITE_OPEN;
             int tries = 5; // Arbitrarily try 5 times.
             int result;
-            while(tries > 0) {
+            while (tries > 0) {
                 --tries;
                 result = qMaster::xrdOpen(_cq._spec.path.c_str(), O_WRONLY);
                 if (result == -1) {
-                    if(errno == ENOENT) {
+                    if (errno == ENOENT) {
                         std::stringstream msgStrm;
                         msgStrm << std::string("Chunk not found for path:")
                                 << _cq._spec.path << " , "
@@ -170,7 +170,7 @@ public:
                         continue;
                     }
                 }
-                if ( result == -1 ) {
+                if (result == -1) {
                     result = -errno;
                 }
                 break;
@@ -178,7 +178,7 @@ public:
             _cq.Complete(result);
         } catch (const char *msg) {
             _cq._state = ChunkQuery::ABORTED;
-            _cq._manager->getMessageStore()->addMessage(_cq._id, 
+            _cq._manager->getMessageStore()->addMessage(_cq._id,
                  errno != 0 ? -abs(errno) : -1, msg);
             _cq._notifyManager();
         }

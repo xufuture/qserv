@@ -181,41 +181,45 @@ int qMaster::xrdOpenAsync(const char* path, int oflag, XrdPosixCallBack *cbP) {
     return -errno; // Return something that indicates "in progress"
 }
 
-
-
 long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
-    // std::cout << "xrd trying to read (" <<  fildes << ") " 
+    // std::cout << "xrd trying to read (" <<  fildes << ") "
     // 	      << nbyte << " bytes" << std::endl;
-    QSM_TIMESTART("Read", fildes);  
+    QSM_TIMESTART("Read", fildes);
     long long readCount;
-    readCount = XrdPosixXrootd::Read(fildes, buf, nbyte); 
+    readCount = XrdPosixXrootd::Read(fildes, buf, nbyte);
     QSM_TIMESTOP("Read", fildes);
 
-/*************************************************
- * TEST FAILURE MODE: Reading query result fails.
- * ***********************************************/
-    //std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
-    //readCount = -1;
-/*************************************************/
+#ifdef DBG_TEST_READ_FAILURE_1
+    /*************************************************
+     * TEST FAILURE MODE: Reading query result fails.
+     * ***********************************************/
+    std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
+    readCount = -1;
+    /*************************************************/
+#endif
 
-/*************************************************
- * TEST FAILURE MODE: Fuzz testing - simulate incomplete results.
- * ***********************************************/
-    //std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
-    //std::cout << "DBG: XrdPosixXrootd::Read() returned: " << readCount << std::endl;
-    //readCount = rand()%readCount;
-    //std::cout << "Dbg: Set readCount = " << readCount << std::endl;
-/*************************************************/
+#ifdef DBG_TEST_READ_FAILURE_2
+    /*************************************************
+     * TEST FAILURE MODE: Fuzz testing - simulate incomplete results.
+     * ***********************************************/
+    std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
+    std::cout << "DBG: XrdPosixXrootd::Read() returned: " << readCount << std::endl;
+    readCount = rand()%readCount;
+    std::cout << "Dbg: Set readCount = " << readCount << std::endl;
+    /*************************************************/
+#endif
 
-/*************************************************
- * TEST FAILURE MODE: Fuzz testing - simulate corrupted byte.
- * ***********************************************/
-    //std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
-    //std::cout << "DBG: XrdPosixXrootd::Read() returned: " << readCount << std::endl;
-    //int position = rand()%readCount;
-    //char value = (char)(rand()%256);
-    //*((char *)buf + position) = value;
-/*************************************************/
+#ifdef DBG_TEST_READ_FAILURE_3
+    /*************************************************
+     * TEST FAILURE MODE: Fuzz testing - simulate corrupted byte.
+     * ***********************************************/
+    std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
+    std::cout << "DBG: XrdPosixXrootd::Read() returned: " << readCount << std::endl;
+    int position = rand()%readCount;
+    char value = (char)(rand()%256);
+    *((char *)buf + position) = value;
+    /*************************************************/
+#endif
 
     if (readCount < 0) {
          if (errno == 0)
@@ -226,22 +230,24 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     return readCount;
 }
 
-long long qMaster::xrdWrite(int fildes, const void *buf, 
+long long qMaster::xrdWrite(int fildes, const void *buf,
                             unsigned long long nbyte) {
     // std::string s;
     // s.assign(static_cast<const char*>(buf), nbyte);
-    // std::cout << "xrd write (" <<  fildes << ") \"" 
+    // std::cout << "xrd write (" <<  fildes << ") \""
     // 	      << s << "\"" << std::endl;
     QSM_TIMESTART("Write", fildes);
     long long res = XrdPosixXrootd::Write(fildes, buf, nbyte);
     QSM_TIMESTOP("Write", fildes);
 
-/*************************************************
- * TEST FAILURE MODE: Writing query result fails.
- * ***********************************************/
-    //std::cout << "DBG: SABOTAGING XRD WRITE!!!!" << std::endl;
-    //res = -1;
-/*************************************************/
+#ifdef DBG_TEST_WRITE_FAILURE_1
+    /*************************************************
+     * TEST FAILURE MODE: Writing query result fails.
+     * ***********************************************/
+    std::cout << "DBG: SABOTAGING XRD WRITE!!!!" << std::endl;
+    res = -1;
+    /*************************************************/
+#endif
 
     if (res < 0) {
          if (errno == 0)

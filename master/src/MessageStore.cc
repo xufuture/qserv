@@ -25,13 +25,8 @@
 #include <boost/format.hpp> 
 #include "lsst/qserv/master/MessageStore.h"
 using lsst::qserv::master::MessageStore;
-using lsst::qserv::master::MessageStoreError;
 
 namespace qMaster=lsst::qserv::master;
-
-namespace { // File-scope helpers
-
-} // anonymous namespace
 
 ////////////////////////////////////////////////////////////////////////
 // public
@@ -43,24 +38,20 @@ void MessageStore::addMessage(int chunkId, int code, std::string const& descript
         QueryMessage(chunkId, code, description, std::time(0)));
 }
 
-qMaster::QueryMessage MessageStore::getMessage(int idx) {
+const qMaster::QueryMessage MessageStore::getMessage(int idx) {
     return _queryMessages.at(idx);
 }
 
-int MessageStore::messageCount() {
+const int MessageStore::messageCount() {
     return _queryMessages.size();
 }
 
-int MessageStore::messageCount(int code) {
+const int MessageStore::messageCount(int code) {
     int count = 0;
     for (std::vector<QueryMessage>::const_iterator i = _queryMessages.begin();
          i != _queryMessages.end(); i++) {
-        if (i->code == code)
-            count++;
+        if (i->code == code) count++;
     }
     return count;
 }
 
-////////////////////////////////////////////////////////////////////////
-// private
-////////////////////////////////////////////////////////////////////////

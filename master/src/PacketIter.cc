@@ -121,15 +121,14 @@ void qMaster::PacketIter::_increment() {
 
 void qMaster::PacketIter::_fill(Value& v) {
     int readRes = 0;
-    if(_stop) { 
-        v.first = 0; 
+    if(_stop) {
+        v.first = 0;
         v.second = 0;
         return;
     }
     if(_xrdFd != 0) {
-        if ((readRes = 
-             xrdRead(_xrdFd, v.first, static_cast<unsigned long long>(v.second))) 
-            < 0) {
+        readRes = xrdRead(_xrdFd, v.first, static_cast<unsigned long long>(v.second));
+        if (readRes < 0) {
             throw "Remote I/O error during XRD read.";
         }
     } else if(!_fileName.empty()) {
@@ -137,11 +136,11 @@ void qMaster::PacketIter::_fill(Value& v) {
     } else {
         readRes = 0;
     }
-     
+
     if(readRes < 0) {
         //Report error somehow
         _errno = errno;
-    } 
+    }
     if(readRes < static_cast<int>(v.second)) {
         _stop = true;
     }
