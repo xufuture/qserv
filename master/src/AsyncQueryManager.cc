@@ -313,7 +313,7 @@ void qMaster::AsyncQueryManager::resumeReadTrans() {
 }
 
 boost::shared_ptr<qMaster::MessageStore> qMaster::AsyncQueryManager::getMessageStore() {
-    if (_messageStore == NULL) {
+    if (!_messageStore) {
         // Lazy instantiation of MessageStore.
         _messageStore = boost::make_shared<qMaster::MessageStore>();
     }
