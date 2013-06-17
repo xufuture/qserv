@@ -222,8 +222,7 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
 #endif
 
     if (readCount < 0) {
-         if (errno == 0)
-             errno = EREMOTEIO;
+         if (errno == 0) errno = EREMOTEIO;
          return -1;
     }
 
@@ -250,8 +249,7 @@ long long qMaster::xrdWrite(int fildes, const void *buf,
 #endif
 
     if (res < 0) {
-         if (errno == 0)
-             errno = EREMOTEIO;
+         if (errno == 0) errno = EREMOTEIO;
          return -1;
     }
 
