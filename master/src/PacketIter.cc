@@ -96,6 +96,8 @@ void qMaster::PacketIter::_setup(bool debug) {
     assert(sizeof(char) == 1);
     assert(_current.first == 0);
     assert(_fragSize > 0);
+    // malloc() is used here rather than the "new" operator because a low-level
+    // bucket of bytes is desired.
     _buffer = malloc(_fragSize); 
     if(_buffer == NULL) {
         errno = ENOMEM;
