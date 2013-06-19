@@ -29,16 +29,14 @@ env.Alias('install', '$PREFIX/bin')
 env.Help("Qserv spatial partitioning and duplication utilities.")
 
 boostLibs = ['system',
-             'chrono',
-             'timer',
              'thread',
              'filesystem',
              'program_options',
-             'unit_test_framework',
             ]
 
 def checkBoost(lib, conf):
-    return conf.CheckLib('boost_' + lib, language='C++', autoadd=0)
+    return (conf.CheckLib('boost_' + lib + '-mt', language='C++') or
+            conf.CheckLib('boost_' + lib, language='C++'))
 
 if not GetOption('help'):
     if not GetOption('clean'):

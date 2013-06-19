@@ -34,7 +34,6 @@
 #include "boost/make_shared.hpp"
 #include "boost/program_options.hpp"
 #include "boost/shared_ptr.hpp"
-#include "boost/timer/timer.hpp"
 
 #include "CmdLineUtils.h"
 #include "Csv.h"
@@ -56,7 +55,6 @@ using std::vector;
 
 using boost::make_shared;
 using boost::shared_ptr;
-using boost::timer::cpu_timer;
 
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
@@ -270,7 +268,6 @@ static char const * help =
 int main(int argc, char const * const * argv) {
     namespace dupr = lsst::qserv::admin::dupr;
     try {
-        cpu_timer t;
         po::options_description options;
         dupr::HtmIndexJob::defineOptions(options);
         po::variables_map vm;
@@ -283,7 +280,6 @@ int main(int argc, char const * const * argv) {
             index->write(d / "htm_index.bin", false);
         }
         if (vm.count("verbose") != 0) {
-            cerr << "run-time: " << t.format() << endl;
             cout << *index << endl;
         }
     } catch (exception const & ex) {

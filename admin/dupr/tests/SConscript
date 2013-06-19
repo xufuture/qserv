@@ -31,17 +31,17 @@ def runTest(target, source, env):
         print >>sys.stderr, red('%s : FAILED (see %s.fail)' % (source[0], tgt))
     return retcode
 
-libs = ['dupr',
-        'boost_system',
-        'boost_thread',
-        'boost_filesystem',
-        'boost_program_options',
-        'boost_unit_test_framework',
-       ]
-
-testEnv = env.Clone(LIBS=libs)
+testEnv = env.Clone()
+if not GetOption('help') and not GetOption('clean'):
+    conf = Configure(testEnv)
+    if not (conf.CheckLib('boost_unit_test_framework-mt', language='C++') or
+            conf.CheckLib('boost_unit_test_framework', language='C++')):
+        print >> sys.stderr, 'Missing required boost library!'
+        Exit(1)
+    testEnv=conf.Finish()
 testEnv.Append(CPPPATH=['../src'])
 testEnv.Append(LIBPATH=['../src'])
+testEnv.Prepend(LIBS=['dupr'])
 testEnv.Append(BUILDERS={'Test': Builder(action=runTest, suffix='.test')})
 
 for source in testEnv.Glob('*.cc'):

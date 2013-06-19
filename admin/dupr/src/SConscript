@@ -1,19 +1,10 @@
 # -*- python -*-
 Import('env')
 
-buildEnv = env.Clone()
-buildEnv.Append(LIBPATH=['.'])
+lenv = env.Clone()
+sources = lenv.Glob('[!Q]*.cc')
+lenv.StaticLibrary('dupr', sources)
 
-sources = buildEnv.Glob('[!Q]*.cc')
-libs = ['dupr',
-        'boost_system',
-        'boost_chrono',
-        'boost_timer',
-        'boost_thread',
-        'boost_filesystem',
-        'boost_program_options',
-       ]
-buildEnv.StaticLibrary('dupr', sources)
 for target in ('qserv-htm-index',
                'qserv-partition',
                'qserv-partition-matches',
@@ -21,5 +12,8 @@ for target in ('qserv-htm-index',
                'qserv-estimate-stats',
               ):
     source = ''.join(map(lambda s: s.title(), target.split('-'))) + '.cc'
-    program = buildEnv.Program(target, [source], LIBS=libs)
-    buildEnv.Install('$PREFIX/bin', program)
+    penv = env.Clone()
+    penv.Append(LIBPATH=['.'])
+    penv.Prepend(LIBS=['dupr'])
+    program = penv.Program(target, [source])
+    penv.Install('$PREFIX/bin', program)

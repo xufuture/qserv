@@ -34,7 +34,6 @@
 #include "boost/filesystem.hpp"
 #include "boost/program_options.hpp"
 #include "boost/shared_ptr.hpp"
-#include "boost/timer/timer.hpp"
 
 #include "Chunker.h"
 #include "ChunkReducer.h"
@@ -56,7 +55,6 @@ using std::string;
 using std::vector;
 
 using boost::shared_ptr;
-using boost::timer::cpu_timer;
 
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
@@ -565,7 +563,6 @@ static char const * help =
 int main(int argc, char const * const * argv) {
     namespace dupr = lsst::qserv::admin::dupr;
     try {
-        cpu_timer t;
         po::options_description options;
         dupr::DuplicateJob::defineOptions(options);
         po::variables_map vm;
@@ -580,7 +577,6 @@ int main(int argc, char const * const * argv) {
             index->write(d / f, false);
         }
         if (vm.count("verbose") != 0) {
-            cerr << "run-time: " << t.format() << endl;
             index->write(cout, 0);
             cout << endl;
         } else {
