@@ -172,7 +172,9 @@ BOOST_AUTO_TEST_CASE(MapReduceTest) {
         string s("--mr.num-workers="); s += n;
         argv[3] = s.c_str();
         po::variables_map vm;
-        po::store(po::parse_command_line(4, argv, options), vm);
+        // Older boost versions (1.41) require the const_cast.
+        po::store(po::parse_command_line(
+            4, const_cast<char **>(argv), options), vm);
         po::notify(vm);
         TestJob job(vm);
         dupr::InputLines input(paths, 1*dupr::MiB, false);

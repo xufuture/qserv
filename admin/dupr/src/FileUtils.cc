@@ -44,7 +44,7 @@ namespace lsst { namespace qserv { namespace admin { namespace dupr {
 InputFile::InputFile(fs::path const & path) : _path(path), _fd(-1), _sz(-1) {
     char msg[1024];
     struct stat st;
-    int fd = open(path.c_str(), O_RDONLY);
+    int fd = open(path.string().c_str(), O_RDONLY);
     if (fd == -1) {
         strerror_r(errno, msg, sizeof(msg));
         throw runtime_error("open() failed [" + path.string() + "]: " + msg);
@@ -61,7 +61,8 @@ InputFile::InputFile(fs::path const & path) : _path(path), _fd(-1), _sz(-1) {
 InputFile::~InputFile() {
     char msg[1024];
     if (_fd != -1 && close(_fd) != 0) {
-        snprintf(msg, sizeof(msg),  "close() failed [%s]", _path.c_str());
+        snprintf(msg, sizeof(msg),  "close() failed [%s]",
+                 _path.string().c_str());
         perror(msg);
         exit(EXIT_FAILURE);
     }
@@ -96,7 +97,7 @@ OutputFile::OutputFile(fs::path const & path, bool truncate) :
     if (truncate) {
         flags |= O_TRUNC;
     }
-    int fd = open(path.c_str(), flags,
+    int fd = open(path.string().c_str(), flags,
                   S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR);
     if (fd == -1) {
         strerror_r(errno, msg, sizeof(msg));
@@ -116,7 +117,8 @@ OutputFile::OutputFile(fs::path const & path, bool truncate) :
 OutputFile::~OutputFile() {
     char msg[1024];
     if (_fd != -1 && close(_fd) != 0) {
-        snprintf(msg, sizeof(msg), "close() failed [%s]", _path.c_str());
+        snprintf(msg, sizeof(msg), "close() failed [%s]",
+                 _path.string().c_str());
         perror(msg);
         exit(EXIT_FAILURE);
     }

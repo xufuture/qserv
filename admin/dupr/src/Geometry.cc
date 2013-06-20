@@ -22,6 +22,7 @@
 
 #include "Geometry.h"
 
+#include <cassert>
 #include <stdexcept>
 
 #include "boost/math/constants/constants.hpp"

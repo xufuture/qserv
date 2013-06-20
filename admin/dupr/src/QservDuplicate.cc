@@ -23,6 +23,7 @@
 /// \file
 /// \brief The Qserv spatial data duplicator.
 
+#include <cstdio>
 #include <algorithm>
 #include <iostream>
 #include <limits>
@@ -50,6 +51,7 @@ using std::exception;
 using std::numeric_limits;
 using std::pair;
 using std::runtime_error;
+using std::snprintf;
 using std::sort;
 using std::string;
 using std::vector;

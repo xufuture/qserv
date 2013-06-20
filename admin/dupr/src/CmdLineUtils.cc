@@ -429,8 +429,8 @@ void parseCommandLine(po::variables_map & vm,
          "option itself is not recognized inside of a configuration file.");
     po::options_description all;
     all.add(common).add(options);
-    // Parse command line.
-    po::store(po::parse_command_line(argc, argv, all), vm);
+    // Parse command line. Older boost versions (1.41) require the const_cast.
+    po::store(po::parse_command_line(argc, const_cast<char **>(argv), all), vm);
     po::notify(vm);
     if (vm.count("help") != 0) {
         cout << argv[0]  << " [options]\n\n" << help << "\n" << all << endl;

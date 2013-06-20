@@ -18,7 +18,7 @@ env['ENV']['PATH'] = os.environ['PATH']
 env.Append(CPPPATH=[GetOption('boost_includes')])
 env.Append(LIBPATH=[GetOption('boost_libs')])
 env.Append(RPATH=[GetOption('boost_libs')])
-env.Append(CCFLAGS=['-g', '-Wall', '-Wextra', '-Wno-unused-local-typedefs'])
+env.Append(CCFLAGS=['-g', '-Wall', '-Wextra'])
 if GetOption('debug_build'):
     variant_dir = 'build/debug'
 else:

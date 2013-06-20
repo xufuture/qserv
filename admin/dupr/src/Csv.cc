@@ -24,6 +24,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
@@ -37,6 +38,7 @@ using std::memcpy;
 using std::numeric_limits;
 using std::pair;
 using std::runtime_error;
+using std::snprintf;
 using std::string;
 using std::vector;
 
