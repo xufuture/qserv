@@ -603,10 +603,10 @@ vector<int32_t> const chunksToDuplicate(Chunker const & chunker,
     if (vm.count("chunk-id") != 0) {
         return vm["chunk-id"].as<vector<int32_t> >();
     }
-    SphericalBox region(vm["ra-min"].as<double>(),
-                        vm["ra-max"].as<double>(),
-                        vm["dec-min"].as<double>(),
-                        vm["dec-max"].as<double>());
+    SphericalBox region(vm["lon-min"].as<double>(),
+                        vm["lon-max"].as<double>(),
+                        vm["lat-min"].as<double>(),
+                        vm["lat-max"].as<double>());
     uint32_t node = 0;
     uint32_t numNodes = 1;
     if (vm.count("out.node") != 0) {

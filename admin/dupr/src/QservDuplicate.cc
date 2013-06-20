@@ -213,13 +213,13 @@ private:
     };
 
     struct Pos {
-        Vector3d v; // Cartesian coordinates for (ra, dec).
-        int ra;     // Right ascension field index.
-        int dec;    // Declination field index.
-        bool null;  // Set to true if the ra or dec field value is NULL.
+        Vector3d v; // Cartesian coordinates for (lon, lat).
+        int lon;    // Longitude angle field index.
+        int lat;    // Latitude angle field index.
+        bool null;  // Set to true if the lon or lat field value is NULL.
 
-        Pos() : v(0.0, 0.0, 0.0), ra(-1), dec(-1), null(false) { }
-        Pos(int r, int d) : v(0.0, 0.0, 0.0), ra(r), dec(d), null(false) { }
+        Pos() : v(0.0, 0.0, 0.0), lon(-1), lat(-1), null(false) { }
+        Pos(int i, int j) : v(0.0, 0.0, 0.0), lon(i), lat(j), null(false) { }
     };
 
     csv::Editor           _editor;
@@ -275,8 +275,8 @@ Worker::Worker(po::variables_map const & vm) :
     FieldNameResolver fields(_editor);
     string s = vm["part.pos"].as<string>();
     pair<string,string> p = parseFieldNamePair("part.pos", s);
-    _partPos.ra = fields.resolve("part.pos", s, p.first);
-    _partPos.dec = fields.resolve("part.pos", s, p.second);
+    _partPos.lon = fields.resolve("part.pos", s, p.first);
+    _partPos.lat = fields.resolve("part.pos", s, p.second);
     if (vm.count("pos") != 0) {
         vector<string> const & pos = vm["pos"].as<vector<string> >();
         for (StringIter i = pos.begin(), e = pos.end(); i != e; ++i) {
@@ -320,18 +320,18 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
         // Extract positions.
         pair<double, double> sc;
         for (PosIter p = _pos.begin(), pe = _pos.end(); p != pe; ++p) {
-            p->null = _editor.isNull(p->ra) || _editor.isNull(p->dec);
+            p->null = _editor.isNull(p->lon) || _editor.isNull(p->lat);
             if (!p->null) {
-                sc.first = _editor.get<double>(p->ra);
-                sc.second = _editor.get<double>(p->dec);
+                sc.first = _editor.get<double>(p->lon);
+                sc.second = _editor.get<double>(p->lat);
                 p->v = cartesian(sc);
             } else {
-                _editor.setNull(p->ra);
-                _editor.setNull(p->dec);
+                _editor.setNull(p->lon);
+                _editor.setNull(p->lat);
             }
         }
-        sc.first = _editor.get<double>(_partPos.ra);
-        sc.second = _editor.get<double>(_partPos.dec);
+        sc.first = _editor.get<double>(_partPos.lon);
+        sc.second = _editor.get<double>(_partPos.lat);
         _partPos.v = cartesian(sc);
         if (sourceHtmId == 0) {
             sourceHtmId = htmId(_partPos.v, _level);
@@ -367,14 +367,14 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
                 continue;
             }
             if (mustTransform) {
-                _editor.set(_partPos.ra, pos.first);
-                _editor.set(_partPos.dec, pos.second);
+                _editor.set(_partPos.lon, pos.first);
+                _editor.set(_partPos.lat, pos.second);
                 // Transform positions.
                 for (PosIter p = _pos.begin(), pe = _pos.end(); p != pe; ++p) {
                     if (!p->null) {
                         pos = spherical(t->transform * p->v);
-                        _editor.set(p->ra, pos.first);
-                        _editor.set(p->dec, pos.second);
+                        _editor.set(p->lon, pos.first);
+                        _editor.set(p->lat, pos.second);
                     }
                 }
             }
@@ -440,18 +440,18 @@ void Worker::defineOptions(po::options_description & opts) {
          "that if --index and --part.index are identical, then either "
          "--id and --part.id must match, or one must be omitted.")
         ("pos", po::value<vector<string> >(),
-         "Optional right ascension and declination field names, "
+         "Optional longitude and latitude angle field names, "
          "separated by a comma. May be specified any number of times. "
          "These field name pairs identify positions in addition to the "
          "partitioning position fields (identified via --part.pos).")
-        ("ra-min", po::value<double>()->default_value(0.0),
-         "Minimum right ascension bound (deg) for the duplication region.")
-        ("ra-max", po::value<double>()->default_value(360.0),
-         "Maximum right ascension bound (deg) for the duplication region.")
-        ("dec-min", po::value<double>()->default_value(-90.0),
-         "Minimum declination bound (deg) for the duplication region.")
-        ("dec-max", po::value<double>()->default_value(90.0),
-         "Maximum declination bound (deg) for the duplication region.")
+        ("lon-min", po::value<double>()->default_value(0.0),
+         "Minimum longitude angle bound (deg) for the duplication region.")
+        ("lon-max", po::value<double>()->default_value(360.0),
+         "Maximum longitude angle bound (deg) for the duplication region.")
+        ("lat-min", po::value<double>()->default_value(-90.0),
+         "Minimum latitude angle bound (deg) for the duplication region.")
+        ("lat-max", po::value<double>()->default_value(90.0),
+         "Maximum latitude angle bound (deg) for the duplication region.")
         ("chunk-id", po::value<vector<int32_t> >(),
          "Optionally limit duplication to one or more chunks. If specified, "
          "data will be duplicated for the given chunk(s) regardless of the "
@@ -483,7 +483,7 @@ void Worker::defineOptions(po::options_description & opts) {
          "Sub-chunk ID output field name. This field field name is appended "
          "to the output field name list if it isn't already included.")
         ("part.pos", po::value<string>(),
-         "The partitioning right ascension and declination field names, "
+         "The partitioning longitude and latitude angle field names, "
          "separated by a comma.");
     Chunker::defineOptions(part);
     opts.add(dup).add(part);

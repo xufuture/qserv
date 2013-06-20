@@ -43,8 +43,8 @@ local storage of a single node can be spread over multiple nodes by
 distributing a subset of triangles to each node (more on this later).
 
 The second phase is the duplication phase. First, the set of HTM triangles
-overlapping the duplication region, specified as a box in right ascension and
-declination, is computed. For each overlapping triangle with ID T, a non-empty
+overlapping the duplication region, specified as a box in longitude and
+latitude, is computed. For each overlapping triangle with ID T, a non-empty
 “source” triangle S must be found. Let A be the sorted array of the IDs for
 non-empty triangles in the HTM index of the partitioning table. If T is in A,
 then S = T. Otherwise, S = A[hash(T) mod size(A)].
@@ -252,7 +252,7 @@ for TABLE in Object Source; do
         --index=index/$TABLE/htm_index.bin \
         --part.index=index/Object/htm_index.bin \
         --verbose \
-        --ra-min=60 --ra-max=72 --dec-min=-30 --dec-max=-18 \
+        --lon-min=60 --lon-max=72 --lat-min=-30 --lat-max=-18 \
         --mr.num-workers=6 \
         --mr.pool-size=32768 \
         --mr.block-size=16 \

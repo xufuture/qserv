@@ -68,8 +68,7 @@ public:
 
 private:
     csv::Editor            _editor;
-    int                    _raField;
-    int                    _decField;
+    pair<int,int>          _pos;
     int                    _chunkIdField;
     int                    _subChunkIdField;
     Chunker                _chunker;
@@ -79,8 +78,7 @@ private:
 Worker::Worker(po::variables_map const & vm) :
     ChunkReducer(vm),
     _editor(vm),
-    _raField(-1),
-    _decField(-1),
+    _pos(-1, -1),
     _chunkIdField(-1),
     _subChunkIdField(-1),
     _chunker(vm)
@@ -92,8 +90,8 @@ Worker::Worker(po::variables_map const & vm) :
     FieldNameResolver fields(_editor);
     string s = vm["part.pos"].as<string>();
     pair<string,string> p = parseFieldNamePair("part.pos", s);
-    _raField = fields.resolve("part.pos", s, p.first);
-    _decField = fields.resolve("part.pos", s, p.second);
+    _pos.first = fields.resolve("part.pos", s, p.first);
+    _pos.second = fields.resolve("part.pos", s, p.second);
     if (vm.count("part.chunk") != 0) {
         s = vm["part.chunk"].as<string>();
         _chunkIdField = fields.resolve("part.chunk", s);
@@ -107,8 +105,8 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
     pair<double, double> sc;
     while (beg < end) {
         beg = _editor.readRecord(beg, end);
-        sc.first = _editor.get<double>(_raField);
-        sc.second = _editor.get<double>(_decField);
+        sc.first = _editor.get<double>(_pos.first);
+        sc.second = _editor.get<double>(_pos.second);
         // Locate partitioning position and output a record for each location.
         _locations.clear();
         _chunker.locate(sc, -1, _locations);
@@ -133,7 +131,7 @@ void Worker::defineOptions(po::options_description & opts) {
          "Sub-chunk ID output field name. This field field name is appended "
          "to the output field name list if it isn't already included.")
         ("part.pos", po::value<string>(),
-         "The partitioning right ascension and declination field names, "
+         "The partitioning longitude and latitude angle field names, "
          "separated by a comma.");
     Chunker::defineOptions(part);
     opts.add(part);

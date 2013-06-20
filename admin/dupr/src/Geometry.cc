@@ -164,32 +164,32 @@ inline uint32_t rootNumFor(Vector3d const &v)
 } // unnamed namespace
 
 
-double reduceRa(double ra) {
-    ra = fmod(ra, 360.0);
-    if (ra < 0.0) {
-        ra += 360.0;
-        if (ra == 360.0) {
-            ra = 0.0;
+double reduceLon(double lon) {
+    lon = fmod(lon, 360.0);
+    if (lon < 0.0) {
+        lon += 360.0;
+        if (lon == 360.0) {
+            lon = 0.0;
         }
     }
-    return ra;
+    return lon;
 }
 
-double maxAlpha(double r, double centerDec) {
+double maxAlpha(double r, double centerLat) {
     if (r < 0.0 || r > 90.0) {
         throw runtime_error("Radius must lie in range [0, 90] deg.");
     }
     if (r == 0.0) {
         return 0.0;
     }
-    double d = clampDec(centerDec);
-    if (fabs(d) + r > 90.0 - 1/3600.0) {
+    double lat = clampLat(centerLat);
+    if (fabs(lat) + r > 90.0 - 1/3600.0) {
         return 180.0;
     }
     r *= RAD_PER_DEG;
-    d *= RAD_PER_DEG;
+    lat *= RAD_PER_DEG;
     double y = sin(r);
-    double x = sqrt(fabs(cos(d - r) * cos(d + r)));
+    double x = sqrt(fabs(cos(lat - r) * cos(lat + r)));
     return DEG_PER_RAD * fabs(atan(y / x));
 }
 
@@ -266,31 +266,31 @@ int htmLevel(uint32_t id) {
     return static_cast<int>(level >> 1);
 }
 
-Vector3d const cartesian(pair<double, double> const &radec) {
-    double ra = radec.first * RAD_PER_DEG;
-    double dec = radec.second * RAD_PER_DEG;
-    double sinRa = sin(ra);
-    double cosRa = cos(ra);
-    double sinDec = sin(dec);
-    double cosDec = cos(dec);
-    return Vector3d(cosRa * cosDec, sinRa * cosDec, sinDec);
+Vector3d const cartesian(pair<double, double> const &lonLat) {
+    double lon = lonLat.first * RAD_PER_DEG;
+    double lat = lonLat.second * RAD_PER_DEG;
+    double sinLon = sin(lon);
+    double cosLon = cos(lon);
+    double sinLat = sin(lat);
+    double cosLat = cos(lat);
+    return Vector3d(cosLon * cosLat, sinLon * cosLat, sinLat);
 }
 
 pair<double, double> const spherical(Vector3d const &v) {
     pair<double, double> sc(0.0, 0.0);
     double d2 = v(0)*v(0) + v(1)*v(1);
     if (d2 != 0.0) {
-        double ra = atan2(v(1), v(0)) * DEG_PER_RAD;
-        if (ra < 0.0) {
-            ra += 360.0;
-            if (ra == 360.0) {
-                ra = 0.0;
+        double lon = atan2(v(1), v(0)) * DEG_PER_RAD;
+        if (lon < 0.0) {
+            lon += 360.0;
+            if (lon == 360.0) {
+                lon = 0.0;
             }
         }
-        sc.first = ra;
+        sc.first = lon;
     }
     if (v(2) != 0.0) {
-        sc.second = clampDec(atan2(v(2), sqrt(d2)) * DEG_PER_RAD);
+        sc.second = clampLat(atan2(v(2), sqrt(d2)) * DEG_PER_RAD);
     }
     return sc;
 }
@@ -386,13 +386,13 @@ double SphericalTriangle::area() const {
 // The area of intersection between a spherical box and a spherical triangle
 // is computed as follows:
 //
-// 1. Intersect the triangle with the ra >= box.getRaMin() and
-//    ra <= box.getRaMax() half-spaces, which correspond to great
+// 1. Intersect the triangle with the lon >= box.getLonMin() and
+//    lon <= box.getLonMax() half-spaces, which correspond to great
 //    circles on the sphere. The result is a spherical convex polygon
-//    so long as the RA extent of the box is <= 180 deg.
+//    so long as the longitude angle extent of the box is <= 180 deg.
 //
-// 2. Intersect the polygon from 1. with the z >= sin(box.getDecMin()) and
-//    z <= sin(box.getDecMax()) half-spaces, which correspond to small circles.
+// 2. Intersect the polygon from 1. with the z >= sin(box.getLatMin()) and
+//    z <= sin(box.getLatMax()) half-spaces, which correspond to small circles.
 //
 // The resulting surface M has constant Gaussian curvature of 1 (because the
 // unit sphere has curvature of 1 everywhere). For the cases under consideration
@@ -487,11 +487,11 @@ size_t intersect(Vector3d const * inVe,  // input (vertex, edge) pair array
     return n;
 }
 
-// A list of non-overlapping RA ranges (in radians).
-class RaRangeList {
+// A list of non-overlapping longitude angle ranges (in radians).
+class LonRangeList {
 public:
-    // A new RaRangeList object contains a single range [-π,π].
-    RaRangeList() : _numRanges(1) {
+    // A new range list contains a single range [-π,π].
+    LonRangeList() : _numRanges(1) {
         _ranges[0].first = -pi<double>();
         _ranges[0].second = pi<double>();
     }
@@ -505,9 +505,9 @@ public:
                _ranges[0].second == pi<double>();
     }
     void clear() { _numRanges = 0; }
-    // Intersect this range list with the given RA range.
-    void clip(double ra0, double ra1);
-    // Return the sum of the RA extents of the ranges in this list.
+    // Intersect this range list with the given longitude angle range.
+    void clip(double lon0, double lon1);
+    // Return the sum of the extents of the ranges in this list.
     double extent() const;
 
 private:
@@ -515,35 +515,35 @@ private:
     int _numRanges;
 };
 
-void RaRangeList::clip(double ra0, double ra1) {
-    assert(ra0 != ra1);
+void LonRangeList::clip(double lon0, double lon1) {
+    assert(lon0 != lon1);
     pair<double, double> out[3];
     int j = 0;
     for (int i = 0; i < _numRanges; ++i) {
-        double cra0 = _ranges[i].first;
-        double cra1 = _ranges[i].second;
-        assert(cra0 < cra1);
-        if (ra0 < ra1) {
-            if (ra0 < cra1 && ra1 > cra0) {
-                out[j].first = max(ra0, cra0);
-                out[j].second = min(ra1, cra1);
+        double clon0 = _ranges[i].first;
+        double clon1 = _ranges[i].second;
+        assert(clon0 < clon1);
+        if (lon0 < lon1) {
+            if (lon0 < clon1 && lon1 > clon0) {
+                out[j].first = max(lon0, clon0);
+                out[j].second = min(lon1, clon1);
                 if (out[j].first != out[j].second) {
                     ++j;
                 }
             }
         } else {
-            if (cra0 < ra1) {
-                out[j].first = cra0;
-                out[j].second = min(cra1, ra1);
+            if (clon0 < lon1) {
+                out[j].first = clon0;
+                out[j].second = min(clon1, lon1);
                 ++j;
-                if (cra1 > ra0) {
-                    out[j].first = ra0;
-                    out[j].second = cra1;
+                if (clon1 > lon0) {
+                    out[j].first = lon0;
+                    out[j].second = clon1;
                     ++j;
                 }
-            } else if (cra1 > ra0) {
-                out[j].first = max(cra0, ra0);
-                out[j].second = cra1;
+            } else if (clon1 > lon0) {
+                out[j].first = max(clon0, lon0);
+                out[j].second = clon1;
                 ++j;
             }
         }
@@ -554,7 +554,7 @@ void RaRangeList::clip(double ra0, double ra1) {
     _numRanges = j;
 }
 
-double RaRangeList::extent() const {
+double LonRangeList::extent() const {
     double e = 0.0;
     for (int i = 0; i < _numRanges; ++i) {
         double delta = _ranges[i].second - _ranges[i].first;
@@ -571,7 +571,7 @@ double zArea(Vector3d const * inVe,
              double zmax)
 {
     double angle = 0.0;
-    RaRangeList bot, top;
+    LonRangeList bot, top;
     for (size_t i = 0, j = numVerts - 1; i < numVerts; j = i, ++i) {
         double z = inVe[2*i](2);
         Vector3d const & n = inVe[2*j + 1];
@@ -672,17 +672,17 @@ double zArea(Vector3d const * inVe,
 } // unnamed namespace
 
 double SphericalTriangle::intersectionArea(SphericalBox const & box) const {
-    if (box.getRaMin() == box.getRaMax() ||
-        box.getDecMin() >= 90.0 - EPSILON_DEG ||
-        box.getDecMax() <= -90.0- + EPSILON_DEG) {
+    if (box.getLonMin() == box.getLonMax() ||
+        box.getLatMin() >= 90.0 - EPSILON_DEG ||
+        box.getLatMax() <= -90.0- + EPSILON_DEG) {
         // box is degenerate or very small.
         return 0.0;
     } else if (box.isFull()) {
         // box completely contains this triangle.
         return area();
     }
-    double const zmin = sin(box.getDecMin()*RAD_PER_DEG);
-    double const zmax = sin(box.getDecMax()*RAD_PER_DEG);
+    double const zmin = sin(box.getLatMin()*RAD_PER_DEG);
+    double const zmax = sin(box.getLatMax()*RAD_PER_DEG);
     if (zmin >= zmax) {
         return 0.0;
     }
@@ -697,29 +697,30 @@ double SphericalTriangle::intersectionArea(SphericalBox const & box) const {
     in[3] = (vertex(2) + vertex(1)).cross(vertex(2) - vertex(1));
     in[4] = vertex(2);
     in[5] = (vertex(0) + vertex(2)).cross(vertex(0) - vertex(2));
-    if (box.getRaMin() != 0.0 || box.getRaMax() != 360.0) {
+    if (box.getLonMin() != 0.0 || box.getLonMax() != 360.0) {
         // Box is not an annulus.
-        double raExtent = box.getRaExtent();
-        if (raExtent > 180.0 + EPSILON_DEG) {
+        double lonExtent = box.getLonExtent();
+        if (lonExtent > 180.0 + EPSILON_DEG) {
             // Punt for now, because the intersection can be non-convex.
-            throw runtime_error("Cannot compute triangle-box intersection area: "
-                                "spherical box has RA extent > 180 deg.");
+            throw runtime_error("Cannot compute triangle-box intersection "
+                                "area: spherical box has longitude angle "
+                                "extent > 180 deg.");
         }
-        // Intersect with the half-space ra >= box.getRaMin().
-        double ra = RAD_PER_DEG * box.getRaMin();
+        // Intersect with the half-space lon >= box.getLonMin().
+        double lon = RAD_PER_DEG * box.getLonMin();
         numVerts = intersect(
-            in, numVerts, Vector3d(-sin(ra), cos(ra), 0.0), out);
+            in, numVerts, Vector3d(-sin(lon), cos(lon), 0.0), out);
         if (numVerts == 0) {
             return 0.0;
         }
         swap(in, out);
-        // If the RA extent is close to 180 deg, avoid intersecting
-        // with (nearly) the same half-space twice.
-        if (raExtent < 180.0 - EPSILON_DEG) {
-            // Intersect with the half-space ra <= box.getRaMax().
-            ra = RAD_PER_DEG * box.getRaMax();
+        // If the longitude angle extent is close to 180 deg, avoid
+        // intersecting with (nearly) the same half-space twice.
+        if (lonExtent < 180.0 - EPSILON_DEG) {
+            // Intersect with the half-space lon <= box.getLonMax().
+            lon = RAD_PER_DEG * box.getLonMax();
             numVerts = intersect(
-                in, numVerts, Vector3d(sin(ra), -cos(ra), 0.0), out);
+                in, numVerts, Vector3d(sin(lon), -cos(lon), 0.0), out);
             if (numVerts == 0) {
                 return 0.0;
             }
@@ -732,25 +733,25 @@ double SphericalTriangle::intersectionArea(SphericalBox const & box) const {
 
 // -- SphericalBox implementation ----
 
-SphericalBox::SphericalBox(double raMin,
-                           double raMax,
-                           double decMin,
-                           double decMax)
+SphericalBox::SphericalBox(double lonMin,
+                           double lonMax,
+                           double latMin,
+                           double latMax)
 {
-    if (decMin > decMax) {
-        throw runtime_error("Spherical box declination max < min.");
-    } else if (raMax < raMin && (raMax < 0.0 || raMin > 360.0)) {
-        throw runtime_error("Spherical box right ascension max < min.");
+    if (latMin > latMax) {
+        throw runtime_error("Spherical box latitude angle max < min.");
+    } else if (lonMax < lonMin && (lonMax < 0.0 || lonMin > 360.0)) {
+        throw runtime_error("Spherical box longitude angle max < min.");
     }
-    if (raMax - raMin >= 360.0) {
-        _raMin = 0.0;
-        _raMax = 360.0;
+    if (lonMax - lonMin >= 360.0) {
+        _lonMin = 0.0;
+        _lonMax = 360.0;
     } else {
-        _raMin = reduceRa(raMin);
-        _raMax = reduceRa(raMax);
+        _lonMin = reduceLon(lonMin);
+        _lonMax = reduceLon(lonMax);
     }
-    _decMin = clampDec(decMin);
-    _decMax = clampDec(decMax);
+    _latMin = clampLat(latMin);
+    _latMax = clampLat(latMax);
 }
 
 SphericalBox::SphericalBox(Vector3d const & v0,
@@ -767,25 +768,25 @@ SphericalBox::SphericalBox(Vector3d const & v0,
     // but involves less code than a more accurate computation.
     pair<double, double> c = spherical(cv);
     double alpha = maxAlpha(r, c.second);
-    _decMin = clampDec(c.second - r);
-    _decMax = clampDec(c.second + r);
+    _latMin = clampLat(c.second - r);
+    _latMax = clampLat(c.second + r);
     if (alpha > 180.0 - 1/3600.0) {
-        _raMin = 0.0;
-        _raMax = 360.0;
+        _lonMin = 0.0;
+        _lonMax = 360.0;
     } else {
-        double raMin = c.first - alpha;
-        double raMax = c.first + alpha;
-        if (raMin < 0.0) {
-            raMin += 360.0;
-            if (raMin == 360.0) {
-                raMin = 0.0;
+        double lonMin = c.first - alpha;
+        double lonMax = c.first + alpha;
+        if (lonMin < 0.0) {
+            lonMin += 360.0;
+            if (lonMin == 360.0) {
+                lonMin = 0.0;
             }
         }
-        _raMin = raMin;
-        if (raMax > 360.0) {
-            raMax -= 360.0;
+        _lonMin = lonMin;
+        if (lonMax > 360.0) {
+            lonMax -= 360.0;
         }
-        _raMax = raMax;
+        _lonMax = lonMax;
     }
 }
 
@@ -796,31 +797,31 @@ void SphericalBox::expand(double radius) {
     } else if (radius == 0.0) {
         return;
     }
-    double const extent = getRaExtent();
-    double const alpha = maxAlpha(radius, max(fabs(_decMin), fabs(_decMax)));
+    double const extent = getLonExtent();
+    double const alpha = maxAlpha(radius, max(fabs(_latMin), fabs(_latMax)));
     if (extent + 2.0 * alpha >= 360.0 - 1/3600.0) {
-        _raMin = 0.0;
-        _raMax = 360.0;
+        _lonMin = 0.0;
+        _lonMax = 360.0;
     } else {
-        _raMin -= alpha;
-        if (_raMin < 0.0) {
-            _raMin += 360.0;
-            if (_raMin == 360.0) {
-                _raMin = 0.0;
+        _lonMin -= alpha;
+        if (_lonMin < 0.0) {
+            _lonMin += 360.0;
+            if (_lonMin == 360.0) {
+                _lonMin = 0.0;
             }
         }
-        _raMax += alpha;
-        if (_raMax > 360.0) {
-            _raMax -= 360.0;
+        _lonMax += alpha;
+        if (_lonMax > 360.0) {
+            _lonMax -= 360.0;
         }
     }
-    _decMin = clampDec(_decMin - radius);
-    _decMax = clampDec(_decMax + radius);
+    _latMin = clampLat(_latMin - radius);
+    _latMax = clampLat(_latMax + radius);
 }
 
 double SphericalBox::area() const {
-    return RAD_PER_DEG*getRaExtent() *
-           (sin(RAD_PER_DEG*_decMax) - sin(RAD_PER_DEG*_decMin));
+    return RAD_PER_DEG*getLonExtent() *
+           (sin(RAD_PER_DEG*_latMax) - sin(RAD_PER_DEG*_latMin));
 }
 
 void SphericalBox::htmIds(vector<uint32_t> & ids, int level) const {

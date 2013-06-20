@@ -66,14 +66,14 @@ void defineOptions(po::options_description & opts) {
          "HTM index file name for the data set to duplicate. May be "
          "omitted, in which case --part.index is used as the HTM index "
          "for both the input data set and for partitioning positions.")
-        ("ra-min", po::value<double>()->default_value(0.0),
-         "Minimum right ascension bound (deg) for the duplication region.")
-        ("ra-max", po::value<double>()->default_value(360.0),
-         "Maximum right ascension bound (deg) for the duplication region.")
-        ("dec-min", po::value<double>()->default_value(-90.0),
-         "Minimum declination bound (deg) for the duplication region.")
-        ("dec-max", po::value<double>()->default_value(90.0),
-         "Maximum declination bound (deg) for the duplication region.")
+        ("lon-min", po::value<double>()->default_value(0.0),
+         "Minimum longitude angle bound (deg) for the duplication region.")
+        ("lon-max", po::value<double>()->default_value(360.0),
+         "Maximum longitude angle bound (deg) for the duplication region.")
+        ("lat-min", po::value<double>()->default_value(-90.0),
+         "Minimum latitude angle bound (deg) for the duplication region.")
+        ("lat-max", po::value<double>()->default_value(90.0),
+         "Maximum latitude angle bound (deg) for the duplication region.")
         ("chunk-id", po::value<vector<int32_t> >(),
          "Optionally limit duplication to one or more chunks. If specified, "
          "data will be duplicated for the given chunk(s) regardless of the "

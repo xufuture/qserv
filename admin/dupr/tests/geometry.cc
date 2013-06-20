@@ -140,12 +140,12 @@ namespace {
         S10, S12, S21, S20, S22, S31, S30, S32
     };
 
-    // Generate n points in a circle of radius r around (ra,dec).
+    // Generate n points in a circle of radius r around (lon,lat).
     vector<pair<double, double> > const ngon(
-        double ra, double dec, double r, int nv)
+        double lon, double lat, double r, int nv)
     {
         vector<pair<double, double> > points;
-        Vector3d n, e, v = dupr::cartesian(ra, dec);
+        Vector3d n, e, v = dupr::cartesian(lon, lat);
         northEast(n, e, v);
         double sinr = sin(r * dupr::RAD_PER_DEG);
         double cosr = cos(r * dupr::RAD_PER_DEG);
@@ -159,8 +159,8 @@ namespace {
         return points;
     }
 
-    dupr::SphericalTriangle const tri(double ra, double dec, double r) {
-        vector<pair<double, double> > p = ngon(ra, dec, r, 3);
+    dupr::SphericalTriangle const tri(double lon, double lat, double r) {
+        vector<pair<double, double> > p = ngon(lon, lat, r, 3);
         return dupr::SphericalTriangle(dupr::cartesian(p[0]),
                                        dupr::cartesian(p[1]),
                                        dupr::cartesian(p[2]));
@@ -169,12 +169,13 @@ namespace {
     // Find IDs of HTM triangles overlapping a box.
     vector<uint32_t> const htmIds(dupr::SphericalBox const & b, int level) {
          std::set<uint32_t> ids;
-         double ra = b.getRaMin(), dec = b.getDecMin();
-         double deltaRa = b.getRaExtent() / 128;
-         double deltaDec = (b.getDecMax() - b.getDecMin()) / 128;
+         double lon = b.getLonMin(), lat = b.getLatMin();
+         double deltaLon = b.getLonExtent() / 128;
+         double deltaLat = (b.getLatMax() - b.getLatMin()) / 128;
          for (int i = 0; i < 128; ++i) {
              for (int j = 0; j < 128; ++j) {
-                 Vector3d v = dupr::cartesian(ra + deltaRa*i, dec + deltaDec*j);
+                 Vector3d v = dupr::cartesian(
+                     lon + deltaLon*i, lat + deltaLat*j);
                  ids.insert(dupr::htmId(v, level)); 
              }
          }
@@ -193,23 +194,23 @@ namespace {
 } // unnamed namespace
 
 
-BOOST_AUTO_TEST_CASE(ClampDecTest) {
-    BOOST_CHECK_EQUAL(dupr::clampDec(-91.0), -90.0);
-    BOOST_CHECK_EQUAL(dupr::clampDec( 91.0),  90.0);
-    BOOST_CHECK_EQUAL(dupr::clampDec( 89.0),  89.0);
+BOOST_AUTO_TEST_CASE(ClampLatTest) {
+    BOOST_CHECK_EQUAL(dupr::clampLat(-91.0), -90.0);
+    BOOST_CHECK_EQUAL(dupr::clampLat( 91.0),  90.0);
+    BOOST_CHECK_EQUAL(dupr::clampLat( 89.0),  89.0);
 }
 
-BOOST_AUTO_TEST_CASE(MinDeltaRaTest) {
-    BOOST_CHECK_EQUAL(dupr::minDeltaRa(1.0, 2.0), 1.0);
-    BOOST_CHECK_EQUAL(dupr::minDeltaRa(359.0, 1.0), 2.0);
-    BOOST_CHECK_EQUAL(dupr::minDeltaRa(10.0, 350.0), 20.0);
+BOOST_AUTO_TEST_CASE(MinDeltaLonTest) {
+    BOOST_CHECK_EQUAL(dupr::minDeltaLon(1.0, 2.0), 1.0);
+    BOOST_CHECK_EQUAL(dupr::minDeltaLon(359.0, 1.0), 2.0);
+    BOOST_CHECK_EQUAL(dupr::minDeltaLon(10.0, 350.0), 20.0);
 }
 
-BOOST_AUTO_TEST_CASE(ReduceRaTest) {
-    BOOST_CHECK_EQUAL(dupr::reduceRa(0.0), 0.0);
-    BOOST_CHECK_EQUAL(dupr::reduceRa(360.0), 0.0);
-    BOOST_CHECK_EQUAL(dupr::reduceRa(540.0), 180.0);
-    BOOST_CHECK_EQUAL(dupr::reduceRa(-180.0), 180.0);
+BOOST_AUTO_TEST_CASE(ReduceLonTest) {
+    BOOST_CHECK_EQUAL(dupr::reduceLon(0.0), 0.0);
+    BOOST_CHECK_EQUAL(dupr::reduceLon(360.0), 0.0);
+    BOOST_CHECK_EQUAL(dupr::reduceLon(540.0), 180.0);
+    BOOST_CHECK_EQUAL(dupr::reduceLon(-180.0), 180.0);
 }
 
 BOOST_AUTO_TEST_CASE(MaxAlphaTest) {
@@ -219,13 +220,13 @@ BOOST_AUTO_TEST_CASE(MaxAlphaTest) {
     BOOST_CHECK_EQUAL(dupr::maxAlpha(0.0, 30.0), 0.0);
     BOOST_CHECK_THROW(dupr::maxAlpha(-1.0, 0.0), exception);
     BOOST_CHECK_THROW(dupr::maxAlpha(91.0, 0.0), exception);
-    // Generate points in a circle of radius 1 deg and check
-    // that each point has RA within alpha of the center RA.
+    // Generate points in a circle of radius 1 deg and check that
+    // each point has longitude within alpha of the center longitude.
     vector<pair<double, double> > circle = ngon(0.0, 45.0, 1.0, 360*16);
     double alpha = dupr::maxAlpha(1.0, 45.0);
     for (size_t i = 0; i < circle.size(); ++i) {
-        double ra = dupr::minDeltaRa(0.0, circle[i].first);
-        BOOST_CHECK_LT(ra, alpha + dupr::EPSILON_DEG);
+        double lon = dupr::minDeltaLon(0.0, circle[i].first);
+        BOOST_CHECK_LT(lon, alpha + dupr::EPSILON_DEG);
     }
 }
 
@@ -324,19 +325,19 @@ BOOST_AUTO_TEST_CASE(SphericalBoxTest) {
     BOOST_CHECK(!b.isEmpty());
     b = dupr::SphericalBox(-10, 10, 0, 0);
     BOOST_CHECK(b.wraps());
-    BOOST_CHECK_EQUAL(b.getRaMin(), 350);
-    BOOST_CHECK_EQUAL(b.getRaMax(), 10);
-    BOOST_CHECK_EQUAL(b.getRaExtent(), 20);
+    BOOST_CHECK_EQUAL(b.getLonMin(), 350);
+    BOOST_CHECK_EQUAL(b.getLonMax(), 10);
+    BOOST_CHECK_EQUAL(b.getLonExtent(), 20);
     b = dupr::SphericalBox(350, 370, -10, 10);
     BOOST_CHECK(b.wraps());
-    BOOST_CHECK_EQUAL(b.getRaMin(), 350);
-    BOOST_CHECK_EQUAL(b.getRaMax(), 10);
-    BOOST_CHECK_EQUAL(b.getDecMin(), -10);
-    BOOST_CHECK_EQUAL(b.getDecMax(), 10);
-    BOOST_CHECK_EQUAL(b.getRaExtent(), 20);
+    BOOST_CHECK_EQUAL(b.getLonMin(), 350);
+    BOOST_CHECK_EQUAL(b.getLonMax(), 10);
+    BOOST_CHECK_EQUAL(b.getLatMin(), -10);
+    BOOST_CHECK_EQUAL(b.getLatMax(), 10);
+    BOOST_CHECK_EQUAL(b.getLonExtent(), 20);
     b = dupr::SphericalBox(10, 20, 30, 40);
     BOOST_CHECK(!b.wraps());
-    BOOST_CHECK_EQUAL(b.getRaExtent(), 10);
+    BOOST_CHECK_EQUAL(b.getLonExtent(), 10);
     BOOST_CHECK_THROW(dupr::SphericalBox(0,1,1,-1), exception);
     BOOST_CHECK_THROW(dupr::SphericalBox(370,0,0,1), exception);
 }
@@ -355,26 +356,26 @@ BOOST_AUTO_TEST_CASE(SphericalBoxExpandTest) {
     dupr::SphericalBox b(10, 20, 80, 85);
     BOOST_CHECK_THROW(b.expand(-1), exception);
     b.expand(0);
-    BOOST_CHECK_EQUAL(b.getRaMin(), 10);
-    BOOST_CHECK_EQUAL(b.getRaMax(), 20);
-    BOOST_CHECK_EQUAL(b.getDecMin(), 80);
-    BOOST_CHECK_EQUAL(b.getDecMax(), 85);
+    BOOST_CHECK_EQUAL(b.getLonMin(), 10);
+    BOOST_CHECK_EQUAL(b.getLonMax(), 20);
+    BOOST_CHECK_EQUAL(b.getLatMin(), 80);
+    BOOST_CHECK_EQUAL(b.getLatMax(), 85);
     b.expand(6);
-    BOOST_CHECK_EQUAL(b.getRaMin(), 0);
-    BOOST_CHECK_EQUAL(b.getRaMax(), 360);
-    BOOST_CHECK_EQUAL(b.getDecMin(), 74);
-    BOOST_CHECK_EQUAL(b.getDecMax(), 90);
+    BOOST_CHECK_EQUAL(b.getLonMin(), 0);
+    BOOST_CHECK_EQUAL(b.getLonMax(), 360);
+    BOOST_CHECK_EQUAL(b.getLatMin(), 74);
+    BOOST_CHECK_EQUAL(b.getLatMax(), 90);
     b = dupr::SphericalBox(1,2,-89,89);
     b.expand(2);
     BOOST_CHECK(b.isFull());
-    double const ra[2] = { 10, 20 };
-    double const dec[2] = { -35, 45 };
-    b = dupr::SphericalBox(ra[0], ra[1], dec[0], dec[1]);
+    double const lon[2] = { 10, 20 };
+    double const lat[2] = { -35, 45 };
+    b = dupr::SphericalBox(lon[0], lon[1], lat[0], lat[1]);
     b.expand(10);
     for (int i = 0; i < 2; ++i) {
         for (int j = 0; j < 2; ++j) {
             vector<pair<double, double> > circle = ngon(
-                ra[i], dec[j], 10 - dupr::EPSILON_DEG, 360);
+                lon[i], lat[j], 10 - dupr::EPSILON_DEG, 360);
             for (size_t k = 0; k < circle.size(); ++k) {
                 BOOST_CHECK(b.contains(circle[k]));
             }

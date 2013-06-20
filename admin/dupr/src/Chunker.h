@@ -41,31 +41,31 @@
 
 namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
-/// Clamp `ra` to be at most 360 degrees. Any input satisfying
+/// Clamp `lon` to be at most 360 degrees. Any input satisfying
 ///
-///     ra >= 360.0 - EPSILON_DEG
+///     lon >= 360.0 - EPSILON_DEG
 ///
 /// is mapped to 360.0. This is useful when multiplying a (sub-)chunk width
 /// by an integer to obtain (sub-)chunk bounds, as this multiplication is not
-/// guaranteed to give a maximum right ascension of exactly 360.0 degrees for
+/// guaranteed to give a maximum longitude angle of exactly 360.0 degrees for
 /// the last (sub-)chunk in a (sub-)stripe.
-inline double clampRa(double ra) {
-    if (ra > 360.0 - EPSILON_DEG) {
+inline double clampLon(double lon) {
+    if (lon > 360.0 - EPSILON_DEG) {
         return 360.0;
     }
-    return ra;
+    return lon;
 }
 
-/// Compute the number of segments to divide the given declination range
-/// (stripe) into. Two points in the declination range separated by at least
+/// Compute the number of segments to divide the given latitude angle range
+/// (stripe) into. Two points in the latitude range separated by at least
 /// one segment are guaranteed to have an angular separation of at least
 /// `width`. All inputs are expected to be in units of degrees.
-int segments(double decMin, double decMax, double width);
+int segments(double latMin, double latMax, double width);
 
 /// Return the angular width of a single segment obtained by chopping the
-/// declination stripe `[decMin,decMax]` into `numSegments` equal width (in
-/// right ascension) segments. Declinations must be in units of degrees.
-double segmentWidth(double decMin, double decMax, int numSegments);
+/// latitude angle stripe `[latMin,latMax]` into `numSegments` equal width (in
+/// longitude angle) segments. Latitude angles must be in units of degrees.
+double segmentWidth(double latMin, double latMax, int numSegments);
 
 
 /// A chunk location for a position on the sky.
@@ -179,7 +179,7 @@ private:
                (subChunk - chunk*_numSubChunksPerChunk[subStripe]);
     }
 
-    void _upDownOverlap(double ra,
+    void _upDownOverlap(double lon,
                         int32_t chunkId,
                         ChunkLocation::Kind kind,
                         int32_t stripe,
@@ -196,11 +196,11 @@ private:
     boost::scoped_array<int32_t> _numChunksPerStripe;
     /// The number of sub-chunks per chunk, indexed by sub-stripe.
     boost::scoped_array<int32_t> _numSubChunksPerChunk;
-    /// The sub-chunk width (in RA) for each sub-stripe.
+    /// The sub-chunk width (in longitude angle) for each sub-stripe.
     boost::scoped_array<double> _subChunkWidth;
-    /// For each sub-stripe, the maximum half-width (in RA) of a circle with
-    /// radius `_overlap` and center inside the sub-stripe. Guaranteed to be
-    /// smaller than the sub-chunk width.
+    /// For each sub-stripe, the maximum half-width (in longitude angle) of a
+    /// circle with radius `_overlap` and center inside the sub-stripe.
+    /// Guaranteed to be smaller than the sub-chunk width.
     boost::scoped_array<double> _alpha;
 };
 

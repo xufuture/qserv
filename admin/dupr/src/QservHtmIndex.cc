@@ -120,8 +120,7 @@ private:
 
     csv::Editor          _editor;
     int                  _idField;
-    int                  _raField;
-    int                  _decField;
+    pair<int,int>        _pos;
     int                  _level;
     shared_ptr<HtmIndex> _index;
     uint32_t             _htmId;
@@ -135,8 +134,7 @@ private:
 Worker::Worker(po::variables_map const & vm) :
     _editor(vm),
     _idField(-1),
-    _raField(-1),
-    _decField(-1),
+    _pos(-1, -1),
     _level(vm["htm.level"].as<int>()),
     _index(make_shared<HtmIndex>(_level)),
     _htmId(0),
@@ -160,8 +158,8 @@ Worker::Worker(po::variables_map const & vm) :
     _idField = fields.resolve("id", s);
     s = vm["part.pos"].as<string>();
     pair<string,string> p = parseFieldNamePair("part.pos", s);
-    _raField = fields.resolve("part.pos", s, p.first);
-    _decField = fields.resolve("part.pos", s, p.second);
+    _pos.first = fields.resolve("part.pos", s, p.first);
+    _pos.second = fields.resolve("part.pos", s, p.second);
 }
 
 void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
@@ -170,8 +168,8 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
     while (beg < end) {
         beg = _editor.readRecord(beg, end);
         k.id = _editor.get<int64_t>(_idField);
-        sc.first = _editor.get<double>(_raField);
-        sc.second = _editor.get<double>(_decField);
+        sc.first = _editor.get<double>(_pos.first);
+        sc.second = _editor.get<double>(_pos.second);
         k.htmId = htmId(cartesian(sc), _level);
         silo.add(k, _editor);
     }
@@ -219,7 +217,7 @@ void Worker::defineOptions(po::options_description & opts) {
         ("id", po::value<string>(),
          "The name of the record ID input field.")
         ("part.pos", po::value<string>(),
-         "The partitioning right ascension and declination field names, "
+         "The partitioning longitude and latitude angle field names, "
          "separated by a comma.");
     opts.add(indexing).add(part);
     defineOutputOptions(opts);

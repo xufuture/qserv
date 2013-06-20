@@ -254,10 +254,10 @@ void Worker::defineOptions(po::options_description & opts) {
          "Sub-chunk ID output field name. This field field name is appended "
          "to the output field name list if it isn't already included.")
         ("part.pos1", po::value<string>(),
-         "The partitioning right ascension and declination field names of the "
+         "The partitioning longitude and latitude angle field names of the "
          "first matched entity, separated by a comma.")
         ("part.pos2", po::value<string>(),
-         "The partitioning right ascension and declination field names of the "
+         "The partitioning longitude and latitude angle field names of the "
          "second matched entity, separated by a comma.")
         ("part.flags", po::value<string>()->default_value("partitioningFlags"),
          "The partitioning flags output field name. Bit 0, the LSB of the "

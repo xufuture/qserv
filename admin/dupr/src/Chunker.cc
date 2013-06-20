@@ -45,9 +45,9 @@ namespace po = boost::program_options;
 
 namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
-int segments(double decMin, double decMax, double width) {
-    double dec = max(fabs(decMin), fabs(decMax));
-    if (dec > 90.0 - 1/3600.0) {
+int segments(double latMin, double latMax, double width) {
+    double lat = max(fabs(latMin), fabs(latMax));
+    if (lat > 90.0 - 1/3600.0) {
         return 1;
     }
     if (width >= 180.0) {
@@ -55,23 +55,23 @@ int segments(double decMin, double decMax, double width) {
     } else if (width < 1/3600.0) {
         width = 1/3600;
     }
-    dec *= RAD_PER_DEG;
+    lat *= RAD_PER_DEG;
     double cw = cos(width * RAD_PER_DEG);
-    double sd = sin(dec);
-    double cd = cos(dec);
-    double x = cw - sd * sd;
-    double u = cd * cd;
+    double sl = sin(lat);
+    double cl = cos(lat);
+    double x = cw - sl * sl;
+    double u = cl * cl;
     double y = sqrt(fabs(u * u - x * x));
     return static_cast<int>(
         floor(360.0 / fabs(DEG_PER_RAD * atan2(y, x))));
 }
 
-double segmentWidth(double decMin, double decMax, int numSegments) {
-    double dec = max(fabs(decMin), fabs(decMax)) * RAD_PER_DEG;
+double segmentWidth(double latMin, double latMax, int numSegments) {
+    double lat = max(fabs(latMin), fabs(latMax)) * RAD_PER_DEG;
     double cw = cos(RAD_PER_DEG * (360.0 / numSegments));
-    double sd = sin(dec);
-    double cd = cos(dec);
-    return acos(cw * cd * cd + sd * sd) * DEG_PER_RAD;
+    double sl = sin(lat);
+    double cl = cos(lat);
+    return acos(cw * cl * cl + sl * sl) * DEG_PER_RAD;
 }
 
 
@@ -94,13 +94,13 @@ SphericalBox const Chunker::getChunkBounds(int32_t chunkId) const {
     int32_t stripe = _getStripe(chunkId);
     int32_t chunk = _getChunk(chunkId, stripe);
     double width = 360.0 / _numChunksPerStripe[stripe];
-    double raMin = chunk*width;
-    double raMax = clampRa((chunk + 1)*width);
-    double decMin = clampDec(
+    double lonMin = chunk*width;
+    double lonMax = clampLon((chunk + 1)*width);
+    double latMin = clampLat(
         stripe*_numSubStripesPerStripe*_subStripeHeight - 90.0);
-    double decMax = clampDec(
+    double latMax = clampLat(
         (stripe + 1)*_numSubStripesPerStripe*_subStripeHeight - 90.0);
-    return SphericalBox(raMin, raMax, decMin, decMax);
+    return SphericalBox(lonMin, lonMax, latMin, latMax);
 }
 
 SphericalBox const Chunker::getSubChunkBounds(int32_t chunkId,
@@ -110,28 +110,28 @@ SphericalBox const Chunker::getSubChunkBounds(int32_t chunkId,
     int32_t chunk = _getChunk(chunkId, stripe);
     int32_t subStripe = _getSubStripe(subChunkId, stripe);
     int32_t subChunk = _getSubChunk(subChunkId, stripe, subStripe, chunk);
-    double raMin = subChunk*_subChunkWidth[subStripe];
-    double raMax = clampRa((subChunk + 1)*_subChunkWidth[subStripe]);
-    double decMin = clampDec(subStripe*_subStripeHeight - 90.0);
-    double decMax = clampDec((subStripe + 1)*_subStripeHeight - 90.0);
-    return SphericalBox(raMin, raMax, decMin, decMax);
+    double lonMin = subChunk*_subChunkWidth[subStripe];
+    double lonMax = clampLon((subChunk + 1)*_subChunkWidth[subStripe]);
+    double latMin = clampLat(subStripe*_subStripeHeight - 90.0);
+    double latMax = clampLat((subStripe + 1)*_subStripeHeight - 90.0);
+    return SphericalBox(lonMin, lonMax, latMin, latMax);
 }
 
 ChunkLocation const Chunker::locate(
     std::pair<double, double> const & position) const
 {
     ChunkLocation loc;
-    double const ra = position.first;
-    double const dec = position.second;
+    double const lon = position.first;
+    double const lat = position.second;
     int32_t subStripe = static_cast<int32_t>(
-        floor((dec + 90.0) / _subStripeHeight));
+        floor((lat + 90.0) / _subStripeHeight));
     int32_t const numSubStripes = _numSubStripesPerStripe*_numStripes;
     if (subStripe >= numSubStripes) {
         subStripe = numSubStripes - 1;
     }
     int32_t const stripe = subStripe/_numSubStripesPerStripe;
     int32_t subChunk = static_cast<int32_t>(
-        floor(ra / _subChunkWidth[subStripe]));
+        floor(lon / _subChunkWidth[subStripe]));
     int32_t const numChunks = _numChunksPerStripe[stripe];
     int32_t const numSubChunksPerChunk = _numSubChunksPerChunk[subStripe];
     int32_t const numSubChunks = numChunks*numSubChunksPerChunk;
@@ -150,17 +150,17 @@ void Chunker::locate(pair<double, double> const & position,
                      vector<ChunkLocation> & locations) const
 {
     // Find non-overlap location of position.
-    double const ra = position.first;
-    double const dec = position.second;
+    double const lon = position.first;
+    double const lat = position.second;
     int32_t subStripe = static_cast<int32_t>(
-        floor((dec + 90.0) / _subStripeHeight));
+        floor((lat + 90.0) / _subStripeHeight));
     int32_t const numSubStripes = _numSubStripesPerStripe*_numStripes;
     if (subStripe >= numSubStripes) {
         subStripe = numSubStripes - 1;
     }
     int32_t const stripe = subStripe/_numSubStripesPerStripe;
     int32_t subChunk = static_cast<int32_t>(
-        floor(ra / _subChunkWidth[subStripe]));
+        floor(lon / _subChunkWidth[subStripe]));
     int32_t const numChunks = _numChunksPerStripe[stripe];
     int32_t const numSubChunksPerChunk = _numSubChunksPerChunk[subStripe];
     int32_t const numSubChunks = numChunks*numSubChunksPerChunk;
@@ -180,23 +180,23 @@ void Chunker::locate(pair<double, double> const & position,
         return;
     }
     // Get sub-chunk bounds.
-    double const raMin = subChunk*_subChunkWidth[subStripe];
-    double const raMax = clampRa((subChunk + 1)*_subChunkWidth[subStripe]);
-    double const decMin = clampDec(subStripe*_subStripeHeight - 90.0);
-    double const decMax = clampDec((subStripe + 1)*_subStripeHeight - 90.0);
+    double const lonMin = subChunk*_subChunkWidth[subStripe];
+    double const lonMax = clampLon((subChunk + 1)*_subChunkWidth[subStripe]);
+    double const latMin = clampLat(subStripe*_subStripeHeight - 90.0);
+    double const latMax = clampLat((subStripe + 1)*_subStripeHeight - 90.0);
     // Check whether the position is in the overlap regions of sub-chunks in
     // the sub-stripe above and below.
-    if (subStripe > 0 && dec < decMin + _overlap) {
+    if (subStripe > 0 && lat < latMin + _overlap) {
         // The position is in the full-overlap region of sub-chunks
         // 1 sub-stripe down.
-        _upDownOverlap(ra, chunkId, ChunkLocation::FULL_OVERLAP,
+        _upDownOverlap(lon, chunkId, ChunkLocation::FULL_OVERLAP,
                        (subStripe - 1) / _numSubStripesPerStripe,
                        subStripe - 1, locations);
     }
-    if (subStripe < numSubStripes - 1 && dec >= decMax - _overlap) {
+    if (subStripe < numSubStripes - 1 && lat >= latMax - _overlap) {
         // The position is in the full and self-overlap regions of sub-chunks
         // 1 sub-stripe up.
-        _upDownOverlap(ra, chunkId, ChunkLocation::SELF_OVERLAP,
+        _upDownOverlap(lon, chunkId, ChunkLocation::SELF_OVERLAP,
                        (subStripe + 1) / _numSubStripesPerStripe,
                        subStripe + 1, locations);
     }
@@ -206,7 +206,7 @@ void Chunker::locate(pair<double, double> const & position,
         return;
     }
     double const alpha = _alpha[subStripe];
-    if (ra < raMin + alpha) {
+    if (lon < lonMin + alpha) {
         // The position is in the full and self-overlap region of the sub-chunk
         // to the left.
         int32_t overlapChunk, overlapSubChunk;
@@ -226,7 +226,7 @@ void Chunker::locate(pair<double, double> const & position,
             locations.push_back(loc);
         }
     }
-    if (ra > raMax - alpha) {
+    if (lon > lonMax - alpha) {
         // The position is in the full-overlap region of the sub-chunk
         // to the right.
         int32_t overlapChunk, overlapSubChunk;
@@ -261,9 +261,9 @@ vector<int32_t> const Chunker::getChunksIn(SphericalBox const & region,
     }
     vector<int32_t> chunks;
     int32_t const minStripe = _getStripe(
-        locate(pair<double,double>(0.0, region.getDecMin())).chunkId);
+        locate(pair<double,double>(0.0, region.getLatMin())).chunkId);
     int32_t const maxStripe = _getStripe(
-        locate(pair<double,double>(0.0, region.getDecMax())).chunkId);
+        locate(pair<double,double>(0.0, region.getLatMax())).chunkId);
     // The slow and easy route - loop over every chunk, see if it belongs to
     // the given node, and if it also intersects with region, return it.
     for (int32_t stripe = minStripe; stripe <= maxStripe; ++stripe) {
@@ -292,7 +292,7 @@ void Chunker::getSubChunks(vector<int32_t> & subChunks, int32_t chunkId) const {
 void Chunker::defineOptions(po::options_description & opts) {
     opts.add_options()
         ("part.num-stripes", po::value<int32_t>()->default_value(18),
-         "The number of declination stripes to divide the sky into.")
+         "The number of latitude angle stripes to divide the sky into.")
         ("part.num-sub-stripes", po::value<int32_t>()->default_value(100),
          "The number of sub-stripes to divide each stripe into.")
         ("part.overlap", po::value<double>()->default_value(0.01),
@@ -334,14 +334,14 @@ void Chunker::_initialize(double overlap,
         numChunksPerStripe[i] = nc;
         for (int32_t j = 0; j < numSubStripesPerStripe; ++j) {
             int32_t ss = i * numSubStripesPerStripe + j;
-            double decMin = ss*subStripeHeight - 90.0;
-            double decMax = (ss + 1)*subStripeHeight - 90.0;
-            int32_t nsc = segments(decMin, decMax, subStripeHeight) / nc;
+            double latMin = ss*subStripeHeight - 90.0;
+            double latMax = (ss + 1)*subStripeHeight - 90.0;
+            int32_t nsc = segments(latMin, latMax, subStripeHeight) / nc;
             maxSubChunksPerChunk = max(maxSubChunksPerChunk, nsc);
             numSubChunksPerChunk[ss] = nsc;
             double scw = 360.0 / (nsc * nc);
             subChunkWidth[ss] = scw;
-            double a = maxAlpha(overlap, max(fabs(decMin), fabs(decMax)));
+            double a = maxAlpha(overlap, max(fabs(latMin), fabs(latMax)));
             if (a > scw) {
                 throw runtime_error("The overlap radius is greater than "
                                     "the sub-chunk width.");
@@ -356,7 +356,7 @@ void Chunker::_initialize(double overlap,
     swap(alpha, _alpha);
 }
 
-void Chunker::_upDownOverlap(double ra,
+void Chunker::_upDownOverlap(double lon,
                              int32_t chunkId,
                              ChunkLocation::Kind kind,
                              int32_t stripe,
@@ -368,8 +368,10 @@ void Chunker::_upDownOverlap(double ra,
     int32_t const numSubChunks = numChunks*numSubChunksPerChunk;
     double const subChunkWidth = _subChunkWidth[subStripe];
     double const alpha = _alpha[subStripe];
-    int32_t minSubChunk = static_cast<int32_t>(floor((ra - alpha) / subChunkWidth));
-    int32_t maxSubChunk = static_cast<int32_t>(floor((ra + alpha) / subChunkWidth));
+    int32_t minSubChunk = static_cast<int32_t>(
+        floor((lon - alpha) / subChunkWidth));
+    int32_t maxSubChunk = static_cast<int32_t>(
+        floor((lon + alpha) / subChunkWidth));
     if (minSubChunk < 0) {
         minSubChunk += numSubChunks;
     }

@@ -39,32 +39,32 @@
 namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
 
-/// Clamp `dec` to lie in the `[-90,90]` degree range.
-inline double clampDec(double dec) {
-    if (dec < -90.0) {
+/// Clamp `lat` to lie in the `[-90,90]` degree range.
+inline double clampLat(double lat) {
+    if (lat < -90.0) {
         return -90.0;
-    } else if (dec > 90.0) {
+    } else if (lat > 90.0) {
         return 90.0;
     }
-    return dec;
+    return lat;
 }
 
-/// Return the minimum delta between two right ascensions,
+/// Return the minimum delta between two longitude angles,
 /// both expected to be in degrees.
-inline double minDeltaRa(double ra1, double ra2) {
-    double delta = std::fabs(ra1 - ra2);
+inline double minDeltaLon(double lon1, double lon2) {
+    double delta = std::fabs(lon1 - lon2);
     return std::min(delta, 360.0 - delta);
 }
 
-/// Range reduce `ra` to lie in the `[0, 360)` degree range.
-double reduceRa(double ra);
+/// Range reduce `lon` to lie in the `[0, 360)` degree range.
+double reduceLon(double lon);
 
-/// Compute the extent in right ascension `[-α,α]` of the circle
-/// with radius `r` and center `(0, centerDec)` on the unit sphere.
-/// Both `r` and `centerDec` are assumed to be in units of degrees;
-/// `centerDec` is clamped to lie in `[-90, 90]` and `r` must
+/// Compute the extent in longitude angle `[-α,α]` of the circle
+/// with radius `r` and center `(0, centerLat)` on the unit sphere.
+/// Both `r` and `centerLat` are assumed to be in units of degrees;
+/// `centerLat` is clamped to lie in `[-90, 90]` and `r` must
 /// lie in `[0, 90]`.
-double maxAlpha(double r, double centerDec);
+double maxAlpha(double r, double centerLat);
 
 /// Compute the HTM ID of `v`.
 uint32_t htmId(Vector3d const &v, int level);
@@ -72,15 +72,15 @@ uint32_t htmId(Vector3d const &v, int level);
 /// Return the HTM subdivision level of `id` or -1 if `id` is invalid.
 int htmLevel(uint32_t id);
 
-/// Return the unit 3-vector corresponding to the given right ascension
-/// and declination (in degrees).
-Vector3d const cartesian(std::pair<double, double> const &radec);
+/// Return the unit 3-vector corresponding to the given spherical
+/// coordinates (in degrees).
+Vector3d const cartesian(std::pair<double, double> const &lonLat);
 
-inline Vector3d const cartesian(double ra, double dec) {
-    return cartesian(std::pair<double, double>(ra, dec));
+inline Vector3d const cartesian(double lon, double lat) {
+    return cartesian(std::pair<double, double>(lon, lat));
 }
 
-/// Return the right ascension and declination (in degrees) corresponding
+/// Return the longitude and latitude angles (in degrees) corresponding
 /// to the given 3-vector.
 std::pair<double, double> const spherical(Vector3d const &v);
 
@@ -186,12 +186,12 @@ private:
 /// specified by a pair of points; however, a spherical box may correspond
 /// to the entire unit-sphere, a spherical cap, a lune or the traditional
 /// rectangle. Additionally, spherical boxes can span the 0/360 degree
-/// right ascension angle discontinuity.
+/// longitude angle discontinuity.
 class SphericalBox {
 public:
-    SphericalBox() : _raMin(0.0), _raMax(360.0), _decMin(-90.0), _decMax(90.0) { }
+    SphericalBox() : _lonMin(0.0), _lonMax(360.0), _latMin(-90.0), _latMax(90.0) { }
 
-    SphericalBox(double raMin, double raMax, double decMin, double decMax);
+    SphericalBox(double lonMin, double lonMax, double latMin, double latMax);
 
     /// Create a conservative bounding box for a spherical triangle.
     SphericalBox(Vector3d const & v0, Vector3d const & v1, Vector3d const & v2);
@@ -200,43 +200,43 @@ public:
     void expand(double radius);
 
     bool isEmpty() const {
-        return _decMax < _decMin;
+        return _latMax < _latMin;
     }
     bool isFull() const {
-        return _decMin == -90.0 && _decMax == 90.0 &&
-               _raMin == 0.0 && _raMax == 360.0;
+        return _latMin == -90.0 && _latMax ==  90.0 &&
+               _lonMin ==   0.0 && _lonMax == 360.0;
     }
 
-    /// Does the box wrap around the 0/360 degree right ascension discontinuity?
+    /// Does the box wrap around the 0/360 degree longitude angle discontinuity?
     bool wraps() const {
-        return _raMax < _raMin;
+        return _lonMax < _lonMin;
     }
 
-    double getRaMin() const { return _raMin; }
-    double getRaMax() const { return _raMax; }
-    double getDecMin() const { return _decMin; }
-    double getDecMax() const { return _decMax; }
+    double getLonMin() const { return _lonMin; }
+    double getLonMax() const { return _lonMax; }
+    double getLatMin() const { return _latMin; }
+    double getLatMax() const { return _latMax; }
 
     /// Compute the area of this box in steradians.
     double area() const;
 
     /// Return the extent in right ascension of this box.
-    double getRaExtent() const {
+    double getLonExtent() const {
         if (wraps()) {
-            return 360.0 - _raMin + _raMax;
+            return 360.0 - _lonMin + _lonMax;
         }
-        return _raMax - _raMin;
+        return _lonMax - _lonMin;
     }
 
     /// Does this box contain the given spherical coordinates?
-    bool contains(double ra, double dec) const {
-        if (dec < _decMin || dec > _decMax) {
+    bool contains(double lon, double lat) const {
+        if (lat < _latMin || lat > _latMax) {
             return false;
         }
         if (wraps()) {
-           return ra >= _raMin || ra <= _raMax;
+           return lon >= _lonMin || lon <= _lonMax;
         }
-        return ra >= _raMin && ra <= _raMax;
+        return lon >= _lonMin && lon <= _lonMax;
     }
 
     bool contains(std::pair<double, double> const & position) const {
@@ -247,17 +247,17 @@ public:
     bool intersects(SphericalBox const & box) const {
         if (isEmpty() || box.isEmpty()) {
             return false;
-        } else if (box._decMin > _decMax || box._decMax < _decMin) {
+        } else if (box._latMin > _latMax || box._latMax < _latMin) {
             return false;
         } else if (wraps()) {
             if (box.wraps()) {
                 return true;
             }
-            return box._raMin <= _raMax || box._raMax >= _raMin;
+            return box._lonMin <= _lonMax || box._lonMax >= _lonMin;
         } else if (box.wraps()) {
-            return _raMin <= box._raMax || _raMax >= box._raMin;
+            return _lonMin <= box._lonMax || _lonMax >= box._lonMin;
         }
-        return  _raMin <= box._raMax && _raMax >= box._raMin;
+        return  _lonMin <= box._lonMax && _lonMax >= box._lonMin;
     }
 
     /// Compute a conservative approximation to the list of HTM triangles
@@ -270,10 +270,10 @@ private:
                  int level,
                  Matrix3d const & m) const;
 
-    double _raMin;
-    double _raMax;
-    double _decMin;
-    double _decMax;
+    double _lonMin;
+    double _lonMax;
+    double _latMin;
+    double _latMax;
 };
 
 }}}} // namespace lsst::qserv::admin::dupr

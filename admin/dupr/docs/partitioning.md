@@ -56,9 +56,9 @@ stores a precomputed amount of overlapping data along with each partition.
 The Partitioning Scheme
 -----------------------
 
-The celestial sphere is divided into declination “stripes” of fixed height H.
+The celestial sphere is divided into latitude angle“stripes” of fixed height H.
 For each stripe, a width W is computed such that any two points in the stripe
-with right ascensions separated by at least W have angular separation of
+with longitude angles separated by at least W have angular separation of
 at least H. The stripe is then broken into an integral number of chunks of
 width at least W. The same procedure is used to obtain finer subchunks -
 each stripe is broken into a configureable number of equal-height “substripes”,
@@ -78,9 +78,9 @@ identifiers are currently assigned.
 
 First, stripes are numbered from 0 to S - 1, where 0 denotes the southernmost
 stripe. Within a stripe s, chunks are numbered from 0 to C_s - 1, where 0
-denotes the chunk with minimum RA = 0. Note that according to the rules above,
-2S >= C_s for any s. The identifier (chunk ID) for chunk c in stripe s is
-given by:
+denotes the chunk with minimum longitude = 0. Note that according to the rules
+above, 2S >= C_s for any s. The identifier (chunk ID) for chunk c in stripe s
+is given by:
 
     2S*s + c
 
@@ -96,10 +96,10 @@ Overlap
 -------
 
 The boundaries of chunks and subchunks constructed as described are boxes in
-right ascension / declination. It is relatively straightforward to compute
+longitude and latitude angle. It is relatively straightforward to compute
 a spherical box that is a conservative approximation to the region containing
-all points within angular separation R of an initial box - the box declination
-limits must be adjusted outwards by R, and right ascension bounds for the
+all points within angular separation R of an initial box - the latitude
+limits must be adjusted outwards by R, and longitude bounds for the
 shape obtained by sweeping a small circle of opening angle R along the sides
 of the box must be computed.
 
