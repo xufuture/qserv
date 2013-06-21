@@ -22,6 +22,7 @@
 #include "lsst/qserv/worker/QueryRunnerManager.h"
 #include "lsst/qserv/worker/QueryRunner.h"
 #include "lsst/qserv/worker/Config.h"
+#include "lsst/qserv/worker/ChunkDisk.h"
 namespace qWorker = lsst::qserv::worker;
 
 ////////////////////////////////////////////////////////////////////////
@@ -78,13 +79,8 @@ qWorker::QueryRunnerManager::_getQueueHead() const {
 void 
 qWorker::QueryRunnerManager::runOrEnqueue(qWorker::QueryRunnerArg const& a) {
     boost::lock_guard<boost::mutex> m(_mutex);
-    if(hasSpace()) {
-        // Can't simply do: boost::thread t(qWorker::QueryRunner(a));
-        // Must call function.
-        launchThread(qWorker::QueryRunner(a)); 
-    } else {
-        _enqueue(a);
-    }
+    _enqueue(a);
+    _tryLaunch();
 }
 
 bool qWorker::QueryRunnerManager::squashByHash(std::string const& hash) {
@@ -127,7 +123,7 @@ void qWorker::QueryRunnerManager::dropRunner(QueryRunner* q) {
 bool qWorker::QueryRunnerManager::recycleRunner(ArgFunc* af, int lastChunkId) {
     boost::lock_guard<boost::mutex> m(_mutex);
     if((!isOverloaded()) && (!_args.empty())) {
-        if(true) { // Simple version
+        if(false) { // Simple version
             (*af)(_getQueueHead()); // Switch to new query
             _popQueueHead();
         } else { // Prefer same chunk, if possible. 
@@ -175,5 +171,33 @@ bool qWorker::QueryRunnerManager::_cancelRunning(std::string const& hash) {
 
 void qWorker::QueryRunnerManager::_enqueue(qWorker::QueryRunnerArg const& a) {
     ++_jobTotal;
-    _args.push_back(a);
+    // FIXME: Obsolete. Using ScanScheduler.
+    // FIXME: Select ChunkDisk according to task's chunk when
+    // implementing multiple spindle support. 
+    assert(!_disks.empty());
+    assert(_disks.front());
+    //_disks.front()->enqueue(boost::make_shared<QueryRunnerArg>(a));
+}
+
+void qWorker::QueryRunnerManager::_tryLaunch() {
+    // FIXME: This is obsolete.
+    ::abort();
+#if 0
+    if(!hasSpace()) { return; }
+    
+    // Check disks for candidate ones.
+    // Pick one. Prefer a less-loaded disk: want to make use of i/o
+    // from both disks. (for multi-disk support)
+    assert(!_disks.empty());
+    boost::shared_ptr<ChunkDisk> disk = _disks[0]; // Only 1 right now
+    assert(disk);
+    // Allow another chunk if disk is not busy and there are tasks remaining.
+    bool allowNewChunk = (!disk->busy() && !disk->empty());
+    boost::shared_ptr<QueryRunnerArg> a = disk->getNext(allowNewChunk);
+    if(a) {
+        launchThread(qWorker::QueryRunner(*this, *a));
+        return;
+    } 
+    // Otherwise, don't run anything.
+#endif
 }

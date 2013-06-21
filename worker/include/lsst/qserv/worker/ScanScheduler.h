@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
@@ -26,8 +27,8 @@
 //  Used to do lightweight concurrent things without thread
 //  creation/destruction overhead.
 //
-#ifndef LSST_QSERV_WORKER_FIFOSCHEDULER_H
-#define LSST_QSERV_WORKER_FIFOSCHEDULER_H
+#ifndef LSST_QSERV_WORKER_SCANSCHEDULER_H
+#define LSST_QSERV_WORKER_SCANSCHEDULER_H
 
 #include <boost/thread/mutex.hpp>
 #include "lsst/qserv/worker/Foreman.h"
@@ -35,14 +36,17 @@
 namespace lsst {
 namespace qserv {
 namespace worker {
+class ChunkDisk; // Forward
+class Logger;
 
-class FifoScheduler : public Foreman::Scheduler {
+class ScanScheduler : public Foreman::Scheduler {
 public:
-    typedef boost::shared_ptr<FifoScheduler> Ptr;
+    typedef boost::shared_ptr<ScanScheduler> Ptr;
     typedef Foreman::TaskQueuePtr TaskQueuePtr;
+    typedef std::vector<boost::shared_ptr<ChunkDisk> > ChunkDiskList;
 
-    FifoScheduler();
-    virtual ~FifoScheduler() {}
+    ScanScheduler(Logger& logger);
+    virtual ~ScanScheduler() {}
     
     virtual TaskQueuePtr nopAct(TodoList::Ptr todo, 
                                 TaskQueuePtr running);
@@ -52,14 +56,15 @@ public:
     virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
                                        TodoList::Ptr todo, 
                                        TaskQueuePtr running);
-    boost::shared_ptr<Foreman::RunnerWatcher> getWatcher() {
-        return boost::shared_ptr<Foreman::RunnerWatcher>();
-    }
-
+    boost::shared_ptr<Foreman::RunnerWatcher> getWatcher();
 private:
+    TaskQueuePtr _getNextTasks(int max);
+  
+    ChunkDiskList _disks;
+    Logger& _logger;
     boost::mutex _mutex;
     int _maxRunning;
 };
 }}} // lsst::qserv::worker
-#endif // LSST_QSERV_WORKER_FIFOSCHEDULER_H
+#endif // LSST_QSERV_WORKER_SCANSCHEDULER_H
 

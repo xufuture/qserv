@@ -122,10 +122,13 @@ namespace qserv {
 namespace worker {
 std::ostream& operator<<(std::ostream& os, qWorker::Task const& t) {
     lsst::qserv::TaskMsg& m = *t.msg;
+    char timestr[27];
     os << "Task: " 
        << "msg: session=" << m.session() 
        << " chunk=" << m.chunkid()
-       << " db=" << m.db() << " ";
+       << " db=" << m.db() 
+       << " entry time=" << ::ctime_r(&t.entryTime, timestr)
+       << " ";
     for(int i=0; i < m.fragment_size(); ++i) {
         dump(os, m.fragment(i));
         os << " ";

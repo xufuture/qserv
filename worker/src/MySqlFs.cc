@@ -285,8 +285,9 @@ int MySqlFs::rem(
     }
     std::string hash = fs::stripPath(path);
     // Signal query squashing
-    QueryRunner::Manager& mgr = QueryRunner::getMgr();
-    mgr.squashByHash(hash);
+    _service->squashByHash(hash);
+    //QueryRunner::Manager& mgr = QueryRunner::getMgr();
+    //mgr.squashByHash(hash);
     return SFS_OK;
 }
 

@@ -62,6 +62,12 @@ public:
     typedef boost::shared_ptr<Foreman> Ptr;
 
     typedef boost::shared_ptr<TodoList::TaskQueue> TaskQueuePtr;
+    class RunnerWatcher {
+    public:
+        virtual ~RunnerWatcher() {}
+        virtual void handleStart(Task::Ptr t) {}
+        virtual void handleFinish(Task::Ptr t) {}
+    };
     class Scheduler {
     public:
         typedef boost::shared_ptr<Scheduler> Ptr;
@@ -75,7 +81,12 @@ public:
         virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
                                            TodoList::Ptr todo, 
                                            TaskQueuePtr running) = 0;
+        boost::shared_ptr<RunnerWatcher> getWatcher() {
+            return boost::shared_ptr<RunnerWatcher>();
+        }
     };
+
+    virtual void squashByHash(std::string const& hash) {}
 
     virtual ~Foreman() {}
 
