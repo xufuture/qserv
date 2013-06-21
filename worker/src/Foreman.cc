@@ -34,6 +34,7 @@
 // Pkg: lsst::qserv::worker
 #include "lsst/qserv/worker/TodoList.h"
 #include "lsst/qserv/worker/FifoScheduler.h"
+#include "lsst/qserv/worker/ScanScheduler.h"
 #include "lsst/qserv/worker/QueryRunner.h"
 #include "lsst/qserv/worker/Base.h"
 #include "lsst/qserv/worker/Logger.h"
@@ -62,23 +63,28 @@ public:
                 Logger::Ptr log);
     virtual ~ForemanImpl();
     
-    //boost::shared_ptr<Callable> getNextCallable();
+    void squashByHash(std::string const& hash);
+
     // For use by runners.
     class Runner;
     class RunnerMgr;
     class RunnerMgr {
     public:
-        RunnerMgr(ForemanImpl& f) : _f(f) {}
+        RunnerMgr(ForemanImpl& f);
         void registerRunner(Runner* r, Task::Ptr t);
+        boost::shared_ptr<QueryRunner> newQueryRunner(Task::Ptr t);
         void reportComplete(Task::Ptr t);
         void reportStart(Task::Ptr t);
         void signalDeath(Runner* r);
         Task::Ptr getNextTask(Runner* r, Task::Ptr previous);
         Logger::Ptr getLog();
         
+        
     private:
+        void _reportStartHelper(Task::Ptr t);
         class StartTaskF;
         ForemanImpl& _f;
+        boost::shared_ptr<RunnerWatcher> _runnerWatcher;
     };
 
     friend class RunnerMgr;
@@ -101,6 +107,7 @@ private:
     TodoList::Ptr _todo;
     RunnerDeque _runners;
     RunnerMgr _rManager;
+    QueryRunnerManager _mgr; // May replace.
     Logger::Ptr _log;
                          
     TaskQueuePtr  _running;
@@ -112,8 +119,9 @@ private:
 ////////////////////////////////////////////////////////////////////////
 Foreman::Ptr 
 qWorker::newForeman(TodoList::Ptr tl, Logger::Ptr log) {
-    FifoScheduler::Ptr fsch(new FifoScheduler());
-    ForemanImpl::Ptr fmi(new ForemanImpl(fsch, tl, log));
+    // FifoScheduler::Ptr fsch(new FifoScheduler());
+    ScanScheduler::Ptr sch(new ScanScheduler(*log));
+    ForemanImpl::Ptr fmi(new ForemanImpl(sch, tl, log));
     return fmi;;
 }
 
@@ -134,7 +142,7 @@ ForemanImpl::Watcher::Watcher(ForemanImpl& f) : _f(f) {
 }
 
 void ForemanImpl::Watcher::handleAccept(Task::Ptr t) {
-    assert(_f._scheduler.get());
+    assert(_f._scheduler);
     TaskQueuePtr newReady = _f._scheduler->newTaskAct(t, 
                                                       _f._todo, 
                                                       _f._running);
@@ -159,21 +167,56 @@ private:
     ForemanImpl& _f;
 };
 
+ForemanImpl::RunnerMgr::RunnerMgr(ForemanImpl& f) 
+  : _f(f) {
+    _runnerWatcher = _f._scheduler->getWatcher();
+}
+
 void ForemanImpl::RunnerMgr::registerRunner(Runner* r, Task::Ptr t) {
-   boost::lock_guard<boost::mutex> lock(_f._runnersMutex); 
-    _f._runners.push_back(r);
-    _f._running->push_back(t);
+    {
+        boost::lock_guard<boost::mutex> lock(_f._runnersMutex); 
+        _f._runners.push_back(r);
+    }
+    
+    std::ostringstream os;
+    os << "Registered runner " << (void*)r;
+    _f._log->debug(os.str());
+    _reportStartHelper(t);
+}
+boost::shared_ptr<QueryRunner> ForemanImpl::RunnerMgr::newQueryRunner(Task::Ptr t) {
+    QueryRunnerArg a(_f._log, t);
+    boost::shared_ptr<QueryRunner> qr(new QueryRunner(_f._mgr, a));
+    return qr;
 }
 
 void ForemanImpl::RunnerMgr::reportComplete(Task::Ptr t) {
-    boost::lock_guard<boost::mutex> lock(_f._runnersMutex); 
-    bool popped = popFrom(*_f._running, t);
-    assert(popped);
+    {
+        boost::lock_guard<boost::mutex> lock(_f._runnersMutex); 
+        bool popped = popFrom(*_f._running, t);
+        assert(popped);
+    }
+    std::ostringstream os;
+    os << "Finished task " << *t;
+    _f._log->debug(os.str());
+    if(_runnerWatcher) {
+        _runnerWatcher->handleFinish(t);
+    }
 }
 
 void ForemanImpl::RunnerMgr::reportStart(Task::Ptr t) {
-   boost::lock_guard<boost::mutex> lock(_f._runnersMutex); 
-    _f._running->push_back(t);
+   _reportStartHelper(t);
+}
+void ForemanImpl::RunnerMgr::_reportStartHelper(Task::Ptr t) {
+    {
+        boost::lock_guard<boost::mutex> lock(_f._runnersMutex); 
+        _f._running->push_back(t);
+    }
+    std::ostringstream os;
+    os << "Started task " << *t;
+    _f._log->debug(os.str());
+    if(_runnerWatcher) {
+        _runnerWatcher->handleStart(t);
+    }
 }
 
 void ForemanImpl::RunnerMgr::signalDeath(Runner* r) {
@@ -221,15 +264,15 @@ public:
     }
     void poison() { _isPoisoned = true; }
     void operator()() {
+        boost::shared_ptr<QueryRunner> qr;
         _rm.registerRunner(this, _task);
         while(!_isPoisoned) { 
             // Run my task.
-            QueryRunnerArg a(_log, _task);
-            QueryRunner qr(a);
+            qr = _rm.newQueryRunner(_task);
             std::stringstream ss;
             ss << "Runner running " << *_task;
             _log->info(ss.str());
-            qr.actOnce();
+            qr->actOnce();
             if(_isPoisoned) break;
             // Request new work from the manager
             // (mgr is a role of the foreman, who will check with the
@@ -261,6 +304,7 @@ ForemanImpl::ForemanImpl(Scheduler::Ptr s,
         // Make basic logger.
         _log.reset(new Logger());
     }
+    assert(s); // Cannot operate without scheduler.
     _watcher.reset(new Watcher(*this));
     _todo->addWatcher(_watcher); // Callbacks are now possible.
     // ...
@@ -277,3 +321,6 @@ void ForemanImpl::_startRunner(Task::Ptr t) {
     boost::thread(Runner(_rManager, t));
 }
 
+void ForemanImpl::squashByHash(std::string const& hash) {
+    _mgr.squashByHash(hash);
+}

@@ -24,7 +24,9 @@
 #include "lsst/qserv/worker/Service.h"
 #include "lsst/qserv/worker/Logger.h"
 
-using namespace lsst::qserv::worker;
+namespace lsst {
+namespace qserv {
+namespace worker {
 
 Service::Service(Logger::Ptr log) 
     : _todo(new TodoList()) {
@@ -37,3 +39,9 @@ Service::Service(Logger::Ptr log)
 TaskAcceptor::Ptr Service::getAcceptor() {
     return _todo;
 }
+
+void Service::squashByHash(std::string const& hash) {
+    _foreman->squashByHash(hash);
+}
+
+}}} // lsst::qserv::worker

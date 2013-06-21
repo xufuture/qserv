@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2012, 2013 LSST Corporation.
+ * Copyright 2012-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -38,6 +38,8 @@ public:
 
     explicit Service(boost::shared_ptr<Logger> log=boost::shared_ptr<Logger>());
     TaskAcceptor::Ptr getAcceptor();
+    void squashByHash(std::string const& hash);
+
 private:
     boost::shared_ptr<TodoList> _todo;
     boost::shared_ptr<Foreman> _foreman;

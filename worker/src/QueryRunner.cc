@@ -152,21 +152,22 @@ void forEachSubChunk(std::string const& script, F& func) {
 ////////////////////////////////////////////////////////////////////////
 // lsst::qserv::worker::QueryRunner
 ////////////////////////////////////////////////////////////////////////
-QueryRunner::QueryRunner(boost::shared_ptr<Logger> log, 
-                                  Task::Ptr task, 
-                                  std::string overrideDump) 
-    : _log(log), _pResult(new QueryPhyResult()),
-      _user(task->user.c_str()), _task(task), 
-      _poisonedMutex(new boost::mutex()) {
-    int rc = mysql_thread_init();
-    assert(rc == 0);
-    if(!overrideDump.empty()) {
-        _task->resultPath = overrideDump;   
-    }
-}
+// QueryRunner::QueryRunner(boost::shared_ptr<Logger> log, 
+//                          Task::Ptr task, 
+//                          std::string overrideDump) 
+//     : _log(log), _pResult(new QueryPhyResult()),
+//       _user(task->user.c_str()), _task(task), 
+//       _poisonedMutex(new boost::mutex()) {
+//     int rc = mysql_thread_init();
+//     assert(rc == 0);
+//     if(!overrideDump.empty()) {
+//         _task->resultPath = overrideDump;   
+//     }
+// }
 
-QueryRunner::QueryRunner(QueryRunnerArg const& a) 
-    : _log(a.log), _pResult(new QueryPhyResult()),
+QueryRunner::QueryRunner(QueryRunnerManager& mgr, QueryRunnerArg const& a) 
+    : _mgr(mgr),
+      _log(a.log), _pResult(new QueryPhyResult()),
       _user(a.task->user), _task(a.task),
       _poisonedMutex(new boost::mutex()) {
     int rc = mysql_thread_init();
@@ -181,12 +182,13 @@ QueryRunner::~QueryRunner() {
 }
 
 bool QueryRunner::operator()() {
+    // 6/11/2013: Note that query runners are not recycled right now.
+    // A Foreman::Runner thread constructs one and executes it once.
     bool haveWork = true;
-    Manager& mgr = getMgr();
     boost::shared_ptr<ArgFunc> afPtr(getResetFunc());
-    mgr.addRunner(this);
+    _mgr.addRunner(this);
     _log->info((Pformat("(Queued: %1%, running: %2%)")
-             % mgr.getQueueLength() % mgr.getRunnerCount()).str().c_str());
+             % _mgr.getQueueLength() % _mgr.getRunnerCount()).str().c_str());
     while(haveWork) {
         if(_checkPoisoned()) {
             _poisonCleanup();
@@ -195,11 +197,11 @@ bool QueryRunner::operator()() {
             // Might be wise to clean up poison for the current hash anyway.
         }
         _log->info((Pformat("(Looking for work... Queued: %1%, running: %2%)")
-                % mgr.getQueueLength() 
-                % mgr.getRunnerCount()).str().c_str());
-        bool reused = mgr.recycleRunner(afPtr.get(), _task->msg->chunkid());
+                % _mgr.getQueueLength() 
+                % _mgr.getRunnerCount()).str().c_str());
+        bool reused = _mgr.recycleRunner(afPtr.get(), _task->msg->chunkid());
         if(!reused) {
-            mgr.dropRunner(this);
+            _mgr.dropRunner(this);
             haveWork = false;
         }
     } // finished with work.

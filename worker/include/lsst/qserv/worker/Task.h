@@ -54,6 +54,7 @@ public:
     std::string resultPath;
     std::string user;
     bool needsCreate;
+    time_t entryTime;
 
     friend std::ostream& operator<<(std::ostream& os, Task const& t);
 };

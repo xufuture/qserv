@@ -32,17 +32,21 @@ namespace worker {
 // Forward
 class Logger;
 class QueryRunner;
+class ChunkDisk;
 
 ////////////////////////////////////////////////////////////////////////
 class QueryRunnerArg {
 public:
-QueryRunnerArg(boost::shared_ptr<Logger> log_,
-               Task::Ptr task_,
-               std::string overrideDump_=std::string()) 
-    : log(log_), task(task_), overrideDump(overrideDump_) { }
+    QueryRunnerArg() {}
+    
+    QueryRunnerArg(boost::shared_ptr<Logger> log_,
+                   Task::Ptr task_,
+                   std::string overrideDump_=std::string()) 
+        : log(log_), task(task_), overrideDump(overrideDump_) { }
     boost::shared_ptr<Logger> log;
     Task::Ptr task;
     std::string overrideDump;
+    
 };
 
 class ArgFunc {
@@ -89,8 +93,11 @@ private:
     bool _cancelQueued(std::string const& hash);
     bool _cancelRunning(std::string const& hash);
     void _enqueue(QueryRunnerArg const& a);
-    
-    ArgQueue _args;
+    void _tryLaunch();
+    typedef std::vector<boost::shared_ptr<ChunkDisk> > ChunkDiskList;
+
+    ArgQueue _args; // Probably obsolete
+    ChunkDiskList _disks;
     QueryQueue _runners;
     int _jobTotal;
     

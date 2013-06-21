@@ -60,10 +60,10 @@ class QueryRunner {
 public:
     typedef ResultTracker<std::string, ResultError> Tracker;
     typedef QueryRunnerManager Manager;
-    QueryRunner(boost::shared_ptr<Logger> log, 
-                Task::Ptr task,
-                std::string overrideDump=std::string());
-    explicit QueryRunner(QueryRunnerArg const& a);
+    /* QueryRunner(boost::shared_ptr<Logger> log,  */
+    /*             Task::Ptr task, */
+    /*             std::string overrideDump=std::string()); */
+    QueryRunner(QueryRunnerManager& mgr, QueryRunnerArg const& a);
     ~QueryRunner();
     bool operator()(); // exec and loop as long as there are queries
                        // to run.
@@ -74,7 +74,6 @@ public:
 
     // Static: 
     static Tracker& getTracker() { static Tracker t; return t;}
-    static Manager& getMgr() { static Manager m; return m;}
 
 private:
     typedef std::deque<std::string> StringDeque;
@@ -104,6 +103,8 @@ private:
     boost::shared_ptr<CheckFlag> _makeAbort();
     bool _poisonCleanup();
 
+    // Fields
+    QueryRunnerManager& _mgr;
     boost::shared_ptr<Logger> _log;
     SqlErrorObject _errObj;
     std::string _user;
