@@ -39,6 +39,8 @@ namespace master {
 class QueryTemplate;
 class BoolTerm;
 
+/// HavingClause: a representation of SQL HAVING. Support for this construct is
+/// incomplete. 
 class HavingClause {
 public:
     HavingClause() {}

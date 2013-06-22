@@ -79,110 +79,15 @@ SelectList::addStar(antlr::RefAST table) {
     _valueExprList->push_back(ve);
 }
 
-#if 0
-void
-SelectList::addFunc(antlr::RefAST a) {
-    assert(_valueExprList.get());
-    boost::shared_ptr<FuncExpr> fe(new FuncExpr());
-   if(a->getType() == SqlSQL2TokenTypes::FUNCTION_SPEC) { 
-       a = a->getFirstChild(); 
-   }
-   //std::cout << "fspec name:" << tokenText(a) << std::endl;
-   fe->name = tokenText(a);
-   _fillParams(fe->params, a->getNextSibling());
-   _valueExprList->push_back(ValueExpr::newSimple(
-                                 ValueFactor::newFuncExpr(fe)));
-}
-
-void
-SelectList::addAgg(antlr::RefAST a) {
-    assert(_valueExprList.get());
-   boost::shared_ptr<FuncExpr> fe(new FuncExpr());
-   fe->name = tokenText(a);
-   _fillParams(fe->params, a->getFirstChild());
-   _valueExprList->push_back(ValueExpr::newSimple(
-                                 ValueFactor::newAggExpr(fe)));
-}
-
-void
-SelectList::addRegular(antlr::RefAST a) {
-    assert(_valueExprList.get());
-    boost::shared_ptr<ColumnRef const> cr(_columnRefList->getRef(a));
-    _valueExprList->push_back(ValueExpr::newSimple(
-                                  ValueFactor::newColumnRefExpr(cr)));
-}
-#endif
 void
 SelectList::dbgPrint() const {
     assert(_valueExprList.get());
     std::cout << "Parsed value expression for select list." << std::endl;
     std::copy(_valueExprList->begin(),
               _valueExprList->end(),
-              std::ostream_iterator<ValueExprPtr>(std::cout, "\n"));
-
-    
-}
-#if 0
-ValueExprPtr _newColumnRef(antlr::RefAST v) {
-    std::string refStr = qMaster::walkSiblingString(v) + "FIXME";
-    boost::shared_ptr<ColumnRef> cr(new ColumnRef( "","", refStr));
-    return  ValueExpr::newColumnRefExpr(cr);
-    //std::cout << "need to make column ref out of " << qMaster::tokenText(v) << std::endl;
+              std::ostream_iterator<ValueExprPtr>(std::cout, "\n"));    
 }
 
-ValueExprPtr _newValueExpr(antlr::RefAST v) {
-    ValueExprPtr e(new ValueExpr());
-    // Figure out what type of value expr, and create it properly.
-    std::cout << "Type of:" << v->getText() << "(" << v->getType() << ")" << std::endl;
-    switch(v->getType()) {
-    case SqlSQL2TokenTypes::ASTERISK:
-        std::cout << "star*: " << std::endl;
-        return ValueExpr::newStarExpr(std::string());
-    case SqlSQL2TokenTypes::VALUE_EXP:
-        v = v->getFirstChild();
-        switch(v->getType()) {
-        case SqlSQL2TokenTypes::REGULAR_ID:
-            std::cout << "Regular id: " << qMaster::tokenText(v) << std::endl;
-            return  _newColumnRef(v);
-            // antlr::RefAST a = _aliasMap->getAlias(v);
-            // if(a.get()) ve->_alias = qMaster::tokenText(a);
-            break;
-        case SqlSQL2TokenTypes::FUNCTION_SPEC:
-            // FIXME.
-            std::cout << "nested function. FIXME. Nesting not supported" << std::endl;
-        };
-
-        std::cout << "ValueExp child:" << v->getText() << "(" << v->getType() << ")" << std::endl;
-        break;
-    default: 
-            break;
-    };
-    return e;
-}
-
-void 
-SelectList::_fillParams(ValueExprList& p, antlr::RefAST pnodes) {
-    antlr::RefAST current = pnodes;
-    //std::cout << "params got " << tokenText(pnodes) << std::endl;
-    // Make sure the parser gave us the right nodes.
-    assert(current->getType() == SqlSQL2TokenTypes::LEFT_PAREN); 
-    for(current = current->getNextSibling(); 
-        current.get(); 
-        current=current->getNextSibling()) {
-        if(current->getType() == SqlSQL2TokenTypes::COMMA) { continue; }
-        if(current->getType() == SqlSQL2TokenTypes::RIGHT_PAREN) { break; }
-        ValueExprPtr ve = _newValueExpr(current);
-        if(!ve.get()) {
-            throw ParseException("Qserv internal error: ValueExpr construction",
-                                 current);
-        }
-        p.push_back(ve);
-    }
-    //std::cout << "printing params \n";
-    //printIndented(pnodes);
-    // FIXME
-}
-#endif
 std::ostream& 
 qMaster::operator<<(std::ostream& os, qMaster::SelectList const& sl) {
     os << "SELECT ";

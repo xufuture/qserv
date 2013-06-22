@@ -86,7 +86,7 @@ public:
     class render;
     BoolTerm::PtrList _terms;
 };
-/// OrTerm is a set of AND-connected BoolTerms
+/// AndTerm is a set of AND-connected BoolTerms
 class AndTerm : public BoolTerm {
 public:
     typedef boost::shared_ptr<AndTerm> Ptr;

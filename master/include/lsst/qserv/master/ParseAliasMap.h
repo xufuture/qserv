@@ -79,7 +79,7 @@ private:
     Map _rMap;
 };
 
-// cryptically implemented in SelectFactory.cc for now.
+// cryptically implemented in FromFactory.cc for now.
 std::ostream& operator<<(std::ostream& os, ParseAliasMap const& m);
 
 }}} // namespace lsst::qserv::master

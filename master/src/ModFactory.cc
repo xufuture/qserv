@@ -227,6 +227,7 @@ void ModFactory::_importHaving(antlr::RefAST a) {
         }
     }
     _having->_tree.reset(); // NULL-out. Unhandled syntax.
+
+    // FIXME: Log this at the WARNING level
     std::cout << "Parse warning: HAVING clause unhandled." << std::endl;
-    // FIXME: Should we report an error?
 }

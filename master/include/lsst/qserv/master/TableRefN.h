@@ -123,7 +123,6 @@ public:
     virtual void setTable(std::string const& table_) { table = table_; }
     virtual void apply(Func& f) { f(*this); }
 protected:
-//    std::string alias; // inherited
     std::string db;
     std::string table;
 };
