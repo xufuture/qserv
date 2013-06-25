@@ -500,7 +500,7 @@ qMaster::MetadataCache::getChunkLevel(std::string const& dbName,
     if (itr == _dbs.end()) {
         return -1;
     }
-    return itr->second.checkIfTableIsSubChunked(tableName);
+    return itr->second.getChunkLevel(tableName);
 }
 
 /** Gets DbInfo structure for a given database.
