@@ -37,6 +37,7 @@ namespace lsst { namespace qserv { namespace master {
 class ParseException : public std::runtime_error {
 public:
     explicit ParseException(char const* msg, antlr::RefAST subTree);
+    explicit ParseException(std::string const& msg, antlr::RefAST subTree);
 };
 
 }}} // namespace lsst::qserv::master

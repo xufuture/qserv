@@ -36,7 +36,8 @@
 // Package
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
 #include "lsst/qserv/master/ColumnRefH.h"
-#include "lsst/qserv/master/ParseAliasMap.h" 
+#include "lsst/qserv/master/ParseAliasMap.h"
+#include "lsst/qserv/master/ParseException.h"
 #include "lsst/qserv/master/parseTreeUtil.h"
 #include "lsst/qserv/master/TableRefN.h"
 #include "lsst/qserv/master/QueryTemplate.h"
@@ -242,13 +243,15 @@ public:
         RefAST child;
 
         TableRefN::Ptr tn;
-        
         switch(node->getType()) {
         case SqlSQL2TokenTypes::TABLE_REF_AUX:
             child = node->getFirstChild();
             switch(child->getType()) {
             case SqlSQL2TokenTypes::QUALIFIED_NAME:
                 tn.reset(_processQualifiedName(child));
+                break;
+            case SqlSQL2TokenTypes::SUBQUERY:
+                tn.reset(_processSubquery(child));
                 break;
             default:
                 break;
@@ -296,6 +299,9 @@ private:
         } else {
             return new SimpleTableN("", qn.getName(), alias);
         }
+    }
+    TableRefN* _processSubquery(RefAST n) const {
+        throw ParseException("Subqueries unsupported", n->getFirstChild());
     }
 
     // Fields

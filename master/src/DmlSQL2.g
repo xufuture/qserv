@@ -1021,7 +1021,7 @@ scalar_subquery :
 
 //{ Rule #568 <subquery>
 subquery : 
-	LEFT_PAREN query_exp RIGHT_PAREN 
+	LEFT_PAREN qe:query_exp RIGHT_PAREN {#subquery = #([SUBQUERY,"SUBQUERY"],qe);}
 ;
 //}
 

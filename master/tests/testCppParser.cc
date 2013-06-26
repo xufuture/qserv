@@ -34,12 +34,15 @@
 #include <list>
 #include <map>
 #include <string>
+#include <antlr/NoViableAltException.hpp>
+
 #include "lsst/qserv/master/MetadataCache.h"
 #include "lsst/qserv/master/ifaceMeta.h"
 #include "lsst/qserv/master/ChunkMeta.h"
 #include "lsst/qserv/master/SelectParser.h"
 #include "lsst/qserv/master/transaction.h"
 #include "lsst/qserv/master/QuerySession.h"
+#include "lsst/qserv/master/ParseException.h"
 
 using lsst::qserv::master::ChunkMeta;
 using lsst::qserv::master::ChunkSpec;
@@ -312,15 +315,24 @@ BOOST_AUTO_TEST_CASE(RestrictorBox) {
     BOOST_CHECK(!spr->getHasAggregate());
 
 }
+#endif 
 BOOST_AUTO_TEST_CASE(RestrictorObjectId) {
     std::string stmt = "select * from Object where qserv_objectId(2,3145,9999);";
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(!spr->getHasSubChunks());
-    BOOST_CHECK(!spr->getHasAggregate());
+    testStmt3(qsTest, stmt);
+    //BOOST_CHECK(spr->getHasChunks());
+    //BOOST_CHECK(!spr->getHasSubChunks());
+    //BOOST_CHECK(!spr->getHasAggregate());
 
 }
+BOOST_AUTO_TEST_CASE(SecondaryIndex) {
+    std::string stmt = "select * from Object where objectId in (2,3145,9999);";
+    testStmt3(qsTest, stmt);
+    //BOOST_CHECK(spr->getHasChunks());
+    //BOOST_CHECK(!spr->getHasSubChunks());
+    //BOOST_CHECK(!spr->getHasAggregate());
+
+}
+#if 0
 BOOST_AUTO_TEST_CASE(RestrictorObjectIdAlias) {
     std::string stmt = "select * from Object as o1 where qserv_objectId(2,3145,9999);";
     SqlParseRunner::Ptr spr = getRunner(stmt);
@@ -548,12 +560,20 @@ BOOST_AUTO_TEST_CASE(UnpartLimit) {
     BOOST_CHECK(!spr->getHasAggregate());
 }
 
+#endif // End: Tests to migrate to new parser framework (needs work in parser too)
+
 BOOST_AUTO_TEST_CASE(Subquery) { // ticket #2053
     std::string stmt = "SELECT * FROM (SELECT * FROM Object WHERE filterId=4) WHERE rFlux_PS > 0.3;";
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr, true);
+    SelectParser::Ptr p = getParser(stmt);
+    testParse(p);
 }
-#endif // End: Tests to migrate to new parser framework (needs work in parser too)
+
+BOOST_AUTO_TEST_CASE(FromParen) { // Extra paren. Not supported by our grammar.
+    std::string stmt = "SELECT * FROM (Object) WHERE rFlux_PS > 0.3;";
+    SelectParser::Ptr p;
+    BOOST_CHECK_THROW(p = getParser(stmt), qMaster::ParseException);
+}
+
 BOOST_AUTO_TEST_CASE(NewParser) {
     char stmts[][128] = {
         "SELECT table1.* from Science_Ccd_Exposure limit 3;",

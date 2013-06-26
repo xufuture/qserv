@@ -31,6 +31,8 @@
   *
   * @author Daniel L. Wang, SLAC
   */
+#include "lsst/qserv/master/SelectParser.h"
+
 // Standard
 #include <functional>
 #include <cstdio>
@@ -40,15 +42,17 @@
 #include <boost/make_shared.hpp>
 #include <boost/bind.hpp>
 
+// ANTLR
+#include <antlr/NoViableAltException.hpp>
+
 // Local (placed in src/)
 #include "SqlSQL2Parser.hpp" 
 #include "SqlSQL2Lexer.hpp"
 #include "SqlSQL2TokenTypes.hpp"
-#include "lsst/qserv/master/SelectStmt.h"
-
-#include "lsst/qserv/master/SelectParser.h"
-#include "lsst/qserv/master/parseTreeUtil.h"
 #include "lsst/qserv/master/SelectFactory.h"
+#include "lsst/qserv/master/SelectStmt.h"
+#include "lsst/qserv/master/ParseException.h"
+#include "lsst/qserv/master/parseTreeUtil.h"
 
 #include <antlr/CommonAST.hpp>
 // namespace modifiers
@@ -68,7 +72,11 @@ public:
     void run() {
         parser.initializeASTFactory(factory);
         parser.setASTFactory(&factory);
-        parser.sql_stmt();
+        try {
+            parser.sql_stmt();
+        } catch(antlr::NoViableAltException& e) {
+            throw ParseException("ANTLR parse error:" + e.getMessage(), e.node);
+        }
         explore();
     }
     void explore();
