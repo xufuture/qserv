@@ -70,7 +70,7 @@ namespace {
     }
 }
 
-void ChunkIndex::Stats::set(vector<uint64_t> & counts) {
+void ChunkIndex::Stats::computeFrom(vector<uint64_t> & counts) {
     typedef vector<uint64_t>::iterator Iter;
     if (counts.empty()) {
         clear();
@@ -170,6 +170,7 @@ void ChunkIndex::write(fs::path const & path, bool truncate) const {
     size_t numBytes = _subChunks.size()*static_cast<size_t>(ENTRY_SIZE);
     boost::scoped_array<uint8_t> buf(new uint8_t[numBytes]);
     uint8_t * b = buf.get();
+    // The file format is simply an array of (sub-chunk ID, counts) pairs.
     for (SubChunkIter i = _subChunks.begin(), e = _subChunks.end();
          i != e; ++i) {
         Entry const & entry = i->second;
@@ -341,6 +342,8 @@ void ChunkIndex::swap(ChunkIndex & idx) {
 
 ChunkIndex::Entry const ChunkIndex::EMPTY;
 
+// Read array of (sub-chunk ID, counts) pairs from a file, and add each
+// count to the in-memory sub-chunk and chunk to count maps
 void ChunkIndex::_read(fs::path const & path) {
     InputFile f(path);
     if (f.size() % ENTRY_SIZE != 0) {
@@ -377,19 +380,19 @@ void ChunkIndex::_computeStats() const {
     }
     vector<uint64_t> counts;
     counts.reserve(_subChunks.size());
-    _modified = true;
     for (int j = 0; j < ChunkLocation::NUM_KINDS; ++j) {
         for (ChunkIter c = _chunks.begin(), e = _chunks.end(); c != e; ++c) {
             counts.push_back(c->second.numRecords[j]);
         }
-        _chunkStats[j].set(counts);
+        _chunkStats[j].computeFrom(counts);
         counts.clear();
         for (SubChunkIter s = _subChunks.begin(), e = _subChunks.end(); s != e; ++s) {
              counts.push_back(s->second.numRecords[j]);
         }
-        _subChunkStats[j].set(counts);
+        _subChunkStats[j].computeFrom(counts);
         counts.clear();
     }
+    _modified = false;
 }
 
 }}}} // namespace lsst::qserv::admin::dupr

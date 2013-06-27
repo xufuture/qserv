@@ -91,7 +91,9 @@ public:
 
         Stats() { clear(); }
         void clear();
-        void set(std::vector<uint64_t> & counts);
+        /// Compute statistics from population counts. Sorts `counts`
+        /// in-place, but does not otherwise modify it.
+        void computeFrom(std::vector<uint64_t> & counts);
         void write(std::ostream & os, std::string const & indent) const;
     };
 
@@ -159,7 +161,7 @@ public:
 
     /// Return the number of non-empty chunks in the index.
     size_t size() const { return _chunks.size(); }
-    bool empty() const { return size() == 0; }
+    bool empty() const { return _chunks.empty(); }
 
     /// Write or append the index to a binary file.
     void write(boost::filesystem::path const & path, bool truncate) const;

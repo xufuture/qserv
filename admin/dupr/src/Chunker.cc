@@ -149,6 +149,7 @@ void Chunker::locate(pair<double, double> const & position,
                      int32_t chunkId,
                      vector<ChunkLocation> & locations) const
 {
+    // TODO(smm): find a way to break this into more manageable pieces.
     // Find non-overlap location of position.
     double const lon = position.first;
     double const lat = position.second;
@@ -329,11 +330,14 @@ void Chunker::_initialize(double overlap,
     scoped_array<double> alpha(new double[numSubStripes]);
     int32_t maxSubChunksPerChunk = 0;
     for (int32_t i = 0; i < numStripes; ++i) {
+        // Compute number of chunks in stripe i
         int32_t nc = segments(
             i*stripeHeight - 90.0, (i + 1)*stripeHeight - 90.0, stripeHeight);
         numChunksPerStripe[i] = nc;
         for (int32_t j = 0; j < numSubStripesPerStripe; ++j) {
             int32_t ss = i * numSubStripesPerStripe + j;
+            // Compute latitude bounds and number of sub-chunks
+            // in substripe j of stripe i
             double latMin = ss*subStripeHeight - 90.0;
             double latMax = (ss + 1)*subStripeHeight - 90.0;
             int32_t nsc = segments(latMin, latMax, subStripeHeight) / nc;
@@ -341,6 +345,9 @@ void Chunker::_initialize(double overlap,
             numSubChunksPerChunk[ss] = nsc;
             double scw = 360.0 / (nsc * nc);
             subChunkWidth[ss] = scw;
+            // Two points in the sub-stripe separated by a longitude angle
+            // of at least a are guaranteed to have angular separation of
+            // at least the overlap radius.
             double a = maxAlpha(overlap, max(fabs(latMin), fabs(latMax)));
             if (a > scw) {
                 throw runtime_error("The overlap radius is greater than "
@@ -367,19 +374,25 @@ void Chunker::_upDownOverlap(double lon,
     int32_t const numSubChunksPerChunk = _numSubChunksPerChunk[subStripe];
     int32_t const numSubChunks = numChunks*numSubChunksPerChunk;
     double const subChunkWidth = _subChunkWidth[subStripe];
+    // alpha is the width (longitude angle delta) by which the overlap region
+    // extends past a sub-chunk's longitude angle bounds.
     double const alpha = _alpha[subStripe];
+    // Compute the range of sub-chunks that contain this position in their
+    // overlap regions.
     int32_t minSubChunk = static_cast<int32_t>(
         floor((lon - alpha) / subChunkWidth));
     int32_t maxSubChunk = static_cast<int32_t>(
         floor((lon + alpha) / subChunkWidth));
+    // Deal with 0/360 degree wrap around.
     if (minSubChunk < 0) {
         minSubChunk += numSubChunks;
     }
     if (maxSubChunk >= numSubChunks) {
         maxSubChunk -= numSubChunks;
     }
+    // Append a location for all sub-chunks in range.
     if (minSubChunk > maxSubChunk) {
-        // 0/360 wrap around
+        // 0/360 degree wrap around
         for (int32_t subChunk = minSubChunk; subChunk < numSubChunks; ++subChunk) {
             int32_t chunk = subChunk / numSubChunksPerChunk;
             if (chunkId < 0 || _getChunkId(stripe, chunk) == chunkId) {

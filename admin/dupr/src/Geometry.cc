@@ -194,6 +194,7 @@ double maxAlpha(double r, double centerLat) {
 }
 
 uint32_t htmId(Vector3d const &v, int level) {
+    // See http://research.microsoft.com/apps/pubs/default.aspx?id=64531
     if (level < 0 || level > HTM_MAX_LEVEL) {
         throw runtime_error("Invalid HTM subdivision level.");
     }
@@ -309,10 +310,15 @@ double angSep(Vector3d const & v0, Vector3d const & v1) {
 // -- SphericalTriangle implementation ----
 
 SphericalTriangle::SphericalTriangle(uint32_t id) : _m(), _mi() {
+    // See http://research.microsoft.com/apps/pubs/default.aspx?id=64531
     int level = htmLevel(id);
     if (level < 0) {
         throw runtime_error("Invalid HTM ID.");
     }
+    // The 3 MSBs of the ID identify the root triangle of id. Each subsequent
+    // pair of bits in the ID identifies one of 4 child triangles relative to
+    // the immediate parent. Follow the subdivision instructions encoded in
+    // in the ID until all bits in ID have been considered.
     uint32_t r = (id >> (level * 2)) - 8;
     Vector3d v0(*htmRootVert[r*3]);
     Vector3d v1(*htmRootVert[r*3 + 1]);
@@ -370,8 +376,10 @@ double SphericalTriangle::area() const {
     // triangle boundary at v, and the turning angle is the angle between the
     // normals for the half planes that define the edges meeting at v.
     //
-    // Numerically, this is not very accurate for small triangles.
-    // An alternate formula is:
+    // Numerically, this is not very accurate for very small triangles. The
+    // triangles this code is excercised with in practice have side arc-lengths
+    // in the tenths of degrees, so there is no need to worry for now. Should
+    // circumstances change, an alternate formula is:
     //
     // tan(A/4) = √(tan(S/2) tan((S-a)/2) tan((S-b)/2) tan((S-c)/2))
     //
@@ -397,7 +405,7 @@ double SphericalTriangle::area() const {
 // The resulting surface M has constant Gaussian curvature of 1 (because the
 // unit sphere has curvature of 1 everywhere). For the cases under consideration
 // (HTM triangles), the intersections from step 2.) cannot punch holes into the
-// polygon from step 1.), so the Euler characteristic of M is 1.
+// polygon from step 1.), so the Euler characteristic χ(M) of M is 1.
 //
 // The Gauss-Bonnet theorem (http://en.wikipedia.org/wiki/Gauss-Bonnet_theorem)
 // states that:
@@ -517,7 +525,7 @@ private:
 
 void LonRangeList::clip(double lon0, double lon1) {
     assert(lon0 != lon1);
-    pair<double, double> out[3];
+    pair<double, double> out[4];
     int j = 0;
     for (int i = 0; i < _numRanges; ++i) {
         double clon0 = _ranges[i].first;
@@ -565,13 +573,18 @@ double LonRangeList::extent() const {
 }
 
 // Compute the area of the input polygon intersected with zmin <= z <= zmax.
-double zArea(Vector3d const * inVe,
-             size_t numVerts,
+double zArea(Vector3d const * inVe, // input (vertex, edge) pair array
+             size_t numVerts,       // # of input vertices
              double zmin,
              double zmax)
 {
     double angle = 0.0;
     LonRangeList bot, top;
+    // Vertex i is at index 2*i. The edges meeting at this vertex are at indexes
+    // 2*i - 1 and 2*i + 1, wrapped to lie in [0, numVerts). Index j holds the
+    // vertex considered by the previous loop iteration, such that vertices j
+    // and i are joined by an edge. The initial value of j is the last vertex in
+    // the array, and the index of the normal for edge j,i is at index 2*j + 1.
     for (size_t i = 0, j = numVerts - 1; i < numVerts; j = i, ++i) {
         double z = inVe[2*i](2);
         Vector3d const & n = inVe[2*j + 1];
@@ -691,6 +704,7 @@ double SphericalTriangle::intersectionArea(SphericalBox const & box) const {
     Vector3d * in = veBuf0;
     Vector3d * out = veBuf1;
     size_t numVerts = 3;
+    // Populate in with (vertex, edge) pairs.
     in[0] = vertex(0);
     in[1] = (vertex(1) + vertex(0)).cross(vertex(1) - vertex(0));
     in[2] = vertex(1);
@@ -702,6 +716,8 @@ double SphericalTriangle::intersectionArea(SphericalBox const & box) const {
         double lonExtent = box.getLonExtent();
         if (lonExtent > 180.0 + EPSILON_DEG) {
             // Punt for now, because the intersection can be non-convex.
+            // TODO(smm): split non-convex boxes into 2 convex boxes and sum
+            //            their intersection areas to make this fully general.
             throw runtime_error("Cannot compute triangle-box intersection "
                                 "area: spherical box has longitude angle "
                                 "extent > 180 deg.");
@@ -833,18 +849,18 @@ void SphericalBox::htmIds(vector<uint32_t> & ids, int level) const {
         m.col(0) = *htmRootVert[r*3];
         m.col(1) = *htmRootVert[r*3 + 1];
         m.col(2) = *htmRootVert[r*3 + 2];
-        findIds(ids, r + 8, level, m);
+        _findIds(ids, r + 8, level, m);
     }
 }
 
 // Slow method for finding triangles overlapping a box. For the subdivision
 // levels and box sizes encountered in practice, this is very unlikely to be
 // a performance problem.
-void SphericalBox::findIds(
-    vector<uint32_t> & ids,
-    uint32_t id,
-    int level,
-    Matrix3d const & m
+void SphericalBox::_findIds(
+    vector<uint32_t> & ids, // Storage for overlapping triangle IDs.
+    uint32_t id,            // HTM ID of triangle `m`.
+    int level,              // Number of recursions remaining.
+    Matrix3d const & m      // Triangle vertices.
 ) const {
     if (!intersects(SphericalBox(m.col(0), m.col(1), m.col(2)))) {
         return;
@@ -859,19 +875,19 @@ void SphericalBox::findIds(
     mChild.col(0) = m.col(0);
     mChild.col(1) = sv2;
     mChild.col(2) = sv1;
-    findIds(ids, id*4, level - 1, mChild);
+    _findIds(ids, id*4, level - 1, mChild);
     mChild.col(0) = m.col(1);
     mChild.col(1) = sv0;
     mChild.col(2) = sv2;
-    findIds(ids, id*4 + 1, level - 1, mChild);
+    _findIds(ids, id*4 + 1, level - 1, mChild);
     mChild.col(0) = m.col(2);
     mChild.col(1) = sv1;
     mChild.col(2) = sv0;
-    findIds(ids, id*4 + 2, level - 1, mChild);
+    _findIds(ids, id*4 + 2, level - 1, mChild);
     mChild.col(0) = sv0;
     mChild.col(1) = sv1;
     mChild.col(2) = sv2;
-    findIds(ids, id*4 + 3, level - 1, mChild);
+    _findIds(ids, id*4 + 3, level - 1, mChild);
 }
 
 }}}} // namespace lsst::qserv::admin::dupr

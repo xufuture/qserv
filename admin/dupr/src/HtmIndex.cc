@@ -109,9 +109,10 @@ uint32_t HtmIndex::mapToNonEmpty(uint32_t id) const {
 }
 
 void HtmIndex::write(fs::path const & path, bool truncate) const {
-    size_t const numBytes = _map.size()*(4 + 8);
+    size_t const numBytes = _map.size()*ENTRY_SIZE;
     boost::scoped_array<uint8_t> buf(new uint8_t[numBytes]);
     uint8_t * b = buf.get();
+    // Write out array of (HTM ID, record count) pairs.
     for (Map::const_iterator i = _map.begin(), e = _map.end(); i != e; ++i) {
         b = encode(b, i->first);
         b = encode(b, i->second);
@@ -189,15 +190,16 @@ void HtmIndex::swap(HtmIndex & idx) {
 
 void HtmIndex::_read(fs::path const & path) {
     InputFile f(path);
-    if (f.size() == 0 || (f.size()) % (4 + 8) != 0) {
+    if (f.size() == 0 || f.size() % ENTRY_SIZE != 0) {
         throw runtime_error("Invalid HTM index file.");
     }
     boost::scoped_array<uint8_t> data(new uint8_t[f.size()]);
     f.read(data.get(), 0, f.size());
     uint8_t const * b = data.get();
-    off_t const numTriangles = f.size()/(4 + 8);
+    off_t const numTriangles = f.size()/ENTRY_SIZE;
     _keys.clear();
-    for (off_t i = 0; i < numTriangles; ++i, b += 4 + 8) {
+    // Read array of (HTM ID, record count) pairs.
+    for (off_t i = 0; i < numTriangles; ++i, b += ENTRY_SIZE) {
         uint32_t id = decode<uint32_t>(b);
         uint64_t numRecords = decode<uint64_t>(b + 4);
         int level = htmLevel(id);

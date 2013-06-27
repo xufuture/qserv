@@ -118,6 +118,7 @@ private:
     OutputFile * _file;
 };
 
+// TODO(smm): the functions below should be moved to their own header.
 
 /// Encode a 32 bit integer as a little-endian sequence of 4 bytes.
 inline uint8_t * encode(uint8_t * buf, uint32_t x) {

@@ -34,27 +34,11 @@
 #include "boost/program_options.hpp"
 #include "boost/scoped_array.hpp"
 
-#include "Constants.h"
 #include "Geometry.h"
 #include "Hash.h"
 
 
 namespace lsst { namespace qserv { namespace admin { namespace dupr {
-
-/// Clamp `lon` to be at most 360 degrees. Any input satisfying
-///
-///     lon >= 360.0 - EPSILON_DEG
-///
-/// is mapped to 360.0. This is useful when multiplying a (sub-)chunk width
-/// by an integer to obtain (sub-)chunk bounds, as this multiplication is not
-/// guaranteed to give a maximum longitude angle of exactly 360.0 degrees for
-/// the last (sub-)chunk in a (sub-)stripe.
-inline double clampLon(double lon) {
-    if (lon > 360.0 - EPSILON_DEG) {
-        return 360.0;
-    }
-    return lon;
-}
 
 /// Compute the number of segments to divide the given latitude angle range
 /// (stripe) into. Two points in the latitude range separated by at least

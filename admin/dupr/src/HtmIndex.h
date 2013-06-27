@@ -104,6 +104,8 @@ public:
 private:
     typedef boost::unordered_map<uint32_t, uint64_t> Map;
 
+    static int const ENTRY_SIZE = 4 + 8; // HTM ID: 4 bytes, count: 8 bytes
+
     void _read(boost::filesystem::path const & path);
 
     uint64_t _numRecords;

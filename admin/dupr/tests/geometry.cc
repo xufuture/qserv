@@ -60,6 +60,12 @@ namespace {
         BOOST_CHECK_CLOSE_FRACTION(u.second, v.second, fraction);
     }
 
+    // Given a unit vector v, construct 2 vectors n and e such that:
+    //  - all 3 vectors are orthonormal
+    //  - n is tangent (at v) to the great circle segment joining v
+    //    to the north pole, i.e. it is the "north" vector at v.
+    //  - e is the "east" vector at v.
+    // (n,e) thus form a basis for the plane tangent to the unit sphere at v.
     void northEast(Vector3d & n, Vector3d & e, Vector3d const & v) {
         n(0) = -v(0)*v(2);
         n(1) = -v(1)*v(2);
