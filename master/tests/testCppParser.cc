@@ -41,11 +41,15 @@
 #include "lsst/qserv/master/ChunkMeta.h"
 #include "lsst/qserv/master/SelectParser.h"
 #include "lsst/qserv/master/transaction.h"
+#include "lsst/qserv/master/QsRestrictor.h"
+#include "lsst/qserv/master/QueryContext.h"
 #include "lsst/qserv/master/QuerySession.h"
 #include "lsst/qserv/master/ParseException.h"
 
 using lsst::qserv::master::ChunkMeta;
 using lsst::qserv::master::ChunkSpec;
+using lsst::qserv::master::QsRestrictor;
+using lsst::qserv::master::QueryContext;
 using lsst::qserv::master::QuerySession;
 using lsst::qserv::master::SelectParser;
 using lsst::qserv::master::SelectStmt;
@@ -69,7 +73,6 @@ ChunkMeta newTestCmeta(bool withSubchunks=true) {
     return m;
 }
 
-int metaCacheSessionId = -1;
 ChunkSpec makeChunkSpec(int chunkNum, bool withSubChunks=false) {
     ChunkSpec cs;
     cs.chunkId = chunkNum;
@@ -84,7 +87,8 @@ ChunkSpec makeChunkSpec(int chunkNum, bool withSubChunks=false) {
 void testParse(SelectParser::Ptr p) {
 }
 
-void testStmt3(QuerySession::Test& t,  std::string const& stmt) {
+boost::shared_ptr<QueryContext> testStmt3(QuerySession::Test& t,  
+                                          std::string const& stmt) {
     QuerySession qs(t);
     qs.setQuery(stmt);
     qs.getConstraints();    
@@ -99,6 +103,7 @@ void testStmt3(QuerySession::Test& t,  std::string const& stmt) {
         std::cout << "Spec: " << cs << std::endl;
         //std::cout << *i << std::endl;
     }    
+    return qs.dbgGetContext();
 }
  
 
@@ -318,19 +323,32 @@ BOOST_AUTO_TEST_CASE(RestrictorBox) {
 #endif 
 BOOST_AUTO_TEST_CASE(RestrictorObjectId) {
     std::string stmt = "select * from Object where qserv_objectId(2,3145,9999);";
-    testStmt3(qsTest, stmt);
-    //BOOST_CHECK(spr->getHasChunks());
-    //BOOST_CHECK(!spr->getHasSubChunks());
-    //BOOST_CHECK(!spr->getHasAggregate());
+    boost::shared_ptr<QueryContext> context = testStmt3(qsTest, stmt);
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_REQUIRE(context->restrictors);
+    BOOST_CHECK_EQUAL(context->restrictors->size(), 1);
+    BOOST_REQUIRE(context->restrictors->front());
+    QsRestrictor& r = *context->restrictors->front();
+    BOOST_CHECK_EQUAL(r._name, "sIndex");
+    char const* params[] = {"LSST","Object", "objectIdObjTest", "2","3145","9999"};
+    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(), 
+                                  params, params+6); 
 
 }
 BOOST_AUTO_TEST_CASE(SecondaryIndex) {
-    std::string stmt = "select * from Object where objectId in (2,3145,9999);";
-    testStmt3(qsTest, stmt);
-    //BOOST_CHECK(spr->getHasChunks());
-    //BOOST_CHECK(!spr->getHasSubChunks());
-    //BOOST_CHECK(!spr->getHasAggregate());
-
+    std::string stmt = "select * from Object where objectIdObjTest in (2,3145,9999);";
+    boost::shared_ptr<QueryContext> context = testStmt3(qsTest, stmt);
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_REQUIRE(context->restrictors);
+    BOOST_CHECK_EQUAL(context->restrictors->size(), 1);
+    BOOST_REQUIRE(context->restrictors->front());
+    QsRestrictor& r = *context->restrictors->front();
+    BOOST_CHECK_EQUAL(r._name, "sIndex");
+    char const* params[] = {"LSST","Object", "objectIdObjTest", "2","3145","9999"};
+    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(), 
+                                  params, params+6); 
 }
 #if 0
 BOOST_AUTO_TEST_CASE(RestrictorObjectIdAlias) {
@@ -563,7 +581,7 @@ BOOST_AUTO_TEST_CASE(UnpartLimit) {
 #endif // End: Tests to migrate to new parser framework (needs work in parser too)
 
 BOOST_AUTO_TEST_CASE(Subquery) { // ticket #2053
-    std::string stmt = "SELECT * FROM (SELECT * FROM Object WHERE filterId=4) WHERE rFlux_PS > 0.3;";
+    std::string stmt = "SELECT subQueryColumn FROM (SELECT * FROM Object WHERE filterId=4) WHERE rFlux_PS > 0.3;";
     SelectParser::Ptr p = getParser(stmt);
     testParse(p);
 }

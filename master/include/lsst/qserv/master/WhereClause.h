@@ -41,6 +41,7 @@
 // Qserv
 #include "lsst/qserv/master/ColumnRefMap.h"
 #include "lsst/qserv/master/BoolTerm.h"
+#include "lsst/qserv/master/QsRestrictor.h"
 #include "lsst/qserv/master/ValueExpr.h"
 
 namespace lsst { 
@@ -48,24 +49,6 @@ namespace qserv {
 namespace master {
 class BoolTerm; // Forward
 
-/// QsRestrictor is a Qserv spatial restrictor element. Also includes other
-/// qserv-specific restrictor directives, like qserv_objectid()
-class QsRestrictor {
-public:
-    typedef boost::shared_ptr<QsRestrictor> Ptr;
-    typedef std::list<Ptr> List;
-    typedef std::list<std::string> StringList;
-
-    class render {
-    public:
-        render(QueryTemplate& qt_) : qt(qt_) {}
-        void operator()(QsRestrictor::Ptr const& p);
-        QueryTemplate& qt;
-    };
-
-    std::string _name;
-    StringList _params;
-};
 /// WhereClause is a SQL WHERE containing QsRestrictors and a BoolTerm tree.
 class WhereClause {
 public:
@@ -122,12 +105,13 @@ private:
     ValueExprPtr& dereference() const;
     ValueExprPtr& dereference();
 
-    ValueExprTerm* _checkForExpr();
-    ValueExprTerm* _checkForExpr() const;
+    bool _checkIfValid() const;
+    void _incrementValueExpr();
     void _incrementBfTerm();
     void _incrementBterm();
     bool _findFactor();
     bool _setupBfIter();
+    void _updateValueExprIter();
     
 
     WhereClause* _wc; // no shared_ptr available
@@ -137,6 +121,9 @@ private:
     std::stack<PosTuple> _posStack;
     BfTerm::PtrList::iterator _bfIter;
     BfTerm::PtrList::iterator _bfEnd;
+    typedef ValueExprList::iterator ValueExprListIter;
+    ValueExprListIter _vIter;
+    ValueExprListIter _vEnd;
 };
 
 }}} // namespace lsst::qserv::master

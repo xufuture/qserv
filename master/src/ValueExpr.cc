@@ -35,6 +35,7 @@
 #include <iterator>
 #include <sstream>
 #include <stdexcept>
+#include <boost/make_shared.hpp>
 #include "lsst/qserv/master/ValueFactor.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 #include "lsst/qserv/master/FuncExpr.h"
@@ -92,6 +93,40 @@ ValueExprPtr ValueExpr::newSimple(boost::shared_ptr<ValueFactor> vt)  {
 ValueExpr::ValueExpr() {
 }
 
+boost::shared_ptr<ColumnRef> ValueExpr::castAsColumnRef() const {
+    boost::shared_ptr<ColumnRef> cr;
+    if(_factorOps.empty()) { return cr; } // Empty?
+    if(_factorOps.size() > 1) { return cr; } // Not a single ColumnRef
+    boost::shared_ptr<ValueFactor> factor = _factorOps.front().factor;
+    if(!factor) { return cr; }
+    return boost::make_shared<ColumnRef>(*factor->getColumnRef());
+}
+
+std::string ValueExpr::castAsLiteral() const{
+    std::string s;
+    // Make sure there is only one factor.
+    if(_factorOps.empty() || (_factorOps.size() > 1)) { return s; } 
+
+    boost::shared_ptr<ValueFactor> factor = _factorOps.front().factor;
+    if(!factor || (factor->getType() != ValueFactor::CONST)) { return s; }
+    return factor->getTableStar();
+}
+
+template<typename T>
+T ValueExpr::castAsType(T const& defaultValue) const {
+    std::string literal = castAsLiteral();
+    std::istringstream is(literal);
+    T value;
+    is >> value;
+    std::ostringstream os;
+    os << value;
+    if (os.str() != literal) { 
+        return defaultValue;
+    }
+    return value;
+}
+template int ValueExpr::castAsType<int>(int const&) const;
+
 void ValueExpr::findColumnRefs(ColumnRef::List& list) {
     for(FactorOpList::iterator i=_factorOps.begin();
         i != _factorOps.end(); ++i) {
@@ -131,18 +166,12 @@ std::ostream& operator<<(std::ostream& os, ValueExpr const* ve) {
 ////////////////////////////////////////////////////////////////////////
 void ValueExpr::render::operator()(qMaster::ValueExpr const& ve) {
     if(_needsComma && _count++ > 0) { _qt.append(","); }
-    int count=0;
     ValueFactor::render render(_qt);    
     if(ve._factorOps.size() > 1) { // Need opening parenthesis
         _qt.append("(");
     }
     for(FactorOpList::const_iterator i=ve._factorOps.begin();
         i != ve._factorOps.end(); ++i) {
-#if 0
-        std::cout << "Rendering ve " << (void*)&ve << " "
-                  << ++count << " factor type=" 
-                  << i->factor->getType() << std::endl;
-#endif
         render(i->factor);
         switch(i->op) {
         case ValueExpr::NONE: break;

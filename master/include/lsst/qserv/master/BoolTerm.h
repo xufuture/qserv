@@ -138,6 +138,7 @@ public: // ( term, term, term )
     virtual void renderTo(QueryTemplate& qt) const;
     StringList _terms;
 };
+
 /// ValueExprTerm is a bool factor term that contains a value expression
 class ValueExprTerm : public BfTerm {
 public:

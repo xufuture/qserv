@@ -64,6 +64,7 @@ public:
 
     std::string const& getAlias() const { return _alias; }
     void setAlias(std::string const& a) { _alias = a; }
+    // TableStar is used for CONST literals as well.
     std::string const& getTableStar() const { return _tableStar; }
     void setTableStar(std::string const& a) { _tableStar = a; }
 

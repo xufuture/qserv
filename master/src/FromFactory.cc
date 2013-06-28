@@ -337,7 +337,7 @@ FromFactory::_import(antlr::RefAST a) {
     // std::cout << "FROM starts with: " << a->getText() 
     //           << " (" << a->getType() << ")" << std::endl;
     std::stringstream ss;
-    // std::cout << "FROM indented: " << walkIndentedString(a) << std::endl;
+    //std::cout << "FROM indented: " << walkIndentedString(a) << std::endl;
     for(RefGenerator refGen(a, _aliases); !refGen.isDone(); refGen.next()) {
         TableRefN::Ptr p = refGen.get();
         ss << "Found ref:" ;

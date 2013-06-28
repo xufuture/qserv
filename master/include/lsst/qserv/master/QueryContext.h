@@ -32,8 +32,10 @@
 #include <boost/shared_ptr.hpp>
 
 #include "lsst/qserv/master/QueryMapping.h"
+#include "lsst/qserv/master/TableAlias.h"
 
 namespace lsst { namespace qserv { namespace master {
+class ColumnRef;
 class QsRestrictor;
 class MetadataCache;
 
@@ -54,6 +56,10 @@ public:
 
     std::list<std::string> scanTables; // Tables scanned (for shared scans)
 
+    // Table aliasing
+    TableAlias tableAliases;
+    TableAliasReverse tableAliasReverses;
+    
     // Owned QueryMapping and query restrictors
     boost::shared_ptr<QueryMapping> queryMapping;
     boost::shared_ptr<RestrList> restrictors;
@@ -64,6 +70,8 @@ public:
         return queryMapping.get() && queryMapping->hasChunks(); }
     bool hasSubChunks() const { 
         return queryMapping.get() && queryMapping->hasSubChunks(); }
+    DbTablePair resolve(boost::shared_ptr<ColumnRef> cr);
+
 };
 
 }}} // namespace lsst::qserv::master

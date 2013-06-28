@@ -50,6 +50,7 @@ ValueExprFactory::ValueExprFactory(boost::shared_ptr<ColumnRefNodeMap> cMap)
 // VALUE_EXP                     //
 // |      \                      //
 // TERM   (TERM_OP TERM)*        //
+/// @param first child of VALUE_EXP node.
 boost::shared_ptr<ValueExpr> 
 ValueExprFactory::newExpr(antlr::RefAST a) {
     boost::shared_ptr<ValueExpr> expr(new ValueExpr);

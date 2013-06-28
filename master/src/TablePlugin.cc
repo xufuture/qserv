@@ -33,6 +33,7 @@
 
 #include "lsst/qserv/master/QueryPlugin.h"
 
+#include "lsst/qserv/master/common.h"
 #include "lsst/qserv/master/SelectList.h"
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/FromList.h"
@@ -41,39 +42,41 @@
 #include "lsst/qserv/master/SphericalBoxStrategy.h"
 #include "lsst/qserv/master/QueryMapping.h"
 #include "lsst/qserv/master/QueryContext.h"
+#include "lsst/qserv/master/TableAlias.h"
 #include "lsst/qserv/master/ValueFactor.h"
 
 namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers
-class ReverseAlias {
-public:
-    ReverseAlias() {}
-    std::string const& get(std::string db, std::string table) {
-        return _map[makeKey(db, table)];
+// Shared among plugins?
+template <class C>
+void printList(char const* label, C const& c) {
+    typename C::const_iterator i; 
+    std::cout << label << ": ";
+    for(i = c.begin(); i != c.end(); ++i) {
+        std::cout << **i << ", ";
     }
-    void set(std::string const& db, std::string const& table, 
-             std::string const& alias) {
-        _map[makeKey(db, table)] = alias;
-    }
-    inline std::string makeKey(std::string db, std::string table) {
-        std::stringstream ss;
-        ss << db << "__" << table << "__";
-        return ss.str();
-    }
-    std::map<std::string, std::string> _map;
-};
+    std::cout << std::endl;
+}
 
+} // anonymous
+
+namespace lsst { namespace qserv { namespace master {
+typedef std::list<std::string> StringList;
 class addMap {
 public:
-    explicit addMap(ReverseAlias& r) : _reverseAlias(r) {}
+    explicit addMap(TableAlias& t, TableAliasReverse& r) 
+        : _tableAlias(t), _tableAliasReverse(r) {}
     void operator()(std::string const& alias, 
                     std::string const& db, std::string const& table) {
         // std::cout << "set: " << alias << "->" 
         //           << db << "." << table << std::endl;
-        _reverseAlias.set(db, table, alias);
+        _tableAlias.set(db, table, alias);
+        _tableAliasReverse.set(db, table, alias);
     }
-    ReverseAlias& _reverseAlias;
+
+    TableAlias& _tableAlias;
+    TableAliasReverse& _tableAliasReverse;
 };
 
 class generateAlias {
@@ -88,7 +91,11 @@ public:
 };
 class addDbContext : public qMaster::TableRefN::Func {
 public:
-    addDbContext(qMaster::QueryContext const& c) : context(c) {}
+    addDbContext(qMaster::QueryContext const& c, 
+                 std::string& firstDb_,
+                 std::string& firstTable_)
+        : context(c), firstDb(firstDb_), firstTable(firstTable_)
+        {}
     void operator()(qMaster::TableRefN::Ptr t) {
         if(t.get()) { t->apply(*this); }     
     }
@@ -96,10 +103,12 @@ public:
         std::string table = t.getTable();
         if(table.empty()) return; // Add context only to concrete refs
         if(t.getDb().empty()) { t.setDb(context.defaultDb); }
-        if(dominantDb.empty()) { dominantDb = t.getDb(); }
+        if(firstDb.empty()) { firstDb = t.getDb(); }
+        if(firstTable.empty()) { firstTable = table; }
     }
     qMaster::QueryContext const& context;
-    std::string dominantDb;
+    std::string& firstDb;
+    std::string& firstTable;
 };
 
 template <typename G, typename A>
@@ -124,21 +133,17 @@ private:
     A _addMap; // Functor that adds a new alias mapping for matchin
                // later clauses.
 };
-} // anonymous
-
-namespace lsst { namespace qserv { namespace master {
-typedef std::list<std::string> StringList;
 
 ////////////////////////////////////////////////////////////////////////
 // fixExprAlias is a functor that acts on ValueExpr objects and
 // modifys them in-place, altering table names to use an aliased name
-// that is mapped via ReverseAlias. 
+// that is mapped via TableAliasReverse. 
 // It does not add table qualifiers where none already exist, because
 // there is no compelling reason to do so (yet).
 ////////////////////////////////////////////////////////////////////////
 class fixExprAlias {
 public:
-    explicit fixExprAlias(ReverseAlias& r) : _reverseAlias(r) {}
+    explicit fixExprAlias(TableAliasReverse& r) : _tableAliasReverse(r) {}
     void operator()(ValueExprPtr& vep) {
         if(!vep.get()) {
             return;
@@ -184,7 +189,7 @@ private:
 
     inline void _patchFuncExpr(FuncExpr& fe) {
         std::for_each(fe.params.begin(), fe.params.end(), 
-                      fixExprAlias(_reverseAlias));
+                      fixExprAlias(_tableAliasReverse));
     }
 
     inline void _patchStar(ValueFactor& vt) {
@@ -199,10 +204,10 @@ private:
     inline std::string _getAlias(std::string const& db,
                                  std::string const& table) {
         //std::cout << "lookup: " << db << "." << table << std::endl;
-        return _reverseAlias.get(db, table);
+        return _tableAliasReverse.get(db, table);
     }
 
-    ReverseAlias& _reverseAlias;
+    TableAliasReverse& _tableAliasReverse;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -272,15 +277,15 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     // std::cout << "TABLE:Logical:orig fromlist "
     //           << fList.getGenerated() << std::endl;
     TableRefnList& tList = fList.getTableRefnList();
-    
+
     // For each tableref, modify to add alias.
     int seq=0;
-    ReverseAlias reverseAlias;
+    addMap addMapContext(addMap(context.tableAliases, 
+                                context.tableAliasReverses));
+
     std::for_each(tList.begin(), tList.end(), 
                   addAlias<generateAlias,addMap>(generateAlias(seq), 
-                                                 addMap(reverseAlias)));
-    // FIXME: Now is a good time to verify that access is allowed and
-    // populate the context accordingly.  
+                                                 addMapContext));
 
     // Now snoop around the other clauses (SELECT, WHERE, etc. and
     // patch their table references)
@@ -288,27 +293,26 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     SelectList& sList = stmt.getSelectList();
     ValueExprList& exprList = *sList.getValueExprList();
     std::for_each(exprList.begin(), exprList.end(), 
-                  fixExprAlias(reverseAlias));
+                  fixExprAlias(context.tableAliasReverses));
     // where
     if(stmt.hasWhereClause()) {
         WhereClause& wClause = stmt.getWhereClause();
         WhereClause::ValueExprIter veI = wClause.vBegin();
         WhereClause::ValueExprIter veEnd = wClause.vEnd();
-        std::for_each(veI, veEnd, fixExprAlias(reverseAlias));
+        std::for_each(veI, veEnd, fixExprAlias(context.tableAliasReverses));
     }
     // Fill-in default db context.
-    addDbContext adc(context);
+    DbTablePair p;
+    addDbContext adc(context, p.db, p.table);
     std::for_each(tList.begin(), tList.end(), adc);
-    _dominantDb = adc.dominantDb;
-    if(_dominantDb.empty()) {
-        _dominantDb = context.defaultDb;
-    }
+    _dominantDb = context.dominantDb = p.db;
+    context.anonymousTable = p.table;
+    
     
     // Apply function using the iterator...
     //wClause.walk(fixExprAlias(reverseAlias));
     // order by
     // having        
-    context.dominantDb = _dominantDb;
     context.scanTables = _findScanTables(stmt, context);
 }
 

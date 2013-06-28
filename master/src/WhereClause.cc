@@ -30,6 +30,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include "lsst/qserv/master/Predicate.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 
 namespace qMaster=lsst::qserv::master;
@@ -259,25 +260,26 @@ WhereClause::ValueExprIter::ValueExprIter(WhereClause* wc,
 
 void WhereClause::ValueExprIter::increment() {
     while(1) {
-        _incrementBfTerm(); // Advance
+        _incrementValueExpr(); // Advance
         if(_posStack.empty()) {
             _wc = NULL; // Clear out WhereClause ptr
             return; 
         }
-        if(_checkForExpr()) return;
+        if(_checkIfValid()) return;
     }
 }
 
-qMaster::ValueExprTerm* WhereClause::ValueExprIter::_checkForExpr() {
-    BfTerm::Ptr b = *_bfIter;
-    ValueExprTerm* vet = dynamic_cast<ValueExprTerm*>(b.get());
-    return vet;
+bool WhereClause::ValueExprIter::_checkIfValid() const {
+    return _vIter != _vEnd;
 }
 
-qMaster::ValueExprTerm* WhereClause::ValueExprIter::_checkForExpr() const {
-    BfTerm::Ptr b = *_bfIter;
-    ValueExprTerm* vet = dynamic_cast<ValueExprTerm*>(b.get());
-    return vet;
+void WhereClause::ValueExprIter::_incrementValueExpr() {
+    assert(_vIter != _vEnd);
+    ++_vIter;
+    if(_vIter == _vEnd) {
+        _incrementBfTerm();
+        return;
+    } 
 }
 
 void WhereClause::ValueExprIter::_incrementBfTerm() {
@@ -288,7 +290,9 @@ void WhereClause::ValueExprIter::_incrementBfTerm() {
     if(_bfIter == _bfEnd) {
         _incrementBterm();
         return;
-    } 
+    } else {
+        _updateValueExprIter();
+    }
 }
 
 void WhereClause::ValueExprIter::_incrementBterm() {
@@ -312,25 +316,23 @@ bool WhereClause::ValueExprIter::equal(WhereClause::ValueExprIter const& other) 
     // Compare the posStack (only .first) and the bfIter.
     if(this->_wc != other._wc) return false;
     if(!this->_wc) return true; // Both are NULL
-    return _posStack == other._posStack;
+    return (_posStack == other._posStack)
+        && (_bfIter == other._bfIter)
+        && (_vIter == other._vIter);
 }
 
 qMaster::ValueExprPtr & WhereClause::ValueExprIter::dereference() const {
-    static ValueExprPtr nullPtr;
-    ValueExprTerm * vet = _checkForExpr();
-    if(!vet) {
+    if(_vIter == _vEnd) {
         throw std::invalid_argument("Cannot dereference NULL ValueExprTerm");
     }
-    return vet->_expr;
+    return *_vIter;
 }
 
 qMaster::ValueExprPtr& WhereClause::ValueExprIter::dereference() {
-    static ValueExprPtr nullPtr;
-    ValueExprTerm* vet = _checkForExpr();
-    if(!vet) {
+    if(_vIter == _vEnd) {
         throw std::invalid_argument("Cannot dereference NULL ValueExprTerm");
     }
-    return vet->_expr;
+    return *_vIter;
 }
 
 bool WhereClause::ValueExprIter::_findFactor() {
@@ -363,12 +365,28 @@ bool WhereClause::ValueExprIter::_setupBfIter() {
     if(bf) {
         _bfIter = bf->_terms.begin();
         _bfEnd = bf->_terms.end();
+        _updateValueExprIter();
         return true;
     } else {
         // Try recursing deeper.
         // FIXME
         return false;
     }
+}
+void WhereClause::ValueExprIter::_updateValueExprIter() {
+    _vIter = _vEnd = ValueExprListIter();
+    if(_bfIter == _bfEnd) { 
+        return;
+    }
+    BfTerm::Ptr b = *_bfIter;
+    assert(b);
+    Predicate* p = dynamic_cast<Predicate*>(b.get());
+    if(!p) {
+        return;
+    }
+    p->cacheValueExprList();
+    _vIter = p->valueExprCacheBegin();
+    _vEnd = p->valueExprCacheEnd();
 }
 
 }}} // namespace lsst::qserv::master
