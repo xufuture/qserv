@@ -46,16 +46,17 @@ class MetadataCache;
 /// instances to share information.
 class QueryContext {
 public:
+    QueryContext() : metadata(NULL) {}
     typedef std::list<boost::shared_ptr<QsRestrictor> > RestrList;
 
-    MetadataCache* metadata; /// Unowned, assumed to be alive for this lifetime.
-    std::string defaultDb; /// Implicit db context
-    std::string dominantDb; /// "dominant" database for this query
-    std::string anonymousTable; /// Implicit table context
-    std::string username; /// unused, but reserved.
+    MetadataCache* metadata; ///< Unowned, assumed to be alive for this lifetime.
+    std::string defaultDb; ///< Implicit db context
+    std::string dominantDb; ///< "dominant" database for this query
+    std::string anonymousTable; ///< Implicit table context
+    std::string username; ///< unused, but reserved.
     boost::shared_ptr<QueryMapping> queryMapping;
     boost::shared_ptr<RestrList> restrictors;
-    bool needsMerge; /// Does this query require a merge/post-processing step?
+    bool needsMerge; ///< Does this query require a merge/post-processing step?
 
     bool hasChunks() const { 
         return queryMapping.get() && queryMapping->hasChunks(); }

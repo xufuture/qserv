@@ -30,6 +30,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
+#include <ostream>
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -44,9 +45,13 @@ public:
     // Contents could change
     std::string db;
     int chunkId;
+    // Consider saving subChunkTable templates, and substituting the chunkIds
+    // and subChunkIds into them on-the-fly. 
     std::vector<std::string> subChunkTables;
     std::vector<int> subChunkIds;
     std::vector<std::string> queries;
+    // Consider promoting the concept of container of ChunkQuerySpec
+    // in the hopes of increased code cleanliness.
     boost::shared_ptr<ChunkQuerySpec> nextFragment;
 };
 

@@ -58,7 +58,7 @@ public:
 
     std::string const& getOriginal() const { return _original; }
     void setQuery(std::string const& q);
-    bool getHasAggregate() const;
+    bool hasAggregate() const;
 
     boost::shared_ptr<ConstraintVector> getConstraints() const;
     void addChunk(ChunkSpec const& cs);
@@ -70,7 +70,10 @@ public:
     // obsolete).
     void setResultTable(std::string const& resultTable);
     std::string const& getResultTable() const { return _resultTable; }
-    
+
+    /// Dominant database is the database that will be used for query
+    /// dispatch. This is distinct from the default database, which is what is
+    /// used for unqualified table and column references 
     std::string const& getDominantDb() const;
     
     MergeFixup makeMergeFixup() const;
@@ -84,7 +87,6 @@ public:
     explicit QuerySession(Test const& t) {_initContext();}
 
 private:
-    typedef std::list<ChunkSpec> ChunkSpecList;
     typedef std::list<QueryPlugin::Ptr> PluginList;
 
     explicit QuerySession(int metaCacheSession);
@@ -115,7 +117,7 @@ private:
     boost::shared_ptr<PluginList> _plugins;
 };
 
-/// Iterates over a ChunkSpecList to return QueryFragments for execution
+/// Iterates over a ChunkSpecList to return ChunkQuerySpecs for execution
 class QuerySession::Iter : public boost::iterator_facade <
     QuerySession::Iter, ChunkQuerySpec, boost::forward_traversal_tag> {
 public:

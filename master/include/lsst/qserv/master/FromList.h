@@ -45,6 +45,7 @@ public:
     }
     /// Get a list of TableRefN that occur
     TableRefnList& getTableRefnList() { return *_tableRefns; }
+    TableRefnList const& getTableRefnList() const { return *_tableRefns; }
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
 

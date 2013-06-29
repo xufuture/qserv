@@ -46,16 +46,6 @@
 namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers
-// Shared among plugins?
-template <class C>
-void printList(char const* label, C const& c) {
-    typename C::const_iterator i; 
-    std::cout << label << ": ";
-    for(i = c.begin(); i != c.end(); ++i) {
-        std::cout << **i << ", ";
-    }
-    std::cout << std::endl;
-}
 class ReverseAlias {
 public:
     ReverseAlias() {}
@@ -220,13 +210,9 @@ public:
     
     virtual ~TablePlugin() {}
 
-    /// Prepare the plugin for a query
     virtual void prepare() {}
 
-    /// Apply the plugin's actions to the parsed, but not planned query
     virtual void applyLogical(SelectStmt& stmt, QueryContext&);
-
-    /// Apply the plugins's actions to the concrete query plan.
     virtual void applyPhysical(QueryPlugin::Plan& p, QueryContext& context);
 private:
     std::string _dominantDb;
@@ -280,6 +266,8 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     std::for_each(tList.begin(), tList.end(), 
                   addAlias<generateAlias,addMap>(generateAlias(seq), 
                                                  addMap(reverseAlias)));
+    // FIXME: Now is a good time to verify that access is allowed and
+    // populate the context accordingly.  
 
     // Now snoop around the other clauses (SELECT, WHERE, etc. and
     // patch their table references)

@@ -47,8 +47,6 @@
 #include "lsst/qserv/master/ValueExpr.h"
 #include "lsst/qserv/master/WhereClause.h"
 
-namespace qMaster=lsst::qserv::master;
-
 namespace { // File-scope helpers
 std::string const UDF_PREFIX = "scisql_";
 } // anonymous
@@ -124,10 +122,10 @@ public:
     explicit getTable(MetadataCache& metadata, SpatialEntries& entries) 
         : _metadata(metadata), 
           _entries(entries) {}
-    void operator()(qMaster::TableRefN::Ptr t) {
+    void operator()(TableRefN::Ptr t) {
         assert(t.get());
-        std::string db = t->getDb();
-        std::string table = t->getTable();
+        std::string const& db = t->getDb();
+        std::string const& table = t->getTable();
         
         // Is table chunked?
         if(!_metadata.checkIfTableIsChunked(db, table)) {
@@ -158,19 +156,13 @@ public:
     
     virtual ~SpatialSpecPlugin() {}
 
-    /// Prepare the plugin for a query
     virtual void prepare() {}
 
-    /// Apply the plugin's actions to the parsed, but not planned query
     virtual void applyLogical(SelectStmt& stmt, QueryContext&);
-
-    /// Apply the plugins's actions to the concrete query plan.
     virtual void applyPhysical(QueryPlugin::Plan& p, QueryContext& context);
 private:
     BoolTerm::Ptr _makeCondition(boost::shared_ptr<QsRestrictor> const restr,
                                  SpatialEntry const& spatialEntry);
-
-
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -184,7 +176,7 @@ public:
         : _name(r._name) {
         _setGenerator(r);
     }
-    virtual BoolFactor::Ptr generate(SpatialEntry const& e) {
+    BoolFactor::Ptr generate(SpatialEntry const& e) {
         return (*_generator)(e);
     }
 
@@ -250,28 +242,27 @@ private:
 
     void _setGenerator(QsRestrictor const& r) {
         if(r._name == "qserv_areaspec_box") {
-            _generator.reset(dynamic_cast<Generator*>
+            _generator.reset(static_cast<Generator*>
                              (new AreaGenerator("s2PtInBox", 
                                                 4, r._params)));
         } else if(r._name == "qserv_areaspec_circle") {
-            _generator.reset(dynamic_cast<Generator*>
+            _generator.reset(static_cast<Generator*>
                              (new AreaGenerator("s2PtInCircle", 
                                                 3, r._params)));
         } else if(r._name == "qserv_areaspec_ellipse") {
-            _generator.reset(dynamic_cast<Generator*>
+            _generator.reset(static_cast<Generator*>
                              (new AreaGenerator("s2PtInEllipse", 
                                                 5, r._params)));
         } else if(r._name == "qserv_areaspec_poly") {
-            _generator.reset(dynamic_cast<Generator*>
+            _generator.reset(static_cast<Generator*>
                              (new AreaGenerator("s2PtInCPoly", 
                                                 AreaGenerator::USE_STRING,
                                                 r._params)));
         } else if(_name == "qserv_objectId") {
             ObjectIdGenerator* g = new ObjectIdGenerator(r._params);
-            _generator.reset(dynamic_cast<Generator*>(g));
+            _generator.reset(static_cast<Generator*>(g));
         } else {
-            std::cout << "Unmatched restriction spec: " << _name 
-                      << ", ignoring." << std::endl;
+            throw std::runtime_error("Unmatched restriction spec: " + _name);
         }
     }
     std::string _name;
@@ -297,7 +288,7 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////
-// registarSpatialSpecPlugin implementation
+// registerSpatialSpecPlugin implementation
 ////////////////////////////////////////////////////////////////////////
 // factory registration
 void 

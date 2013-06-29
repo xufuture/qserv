@@ -31,6 +31,7 @@
 #include "lsst/qserv/master/QuerySession.h"
 
 #include <algorithm>
+#include <iostream>
 #include "lsst/qserv/master/SelectParser.h"
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/SelectList.h"
@@ -44,12 +45,13 @@
 #include "lsst/qserv/master/PostPlugin.h"
 #include "lsst/qserv/master/ifaceMeta.h" // Retrieve metadata object
 
-namespace qMaster=lsst::qserv::master;
+namespace lsst {
+namespace qserv { 
+namespace master {
 
-namespace { // File-scope helpers
 struct printConstraintHelper {
     printConstraintHelper(std::ostream& os_) : os(os_) {}
-    void operator()(qMaster::Constraint const& c) {
+    void operator()(Constraint const& c) {
         os << "Constraint " << c.name << " ";
         std::copy(c.params.begin(), c.params.end(), 
                   std::ostream_iterator<std::string>(os, ","));
@@ -57,13 +59,10 @@ struct printConstraintHelper {
     }
     std::ostream& os;
 };
-void printConstraints(qMaster::ConstraintVector const& cv) {
+void printConstraints(ConstraintVector const& cv) {
     std::for_each(cv.begin(), cv.end(), printConstraintHelper(std::cout));
 }
 
-} // anonymous namespace
-
-namespace lsst { namespace qserv  { namespace master {
 
 ////////////////////////////////////////////////////////////////////////
 // class QuerySession
@@ -87,7 +86,7 @@ void QuerySession::setQuery(std::string const& q) {
     _showFinal(); // DEBUG    
 }
 
-bool QuerySession::getHasAggregate() const {
+bool QuerySession::hasAggregate() const {
     // Aggregate: having an aggregate fct spec in the select list.
     // Stmt itself knows whether aggregation is present. More
     // generally, aggregation is a separate pass. In computing a
@@ -127,7 +126,7 @@ boost::shared_ptr<ConstraintVector> QuerySession::getConstraints() const {
     return cv;
 }
 
-void QuerySession::addChunk(qMaster::ChunkSpec const& cs) {
+void QuerySession::addChunk(ChunkSpec const& cs) {
     _chunks.push_back(cs);
 }
 
@@ -194,9 +193,9 @@ void QuerySession::_applyLogicPlugins() {
 void QuerySession::_generateConcrete() {
     _hasMerge = false;
     // In making a statement concrete, the query's execution is split
-    // into a parallel portion and a merging/aggregation portion. 
-    // In many cases, not much needs to be done, since nearly all of
-    // it can be parallelized.
+    // into a parallel portion and a merging/aggregation portion.  In
+    // many cases, not much needs to be done for the latter, since
+    // nearly all of the query can be parallelized.
     // If the query requires aggregation, the select list needs to get
     // converted into a parallel portion, and the merging includes the
     // post-parallel steps to merge sub-results.  When the statement
@@ -204,18 +203,18 @@ void QuerySession::_generateConcrete() {
     // the merge statement can be left empty, signifying that the sub
     // results can be concatenated directly into the output table.
     //
-    // Important parts of the merge statement are 
-    _stmtParallel = _stmt->copyDeep(); // Needs to copy SelectList, since the
-                           // parallel statement's version will get
-                           // updated by plugins. Plugins probably
-                           // need access to the original as a
-                           // reference.
-    _stmtMerge = _stmt->copyMerge(); // Copies SelectList and Mods,
-                                      // but not FROM, and perhaps not
-                                      // WHERE(???)
-    
-    
-    // Compute default merge predicate:
+
+    // Needs to copy SelectList, since the parallel statement's
+    // version will get updated by plugins. Plugins probably need
+    // access to the original as a reference.
+    _stmtParallel = _stmt->copyDeep(); 
+
+    // Copy SelectList and Mods, but not FROM, and perhaps not
+    // WHERE(???). Conceptually, we want to copy the parts that are
+    // needed during merging and aggregation. 
+    _stmtMerge = _stmt->copyMerge();
+
+    // TableMerger needs to be integrated into this design.
 }
 
 

@@ -60,9 +60,8 @@ public:
 
 private:
     class Impl;
-    void _import(FromList& f);
+    void _import(FromList const& f);
 
-    QueryContext& _context;
     boost::shared_ptr<Impl> _impl;
 };
 

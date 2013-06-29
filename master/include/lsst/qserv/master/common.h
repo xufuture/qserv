@@ -26,6 +26,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <iostream>
 
 namespace lsst {
 namespace qserv {
@@ -81,6 +82,17 @@ void forEachFirst(Map const& m, Func& f, Filter& filter) {
         }
     }
 }
+
+template <class C>
+std::ostream& printList(std::ostream &os, char const* label, C const& c) {
+    typename C::const_iterator i; 
+    os << label << ": ";
+    for(i = c.begin(); i != c.end(); ++i) {
+        os << **i << ", ";
+    }
+    return os;
+}
+
 
 }}} // namesapce lsst::qserv::master
 #endif // LSST_QSERV_MASTER_COMMON_H

@@ -25,10 +25,6 @@
 /**
   * @file QueryPlugin.h
   *
-  * @brief QueryPlugin is an abstract query plugin that operates on query
-  * representations. It has hooks for preparation, applying on logical queries
-  * (SelectStmt) and physical queries (multiple SelectStmt). 
-  *
   * @author Daniel L. Wang, SLAC
   */
 #include <list>
@@ -44,8 +40,9 @@ class SelectStmt;
 typedef std::list<boost::shared_ptr<SelectStmt> > SelectStmtList;
  
 /// QueryPlugin is an interface for classes which implement rewrite/optimization
-/// rules for incoming SQL queries.  Plugins can act upon the intermediate
-/// representation or the concrete plan or both.
+/// rules for incoming SQL queries by operating on query representations.
+/// Plugins can act upon the intermediate representation or the concrete plan or both.
+/// The QuerySession requests specific QueryPlugins by name and calls them in order.
 class QueryPlugin {
 public:
     // Types

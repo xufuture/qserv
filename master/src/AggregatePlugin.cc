@@ -32,6 +32,7 @@
   */
 #include "lsst/qserv/master/AggregatePlugin.h"
 #include <string>
+#include "lsst/qserv/master/common.h"
 #include "lsst/qserv/master/QueryContext.h"
 #include "lsst/qserv/master/QueryPlugin.h"
 #include "lsst/qserv/master/QueryTemplate.h"
@@ -43,28 +44,12 @@
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/AggOp.h"
 
-namespace qMaster=lsst::qserv::master;
-using lsst::qserv::master::QueryContext;
-using lsst::qserv::master::QueryPlugin;
-using lsst::qserv::master::QueryTemplate;
-using lsst::qserv::master::ValueExpr;
-using lsst::qserv::master::FuncExpr;
-using lsst::qserv::master::AggOp;
-using lsst::qserv::master::AggRecord;
-
 namespace { // Anonymous helpers
-template <class C>
-void printList(char const* label, C const& c) {
-    typename C::const_iterator i; 
-    std::cout << label << ": ";
-    for(i = c.begin(); i != c.end(); ++i) {
-        std::cout << **i << ", ";
-    }
-    std::cout << std::endl;
-}
 } // Anonymous namespace
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 
 template <class C>
 class convertAgg {
@@ -118,9 +103,9 @@ private:
                 AggRecord::Ptr p = aMgr.applyOp(newFactor->getFuncExpr()->name,
                                                  *newFactor);
                 assert(p.get());
-                pList.insert(pList.end(), p->pass.begin(), p->pass.end());
+                pList.insert(pList.end(), p->parallel.begin(), p->parallel.end());
                 ValueExpr::FactorOp m;
-                m.factor = p->fixup;
+                m.factor = p->merge;
                 m.op = i->op;
                 mergeFactorOps.push_back(m);
             }
@@ -143,16 +128,10 @@ public:
     
     virtual ~AggregatePlugin() {}
 
-    /// Prepare the plugin for a query
     virtual void prepare() {}
 
-    /// Apply the plugin's actions to the parsed, but not planned query
-    virtual void applyLogical(SelectStmt& stmt,
-                              QueryContext&) {}
-
-    /// Apply the plugins's actions to the concrete query plan.
-    virtual void applyPhysical(QueryPlugin::Plan& p,
-                               QueryContext&);
+    virtual void applyLogical(SelectStmt& stmt, QueryContext&) {}
+    virtual void applyPhysical(QueryPlugin::Plan& p, QueryContext&);
 private:
     AggOp::Mgr _aMgr;
 };
@@ -195,18 +174,18 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
     SelectList& oList = p.stmtOriginal.getSelectList();
     SelectList& pList = p.stmtParallel.getSelectList();
     SelectList& mList = p.stmtMerge.getSelectList();
-    boost::shared_ptr<qMaster::ValueExprList> vlist;
+    boost::shared_ptr<ValueExprList> vlist;
     vlist = oList.getValueExprList();
     assert(vlist.get());
     
-    printList("aggr origlist", *vlist);
+    printList(std::cout, "aggr origlist", *vlist) << std::endl;
     // Clear out select lists, since we are rewriting them.
     pList.getValueExprList()->clear();
     mList.getValueExprList()->clear();
     AggOp::Mgr m; // Eventually, this can be shared?
-    convertAgg<qMaster::ValueExprList> ca(*pList.getValueExprList(), 
-                                          *mList.getValueExprList(),
-                                          m);
+    convertAgg<ValueExprList> ca(*pList.getValueExprList(), 
+                                 *mList.getValueExprList(),
+                                 m);
     std::for_each(vlist->begin(), vlist->end(), ca);
     QueryTemplate qt;
     pList.renderTo(qt);

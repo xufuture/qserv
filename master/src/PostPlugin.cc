@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,21 +9,21 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /**
   * @file PostPlugin.cc
   *
   * @brief PostPlugin does the right thing to handle LIMIT (and
-  * perhaps ORDER BY and GROUP BY) clauses.  
+  * perhaps ORDER BY and GROUP BY) clauses.
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -34,18 +34,17 @@
 #include "lsst/qserv/master/QueryPlugin.h"
 #include "lsst/qserv/master/SelectList.h"
 #include "lsst/qserv/master/SelectStmt.h"
-namespace qMaster=lsst::qserv::master;
 
 namespace lsst { namespace qserv { namespace master {
 
 ////////////////////////////////////////////////////////////////////////
 // PostPlugin declaration
 ////////////////////////////////////////////////////////////////////////
-class PostPlugin : public lsst::qserv::master::QueryPlugin {
+class PostPlugin : public QueryPlugin {
 public:
     // Types
     typedef boost::shared_ptr<PostPlugin> Ptr;
-    
+
     virtual ~PostPlugin() {}
 
     /// Prepare the plugin for a query
@@ -56,7 +55,7 @@ public:
 
     /// Apply the plugins's actions to the concrete query plan.
     virtual void applyPhysical(QueryPlugin::Plan& p, QueryContext& context);
-    
+
     int _limit;
 };
 
@@ -77,10 +76,10 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////
-// registarPostPlugin implementation
+// registerPostPlugin implementation
 ////////////////////////////////////////////////////////////////////////
 // factory registration
-void 
+void
 registerPostPlugin() {
     PostPluginFactory::Ptr f(new PostPluginFactory());
     QueryPlugin::registerClass(f);
@@ -89,7 +88,7 @@ registerPostPlugin() {
 ////////////////////////////////////////////////////////////////////////
 // PostPlugin implementation
 ////////////////////////////////////////////////////////////////////////
-void 
+void
 PostPlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     _limit = stmt.getLimit();
 }
@@ -106,10 +105,10 @@ PostPlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext& context) {
         vlist = mList.getValueExprList();
         assert(vlist.get());
         if(vlist->size() == 0) {
-            mList.addStar(antlr::RefAST()); 
+            mList.addStar(antlr::RefAST());
         }
-    // Patch MergeFixup.
-    context.needsMerge = true;
+        // Patch MergeFixup.
+        context.needsMerge = true;
     } // if limit != -1
 }
 
