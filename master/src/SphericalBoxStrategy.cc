@@ -149,7 +149,9 @@ public:
             i != tuples.end(); ++i) {
             if(i->chunkLevel == 2) { 
                 std::string const& table = i->prePatchTable;
-                assert(!table.empty());
+                if(table.empty()) {
+                    throw std::logic_error("Unknown prePatchTable in QueryMapping");
+                }
                 m.insertSubChunkTable(table);
             }
         }
@@ -188,7 +190,9 @@ public:
         std::string table = t.getTable();
         if(table.empty()) return; // Ignore the compound-part of
                                   // compound ref. 
-        assert(_i != _end);
+        if(_i == _end) {
+            throw std::invalid_argument("TableRefN missing table.");
+        }
         // std::cout << "Patching tablerefn:" << t << std::endl;
         t.setDb(_i->db);
         t.setTable(_i->table);
@@ -314,7 +318,9 @@ void SphericalBoxStrategy::_import(FromList const& f) {
     std::for_each(tList.begin(), tList.end(), 
                   TableRefN::Fwrapper<addTable>(a));
     
-    assert(_impl->context.metadata);
+    if(!_impl->context.metadata) {
+        throw std::logic_error("Missing context.metadata");
+    }
     lookupTuple lookup(*_impl->context.metadata);
     std::for_each(_impl->tuples.begin(), _impl->tuples.end(), lookup);
 #if 0

@@ -38,42 +38,41 @@
 // map them?
 // For now, just build the syntax tree without evaluating.
 #include "lsst/qserv/master/SelectList.h"
+#include <iterator>
+#include <stdexcept>
 #include "lsst/qserv/master/FuncExpr.h"
 #include "lsst/qserv/master/ValueFactor.h"
 #include "lsst/qserv/master/QueryTemplate.h"
-#include <iterator>
 
 #include "SqlSQL2TokenTypes.hpp" // For ANTLR typing.
 
-using lsst::qserv::master::ColumnRef;
-using lsst::qserv::master::ColumnRefList;
-using lsst::qserv::master::ValueExpr;
-using lsst::qserv::master::ValueExprPtr;
-using lsst::qserv::master::SelectList;
-namespace qMaster=lsst::qserv::master;
+namespace lsst { 
+namespace qserv {
+namespace master {
 
-namespace { // File-scope helpers
 template <typename T>
 struct renderWithSep {
-    renderWithSep(qMaster::QueryTemplate& qt_, std::string const& sep_) 
+    renderWithSep(QueryTemplate& qt_, std::string const& sep_) 
         : qt(qt_),sep(sep_),count(0) {}
     void operator()(T const& t) {
         if(++count > 1) qt.append(sep);
     }
-    qMaster::QueryTemplate& qt;
+    QueryTemplate& qt;
     std::string sep;
     int count;
 
 };
-} // anonymous namespace
+
 void
 SelectList::addStar(antlr::RefAST table) {
-    assert(_valueExprList.get());
+    if(!_valueExprList) {
+        throw std::logic_error("Corrupt SelectList object");
+    }
 
     ValueExprPtr ve;
     std::string tParam;
     if(table.get()) {
-        tParam = qMaster::tokenText(table);
+        tParam = tokenText(table);
     }
     ve = ValueExpr::newSimple(ValueFactor::newStarFactor(tParam));
     _valueExprList->push_back(ve);
@@ -81,7 +80,9 @@ SelectList::addStar(antlr::RefAST table) {
 
 void
 SelectList::dbgPrint() const {
-    assert(_valueExprList.get());
+    if(!_valueExprList) {
+        throw std::logic_error("Corrupt SelectList object");
+    }
     std::cout << "Parsed value expression for select list." << std::endl;
     std::copy(_valueExprList->begin(),
               _valueExprList->end(),
@@ -89,7 +90,7 @@ SelectList::dbgPrint() const {
 }
 
 std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::SelectList const& sl) {
+operator<<(std::ostream& os, SelectList const& sl) {
     os << "SELECT ";
     std::copy(sl._valueExprList->begin(), sl._valueExprList->end(),
                   std::ostream_iterator<ValueExprPtr>(os,", "));
@@ -98,24 +99,24 @@ qMaster::operator<<(std::ostream& os, qMaster::SelectList const& sl) {
 }
 
 std::string
-qMaster::SelectList::getGenerated() {
+SelectList::getGenerated() {
     QueryTemplate qt;
     renderTo(qt);
     return qt.dbgStr();
 }
 
 void
-qMaster::SelectList::renderTo(qMaster::QueryTemplate& qt) const {
+SelectList::renderTo(QueryTemplate& qt) const {
     std::for_each(_valueExprList->begin(), _valueExprList->end(),
                   ValueExpr::render(qt, true));
 
 }
 struct copyValueExpr {
-    qMaster::ValueExprPtr operator()(ValueExprPtr const& p) {
+    ValueExprPtr operator()(ValueExprPtr const& p) {
         return p->clone();
     }
 };
-boost::shared_ptr<SelectList> qMaster::SelectList::copyDeep() {
+boost::shared_ptr<SelectList> SelectList::copyDeep() {
     boost::shared_ptr<SelectList> newS(new SelectList(*this));
     newS->_valueExprList.reset(new ValueExprList());
     ValueExprList& src = *_valueExprList;
@@ -128,10 +129,11 @@ boost::shared_ptr<SelectList> qMaster::SelectList::copyDeep() {
     return newS;
 }
 
-boost::shared_ptr<SelectList> qMaster::SelectList::copySyntax() {
+boost::shared_ptr<SelectList> SelectList::copySyntax() {
     boost::shared_ptr<SelectList> newS(new SelectList(*this));
     // Shallow copy of expr list is okay.
     newS->_valueExprList.reset(new ValueExprList(*_valueExprList));
     // For the other fields, default-copied versions are okay.
     return newS;
 }
+}}} // lsst::qserv::master

@@ -51,7 +51,7 @@ struct SpacedOutput {
         last = s;
     }
     void operator()(boost::shared_ptr<QueryTemplate::Entry> e) {
-        assert(e.get());
+        if(!e) { throw std::invalid_argument("NULL QueryTemplate::Entry"); }
         //if(e->isDynamic()) { os << "(" << count << ")"; }
         (*this)(e->getValue());
         ++count;

@@ -424,7 +424,9 @@ void qMaster::AsyncQueryManager::_addNewResult(PacIterPtr pacIter,
 void qMaster::AsyncQueryManager::_addNewResult(ssize_t dumpSize, 
                                                std::string const& dumpFile, 
                                                std::string const& tableName) {
-    assert(dumpSize >= 0);
+    if(dumpSize < 0) {
+        throw std::invalid_argument("dumpSize < 0");
+    }
     {
         boost::lock_guard<boost::mutex> lock(_totalSizeMutex);
         _totalSize += dumpSize; 

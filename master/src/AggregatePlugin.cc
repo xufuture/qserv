@@ -32,6 +32,7 @@
   */
 #include "lsst/qserv/master/AggregatePlugin.h"
 #include <string>
+#include <stdexcept>
 #include "lsst/qserv/master/common.h"
 #include "lsst/qserv/master/QueryContext.h"
 #include "lsst/qserv/master/QueryPlugin.h"
@@ -99,10 +100,14 @@ private:
             } else {
                 AggRecord r;
                 r.orig = newFactor;
-                assert(newFactor->getFuncExpr().get());        
+                if(!newFactor->getFuncExpr()) {
+                    throw std::logic_error("Missing FuncExpr in AggRecord");
+                }
                 AggRecord::Ptr p = aMgr.applyOp(newFactor->getFuncExpr()->name,
                                                  *newFactor);
-                assert(p.get());
+                if(!p) {
+                    throw std::logic_error("Couldn't process AggRecord");
+                }
                 pList.insert(pList.end(), p->parallel.begin(), p->parallel.end());
                 ValueExpr::FactorOp m;
                 m.factor = p->merge;
@@ -176,7 +181,9 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
     SelectList& mList = p.stmtMerge.getSelectList();
     boost::shared_ptr<ValueExprList> vlist;
     vlist = oList.getValueExprList();
-    assert(vlist.get());
+    if(!vlist) { 
+        throw std::invalid_argument("No select list in original SelectStmt"); 
+    }
     
     printList(std::cout, "aggr origlist", *vlist) << std::endl;
     // Clear out select lists, since we are rewriting them.

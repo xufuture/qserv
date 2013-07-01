@@ -51,6 +51,7 @@
 #include "lsst/qserv/master/ValueFactor.h"
 
 #include "lsst/qserv/master/ParseAliasMap.h" 
+#include "lsst/qserv/master/ParseException.h" 
 #include "lsst/qserv/master/parseTreeUtil.h"
 #include "lsst/qserv/master/TableRefN.h"
 // namespace modifiers
@@ -207,11 +208,15 @@ SelectListFactory::_import(RefAST selectRoot) {
         RefAST child = selectRoot->getFirstChild();
         switch(selectRoot->getType()) {
         case SqlSQL2TokenTypes::SELECT_COLUMN:
-            assert(child.get());
+            if(!child.get()) {
+                throw ParseException("Expected select column", selectRoot);
+            }
             _addSelectColumn(child);
             break;
         case SqlSQL2TokenTypes::SELECT_TABLESTAR:
-            assert(child.get());
+            if(!child.get()) {
+                throw ParseException("Missing table.*", selectRoot);
+            }
             _addSelectStar(child);
             break;
         case SqlSQL2TokenTypes::ASTERISK: // Not sure this will be
@@ -220,22 +225,27 @@ SelectListFactory::_import(RefAST selectRoot) {
             // should only have a single unqualified "*"            
             break;
         default:
-            throw ParseException(selectRoot);
+            throw ParseException("Invalid SelectList token type",selectRoot);
      
         } // end switch
     } // end for-each select_list child.
 }
 
 void
-SelectListFactory::_addSelectColumn(RefAST expr) {
+SelectListFactory::_addSelectColumn(RefAST expr) {    
     // Figure out what type of value expr, and create it properly.
     // std::cout << "SelectCol Type of:" << expr->getText() 
     //           << "(" << expr->getType() << ")" << std::endl;
+    if(!expr.get()) {
+        throw std::invalid_argument("Attempted _addSelectColumn(NULL)");
+    }
     if(expr->getType() != SqlSQL2TokenTypes::VALUE_EXP) {
-        throw ParseException(expr);
+        throw ParseException("Expected VALUE_EXP", expr);
     }
     RefAST child = expr->getFirstChild();
-    assert(child.get());
+    if(!child.get()) {
+        throw ParseException("Missing VALUE_EXP child", expr);
+    }
     //    std::cout << "child is " << child->getType() << std::endl;
     ValueExprPtr ve = _vFactory->newExpr(child);
 
@@ -259,19 +269,13 @@ SelectListFactory::_addSelectStar(RefAST child) {
         // child should be QUALIFIED_NAME, so its child should be a
         // table name.
         RefAST table = child->getFirstChild();
-        assert(table.get());
+        if(!table.get()) {
+            throw ParseException("Missing name node.", child);
+        }
         tableName = tokenText(table);
         std::cout << "table ref'd for *: " << tableName << std::endl;
     } 
     vt = ValueFactor::newStarFactor(tableName);
     _valueExprList->push_back(ValueExpr::newSimple(vt));
-}
-
-////////////////////////////////////////////////////////////////////////
-// class SelectListFactory::ParseException 
-////////////////////////////////////////////////////////////////////////
-SelectListFactory::ParseException::ParseException(RefAST subtree) :
-    runtime_error("SelectList parse error") {
-    // empty.
 }
 

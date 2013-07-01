@@ -32,6 +32,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
+
 #include "lsst/qserv/master/SelectParser.h"
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/SelectList.h"
@@ -142,7 +144,9 @@ std::string const& QuerySession::getDominantDb() const {
 MergeFixup QuerySession::makeMergeFixup() const {
     // Make MergeFixup to adapt new query parser/generation framework
     // to older merging code. 
-    assert(_stmt.get());
+    if(!_stmt) {
+        throw std::invalid_argument("Cannot makeMergeFixup() with NULL _stmt");
+    }
     SelectList const& mergeSelect = _stmtMerge->getSelectList();
     QueryTemplate t;
     mergeSelect.renderTo(t);
@@ -170,7 +174,9 @@ void QuerySession::_initContext() {
     _context->needsMerge = false;
     MetadataCache* metadata = getMetadataCache(_metaCacheSession).get();
     _context->metadata = metadata;
-    assert(metadata);
+    if(!metadata) {
+        throw std::logic_error("Couldn't retrieve MetadataCache");
+    }
 }
 void QuerySession::_preparePlugins() {
     _plugins.reset(new PluginList);
@@ -240,9 +246,13 @@ void QuerySession::_showFinal() {
 std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) { 
     std::vector<std::string> q;
     // This logic may be pushed over to the qserv worker in the future.
-    assert(_stmtParallel.get());
+    if(!_stmtParallel) {
+        throw std::logic_error("Attempted buildChunkQueries without _stmtParallel");
+    }
     QueryTemplate cqTemp = _stmtParallel->getTemplate();
-    assert(_context->queryMapping.get());
+    if(!_context->queryMapping) {
+        throw std::logic_error("Missing QueryMapping in _context");
+    }
     QueryMapping const& queryMapping = *_context->queryMapping;
     if(!queryMapping.hasSubChunks()) { // Non-subchunked?
         q.push_back(_context->queryMapping->apply(s, cqTemp));
@@ -261,7 +271,9 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) {
 ////////////////////////////////////////////////////////////////////////
 QuerySession::Iter::Iter(QuerySession& qs, ChunkSpecList::iterator i)
     : _qs(&qs), _pos(i), _dirty(true) {
-    assert(qs._context.get());
+    if(!qs._context) {
+        throw std::invalid_argument("NULL QuerySession");
+    }
     _hasChunks = qs._context->hasChunks();
     _hasSubChunks = qs._context->hasSubChunks();
 }

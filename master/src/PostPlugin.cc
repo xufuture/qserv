@@ -28,6 +28,7 @@
   * @author Daniel L. Wang, SLAC
   */
 #include "lsst/qserv/master/PostPlugin.h"
+#include <stdexcept>
 #include <string>
 
 #include "lsst/qserv/master/QueryContext.h"
@@ -103,7 +104,9 @@ PostPlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext& context) {
         SelectList& mList = p.stmtMerge.getSelectList();
         boost::shared_ptr<ValueExprList> vlist;
         vlist = mList.getValueExprList();
-        assert(vlist.get());
+        if(!vlist) {
+            throw std::logic_error("Unexpected NULL ValueExpr in SelectList");
+        }
         if(vlist->size() == 0) {
             mList.addStar(antlr::RefAST());
         }

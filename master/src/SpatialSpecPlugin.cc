@@ -123,7 +123,9 @@ public:
         : _metadata(metadata), 
           _entries(entries) {}
     void operator()(TableRefN::Ptr t) {
-        assert(t.get());
+        if(!t) {
+            throw std::invalid_argument("NULL TableRefN::Ptr");
+        }
         std::string const& db = t->getDb();
         std::string const& table = t->getTable();
         
@@ -133,9 +135,11 @@ public:
         }
         // Now save an entry for WHERE clause processing.
         std::string alias = t->getAlias();
-        assert(!alias.empty()); // For now, only accept aliased
-                                // tablerefs (should have been done
-                                // earlier)
+        if(alias.empty()) {
+            // For now, only accept aliased tablerefs (should have
+            // been done earlier)
+            throw std::logic_error("Unexpected unaliased table reference");
+        }
         std::vector<std::string> pCols = _metadata.getPartitionCols(db, table);
         SpatialEntry se(alias,
                         StringPair(pCols[0], pCols[1]),
@@ -310,7 +314,9 @@ SpatialSpecPlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     FromList& fList = stmt.getFromList();    
     TableRefnList& tList = fList.getTableRefnList();
     SpatialEntries entries;
-    assert(context.metadata);
+    if(!context.metadata) {
+        throw std::logic_error("Missing metadata in context");
+    }
     getTable gt(*context.metadata, entries);
     std::for_each(tList.begin(), tList.end(), gt);
     

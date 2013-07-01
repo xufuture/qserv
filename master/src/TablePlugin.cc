@@ -146,7 +146,9 @@ public:
         ValueExpr::FactorOpList& factorOps = vep->getFactorOps();
         for(ValueExpr::FactorOpList::iterator i=factorOps.begin();
             i != factorOps.end(); ++i) {
-            assert(i->factor.get());
+            if(!i->factor) {
+                throw std::logic_error("Bad ValueExpr::FactorOps");
+            }
             ValueFactor& t = *i->factor;
             //std::cout << "fixing factor: " << *vep << std::endl;
             std::string newAlias;
@@ -306,8 +308,9 @@ TablePlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext& context) {
     SelectList& oList = p.stmtOriginal.getSelectList();
     boost::shared_ptr<qMaster::ValueExprList> vlist;
     vlist = oList.getValueExprList();
-    assert(vlist.get());
-    
+    if(!vlist) {
+        throw std::logic_error("Invalid stmtOriginal.SelectList");
+    }
     p.dominantDb = _dominantDb;
     
 

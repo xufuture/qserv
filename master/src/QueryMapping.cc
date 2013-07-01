@@ -154,9 +154,11 @@ QueryMapping::update(QueryMapping const& m) {
     for(i=m._subs.begin(); i != m._subs.end(); ++i) {
         ParameterMap::const_iterator f = _subs.find(i->first);
         if(f != _subs.end()) {
-            assert(f->second == i->second);
-            // Not sure what to do.
-            // This is a big parse error, or a flaw in parsing logic.
+            if(f->second != i->second) {
+                throw std::logic_error("Conflict  during update in QueryMapping");
+                // Not sure what to do.
+                // This is a big parse error, or a flaw in parsing logic.
+            }
         } else {
             _subs.insert(*i);
         }

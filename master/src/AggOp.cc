@@ -30,6 +30,7 @@
 #include "lsst/qserv/master/AggOp.h"
 
 #include <sstream>
+#include <stdexcept>
 #include "lsst/qserv/master/FuncExpr.h"
 #include "lsst/qserv/master/ValueExpr.h"
 #include "lsst/qserv/master/ValueFactor.h"
@@ -184,7 +185,9 @@ AggOp::Mgr::applyOp(std::string const& name, ValueFactor const& orig) {
     std::string n(name);
     std::transform(name.begin(), name.end(), n.begin(), ::toupper);
     AggOp::Ptr p = getOp(n);
-    assert(p.get());
+    if(!p) {
+        throw std::invalid_argument("Missing AggOp in applyOp()");
+    }
     return (*p)(orig);
 }
 

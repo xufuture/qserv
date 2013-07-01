@@ -57,7 +57,6 @@ private:
     class SelectStarH;
     friend class SelectStarH;
     class ColumnAliasH;
-    class ParseException;
 
     // For "friends"
     SelectListFactory(boost::shared_ptr<ParseAliasMap> aliasMap,
@@ -81,11 +80,6 @@ private:
     boost::shared_ptr<ValueExprFactory> _vFactory;
     boost::shared_ptr<ValueExprList> _valueExprList;
     
-};
-
-class SelectListFactory::ParseException : public std::runtime_error {
-public:
-  explicit ParseException(RefAST subtree);
 };
 
 }}} // namespace lsst::qserv::master
