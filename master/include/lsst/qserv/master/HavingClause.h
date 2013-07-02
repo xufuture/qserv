@@ -25,9 +25,6 @@
 /**
   * @file HavingClause.h
   *
-  * @brief HavingClause is a representation of a SQL HAVING clause, similar to a
-  * WhereClause, but with more limitations. 
-  *
   * @author Daniel L. Wang, SLAC
   */
 #include <boost/shared_ptr.hpp>

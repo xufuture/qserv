@@ -30,6 +30,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
+
 // Standard
 #include <iostream>
 #include <list>
@@ -45,7 +46,8 @@
 namespace lsst { namespace qserv { namespace master {
 class BoolTerm; // Forward
 
-/// QsRestrictor is a Qserv spatial restrictor element
+/// QsRestrictor is a Qserv spatial restrictor element. Also includes other
+/// qserv-specific restrictor directives, like qserv_objectid()
 class QsRestrictor {
 public:
     typedef boost::shared_ptr<QsRestrictor> Ptr;
@@ -95,6 +97,7 @@ private:
     boost::shared_ptr<QsRestrictor::List> _restrs;
 
 };
+
 /// ValueExprIter facilitates iteration over value expressions in WhereClause
 /// objects for analysis and manipulation.  
 class WhereClause::ValueExprIter : public boost::iterator_facade <

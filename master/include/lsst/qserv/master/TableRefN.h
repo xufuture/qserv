@@ -25,8 +25,7 @@
 /**
   * @file TableRefN.h
   *
-  * @brief TableRefN is a table ref node in a parsed query. Subclasses:
-  * SimpleTableN and JoinRefN
+  * @brief Declarations for TableRefN and subclasses SimpleTableN and JoinRefN
   *
   * @author Daniel L. Wang, SLAC
   */

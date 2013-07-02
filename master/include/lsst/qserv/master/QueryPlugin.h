@@ -23,7 +23,7 @@
 #ifndef LSST_QSERV_MASTER_QUERYPLUGIN_H
 #define LSST_QSERV_MASTER_QUERYPLUGIN_H
 /**
-  * @file QueryPlugin.h
+  * @file 
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -69,7 +69,7 @@ public:
     static void registerClass(FactoryPtr f);
 };
 
-/// Factory is an abstract class for specifi QueryPlugin Factories
+/// Factory is an abstract class for specific QueryPlugin Factories
 class QueryPlugin::Factory {
 public:
     // Types
@@ -81,7 +81,7 @@ public:
     virtual QueryPlugin::Ptr newInstance() { return QueryPlugin::Ptr(); }
 };
 
-// A bundle of references to a components that form a "plan"
+/// A bundle of references to a components that form a "plan"
 class QueryPlugin::Plan { 
 public:
     Plan(SelectStmt& stmtOriginal_, SelectStmt& stmtParallel_, 
@@ -100,9 +100,6 @@ public:
     bool hasMerge;
 };
 
-
 }}} // namespace lsst::qserv::master
-
-
 #endif // LSST_QSERV_MASTER_QUERYPLUGIN_H
 

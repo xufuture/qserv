@@ -25,9 +25,7 @@
 /**
   * @file 
   *
-  * @brief ChunkSpec is a type that bundles the per-chunk information that is
-  * used to compose a concrete chunk query for a specific chunk from an input
-  * parsed query statement.
+  * @brief ChunkSpec, ChunkSpecFragmenter, and ChunkSpecSingle declarations
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -38,7 +36,10 @@
 
 namespace lsst { namespace qserv { namespace master {
 
-/// A specification of chunkId and subChunkId list
+/// ChunkSpec is a value class that bundles the per-chunk information that is
+/// used to compose a concrete chunk query for a specific chunk from an input
+/// parsed query statement. Contains A specification of chunkId and subChunkId
+/// list.
 struct ChunkSpec {
 public:
     ChunkSpec() : chunkId(-1) {}

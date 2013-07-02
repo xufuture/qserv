@@ -23,11 +23,7 @@
 #ifndef LSST_QSERV_MASTER_QUERYMAPPING_H
 #define LSST_QSERV_MASTER_QUERYMAPPING_H
 /**
-  * @file QueryMapping.h
-  *
-  * @brief QueryMapping facilitates mapping a QueryTemplate to a concrete
-  * queries for executing on workers. In the future, this responsibility may be
-  * moved to the worker. 
+  * @file 
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -57,7 +53,9 @@ class QueryTemplate;
 /// refined or removed when near-neighbor subchunked queries are done and
 /// tested.
 ///
-/// 
+/// QueryMapping facilitates mapping a QueryTemplate to a concrete
+/// queries for executing on workers. In the future, this responsibility may be
+/// moved to the worker. 
 class QueryMapping {
 public:
     typedef boost::shared_ptr<QueryMapping> Ptr;

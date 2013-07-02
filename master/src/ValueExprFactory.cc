@@ -35,16 +35,8 @@
 #include "SqlSQL2TokenTypes.hpp" // antlr-generated
 
 
-// namespace modifiers
-namespace qMaster = lsst::qserv::master;
 using antlr::RefAST;
 
-////////////////////////////////////////////////////////////////////////
-// Anonymous helpers
-////////////////////////////////////////////////////////////////////////
-namespace {
-
-} // anonymous
 namespace lsst { 
 namespace qserv { 
 namespace master {

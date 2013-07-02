@@ -19,7 +19,12 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+/* 
+ * @file
+ * 
+ * @brief Common utilty functions for lsst::qserv::master
+ *
+ */
 #ifndef LSST_QSERV_MASTER_COMMON_H
 #define LSST_QSERV_MASTER_COMMON_H
 
@@ -36,7 +41,6 @@ typedef std::map<std::string, std::string> StringMap;
 typedef std::map<std::string, StringMap> StringMapMap;
 typedef std::list<std::pair<std::string, std::string> > StringPairList;
 typedef std::list<std::string> StringList;
-
 
 template <class Map>
 typename Map::mapped_type const& getFromMap(Map const& m, 

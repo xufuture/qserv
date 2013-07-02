@@ -25,7 +25,8 @@
 /**
   * @file BoolTerm.h
   *
-  * @brief BoolTerm is a representation of a boolean term in a WHERE clause
+  * @brief BoolTerm, BfTerm, OrTerm, AndTerm, BoolFactor, PassTerm, UnknownTerm,
+  * ValueExprTerm declarations.
   *
   * @author Daniel L. Wang, SLAC
   */

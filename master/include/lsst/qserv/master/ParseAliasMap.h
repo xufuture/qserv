@@ -25,16 +25,15 @@
 /**
   * @file ParseAliasMap.h
   *
-  * @brief ParseAliasAliasMap contains meta-information on column aliases
-  * declared in the select list of a SQL select statement. 
-  *
   * @author Daniel L. Wang, SLAC
   */
 
 // Standard
 #include <map>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 
 /// class ParseAliasMap - maintain mappings for aliasing in SQL statements
 /// in the parse node domain.
@@ -83,6 +82,4 @@ private:
 std::ostream& operator<<(std::ostream& os, ParseAliasMap const& m);
 
 }}} // namespace lsst::qserv::master
-
-
 #endif // LSST_QSERV_MASTER_PARSEALIASMAP_H

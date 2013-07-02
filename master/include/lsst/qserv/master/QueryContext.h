@@ -23,11 +23,7 @@
 #ifndef LSST_QSERV_MASTER_QUERYCONTEXT_H
 #define LSST_QSERV_MASTER_QUERYCONTEXT_H
 /**
-  * @file QueryContext.h
-  *
-  * @brief QueryContext is a value class that contains the user context of a
-  * submitted query that may be needed to execute a query accurately, but is not
-  * contained in the query text itself. 
+  * @file 
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -41,9 +37,10 @@ namespace lsst { namespace qserv { namespace master {
 class QsRestrictor;
 class MetadataCache;
 
-/// QueryContext is a container for query state related to analyzing, rewriting,
-/// and generating queries. It is the primary mechanism for QueryPlugin
-/// instances to share information.
+/// QueryContext is a value container for query state related to analyzing,
+/// rewriting, and generating queries. It is the primary mechanism for
+/// QueryPlugin instances to share information. It contains the user context of
+/// a query, but not the query itself.
 class QueryContext {
 public:
     QueryContext() : metadata(NULL) {}

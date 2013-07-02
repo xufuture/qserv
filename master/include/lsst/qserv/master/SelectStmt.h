@@ -25,8 +25,6 @@
 /**
   * @file SelectStmt.h
   *
-  * @brief SelectStmt is a parsed SELECT statment.
-  *
   * @author Daniel L. Wang, SLAC
   */
 

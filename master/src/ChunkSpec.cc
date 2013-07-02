@@ -35,9 +35,14 @@
 namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers
-int const GOOD_SUBCHUNK_COUNT = 20;
+/// A "good" number of subchunks to include in a chunk query.  This is
+/// a guess. The best value is an open question
+int const GOOD_SUBCHUNK_COUNT = 20; 
 }
-namespace lsst { namespace qserv { namespace master {
+
+namespace lsst { 
+namespace qserv { 
+namespace master {
 std::ostream& operator<<(std::ostream& os, ChunkSpec const& c) {
     os << "ChunkSpec[" 
        << "chunkId=" << c.chunkId

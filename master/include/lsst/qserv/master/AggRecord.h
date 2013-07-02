@@ -23,10 +23,7 @@
 #ifndef LSST_QSERV_MASTER_AGGRECORD_H
 #define LSST_QSERV_MASTER_AGGRECORD_H
 /**
-  * @file AggRecord.h
-  *
-  * @brief AggRecord is a value class that stores an aggregation instance during
-  * query analysis, generation, and manipulation
+  * @file 
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -56,7 +53,6 @@ public:
 };
 
 }}} // namespace lsst::qserv::master
-
 
 #endif // LSST_QSERV_MASTER_AGGRECORD_H
 

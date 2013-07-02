@@ -23,11 +23,7 @@
 #ifndef LSST_QSERV_MASTER_QUERYSESSION_H
 #define LSST_QSERV_MASTER_QUERYSESSION_H
 /**
-  * @file QuerySession.h
-  *
-  * @brief QuerySession contains state and behavior for operating on user
-  * queries. It contains much of the query analysis-side of AsyncQueryManager's
-  * responsibility. 
+  * @file 
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -43,13 +39,16 @@
 #include "lsst/qserv/master/QueryPlugin.h"
 #include "lsst/qserv/master/mergeTypes.h"
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 class SelectStmt; // forward
 class QueryPlugin; // forward
 
-/// A QuerySession contains information regarding a top-level query, including
-/// the text of the original query, a parsed query tree, and other user
-/// state/context. 
+///  QuerySession contains state and behavior for operating on user queries. It
+///  contains much of the query analysis-side of AsyncQueryManager's
+///  responsibility, including the text of the original query, a parsed query
+///  tree, and other user state/context.
 class QuerySession {
 public:
     class Iter;

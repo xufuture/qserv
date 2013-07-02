@@ -62,7 +62,7 @@ protected:
 /// contained within an AggregatePlugin instance. Plugins are created per-query
 /// (top-level), because they may contain per-query state.
 /// 
-/// Note that AggOp::Mgr is concrete and is not meant to have 
+/// Note that AggOp::Mgr is concrete and is not meant to have subclasses
 class AggOp::Mgr {
 public:
     typedef std::map<std::string, AggOp::Ptr> OpMap;

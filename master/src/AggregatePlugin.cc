@@ -22,12 +22,6 @@
 /**
   * @file AggregatePlugin.cc
   *
-  * @brief Implemenation of AggregatePlugin that primarily operates in
-  * the second phase of query manipulation. It rewrites the
-  * select-list of a query in their parallel and merging instances so
-  * that a SUM() becomes a SUM() followed by another SUM(), AVG()
-  * becomes SUM() and COUNT() followed by SUM()/SUM(), etc.  
-  *
   * @author Daniel L. Wang, SLAC
   */
 #include "lsst/qserv/master/AggregatePlugin.h"
@@ -52,6 +46,7 @@ namespace lsst {
 namespace qserv { 
 namespace master {
 
+/// convertAgg build records for merge expressions from parallel expressions
 template <class C>
 class convertAgg {
 public:
@@ -59,12 +54,13 @@ public:
     convertAgg(C& pList_, C& mList_, AggOp::Mgr& aMgr_) 
         : pList(pList_), mList(mList_), aMgr(aMgr_) {}
     void operator()(T const& e) {
-        _makeRecord2(*e);
+        _makeRecord(*e);
     }
 
 private:
+    // Simply check for aggregation functions
     class checkAgg {
-    public: // Simply check for aggregation functions
+    public: 
         checkAgg(bool& hasAgg_) : hasAgg(hasAgg_) {}
         inline void operator()(ValueExpr::FactorOp const& fo) {
             if(!fo.factor.get());
@@ -74,7 +70,7 @@ private:
         bool& hasAgg;
     };
 
-    void _makeRecord2(ValueExpr const& e) {
+    void _makeRecord(ValueExpr const& e) {
         bool hasAgg = false;
         checkAgg ca(hasAgg);
         ValueExpr::FactorOpList const& factorOps = e.getFactorOps();
@@ -126,6 +122,11 @@ private:
 ////////////////////////////////////////////////////////////////////////
 // AggregatePlugin declaration
 ////////////////////////////////////////////////////////////////////////
+/// AggregatePlugin primarily operates in
+/// the second phase of query manipulation. It rewrites the
+/// select-list of a query in their parallel and merging instances so
+/// that a SUM() becomes a SUM() followed by another SUM(), AVG()
+/// becomes SUM() and COUNT() followed by SUM()/SUM(), etc.  
 class AggregatePlugin : public QueryPlugin {
 public:
     // Types
