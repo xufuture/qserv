@@ -25,9 +25,7 @@
 /**
   * @file AggregatePlugin.h
   *
-  * @brief AggregatePlugin inherits from QueryPlugin, but has no public
-  * interface, aside from getting registered in the plugin manager. The concrete
-  * AggregatePlugin operates on the query in its split parallel/merge forms.
+  * @brief Declaration of registerAggregatePlugin
   *
   * TODO: Consider renaming to AggPlugin
   *

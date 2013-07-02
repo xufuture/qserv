@@ -24,11 +24,6 @@
   *
   * @brief SpatialSpecPlugin implementation
   *
-  * SpatialSpecPlugin replaces a spatial specification with directives
-  * that can be executed on a qserv mysqld. This plugin should be
-  * execute after aliases for tables have been generates, so that the
-  * new spatial function clauses/phrases can use the aliases. 
-  *
   * @author Daniel L. Wang, SLAC
   */
 
@@ -152,6 +147,10 @@ public:
 ////////////////////////////////////////////////////////////////////////
 // SpatialSpec declaration
 ////////////////////////////////////////////////////////////////////////
+/// SpatialSpecPlugin replaces a spatial specification with directives
+/// that can be executed on a qserv mysqld. This plugin should be
+/// execute after aliases for tables have been generates, so that the
+/// new spatial function clauses/phrases can use the aliases.
 class SpatialSpecPlugin : public lsst::qserv::master::QueryPlugin {
 public:
     // Types

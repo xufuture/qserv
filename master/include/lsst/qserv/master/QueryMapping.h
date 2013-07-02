@@ -63,7 +63,7 @@ public:
     typedef std::map<std::string,Parameter> ParameterMap;
     typedef std::set<std::string> StringSet;
 
-    explicit QueryMapping();
+    QueryMapping();
 
     std::string apply(ChunkSpec const& s, QueryTemplate const& t) const;
     std::string apply(ChunkSpecSingle const& s, QueryTemplate const& t) const;

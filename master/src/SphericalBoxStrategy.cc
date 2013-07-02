@@ -130,7 +130,6 @@ namespace lsst {
 namespace qserv { 
 namespace master {
 
-
 class SphericalBoxStrategy::Impl {
 public:
     friend class SphericalBoxStrategy;

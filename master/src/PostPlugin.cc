@@ -41,6 +41,7 @@ namespace lsst { namespace qserv { namespace master {
 ////////////////////////////////////////////////////////////////////////
 // PostPlugin declaration
 ////////////////////////////////////////////////////////////////////////
+/// PostPlugin is a plugin handling query result post-processing.
 class PostPlugin : public QueryPlugin {
 public:
     // Types

@@ -113,6 +113,8 @@ private:
             return _chunkString;
         case QueryMapping::SUBCHUNK:
             return _subChunkString;
+        case QueryMapping::HTM1:
+            throw std::range_error("HTM unimplemented");
         default:
             return "UNKNOWN";
         }

@@ -43,7 +43,9 @@
 #include "lsst/qserv/master/BoolTerm.h"
 #include "lsst/qserv/master/ValueExpr.h"
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 class BoolTerm; // Forward
 
 /// QsRestrictor is a Qserv spatial restrictor element. Also includes other

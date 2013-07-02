@@ -36,8 +36,9 @@
 #include <boost/shared_ptr.hpp>
 #include "lsst/qserv/master/QueryTemplate.h"
 
-
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 class QueryTemplate; // Forward
 
 /// TableRefN is a parsed table reference 
