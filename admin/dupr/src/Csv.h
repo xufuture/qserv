@@ -109,8 +109,8 @@ public:
             char quote);
 
     /// Build a dialect from configuration variables with names given by the
-    /// concatenation of prefix and ".null", ".delimiter", ".escape",
-    /// ".no-escape", ".quote" and ".no-quote".
+    /// concatenation of prefix and "null", "delimiter", "escape",
+    /// "no-escape", "quote" and "no-quote".
     Dialect(boost::program_options::variables_map const & vm,
             std::string const & prefix);
 
@@ -139,7 +139,8 @@ public:
     }
     /// Decode a value encoded in this dialect into `buf` and return the
     /// number of characters written. No more than MAX_FIELD_SIZE characters
-    /// are written - if more are required an exception is thrown.
+    /// are written - if more are required an exception is thrown. Leading
+    /// and trailing whitespace is preserved.
     size_t decode(char * buf, char const * value, size_t size) const;
     /// Decode a field encoded in this dialect.
     std::string const decode(char const * value, size_t size) const {
@@ -165,8 +166,9 @@ public:
         std::string const & prefix);
 
 private:
+    static size_t const NUM_CHARS = 256; // Number of distinct character values.
     static std::string const _prohibited;
-    static uint8_t const _unescape[256];
+    static uint8_t const _unescape[NUM_CHARS];
 
     enum {
         HAS_CRLF   = 0x1,
@@ -179,6 +181,7 @@ private:
     void _validate();
 
     std::string _null;
+    // Map from character values to HAS_xxx flags.
     boost::scoped_array<uint8_t> _scanLut;
     bool _nullHasSpecial;
     char _delimiter;
@@ -230,12 +233,12 @@ public:
 
     // -- Record input/output ----
 
-    /// Set the input record to the first line in `[beg, end)` and return a
+    /// Set the input record to the first line in `[begin, end)` and return a
     /// pointer to the first character of the following line or `end`. The
     /// input line must remain live until the next call to `readRecord()`
     /// or editor destruction, whichever comes first. Raw input is never
     /// modified.
-    char const * readRecord(char const * beg, char const * end);
+    char const * readRecord(char const * begin, char const * end);
 
     /// Write the combination of the current input fields and any edits
     /// performed to `buf`, returning a pointer to the character following the
@@ -334,37 +337,7 @@ public:
     bool set(int i, float value);
     bool set(int i, double value);
 
-    bool set(std::string const & name, std::string const & value) {
-        return set(getFieldIndex(name), value);
-    }
-    bool set(std::string const & name, bool value) {
-        return set(getFieldIndex(name), value);
-    }
-    bool set(std::string const & name, char value) {
-        return set(getFieldIndex(name), value);
-    }
-    bool set(std::string const & name, int value) {
-        return set(getFieldIndex(name), value);
-    }
-    bool set(std::string const & name, long value) {
-        return set(getFieldIndex(name), value);
-    }
-    bool set(std::string const & name, long long value) {
-        return set(getFieldIndex(name), value);
-    }
-    bool set(std::string const & name, unsigned int value) {
-        return set(getFieldIndex(name), value);
-    }
-    bool set(std::string const & name, unsigned long value) {
-        return set(getFieldIndex(name), value);
-    }
-    bool set(std::string const & name, unsigned long long value) {
-        return set(getFieldIndex(name), value);
-    }
-    bool set(std::string const & name, float value) {
-        return set(getFieldIndex(name), value);
-    }
-    bool set(std::string const & name, double value) {
+    template <typename T> bool set(std::string const & name, T value) {
         return set(getFieldIndex(name), value);
     }
     ///@}
@@ -378,6 +351,7 @@ private:
     Editor(Editor const &);
     Editor & operator=(Editor const &);
 
+    typedef std::pair<char const *, char const *> CharConstPtrPair;
     typedef boost::unordered_map<std::string, int> FieldMap;
 
     struct Field {
@@ -396,6 +370,7 @@ private:
 
     void _initialize(std::vector<std::string> const & inputFieldNames,
                      std::vector<std::string> const & outputFieldNames);
+    CharConstPtrPair const _getFieldText(int i, char * buf) const;
     template <typename T> T _get(int i) const;
 
     Dialect const _inputDialect;

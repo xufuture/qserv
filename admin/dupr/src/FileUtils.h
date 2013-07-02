@@ -120,7 +120,8 @@ private:
 
 // TODO(smm): the functions below should be moved to their own header.
 
-/// Encode a 32 bit integer as a little-endian sequence of 4 bytes.
+/// Encode a 32 bit integer as a little-endian sequence of 4 bytes. Return
+/// `buf + 4`.
 inline uint8_t * encode(uint8_t * buf, uint32_t x) {
     buf[0] = static_cast<uint8_t>( x        & 0xff);
     buf[1] = static_cast<uint8_t>((x >>  8) & 0xff);
@@ -128,7 +129,8 @@ inline uint8_t * encode(uint8_t * buf, uint32_t x) {
     buf[3] = static_cast<uint8_t>((x >> 24) & 0xff);
     return buf + 4;
 }
-/// Encode a 64 bit integer as a little-endian sequence of 8 bytes.
+/// Encode a 64 bit integer as a little-endian sequence of 8 bytes. Return
+/// `buf + 8`.
 inline uint8_t * encode(uint8_t * buf, uint64_t x) {
     buf[0] = static_cast<uint8_t>( x        & 0xff);
     buf[1] = static_cast<uint8_t>((x >>  8) & 0xff);

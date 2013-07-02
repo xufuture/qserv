@@ -31,7 +31,7 @@
 
 namespace csv = lsst::qserv::admin::dupr::csv;
 
-using std::exception;
+using std::runtime_error;
 using std::string;
 using std::vector;
 
@@ -40,24 +40,24 @@ using csv::Editor;
 
 BOOST_AUTO_TEST_CASE(DialectTest) {
     char const X[2] = { '\n', '\r' };
-    BOOST_CHECK_THROW(Dialect('\0', '\\', '"'), exception);
+    BOOST_CHECK_THROW(Dialect('\0', '\\', '"'), runtime_error);
     for (size_t i = 0; i < 2; ++i) {
-        BOOST_CHECK_THROW(Dialect(X[i], '\\',  '"'), exception);
-        BOOST_CHECK_THROW(Dialect(',',  X[i],  '"'), exception);
-        BOOST_CHECK_THROW(Dialect(',',  '\\', X[i]), exception);
+        BOOST_CHECK_THROW(Dialect(X[i], '\\',  '"'), runtime_error);
+        BOOST_CHECK_THROW(Dialect(',',  X[i],  '"'), runtime_error);
+        BOOST_CHECK_THROW(Dialect(',',  '\\', X[i]), runtime_error);
     }
-    BOOST_CHECK_THROW(Dialect(',', ',', '"'), exception);
-    BOOST_CHECK_THROW(Dialect(',', '\\', ','), exception);
-    BOOST_CHECK_THROW(Dialect(',', '\\', '\\'), exception);
+    BOOST_CHECK_THROW(Dialect(',', ',', '"'), runtime_error);
+    BOOST_CHECK_THROW(Dialect(',', '\\', ','), runtime_error);
+    BOOST_CHECK_THROW(Dialect(',', '\\', '\\'), runtime_error);
     string x("0bfnrtvNZ");
     for (size_t i = 0; i < x.size(); ++i) {
-        BOOST_CHECK_THROW(Dialect(x[i], '\\',  '"'), exception);
-        BOOST_CHECK_THROW(Dialect(',',  x[i],  '"'), exception);
-        BOOST_CHECK_THROW(Dialect(',',  '\\', x[i]), exception);
+        BOOST_CHECK_THROW(Dialect(x[i], '\\',  '"'), runtime_error);
+        BOOST_CHECK_THROW(Dialect(',',  x[i],  '"'), runtime_error);
+        BOOST_CHECK_THROW(Dialect(',',  '\\', x[i]), runtime_error);
     }
-    BOOST_CHECK_THROW(Dialect("nil\n", '|', '\\', '"'), exception);
-    BOOST_CHECK_THROW(Dialect("nil\r", '|', '\\', '"'), exception);
-    BOOST_CHECK_THROW(Dialect("nil|",  '|', '\\', '"'), exception);
+    BOOST_CHECK_THROW(Dialect("nil\n", '|', '\\', '"'), runtime_error);
+    BOOST_CHECK_THROW(Dialect("nil\r", '|', '\\', '"'), runtime_error);
+    BOOST_CHECK_THROW(Dialect("nil|",  '|', '\\', '"'), runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(CodingTest) {
@@ -93,8 +93,8 @@ BOOST_AUTO_TEST_CASE(CodingNoEscapeTest) {
     BOOST_CHECK_EQUAL(s, "'NULL'");
     BOOST_CHECK_EQUAL(d.decode(s.data(), s.size()), "NULL");
     BOOST_CHECK_EQUAL(d.encode(0, 0), "NULL");
-    BOOST_CHECK_THROW(d.encode("\n",1), exception);
-    BOOST_CHECK_THROW(d.encode("\r",1), exception);
+    BOOST_CHECK_THROW(d.encode("\n",1), runtime_error);
+    BOOST_CHECK_THROW(d.encode("\r",1), runtime_error);
     BOOST_CHECK_EQUAL(d.encode("|",1), "'|'");
     BOOST_CHECK_EQUAL(d.decode("'|'", 3), "|");
     BOOST_CHECK_EQUAL(d.encode("'",1), "''''");
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(EditorTest) {
     vector<string> inames, onames;
     inames.push_back("foo");
     inames.push_back("foo");
-    BOOST_CHECK_THROW(Editor(d, d, inames, onames), exception);
+    BOOST_CHECK_THROW(Editor(d, d, inames, onames), runtime_error);
     inames.pop_back();
     inames.push_back("bar");
     Editor ed(d, d, inames, onames);
@@ -139,23 +139,23 @@ BOOST_AUTO_TEST_CASE(EditorTest) {
     BOOST_CHECK(ed.isNull("foo") && ed.isNull("bar"));
     BOOST_CHECK(ed.isNull(0) && ed.isNull(1));
     BOOST_CHECK_EQUAL(ed.get(0, false), "\\N");
-    BOOST_CHECK_THROW(ed.get(0, true), exception);
-    BOOST_CHECK_THROW(ed.get(-1, false), exception);
-    BOOST_CHECK_THROW(ed.get(2, false), exception);
-    BOOST_CHECK_THROW(ed.get("baz", false), exception);
-    BOOST_CHECK_THROW(ed.get<char>(1), exception);
-    BOOST_CHECK_THROW(ed.get<unsigned char>(1), exception);
-    BOOST_CHECK_THROW(ed.get<signed char>(1), exception);
-    BOOST_CHECK_THROW(ed.get<short>(1), exception);
-    BOOST_CHECK_THROW(ed.get<unsigned short>(1), exception);
-    BOOST_CHECK_THROW(ed.get<int>(1), exception);
-    BOOST_CHECK_THROW(ed.get<unsigned int>(1), exception);
-    BOOST_CHECK_THROW(ed.get<long>(1), exception);
-    BOOST_CHECK_THROW(ed.get<unsigned long>(1), exception);
-    BOOST_CHECK_THROW(ed.get<long long>(1), exception);
-    BOOST_CHECK_THROW(ed.get<unsigned long long>(1), exception);
-    BOOST_CHECK_THROW(ed.get<float>(0), exception);
-    BOOST_CHECK_THROW(ed.get<double>(0), exception);
+    BOOST_CHECK_THROW(ed.get(0, true), runtime_error);
+    BOOST_CHECK_THROW(ed.get(-1, false), runtime_error);
+    BOOST_CHECK_THROW(ed.get(2, false), runtime_error);
+    BOOST_CHECK_THROW(ed.get("baz", false), runtime_error);
+    BOOST_CHECK_THROW(ed.get<char>(1), runtime_error);
+    BOOST_CHECK_THROW(ed.get<unsigned char>(1), runtime_error);
+    BOOST_CHECK_THROW(ed.get<signed char>(1), runtime_error);
+    BOOST_CHECK_THROW(ed.get<short>(1), runtime_error);
+    BOOST_CHECK_THROW(ed.get<unsigned short>(1), runtime_error);
+    BOOST_CHECK_THROW(ed.get<int>(1), runtime_error);
+    BOOST_CHECK_THROW(ed.get<unsigned int>(1), runtime_error);
+    BOOST_CHECK_THROW(ed.get<long>(1), runtime_error);
+    BOOST_CHECK_THROW(ed.get<unsigned long>(1), runtime_error);
+    BOOST_CHECK_THROW(ed.get<long long>(1), runtime_error);
+    BOOST_CHECK_THROW(ed.get<unsigned long long>(1), runtime_error);
+    BOOST_CHECK_THROW(ed.get<float>(0), runtime_error);
+    BOOST_CHECK_THROW(ed.get<double>(0), runtime_error);
     char const * x[6] = {
          "foo",
          "foo\n",
@@ -165,16 +165,16 @@ BOOST_AUTO_TEST_CASE(EditorTest) {
          "foo|bar\\"
     };
     for (int i = 0; i < 6; ++i) {
-        BOOST_CHECK_THROW(ed.readRecord(x[i], x[i] + strlen(x[i])), exception);
+        BOOST_CHECK_THROW(ed.readRecord(x[i], x[i] + strlen(x[i])), runtime_error);
     }
     char const * r = "10000|3.1415926\r\n";
     char const * e = r + strlen(r);
     BOOST_CHECK(ed.readRecord(r, e) == e);
-    BOOST_CHECK_THROW(ed.get<char>(0), exception);
-    BOOST_CHECK_THROW(ed.get<unsigned char>(0), exception);
-    BOOST_CHECK_THROW(ed.get<signed char>(0), exception);
-    BOOST_CHECK_THROW(ed.get<int>("bar"), exception);
-    BOOST_CHECK_THROW(ed.get<long>(1), exception);
+    BOOST_CHECK_THROW(ed.get<char>(0), runtime_error);
+    BOOST_CHECK_THROW(ed.get<unsigned char>(0), runtime_error);
+    BOOST_CHECK_THROW(ed.get<signed char>(0), runtime_error);
+    BOOST_CHECK_THROW(ed.get<int>("bar"), runtime_error);
+    BOOST_CHECK_THROW(ed.get<long>(1), runtime_error);
     BOOST_CHECK_EQUAL(ed.get<short>("foo"), 10000);
     BOOST_CHECK_EQUAL(ed.get<unsigned>("foo"), 10000u);
     BOOST_CHECK_EQUAL(ed.get<long long>(0), 10000);

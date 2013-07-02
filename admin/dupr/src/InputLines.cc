@@ -58,6 +58,8 @@ namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
 namespace {
 
+    typedef pair<char *, char *> CharPtrPair;
+
     struct LineFragmentStorage {
         size_t size;
         char   buf[MAX_LINE_SIZE];
@@ -109,11 +111,11 @@ namespace {
 
         Block() : file(), offset(0), size(0), head(), tail() { }
 
-        pair<char *, char *> const read(char * buf, bool skipFirstLine);
+        CharPtrPair const read(char * buf, bool skipFirstLine);
     };
 
     // Read a file block and handle the lines crossing its boundaries.
-    pair<char *, char *> const Block::read(char * buf, bool skipFirstLine) {
+    CharPtrPair const Block::read(char * buf, bool skipFirstLine) {
         // Read into buf, leaving space for a line on either side of the block.
         char * readBeg = buf + MAX_LINE_SIZE;
         char * readEnd = readBeg + size;
@@ -172,7 +174,7 @@ namespace {
                delete left;
            }
         }
-        return pair<char *, char *>(beg, end);
+        return CharPtrPair(beg, end);
     }
 
     // Split a file into a series of blocks.
@@ -220,7 +222,7 @@ public:
         return _blockCount == 0;
     }
 
-    pair<char *, char *> const read(char * buf);
+    CharPtrPair const read(char * buf);
 
 private:
     BOOST_STATIC_ASSERT(MAX_LINE_SIZE < 1*MiB);
@@ -252,12 +254,9 @@ InputLines::Impl::Impl(vector<fs::path> const & paths,
     _paths(paths)
 { }
 
-pair<char *, char *> const InputLines::Impl::read(char * buf) {
+CharPtrPair const InputLines::Impl::read(char * buf) {
     unique_lock<mutex> lock(_mutex);
-    while (true) {
-        if (_blockCount == 0) {
-            break;
-        }
+    while (_blockCount > 0) {
         if (!_queue.empty()) {
             // Pop the next block off the queue and read it.
             Block b = _queue.back();
@@ -279,16 +278,15 @@ pair<char *, char *> const InputLines::Impl::read(char * buf) {
             if (v.empty()) {
                 // The input file was empty.
                 continue;
-            } else {
-                Block b = v.front();
-                // Insert remaining blocks in reverse order - popping them from
-                // the back of the queue will yield blocks with increasing file
-                // offsets.
-                _queue.insert(_queue.end(), v.rbegin(), v.rend() - 1);
-                _blockCount += v.size() - 1;
-                lock.unlock(); // allow block reads to proceed in parallel
-                return b.read(buf, _skipFirstLine);
             }
+            Block b = v.front();
+            // Insert remaining blocks in reverse order - popping them from
+            // the back of the queue will yield blocks with increasing file
+            // offsets.
+            _queue.insert(_queue.end(), v.rbegin(), v.rend() - 1);
+            _blockCount += v.size() - 1;
+            lock.unlock(); // allow block reads to proceed in parallel
+            return b.read(buf, _skipFirstLine);
         } else {
             // The queue is empty and all input paths have been processed, but
             // the block count is non-zero. This means one or more threads are
@@ -301,7 +299,7 @@ pair<char *, char *> const InputLines::Impl::read(char * buf) {
         }
     }
     // All lines have been read.
-    return pair<char *, char *>(0, 0);
+    return CharPtrPair(0, 0);
 }
 
 
@@ -325,8 +323,8 @@ bool InputLines::empty() const {
     return _impl ? _impl->empty() : true;
 }
 
-pair<char *, char *> const InputLines::read(char * buf) {
-    return _impl ? _impl->read(buf) : pair<char *, char*>(0, 0);
+CharPtrPair const InputLines::read(char * buf) {
+    return _impl ? _impl->read(buf) : CharPtrPair(0, 0);
 }
 
 }}}} // namespace lsst::qserv::admin::dupr

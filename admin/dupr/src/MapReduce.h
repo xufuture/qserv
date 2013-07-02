@@ -82,23 +82,17 @@ class Silo {
 public:
     typedef dupr::Record<K> Record;
 
+    // The allocation granularity. It is many times larger than the maximum
+    // line size, making allocation infrequent and minimizing waste (one
+    // version of `add` needs  `MAX_LINE_SIZE` free space, no matter what the
+    // length of the line being added actually is). 32 bytes are subtracted so
+    // that when implementation specific `malloc` bookkeeping data is accounted
+    // for, the actual memory allocation size is likely to be nearly equal to a
+    // multiple of the system page size.
     static size_t const ALLOC_SIZE = 8*MiB - 32;
 
     Silo() : _records(), _bytesUsed(0), _head(0), _cur(0), _end(0) { }
-
-    ~Silo() {
-        // Traverse linked-list, freeing each allocation. Forward
-        // pointers are located at the beginning of each allocation.
-        char * head = _head;
-        while (head) {
-            char * next = *reinterpret_cast<char **>(head);
-            std::free(head);
-            head = next;
-        }
-        _head = 0;
-        _cur = 0;
-        _end = 0;
-    }
+    ~Silo();
 
     bool   empty()        const { return _records.empty(); }
     size_t size()         const { return _records.size();  }
@@ -118,16 +112,7 @@ public:
     }
 
     /// Clear the silo without deallocating memory.
-    void clear() {
-        _records.clear();
-        _bytesUsed = 0;
-        if (_head) {
-            // Set data insertion point to the beginning of the
-            // first allocation.
-            _cur = _head + sizeof(char *);
-            _end = _head + ALLOC_SIZE;
-        }
-    }
+    void clear();
 
     /// Sort the records in the silo.
     void sort() {
@@ -137,46 +122,9 @@ public:
     /// Add a record to the silo, using `Editor::writeRecord()` to produce
     /// the record text. Passing in the editor allows records to be written
     /// directly to silo memory, avoiding a copy.
-    void add(K const & key, csv::Editor const & editor) {
-        char * buf = _cur;
-        char * end = _end;
-        if (end - buf < MAX_LINE_SIZE) {
-            // The size of the line being written isn't known in advance, so
-            // the silo must always present MAX_LINE_SIZE or more contiguous
-            // bytes to editor. Memory waste is <1%.
-            _grow();
-            buf = _cur;
-        }
-        Record r(key);
-        end = editor.writeRecord(buf);
-        uint32_t sz = static_cast<uint32_t>(end - buf);
-        r.size = sz;
-        r.data = buf;
-        _records.push_back(r);
-        _bytesUsed += sz + sizeof(Record);
-        _cur = end;
-    }
-
+    void add(K const & key, csv::Editor const & editor);
     /// Add a record to the silo.
-    void add(K const & key, char const * data, size_t size) {
-        if (size > MAX_LINE_SIZE) {
-             throw std::runtime_error("Record too long.");
-        }
-        char * buf = _cur;
-        char * end = _end;
-        if (static_cast<uint32_t>(end - buf) < size) {
-            _grow();
-            buf = _cur;
-        }
-        Record r(key);
-        std::memcpy(buf, data, size);
-        end = buf + size;
-        r.size = size;
-        r.data = buf;
-        _records.push_back(r);
-        _bytesUsed += size + sizeof(Record);
-        _cur = end;
-    }
+    void add(K const & key, char const * data, uint32_t size);
 
 private:
     // Disable copy construction and assignment.
@@ -185,7 +133,7 @@ private:
 
     void _grow();
 
-    char                _padBeg[CACHE_LINE_SIZE];
+    char                _pad0[CACHE_LINE_SIZE];
 
     std::vector<Record> _records;
     size_t              _bytesUsed;
@@ -193,8 +141,75 @@ private:
     char *              _cur;
     char *              _end;  // End of current allocation.
 
-    char                _padEnd[CACHE_LINE_SIZE];
+    char                _pad1[CACHE_LINE_SIZE];
 };
+
+template <typename K> Silo<K>::~Silo() {
+    // Traverse linked-list, freeing each allocation. Forward
+    // pointers are located at the beginning of each allocation.
+    char * head = _head;
+    while (head) {
+        char * next = *reinterpret_cast<char **>(head);
+        std::free(head);
+        head = next;
+    }
+    _head = 0;
+    _cur = 0;
+    _end = 0;
+}
+
+template <typename K> void Silo<K>::clear() {
+    _records.clear();
+    _bytesUsed = 0;
+    if (_head) {
+        // Set data insertion point to the beginning of the
+        // first allocation.
+        _cur = _head + sizeof(char *);
+        _end = _head + ALLOC_SIZE;
+    }
+}
+
+template <typename K>
+void Silo<K>::add(K const & key, csv::Editor const & editor) {
+    char * buf = _cur;
+    char * end = _end;
+    if (end - buf < MAX_LINE_SIZE) {
+        // The size of the line being written isn't known in advance, so
+        // the silo must always present MAX_LINE_SIZE or more contiguous
+        // bytes to editor. Memory waste is <1%.
+        _grow();
+        buf = _cur;
+    }
+    Record r(key);
+    end = editor.writeRecord(buf);
+    uint32_t sz = static_cast<uint32_t>(end - buf);
+    r.size = sz;
+    r.data = buf;
+    _records.push_back(r);
+    _bytesUsed += sz + sizeof(Record);
+    _cur = end;
+}
+
+template <typename K>
+void Silo<K>::add(K const & key, char const * data, uint32_t size) {
+    if (size > MAX_LINE_SIZE) {
+         throw std::runtime_error("Record too long.");
+    }
+    char * buf = _cur;
+    char * end = _end;
+    if (static_cast<uint32_t>(end - buf) < size) {
+        _grow();
+        buf = _cur;
+    }
+    Record r(key);
+    std::memcpy(buf, data, size);
+    end = buf + size;
+    r.size = size;
+    r.data = buf;
+    _records.push_back(r);
+    _bytesUsed += size + sizeof(Record);
+    _cur = end;
+}
 
 template <typename K> void Silo<K>::_grow() {
     // [_cur, _end) has no room for data, so either advance to the next
@@ -227,15 +242,15 @@ template <typename K> void Silo<K>::_grow() {
 /// that workers are required to provide, and is otherwise nothing more than
 /// a documentation point for the expected worker API, described below.
 ///
-///     void map(char const * beg,
+///     void map(char const * begin,
 ///              char const * end,
 ///              Silo & silo);
 ///
 /// The `map` function is passed one or more lines of input text stored in
-/// `[beg, end)` along with a silo. It is expected to transform input records
+/// `[begin, end)` along with a silo. It is expected to transform input records
 /// to output records and record keys, and to store them in the silo.
 ///
-///     void reduce(RecordIter beg, RecordIter end);
+///     void reduce(RecordIter begin, RecordIter end);
 ///
 /// The `reduce` function is passed ranges of records with identical keys.
 /// Multiple consecutive calls may supply records with the same key.
@@ -399,10 +414,9 @@ namespace detail {
         _numReducers(0),
         _failed(false)
     {
-        if (_numWorkers < 1 || _numWorkers > 256) {
+        if (_numWorkers < 1) {
             throw std::runtime_error("The number of worker threads given by "
-                                     "--mr.num-workers must be between "
-                                     "1 and 256.");
+                                     "--mr.num-workers must be at least 1");
         }
         size_t poolSize = vm["mr.pool-size"].as<size_t>();
         _threshold = (poolSize*MiB) / _numWorkers;
