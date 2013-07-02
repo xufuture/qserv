@@ -25,19 +25,21 @@
 /**
   * @file QsRestrictor.h
   *
-  * @brief QsRestrictor is a Qserv spatial restrictor element
-  *
   * @author Daniel L. Wang, SLAC
   */
 #include <list>
 #include <string>
 #include <boost/shared_ptr.hpp>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 class QueryTemplate;
 
 /// QsRestrictor is a Qserv spatial restrictor element that is used to
-/// signal dependencies on spatially-partitioned tables. 
+/// signal dependencies on spatially-partitioned tables. It includes
+/// qserv-specific restrictors that make use of the spatial indexing,
+/// but are not strictly spatial restrictuions.
 class QsRestrictor {
 public:
     typedef boost::shared_ptr<QsRestrictor> Ptr;

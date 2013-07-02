@@ -33,7 +33,9 @@
 #include "lsst/qserv/master/ValueExprFactory.h" 
 #include "SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 
 boost::shared_ptr<CompPredicate> 
 PredicateFactory::newCompPredicate(antlr::RefAST a) {

@@ -25,15 +25,15 @@
 /**
   * @file TableAlias.h
   *
-  * @brief TableAlias is a mapping from an alias to a (db, table)
-  * name. TableAlias is a forward mapping, and AliasTable is a
-  * backwards mapping. 
+  * @brief DbTablePair, TableAlias, and TableAliasReverse declarations.
   *
   * @author Daniel L. Wang, SLAC
   */
 #include <sstream>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 
 struct DbTablePair {
     DbTablePair(std::string const& db_, std::string const& table_)
@@ -44,8 +44,9 @@ struct DbTablePair {
     std::string table;
 };
 
-/// Stores a table alias, a mapping from a table's alias to 
-/// concrete (db,table) name.
+/// TableAlias is a mapping from an alias to a (db, table)
+/// name. TableAlias is a forward mapping, and TableAliasReverse is a
+/// backwards mapping.
 class TableAlias {
 public:
     typedef std::map<std::string, DbTablePair> Map;
@@ -83,7 +84,6 @@ public:
 };
 
 }}} // namespace lsst::qserv::master
-
 
 #endif // LSST_QSERV_MASTER_TABLEALIAS_H
 
