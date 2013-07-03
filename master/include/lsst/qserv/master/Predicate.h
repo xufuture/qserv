@@ -165,6 +165,9 @@ public:
     virtual ~BetweenPredicate() {}
     virtual char const* getName() const { return "BetweenPredicate"; }
 
+    virtual void cacheValueExprList();
+    virtual ValueExprList::iterator valueExprCacheBegin() { return _cache->begin(); }
+    virtual ValueExprList::iterator valueExprCacheEnd() { return _cache->end(); }
     friend std::ostream& operator<<(std::ostream& os, BetweenPredicate const& bt);
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;

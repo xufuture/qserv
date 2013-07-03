@@ -40,6 +40,7 @@
 #include "lsst/qserv/master/ifaceMeta.h"
 #include "lsst/qserv/master/ChunkMeta.h"
 #include "lsst/qserv/master/SelectParser.h"
+#include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/transaction.h"
 #include "lsst/qserv/master/QsRestrictor.h"
 #include "lsst/qserv/master/QueryContext.h"
@@ -87,26 +88,24 @@ ChunkSpec makeChunkSpec(int chunkNum, bool withSubChunks=false) {
 void testParse(SelectParser::Ptr p) {
 }
 
-boost::shared_ptr<QueryContext> testStmt3(QuerySession::Test& t,  
+boost::shared_ptr<QuerySession> testStmt3(QuerySession::Test& t,  
                                           std::string const& stmt) {
-    QuerySession qs(t);
-    qs.setQuery(stmt);
-    qs.getConstraints();    
+    boost::shared_ptr<QuerySession> qs(new QuerySession(t));
+    qs->setQuery(stmt);
+    qs->getConstraints();    
     // SelectStmt const& stmt2 = 
-    qs.getStmt();
-    qs.addChunk(makeChunkSpec(100));
-    qs.addChunk(makeChunkSpec(101));
+    qs->getStmt();
+    qs->addChunk(makeChunkSpec(100));
+    qs->addChunk(makeChunkSpec(101));
     QuerySession::Iter i;
-    QuerySession::Iter e = qs.cQueryEnd();
-    for(i = qs.cQueryBegin(); i != e; ++i) {
+    QuerySession::Iter e = qs->cQueryEnd();
+    for(i = qs->cQueryBegin(); i != e; ++i) {
         qMaster::ChunkQuerySpec& cs = *i;
         std::cout << "Spec: " << cs << std::endl;
         //std::cout << *i << std::endl;
     }    
-    return qs.dbgGetContext();
+    return qs;
 }
- 
-
 } // anonymous namespace
 
 struct ParserFixture {
@@ -249,83 +248,87 @@ BOOST_AUTO_TEST_CASE(TrivialSub) {
     BOOST_CHECK(!spr->getHasSubChunks());
     BOOST_CHECK(!spr->getHasAggregate());
 }
+#endif 
 
 BOOST_AUTO_TEST_CASE(NoSub) {
     std::string stmt = "SELECT * FROM Filter WHERE filterId=4;";
     std::string goodRes = "SELECT * FROM LSST.Filter WHERE filterId=4;";
-    SqlParseRunner::Ptr spr(SqlParseRunner::newInstance(stmt, 
-                                                        delimiter,
-                                                        config,
-                                                        metaCacheSessionId));
-    spr->setup(tableNames);
-    std::string parseResult = spr->getParseResult();
-    // std::cout << stmt << " is parsed into " << parseResult 
-    //           << std::endl;
-    BOOST_CHECK(!parseResult.empty());
-    BOOST_CHECK_EQUAL(parseResult, goodRes);
-    BOOST_CHECK(!spr->getHasChunks());
-    BOOST_CHECK(!spr->getHasSubChunks());
-    BOOST_CHECK(!spr->getHasAggregate());
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    SelectStmt const& ss = qs->getStmt();
+    BOOST_CHECK(context);
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(!context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_CHECK(!ss.hasGroupBy());
+    BOOST_CHECK(!context->needsMerge);
 }
 
 BOOST_AUTO_TEST_CASE(Aggregate) {
     std::string stmt = "select sum(pm_declErr),chunkId, avg(bMagF2) bmf2 from LSST.Object where bMagF > 20.0 GROUP BY chunkId;";
 
-    SqlSubstitution ss(stmt, config, metaCacheSessionId);
-    for(int i = 4; i < 6; ++i) {
-        BOOST_CHECK_EQUAL(ss.getChunkLevel(), 1);
-        BOOST_CHECK(ss.getHasAggregate());
-        // std::cout << "fixupsel " << ss.getFixupSelect() << std::endl
-        //           << "fixuppost " << ss.getFixupPost() << std::endl;
-        BOOST_CHECK_EQUAL(ss.getFixupSelect(), 
-                          "sum(`sum(pm_declErr)`) AS `sum(pm_declErr)`, `chunkId`, SUM(avgs_bMagF2)/SUM(avgc_bMagF2) AS `bmf2`");
-        BOOST_CHECK_EQUAL(ss.getFixupPost(), "GROUP BY `chunkId`");
-    }
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    SelectStmt const& ss = qs->getStmt();
+    BOOST_CHECK(context);
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_REQUIRE(ss.hasGroupBy());
+    
+    // BOOST_CHECK_EQUAL(ss.getFixupSelect(), 
+    //                   "sum(`sum(pm_declErr)`) AS `sum(pm_declErr)`, `chunkId`, SUM(avgs_bMagF2)/SUM(avgc_bMagF2) AS `bmf2`");
+    // BOOST_CHECK_EQUAL(ss.getFixupPost(), "GROUP BY `chunkId`");
+    
 }
 
 BOOST_AUTO_TEST_CASE(Limit) {
     std::string stmt = "select * from LSST.Object WHERE ra_PS BETWEEN 150 AND 150.2 and decl_PS between 1.6 and 1.7 limit 2;";
     
-    SqlSubstitution ss(stmt, config, metaCacheSessionId);
-    for(int i = 4; i < 6; ++i) {
-        BOOST_CHECK_EQUAL(ss.getChunkLevel(), 1);
-        BOOST_CHECK(!ss.getHasAggregate());
-        if(!ss.getError().empty()) { std::cout << ss.getError() << std::endl;}
-        BOOST_CHECK(ss.getError().empty());
-        // std::cout << "fixupsel " << ss.getFixupSelect() << std::endl
-        //           << "fixuppost " << ss.getFixupPost() << std::endl;
-    }
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    SelectStmt const& ss = qs->getStmt();
+    BOOST_CHECK(context);
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(ss.getLimit(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(OrderBy) {
     std::string stmt = "select * from LSST.Object WHERE ra_PS BETWEEN 150 AND 150.2 and decl_PS between 1.6 and 1.7 ORDER BY objectId;";
     
-    SqlSubstitution ss(stmt, config, metaCacheSessionId);
-    for(int i = 4; i < 6; ++i) {
-        BOOST_CHECK_EQUAL(ss.getChunkLevel(), 1);
-        BOOST_CHECK(!ss.getHasAggregate());
-        if(!ss.getError().empty()) { std::cout << ss.getError() << std::endl;}
-        BOOST_CHECK(ss.getError().empty());
-        // std::cout << "fixupsel " << ss.getFixupSelect() << std::endl
-        //           << "fixuppost " << ss.getFixupPost() << std::endl;
-    }
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    SelectStmt const& ss = qs->getStmt();
+    BOOST_CHECK(context);
+    BOOST_CHECK(!context->restrictors);
+    BOOST_REQUIRE(ss.hasOrderBy());
+    // TODO add testing of order-by clause
+    //OrderByClause const& oc = ss->getOrderBy();    
 }
 
 BOOST_AUTO_TEST_CASE(RestrictorBox) {
     std::string stmt = "select * from Object where qserv_areaspec_box(0,0,1,1);";
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(!spr->getHasSubChunks());
-    BOOST_CHECK(!spr->getHasAggregate());
-
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_REQUIRE(context->restrictors);
+    BOOST_CHECK_EQUAL(context->restrictors->size(), 1);
+    BOOST_REQUIRE(context->restrictors->front());
+    QsRestrictor& r = *context->restrictors->front();
+    BOOST_CHECK_EQUAL(r._name, "qserv_areaspec_box");
+    char const* params[] = {"0","0","1","1"};
+    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(), 
+                                  params, params+4);
+    BOOST_CHECK(!context->needsMerge);
+    BOOST_CHECK_EQUAL(context->anonymousTable, "Object");
+    BOOST_CHECK(!context->hasSubChunks());
 }
-#endif 
 BOOST_AUTO_TEST_CASE(RestrictorObjectId) {
     std::string stmt = "select * from Object where qserv_objectId(2,3145,9999);";
-    boost::shared_ptr<QueryContext> context = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK_EQUAL(context->dominantDb, "LSST");
     BOOST_REQUIRE(context->restrictors);
     BOOST_CHECK_EQUAL(context->restrictors->size(), 1);
     BOOST_REQUIRE(context->restrictors->front());
@@ -338,7 +341,8 @@ BOOST_AUTO_TEST_CASE(RestrictorObjectId) {
 }
 BOOST_AUTO_TEST_CASE(SecondaryIndex) {
     std::string stmt = "select * from Object where objectIdObjTest in (2,3145,9999);";
-    boost::shared_ptr<QueryContext> context = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
     BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
     BOOST_REQUIRE(context->restrictors);

@@ -780,7 +780,7 @@ predicate :
 row_predicate : 
 	row_value_constructor
         ( comp_predicate {#row_predicate = #([COMP_PREDICATE,"COMP_PREDICATE"],row_predicate);}
-        | ("not")? (between_predicate
+        | ("not")? (between_predicate {#row_predicate = #([BETWEEN_PREDICATE, "BETWEEN_PREDICATE"], row_predicate);}
             | in_predicate {#row_predicate = #([IN_PREDICATE, "IN_PREDICATE"], row_predicate);}
             | like_predicate
             )
@@ -816,7 +816,6 @@ comp_op :
 between_predicate : 
 //	row_value_constructor ("not")?
         "between" row_value_constructor "and" row_value_constructor 
-        {#between_predicate = #([BETWEEN_PREDICATE, "BETWEEN_PREDICATE"], between_predicate);}
 ;
 //}
 

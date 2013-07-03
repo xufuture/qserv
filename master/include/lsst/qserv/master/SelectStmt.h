@@ -78,9 +78,13 @@ public:
     WhereClause& getWhereClause() { return *_whereClause; }
     
     int getLimit() const { return _limit; }
-    bool hasOrderBy() { return _orderBy.get(); }
+    bool hasOrderBy() const { return _orderBy; }
     OrderByClause const& getOrderBy() const { return *_orderBy; }
     OrderByClause& getOrderBy() { return *_orderBy; }
+
+    bool hasGroupBy() const { return _groupBy; }
+    GroupByClause const& getGroupBy() const { return *_groupBy; }
+    GroupByClause& getGroupBy() { return *_groupBy; }
 
  private: 
     // Declarations

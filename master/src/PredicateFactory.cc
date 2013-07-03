@@ -56,9 +56,9 @@ boost::shared_ptr<BetweenPredicate> PredicateFactory::newBetweenPredicate(antlr:
     RefAST minValue = betweenToken->getNextSibling();
     RefAST andToken = minValue->getNextSibling();
     RefAST maxValue = andToken->getNextSibling();
-    p->value = _vf.newExpr(a);
-    p->minValue = _vf.newExpr(minValue);
-    p->maxValue = _vf.newExpr(maxValue); 
+    p->value = _vf.newExpr(a->getFirstChild());
+    p->minValue = _vf.newExpr(minValue->getFirstChild());
+    p->maxValue = _vf.newExpr(maxValue->getFirstChild()); 
     return p;
 }
 boost::shared_ptr<InPredicate> PredicateFactory::newInPredicate(antlr::RefAST a) {
@@ -78,7 +78,7 @@ boost::shared_ptr<InPredicate> PredicateFactory::newInPredicate(antlr::RefAST a)
         p->cands.push_back(_vf.newExpr(i->getFirstChild()));
     }
     InPredicate& ip = *p;
-        return p;
-    }
+    return p;
+}
 
 }}} // lsst::qserv::master

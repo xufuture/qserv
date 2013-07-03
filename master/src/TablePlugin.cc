@@ -292,15 +292,15 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
         std::for_each(veI, veEnd, fixExprAlias(context.tableAliasReverses));
     }
     // Fill-in default db context.
+        
     DbTablePair p;
     addDbContext adc(context, p.db, p.table);
     std::for_each(tList.begin(), tList.end(), adc);
     _dominantDb = context.dominantDb = p.db;
-    context.anonymousTable = p.table;
-    
-    
+    context.anonymousTable = p.table;   
+        
     // Apply function using the iterator...
-    //wClause.walk(fixExprAlias(reverseAlias));
+    // wClause.walk(fixExprAlias(reverseAlias));
     // order by
     // having        
     context.scanTables = _findScanTables(stmt, context);

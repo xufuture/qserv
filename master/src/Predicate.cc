@@ -100,5 +100,11 @@ void InPredicate::cacheValueExprList() {
     _cache->push_back(value);
     _cache->insert(_cache->end(), cands.begin(), cands.end());
 }
+void BetweenPredicate::cacheValueExprList() {
+    _cache.reset(new ValueExprList());
+    _cache->push_back(value);
+    _cache->push_back(minValue);
+    _cache->push_back(maxValue);
+}
 
 }}} // lsst::qserv::master
