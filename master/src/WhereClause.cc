@@ -33,11 +33,10 @@
 #include "lsst/qserv/master/Predicate.h"
 #include "lsst/qserv/master/QueryTemplate.h"
 
-namespace qMaster=lsst::qserv::master;
-using lsst::qserv::master::QsRestrictor;
-using lsst::qserv::master::WhereClause;
+namespace lsst { 
+namespace qserv { 
+namespace master {
 
-namespace lsst { namespace qserv { namespace master {
 BoolTerm::Ptr findAndTerm(BoolTerm::Ptr tree) {
     while(1) {
         AndTerm* at = dynamic_cast<AndTerm*>(tree.get());
@@ -321,16 +320,16 @@ bool WhereClause::ValueExprIter::equal(WhereClause::ValueExprIter const& other) 
         && (_vIter == other._vIter);
 }
 
-qMaster::ValueExprPtr & WhereClause::ValueExprIter::dereference() const {
+ValueExprPtr & WhereClause::ValueExprIter::dereference() const {
     if(_vIter == _vEnd) {
-        throw std::invalid_argument("Cannot dereference NULL ValueExprTerm");
+        throw std::invalid_argument("Cannot dereference end iterator");
     }
     return *_vIter;
 }
 
-qMaster::ValueExprPtr& WhereClause::ValueExprIter::dereference() {
+ValueExprPtr& WhereClause::ValueExprIter::dereference() {
     if(_vIter == _vEnd) {
-        throw std::invalid_argument("Cannot dereference NULL ValueExprTerm");
+        throw std::invalid_argument("Cannot dereference end iterator");
     }
     return *_vIter;
 }

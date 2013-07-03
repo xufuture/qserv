@@ -47,22 +47,12 @@
 
 namespace qMaster=lsst::qserv::master;
 
-namespace { // File-scope helpers
-// Shared among plugins?
-template <class C>
-void printList(char const* label, C const& c) {
-    typename C::const_iterator i; 
-    std::cout << label << ": ";
-    for(i = c.begin(); i != c.end(); ++i) {
-        std::cout << **i << ", ";
-    }
-    std::cout << std::endl;
-}
-
-} // anonymous
-
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 typedef std::list<std::string> StringList;
+
+
 class addMap {
 public:
     explicit addMap(TableAlias& t, TableAliasReverse& r) 
