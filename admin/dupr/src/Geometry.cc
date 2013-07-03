@@ -578,7 +578,13 @@ double zArea(Vector3d const * inVe, // input (vertex, edge) pair array
              double zmin,
              double zmax)
 {
+    // A = 2πχ(M) - Σ αᵥ - Σ cos(φᵤ) ∆θᵤ      (see above)
     double angle = 0.0;
+    // bot and top maintain edges on the z=zmin (bot) and z=zmax (top) planes
+    // as longitude angle pairs. The sum of the longitude angle extents is
+    // Σ ∆θᵤ for z = zmin and -Σ ∆θᵤ for z = zmax. Note that zmin
+    // and zmax are equal to cosines of the opening angles for the corresponding
+    // small circles.
     LonRangeList bot, top;
     // Vertex i is at index 2*i. The edges meeting at this vertex are at indexes
     // 2*i - 1 and 2*i + 1, wrapped to lie in [0, numVerts). Index j holds the
@@ -587,16 +593,23 @@ double zArea(Vector3d const * inVe, // input (vertex, edge) pair array
     // the array, and the index of the normal for edge j,i is at index 2*j + 1.
     for (size_t i = 0, j = numVerts - 1; i < numVerts; j = i, ++i) {
         double z = inVe[2*i](2);
+        // n is parallel to the edge plane normal (but does not necessarily
+        // have unit norm).
         Vector3d const & n = inVe[2*j + 1];
         if (z >= zmin && z <= zmax) {
-            // Vertex is in z-range; accumulate vertex turning angle.
+            // Vertex i is in z-range; compute and accumulate turning angle αᵥ
+            // at vertex v = i. Here αᵥ is just the angle between the normal
+            // vectors of the 2 edge planes meeting at vertex i.
             angle += angSep(n, inVe[2*i + 1]);
         }
         double u = n(0)*n(0) + n(1)*n(1);
         double n2 = u + n(2)*n(2);
         if (u == 0.0) {
             assert(n(2) != 0.0);
-            // Edge lies on x-y plane.
+            // Edge lies on x-y plane. The z=zmin and z=zmax small circles are
+            // either completely inside or outside of the corresponding half-
+            // space. If a small circle is outside, clear the corresponding
+            // edge list.
             if (n(2)*zmin <= 0.0) {
                 bot.clear();
             }
@@ -608,37 +621,65 @@ double zArea(Vector3d const * inVe, // input (vertex, edge) pair array
         Vector3d const p(-n(0)*n(2), -n(1)*n(2), u);
         Vector3d const nc(n(1), -n(0), 0.0);
 
-        // Compare z = zmin and edge j,i.
+        // See if z = zmin and edge j,i intersect. The intersections of the 2
+        // planes is parallel to the cross product of (0,0,1) and n. The
+        // intersection points additionally have unit norm, yielding a quadratic
+        // equation.
         double z2 = zmin*zmin;
         double v = u - n2*z2;
         if (v > 0.0 && !bot.empty()) {
+            // The quadratic equation for the intersection points has solutions,
+            // and edges on z=zmin haven't been completely clipped away by other
+            // edges.
             double lambda = sqrt(v);
             // Compute unnormalized intersection points v0, v1.
             Vector3d v0 = zmin * p + lambda * nc;
             Vector3d v1 = zmin * p - lambda * nc;
             if (angSep(v0, v1) <= RAD_PER_DEG/36000.0) {
-                // Angle between intersections is less than 100 milliarcsec;
-                // treat this as a single degenerate intersection point.
+                // Angle between intersections is less than 100 milliarcsec. In
+                // this case, treat the great circle for the edge and the z=zmin
+                // small circle as tangent at a single degenerate intersection
+                // point. Again, the z=zmin small circle is either completely
+                // inside or outside the half-space corresponding to edge j,i.
+                // If it is outside, clear the z=zmin edge list.
                 if (n(2)*zmin < 0.0) {
                     bot.clear();
                 }
             } else {
+                // v0 and v1 are distinct. Test both intersections points to
+                // see if they lie on the edge obtained by rotating vertex j
+                // counter-clockwise about the axis given by the edge plane
+                // normal to vertex i.
                 Vector3d ncv0 = n.cross(v0);
                 Vector3d ncv1 = n.cross(v1);
                 if (ncv0.dot(inVe[2*j]) < 0.0 && ncv0.dot(inVe[2*i]) > 0.0) {
-                    // v0 lies on edge j,i - accumulate turning angle.
+                    // v0 lies on edge j,i. Because the intersection is with a
+                    // convex polygon, this means that v0 must be on the boundary
+                    // of the intersection region. Therefore, compute and
+                    // accumulate turning angle αᵥ at vertex v = v0.
                     angle += angSep(ncv0, Vector3d(-v0(1), v0(0), 0.0));
                 }
                 if (ncv1.dot(inVe[2*j]) < 0.0 && ncv1.dot(inVe[2*i]) > 0.0) {
-                    // v1 lies on edge j,i - accumulate turning angle.
+                    // v1 lies on edge j,i - compute and accumulate turning
+                    // angle αᵥ at vertex v = v1.
                     angle += angSep(ncv1, Vector3d(-v1(1), v1(0), 0.0));
                 }
+                // Clip existing edges on the z=zmin small circle against the
+                // edge (represented as a longitude angle segment) formed by the
+                // intersection of this edge half-space with z=zmin.
                 bot.clip(atan2(v0(1), v0(0)), atan2(v1(1), v1(0)));
             }
         } else if (n(2)*zmin < 0.0) {
+            // The great circle of the edge and the z=zmin small circle do not
+            // intersect on the unit sphere. If the dot product of the edge plane
+            // normal with (0, 0, zmin) is negative, then the small circle is
+            // entirely outside, and the edge-list for z=zmin must be cleared.
             bot.clear();
         }
-        // Compare z = zmax and edge j,i.
+        // See if z = zmax and edge j,i intersect. This code is substantially
+        // the same as for the z = zmin case, but there are subtle sign
+        // differences in various computations. The detailed comments for the
+        // z = zmin case are nevertheless relevant and are not repeated below.
         z2 = zmax*zmax;
         v = u - n2*z2;
         if (v > 0.0 && !top.empty()) {
@@ -656,11 +697,13 @@ double zArea(Vector3d const * inVe, // input (vertex, edge) pair array
                 Vector3d ncv0 = n.cross(v0);
                 Vector3d ncv1 = n.cross(v1);
                 if (ncv0.dot(inVe[2*j]) < 0.0 && ncv0.dot(inVe[2*i]) > 0.0) {
-                    // v0 lies on edge j,i - accumulate turning angle.
+                    // v0 lies on edge j,i - compute and accumulate turning
+                    // angle αᵥ at vertex v = v0.
                     angle += angSep(ncv0, Vector3d(v0(1), -v0(0), 0.0));
                 }
                 if (ncv1.dot(inVe[2*j]) < 0.0 && ncv1.dot(inVe[2*i]) > 0.0) {
-                    // v1 lies on edge j,i - accumulate turning angle.
+                    // v1 lies on edge j,i - compute and accumulate turning
+                    // angle αᵥ at vertex v = v1.
                     angle += angSep(ncv1, Vector3d(v1(1), -v1(0), 0.0));
                 }
                 top.clip(atan2(v1(1), v1(0)), atan2(v0(1), v0(0)));
@@ -669,7 +712,8 @@ double zArea(Vector3d const * inVe, // input (vertex, edge) pair array
             top.clear();
         }
     }
-    double chi = 1.0; // Euler characteristic
+    // Compute the Euler characteristic χ(M).
+    double chi = 1.0;
     if (angle == 0.0 && bot.empty() && top.empty()) {
         return 0.0;
     } else if (bot.full() && top.full()) {
@@ -678,6 +722,7 @@ double zArea(Vector3d const * inVe, // input (vertex, edge) pair array
     } else if (angle != 0.0 && (bot.full() || top.full())) {
         chi = 0.0;
     }
+    // Subtract Σ αᵥ and Σ cos(φᵤ) ∆θᵤ.
     double area = 2.0*pi<double>()*chi - angle + top.extent()*zmax - bot.extent()*zmin;
     return area < 0.0 ? 0.0 : area;
 }
