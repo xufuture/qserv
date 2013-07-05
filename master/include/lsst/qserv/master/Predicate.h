@@ -36,7 +36,10 @@
 #include <boost/shared_ptr.hpp>
 #include "lsst/qserv/master/BoolTerm.h"
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
+
 class QueryTemplate; // Forward
 class ValueExpr;
 
@@ -68,6 +71,8 @@ public:
     virtual void cacheValueExprList() {}
     virtual ValueExprList::iterator valueExprCacheBegin() { return ValueExprList::iterator(); }
     virtual ValueExprList::iterator valueExprCacheEnd() { return ValueExprList::iterator(); }
+
+    virtual void findColumnRefs(ColumnRefMap::List& list) {}
 
     friend std::ostream& operator<<(std::ostream& os, Predicate const& bt);
     virtual std::ostream& putStream(std::ostream& os) const = 0;
@@ -115,6 +120,7 @@ public:
     virtual void cacheValueExprList();
     virtual ValueExprList::iterator valueExprCacheBegin() { return _cache->begin(); }
     virtual ValueExprList::iterator valueExprCacheEnd() { return _cache->end(); }
+    virtual void findColumnRefs(ColumnRefMap::List& list);
 
     friend std::ostream& operator<<(std::ostream& os, CompPredicate const& bt);
     virtual std::ostream& putStream(std::ostream& os) const;
@@ -142,6 +148,7 @@ public:
     virtual void cacheValueExprList();
     virtual ValueExprList::iterator valueExprCacheBegin() { return _cache->begin(); }
     virtual ValueExprList::iterator valueExprCacheEnd() { return _cache->end(); }
+    virtual void findColumnRefs(ColumnRefMap::List& list);
 
     friend std::ostream& operator<<(std::ostream& os, InPredicate const& bt);
     virtual std::ostream& putStream(std::ostream& os) const;
@@ -168,6 +175,7 @@ public:
     virtual void cacheValueExprList();
     virtual ValueExprList::iterator valueExprCacheBegin() { return _cache->begin(); }
     virtual ValueExprList::iterator valueExprCacheEnd() { return _cache->end(); }
+    virtual void findColumnRefs(ColumnRefMap::List& list);
     friend std::ostream& operator<<(std::ostream& os, BetweenPredicate const& bt);
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;

@@ -39,9 +39,24 @@ namespace { // File-scope helpers
 namespace lsst {
 namespace qserv {
 namespace master {
-////////////////////////////////////////////////////////////////////////
-// BoolTerm section
-////////////////////////////////////////////////////////////////////////
+
+void CompPredicate::findColumnRefs(ColumnRefMap::List& list) {
+    if(left) { left->findColumnRefs(list); }
+    if(right) { right->findColumnRefs(list); }
+}
+void InPredicate::findColumnRefs(ColumnRefMap::List& list) {
+    if(value) { value->findColumnRefs(list); }
+    std::list<boost::shared_ptr<ValueExpr> >::iterator i;
+    for(i=cands.begin(); i != cands.end(); ++i) {
+        (**i).findColumnRefs(list);
+    }
+}
+void BetweenPredicate::findColumnRefs(ColumnRefMap::List& list) {
+    if(value) { value->findColumnRefs(list); }
+    if(minValue) { minValue->findColumnRefs(list); }
+    if(maxValue) { maxValue->findColumnRefs(list); }
+}
+
 std::ostream& qMaster::CompPredicate::putStream(std::ostream& os) const {
     // FIXME
     return os;

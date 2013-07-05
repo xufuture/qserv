@@ -76,7 +76,7 @@ public:
             parser.sql_stmt();
         } catch(antlr::NoViableAltException& e) {
             throw ParseException("ANTLR parse error:" + e.getMessage(), e.node);
-        }
+        } 
         explore();
     }
     void explore();

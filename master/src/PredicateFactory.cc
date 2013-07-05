@@ -42,8 +42,8 @@ PredicateFactory::newCompPredicate(antlr::RefAST a) {
     boost::shared_ptr<CompPredicate> p(new CompPredicate());
     if(a->getType() == SqlSQL2TokenTypes::COMP_PREDICATE) { a = a->getFirstChild(); }
     RefAST left = a;
-    RefAST op = left->getFirstChild();
-    RefAST right = op->getFirstChild();
+    RefAST op = left->getNextSibling();
+    RefAST right = op->getNextSibling();
     p->left = _vf.newExpr(left->getFirstChild());
     p->op = op->getType();
     p->right = _vf.newExpr(right->getFirstChild());

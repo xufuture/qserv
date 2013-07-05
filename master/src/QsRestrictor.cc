@@ -1,4 +1,3 @@
-// -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
  * Copyright 2013 LSST Corporation.
@@ -20,43 +19,25 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_QSRESTRICTOR_H
-#define LSST_QSERV_MASTER_QSRESTRICTOR_H
 /**
-  * @file QsRestrictor.h
+  * @file 
   *
   * @author Daniel L. Wang, SLAC
-  */
-#include <list>
-#include <string>
-#include <boost/shared_ptr.hpp>
+  */ 
+#include "lsst/qserv/master/QsRestrictor.h"
+
+#include <iostream>
+#include <iterator>
 
 namespace lsst { 
 namespace qserv { 
 namespace master {
-class QueryTemplate;
-
-/// QsRestrictor is a Qserv spatial restrictor element that is used to
-/// signal dependencies on spatially-partitioned tables. It includes
-/// qserv-specific restrictors that make use of the spatial indexing,
-/// but are not strictly spatial restrictuions.
-class QsRestrictor {
-public:
-    typedef boost::shared_ptr<QsRestrictor> Ptr;
-    typedef std::list<Ptr> List;
-    typedef std::list<std::string> StringList;
-
-    class render {
-    public:
-        render(QueryTemplate& qt_) : qt(qt_) {}
-        void operator()(boost::shared_ptr<QsRestrictor> const& p);
-        QueryTemplate& qt;
-    };
-
-    std::string _name;
-    StringList _params;
-};
-std::ostream& operator<<(std::ostream& os, QsRestrictor const& q);
+std::ostream& operator<<(std::ostream& os, QsRestrictor const& q) {
+    os << "Restrictor " << q._name << "(";
+    std::copy(q._params.begin(), q._params.end(), 
+              std::ostream_iterator<std::string>(os, ","));
+    os << ")";
+    return os;
+}
 }}} // namespace lsst::qserv::master
-#endif // LSST_QSERV_MASTER_QSRESTRICTOR_H
 

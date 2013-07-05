@@ -124,6 +124,15 @@ void qMaster::ValueExprTerm::renderTo(QueryTemplate& qt) const {
     if(!_expr) { throw std::invalid_argument("Null-ValueExpr for renderTo()"); }
 }
 
+void qMaster::BoolFactor::findColumnRefs(ColumnRefMap::List& list) {
+    BfTerm::PtrList::const_iterator i;
+    for(i = _terms.begin(); i != _terms.end(); ++i) {
+        (**i).findColumnRefs(list);
+    }
+}
+void qMaster::ValueExprTerm::findColumnRefs(ColumnRefMap::List& list) {
+    if(_expr) { return _expr->findColumnRefs(list); }
+}
 boost::shared_ptr<qMaster::BoolTerm> qMaster::OrTerm::copySyntax() {
     boost::shared_ptr<OrTerm> ot(new OrTerm());
     ot->_terms = _terms; // shallow copy for now

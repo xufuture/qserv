@@ -120,10 +120,10 @@ boost::shared_ptr<ConstraintVector> QuerySession::getConstraints() const {
             (*cv)[i] = c;
             ++i;
         }
-        printConstraints(*cv);
+        //printConstraints(*cv);
         return cv;
     } else {
-        std::cout << "No constraints." << std::endl;
+        //std::cout << "No constraints." << std::endl;
     }
     // No constraint vector
     return cv;

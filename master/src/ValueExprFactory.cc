@@ -57,9 +57,8 @@ ValueExprFactory::newExpr(antlr::RefAST a) {
     //std::cout << walkIndentedString(a) << std::endl;
     while(a.get()) {
         ValueExpr::FactorOp newFactorOp;
-        //std::cout << "factor: " << tokenText(a) << std::endl;
-        newFactorOp.factor = _valueFactorFactory->newFactor(a);
         RefAST op = a->getNextSibling();
+        newFactorOp.factor = _valueFactorFactory->newFactor(a);
         if(op.get()) { // No more ops?
             //std::cout << "expected op: " << tokenText(op) << std::endl;
             int eType = op->getType();

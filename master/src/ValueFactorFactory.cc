@@ -85,9 +85,14 @@ newColumnFactor(antlr::RefAST t, ColumnRefNodeMap& cMap) {
     boost::shared_ptr<ValueFactor> vt(new ValueFactor());
     boost::shared_ptr<FuncExpr> fe;
     RefAST last;
-    //std::cout << "colterm: " << t->getType() << " "
-    //          << t->getText() << std::endl;
-    switch(t->getType()) {
+    // std::cout << "colterm: " << t->getType() << " "
+    //           << t->getText() << std::endl;
+    int tType = t->getType();
+    switch(tType) {
+    case SqlSQL2TokenTypes::COLUMN_REF: 
+        t = child;
+        child = t->getFirstChild();
+        // Fall-through to REGULAR_ID handler
     case SqlSQL2TokenTypes::REGULAR_ID: 
         // make column ref. (no further children)
         {
@@ -141,7 +146,6 @@ newColumnFactor(antlr::RefAST t, ColumnRefNodeMap& cMap) {
         
         break;
     default: 
-        // FIXME, need to unify exceptions.
         throw ParseException("ValueFactorFactory::newColumnFactor with ", t);
         break;
     }
@@ -209,8 +213,12 @@ ValueFactorFactory::newFactor(antlr::RefAST a) {
     if(a->getType() == SqlSQL2TokenTypes::FACTOR) {
         a = a->getFirstChild(); // FACTOR is a parent placeholder element
     }
-    //std::cout << "new term: " << tokenText(a) << std::endl;
+    //    std::cout << "new ValueFactor: " << tokenText(a) << std::endl;
     switch(a->getType()) {
+    case SqlSQL2TokenTypes::COLUMN_REF:
+        a = a->getFirstChild();
+        // COLUMN_REF should have REGULAR_ID as only child.
+        // Fall through to REGULAR_ID handler
     case SqlSQL2TokenTypes::REGULAR_ID:
     case SqlSQL2TokenTypes::FUNCTION_SPEC:
         vt = newColumnFactor(a, *_columnRefNodeMap);

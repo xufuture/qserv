@@ -92,6 +92,7 @@ boost::shared_ptr<QuerySession> testStmt3(QuerySession::Test& t,
                                           std::string const& stmt) {
     boost::shared_ptr<QuerySession> qs(new QuerySession(t));
     qs->setQuery(stmt);
+    BOOST_CHECK_EQUAL(qs->getError(), "");
     qs->getConstraints();    
     // SelectStmt const& stmt2 = 
     qs->getStmt();
@@ -290,6 +291,11 @@ BOOST_AUTO_TEST_CASE(Limit) {
     SelectStmt const& ss = qs->getStmt();
     BOOST_CHECK(context);
     BOOST_CHECK(!context->restrictors);
+    if(context->restrictors) {
+        QsRestrictor& r = *context->restrictors->front();
+        std::cout << "front restr is " << r << std::endl;
+    }
+
     BOOST_CHECK_EQUAL(ss.getLimit(), 2);
 }
 

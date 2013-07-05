@@ -341,7 +341,6 @@ QservRestrictorPlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     WhereClause& wc = stmt.getWhereClause();
 
     boost::shared_ptr<QsRestrictor::List const> rListP = wc.getRestrs();
-    context.restrictors.reset(new QueryContext::RestrList);
     AndTerm::Ptr originalAnd(wc.getRootAndTerm());
     boost::shared_ptr<QsRestrictor::List> keyPreds;
     keyPreds = _getKeyPreds(context, originalAnd);
@@ -349,6 +348,7 @@ QservRestrictorPlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     // Now handle the explicit restrictors
     if(!rListP.get()) return; // No spatial restrictions -> nothing to do
     QsRestrictor::List const& rList = *rListP;
+    context.restrictors.reset(new QueryContext::RestrList);
     AndTerm::Ptr newTerm(new AndTerm);
 
     // Now, for each of the qserv restrictors:
@@ -376,6 +376,7 @@ QservRestrictorPlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
         context.restrictors->insert(context.restrictors->end(), 
                                     keyPreds->begin(), keyPreds->end());
     }
+    if(context.restrictors->empty()) { context.restrictors.reset(); }
     wc.prependAndTerm(newTerm);
 }
 

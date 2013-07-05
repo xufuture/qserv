@@ -82,9 +82,8 @@ operator<<(std::ostream& os, WhereClause const& wc) {
     return os;
 }
 void findColumnRefs(boost::shared_ptr<BoolFactor> f, ColumnRefMap::List& list) {
-    if(f) { // FIXME
-        std::cout << "bfterm";
-        f->putStream(std::cout) << std::endl;
+    if(f) { 
+        f->findColumnRefs(list);
     }
 }
 

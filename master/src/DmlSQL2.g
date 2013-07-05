@@ -1753,7 +1753,9 @@ target_spec :
 
 //{ Rule #095 <column_ref> incorpotates <catalog_name>; <schema_name> and <table_name> to enable left_factoring
 column_ref : 
-	a:id (PERIOD b:id (PERIOD c:id (PERIOD d:id)?)?)?  {handleColumnRef(a_AST, b_AST, c_AST, d_AST);}
+	a:id (PERIOD b:id (PERIOD c:id (PERIOD d:id)?)?)?  {
+       #column_ref=#([COLUMN_REF,"COLUMN_REF"], column_ref);
+       handleColumnRef(a_AST, b_AST, c_AST, d_AST);}
 ;
 //}
 
