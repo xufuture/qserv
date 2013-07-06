@@ -30,7 +30,10 @@
 #include <boost/shared_ptr.hpp>
 #include <antlr/AST.hpp>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
+
 // Forward
 class ColumnRefNodeMap;
 class ValueFactor;

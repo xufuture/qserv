@@ -29,7 +29,9 @@
 #include "lsst/qserv/master/QueryContext.h"
 #include "lsst/qserv/master/ColumnRef.h"
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace master {
 
 /// Resolve a column ref to a concrete (db,table)
 /// @return the concrete (db,table), based on current context.

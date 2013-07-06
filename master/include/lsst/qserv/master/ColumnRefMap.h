@@ -32,7 +32,10 @@
   */
 #include "lsst/qserv/master/ColumnRefH.h"
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
+
 class ColumnRef; // Forward
 
 /// ColumnRefMap is a listener that maintains a mapping from node to a

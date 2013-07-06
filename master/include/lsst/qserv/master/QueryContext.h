@@ -34,7 +34,10 @@
 #include "lsst/qserv/master/QueryMapping.h"
 #include "lsst/qserv/master/TableAlias.h"
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
+
 class ColumnRef;
 class QsRestrictor;
 class MetadataCache;

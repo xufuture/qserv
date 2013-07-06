@@ -45,8 +45,6 @@
 #include "lsst/qserv/master/TableAlias.h"
 #include "lsst/qserv/master/ValueFactor.h"
 
-namespace qMaster=lsst::qserv::master;
-
 namespace lsst { 
 namespace qserv { 
 namespace master {
@@ -79,24 +77,24 @@ public:
     }
     int& _seqN;
 };
-class addDbContext : public qMaster::TableRefN::Func {
+class addDbContext : public TableRefN::Func {
 public:
-    addDbContext(qMaster::QueryContext const& c, 
+    addDbContext(QueryContext const& c, 
                  std::string& firstDb_,
                  std::string& firstTable_)
         : context(c), firstDb(firstDb_), firstTable(firstTable_)
         {}
-    void operator()(qMaster::TableRefN::Ptr t) {
+    void operator()(TableRefN::Ptr t) {
         if(t.get()) { t->apply(*this); }     
     }
-    void operator()(qMaster::TableRefN& t) {
+    void operator()(TableRefN& t) {
         std::string table = t.getTable();
         if(table.empty()) return; // Add context only to concrete refs
         if(t.getDb().empty()) { t.setDb(context.defaultDb); }
         if(firstDb.empty()) { firstDb = t.getDb(); }
         if(firstTable.empty()) { firstTable = table; }
     }
-    qMaster::QueryContext const& context;
+    QueryContext const& context;
     std::string& firstDb;
     std::string& firstTable;
 };
@@ -105,7 +103,7 @@ template <typename G, typename A>
 class addAlias {
 public:
     addAlias(G g, A a) : _generate(g), _addMap(a) {}
-    void operator()(qMaster::TableRefN::Ptr t) {
+    void operator()(TableRefN::Ptr t) {
         // std::cout << "tableref:";
         // t->putStream(std::cout);
         // std::cout << std::endl;
@@ -312,7 +310,7 @@ TablePlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext& context) {
     // for the parallel and merge versions.
     // Set hasMerge to true if aggregation is detected.
     SelectList& oList = p.stmtOriginal.getSelectList();
-    boost::shared_ptr<qMaster::ValueExprList> vlist;
+    boost::shared_ptr<ValueExprList> vlist;
     vlist = oList.getValueExprList();
     if(!vlist) {
         throw std::logic_error("Invalid stmtOriginal.SelectList");

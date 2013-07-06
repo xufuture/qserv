@@ -34,7 +34,9 @@
 ////////////////////////////////////////////////////////////////////////
 // ParseException
 ////////////////////////////////////////////////////////////////////////
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 
 ParseException::ParseException(char const* msg, antlr::RefAST subTree) 
     : std::runtime_error(std::string(msg) + ":" + walkSiblingString(subTree))

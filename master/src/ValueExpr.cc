@@ -40,14 +40,14 @@
 #include "lsst/qserv/master/QueryTemplate.h"
 #include "lsst/qserv/master/FuncExpr.h"
 
-namespace qMaster=lsst::qserv::master;
+namespace lsst { 
+namespace qserv { 
+namespace master {
 
-
-namespace lsst { namespace qserv { namespace master {
 std::ostream& 
 output(std::ostream& os, ValueExprList const& vel) {
     std::copy(vel.begin(), vel.end(),
-              std::ostream_iterator<qMaster::ValueExprPtr>(os, ";"));    
+              std::ostream_iterator<ValueExprPtr>(os, ";"));    
     return os;
 }
 void 
@@ -164,7 +164,7 @@ std::ostream& operator<<(std::ostream& os, ValueExpr const* ve) {
 ////////////////////////////////////////////////////////////////////////
 // ValueExpr::render
 ////////////////////////////////////////////////////////////////////////
-void ValueExpr::render::operator()(qMaster::ValueExpr const& ve) {
+void ValueExpr::render::operator()(ValueExpr const& ve) {
     if(_needsComma && _count++ > 0) { _qt.append(","); }
     ValueFactor::render render(_qt);    
     if(ve._factorOps.size() > 1) { // Need opening parenthesis

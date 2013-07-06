@@ -35,7 +35,9 @@
 #include <boost/shared_ptr.hpp>
 #include "lsst/qserv/master/ColumnRef.h"
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 
 // Forward
 class QueryTemplate;

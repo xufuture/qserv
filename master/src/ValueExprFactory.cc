@@ -34,7 +34,6 @@
 #include "lsst/qserv/master/ParseException.h" // 
 #include "SqlSQL2TokenTypes.hpp" // antlr-generated
 
-
 using antlr::RefAST;
 
 namespace lsst { 

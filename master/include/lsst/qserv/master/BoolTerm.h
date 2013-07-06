@@ -37,7 +37,10 @@
 #include <boost/shared_ptr.hpp>
 #include "lsst/qserv/master/ColumnRefMap.h"
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
+
 class QueryTemplate; // Forward
 class ValueExpr;
 

@@ -40,14 +40,6 @@
 #include "SqlSQL2TokenTypes.hpp" 
 
 // namespace modifiers
-namespace qMaster = lsst::qserv::master;
-using qMaster::ValueFactor;
-using qMaster::ValueExpr;
-using qMaster::FuncExpr;
-using qMaster::ValueFactorFactory;
-using qMaster::ColumnRef;
-using qMaster::ColumnRefNodeMap;
-using qMaster::tokenText;
 using antlr::RefAST;
 
 ////////////////////////////////////////////////////////////////////////
@@ -65,7 +57,7 @@ inline RefAST walkToSiblingBefore(RefAST node, int typeId) {
 }
 
 inline std::string getSiblingStringBounded(RefAST left, RefAST right) {
-    qMaster::CompactPrintVisitor<RefAST> p;
+    lsst::qserv::master::CompactPrintVisitor<RefAST> p;
     for(; left.get(); left = left->getNextSibling()) {
         p(left);
         if(left == right) break;
@@ -73,7 +65,10 @@ inline std::string getSiblingStringBounded(RefAST left, RefAST right) {
     return p.result;
 }
 } // anonymous
-namespace lsst { namespace qserv { namespace master { 
+
+namespace lsst { 
+namespace qserv { 
+namespace master { 
 
 boost::shared_ptr<ValueFactor> 
 newColumnFactor(antlr::RefAST t, ColumnRefNodeMap& cMap) {
@@ -103,7 +98,7 @@ newColumnFactor(antlr::RefAST t, ColumnRefNodeMap& cMap) {
             ColumnRefNodeMap::Ref r = it->second;
 
             boost::shared_ptr<ColumnRef> newColumnRef;
-            newColumnRef.reset(new qMaster::ColumnRef(tokenText(r.db),
+            newColumnRef.reset(new ColumnRef(tokenText(r.db),
                                                       tokenText(r.table),
                                                       tokenText(r.column)));
             vt = ValueFactor::newColumnRefFactor(newColumnRef);
@@ -189,7 +184,7 @@ newSetFctSpec(RefAST expr, ColumnRefNodeMap& cMap) {
 
 boost::shared_ptr<ValueFactor> 
 newConstFactor(RefAST t) {
-    return ValueFactor::newConstFactor(qMaster::walkTreeString(t));
+    return ValueFactor::newConstFactor(walkTreeString(t));
 }
 
 ////////////////////////////////////////////////////////////////////////

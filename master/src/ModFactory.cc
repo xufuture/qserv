@@ -47,62 +47,62 @@
 #include "lsst/qserv/master/OrderByClause.h" // Clauses
 #include "lsst/qserv/master/GroupByClause.h" // Clauses
 
-// namespace modifiers
-namespace qMaster = lsst::qserv::master;
+namespace lsst {
+namespace qserv {
+namespace master {
 
 ////////////////////////////////////////////////////////////////////////
 // ModFactory::LimitH
 ////////////////////////////////////////////////////////////////////////
-class lsst::qserv::master::ModFactory::LimitH : public VoidOneRefFunc {
+class ModFactory::LimitH : public VoidOneRefFunc {
 public:
-    LimitH(lsst::qserv::master::ModFactory& mf) : _mf(mf) {}
+    LimitH(ModFactory& mf) : _mf(mf) {}
     virtual void operator()(antlr::RefAST n) {
         _mf._importLimit(n);
     }
 private:
-    lsst::qserv::master::ModFactory& _mf;
+    ModFactory& _mf;
 };
 ////////////////////////////////////////////////////////////////////////
 // ModFactory::OrderByH
 ////////////////////////////////////////////////////////////////////////
-class lsst::qserv::master::ModFactory::OrderByH : public VoidOneRefFunc {
+class ModFactory::OrderByH : public VoidOneRefFunc {
 public:
-    OrderByH(lsst::qserv::master::ModFactory& mf) : _mf(mf) {}
+    OrderByH(ModFactory& mf) : _mf(mf) {}
     virtual void operator()(antlr::RefAST n) {
         std::cout << "Importing Orderby:" << walkIndentedString(n) << std::endl;
         _mf._importOrderBy(n);
     }
 private:
-    lsst::qserv::master::ModFactory& _mf;
+    ModFactory& _mf;
 };
 ////////////////////////////////////////////////////////////////////////
 // ModFactory::GroupByH
 ////////////////////////////////////////////////////////////////////////
-class lsst::qserv::master::ModFactory::GroupByH : public VoidOneRefFunc {
+class ModFactory::GroupByH : public VoidOneRefFunc {
 public:
-    GroupByH(lsst::qserv::master::ModFactory& mf) : _mf(mf) {}
+    GroupByH(ModFactory& mf) : _mf(mf) {}
     virtual void operator()(antlr::RefAST n) {
         _mf._importGroupBy(n);
     }
 private:
-    lsst::qserv::master::ModFactory& _mf;
+    ModFactory& _mf;
 };
 ////////////////////////////////////////////////////////////////////////
 // ModFactory::HavingH
 ////////////////////////////////////////////////////////////////////////
-class lsst::qserv::master::ModFactory::HavingH : public VoidOneRefFunc {
+class ModFactory::HavingH : public VoidOneRefFunc {
 public:
-    HavingH(lsst::qserv::master::ModFactory& mf) : _mf(mf) {}
+    HavingH(ModFactory& mf) : _mf(mf) {}
     virtual void operator()(antlr::RefAST n) {
         _mf._importHaving(n);
     }
 private:
-    lsst::qserv::master::ModFactory& _mf;
+    ModFactory& _mf;
 };
 ////////////////////////////////////////////////////////////////////////
 // ModFactory
 ////////////////////////////////////////////////////////////////////////
-using qMaster::ModFactory;
 ModFactory::ModFactory(boost::shared_ptr<ValueExprFactory> vf)
     : _vFactory(vf),
       _limit(-1)
@@ -245,3 +245,4 @@ void ModFactory::_importHaving(antlr::RefAST a) {
     // FIXME: Log this at the WARNING level
     std::cout << "Parse warning: HAVING clause unhandled." << std::endl;
 }
+}}} // lsst::qserv::master

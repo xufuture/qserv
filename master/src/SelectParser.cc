@@ -55,13 +55,15 @@
 #include "lsst/qserv/master/parseTreeUtil.h"
 
 #include <antlr/CommonAST.hpp>
-// namespace modifiers
-namespace qMaster = lsst::qserv::master;
+
+namespace lsst {
+namespace qserv {
+namespace master {
 
 ////////////////////////////////////////////////////////////////////////
 // AntlrParser -- Antlr parsing complex
 ////////////////////////////////////////////////////////////////////////
-class qMaster::AntlrParser {
+class AntlrParser {
 public:
     AntlrParser(std::string const& q) 
         : statement(q), 
@@ -87,7 +89,7 @@ public:
     SqlSQL2Parser parser;
 };
 void 
-qMaster::AntlrParser::explore() {
+AntlrParser::explore() {
     RefAST a = parser.getAST();
 //    std::cout << "wholething: " << walkIndentedString(a) << std::endl;
 //    std::cout << "printing walktree \n";
@@ -100,18 +102,18 @@ qMaster::AntlrParser::explore() {
 ////////////////////////////////////////////////////////////////////////
 
 // Static factory function
-qMaster::SelectParser::Ptr 
-qMaster::SelectParser::newInstance(std::string const& statement) {
+SelectParser::Ptr 
+SelectParser::newInstance(std::string const& statement) {
     return boost::shared_ptr<SelectParser>(new SelectParser(statement));
 }
 
 // Construtor
-qMaster::SelectParser::SelectParser(std::string const& statement)
+SelectParser::SelectParser(std::string const& statement)
     :_statement(statement) {
 }
 
 void 
-qMaster::SelectParser::setup() {
+SelectParser::setup() {
     _selectStmt.reset(new SelectStmt());
     _aParser.reset(new AntlrParser(_statement));
     // model 3: parse tree construction to build intermediate expr.
@@ -121,3 +123,4 @@ qMaster::SelectParser::setup() {
     _selectStmt = sf.getStatement();
     _selectStmt->diagnose();
 }
+}}}

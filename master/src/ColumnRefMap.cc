@@ -31,7 +31,9 @@
 #include <stdexcept>
 #include "lsst/qserv/master/ColumnRef.h"
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 
 void
 ColumnRefMap::acceptColumnRef(antlr::RefAST d, antlr::RefAST t, 

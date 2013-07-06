@@ -42,7 +42,9 @@
 // Forward
 class SqlSQL2Parser;
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 
 /// ColumnRefH is a parse action for column_ref tokens in the grammar
 class ColumnRefH : public VoidFourRefFunc {

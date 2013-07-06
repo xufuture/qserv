@@ -23,17 +23,20 @@
 #ifndef LSST_QSERV_MASTER_PARSEEXCEPTION_H
 #define LSST_QSERV_MASTER_PARSEEXCEPTION_H
 /**
-  * @file ParseException.h
-  *
-  * @brief ParseException is a trivial exception for Qserv parse problems
+  * @file 
   *
   * @author Daniel L. Wang, SLAC
   */
 #include <map>
 #include <antlr/AST.hpp>
 #include <stdexcept>
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 
+/// ParseException is a trivial exception for Qserv parse problems.
+/// ParseExceptions automatically retrieves basic information from the ANTLR
+/// parse node to be bundled with the exception for greater context.
 class ParseException : public std::runtime_error {
 public:
     explicit ParseException(char const* msg, antlr::RefAST subTree);
