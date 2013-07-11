@@ -64,8 +64,9 @@ TaskQueuePtr qWorker::FifoScheduler::newTaskAct(Task::Ptr incoming,
         // Prefer tasks already in the todo list, although there
         // shouldn't be... 
         tq.reset(new TodoList::TaskQueue());
-        if(todo->size() > 0) {
-            tq->push_back(todo->popTask());
+        boost::shared_ptr<qWorker::Task> t = todo->popTask();
+        if(t) {
+            tq->push_back(t);
         } else {
             tq->push_back(todo->popTask(incoming));
         }
@@ -86,10 +87,15 @@ TaskQueuePtr qWorker::FifoScheduler::taskFinishAct(Task::Ptr finished,
 
     // FIFO always replaces a finishing task with a new task, always
     // maintaining a constant number of running threads (as long as
-    // there is work to do)
-    if(todo->size() > 0) {
+    // there is work to do)    
+
+    // Try to pop a task, checking if we got a null Task.  This is
+    // better than a size-check followed by pop (because the size may
+    // change between the two calls).
+    boost::shared_ptr<qWorker::Task> t = todo->popTask();
+    if(t) {
         tq.reset(new TodoList::TaskQueue());
-        tq->push_back(todo->popTask());
+        tq->push_back(t);
         return tq;
     } 
     // No more work to do--> don't schedule anything.
