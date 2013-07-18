@@ -378,8 +378,8 @@ double SphericalTriangle::area() const {
     //
     // Numerically, this is not very accurate for very small triangles. The
     // triangles this code is excercised with in practice have side arc-lengths
-    // in the tenths of degrees, so there is no need to worry for now. Should
-    // circumstances change, an alternate formula is:
+    // in the tenths of a degree range, so there is no need to worry for now.
+    // Should circumstances change, an alternate formula is:
     //
     // tan(A/4) = √(tan(S/2) tan((S-a)/2) tan((S-b)/2) tan((S-c)/2))
     //
@@ -621,10 +621,11 @@ double zArea(Vector3d const * inVe, // input (vertex, edge) pair array
         Vector3d const p(-n(0)*n(2), -n(1)*n(2), u);
         Vector3d const nc(n(1), -n(0), 0.0);
 
-        // See if z = zmin and edge j,i intersect. The intersections of the 2
+        // See if z = zmin and edge j,i intersect. The intersection of the 2
         // planes is parallel to the cross product of (0,0,1) and n. The
-        // intersection points additionally have unit norm, yielding a quadratic
-        // equation.
+        // intersection points on the unit sphere additionally have unit norm.
+        // Together, these constraints give a quadratic equation for the
+        // intersection point coordinates.
         double z2 = zmin*zmin;
         double v = u - n2*z2;
         if (v > 0.0 && !bot.empty()) {
