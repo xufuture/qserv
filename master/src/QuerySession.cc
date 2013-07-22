@@ -179,6 +179,7 @@ void QuerySession::_initContext() {
 void QuerySession::_preparePlugins() {
     _plugins.reset(new PluginList);
 
+    _plugins->push_back(QueryPlugin::newInstance("Where"));
     _plugins->push_back(QueryPlugin::newInstance("Aggregate"));
     _plugins->push_back(QueryPlugin::newInstance("Table"));
     _plugins->push_back(QueryPlugin::newInstance("QservRestrictor"));

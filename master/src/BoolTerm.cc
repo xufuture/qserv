@@ -127,6 +127,50 @@ void BoolFactor::findColumnRefs(ColumnRefMap::List& list) {
 void ValueExprTerm::findColumnRefs(ColumnRefMap::List& list) {
     if(_expr) { _expr->findColumnRefs(list); }
 }
+
+boost::shared_ptr<BoolTerm> OrTerm::getReduced() {
+    if(_terms.size() == 1) {
+        boost::shared_ptr<BoolTerm> reduced = _terms.front();
+        if(reduced) { return reduced; }
+        else { return _terms.front(); }
+    } 
+    return boost::shared_ptr<BoolTerm>();
+}
+
+boost::shared_ptr<BoolTerm> AndTerm::getReduced() {
+    // Get reduced versions of my children.
+    // FIXME
+
+    // Can I eliminate myself?
+    if(_terms.size() == 1) {
+        boost::shared_ptr<BoolTerm> reduced = _terms.front();
+        if(reduced) { return reduced; }
+        else { return _terms.front(); }
+    } 
+    return boost::shared_ptr<BoolTerm>();
+}
+
+boost::shared_ptr<BoolTerm> BoolFactor::getReduced() {
+    // Get reduced versions of my children.
+    QueryTemplate qt;    // FIXME
+    typedef BfTerm::PtrList::iterator Iter;
+    for(Iter i=_terms.begin(), e=_terms.end(); i != e; ++i) {
+        BfTerm& term = **i;
+        term.renderTo(qt);
+    }
+
+    std::cout << "Considering boolfactor " << std::endl;
+    if(_terms.size() >= 1) {
+        QueryTemplate qt;
+        std::string s;
+        renderList(qt, _terms, "---");
+        
+        std::cout << "Can I reduce " << qt.generate() << std::endl;
+    } 
+    return boost::shared_ptr<BoolTerm>();
+}
+
+
 boost::shared_ptr<BoolTerm> OrTerm::copySyntax() {
     boost::shared_ptr<OrTerm> ot(new OrTerm());
     ot->_terms = _terms; // shallow copy for now
