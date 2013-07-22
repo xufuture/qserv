@@ -71,6 +71,7 @@ void forEachSibs(antlr::RefAST a, F& f) {
 /// Construct a ValueExpr (or PassTerm) term and import as appropriate
 void BoolTermFactory::bfImport::operator()(antlr::RefAST a) {
     PredicateFactory _pf(*_bf._vFactory); // placeholder
+    int aType = a->getType(); // for gdb
     switch(a->getType()) {
     case SqlSQL2TokenTypes::VALUE_EXP:
         _bfr._terms.push_back(_bf.newValueExprTerm(a));
@@ -79,10 +80,17 @@ void BoolTermFactory::bfImport::operator()(antlr::RefAST a) {
         _bfr._terms.push_back(_pf.newCompPredicate(a));
         break;
     case SqlSQL2TokenTypes::BETWEEN_PREDICATE:
+        printIndented(a);
         _bfr._terms.push_back(_pf.newBetweenPredicate(a));
         break;
     case SqlSQL2TokenTypes::IN_PREDICATE:
         _bfr._terms.push_back(_pf.newInPredicate(a));
+        break;
+    case SqlSQL2TokenTypes::AND_OP:
+    case SqlSQL2TokenTypes::OR_OP:
+        printIndented(a);
+        _bfr._terms.push_back(_bf.newPassTerm(a));
+
         break;
     default:
         _bfr._terms.push_back(_bf.newPassTerm(a));
@@ -159,6 +167,9 @@ PassTerm::Ptr
 BoolTermFactory::newPassTerm(antlr::RefAST a) {
     PassTerm::Ptr p(new PassTerm());
     p->_text = tokenText(a); // FIXME: Should this be a tree walk?
+    if(p->_text == "OR_OP") {
+        std::cout << "PassTerm(" << p->_text << ")";
+    }
     return p;
 }
 /// Construct a new ValueExprTerm using the ValueExprFactory

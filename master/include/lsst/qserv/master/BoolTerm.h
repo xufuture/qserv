@@ -57,6 +57,10 @@ public:
     virtual PtrList::iterator iterBegin() { return PtrList::iterator(); }
     /// @return the terminal iterator
     virtual PtrList::iterator iterEnd() { return PtrList::iterator(); }
+    
+    /// @return the reduced form of this term, or null if no reduction is
+    /// possible.  
+    virtual boost::shared_ptr<BoolTerm> getReduced() { return Ptr(); }
 
     virtual std::ostream& putStream(std::ostream& os) const = 0;
     virtual void renderTo(QueryTemplate& qt) const = 0;
@@ -83,6 +87,8 @@ public:
     virtual PtrList::iterator iterBegin() { return _terms.begin(); }
     virtual PtrList::iterator iterEnd() { return _terms.end(); }
 
+    virtual boost::shared_ptr<BoolTerm> getReduced();
+
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
     virtual boost::shared_ptr<BoolTerm> copySyntax();
@@ -99,6 +105,8 @@ public:
     virtual PtrList::iterator iterBegin() { return _terms.begin(); }
     virtual PtrList::iterator iterEnd() { return _terms.end(); }
 
+    virtual boost::shared_ptr<BoolTerm> getReduced();
+
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
 
@@ -110,6 +118,9 @@ class BoolFactor : public BoolTerm {
 public:
     typedef boost::shared_ptr<BoolFactor> Ptr;
     virtual char const* getName() const { return "BoolFactor"; }
+
+
+    virtual boost::shared_ptr<BoolTerm> getReduced();
 
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
@@ -145,6 +156,7 @@ public: // ( term, term, term )
 };
 
 /// ValueExprTerm is a bool factor term that contains a value expression
+/// Might be obsolete
 class ValueExprTerm : public BfTerm {
 public:
     typedef boost::shared_ptr<ValueExprTerm> Ptr;

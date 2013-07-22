@@ -400,7 +400,7 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
 
 bool testIfSecondary(BoolTerm& t) {
     // FIXME: Look for secondary key in the bool term.
-    std::cout << "Testing ";
+    std::cout << "Testing "; 
     t.putStream(std::cout) << std::endl;
     return false;
 }
@@ -430,15 +430,21 @@ TablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
     // the presence of a small-valued LIMIT should be enough to
     // de-classify a query as a scanning query.
 
-    bool hasSpatialSelect = false;
-    bool hasWhereColumnRef = false;
-    bool hasSecondaryKey = false;
+    bool hasSelectColumnRef = false; // Requires row-reading for
+                                     // results
+    bool hasSelectStar = false; // Requires reading all rows
+    bool hasSpatialSelect = false; // Recognized chunk restriction
+    bool hasWhereColumnRef = false; // Makes count(*) non-trivial
+    bool hasSecondaryKey = false; // Using secondaryKey to restrict
+                                  // coverage, e.g., via objectId=123
+                                  // or objectId IN (123,133) ?
 
     if(stmt.hasWhereClause()) {
         WhereClause& wc = stmt.getWhereClause();
         // Check WHERE for spatial select
         boost::shared_ptr<QsRestrictor::List const> restrs = wc.getRestrs();
         hasSpatialSelect = restrs && !restrs->empty();
+
 
         // Look for column refs
         boost::shared_ptr<ColumnRefMap::List const> crl = wc.getColumnRefs();
@@ -458,6 +464,42 @@ TablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
             }
         }
 
+    }
+    SelectList& sList = stmt.getSelectList();
+    boost::shared_ptr<ValueExprList> sVexpr = sList.getValueExprList();
+    
+    if(sVexpr) {
+        ColumnRef::List cList; // For each expr, get column refs.
+
+        typedef ValueExprList::const_iterator Iter;
+        for(Iter i=sVexpr->begin(), e=sVexpr->end(); i != e; ++i) {
+            (*i)->findColumnRefs(cList);
+        }
+        // Resolve column refs, see if they include partitioned
+        // tables.
+        typedef ColumnRef::List::const_iterator ColIter;
+        for(ColIter i=cList.begin(), e=cList.end(); i != e; ++i) {
+            // Want column refs * values.
+            
+        }
+    }
+
+
+    // Right now, if there is any spatial restriction, it's not a shared scan.
+    // In the future, we may want a threshold area percentage, above
+    // which a query gets relegated as a "partial scan". Maybe 1% ?  
+    if(hasSelectColumnRef || hasSelectStar) {
+        if(hasSpatialSelect || hasSecondaryKey) {
+            std::cout << "**** Not a scan ****" << std::endl;
+            // Not a scan?
+            return StringList(); // FIXME    
+        } 
+        std::cout << "**** SCAN SCAN ****" << std::endl;
+
+        // Return scan tables.
+    } else {
+        // count(*): still a scan with a non-trivial where.
+        std::cout << "**** ??SCAN SCAN ****" << std::endl;
     }
 
     return StringList(); // FIXME

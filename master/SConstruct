@@ -210,7 +210,8 @@ parserSrcs = map(lambda x: os.path.join('src', x),
                   "ValueFactor.cc",
                   "FuncExpr.cc",
                   "WhereFactory.cc",
-                  "ifaceMeta.cc",
+                  "WherePlugin.cc",
+                  "ifaceMeta.cc", 
                   "MetadataCache.cc"
 ])
 
