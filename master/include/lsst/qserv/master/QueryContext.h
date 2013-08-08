@@ -42,6 +42,9 @@ class ColumnRef;
 class QsRestrictor;
 class MetadataCache;
 
+typedef std::pair<std::string, std::string> StringPair;
+typedef std::list<StringPair> StringPairList;
+
 /// QueryContext is a value container for query state related to analyzing,
 /// rewriting, and generating queries. It is the primary mechanism for
 /// QueryPlugin instances to share information. It contains the user context of
@@ -57,7 +60,7 @@ public:
     std::string anonymousTable; ///< Implicit table context
     std::string username; ///< unused, but reserved.
 
-    std::list<std::string> scanTables; // Tables scanned (for shared scans)
+    StringPairList scanTables; // Tables scanned (for shared scans)
 
     // Table aliasing
     TableAlias tableAliases;

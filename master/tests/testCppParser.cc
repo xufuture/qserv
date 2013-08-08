@@ -58,6 +58,7 @@ using lsst::qserv::master::QueryContext;
 using lsst::qserv::master::QuerySession;
 using lsst::qserv::master::SelectParser;
 using lsst::qserv::master::SelectStmt;
+using lsst::qserv::master::StringPair;
 namespace qMaster = lsst::qserv::master;
 
 namespace test = boost::test_tools;
@@ -655,6 +656,25 @@ BOOST_AUTO_TEST_CASE(CountQuery2) {
     BOOST_CHECK_EQUAL(first.queries[0], expected_100);
 }
 
+BOOST_AUTO_TEST_CASE(SimpleScan) {
+    std::string stmt[] = {
+        "SELECT count(*) FROM Object WHERE iFlux < 0.4 ;",
+        "SELECT rFlux FROM Object WHERE iFlux < 0.4 ;"
+    };
+    for(int i=0; i < 2; ++i) {
+        boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt[i]);
+        
+        boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+        BOOST_CHECK(context);
+        BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+        BOOST_CHECK(!context->restrictors);
+        BOOST_CHECK_EQUAL(context->scanTables.size(), 1);
+        StringPair p = context->scanTables.front();
+        BOOST_CHECK_EQUAL(p.first, "LSST");
+        BOOST_CHECK_EQUAL(p.second, "Object");
+    }
+}
+
 BOOST_AUTO_TEST_CASE(UnpartLimit) {
     std::string stmt = "SELECT * from Science_Ccd_Exposure limit 3;";
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
@@ -666,7 +686,6 @@ BOOST_AUTO_TEST_CASE(UnpartLimit) {
     // BOOST_CHECK(!spr->getHasChunks());
     // BOOST_CHECK(!spr->getHasSubChunks());
     // BOOST_CHECK(!spr->getHasAggregate());
-
 }
 
 BOOST_AUTO_TEST_CASE(Subquery) { // ticket #2053
