@@ -298,6 +298,7 @@ ChunkQuerySpec& QuerySession::Iter::dereference() const {
 void QuerySession::Iter::_buildCache() const {
     assert(_qs != NULL);
     _cache.db = _qs->_context->defaultDb;
+    _cache.scanTables = _qs->_context->scanTables;
     _cache.queries = _qs->_buildChunkQueries(*_pos);
     _cache.chunkId = _pos->chunkId;
     _cache.nextFragment.reset();

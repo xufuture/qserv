@@ -215,7 +215,7 @@ public:
     virtual void applyLogical(SelectStmt& stmt, QueryContext& context);
     virtual void applyPhysical(QueryPlugin::Plan& p, QueryContext& context);
 private:
-    StringList _findScanTables(SelectStmt& stmt, QueryContext& context);
+    StringPairList _findScanTables(SelectStmt& stmt, QueryContext& context);
     int _rewriteTables(SelectStmtList& outList,
                        SelectStmt& in,
                        QueryContext& context,
@@ -400,12 +400,43 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
 
 bool testIfSecondary(BoolTerm& t) {
     // FIXME: Look for secondary key in the bool term.
-    std::cout << "Testing "; 
+    std::cout << "Testing ";
     t.putStream(std::cout) << std::endl;
     return false;
 }
 
-StringList
+struct getPartitioned : public TableRefN::Func {
+    getPartitioned(StringPairList& sList_) : sList(sList_) {}
+    virtual void operator()(TableRefN& t) { 
+        (*this)(const_cast<TableRefN const&>(t));
+    }
+    virtual void operator()(TableRefN const& tRef) {
+        SimpleTableN const* t = dynamic_cast<SimpleTableN const*>(&tRef);
+        if(t) {
+            StringPair entry(t->getDb(), t->getTable());
+            if(found.end() != found.find(entry)) return;
+            sList.push_back(entry);
+            found.insert(entry);
+        } else {
+            throw std::logic_error("Unexpected non-simple table in apply()");
+        }
+    }
+    std::set<StringPair> found;
+    StringPairList& sList;
+};
+
+StringPairList filterPartitioned(TableRefnList const& tList) {
+    StringPairList list;
+    getPartitioned gp(list);
+    for(TableRefnList::const_iterator i=tList.begin(), e=tList.end();
+        i != e; ++i) {
+        (**i).apply(gp);
+    }
+    return list;
+}
+
+
+StringPairList
 TablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
     // Might be better as a separate plugin
 
@@ -467,7 +498,7 @@ TablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
     }
     SelectList& sList = stmt.getSelectList();
     boost::shared_ptr<ValueExprList> sVexpr = sList.getValueExprList();
-    
+
     if(sVexpr) {
         ColumnRef::List cList; // For each expr, get column refs.
 
@@ -479,30 +510,34 @@ TablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
         // tables.
         typedef ColumnRef::List::const_iterator ColIter;
         for(ColIter i=cList.begin(), e=cList.end(); i != e; ++i) {
-            // Want column refs * values.
-            
+            // FIXME: Need to resolve and see if it's a partitioned table.
+            hasSelectColumnRef = true;
         }
     }
 
-
+    StringPairList scanTables;
     // Right now, if there is any spatial restriction, it's not a shared scan.
     // In the future, we may want a threshold area percentage, above
-    // which a query gets relegated as a "partial scan". Maybe 1% ?  
+    // which a query gets relegated as a "partial scan". Maybe 1% ?
     if(hasSelectColumnRef || hasSelectStar) {
         if(hasSpatialSelect || hasSecondaryKey) {
             std::cout << "**** Not a scan ****" << std::endl;
-            // Not a scan?
-            return StringList(); // FIXME    
-        } 
-        std::cout << "**** SCAN SCAN ****" << std::endl;
+            // Not a scan? Leave scanTables alone
+        }
+        // 
+        std::cout << "**** SCAN (column ref, non-spatial-idx)****" << std::endl;
+        // Scan tables = all partitioned tables
+        scanTables = filterPartitioned(stmt.getFromList().getTableRefnList());
 
-        // Return scan tables.
+        // FIXME: Add scan tables to scanTables
+        
     } else {
         // count(*): still a scan with a non-trivial where.
-        std::cout << "**** ??SCAN SCAN ****" << std::endl;
+        std::cout << "**** SCAN (filter) ****" << std::endl;
+        scanTables = filterPartitioned(stmt.getFromList().getTableRefnList());
     }
 
-    return StringList(); // FIXME
+    return scanTables;
 }
 
 }}} // namespace lsst::qserv::master

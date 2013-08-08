@@ -521,11 +521,31 @@ class InbandQueryAction:
             pass
         self._evaluateHints(dominantDb, self.hintList, self.pmap)
         self._emptyChunks = metadata.getEmptyChunks(dominantDb)
+        class RangePrint:
+            def __init__(self):
+                self.last = -1
+                self.first = -1
+                pass
+            def add(self, chunkId):
+                if self.last != (chunkId -1):
+                    if(self.last != -1): self._print()
+                    self.first = chunkId
+                self.last = chunkId
+                pass
+            def _print(self):
+                        if(self.last - self.first > 1):
+                            print "Rejecting chunks: %d-%d" %(self.first, 
+                                                              self.last)
+                        else: print "Rejecting chunk: %d" %(self.last)
+            def finish(self):
+                self._print()
+            pass
+        rPrint = RangePrint()
         count = 0
         chunkLimit = self.chunkLimit
         for chunkId, subIter in self._intersectIter:
             if chunkId in self._emptyChunks:
-                print "Rejecting empty chunk:", chunkId
+                rPrint.add(chunkId)
                 continue
             #prepare chunkspec
             c = ChunkSpec()
@@ -545,7 +565,9 @@ class InbandQueryAction:
             c.chunkId = dummyEmptyChunk
             scount=0
             addChunk(self.sessionId, c)
+        rPrint.finish()
         pass
+    
 
     def _execAndJoin(self):
         """Signal dispatch to C++ layer and block until execution completes"""
