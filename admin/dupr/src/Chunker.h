@@ -54,17 +54,11 @@ double segmentWidth(double latMin, double latMax, int numSegments);
 
 /// A chunk location for a position on the sky.
 struct ChunkLocation {
-    enum Kind {
-        NON_OVERLAP = 0,
-        SELF_OVERLAP,
-        FULL_OVERLAP,
-        NUM_KINDS
-    };
     int32_t chunkId;
     int32_t subChunkId;
-    Kind    kind;
+    bool    overlap;
 
-    ChunkLocation() : chunkId(-1), subChunkId(-1), kind(NON_OVERLAP) { }
+    ChunkLocation() : chunkId(-1), subChunkId(-1), overlap(false) { }
 
     /// Hash chunk locations by chunk ID.
     uint32_t hash() const { return dupr::hash(static_cast<uint32_t>(chunkId)); }
@@ -165,7 +159,6 @@ private:
 
     void _upDownOverlap(double lon,
                         int32_t chunkId,
-                        ChunkLocation::Kind kind,
                         int32_t stripe,
                         int32_t subStripe,
                         std::vector<ChunkLocation> & locations) const;

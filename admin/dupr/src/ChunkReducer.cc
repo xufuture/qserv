@@ -47,9 +47,8 @@ ChunkReducer::ChunkReducer(po::variables_map const & vm) :
     _numNodes(vm["out.num-nodes"].as<uint32_t>()),
     _prefix(vm["part.prefix"].as<string>().c_str()), // defend against GCC PR21334
     _outputDir(vm["out.dir"].as<string>().c_str()),  // defend against GCC PR21334
-    _nonOverlap(vm["mr.block-size"].as<size_t>()*MiB),
-    _selfOverlap(vm["mr.block-size"].as<size_t>()*MiB),
-    _fullOverlap(vm["mr.block-size"].as<size_t>()*MiB)
+    _chunkAppender(vm["mr.block-size"].as<size_t>()*MiB),
+    _overlapChunkAppender(vm["mr.block-size"].as<size_t>()*MiB)
 {
     if (_numNodes == 0 || _numNodes > 99999u) {
         throw runtime_error("The --out.num-nodes option value must be "
@@ -73,23 +72,16 @@ void ChunkReducer::reduce(ChunkReducer::RecordIter beg,
     // opened if there is data to write to them.
     for (; beg != end; ++beg) {
         _index->add(beg->key);
-        if (beg->key.kind == ChunkLocation::NON_OVERLAP) {
-            if (!_nonOverlap.isOpen()) {
-                _nonOverlap.open(_nonOverlapPath, false);
+        if (beg->key.overlap) {
+            if (!_overlapChunkAppender.isOpen()) {
+                _overlapChunkAppender.open(_overlapChunkPath, false);
             }
-            _nonOverlap.append(beg->data, beg->size);
+            _overlapChunkAppender.append(beg->data, beg->size);
         } else {
-            if (beg->key.kind == ChunkLocation::SELF_OVERLAP) {
-               if (!_selfOverlap.isOpen()) {
-                   _selfOverlap.open(_selfOverlapPath, false);
-               }
-               _selfOverlap.append(beg->data, beg->size);
+            if (!_chunkAppender.isOpen()) {
+                _chunkAppender.open(_chunkPath, false);
             }
-            // self-overlap locations are also full-overlap locations.
-            if (!_fullOverlap.isOpen()) {
-                _fullOverlap.open(_fullOverlapPath, false);
-            }
-            _fullOverlap.append(beg->data, beg->size);
+            _chunkAppender.append(beg->data, beg->size);
         }
     }
 }
@@ -97,9 +89,8 @@ void ChunkReducer::reduce(ChunkReducer::RecordIter beg,
 void ChunkReducer::finish() {
     // Reset current chunk ID to an invalid ID and close all output files.
     _chunkId = -1;
-    _nonOverlap.close();
-    _selfOverlap.close();
-    _fullOverlap.close();
+    _chunkAppender.close();
+    _overlapChunkAppender.close();
 }
 
 void ChunkReducer::_makeFilePaths(int32_t chunkId) {
@@ -116,13 +107,10 @@ void ChunkReducer::_makeFilePaths(int32_t chunkId) {
     char suffix[32];
     snprintf(suffix, sizeof(suffix), "_%ld.txt",
              static_cast<long>(chunkId));
-    _nonOverlapPath = p / (_prefix + suffix);
-    snprintf(suffix, sizeof(suffix), "_%ld_self.txt",
+    _chunkPath = p / (_prefix + suffix);
+    snprintf(suffix, sizeof(suffix), "_%ld_overlap.txt",
              static_cast<long>(chunkId));
-    _selfOverlapPath = p / (_prefix + suffix);
-    snprintf(suffix, sizeof(suffix), "_%ld_full.txt",
-             static_cast<long>(chunkId));
-    _fullOverlapPath = p / (_prefix + suffix);
+    _overlapChunkPath = p / (_prefix + suffix);
 }
 
 }}}} // namespace lsst::qserv::admin::dupr

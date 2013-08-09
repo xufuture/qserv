@@ -111,17 +111,17 @@ void ChunkIndex::Stats::computeFrom(vector<uint64_t> & counts) {
 }
 
 void ChunkIndex::Stats::write(ostream & os, string const & indent) const {
-    os << indent << "\"nrec\":     " << nrec << ",\n"
-       << indent << "\"n\":        " << n << ",\n"
-       << indent << "\"min\":      " << min << ",\n"
-       << indent << "\"max\":      " << max << ",\n"
+    os << indent << "\"nrec\":      " << nrec << ",\n"
+       << indent << "\"n\":         " << n << ",\n"
+       << indent << "\"min\":       " << min << ",\n"
+       << indent << "\"max\":       " << max << ",\n"
        << indent << "\"quartile\": [" << quartile[0] << ", "
                                       << quartile[1] << ", "
                                       << quartile[2] << "],\n"
-       << indent << "\"mean\":     " << setprecision(3) << mean << ",\n"
-       << indent << "\"sigma\":    " << setprecision(3) << sigma << ",\n"
-       << indent << "\"skewness\": " << setprecision(3) << skewness << ",\n"
-       << indent << "\"kurtosis\": " << setprecision(3) << kurtosis;
+       << indent << "\"mean\":      " << setprecision(3) << mean << ",\n"
+       << indent << "\"sigma\":     " << setprecision(3) << sigma << ",\n"
+       << indent << "\"skewness\":  " << setprecision(3) << skewness << ",\n"
+       << indent << "\"kurtosis\":  " << setprecision(3) << kurtosis;
 }
 
 
@@ -175,9 +175,8 @@ void ChunkIndex::write(fs::path const & path, bool truncate) const {
          i != e; ++i) {
         Entry const & entry = i->second;
         b = encode(b, static_cast<uint64_t>(i->first));
-        for (int j = 0; j < ChunkLocation::NUM_KINDS; ++j) {
-            b = encode(b, entry.numRecords[j]);
-        }
+        b = encode(b, entry.numRecords);
+        b = encode(b, entry.numOverlapRecords);
     }
     OutputFile f(path, truncate);
     f.append(buf.get(), numBytes);
@@ -202,32 +201,24 @@ void ChunkIndex::write(ostream & os, int verbosity) const {
         _computeStats();
     }
     os << "{\n"
-          "\"chunkStats\": [\n"
-          "\t{\n";
-    for (int j = 0; j < ChunkLocation::NUM_KINDS; ++j) {
-        if (j > 0) {
-            os << ", {\n";
-        }
-        _chunkStats[j].write(os, INDENT);
-        os << "\n\t}";
-    }
-    os << "\n],\n"
-          "\"subChunkStats\": [\n"
-          "\t{\n";
-    for (int j = 0; j < ChunkLocation::NUM_KINDS; ++j) {
-        if (j > 0) {
-            os << ", {\n";
-        }
-        _subChunkStats[j].write(os, INDENT);
-        os << "\n\t}";
-    }
-    os << "\n]";
+          "\t\"chunkStats\": {\n";
+    _chunkStats.write(os, INDENT);
+    os << "\n\t},\n"
+          "\t\"overlapChunkStats\": {\n";
+    _overlapChunkStats.write(os, INDENT);
+    os << "\n\t},\n"
+          "\t\"subChunkStats\": {\n";
+    _subChunkStats.write(os, INDENT);
+    os << "\n\t},\n"
+          "\t\"overlapSubChunkStats\": {\n";
+    _overlapSubChunkStats.write(os, INDENT);
+    os << "\n\t}";
     if (verbosity < 0) {
         os << "\n}";
         return;
     }
     os << ",\n"
-          "\"chunks\": [\n";
+          "\t\"chunks\": [\n";
     // Extract and sort non-empty chunks and sub-chunks.
     vector<Chunk> chunks;
     vector<SubChunk> subChunks;
@@ -252,13 +243,8 @@ void ChunkIndex::write(ostream & os, int verbosity) const {
         }
         int32_t const chunkId = chunks[c].first;
         Entry const * e = &chunks[c].second;
-        os << "\t{\"id\":  " << setw(7) << chunkId << ", \"nrec\": [";
-        for (int j  = 0; j < ChunkLocation::NUM_KINDS; ++j) {
-            if (j > 0) {
-                os << ", ";
-            }
-            os << setw(8) << e->numRecords[j];
-        }
+        os << "\t\t{\"id\":  " << setw(5) << chunkId << ", \"nrec\": ["
+           << e->numRecords << ", " << e->numOverlapRecords << "]";
         if (verbosity > 0) {
             // Print record counts for sub-chunks of chunkId.
             os << ", \"subchunks\": [\n";
@@ -273,20 +259,15 @@ void ChunkIndex::write(ostream & os, int verbosity) const {
                 int32_t subChunkId = static_cast<int32_t>(
                     subChunks[s].first & 0xfffffff);
                 e = &subChunks[s].second;
-                os << "\t\t{\"id\":" << setw(7) << subChunkId
-                   << ", \"nrec\": [";
-                for (int j = 0; j < ChunkLocation::NUM_KINDS; ++j) {
-                    if (j > 0) {
-                        os << ", ";
-                    }
-                    os << setw(6) << e->numRecords[j];
-                }
+                os << "\t\t\t{\"id\":" << setw(5) << subChunkId
+                   << ", \"nrec\": [" << e->numRecords
+                   << ", " << e->numOverlapRecords << "]}";
             }
-            os << "\n\t]\n\t";
+            os << "\n\t\t]";
         }
-        os << "]}";
+        os << "}";
     }
-    os << "\n]\n}";
+    os << "\n\t]\n}";
 }
 
 void ChunkIndex::add(ChunkLocation const & loc, size_t n) {
@@ -295,11 +276,12 @@ void ChunkIndex::add(ChunkLocation const & loc, size_t n) {
     }
     Entry * c = &_chunks[loc.chunkId];
     Entry * sc = &_subChunks[_key(loc.chunkId, loc.subChunkId)];
-    c->numRecords[loc.kind] += n;
-    sc->numRecords[loc.kind] += n;
-    if (loc.kind == ChunkLocation::SELF_OVERLAP) {
-        c->numRecords[ChunkLocation::FULL_OVERLAP] += n;
-        sc->numRecords[ChunkLocation::FULL_OVERLAP] += n;
+    if (loc.overlap) {
+        c->numOverlapRecords += n;
+        sc->numOverlapRecords += n;
+    } else {
+        c->numRecords += n;
+        sc->numRecords += n;
     }
     _modified = true;
 }
@@ -323,10 +305,10 @@ void ChunkIndex::clear() {
     _chunks.clear();
     _subChunks.clear();
     _modified = false;
-    for (int j = 0; j < ChunkLocation::NUM_KINDS; ++j) {
-        _chunkStats[j].clear();
-        _subChunkStats[j].clear();
-    }
+    _chunkStats.clear();
+    _overlapChunkStats.clear();
+    _subChunkStats.clear();
+    _overlapSubChunkStats.clear();
 }
 
 void ChunkIndex::swap(ChunkIndex & idx) {
@@ -336,7 +318,9 @@ void ChunkIndex::swap(ChunkIndex & idx) {
         swap(_subChunks, idx._subChunks);
         swap(_modified, idx._modified);
         swap(_chunkStats, idx._chunkStats);
+        swap(_overlapChunkStats, idx._overlapChunkStats);
         swap(_subChunkStats, idx._subChunkStats);
+        swap(_overlapSubChunkStats, idx._overlapSubChunkStats);
     }
 }
 
@@ -354,17 +338,14 @@ void ChunkIndex::_read(fs::path const & path) {
     }
     boost::scoped_array<uint8_t> data(new uint8_t[f.size()]);
     f.read(data.get(), 0, f.size());
-    uint8_t const * b = data.get();
-    uint8_t const * e = b + f.size();
     _modified = true;
-    while (b < e) {
+    for (uint8_t const * b = data.get(), * e = data.get() + f.size();
+         b < e; b += ENTRY_SIZE) {
         int64_t id = static_cast<int64_t>(decode<uint64_t>(b));
-        b += 8;
         int32_t chunkId = static_cast<int32_t>(id >> 32);
         Entry entry;
-        for (int j = 0; j < ChunkLocation::NUM_KINDS; ++j, b += 8) {
-            entry.numRecords[j] = decode<uint64_t>(b);
-        }
+        entry.numRecords = decode<uint64_t>(b + 8);
+        entry.numOverlapRecords = decode<uint64_t>(b + 16);
         _chunks[chunkId] += entry;
         _subChunks[id] += entry;
     }
@@ -372,26 +353,29 @@ void ChunkIndex::_read(fs::path const & path) {
 
 void ChunkIndex::_computeStats() const {
     if (_chunks.empty()) {
-        for (int j = 0; j < ChunkLocation::NUM_KINDS; ++j) {
-            _chunkStats[j].clear();
-            _subChunkStats[j].clear();
-        }
+        _chunkStats.clear();
+        _overlapChunkStats.clear();
+        _subChunkStats.clear();
+        _overlapSubChunkStats.clear();
         return;
     }
-    vector<uint64_t> counts;
+    vector<uint64_t> counts, overlapCounts;
     counts.reserve(_subChunks.size());
-    for (int j = 0; j < ChunkLocation::NUM_KINDS; ++j) {
-        for (ChunkIter c = _chunks.begin(), e = _chunks.end(); c != e; ++c) {
-            counts.push_back(c->second.numRecords[j]);
-        }
-        _chunkStats[j].computeFrom(counts);
-        counts.clear();
-        for (SubChunkIter s = _subChunks.begin(), e = _subChunks.end(); s != e; ++s) {
-             counts.push_back(s->second.numRecords[j]);
-        }
-        _subChunkStats[j].computeFrom(counts);
-        counts.clear();
+    overlapCounts.reserve(_subChunks.size());
+    for (ChunkIter c = _chunks.begin(), e = _chunks.end(); c != e; ++c) {
+        counts.push_back(c->second.numRecords);
+        overlapCounts.push_back(c->second.numOverlapRecords);
     }
+    _chunkStats.computeFrom(counts);
+    _overlapChunkStats.computeFrom(overlapCounts);
+    counts.clear();
+    overlapCounts.clear();
+    for (SubChunkIter s = _subChunks.begin(), e = _subChunks.end(); s != e; ++s) {
+        counts.push_back(s->second.numRecords);
+        overlapCounts.push_back(s->second.numOverlapRecords);
+    }
+    _subChunkStats.computeFrom(counts);
+    _overlapSubChunkStats.computeFrom(overlapCounts);
     _modified = false;
 }
 

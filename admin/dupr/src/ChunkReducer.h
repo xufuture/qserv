@@ -63,12 +63,10 @@ private:
     uint32_t                      _numNodes;
     std::string                   _prefix;
     boost::filesystem::path       _outputDir;
-    boost::filesystem::path       _nonOverlapPath;
-    boost::filesystem::path       _selfOverlapPath;
-    boost::filesystem::path       _fullOverlapPath;
-    BufferedAppender              _nonOverlap;
-    BufferedAppender              _selfOverlap;
-    BufferedAppender              _fullOverlap;
+    boost::filesystem::path       _chunkPath;
+    boost::filesystem::path       _overlapChunkPath;
+    BufferedAppender              _chunkAppender;
+    BufferedAppender              _overlapChunkAppender;
 };
 
 }}}} // namespace lsst::qserv::admin::dupr

@@ -141,7 +141,6 @@ ChunkLocation const Chunker::locate(
     int32_t const chunk = subChunk / numSubChunksPerChunk;
     loc.chunkId = _getChunkId(stripe, chunk);
     loc.subChunkId = _getSubChunkId(stripe, subStripe, chunk, subChunk);
-    loc.kind = ChunkLocation::NON_OVERLAP;
     return loc;
 }
 
@@ -174,7 +173,6 @@ void Chunker::locate(pair<double, double> const & position,
         ChunkLocation loc;
         loc.chunkId = _getChunkId(stripe, chunk);
         loc.subChunkId = _getSubChunkId(stripe, subStripe, chunk, subChunk);
-        loc.kind = ChunkLocation::NON_OVERLAP;
         locations.push_back(loc);
     }
     if (_overlap == 0.0) {
@@ -190,15 +188,13 @@ void Chunker::locate(pair<double, double> const & position,
     if (subStripe > 0 && lat < latMin + _overlap) {
         // The position is in the full-overlap region of sub-chunks
         // 1 sub-stripe down.
-        _upDownOverlap(lon, chunkId, ChunkLocation::FULL_OVERLAP,
-                       (subStripe - 1) / _numSubStripesPerStripe,
+        _upDownOverlap(lon, chunkId, (subStripe - 1) / _numSubStripesPerStripe,
                        subStripe - 1, locations);
     }
     if (subStripe < numSubStripes - 1 && lat >= latMax - _overlap) {
         // The position is in the full and self-overlap regions of sub-chunks
         // 1 sub-stripe up.
-        _upDownOverlap(lon, chunkId, ChunkLocation::SELF_OVERLAP,
-                       (subStripe + 1) / _numSubStripesPerStripe,
+        _upDownOverlap(lon, chunkId, (subStripe + 1) / _numSubStripesPerStripe,
                        subStripe + 1, locations);
     }
     // Check whether the position is in the overlap regions of the sub-chunks
@@ -223,7 +219,7 @@ void Chunker::locate(pair<double, double> const & position,
             loc.chunkId = _getChunkId(stripe, overlapChunk);
             loc.subChunkId = _getSubChunkId(
                 stripe, subStripe, overlapChunk, overlapSubChunk);
-            loc.kind = ChunkLocation::SELF_OVERLAP;
+            loc.overlap = true;
             locations.push_back(loc);
         }
     }
@@ -243,7 +239,7 @@ void Chunker::locate(pair<double, double> const & position,
             loc.chunkId = _getChunkId(stripe, overlapChunk);
             loc.subChunkId = _getSubChunkId(
                 stripe, subStripe, overlapChunk, overlapSubChunk);
-            loc.kind = ChunkLocation::FULL_OVERLAP;
+            loc.overlap = true;
             locations.push_back(loc);
         }
     }
@@ -365,7 +361,6 @@ void Chunker::_initialize(double overlap,
 
 void Chunker::_upDownOverlap(double lon,
                              int32_t chunkId,
-                             ChunkLocation::Kind kind,
                              int32_t stripe,
                              int32_t subStripe,
                              vector<ChunkLocation> & locations) const
@@ -399,7 +394,7 @@ void Chunker::_upDownOverlap(double lon,
                 ChunkLocation loc;
                 loc.chunkId = _getChunkId(stripe, chunk);
                 loc.subChunkId = _getSubChunkId(stripe, subStripe, chunk, subChunk);
-                loc.kind = kind;
+                loc.overlap = true;
                 locations.push_back(loc);
             }
         }
@@ -411,7 +406,7 @@ void Chunker::_upDownOverlap(double lon,
             ChunkLocation loc;
             loc.chunkId = _getChunkId(stripe, chunk);
             loc.subChunkId = _getSubChunkId(stripe, subStripe, chunk, subChunk);
-            loc.kind = kind;
+            loc.overlap = true;
             locations.push_back(loc);
         }
     }

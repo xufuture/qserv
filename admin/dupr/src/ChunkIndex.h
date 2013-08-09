@@ -54,18 +54,14 @@ class ChunkIndex {
 public:
     /// An index entry.
     struct Entry {
-        /// Number of records:
-        /// - 0: not in overlap region
-        /// - 1: in self-overlap region
-        /// - 2: in full-overlap region
-        uint64_t numRecords[ChunkLocation::NUM_KINDS];
+        uint64_t numRecords;
+        uint64_t numOverlapRecords;
 
-        Entry() : numRecords() { }
+        Entry() : numRecords(0), numOverlapRecords(0) { }
 
         Entry & operator+=(Entry const & e) {
-             for (int i = 0; i < ChunkLocation::NUM_KINDS; ++i) {
-                 numRecords[i] += e.numRecords[i];
-             }
+             numRecords += e.numRecords;
+             numOverlapRecords += e.numOverlapRecords;
              return *this;
         }
     };
@@ -123,7 +119,7 @@ public:
         if (i == _subChunks.end()) {
             return 0u;
         }
-        return i->second.numRecords[loc.kind];
+        return loc.overlap ? i->second.numOverlapRecords : i->second.numRecords;
     }
 
     /// Return record counts for the given chunk.
@@ -144,19 +140,19 @@ public:
         return i->second;
     }
 
-    /// Get summary statistics for chunks (non, self, or full overlap).
-    Stats const & getChunkStats(ChunkLocation::Kind kind) {
+    /// Get summary statistics for chunks or overlap chunks.
+    Stats const & getChunkStats(bool overlap) {
         if (_modified) {
             _computeStats();
         }
-        return _chunkStats[kind];
+        return overlap ? _overlapChunkStats : _chunkStats;
     }
-    /// Get summary statistics for sub-chunks (non, self, or full overlap).
-    Stats const & getSubChunkStats(ChunkLocation::Kind kind) {
+    /// Get summary statistics for sub-chunks or overlap sub-chunks.
+    Stats const & getSubChunkStats(bool overlap) {
         if (_modified) {
             _computeStats();
         }
-        return _subChunkStats[kind];
+        return overlap ? _overlapSubChunkStats : _subChunkStats;
     }
 
     /// Return the number of non-empty chunks in the index.
@@ -184,7 +180,7 @@ public:
 
 private:
     static Entry const EMPTY;
-    static int const ENTRY_SIZE = 8*(1 + ChunkLocation::NUM_KINDS);
+    static int const ENTRY_SIZE = 8*3;
 
     static int64_t _key(int32_t chunkId, int32_t subChunkId) {
         return (static_cast<int64_t>(chunkId) << 32) + subChunkId;
@@ -193,11 +189,14 @@ private:
     void _read(boost::filesystem::path const & path);
     void _computeStats() const;
 
-    ChunkMap _chunks;
-    SubChunkMap _subChunks;
-    bool mutable _modified;
-    Stats mutable _chunkStats[ChunkLocation::NUM_KINDS];
-    Stats mutable _subChunkStats[ChunkLocation::NUM_KINDS];
+    ChunkMap      _chunks;
+    SubChunkMap   _subChunks;
+
+    bool  mutable _modified;
+    Stats mutable _chunkStats;
+    Stats mutable _overlapChunkStats;
+    Stats mutable _subChunkStats;
+    Stats mutable _overlapSubChunkStats;
 };
 
 inline void swap(ChunkIndex & a, ChunkIndex & b) {

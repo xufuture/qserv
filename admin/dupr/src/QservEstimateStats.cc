@@ -131,15 +131,13 @@ void estimateStats(ChunkIndex            & chunkIndex,
                 ChunkLocation loc;
                 loc.chunkId = chunkId;
                 loc.subChunkId = subChunkId;
-                loc.kind = ChunkLocation::NON_OVERLAP;
                 uint64_t inTri = index(sourceHtmId);
                 size_t inBox = static_cast<size_t>((x/a)*inTri);
                 chunkIndex.add(loc, inBox);
                 double ox = max(min(tri.intersectionArea(overlapBox), a), x);
                 size_t inOverlap = static_cast<size_t>((ox/a)*inTri) - inBox;
-                loc.kind = ChunkLocation::FULL_OVERLAP;
+                loc.overlap = true;
                 chunkIndex.add(loc, inOverlap);
-                // TODO(smm): estimate self-overlap record count?             
             }
         }
     }
