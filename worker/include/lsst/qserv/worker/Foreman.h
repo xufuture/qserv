@@ -81,7 +81,7 @@ public:
         virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
                                            TodoList::Ptr todo, 
                                            TaskQueuePtr running) = 0;
-        boost::shared_ptr<RunnerWatcher> getWatcher() {
+        virtual boost::shared_ptr<RunnerWatcher> getWatcher() {
             return boost::shared_ptr<RunnerWatcher>();
         }
     };

@@ -29,7 +29,7 @@ package lsst.qserv;
 message TaskMsg {
     optional int64 session = 1;
     // Future: might have multiple db/chunk dependencies.
-    optional string db = 2; 
+    optional string db = 2;
     optional int32 chunkid = 3;
     repeated string scanTables = 4;
     message Subchunk {
@@ -38,19 +38,19 @@ message TaskMsg {
         repeated int32 id = 3; // subchunk ids
     }
     message Fragment {
-        // A query fragment without "CREATE or INSERT". 
+        // A query fragment without "CREATE or INSERT".
         // Worker should synthesize.
-        repeated string query = 1; 
+        repeated string query = 1;
         optional string resulttable = 3;
         optional Subchunk subchunks = 4; // Only needed with subchunk-ed queries
 
         // Each fragment may only write results to one table,
-        // but multiple fragments may write to the same table, 
-        // in which case the table contains a concatenation of the 
+        // but multiple fragments may write to the same table,
+        // in which case the table contains a concatenation of the
         // contributing fragments' rows.
     }
     repeated Fragment fragment = 5;
-    
+
 }
 
 // Result message received from worker
@@ -59,12 +59,12 @@ message TaskMsg {
 // the ResultHeader message, indicating the size of the ResultHeader
 // object.
 // The Header message contains size information so each result can be
-// distinguished. 
+// distinguished.
 message ResultHeader {
     optional int64 session = 1;
     message Result {
         // Meta-info of an upcoming result
-        required string hash = 1; // 
+        required string hash = 1; //
         required int64 resultsize = 3;
         optional int32 chunkid = 2;
     }

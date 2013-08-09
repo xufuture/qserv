@@ -45,7 +45,7 @@ public:
     typedef Foreman::TaskQueuePtr TaskQueuePtr;
     typedef std::vector<boost::shared_ptr<ChunkDisk> > ChunkDiskList;
 
-    ScanScheduler(Logger& logger);
+    ScanScheduler(boost::shared_ptr<Logger> logger);
     virtual ~ScanScheduler() {}
     
     virtual TaskQueuePtr nopAct(TodoList::Ptr todo, 
@@ -56,12 +56,12 @@ public:
     virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
                                        TodoList::Ptr todo, 
                                        TaskQueuePtr running);
-    boost::shared_ptr<Foreman::RunnerWatcher> getWatcher();
+    virtual boost::shared_ptr<Foreman::RunnerWatcher> getWatcher();
 private:
     TaskQueuePtr _getNextTasks(int max);
   
     ChunkDiskList _disks;
-    Logger& _logger;
+    boost::shared_ptr<Logger> _logger;
     boost::mutex _mutex;
     int _maxRunning;
 };

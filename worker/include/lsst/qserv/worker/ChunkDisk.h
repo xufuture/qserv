@@ -36,6 +36,7 @@
 namespace lsst { 
 namespace qserv { 
 namespace worker {
+class Logger;
 class Task;
 
 class ChunkDisk {
@@ -54,7 +55,7 @@ public:
     typedef std::priority_queue<ElementPtr, std::vector<ElementPtr>, TaskPtrCompare> Queue;
     typedef std::list<ElementPtr> List;
 
-    ChunkDisk() {} // FIXME
+    ChunkDisk(boost::shared_ptr<Logger> logger) : _logger(logger) {} 
     List getInflight() const;
 
     // Queue management
@@ -76,6 +77,7 @@ private:
     List _inflight;
     int _currentChunkId; // Last chunkId retrieved from queue
     bool _completed;
+    boost::shared_ptr<Logger>_logger;
 };
 
 
