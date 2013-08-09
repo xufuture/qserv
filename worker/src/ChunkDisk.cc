@@ -21,7 +21,10 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #include "lsst/qserv/worker/ChunkDisk.h"
+
 #include <ctime>
+#include <sstream>
+#include "lsst/qserv/worker/Logger.h"
 /// ChunkDisk is a data structure that tracks a queue of pending tasks
 /// for a disk, and the state of a chunkId-ordered scan on a disk
 /// (current chunkId, tasks in flight).
@@ -79,11 +82,13 @@ void ChunkDisk::enqueue(ChunkDisk::ElementPtr a) {
 /// something with this task.
 ChunkDisk::ElementPtr ChunkDisk::getNext(bool allowAdvance) {
     boost::lock_guard<boost::mutex> lock(_queueMutex);
+
     // If the current queue is empty and the pending is not,
     // Switch to the pending queue.
     if(_activeTasks.empty() && !_pendingTasks.empty()) {
         // Swap
         std::swap(_activeTasks, _pendingTasks);
+        _logger->debug("ChunkDisk active-pending swap");
     } 
     // If the pending was empty too, nothing to do.    
     if(_activeTasks.empty()) { return ElementPtr(); }
@@ -92,9 +97,15 @@ ChunkDisk::ElementPtr ChunkDisk::getNext(bool allowAdvance) {
     ElementPtr e = _activeTasks.top();
     int chunkId = elementChunkId(*e); 
     if((chunkId == _currentChunkId) || allowAdvance) {
+        std::ostringstream os;
+        os << "ChunkDisk allowing task for " << chunkId 
+           << " (advance=" << (allowAdvance ? "yes" : "no") << ")";
+        _logger->debug(os.str());
         _activeTasks.pop();
         _currentChunkId = chunkId;
         return e;
+    } else {
+        _logger->debug("ChunkDisk denying task");
     }
     return ElementPtr();
     // If next chunk is of a different chunk, only continue if current
@@ -108,6 +119,9 @@ bool ChunkDisk::busy() const {
     // Simplistic view, only one chunk in flight.
     // We are busy if the inflight list is non-empty
     boost::lock_guard<boost::mutex> lock(_inflightMutex);
+    std::ostringstream os;
+    os << "ChunkDisk busyness: " << (_inflight.empty() ? "no" : "yes");
+    _logger->debug(os.str());
     return !_inflight.empty();
 
     // More advanced:
@@ -125,11 +139,19 @@ bool ChunkDisk::empty() const {
 
 ChunkDisk::List::iterator ChunkDisk::registerInflight(ElementPtr const& e) {
     boost::lock_guard<boost::mutex> lock(_inflightMutex);
+    std::ostringstream os;
+    os << "ChunkDisk registering for " << e->msg->chunkid() 
+       << " : " << e->msg->fragment(0).query(0);
+    _logger->debug(os.str());
     _inflight.push_back(e);
     
 }
 void ChunkDisk::removeInflight(List::iterator i) {
     boost::lock_guard<boost::mutex> lock(_inflightMutex);
+    std::ostringstream os;
+    os << "ChunkDisk remove for " << (**i).msg->chunkid()
+       << " : " << (**i).msg->fragment(0).query(0);
+    _logger->debug(os.str());
     _inflight.erase(i);
 }
 

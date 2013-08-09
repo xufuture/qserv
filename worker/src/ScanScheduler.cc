@@ -28,6 +28,7 @@
   * @author Daniel L. Wang, SLAC
   */ 
 #include "lsst/qserv/worker/ScanScheduler.h"
+#include <iostream>
 #include <sstream>
 #include <boost/thread.hpp>
 #include <boost/make_shared.hpp>
@@ -72,12 +73,12 @@ private:
 ////////////////////////////////////////////////////////////////////////
 // class ScanScheduler
 ////////////////////////////////////////////////////////////////////////
-ScanScheduler::ScanScheduler(Logger& logger)
+ScanScheduler::ScanScheduler(Logger::Ptr logger)
     : _maxRunning(4), // FIXME: set to system proc count.
       _logger(logger)
 {
     
-    _disks.push_back(boost::make_shared<ChunkDisk>());
+    _disks.push_back(boost::make_shared<ChunkDisk>(logger));
     assert(!_disks.empty());
 }    
 
@@ -103,6 +104,12 @@ TaskQueuePtr ScanScheduler::newTaskAct(Task::Ptr incoming,
     assert(!_disks.empty());
     assert(_disks.front());
     _disks.front()->enqueue(incoming);
+    std::ostringstream os;
+    TaskMsg const& msg = *(incoming->msg);
+    os << "Adding new task: " << msg.chunkid() 
+       << " : " << msg.fragment(0).query(0);
+    _logger->debug(os.str());
+
     // No free threads? Exit.
     // FIXME: Can do an I/O bound scan if there is memory and an idle
     // spindle.
@@ -121,6 +128,10 @@ TaskQueuePtr ScanScheduler::taskFinishAct(Task::Ptr finished,
     // No free threads? Exit.
     // FIXME: Can do an I/O bound scan if there is memory and an idle
     // spindle.
+    std::ostringstream os;
+    os << "Completed: " << "(" << finished->msg->chunkid()
+       << ")" << finished->msg->fragment(0).query(0);
+    _logger->debug(os.str());
     int available = _maxRunning - running->size();
     if(available <= 0) { 
         return TaskQueuePtr();
@@ -132,7 +143,6 @@ boost::shared_ptr<Foreman::RunnerWatcher> ScanScheduler::getWatcher() {
     boost::shared_ptr<ChunkDiskWatcher> w;
     w.reset(new ChunkDiskWatcher(_disks));
     return w;
-    //return boost::make_shared<ChunkDiskWatcher>(_disks);
 }
 
 
@@ -159,15 +169,16 @@ TaskQueuePtr ScanScheduler::_getNextTasks(int max) {
             tq.reset(new TodoList::TaskQueue());
         }
         tq->push_back(p);
+
         // FIXME: May need to maintain TodoList.
         os << "Making ready: " << *(tq->front());
-        _logger.debug(os.str()); 
+        _logger->debug(os.str()); 
         os.str("");
         --max;
     }
     if(tq) {
         os << "Returning " << tq->size() << " to launch";
-        _logger.debug(os.str());
+        _logger->debug(os.str());
     }
     return tq;
 }    

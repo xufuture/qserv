@@ -324,22 +324,23 @@ bool QueryRunner::_runTask(Task::Ptr t) {
                 % getConfig().getString("mysqlSocket") % _user).str());
         return _errObj.addErrMsg("Unable to connect to MySQL as " + _user);
     }
+    int chunkId = 1234567890;
+    if(m.has_chunkid()) { chunkId = m.chunkid(); }
+    std::string defaultDb = "test"; 
+    if(m.has_db()) { defaultDb = m.db(); }
     QuerySql::Factory qf;
     for(int i=0; i < m.fragment_size(); ++i) {
         Task::Fragment const& f(m.fragment(i));
-        int chunkId = 1234567890;
-        std::string defaultDb = "test"; // should always get db from TaskMsg
-        if(m.has_chunkid()) { chunkId = m.chunkid(); }
-        if(m.has_db()) { defaultDb = m.db(); }
-        if(f.has_resulttable()) { resultTable = f.resulttable(); }
+
+            if(f.has_resulttable()) { resultTable = f.resulttable(); }
         assert(!resultTable.empty());
         
         // Use SqlFragmenter to break up query portion into fragments.
         // If protocol gives us a query sequence, we won't need to
         // split fragments.
         bool first = t->needsCreate && (i==0);
-        boost::shared_ptr<QuerySql> qSql = qf.newQuerySql(defaultDb, chunkId, 
-                                                          m.fragment(i), 
+        boost::shared_ptr<QuerySql> qSql = qf.newQuerySql(defaultDb, chunkId,
+                                                          f, 
                                                           first,
                                                           resultTable);
         

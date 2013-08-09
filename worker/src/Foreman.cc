@@ -30,6 +30,7 @@
 // Boost
 #include <boost/thread.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/scoped_ptr.hpp>
 
 // Pkg: lsst::qserv::worker
 #include "lsst/qserv/worker/TodoList.h"
@@ -106,7 +107,7 @@ private:
     Scheduler::Ptr _scheduler;
     TodoList::Ptr _todo;
     RunnerDeque _runners;
-    RunnerMgr _rManager;
+    boost::scoped_ptr<RunnerMgr> _rManager;
     QueryRunnerManager _mgr; // May replace.
     Logger::Ptr _log;
                          
@@ -120,7 +121,9 @@ private:
 Foreman::Ptr 
 qWorker::newForeman(TodoList::Ptr tl, Logger::Ptr log) {
     // FifoScheduler::Ptr fsch(new FifoScheduler());
-    ScanScheduler::Ptr sch(new ScanScheduler(*log));
+    Logger::Ptr schedLog(new Logger(log));
+    schedLog->setPrefix("ScanSched:");   
+    ScanScheduler::Ptr sch(new ScanScheduler(schedLog));
     ForemanImpl::Ptr fmi(new ForemanImpl(sch, tl, log));
     return fmi;;
 }
@@ -170,6 +173,9 @@ private:
 ForemanImpl::RunnerMgr::RunnerMgr(ForemanImpl& f) 
   : _f(f) {
     _runnerWatcher = _f._scheduler->getWatcher();
+    std::ostringstream os;
+    os << "Tried to get watcher " << (void*)_runnerWatcher.get();
+    _f._log->debug(os.str());
 }
 
 void ForemanImpl::RunnerMgr::registerRunner(Runner* r, Task::Ptr t) {
@@ -216,6 +222,8 @@ void ForemanImpl::RunnerMgr::_reportStartHelper(Task::Ptr t) {
     _f._log->debug(os.str());
     if(_runnerWatcher) {
         _runnerWatcher->handleStart(t);
+    } else {
+        _f._log->debug("WARNING: no watcher. missing scheduler?");
     }
 }
 
@@ -298,12 +306,16 @@ private:
 ForemanImpl::ForemanImpl(Scheduler::Ptr s,
                          TodoList::Ptr t,
                          Logger::Ptr log)
-    : _scheduler(s), _todo(t), _rManager(*this), _log(log),
+    : _scheduler(s), _todo(t),
       _running(new TodoList::TaskQueue()) {
-    if(!_log.get()) {
+    if(!log) {
         // Make basic logger.
         _log.reset(new Logger());
+    } else {
+        _log.reset(new Logger(log));
+        _log->setPrefix("Foreman:");
     }
+    _rManager.reset(new RunnerMgr(*this));
     assert(s); // Cannot operate without scheduler.
     _watcher.reset(new Watcher(*this));
     _todo->addWatcher(_watcher); // Callbacks are now possible.
@@ -318,7 +330,7 @@ ForemanImpl::~ForemanImpl() {
 
 void ForemanImpl::_startRunner(Task::Ptr t) {
     // FIXME: Is this all that is needed?
-    boost::thread(Runner(_rManager, t));
+    boost::thread(Runner(*_rManager, t));
 }
 
 void ForemanImpl::squashByHash(std::string const& hash) {

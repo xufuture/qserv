@@ -52,7 +52,7 @@ public:
     virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
                                        TodoList::Ptr todo, 
                                        TaskQueuePtr running);
-    boost::shared_ptr<Foreman::RunnerWatcher> getWatcher() {
+    virtual boost::shared_ptr<Foreman::RunnerWatcher> getWatcher() {
         return boost::shared_ptr<Foreman::RunnerWatcher>();
     }
 

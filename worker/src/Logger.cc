@@ -34,9 +34,11 @@ using lsst::qserv::worker::Logger;
 void Logger::message(Logger::LogLevel logLevel, char const* s) {
     if(logLevel <= _logLevel) { // Lower is higher priority
         std::stringstream ss;
-        ss << s;
-        if(_xrdSysError) { _xrdSysError->Say(ss.str().c_str()); }
-        else { 
+        ss << _prefix << s;
+        if(_backend) {
+            _backend->message(logLevel, ss.str().c_str());
+        } else if(_xrdSysError) { _xrdSysError->Say(ss.str().c_str()); 
+        } else { 
             if(!_prefix.empty()) { ss << _prefix << " "; }
             std::cerr << _prefix << ss.str() << std::endl; 
         }
