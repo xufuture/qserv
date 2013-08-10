@@ -56,14 +56,14 @@ public:
         : _disks(chunkDiskList) {}
     virtual void handleStart(Task::Ptr t) {
         assert(!_disks.empty());
-        ChunkDisk::List::iterator i = _disks.front()->registerInflight(t);
-        _map[t.get()] = i;
+        _disks.front()->registerInflight(t);
+        //_map[t.get()] = i;
 
     }
     virtual void handleFinish(Task::Ptr t) {
         assert(!_disks.empty());
-        _disks.front()->removeInflight(_map[t.get()]);
-        _map.erase(t.get());
+        _disks.front()->removeInflight(t);
+        //_map.erase(t.get());
     }
 private:
     ChunkDiskList& _disks;
