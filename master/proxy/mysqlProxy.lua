@@ -427,7 +427,14 @@ function queryType()
         end
         return false
     end
+    ---------------------------------------------------------------------------
 
+    local isKill = function(qU)
+        if string.find(qU, "^KILL ") then
+            return true
+        end
+        return false
+    end
     ---------------------------------------------------------------------------
 
     local isIgnored = function(qU)
@@ -456,6 +463,7 @@ function queryType()
         isLocal = isLocal,
         shouldPassToResultDb = shouldPassToResultDb,
         isDisallowed = isDisallowed,
+        isKill = isKill,
         isIgnored = isIgnored,
         isNotSupported = isNotSupported
     }
@@ -486,10 +494,17 @@ function queryProcessing()
         queryToPassStr = q
         -- Add client db context
         hintsToPassArr["db"] = proxy.connection.client.default_db
-        hintsToPassStr = utils.tableToString(hintsToPassArr)
-
+        
+        -- Need to save thread_id and reuse for killing query
+        hintsToPassArr["client_dst_name"] = proxy.connection.client.dst.name
+        hintsToPassArr["server_thread_id"] = proxy.connection.server.thread_id
+        print ("proxy.connection.server.thread_id: " .. proxy.connection.server.thread_id)
         print ("Passing query: " .. queryToPassStr)
         print ("Passing hints: " .. hintsToPassStr)
+
+        -- Build hint string
+        hintsToPassStr = utils.tableToString(hintsToPassArr)
+
         local queryToPassProtect = "<![CDATA[" .. queryToPassStr .. "]]>"
         -- Wrap this in a pcall so that a meaningful error can 
         -- be returned to the caller
@@ -543,6 +558,32 @@ function queryProcessing()
 
     ---------------------------------------------------------------------------
 
+    local killQservQuery = function(q, qU)
+        proxy.response.type = proxy.MYSQLD_PACKET_OK
+        local callError, ok, res = 
+           pcall(xmlrpc.http.call, 
+                 rpcHP, "killQuery", q, qU)
+        if (not callError) then
+           return err.set(ERR_RPC_CALL, "Cannot connect to Qserv master; "
+                          .. "Exception in RPC call: " .. ok)
+        elseif (not ok) then
+           return err.set(ERR_RPC_CALL, "rpc call failed for " .. rpcHP)
+        end
+        -- Assemble result
+        proxy.response.resultset = {
+           fields = {
+              {
+                 type = proxy.MYSQL_TYPE_STRING,
+                 name = command,
+              },
+           },
+           rows = {{"Trying to kill query..".. qU}}
+        }
+        return proxy.PROXY_SEND_RESULT
+    end
+
+    ---------------------------------------------------------------------------
+
     local prepForFetchingResults = function(proxy)
         if resultTableName == nil then
             return err.set(ERR_BAD_RES_TNAME, "Invalid result table name ")
@@ -572,6 +613,7 @@ function queryProcessing()
 
     return {
         sendToQserv = sendToQserv,
+        killQservQuery = killQservQuery,
         processLocally = processLocally,
         processIgnored = processIgnored,
         prepForFetchingResults = prepForFetchingResults
@@ -613,8 +655,9 @@ function read_query(packet)
         -- check for queries that we don't support yet
         if qType.isNotSupported(qU) then
             return err.send()
+        elseif qType.isKill(qU) then
+           return qProc.killQservQuery(q, qU)           
         end
-
         -- Reset error count
         queryErrorCount = 0
 
@@ -631,7 +674,6 @@ function read_query(packet)
             return err.send()
         end
         return proxy.PROXY_SEND_QUERY
-
     end
 end
 
