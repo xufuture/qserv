@@ -62,9 +62,9 @@ inline int elementChunkId(ChunkDisk::Element const& e) {
 ////////////////////////////////////////////////////////////////////////
 // ChunkDisk implementation
 ////////////////////////////////////////////////////////////////////////
-ChunkDisk::List ChunkDisk::getInflight() const {
+ChunkDisk::ElementSet ChunkDisk::getInflight() const {
     boost::lock_guard<boost::mutex> lock(_inflightMutex);
-    return List(_inflight);
+    return ElementSet(_inflight);
 }
 
 void ChunkDisk::enqueue(ChunkDisk::ElementPtr a) {
@@ -137,22 +137,24 @@ bool ChunkDisk::empty() const {
     return _activeTasks.empty() && _pendingTasks.empty();
 }
 
-ChunkDisk::List::iterator ChunkDisk::registerInflight(ElementPtr const& e) {
+void
+ChunkDisk::registerInflight(ElementPtr const& e) {
     boost::lock_guard<boost::mutex> lock(_inflightMutex);
     std::ostringstream os;
     os << "ChunkDisk registering for " << e->msg->chunkid() 
-       << " : " << e->msg->fragment(0).query(0);
+       << " : " << e->msg->fragment(0).query(0) << " p=" 
+       << (void*) e.get();
     _logger->debug(os.str());
-    _inflight.push_back(e);
+    _inflight.insert(e.get());
     
 }
-void ChunkDisk::removeInflight(List::iterator i) {
+void ChunkDisk::removeInflight(ElementPtr const& e) {
     boost::lock_guard<boost::mutex> lock(_inflightMutex);
     std::ostringstream os;
-    os << "ChunkDisk remove for " << (**i).msg->chunkid()
-       << " : " << (**i).msg->fragment(0).query(0);
+    os << "ChunkDisk remove for " << e->msg->chunkid()
+       << " : " << e->msg->fragment(0).query(0);
     _logger->debug(os.str());
-    _inflight.erase(i);
+    _inflight.erase(e.get());
 }
 
 }}} // lsst::qserv::worker

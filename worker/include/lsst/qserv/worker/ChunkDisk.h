@@ -30,6 +30,7 @@
   * @author Daniel L. Wang, SLAC
   */ 
 #include <queue>
+#include <set>
 #include <boost/shared_ptr.hpp>
 
 #include "lsst/qserv/worker/QueryRunnerManager.h" // QueryRunnerArg
@@ -54,9 +55,10 @@ public:
     };
     typedef std::priority_queue<ElementPtr, std::vector<ElementPtr>, TaskPtrCompare> Queue;
     typedef std::list<ElementPtr> List;
+    typedef std::set<Element const*> ElementSet;
 
     ChunkDisk(boost::shared_ptr<Logger> logger) : _logger(logger) {} 
-    List getInflight() const;
+    ElementSet getInflight() const;
 
     // Queue management
     void enqueue(ElementPtr a);
@@ -65,8 +67,8 @@ public:
     bool empty() const;
 
     // Inflight management
-    List::iterator registerInflight(ElementPtr const& e);
-    void removeInflight(List::iterator i);
+    void registerInflight(ElementPtr const& e);
+    void removeInflight(ElementPtr const& e);
         
 
 private:
@@ -74,7 +76,7 @@ private:
     Queue _activeTasks;
     Queue _pendingTasks;
     mutable boost::mutex _inflightMutex;
-    List _inflight;
+    ElementSet _inflight;
     int _currentChunkId; // Last chunkId retrieved from queue
     bool _completed;
     boost::shared_ptr<Logger>_logger;

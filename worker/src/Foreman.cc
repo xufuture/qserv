@@ -206,6 +206,8 @@ void ForemanImpl::RunnerMgr::reportComplete(Task::Ptr t) {
     _f._log->debug(os.str());
     if(_runnerWatcher) {
         _runnerWatcher->handleFinish(t);
+    } else {
+        _f._log->debug("Missing watcher during de-register");
     }
 }
 
