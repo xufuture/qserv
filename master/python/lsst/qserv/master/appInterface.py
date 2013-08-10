@@ -95,6 +95,10 @@ class AppInterface:
     def submitQueryWithLock(self, query, conditions):
         """Simplified mysqlproxy version.  
         @returns result table name, lock table name, but before completion."""
+        proxyName = conditions["client_dst_name"]
+        proxyThread = conditions["server_thread_id"]
+        ## FIXME: Use the proxyId to match up 
+
         # Short-circuit the standard proxy/client queries.
         quickResult = app.computeShortCircuitQuery(query, conditions)
         if quickResult: return quickResult
@@ -137,6 +141,12 @@ class AppInterface:
         self._callWithThread(a.invoke)
         #stats["appInvokeFinish"] = time.time()
         return key
+
+    def killQuery(self, query, taskId):
+        """Process a kill query command (experimental)"""
+        a = app.KillQueryAction(query)
+        self._callWithThread(a.invoke)
+        return "Attempt: " + query
 
     def joinQuery(self, taskId):
         """Wait for a query to finish, then return its results."""

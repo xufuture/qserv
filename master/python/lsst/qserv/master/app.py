@@ -669,6 +669,14 @@ class InbandQueryAction:
 
     pass # class InbandQueryAction
 
+class KillQueryAction:
+    def __init__(self, query):
+        self.query = query
+        pass
+    def invoke(self):
+        print "invoking kill query", self.query
+        return "Unimplemented"
+
 class CheckAction:
     def __init__(self, tracker, handle):
         self.tracker = tracker
