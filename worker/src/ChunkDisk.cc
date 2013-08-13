@@ -95,9 +95,14 @@ ChunkDisk::ElementPtr ChunkDisk::getNext(bool allowAdvance) {
 
     // Check the chunkId.
     ElementPtr e = _activeTasks.top();
+    std::ostringstream os;
     int chunkId = elementChunkId(*e); 
+    os << "ChunkDisk getNext: current="
+       << _currentChunkId << " candidate=" << chunkId;
+    _logger->debug(os.str());
+    os.str("");
+    
     if((chunkId == _currentChunkId) || allowAdvance) {
-        std::ostringstream os;
         os << "ChunkDisk allowing task for " << chunkId 
            << " (advance=" << (allowAdvance ? "yes" : "no") << ")";
         _logger->debug(os.str());
