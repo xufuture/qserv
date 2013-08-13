@@ -74,7 +74,7 @@ private:
 // class ScanScheduler
 ////////////////////////////////////////////////////////////////////////
 ScanScheduler::ScanScheduler(Logger::Ptr logger)
-    : _maxRunning(4), // FIXME: set to system proc count.
+    : _maxRunning(16), // FIXME: set to system proc count.
       _logger(logger)
 {
     
@@ -165,6 +165,7 @@ TaskQueuePtr ScanScheduler::_getNextTasks(int max) {
     while(max > 0) {
         Task::Ptr p = disk.getNext(allowNewChunk);
         if(!p) { break; }
+        allowNewChunk = false; // Only allow one new chunk
         if(!tq) {
             tq.reset(new TodoList::TaskQueue());
         }
