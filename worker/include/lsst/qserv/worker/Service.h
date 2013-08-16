@@ -41,7 +41,6 @@ public:
     void squashByHash(std::string const& hash);
 
 private:
-    boost::shared_ptr<TodoList> _todo;
     boost::shared_ptr<Foreman> _foreman;
 };
 

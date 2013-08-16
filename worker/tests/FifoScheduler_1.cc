@@ -31,8 +31,8 @@
 #include "lsst/qserv/worker/FifoScheduler.h"
 
 namespace test = boost::test_tools;
-namespace qWorker = lsst::qserv::worker;
-
+using namespace lsst::qserv::worker;
+#if 0
 struct TodoWatcher : public qWorker::TodoList::Watcher {
     typedef boost::shared_ptr<TodoWatcher> Ptr;
     void handleAccept(qWorker::Task::Ptr t) {
@@ -40,17 +40,18 @@ struct TodoWatcher : public qWorker::TodoList::Watcher {
     }
     qWorker::Task::Ptr task;
 };
+#endif
 
+Task::Ptr makeTask(boost::shared_ptr<lsst::qserv::TaskMsg> tm) {
+    return Task::Ptr(new Task(tm));
+}
 struct SchedulerFixture {
-    typedef boost::shared_ptr<qWorker::TodoList::TaskQueue> TaskQueuePtr;
     typedef boost::shared_ptr<lsst::qserv::TaskMsg> TaskMsgPtr;
 
-    SchedulerFixture(void) {
+    SchedulerFixture(void) 
+        : fs(1) {
         counter = 1;
-        todo.reset(new qWorker::TodoList());
-        watcher.reset(new TodoWatcher());
-        todo->addWatcher(watcher);
-        emptyTqp.reset(new qWorker::TodoList::TaskQueue());
+        emptyTqp.reset(new TaskQueue());
 
     }
     ~SchedulerFixture(void) { }
@@ -78,30 +79,30 @@ struct SchedulerFixture {
     TaskQueuePtr tqp;
     TaskQueuePtr nullTqp;
     TaskQueuePtr emptyTqp;
-    qWorker::FifoScheduler fs;
-    qWorker::TodoList::Ptr todo;
-    TodoWatcher::Ptr watcher;
+    FifoScheduler fs;
+//    TodoWatcher::Ptr watcher;
 };
 
 
 BOOST_FIXTURE_TEST_SUITE(FifoSchedulerSuite, SchedulerFixture)
 
 BOOST_AUTO_TEST_CASE(Basic) {
-    BOOST_CHECK_EQUAL(nullTqp, fs.nopAct(todo, nullTqp));
+    BOOST_CHECK_EQUAL(nullTqp, fs.nopAct(nullTqp));
+    Task::Ptr first = makeTask(nextTaskMsg());
+    fs.queueTaskAct(first);
 
-    todo->accept(nextTaskMsg());
-    qWorker::Task::Ptr t = watcher->task;
-    TaskQueuePtr next = fs.newTaskAct(t, todo, emptyTqp);
-    BOOST_CHECK(next.get());
-    BOOST_CHECK_EQUAL(next->front(), t);
+    Task::Ptr second = makeTask(nextTaskMsg());
+    TaskQueuePtr next = fs.newTaskAct(second, emptyTqp);
+    BOOST_REQUIRE(next.get());
+    BOOST_CHECK_EQUAL(next->front(), first);
     BOOST_CHECK_EQUAL(next->size(), 1);
 
-    todo->accept(nextTaskMsg());
-    qWorker::Task::Ptr t2 = watcher->task;
-    next = fs.taskFinishAct(t, todo, emptyTqp);
-    BOOST_CHECK(next.get());
-    BOOST_CHECK_EQUAL(next->front(), t2);
-    BOOST_CHECK_EQUAL(next->size(), 1);
+    //todo->accept(nextTaskMsg());
+    //Task::Ptr t2 = watcher->task;
+    next = fs.taskFinishAct(first, emptyTqp);
+    BOOST_REQUIRE(next.get());
+    BOOST_CHECK_EQUAL(next->front(), second);
+//    BOOST_CHECK_EQUAL(next->size(), 1);
     
 }
 

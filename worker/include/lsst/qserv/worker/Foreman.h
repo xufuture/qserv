@@ -49,7 +49,7 @@
 #ifndef LSST_QSERV_WORKER_FOREMAN_H
 #define LSST_QSERV_WORKER_FOREMAN_H
 #include <boost/shared_ptr.hpp>
-#include "lsst/qserv/worker/TodoList.h"
+//#include "lsst/qserv/worker/TodoList.h" // FIXME remove
 #include "lsst/qserv/worker/Task.h"
 
 namespace lsst {
@@ -57,11 +57,10 @@ namespace qserv {
 namespace worker {
 class Logger; // Forward
 
-class Foreman {
+class Foreman : public TaskAcceptor {
 public:
     typedef boost::shared_ptr<Foreman> Ptr;
 
-    typedef boost::shared_ptr<TodoList::TaskQueue> TaskQueuePtr;
     class RunnerWatcher {
     public:
         virtual ~RunnerWatcher() {}
@@ -73,13 +72,11 @@ public:
         typedef boost::shared_ptr<Scheduler> Ptr;
         virtual ~Scheduler() {}
     
-        virtual TaskQueuePtr nopAct(TodoList::Ptr todo, 
-                                    TaskQueuePtr running) = 0;
+        virtual void queueTaskAct(Task::Ptr incoming) = 0;
+        virtual TaskQueuePtr nopAct(TaskQueuePtr running) = 0;
         virtual TaskQueuePtr newTaskAct(Task::Ptr incoming,
-                                        TodoList::Ptr todo, 
                                         TaskQueuePtr running) = 0;
         virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
-                                           TodoList::Ptr todo, 
                                            TaskQueuePtr running) = 0;
         virtual boost::shared_ptr<RunnerWatcher> getWatcher() {
             return boost::shared_ptr<RunnerWatcher>();
@@ -88,13 +85,16 @@ public:
 
     virtual void squashByHash(std::string const& hash) {}
 
+    virtual bool accept(boost::shared_ptr<TaskMsg> msg) { return false; }
+    //virtual void addWatcher(Watcher::Ptr w); // FIXME remove
+    //virtual void removeWatcher(Watcher::Ptr w); // FIXME remove
     virtual ~Foreman() {}
 
 protected:
     explicit Foreman() {}
 };
 
-Foreman::Ptr newForeman(TodoList::Ptr tl, boost::shared_ptr<Logger> log);
+Foreman::Ptr newForeman(Foreman::Scheduler::Ptr s, boost::shared_ptr<Logger> log);
 
 }}}  // namespace lsst::qserv::worker
 

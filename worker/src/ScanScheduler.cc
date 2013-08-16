@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,24 +9,24 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
  /**
   * @file ScanScheduler.cc
   *
   * @brief A scheduler implementation that limits disk scans to one at
-  * a time, but allows multiple queries to share I/O. 
+  * a time, but allows multiple queries to share I/O.
   *
   * @author Daniel L. Wang, SLAC
-  */ 
+  */
 #include "lsst/qserv/worker/ScanScheduler.h"
 #include <iostream>
 #include <sstream>
@@ -40,7 +40,6 @@
 namespace lsst {
 namespace qserv {
 namespace worker {
-typedef Foreman::TaskQueuePtr TaskQueuePtr;
 
 ////////////////////////////////////////////////////////////////////////
 // class ChunkDiskWatcher
@@ -52,7 +51,7 @@ public:
     typedef ScanScheduler::ChunkDiskList ChunkDiskList;
     typedef std::map<Task*, ChunkDisk::List::iterator> IteratorMap;
 
-    ChunkDiskWatcher(ChunkDiskList& chunkDiskList) 
+    ChunkDiskWatcher(ChunkDiskList& chunkDiskList)
         : _disks(chunkDiskList) {}
     virtual void handleStart(Task::Ptr t) {
         assert(!_disks.empty());
@@ -77,14 +76,18 @@ ScanScheduler::ScanScheduler(Logger::Ptr logger)
     : _maxRunning(16), // FIXME: set to system proc count.
       _logger(logger)
 {
-    
+
     _disks.push_back(boost::make_shared<ChunkDisk>(logger));
     assert(!_disks.empty());
-}    
+}
 
-TaskQueuePtr ScanScheduler::nopAct(TodoList::Ptr todo, 
-                                   TaskQueuePtr running) {
-    // For now, do nothing when there is no event.  
+void ScanScheduler::queueTaskAct(Task::Ptr incoming) {
+    boost::lock_guard<boost::mutex> guard(_mutex);
+    _enqueueTask(incoming);
+}
+
+TaskQueuePtr ScanScheduler::nopAct(TaskQueuePtr running) {
+    // For now, do nothing when there is no event.
 
     // Perhaps better: Check to see how many are running, and schedule
     // a task if the number of running jobs is below a threshold.
@@ -94,34 +97,22 @@ TaskQueuePtr ScanScheduler::nopAct(TodoList::Ptr todo,
 /// @return a queue of all tasks ready to run.
 ///
 TaskQueuePtr ScanScheduler::newTaskAct(Task::Ptr incoming,
-                                       TodoList::Ptr todo, 
                                        TaskQueuePtr running) {
     boost::lock_guard<boost::mutex> guard(_mutex);
     assert(running.get());
-    assert(todo.get());
-    assert(incoming.get());
-    // FIXME: Select disk based on chunk location.
-    assert(!_disks.empty());
-    assert(_disks.front());
-    _disks.front()->enqueue(incoming);
-    std::ostringstream os;
-    TaskMsg const& msg = *(incoming->msg);
-    os << "Adding new task: " << msg.chunkid() 
-       << " : " << msg.fragment(0).query(0);
-    _logger->debug(os.str());
 
+    _enqueueTask(incoming);
     // No free threads? Exit.
     // FIXME: Can do an I/O bound scan if there is memory and an idle
     // spindle.
     int available = _maxRunning - running->size();
-    if(available <= 0) { 
+    if(available <= 0) {
         return TaskQueuePtr();
     }
     return _getNextTasks(available);
 }
 
 TaskQueuePtr ScanScheduler::taskFinishAct(Task::Ptr finished,
-                                          TodoList::Ptr todo, 
                                           TaskQueuePtr running) {
 
     boost::lock_guard<boost::mutex> guard(_mutex);
@@ -133,7 +124,7 @@ TaskQueuePtr ScanScheduler::taskFinishAct(Task::Ptr finished,
        << ")" << finished->msg->fragment(0).query(0);
     _logger->debug(os.str());
     int available = _maxRunning - running->size();
-    if(available <= 0) { 
+    if(available <= 0) {
         return TaskQueuePtr();
     }
     return _getNextTasks(available);
@@ -141,7 +132,7 @@ TaskQueuePtr ScanScheduler::taskFinishAct(Task::Ptr finished,
 
 boost::shared_ptr<Foreman::RunnerWatcher> ScanScheduler::getWatcher() {
     boost::shared_ptr<ChunkDiskWatcher> w;
-    w.reset(new ChunkDiskWatcher(_disks));
+     w.reset(new ChunkDiskWatcher(_disks));
     return w;
 }
 
@@ -154,10 +145,13 @@ TaskQueuePtr ScanScheduler::_getNextTasks(int max) {
     // FIXME: Select disk based on chunk location.
     assert(!_disks.empty());
     assert(_disks.front());
-    
+    std::ostringstream os;
+    os << "_getNextTasks(" << max << ")>->->";
+    _logger->debug(os.str());
+    os.str("");
     TaskQueuePtr tq;
     ChunkDisk& disk = *_disks.front();
-    std::ostringstream os;
+
     // Check disks for candidate ones.
     // Pick one. Prefer a less-loaded disk: want to make use of i/o
     // from both disks. (for multi-disk support)
@@ -167,13 +161,12 @@ TaskQueuePtr ScanScheduler::_getNextTasks(int max) {
         if(!p) { break; }
         allowNewChunk = false; // Only allow one new chunk
         if(!tq) {
-            tq.reset(new TodoList::TaskQueue());
+            tq.reset(new TaskQueue());
         }
         tq->push_back(p);
 
-        // FIXME: May need to maintain TodoList.
         os << "Making ready: " << *(tq->front());
-        _logger->debug(os.str()); 
+        _logger->debug(os.str());
         os.str("");
         --max;
     }
@@ -181,7 +174,22 @@ TaskQueuePtr ScanScheduler::_getNextTasks(int max) {
         os << "Returning " << tq->size() << " to launch";
         _logger->debug(os.str());
     }
+    _logger->debug("_getNextTasks <<<<<");
     return tq;
-}    
+}
+
+/// Precondition: _mutex is locked.
+void ScanScheduler::_enqueueTask(Task::Ptr incoming) {
+    assert(incoming.get());
+    // FIXME: Select disk based on chunk location.
+    assert(!_disks.empty());
+    assert(_disks.front());
+    _disks.front()->enqueue(incoming);
+    std::ostringstream os;
+    TaskMsg const& msg = *(incoming->msg);
+    os << "Adding new task: " << msg.chunkid()
+       << " : " << msg.fragment(0).query(0);
+    _logger->debug(os.str());
+}
 
 }}} // lsst::qserv::worker
