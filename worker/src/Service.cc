@@ -19,25 +19,29 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#include "lsst/qserv/worker/TodoList.h"
 #include "lsst/qserv/worker/Foreman.h"
 #include "lsst/qserv/worker/Service.h"
 #include "lsst/qserv/worker/Logger.h"
+#include "lsst/qserv/worker/FifoScheduler.h"
+#include "lsst/qserv/worker/ScanScheduler.h"
 
 namespace lsst {
 namespace qserv {
 namespace worker {
 
-Service::Service(Logger::Ptr log) 
-    : _todo(new TodoList()) {
+Service::Service(Logger::Ptr log) {
     if(!log.get()) {
         log.reset(new Logger());
     }
-    _foreman = newForeman(_todo, log);
+    
+    Logger::Ptr schedLog(new Logger(log));
+    schedLog->setPrefix(ScanScheduler::getName() + ":");
+    ScanScheduler::Ptr sch(new ScanScheduler(schedLog));    
+    _foreman = newForeman(sch, log);
 }
 
 TaskAcceptor::Ptr Service::getAcceptor() {
-    return _todo;
+    return _foreman;
 }
 
 void Service::squashByHash(std::string const& hash) {

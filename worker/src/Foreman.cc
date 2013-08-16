@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,14 +10,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /// class Foreman implementation
@@ -34,10 +34,9 @@
 
 // Pkg: lsst::qserv::worker
 #include "lsst/qserv/worker/TodoList.h"
-#include "lsst/qserv/worker/FifoScheduler.h"
-#include "lsst/qserv/worker/ScanScheduler.h"
 #include "lsst/qserv/worker/QueryRunner.h"
 #include "lsst/qserv/worker/Base.h"
+#include "lsst/qserv/worker/FifoScheduler.h"
 #include "lsst/qserv/worker/Logger.h"
 
 using namespace lsst::qserv::worker;
@@ -45,8 +44,8 @@ namespace qWorker = lsst::qserv::worker;
 ////////////////////////////////////////////////////////////////////////
 // anonymous helpers
 ////////////////////////////////////////////////////////////////////////
-namespace { 
-    template <typename Q> 
+namespace {
+    template <typename Q>
     bool popFrom(Q& q, typename Q::value_type const& v) {
         typename Q::iterator i = std::find(q.begin(), q.end(), v);
         if(i == q.end()) return false;
@@ -60,12 +59,11 @@ namespace {
 ////////////////////////////////////////////////////////////////////////
 class ForemanImpl : public lsst::qserv::worker::Foreman {
 public:
-    ForemanImpl(Scheduler::Ptr s, TodoList::Ptr t, 
-                Logger::Ptr log);
+    ForemanImpl(Scheduler::Ptr s, Logger::Ptr log);
     virtual ~ForemanImpl();
-    
-    void squashByHash(std::string const& hash);
 
+    void squashByHash(std::string const& hash);
+    bool accept(boost::shared_ptr<lsst::qserv::TaskMsg> msg);
     // For use by runners.
     class Runner;
     class RunnerMgr;
@@ -79,8 +77,8 @@ public:
         void signalDeath(Runner* r);
         Task::Ptr getNextTask(Runner* r, Task::Ptr previous);
         Logger::Ptr getLog();
-        
-        
+
+
     private:
         void _reportStartHelper(Task::Ptr t);
         class StartTaskF;
@@ -89,28 +87,22 @@ public:
     };
 
     friend class RunnerMgr;
-    class Watcher; 
+    class Watcher;
     friend class Watcher;
 
 private:
     typedef std::deque<Runner*> RunnerDeque;
 
     void _startRunner(Task::Ptr t);
-    
+
     boost::mutex _mutex;
     boost::mutex _runnersMutex;
-#if 0
-    boost::condition_variable _queueNonEmpty;
-    boost::condition_variable _runnersEmpty;
-    boost::condition_variable _runnerRegistered;
-#endif
     Scheduler::Ptr _scheduler;
-    TodoList::Ptr _todo;
     RunnerDeque _runners;
     boost::scoped_ptr<RunnerMgr> _rManager;
     QueryRunnerManager _mgr; // May replace.
     Logger::Ptr _log;
-                         
+
     TaskQueuePtr  _running;
     boost::shared_ptr<Watcher> _watcher;
 
@@ -118,13 +110,14 @@ private:
 ////////////////////////////////////////////////////////////////////////
 // Foreman factory function
 ////////////////////////////////////////////////////////////////////////
-Foreman::Ptr 
-qWorker::newForeman(TodoList::Ptr tl, Logger::Ptr log) {
-    // FifoScheduler::Ptr fsch(new FifoScheduler());
-    Logger::Ptr schedLog(new Logger(log));
-    schedLog->setPrefix("ScanSched:");   
-    ScanScheduler::Ptr sch(new ScanScheduler(schedLog));
-    ForemanImpl::Ptr fmi(new ForemanImpl(sch, tl, log));
+Foreman::Ptr
+qWorker::newForeman(Foreman::Scheduler::Ptr sched, Logger::Ptr log) {
+    if(!sched) {
+        sched.reset(new qWorker::FifoScheduler());
+    }
+    // Fifoscheduler::Ptr fsch(new FifoScheduler());
+    // FIXME: Use parameter.
+    ForemanImpl::Ptr fmi(new ForemanImpl(sched, log));
     return fmi;;
 }
 
@@ -145,10 +138,9 @@ ForemanImpl::Watcher::Watcher(ForemanImpl& f) : _f(f) {
 }
 
 void ForemanImpl::Watcher::handleAccept(Task::Ptr t) {
+    // FIXME: deprecated with todolist elimination?
     assert(_f._scheduler);
-    TaskQueuePtr newReady = _f._scheduler->newTaskAct(t, 
-                                                      _f._todo, 
-                                                      _f._running);
+    TaskQueuePtr newReady = _f._scheduler->newTaskAct(t, _f._running);
     // Perform only what the scheduler requests.
     if(newReady.get() && (newReady->size() > 0)) {
         TodoList::TaskQueue::iterator i = newReady->begin();
@@ -170,7 +162,7 @@ private:
     ForemanImpl& _f;
 };
 
-ForemanImpl::RunnerMgr::RunnerMgr(ForemanImpl& f) 
+ForemanImpl::RunnerMgr::RunnerMgr(ForemanImpl& f)
   : _f(f) {
     _runnerWatcher = _f._scheduler->getWatcher();
     std::ostringstream os;
@@ -180,10 +172,10 @@ ForemanImpl::RunnerMgr::RunnerMgr(ForemanImpl& f)
 
 void ForemanImpl::RunnerMgr::registerRunner(Runner* r, Task::Ptr t) {
     {
-        boost::lock_guard<boost::mutex> lock(_f._runnersMutex); 
+        boost::lock_guard<boost::mutex> lock(_f._runnersMutex);
         _f._runners.push_back(r);
     }
-    
+
     std::ostringstream os;
     os << "Registered runner " << (void*)r;
     _f._log->debug(os.str());
@@ -197,7 +189,7 @@ boost::shared_ptr<QueryRunner> ForemanImpl::RunnerMgr::newQueryRunner(Task::Ptr 
 
 void ForemanImpl::RunnerMgr::reportComplete(Task::Ptr t) {
     {
-        boost::lock_guard<boost::mutex> lock(_f._runnersMutex); 
+        boost::lock_guard<boost::mutex> lock(_f._runnersMutex);
         bool popped = popFrom(*_f._running, t);
         assert(popped);
     }
@@ -216,7 +208,7 @@ void ForemanImpl::RunnerMgr::reportStart(Task::Ptr t) {
 }
 void ForemanImpl::RunnerMgr::_reportStartHelper(Task::Ptr t) {
     {
-        boost::lock_guard<boost::mutex> lock(_f._runnersMutex); 
+        boost::lock_guard<boost::mutex> lock(_f._runnersMutex);
         _f._running->push_back(t);
     }
     std::ostringstream os;
@@ -230,7 +222,7 @@ void ForemanImpl::RunnerMgr::_reportStartHelper(Task::Ptr t) {
 }
 
 void ForemanImpl::RunnerMgr::signalDeath(Runner* r) {
-    boost::lock_guard<boost::mutex> lock(_f._runnersMutex); 
+    boost::lock_guard<boost::mutex> lock(_f._runnersMutex);
     RunnerDeque::iterator end = _f._runners.end();
     // std::cout << (void*) r << " dying" << std::endl;
     for(RunnerDeque::iterator i = _f._runners.begin(); i != end; ++i) {
@@ -242,17 +234,17 @@ void ForemanImpl::RunnerMgr::signalDeath(Runner* r) {
     }
 }
 
-Task::Ptr 
+Task::Ptr
 ForemanImpl::RunnerMgr::getNextTask(Runner* r, Task::Ptr previous) {
     TaskQueuePtr tq;
-    tq = _f._scheduler->taskFinishAct(previous, _f._todo, _f._running);
+    tq = _f._scheduler->taskFinishAct(previous, _f._running);
     if(!tq.get()) {
         return Task::Ptr();
     }
     if(tq->size() > 1) {
         std::for_each(tq->begin()+1, tq->end(), StartTaskF(_f));
     }
-    return tq->front();    
+    return tq->front();
 }
 
 Logger::Ptr ForemanImpl::RunnerMgr::getLog() {
@@ -266,17 +258,17 @@ Logger::Ptr ForemanImpl::RunnerMgr::getLog() {
 class ForemanImpl::Runner  {
 public:
     Runner(RunnerMgr& rm, Task::Ptr firstTask)
-        : _rm(rm), 
+        : _rm(rm),
           _task(firstTask),
           _isPoisoned(false),
-          _log(rm.getLog()) { 
+          _log(rm.getLog()) {
         // nothing to do.
     }
     void poison() { _isPoisoned = true; }
     void operator()() {
         boost::shared_ptr<QueryRunner> qr;
         _rm.registerRunner(this, _task);
-        while(!_isPoisoned) { 
+        while(!_isPoisoned) {
             // Run my task.
             qr = _rm.newQueryRunner(_task);
             std::stringstream ss;
@@ -286,7 +278,7 @@ public:
             if(_isPoisoned) break;
             // Request new work from the manager
             // (mgr is a role of the foreman, who will check with the
-            // scheduler for the next assignment) 
+            // scheduler for the next assignment)
             _rm.reportComplete(_task);
             _task = _rm.getNextTask(this, _task);
             if(!_task.get()) break; // No more work?
@@ -306,10 +298,8 @@ private:
 // ForemanImpl
 ////////////////////////////////////////////////////////////////////////
 ForemanImpl::ForemanImpl(Scheduler::Ptr s,
-                         TodoList::Ptr t,
                          Logger::Ptr log)
-    : _scheduler(s), _todo(t),
-      _running(new TodoList::TaskQueue()) {
+    : _scheduler(s), _running(new TaskQueue()) {
     if(!log) {
         // Make basic logger.
         _log.reset(new Logger());
@@ -319,13 +309,12 @@ ForemanImpl::ForemanImpl(Scheduler::Ptr s,
     }
     _rManager.reset(new RunnerMgr(*this));
     assert(s); // Cannot operate without scheduler.
-    _watcher.reset(new Watcher(*this));
-    _todo->addWatcher(_watcher); // Callbacks are now possible.
+    //_watcher.reset(new Watcher(*this));
+    //_todo->addWatcher(_watcher); // Callbacks are now possible.
     // ...
-    
+
 }
 ForemanImpl::~ForemanImpl() {
-    _todo->removeWatcher(_watcher);
     _watcher.reset();
     // FIXME: Poison and drain runners.
 }
@@ -337,4 +326,20 @@ void ForemanImpl::_startRunner(Task::Ptr t) {
 
 void ForemanImpl::squashByHash(std::string const& hash) {
     _mgr.squashByHash(hash);
+}
+
+bool ForemanImpl::accept(boost::shared_ptr<lsst::qserv::TaskMsg> msg) { 
+    // Pass to scheduler.
+    assert(_scheduler);
+    Task::Ptr t(new Task(msg));
+    TaskQueuePtr newReady = _scheduler->newTaskAct(t, _running);
+    // Perform only what the scheduler requests.
+    if(newReady.get() && (newReady->size() > 0)) {
+        TodoList::TaskQueue::iterator i = newReady->begin();
+        for(; i != newReady->end(); ++i) {
+            _startRunner(*i);
+        }
+    }
+
+    return false; // FIXME:::
 }

@@ -27,9 +27,11 @@
 #ifndef LSST_QSERV_WORKER_TASK_H
 #define LSST_QSERV_WORKER_TASK_H
 
+#include <deque>
 #include <boost/shared_ptr.hpp>
 #include "lsst/qserv/worker.pb.h"
 #include "lsst/qserv/worker/Base.h"
+
 
 namespace lsst {
 namespace qserv {
@@ -58,6 +60,9 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, Task const& t);
 };
+typedef std::deque<Task::Ptr> TaskQueue;
+typedef boost::shared_ptr<TaskQueue> TaskQueuePtr;
+
 }}} // lsst::qserv::worker
 
 #endif // LSST_QSERV_WORKER_TASK_H
