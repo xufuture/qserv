@@ -71,11 +71,24 @@ void ChunkDisk::enqueue(ChunkDisk::ElementPtr a) {
     boost::lock_guard<boost::mutex> lock(_queueMutex);
     int chunkId = elementChunkId(*a);
     time(&a->entryTime);
+
+    std::ostringstream os;
+    os << "ChunkDisk enqueue " << chunkId;
+
     if(chunkId < _currentChunkId) { // 
-        _activeTasks.push(a);
-    } else {
         _pendingTasks.push(a);
+        os << "  PENDING";
+    } else {
+        if(chunkId == _currentChunkId) {
+            // FIXME: If outside quantum, put on pending.
+            _activeTasks.push(a);
+        os << "  ACTIVE";
+        } else {
+            _activeTasks.push(a);
+            os << "  ACTIVE";
+        }
     }
+    _logger->debug(os.str());
 }
 
 /// Get the next task, popping it off the queue. Client must do
