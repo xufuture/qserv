@@ -57,7 +57,8 @@ public:
     typedef std::list<ElementPtr> List;
     typedef std::set<Element const*> ElementSet;
 
-    ChunkDisk(boost::shared_ptr<Logger> logger) : _logger(logger) {} 
+    ChunkDisk(boost::shared_ptr<Logger> logger) 
+        : _logger(logger), _currentChunkId(-1) {} 
     ElementSet getInflight() const;
 
     // Queue management
