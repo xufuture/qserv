@@ -55,9 +55,11 @@ public:
                                        TaskQueuePtr running);
     virtual boost::shared_ptr<Foreman::RunnerWatcher> getWatcher();
     static std::string getName()  { return std::string("ScanSched"); }
+    bool checkIntegrity();
 private:
     TaskQueuePtr _getNextTasks(int max);
     void _enqueueTask(Task::Ptr incoming);
+    bool _integrityHelper();
 
     ChunkDiskList _disks;
     boost::shared_ptr<Logger> _logger;

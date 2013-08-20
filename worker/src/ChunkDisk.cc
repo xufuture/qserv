@@ -41,9 +41,15 @@
 /// chunks if new queries for the current chunk keep coming in). In
 /// that case the incoming task is passed to the pending queue as
 /// well.
-
-namespace { 
-} // anonymous namespace
+///
+/// _currentChunkIds tracks the chunkIds that should be in-flight. _inflight is
+/// insufficient for this because it is populated as queries execute. There is a
+/// delay between the time that the scheduler returns task elements for
+/// execution and the starting of those tasks. Within that delay, the chunkdisk
+/// may get a request for more tasks. This happens infrequently, but can be
+/// reproduced with high probability (>50%) while testing with a shared-scan
+/// load: multiple chunks are launched and some queries complete much earlier
+/// than others.
 
 namespace lsst {
 namespace qserv {
@@ -74,20 +80,25 @@ void ChunkDisk::enqueue(ChunkDisk::ElementPtr a) {
 
     std::ostringstream os;
     os << "ChunkDisk enqueue " << chunkId;
-
-    if(chunkId < _currentChunkId) { // 
-        _pendingTasks.push(a);
-        os << "  PENDING";
+    
+    if(_chunkState.empty()) {
+        _activeTasks.push(a);
     } else {
-        if(chunkId == _currentChunkId) {
+        if(chunkId < _chunkState.lastScan()) {
+            _pendingTasks.push(a);
+            os << "  PENDING";
+        } else if(_chunkState.isScan(chunkId)) {
             // FIXME: If outside quantum, put on pending.
             _activeTasks.push(a);
-        os << "  ACTIVE";
-        } else {
+            os << "  ACTIVE";
+        } else { // Ok to be part of scan. chunk not yet started
             _activeTasks.push(a);
             os << "  ACTIVE";
         }
-    }
+    }    
+    _logger->debug(os.str());
+    os.str("");
+    os << "Top of ACTIVE is now: " << elementChunkId(*_activeTasks.top());
     _logger->debug(os.str());
 }
 
@@ -111,16 +122,21 @@ ChunkDisk::ElementPtr ChunkDisk::getNext(bool allowAdvance) {
     std::ostringstream os;
     int chunkId = elementChunkId(*e); 
     os << "ChunkDisk getNext: current="
-       << _currentChunkId << " candidate=" << chunkId;
+       << _chunkState << " candidate=" << chunkId;
     _logger->debug(os.str());
     os.str("");
     
-    if((chunkId == _currentChunkId) || allowAdvance) {
+    bool idle = !_chunkState.hasScan();
+    bool inScan = _chunkState.isScan(chunkId);
+    if(allowAdvance || idle || inScan) {
         os << "ChunkDisk allowing task for " << chunkId 
-           << " (advance=" << (allowAdvance ? "yes" : "no") << ")";
+           << " (advance=" << (allowAdvance ? "yes" : "no") 
+           << " idle=" << (idle ? "yes" : "no") 
+           << " inScan=" << (inScan ? "yes" : "no") 
+           << ")";
         _logger->debug(os.str());
         _activeTasks.pop();
-        _currentChunkId = chunkId;
+        _chunkState.addScan(chunkId);
         return e;
     } else {
         _logger->debug("ChunkDisk denying task");
@@ -136,11 +152,12 @@ ChunkDisk::ElementPtr ChunkDisk::getNext(bool allowAdvance) {
 bool ChunkDisk::busy() const {
     // Simplistic view, only one chunk in flight.
     // We are busy if the inflight list is non-empty
-    boost::lock_guard<boost::mutex> lock(_inflightMutex);
+    boost::lock_guard<boost::mutex> lock(_queueMutex);
+    bool busy = _chunkState.hasScan();
     std::ostringstream os;
-    os << "ChunkDisk busyness: " << (_inflight.empty() ? "no" : "yes");
+    os << "ChunkDisk busyness: " << (busy ? "yes" : "no");
     _logger->debug(os.str());
-    return !_inflight.empty();
+    return busy;
 
     // More advanced:
     // If we have finished one task on the current chunk, we are
@@ -159,20 +176,49 @@ void
 ChunkDisk::registerInflight(ElementPtr const& e) {
     boost::lock_guard<boost::mutex> lock(_inflightMutex);
     std::ostringstream os;
-    os << "ChunkDisk registering for " << e->msg->chunkid() 
-       << " : " << e->msg->fragment(0).query(0) << " p=" 
+    os << "ChunkDisk registering for " << e->msg->chunkid()
+       << " : " << e->msg->fragment(0).query(0) << " p="
        << (void*) e.get();
     _logger->debug(os.str());
     _inflight.insert(e.get());
-    
+
 }
+
 void ChunkDisk::removeInflight(ElementPtr const& e) {
     boost::lock_guard<boost::mutex> lock(_inflightMutex);
+    int chunkId = e->msg->chunkid();
     std::ostringstream os;
-    os << "ChunkDisk remove for " << e->msg->chunkid()
+    os << "ChunkDisk remove for " << chunkId
        << " : " << e->msg->fragment(0).query(0);
     _logger->debug(os.str());
     _inflight.erase(e.get());
+    {
+        boost::lock_guard<boost::mutex> lock(_queueMutex);
+        _chunkState.markComplete(chunkId);
+    }
+}
+
+namespace {
+inline bool taskOk(lsst::qserv::worker::ChunkDisk::ElementPtr ep) {
+    if(!ep->msg || !ep->msg->has_chunkid()) { return false; }
+    return true;
+}
+inline bool checkQueueOk(lsst::qserv::worker::ChunkDisk::Queue& q) {
+    typedef lsst::qserv::worker::ChunkDisk::Queue Queue;
+    std::vector<Queue::value_type>::iterator i, e;
+    std::vector<Queue::value_type>& container = q.impl();
+    for(i=container.begin(), e=container.end(); i != e; ++i) {
+        if(!taskOk(*i)) { return false; }
+    }
+    return true;
+}
+} // anonymous
+
+// @return true if things are okay
+bool ChunkDisk::checkIntegrity() {
+    boost::lock_guard<boost::mutex> lock(_queueMutex);
+    // Check for chunk ids in all tasks.
+    return checkQueueOk(_activeTasks) && checkQueueOk(_pendingTasks);
 }
 
 }}} // lsst::qserv::worker

@@ -51,22 +51,21 @@ public:
     typedef ScanScheduler::ChunkDiskList ChunkDiskList;
     typedef std::map<Task*, ChunkDisk::List::iterator> IteratorMap;
 
-    ChunkDiskWatcher(ChunkDiskList& chunkDiskList)
-        : _disks(chunkDiskList) {}
+    ChunkDiskWatcher(ChunkDiskList& chunkDiskList, boost::mutex& mutex)
+        : _disks(chunkDiskList), _mutex(mutex) {}
     virtual void handleStart(Task::Ptr t) {
+        boost::lock_guard<boost::mutex> guard(_mutex);
         assert(!_disks.empty());
         _disks.front()->registerInflight(t);
-        //_map[t.get()] = i;
-
     }
     virtual void handleFinish(Task::Ptr t) {
+        boost::lock_guard<boost::mutex> guard(_mutex);
         assert(!_disks.empty());
         _disks.front()->removeInflight(t);
-        //_map.erase(t.get());
     }
 private:
     ChunkDiskList& _disks;
-    IteratorMap _map;
+    boost::mutex& _mutex;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -99,6 +98,7 @@ TaskQueuePtr ScanScheduler::nopAct(TaskQueuePtr running) {
 TaskQueuePtr ScanScheduler::newTaskAct(Task::Ptr incoming,
                                        TaskQueuePtr running) {
     boost::lock_guard<boost::mutex> guard(_mutex);
+    assert(_integrityHelper());
     assert(running.get());
 
     _enqueueTask(incoming);
@@ -116,6 +116,8 @@ TaskQueuePtr ScanScheduler::taskFinishAct(Task::Ptr finished,
                                           TaskQueuePtr running) {
 
     boost::lock_guard<boost::mutex> guard(_mutex);
+    assert(_integrityHelper());
+
     // No free threads? Exit.
     // FIXME: Can do an I/O bound scan if there is memory and an idle
     // spindle.
@@ -132,10 +134,30 @@ TaskQueuePtr ScanScheduler::taskFinishAct(Task::Ptr finished,
 
 boost::shared_ptr<Foreman::RunnerWatcher> ScanScheduler::getWatcher() {
     boost::shared_ptr<ChunkDiskWatcher> w;
-     w.reset(new ChunkDiskWatcher(_disks));
+    w.reset(new ChunkDiskWatcher(_disks, _mutex));
     return w;
 }
 
+/// @return true if data is okay.
+bool ScanScheduler::checkIntegrity() {
+    boost::lock_guard<boost::mutex> guard(_mutex);
+    return _integrityHelper();
+    ChunkDiskList::iterator i, e;
+    for(i=_disks.begin(), e=_disks.end(); i != e; ++i) {
+        if(!(**i).checkIntegrity()) return false;
+    }
+    return true;
+}
+
+/// @return true if data is okay
+/// precondition: _mutex is locked.
+bool ScanScheduler::_integrityHelper() {
+    ChunkDiskList::iterator i, e;
+    for(i=_disks.begin(), e=_disks.end(); i != e; ++i) {
+        if(!(**i).checkIntegrity()) return false;
+    }
+    return true;
+}
 
 /// Precondition: _mutex is already locked.
 /// @return new tasks to run
@@ -174,6 +196,7 @@ TaskQueuePtr ScanScheduler::_getNextTasks(int max) {
         os << "Returning " << tq->size() << " to launch";
         _logger->debug(os.str());
     }
+    assert(_integrityHelper());
     _logger->debug("_getNextTasks <<<<<");
     return tq;
 }

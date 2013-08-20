@@ -28,11 +28,13 @@
 #include "boost/test/included/unit_test.hpp"
 #include "lsst/qserv/worker/GroupedQueue.h"
 #include "lsst/qserv/worker/CirclePqueue.h"
+#include "lsst/qserv/worker/ChunkState.h"
 
 namespace test = boost::test_tools;
 namespace qWorker = lsst::qserv::worker;
 using lsst::qserv::worker::GroupedQueue;
 using lsst::qserv::worker::CirclePqueue;
+using lsst::qserv::worker::ChunkState;
 
 int const compareLimit = 1000;
 
@@ -52,13 +54,13 @@ struct KeyedElem {
         }
     };
     inline bool operator<(KeyedElem const& b) const {
-        return (id < b.id)  || 
+        return (id < b.id)  ||
             ((id == b.id) &&
              (strncmp(name, b.name, compareLimit) < 0));
     };
     struct Less {
         bool operator()(KeyedElem const& a, KeyedElem const& b) {
-            return a < b; 
+            return a < b;
         }
     };
     struct GetKey {
@@ -71,7 +73,7 @@ struct KeyedElem {
 };
 typedef boost::shared_ptr<KeyedElem> KeyedElemPtr;
 std::ostream& operator<<(std::ostream& os, KeyedElem const& a) {
-    return (os << a.id << ":" << a.name);    
+    return (os << a.id << ":" << a.name);
 }
 
 template<class T, class Equal>
@@ -86,6 +88,7 @@ struct PtrEqual {
 struct QueueFixture {
     GroupedQueue<KeyedElem, KeyedElem::KeyEqual> gQueue;
     CirclePqueue<KeyedElem, KeyedElem::Less, KeyedElem::GetKey> circle;
+    ChunkState cState;
 };
 
 KeyedElem const elts[] = {
@@ -169,7 +172,7 @@ BOOST_AUTO_TEST_CASE(Circle_2) {
 
     int last = -1;
     // Insert in reverse order. Circle should enforce ordering.
-    for(int i=(eltSize-1)/2; i >= 0; --i ) { 
+    for(int i=(eltSize-1)/2; i >= 0; --i ) {
         circle.insert(elts[i*2]);
     }
     BOOST_CHECK_EQUAL(circle.size(), 4);
@@ -194,5 +197,39 @@ BOOST_AUTO_TEST_CASE(Circle_2) {
     }
     BOOST_CHECK(circle.empty());
 }
+
+BOOST_AUTO_TEST_CASE(ChunkState) {
+    int chunks[] = {2,3,5,7};
+    int count = 4;
+
+    cState.addScan(chunks[0]);
+    BOOST_CHECK(!cState.isCached(chunks[0]));
+
+    cState.addScan(chunks[1]);
+    BOOST_CHECK(!cState.isCached(chunks[0]));
+
+    cState.markComplete(chunks[0]);
+    BOOST_CHECK(cState.isCached(chunks[0]));
+
+    cState.markComplete(chunks[1]);
+    BOOST_CHECK(cState.isCached(chunks[0]));
+    BOOST_CHECK(cState.isCached(chunks[1]));
+    BOOST_CHECK(!cState.isCached(chunks[2]));
+
+    cState.addScan(chunks[2]);
+    BOOST_CHECK(!cState.isCached(chunks[2]));
+
+    cState.markComplete(chunks[2]);
+    BOOST_CHECK(!cState.isCached(chunks[0]));
+    BOOST_CHECK(cState.isCached(chunks[2]));
+
+    cState.addScan(chunks[3]);
+    cState.markComplete(chunks[3]);
+    BOOST_CHECK(!cState.isCached(chunks[0]));
+    BOOST_CHECK(!cState.isCached(chunks[1]));
+    BOOST_CHECK(cState.isCached(chunks[2]));
+    BOOST_CHECK(cState.isCached(chunks[3]));
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
