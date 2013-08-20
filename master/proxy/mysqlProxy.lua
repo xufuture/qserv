@@ -500,10 +500,10 @@ function queryProcessing()
         hintsToPassArr["server_thread_id"] = proxy.connection.server.thread_id
         print ("proxy.connection.server.thread_id: " .. proxy.connection.server.thread_id)
         print ("Passing query: " .. queryToPassStr)
-        print ("Passing hints: " .. hintsToPassStr)
 
         -- Build hint string
         hintsToPassStr = utils.tableToString(hintsToPassArr)
+        print ("Passing hints: " .. hintsToPassStr)
 
         local queryToPassProtect = "<![CDATA[" .. queryToPassStr .. "]]>"
         -- Wrap this in a pcall so that a meaningful error can 

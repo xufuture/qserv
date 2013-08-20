@@ -616,7 +616,7 @@ class InbandQueryAction:
         cfg["frontend.scratchPath"] = setupResultScratch()
         cfg["table.defaultdb"] = self._dbContext
         cfg["query.hints"] = ";".join(
-            map(lambda (k,v): k + "," + v, self.hints.items()))
+            map(lambda (k,v): k + "," + str(v), self.hints.items()))
         cfg["table.result"] = self._resultName
         cfg["runtime.metaCacheSession"] = str(self.metaCacheSession)
         return cfg
