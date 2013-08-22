@@ -57,6 +57,7 @@ public:
     std::string user;
     bool needsCreate;
     time_t entryTime;
+    char timestr[27]; ///< ::ctime_r(&t.entryTime, timestr)
 
     friend std::ostream& operator<<(std::ostream& os, Task const& t);
 };
