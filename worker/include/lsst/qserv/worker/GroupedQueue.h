@@ -74,7 +74,7 @@ public:
     }
     T& front() { return _deque.back(); }
     T const& front() const { return _deque.back(); }
-    T pop_front() { _deque.pop_back(); }
+    void pop_front() { _deque.pop_back(); }
     size_t size() const { return _deque.size(); }
     size_t empty() const { return _deque.empty(); }
 private:
