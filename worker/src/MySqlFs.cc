@@ -37,9 +37,11 @@
 #include "lsst/qserv/worker/XrdName.h"
 
 
+#include "lsst/qserv/SqlConnection.hh"
 #include "lsst/qserv/QservPath.hh"
 #include <cerrno>
 #include <iostream>
+#include <iterator>
 
 // Externally declare XrdSfs loader to cheat on Andy's suggestion.
 #if 1
@@ -195,6 +197,7 @@ MySqlFs::MySqlFs(boost::shared_ptr<Logger> log, XrdSysLogger* lp,
     }   
     _initExports();
     assert(_exports.get());
+    _cleanup();
     _service.reset(new Service(_log));
 }
 
@@ -334,7 +337,46 @@ void MySqlFs::_initExports() {
     XrdName x;
     MySqlExportMgr m(x.getName(), *_log);
     m.fillDbChunks(*_exports);
+    std::ostringstream os;
+    os << "Paths exported: ";
+    std::copy(_exports->begin(), _exports->end(), 
+              std::ostream_iterator<std::string>(os, ","));
+    //boost::shared_ptr<Logger> log2 = log;
+    _log->info(os.str());
 }
+
+/// Cleanup scratch space and scratch dbs.
+/// This means that scratch db and scratch dirs CANNOT be shared among
+/// qserv workers. Take heed.
+/// @return true if cleanup was successful, false otherwise.
+bool MySqlFs::_cleanup() {
+    if(getConfig().getIsValid()) {
+        SqlConfig sqlConfig = getConfig().getSqlConfig();
+        // FIXME: Use qsmaster privileges for now.
+        sqlConfig.username = "qsmaster"; 
+        sqlConfig.dbName = ""; 
+        SqlConnection sc(sqlConfig, true);
+        SqlErrorObject errObj;
+        std::string dbName = getConfig().getString("scratchDb");
+        _log->info((Pformat("Cleaning up scratchDb: %1%.")
+                    % dbName).str());
+       if(!sc.dropDb(dbName, errObj, false)) {
+            _log->error((Pformat("Cfg error! couldn't drop scratchDb: %1% %2%.")
+                         % dbName % errObj.errMsg()).str());
+            return false;
+        }
+       errObj.reset();
+        if(!sc.createDb(dbName, errObj, true)) {
+            _log->error((Pformat("Cfg error! couldn't create scratchDb: %1% %2%.")
+                         % dbName % errObj.errMsg()).str());
+            return false;
+        }
+    } else {
+        return false;
+    }
+    return true;  
+}
+
 class XrdSysLogger;
 
 extern "C" {
