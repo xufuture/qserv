@@ -77,6 +77,8 @@ void ChunkDisk::enqueue(ChunkDisk::ElementPtr a) {
     boost::lock_guard<boost::mutex> lock(_queueMutex);
     int chunkId = elementChunkId(*a);
     time(&a->entryTime);
+    /// Compute entry time to reduce spurious valgrind errors
+    ::ctime_r(&a->entryTime, a->timestr);
 
     std::ostringstream os;
     os << "ChunkDisk enqueue " << chunkId;

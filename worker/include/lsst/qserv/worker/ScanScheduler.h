@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,13 +20,6 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-//  class WorkQueue -- A class that implements a fixed-size
-//  thread-pool for performing tasks.  No pre-emption, so if all
-//  threads are blocked, the queue will stall.
-//
-//  Used to do lightweight concurrent things without thread
-//  creation/destruction overhead.
-//
 #ifndef LSST_QSERV_WORKER_SCANSCHEDULER_H
 #define LSST_QSERV_WORKER_SCANSCHEDULER_H
 
