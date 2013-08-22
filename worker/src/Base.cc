@@ -141,7 +141,7 @@ void qWorker::updateResultPath(char const* resultPath) {
         return;
     } 
     char* path =::getenv("QSW_RESULTPATH");
-    if(checkWritablePath(path)) {
+    if(path && checkWritablePath(path)) {
         DUMP_BASE.assign(path);
     }
 }

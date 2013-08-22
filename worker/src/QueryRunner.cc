@@ -381,7 +381,7 @@ bool qWorker::QueryRunner::_runFragment(SqlConnection& sqlConn,
 
 bool 
 QueryRunner::_prepareAndSelectResultDb(SqlConnection& sqlConn, 
-                                                std::string const& resultDb) {
+                                       std::string const& resultDb) {
     std::string result;
     std::string dbName(resultDb);
 

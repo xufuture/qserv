@@ -232,7 +232,7 @@ int MySqlFsFile::_acceptFile(char const* fileName) {
         }
         _requestTaker.reset(new RequestTaker(_service->getAcceptor(),
                                              *_path));
-        
+        _chunkId = -1; // unused.
         return SFS_OK; // No other action is needed.
 
     case QservPath::RESULT:
