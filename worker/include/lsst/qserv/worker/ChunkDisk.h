@@ -63,12 +63,12 @@ public:
     };
     typedef IterablePq Queue;
     typedef std::list<ElementPtr> List;
-    typedef std::set<Element const*> ElementSet;
+    typedef std::set<Task const*> TaskSet;
     //typedef std::deque<int> IntDeque;
 
     ChunkDisk(boost::shared_ptr<Logger> logger)
         : _logger(logger), _chunkState(2) {}
-    ElementSet getInflight() const;
+    TaskSet getInflight() const;
 
     // Queue management
     void enqueue(ElementPtr a);
@@ -88,7 +88,7 @@ private:
     Queue _pendingTasks;
     ChunkState _chunkState;
     mutable boost::mutex _inflightMutex;
-    ElementSet _inflight;
+    TaskSet _inflight;
     bool _completed;
     boost::shared_ptr<Logger>_logger;
 };

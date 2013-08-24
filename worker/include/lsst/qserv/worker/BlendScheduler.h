@@ -20,25 +20,28 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_SCANSCHEDULER_H
-#define LSST_QSERV_WORKER_SCANSCHEDULER_H
+#ifndef LSST_QSERV_WORKER_BLENDSCHEDULER_H
+#define LSST_QSERV_WORKER_BLENDSCHEDULER_H
 
-#include <boost/thread/mutex.hpp>
 #include "lsst/qserv/worker/Foreman.h"
 
 namespace lsst {
 namespace qserv {
 namespace worker {
-class ChunkDisk; // Forward
-class Logger;
+class GroupScheduler;
+class ScanScheduler;
 
-class ScanScheduler : public Foreman::Scheduler {
+/// BlendScheduler -- A scheduler that is a cross between FIFO and shared scan.
+/// Tasks are ordered as they come in, except that queries for the
+/// same chunks are grouped together. 
+class BlendScheduler : public Foreman::Scheduler {
 public:
-    typedef boost::shared_ptr<ScanScheduler> Ptr;
-    typedef std::vector<boost::shared_ptr<ChunkDisk> > ChunkDiskList;
+    typedef boost::shared_ptr<BlendScheduler> Ptr;
 
-    ScanScheduler(boost::shared_ptr<Logger> logger);
-    virtual ~ScanScheduler() {}
+    BlendScheduler(boost::shared_ptr<Logger> logger,
+                   boost::shared_ptr<GroupScheduler> group,
+                   boost::shared_ptr<ScanScheduler> scan);
+    virtual ~BlendScheduler() {}
 
     virtual void queueTaskAct(Task::Ptr incoming);
     virtual TaskQueuePtr nopAct(TaskQueuePtr running);
@@ -47,20 +50,25 @@ public:
     virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
                                        TaskQueuePtr running);
     virtual boost::shared_ptr<Foreman::RunnerWatcher> getWatcher();
-    static std::string getName()  { return std::string("ScanSched"); }
-    bool checkIntegrity();
-private:
-    TaskQueuePtr _getNextTasks(int max);
-    void _enqueueTask(Task::Ptr incoming);
-    bool _integrityHelper();
+    static std::string getName()  { return std::string("BlendSched"); }
 
-    ChunkDiskList _disks;
+    bool checkIntegrity();
+
+    Foreman::Scheduler* lookup(Task::Ptr p);
+    class Watcher;
+    friend class Watcher;
+private:
+    TaskQueuePtr _getNextIfAvail(TaskQueuePtr running);
+    bool _integrityHelper() const;
+    Foreman::Scheduler* _lookup(Task::Ptr p);
+
+    boost::shared_ptr<GroupScheduler> _group;
+    boost::shared_ptr<ScanScheduler> _scan;
     boost::shared_ptr<Logger> _logger;
-    boost::mutex _mutex;
-    int _maxRunning;
+    typedef std::map<Task*, Foreman::Scheduler*> Map;
+    Map _map;
+    boost::mutex _mapMutex;
 };
 }}} // lsst::qserv::worker
-extern lsst::qserv::worker::ScanScheduler* dbgScanScheduler; //< A symbol for gdb 
-extern lsst::qserv::worker::ChunkDisk* dbgChunkDisk1; //< A symbol for gdb
-#endif // LSST_QSERV_WORKER_SCANSCHEDULER_H
-
+extern lsst::qserv::worker::BlendScheduler* dbgBlendScheduler; //< A symbol for gdb 
+#endif // LSST_QSERV_WORKER_BLENDSCHEDULER_H

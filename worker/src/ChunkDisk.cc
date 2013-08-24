@@ -68,9 +68,9 @@ inline int elementChunkId(ChunkDisk::Element const& e) {
 ////////////////////////////////////////////////////////////////////////
 // ChunkDisk implementation
 ////////////////////////////////////////////////////////////////////////
-ChunkDisk::ElementSet ChunkDisk::getInflight() const {
+ChunkDisk::TaskSet ChunkDisk::getInflight() const {
     boost::lock_guard<boost::mutex> lock(_inflightMutex);
-    return ElementSet(_inflight);
+    return TaskSet(_inflight);
 }
 
 void ChunkDisk::enqueue(ChunkDisk::ElementPtr a) {
