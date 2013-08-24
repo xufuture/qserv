@@ -37,6 +37,9 @@
 #include "lsst/qserv/worker/Foreman.h"
 #include "lsst/qserv/worker/Logger.h"
 
+lsst::qserv::worker::ScanScheduler* dbgScanScheduler = 0; //< A symbol for gdb 
+lsst::qserv::worker::ChunkDisk* dbgChunkDisk1 = 0; //< A symbol for gdb
+
 namespace lsst {
 namespace qserv {
 namespace worker {
@@ -72,11 +75,13 @@ private:
 // class ScanScheduler
 ////////////////////////////////////////////////////////////////////////
 ScanScheduler::ScanScheduler(Logger::Ptr logger)
-    : _maxRunning(16), // FIXME: set to system proc count.
+    : _maxRunning(32), // FIXME: set to some multiple of system proc count.
       _logger(logger)
 {
 
     _disks.push_back(boost::make_shared<ChunkDisk>(logger));
+    dbgChunkDisk1 = _disks.front().get();
+    dbgScanScheduler = this;
     assert(!_disks.empty());
 }
 
@@ -86,11 +91,11 @@ void ScanScheduler::queueTaskAct(Task::Ptr incoming) {
 }
 
 TaskQueuePtr ScanScheduler::nopAct(TaskQueuePtr running) {
-    // For now, do nothing when there is no event.
-
-    // Perhaps better: Check to see how many are running, and schedule
-    // a task if the number of running jobs is below a threshold.
-    return TaskQueuePtr();
+    if(!running) { throw std::invalid_argument("null run list"); }
+    boost::lock_guard<boost::mutex> guard(_mutex);
+    assert(_integrityHelper());
+    int available = _maxRunning - running->size();
+    return _getNextTasks(available);
 }
 
 /// @return a queue of all tasks ready to run.
@@ -99,7 +104,7 @@ TaskQueuePtr ScanScheduler::newTaskAct(Task::Ptr incoming,
                                        TaskQueuePtr running) {
     boost::lock_guard<boost::mutex> guard(_mutex);
     assert(_integrityHelper());
-    assert(running.get());
+    if(!running) { throw std::invalid_argument("null run list"); }
 
     _enqueueTask(incoming);
     // No free threads? Exit.
@@ -142,11 +147,6 @@ boost::shared_ptr<Foreman::RunnerWatcher> ScanScheduler::getWatcher() {
 bool ScanScheduler::checkIntegrity() {
     boost::lock_guard<boost::mutex> guard(_mutex);
     return _integrityHelper();
-    ChunkDiskList::iterator i, e;
-    for(i=_disks.begin(), e=_disks.end(); i != e; ++i) {
-        if(!(**i).checkIntegrity()) return false;
-    }
-    return true;
 }
 
 /// @return true if data is okay
@@ -203,7 +203,7 @@ TaskQueuePtr ScanScheduler::_getNextTasks(int max) {
 
 /// Precondition: _mutex is locked.
 void ScanScheduler::_enqueueTask(Task::Ptr incoming) {
-    assert(incoming.get());
+    if(!incoming) { throw std::invalid_argument("No task to enqueue"); }
     // FIXME: Select disk based on chunk location.
     assert(!_disks.empty());
     assert(_disks.front());

@@ -80,11 +80,9 @@ void GroupScheduler::queueTaskAct(Task::Ptr incoming) {
 }
 
 TaskQueuePtr GroupScheduler::nopAct(TaskQueuePtr running) {
-    // For now, do nothing when there is no event.
-
-    // Perhaps better: Check to see how many are running, and schedule
-    // a task if the number of running jobs is below a threshold.
-    return TaskQueuePtr();
+    boost::lock_guard<boost::mutex> guard(_mutex);
+    assert(_integrityHelper());
+    return _getNextIfAvail(running->size());
 }
 
 /// @return a queue of all tasks ready to run.
