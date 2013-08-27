@@ -118,6 +118,10 @@ from lsst.qserv.master import addTbInfoNonPartitioned
 from lsst.qserv.master import addTbInfoPartitionedSphBox
 from lsst.qserv.master import printMetadataCache
 
+# queryMsg
+from lsst.qserv.master import msgCode
+from lsst.qserv.master import queryMsgAddMsg
+
 # Experimental interactive prompt (not currently working)
 import code, traceback, signal
 
@@ -383,12 +387,13 @@ class InbandQueryAction:
     from HintedQueryAction, but uses different abstractions
     underneath.
     """
-    def __init__(self, query, hints, reportError, resultName=""):
+    def __init__(self, query, hints, setSessionId, resultName=""):
         """Construct an InbandQueryAction
         @param query SQL query text (SELECT...)
         @param hints dict containing query hints and context
-        @param reportError unary function that accepts the description
-                           of an encountered error.
+        @param setSessionId - unary function. a callback so this object can provide
+                          a handle (sessionId) for the caller to access query
+                          messages.
         @param resultName name of result table for query results."""
         ## Fields with leading underscores are internal-only
         ## Those without leading underscores may be read by clients
@@ -409,10 +414,14 @@ class InbandQueryAction:
         self._invokeLock = threading.Semaphore()
         self._invokeLock.acquire() # Prevent res-retrieval before invoke
         self._resultName = resultName
-        self._reportError = reportError
         try:
             self.metaCacheSession = MetadataCacheIface().getDefaultSessionId()
             self._prepareForExec()
+            # Pass up the sessionId for query messages access.
+            setSessionId(self.sessionId)
+            # Create query initialization message.
+            queryMsgAddMsg(self.sessionId, -1, msgCode.MSG_QUERY_INIT,
+                       "Initialize Query: " + self.queryStr);
             self.isValid = True
         except QueryHintError, e:
             self._error = str(e)
@@ -422,6 +431,9 @@ class InbandQueryAction:
             self._error = "Unexpected error: " + str(sys.exc_info())
             print self._error, traceback.format_exc()
         pass
+
+    def _reportError(self, message):
+        queryMsgAddMsg(self.sessionId, -1, -1, message)
 
     def invoke(self):
         """Begin execution of the query"""
@@ -550,6 +562,8 @@ class InbandQueryAction:
     def _execAndJoin(self):
         """Signal dispatch to C++ layer and block until execution completes"""
         lastTime = time.time()
+        queryMsgAddMsg(self.sessionId, -1, msgCode.MSG_CHUNK_DISPATCH, 
+                       "Dispatch Chunk Query.")
         submitQuery3(self.sessionId)
         elapsed = time.time() - lastTime
         print "Query dispatch (%s) took %f seconds" % (self.sessionId,

@@ -50,7 +50,7 @@
 #include "lsst/qserv/master/dispatcher.h"
 #include "lsst/qserv/master/thread.h"
 #include "lsst/qserv/master/xrootd.h"
-#include "lsst/qserv/master/SessionManager.h"
+#include "lsst/qserv/master/SessionManagerAsync.h"
 #include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/master/ChunkSpec.h"
 #include "lsst/qserv/master/QuerySession.h"
@@ -446,7 +446,7 @@ qMaster::getErrorDesc(int session) {
 int qMaster::newSession(std::map<std::string,std::string> const& config) {
     AsyncQueryManager::Ptr m =
         boost::make_shared<qMaster::AsyncQueryManager>(config);
-    int id = getSessionManager().newSession(m);
+    int id = getSessionManagerAsync().newSession(m);
     return id;
 }
 
@@ -466,7 +466,7 @@ std::string qMaster::getSessionResultName(int session) {
 }
 
 void qMaster::discardSession(int session) {
-    getSessionManager().discardSession(session);
+    getSessionManagerAsync().discardSession(session);
 }
 
 qMaster::XrdTransResult qMaster::getQueryResult(int session, int chunk) {

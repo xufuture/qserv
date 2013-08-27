@@ -55,7 +55,7 @@ namespace { // File-scope helpers
 std::string getTimeStampId() {
     struct timeval now;
     int rc = gettimeofday(&now, NULL);
-    assert(rc == 0);
+    if (rc != 0) throw "Failed to get timestamp.";
     std::stringstream s;
     s << (now.tv_sec % 10000) << now.tv_usec;
     return s.str();
@@ -372,8 +372,8 @@ std::string TableMerger::_makeCreateStmt(PacketIterPtr pacIterP,
         }
         // Extend, since we didn't find the CREATE statement.
         if(!pacIterP->incrementExtend()) {
-            std::cerr << "ERROR! Didn't find create stmt." << std::endl;
-            assert((*pacIterP)->second != sz);
+            errno = ENOTRECOVERABLE;
+            throw "Create statement not found.";
         }
     }
     return createSql;

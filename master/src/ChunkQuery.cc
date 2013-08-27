@@ -44,6 +44,8 @@
 #include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/master/PacketIter.h"
 #include "lsst/qserv/master/DynamicWorkQueue.h"
+#include "lsst/qserv/master/MessageStore.h"
+#include "lsst/qserv/master/msgCode.h"
 
 // Namespace modifiers
 using boost::make_shared;
@@ -80,6 +82,59 @@ namespace {
 }  // anonymous namespace
 
 //////////////////////////////////////////////////////////////////////
+// class ChunkQuery::WriteCallable
+//////////////////////////////////////////////////////////////////////
+class lsst::qserv::master::ChunkQuery::WriteCallable : public DynamicWorkQueue::Callable {
+public:
+    explicit WriteCallable(qMaster::ChunkQuery& cq) :
+        _cq(cq)
+    {}
+    virtual ~WriteCallable() {}
+    virtual void operator()() {
+        try {
+            // Use blocking calls to prevent implicit thread creation by
+            // XrdClient
+            _cq._state = ChunkQuery::WRITE_OPEN;
+            int tries = 5; // Arbitrarily try 5 times.
+            int result;
+            while (tries > 0) {
+                --tries;
+                result = qMaster::xrdOpen(_cq._spec.path.c_str(), O_WRONLY);
+                if (result == -1) {
+                    if (errno == ENOENT) {
+                        std::stringstream msgStrm;
+                        msgStrm << std::string("Chunk not found for path:")
+                                << _cq._spec.path << " , "
+                                << tries << " tries left ";
+                        _cq._manager->getMessageStore()->addMessage(_cq._id,
+                            MSG_XRD_OPEN_FAIL, msgStrm.str());
+                        std::cout << msgStrm.str() << std::endl;
+                        continue;
+                    }
+                    _cq._manager->getMessageStore()->addMessage(_cq._id,
+                        errno != 0 ? -abs(errno) : -1,
+                        "Remote I/O error during XRD open for write.");
+                    result = -errno;
+                }
+                break;
+            }
+            _cq.Complete(result);
+        } catch (const char *msg) {
+            _cq._state = ChunkQuery::ABORTED;
+            _cq._manager->getMessageStore()->addMessage(_cq._id,
+                 errno != 0 ? -abs(errno) : -1, msg);
+            _cq._notifyManager();
+        }
+    }
+    virtual void abort() {
+        // Can't really squash myself.
+    }
+
+private:
+    ChunkQuery& _cq;
+};
+
+//////////////////////////////////////////////////////////////////////
 // class ChunkQuery::ReadCallable
 //////////////////////////////////////////////////////////////////////
 class lsst::qserv::master::ChunkQuery::ReadCallable : public DynamicWorkQueue::Callable {
@@ -89,24 +144,40 @@ public:
     {}
     virtual ~ReadCallable() {} // Must halt current operation.
     virtual void operator()() {
-        // Use blocking reads to prevent implicit thread creation by 
-        // XrdClient
-        _cq._state = ChunkQuery::READ_OPEN;
-        _cq._readOpenTimer.start();
-        _isRunning = true;
-        int result = qMaster::xrdOpen(_cq._resultUrl.c_str(), O_RDONLY);
-        if(result == -1 ) {
-            if(errno == EINPROGRESS) {
-                std::cout << "Synchronous open returned EINPROGRESS!!!! "
-                          << _cq._spec.chunkId
-                          << std::endl;
+        try {
+            // Use blocking reads to prevent implicit thread creation by
+            // XrdClient
+            _cq._state = ChunkQuery::READ_OPEN;
+            _cq._readOpenTimer.start();
+            _isRunning = true;
+            int result = qMaster::xrdOpen(_cq._resultUrl.c_str(), O_RDONLY);
+            if(result == -1 ) {
+                if(errno == EINPROGRESS) {
+                    std::cout << "Synchronous open returned EINPROGRESS!!!! "
+                              << _cq._spec.chunkId
+                              << std::endl;
+                }
+                _cq._attempts += 1;
+                if (_cq._attempts < _cq.MAX_ATTEMPTS) {
+                    _cq._state = WRITE_QUEUE;
+                    _cq._manager->addToWriteQueue(new WriteCallable(_cq));
+                } else {
+                    _cq._result.read = -errno;
+                    _cq._state = ChunkQuery::COMPLETE;
+                    _cq._manager->getMessageStore()->addMessage(_cq._id,
+                        errno != 0 ? -abs(errno) : -1,
+                        "Remote I/O error during XRD open for read.");
+                    _cq._notifyManager();
+                }
+                return;
             }
-            _cq._result.read = -errno;
-            _cq._state = ChunkQuery::COMPLETE;
-            _cq._notifyManager(); 
-            return;
+            _cq.Complete(result);
+        } catch (const char *msg) {
+            _cq._state = ChunkQuery::ABORTED;
+            _cq._manager->getMessageStore()->addMessage(_cq._id, 
+                errno != 0 ? -abs(errno) : -1, msg);
+            _cq._notifyManager();
         }
-        _cq.Complete(result);
     }
     virtual void abort() {
         if(_isRunning) {
@@ -114,53 +185,9 @@ public:
             _cq._unlinkResult(_cq._resultUrl);             
         }
     }
-
 private:
     ChunkQuery& _cq;
     bool _isRunning;
-};
-
-//////////////////////////////////////////////////////////////////////
-// class ChunkQuery::WriteCallable
-//////////////////////////////////////////////////////////////////////
-class lsst::qserv::master::ChunkQuery::WriteCallable : public DynamicWorkQueue::Callable {
-public:
-    explicit WriteCallable(qMaster::ChunkQuery& cq) : 
-        _cq(cq)
-    {}
-    virtual ~WriteCallable() {} 
-    virtual void operator()() {
-        // Use blocking calls to prevent implicit thread creation by 
-        // XrdClient
-        _cq._state = ChunkQuery::WRITE_OPEN;
-        int tries = 5; // Arbitrarily try 5 times.
-        int result;
-        while(tries > 0) {
-            --tries;
-            result = qMaster::xrdOpen(_cq._spec.path.c_str(), O_WRONLY);
-            if (result == -1) {
-                if(errno == ENOENT) {
-                    std::cout << "Chunk not found for path:"
-                              << _cq._spec.path << " , "
-                              << tries << " tries left " << std::endl;
-                    continue;
-                }
-            }
-            if ( result == -1 ) {
-                result = -errno;
-            }
-            break;
-        }
-        _cq.Complete(result);
-    }
-    virtual void abort() {
-        // Can't really squash myself.
-    }
-    virtual void cancel() {
-        _cq.Complete(-1);
-    }
-private:
-    ChunkQuery& _cq;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -186,7 +213,6 @@ void qMaster::ChunkQuery::Complete(int Result) {
     // Prevent multiple Complete() callbacks from stacking. 
     boost::shared_ptr<boost::mutex> m(_completeMutexP);
     boost::lock_guard<boost::mutex> lock(*m);
-
     std::stringstream ss;
     bool isReallyComplete = false;
     if(_shouldSquash) {        
@@ -252,6 +278,7 @@ qMaster::ChunkQuery::ChunkQuery(qMaster::TransactionSpec const& t, int id,
     _result.queryWrite = 0;
     _result.read = 0;
     _result.localWrite = 0;
+    _attempts = 0;
     _hash = qMaster::hashQuery(_spec.query.c_str(), 
                                _spec.query.size());
     // Patch the spec to include the magic query terminator.
@@ -471,11 +498,15 @@ void qMaster::ChunkQuery::_sendQuery(int fd) {
     int len = _spec.query.length();
     _writeTimer.start();
     int writeCount = qMaster::xrdWrite(fd, _spec.query.c_str(), len);
+    if (writeCount < 0) {
+        throw "Remote I/O error during XRD write.";
+    }
     _writeTimer.stop();
     ss << _hash << " WriteQuery " << _writeTimer << std::endl;
+    _manager->getMessageStore()->addMessage(_id, MSG_XRD_WRITE, "Query Written.");
     
     // Get rid of the query string to save space
-    _spec.query.clear();
+    //_spec.query.clear();
     if(writeCount != len) {
         _result.queryWrite = -errno;
         isReallyComplete = true;
@@ -531,6 +562,7 @@ void qMaster::ChunkQuery::_readResultsDefer(int fd) {
     _result.localWrite = 1; // MAGIC: stuff the result so that it doesn't
     // look like an error to skip the local write.
     _state = COMPLETE;
+    _manager->getMessageStore()->addMessage(_id, MSG_XRD_READ, "Results Read.");
     std::cout << _hash << " ReadResults defer " << std::endl;
     _notifyManager();
 }
