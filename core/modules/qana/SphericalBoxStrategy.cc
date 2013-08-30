@@ -206,10 +206,17 @@ public:
     addTable(Tuples& tuples) : _tuples(tuples) {
     }
     virtual void operator()(TableRefN& t) {
-        std::string table = t.getTable();
-        if(table.empty()) return; // Don't add the compound-part of
-                                  // compound ref.
-        _tuples.push_back(Tuple(t.getDb(), t.getTable(), t.getAlias()));
+        SimpleTableN* p = dynamic_cast<SimpleTableN*>(&t);
+        if(p) {
+            std::string table = p->getTable();
+            
+            if(table.empty()) { 
+                throw std::logic_error("Missing table in SimpleTableN"); 
+            }
+            _tuples.push_back(Tuple(p->getDb(), table, p->getAlias()));
+        } else { 
+            t.apply(*this);
+        }
     }
 private:
     Tuples& _tuples;
@@ -224,22 +231,27 @@ public:
           _end(tuples.end()) {
     }
     virtual void operator()(TableRefN& t) {
-        std::string table = t.getTable();
-        if(table.empty()) return; // Ignore the compound-part of
-                                  // compound ref.
-        if(_i == _end) {
-            throw std::invalid_argument("TableRefN missing table.");
+        SimpleTableN* p = dynamic_cast<SimpleTableN*>(&t);
+        if(p) {            
+            std::string table = p->getTable();
+            if(table.empty()) { 
+                throw std::logic_error("SimpleTableN: missing table"); }
+            if(_i == _end) {
+                throw std::invalid_argument("TableRefN missing table.");
+            }
+            // std::cout << "Patching tablerefn:" << t << std::endl;
+            p->setDb(_i->db);
+            // Always use the first table. A different function will be
+            // used when multiple tables are involved.
+            if(_i->tables.empty()) {
+                throw std::logic_error("Missing patched table");
+            } else {
+                p->setTable(_i->tables.front());
+            }
+            ++_i;
+        } else { 
+            t.apply(*this); 
         }
-        // LOGGER_INF << "Patching tablerefn:" << t << std::endl;
-        t.setDb(_i->db);
-        // Always use the first table. A different function will be
-        // used when multiple tables are involved.
-        if(_i->tables.empty()) {
-            throw std::logic_error("Missing patched table");
-        } else {
-            t.setTable(_i->tables.front());
-        }
-        ++_i;
     }
 private:
     Tuples& _tuples;
