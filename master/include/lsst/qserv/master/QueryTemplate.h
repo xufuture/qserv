@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,20 +10,20 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #ifndef LSST_QSERV_MASTER_QUERYTEMPLATE_H
 #define LSST_QSERV_MASTER_QUERYTEMPLATE_H
 /**
-  * @file 
+  * @file
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -31,16 +31,18 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace master {
 // Forward
 class ColumnRef;
-class TableRefN;
+class SimpleTableN;
 
 /// QueryTemplate
 ///
 /// @brief QueryTemplate stores a query representation that is a sequence of
 /// mostly-concrete tokens. It contains minimal structural information except
-/// what is necessary to vary queries for different partitions. 
+/// what is necessary to vary queries for different partitions.
 ///
 /// A query template is an intermediate stage between a fully-structured
 /// semantic-preserving query representation (i.e., SelectStmt) and generated
@@ -54,7 +56,7 @@ class TableRefN;
 
 /// History:
 /// QueryTemplate replaces the string-based Substitution class that was used to
-/// perform fast chunk substitutions in generating queries. 
+/// perform fast chunk substitutions in generating queries.
 ///
 /// The Substition/SqlSubstitution model employed a single template
 /// string along with an index to the string regions that were
@@ -63,7 +65,7 @@ class TableRefN;
 /// perform the subsitution. The representation was fairly compact, but relied
 /// on string manipulation with structural information limited to indexes and
 /// extents.
-/// 
+///
 class QueryTemplate {
 public:
     /// An abstract entry in a query template
@@ -77,7 +79,7 @@ public:
     class StringEntry : public Entry {
     public:
         StringEntry(std::string const& s_) : s(s_) {}
-        virtual std::string getValue() const { return s; } 
+        virtual std::string getValue() const { return s; }
         std::string s;
     };
     /// An abstract mapping from entry to entry
@@ -91,7 +93,7 @@ public:
 
     void append(std::string const& s);
     void append(ColumnRef const& cr);
-    void append(TableRefN const& tr);
+    void append(SimpleTableN const& st);
     void append(boost::shared_ptr<Entry> const& e);
 
     std::string dbgStr() const;

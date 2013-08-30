@@ -99,8 +99,8 @@ newColumnFactor(antlr::RefAST t, ColumnRefNodeMap& cMap) {
 
             boost::shared_ptr<ColumnRef> newColumnRef;
             newColumnRef.reset(new ColumnRef(tokenText(r.db),
-                                                      tokenText(r.table),
-                                                      tokenText(r.column)));
+                                             tokenText(r.table),
+                                             tokenText(r.column)));
             vt = ValueFactor::newColumnRefFactor(newColumnRef);
         }
         return vt;

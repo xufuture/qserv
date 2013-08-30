@@ -115,35 +115,40 @@ struct RestrictorEntry {
     std::string keyColumn;
 };
 typedef std::deque<RestrictorEntry> RestrictorEntries;
-class getTable {
+class getTable : public TableRefN::Func {
 public:
 
-    explicit getTable(MetadataCache& metadata, RestrictorEntries& entries)
+    getTable(MetadataCache& metadata, RestrictorEntries& entries)
         : _metadata(metadata),
           _entries(entries) {}
     void operator()(TableRefN::Ptr t) {
         if(!t) {
             throw std::invalid_argument("NULL TableRefN::Ptr");
         }
-        std::string const& db = t->getDb();
-        std::string const& table = t->getTable();
+        SimpleTableN::Ptr p = boost::dynamic_pointer_cast<SimpleTableN>(t);
+        if(p) {
+            std::string const& db = p->getDb();
+            std::string const& table = p->getTable();
 
-        // Is table chunked?
-        if(!_metadata.checkIfTableIsChunked(db, table)) {
-            return; // Do nothing for non-chunked tables
+            // Is table chunked?
+            if(!_metadata.checkIfTableIsChunked(db, table)) {
+                return; // Do nothing for non-chunked tables
+            }
+            // Now save an entry for WHERE clause processing.
+            if(!t->isSimple()) {
+                // For now, only accept aliased tablerefs (should have
+                // been done earlier)
+                throw std::logic_error("Unexpected unaliased table reference");
+            }
+            std::string alias = p->getAlias();
+            std::vector<std::string> pCols = _metadata.getPartitionCols(db, table);
+            RestrictorEntry se(alias,
+                               StringPair(pCols[0], pCols[1]),
+                               pCols[2]);
+            _entries.push_back(se);
+        } else {
+            t->apply(*this);
         }
-        // Now save an entry for WHERE clause processing.
-        std::string alias = t->getAlias();
-        if(alias.empty()) {
-            // For now, only accept aliased tablerefs (should have
-            // been done earlier)
-            throw std::logic_error("Unexpected unaliased table reference");
-        }
-        std::vector<std::string> pCols = _metadata.getPartitionCols(db, table);
-        RestrictorEntry se(alias,
-                        StringPair(pCols[0], pCols[1]),
-                        pCols[2]);
-        _entries.push_back(se);
     }
     MetadataCache& _metadata;
     RestrictorEntries& _entries;

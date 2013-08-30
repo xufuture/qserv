@@ -640,7 +640,7 @@ BOOST_AUTO_TEST_CASE(CountQuery2) {
 
 
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
-    
+
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
     BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
@@ -658,7 +658,7 @@ BOOST_AUTO_TEST_CASE(CountQuery2) {
 BOOST_AUTO_TEST_CASE(UnpartLimit) {
     std::string stmt = "SELECT * from Science_Ccd_Exposure limit 3;";
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
-    
+
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
     BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
@@ -740,8 +740,56 @@ BOOST_AUTO_TEST_CASE(Petasky1) {
         " FROM Source GROUP BY objectId HAVING  c > 1000 LIMIT 10;";
     testStmt3(qsTest, stmt);
 }
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(EquiJoin, ParserFixture)
+BOOST_AUTO_TEST_CASE(FreeIndex) {
+    // Equi-join using index and free-form syntax
+    std::string stmt = "SELECT s.ra, s.decl, o.foo FROM Source s, Object o "
+        "WHERE s.objectId=o.objectId and o.objectIdObjTest = 430209694171136;";
+    testStmt3(qsTest, stmt);
+}
+
+BOOST_AUTO_TEST_CASE(SpecIndex) {
+    // Equi-join syntax, not supported yet.
+    std::string stmt = "SELECT s.ra, s.decl, o.foo "
+        "FROM Object o JOIN Source s USING (objectIdObjTest) JOIN Source s2 USING (objectIdObjTest) "
+        "WHERE o.objectId = 430209694171136;";
+    testStmt3(qsTest, stmt);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
+
+/// table JOIN table syntax
+BOOST_FIXTURE_TEST_SUITE(JoinSyntax, ParserFixture)
+BOOST_AUTO_TEST_CASE(NoSpec) {
+    std::string stmt = "SELECT s1.foo, s2.foo "
+        "FROM Source s1 NATURAL LEFT JOIN Source s2 "
+        "WHERE s1.bar = s2.bar;";
+    testStmt3(qsTest, stmt);
+}
+
+BOOST_AUTO_TEST_CASE(Union) {
+    std::string stmt = "SELECT s1.foo, s2.foo "
+        "FROM Source s1 UNION JOIN Source s2 "
+        "WHERE s1.bar = s2.bar;";
+    testStmt3(qsTest, stmt);
+}
+BOOST_AUTO_TEST_CASE(Cross) {
+    std::string stmt = "SELECT * "
+        "FROM Source s1 CROSS JOIN Source s2 "
+        "WHERE s1.bar = s2.bar;";
+    testStmt3(qsTest, stmt);
+}
+BOOST_AUTO_TEST_CASE(Using) {
+    // Equi-join syntax, non-partitioned
+    std::string stmt = "SELECT * "
+        "FROM Filter f JOIN Science_Ccd_Exposure USING(exposureId);";
+    testStmt3(qsTest, stmt);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 ////////////////////////////////////////////////////////////////////////
 // Case01
 ////////////////////////////////////////////////////////////////////////
@@ -760,7 +808,7 @@ BOOST_AUTO_TEST_CASE(Case01_0002) {
     QsRestrictor& r = *context->restrictors->front();
     BOOST_CHECK_EQUAL(r._name, "sIndex");
     char const* params[] = {"LSST","Object", "objectIdObjTest", "430213989000"};
-    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(), 
+    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
                                   params, params+4);
 }
 

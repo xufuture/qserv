@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,14 +10,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #ifndef LSST_QSERV_MASTER_TABLEREFN_H
@@ -36,30 +36,34 @@
 #include <boost/shared_ptr.hpp>
 #include "lsst/qserv/master/QueryTemplate.h"
 
-namespace lsst { 
-namespace qserv { 
+namespace lsst {
+namespace qserv {
 namespace master {
 class QueryTemplate; // Forward
+class JoinSpec; 
 
 /// TableRefN is a parsed table reference node
 class TableRefN {
 public:
     typedef boost::shared_ptr<TableRefN> Ptr;
     virtual ~TableRefN() {}
-    virtual std::string const& getAlias() const { return alias; }
-    virtual std::string const& getDb() const = 0;
-    virtual std::string const& getTable() const = 0; ///< empty string if compound
+    
+    virtual bool isSimple() const = 0;
+
     virtual std::ostream& putStream(std::ostream& os) const = 0;
     virtual void putTemplate(QueryTemplate& qt) const = 0;
     // Modifiers:
-    virtual void setAlias(std::string const& a) { alias=a; }
     virtual void setDb(std::string const& db) = 0;
     virtual void setTable(std::string const& table) = 0;
 
     class Func {
     public:
         virtual ~Func() {}
-        virtual void operator()(TableRefN& t) { (*this)(t); }
+        virtual void operator()(TableRefN& t) {}
+    };
+    class FuncConst {
+    public:
+        virtual ~FuncConst() {}
         virtual void operator()(TableRefN const& t) {}
     };
     template <class F>
@@ -72,23 +76,16 @@ public:
             if(t.get()) { t->apply(f); } }
         F& f;
     };
-        
+    
     // apply f() over all all tableRefns in depth-first order (for compound
-    // tablerefs)
-    virtual void apply(Func& f) {}
+    // tablerefs). Always applies non-const version.
+    virtual void apply(Func& f) {} 
+    virtual void apply(FuncConst& f) {} 
 
     class render;
 protected:
 
-    TableRefN(std::string const& alias_) : alias(alias_) {}
-    inline void _putAlias(QueryTemplate& qt) const {
-        if(!alias.empty()) { 
-            qt.append("AS"); 
-            qt.append(alias); 
-        }
-    }
-    std::string alias;
-    
+
 };
 std::ostream& operator<<(std::ostream& os, TableRefN const& refN);
 std::ostream& operator<<(std::ostream& os, TableRefN const* refN);
@@ -111,12 +108,15 @@ public:
     typedef boost::shared_ptr<SimpleTableN> Ptr;
     SimpleTableN(std::string const& db_, std::string const& table_,
                  std::string const& alias_) 
-        : TableRefN(alias_), db(db_), table(table_)  {
+        : alias(alias_), db(db_), table(table_)  {
         if(table_.empty()) { throw std::logic_error("SimpleTableN without table"); }
     }
     
+    virtual bool isSimple() const { return true; }
     virtual std::string const& getDb() const { return db; }
     virtual std::string const& getTable() const { return table; }
+    virtual std::string const& getAlias() const { return alias; }
+
     virtual std::ostream& putStream(std::ostream& os) const {
         os << "Table(" << db << "." << table << ")";
         if(!alias.empty()) { os << " AS " << alias; }
@@ -124,14 +124,19 @@ public:
     }
     virtual void putTemplate(QueryTemplate& qt) const {
         qt.append(*this);
-        _putAlias(qt);
+        if(!alias.empty()) {
+            qt.append("AS");
+            qt.append(alias);
+        }
     }
     // Modifiers
+    virtual void setAlias(std::string const& a) { alias=a; }
     virtual void setDb(std::string const& db_) { db = db_; }
     virtual void setTable(std::string const& table_) { table = table_; }
     virtual void apply(Func& f) { f(*this); }
-    virtual void apply(Func& f) const { f(*this); }
+    virtual void apply(FuncConst& f) const { f(*this); }
 protected:
+    std::string alias;
     std::string db;
     std::string table;
 };
@@ -142,55 +147,51 @@ protected:
 /// Implementation is incomplete/broken.
 class JoinRefN : public TableRefN {
 public:
-    enum JoinType {DEFAULT, INNER, LEFT, RIGHT, NATURAL, CROSS, FULL};
+    enum JoinType {DEFAULT, INNER, LEFT, RIGHT, FULL, CROSS, UNION};
+    
+    JoinRefN(TableRefN::Ptr left_, TableRefN::Ptr right_,
+             JoinType jt, bool isNatural_, 
+             boost::shared_ptr<JoinSpec> spec_) 
+        : left(left_), right(right_),
+          joinType(jt), 
+          isNatural(isNatural),
+          spec(spec_) {}
 
-    JoinRefN(std::string const& db1_, std::string const& table1_, 
-             std::string const& db2_, std::string const& table2_,
-             JoinType jt, std::string const& condition_, 
-             std::string const& alias_) 
-        : TableRefN(alias_),
-          db1(db1_), table1(table1_), db2(db2_), table2(table2_),
-          joinType(jt), condition(condition_) {}
-
-    virtual std::string const& getTable() const { 
-        static std::string s;
-        return s; 
-    }
-    virtual std::string const& getDb() const { return getTable(); }
+    virtual bool isSimple() const { return false; }
 
     JoinType getJoinType() const { return joinType; }
-    std::string getDb1() { return db1; }
-    std::string getDb2() { return db2; }
-    std::string getTable1() { return table1; }
-    std::string getTable2() { return table2; }
-    std::string getCondition() { return condition; }
+    TableRefN const* getLeft() const { return left.get(); }
+    TableRefN const* getRight() const { return right.get(); }
+    JoinSpec const* getSpec() const { return spec.get(); }
 
     virtual std::ostream& putStream(std::ostream& os) const {
-        os << "Join(" << db1 << "." << table1 << ", "
-           << db2 << "." << table2 << ", " << condition << ")";
-        if(!alias.empty()) { os << " AS " << alias; }
+        os << "Join(";
+        if(left) { left->putStream(os); }
+        else { os << "<BROKEN_JOIN>";}
+        os << ",";
+        if(right) {right->putStream(os); }
+        else { os << "<BROKEN_JOIN>";}
         return os;
     }
-    virtual void putTemplate(QueryTemplate& qt) const {
-        // FIXME: need to pass Join decorator into template.
-        qt.append(SimpleTableN(db1, table1, ""));
-        qt.append("JOIN");
-        qt.append(SimpleTableN(db2, table2, ""));
-        _putAlias(qt);
-    }
+    virtual void putTemplate(QueryTemplate& qt) const;
     // Modifiers
+    void setLeft(TableRefN::Ptr t) { left = t; } 
+    void setRight(TableRefN::Ptr t) { right = t; } 
+    void setJoinType(JoinType jt, bool isNatural_) { 
+        joinType = jt; isNatural = isNatural_; } 
     virtual void setDb(std::string const&) {} // FIXME: ignore?
     virtual void setTable(std::string const&) {} // FIXME: ignore?
     virtual void apply(Func& f);
+    virtual void apply(FuncConst& f) const;
 
 protected:
-    std::string db1;
-    std::string table1;
-    std::string db2;
-    std::string table2;
-    JoinType joinType;
-    std::string condition; // for now, use a dumb string.
+    void _putJoinTemplate(QueryTemplate& qt) const;
 
+    TableRefN::Ptr left;
+    TableRefN::Ptr right;
+    JoinType joinType;
+    bool isNatural;
+    boost::shared_ptr<JoinSpec> spec;
 };
 
 // Containers

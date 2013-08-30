@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /**
@@ -29,9 +29,10 @@
 #include "lsst/qserv/master/FromList.h"
 
 namespace qMaster=lsst::qserv::master;
+using lsst::qserv::master::FromList;
 
-std::ostream& 
-qMaster::operator<<(std::ostream& os, qMaster::FromList const& fl) {
+std::ostream&
+qMaster::operator<<(std::ostream& os, FromList const& fl) {
     os << "FROM ";
     if(fl._tableRefns.get() && fl._tableRefns->size() > 0) {
         TableRefnList const& refList = *(fl._tableRefns);
@@ -43,22 +44,26 @@ qMaster::operator<<(std::ostream& os, qMaster::FromList const& fl) {
     return os;
 }
 
+bool FromList::isJoin() const {    
+    return (_tableRefns.get() && _tableRefns->size() > 1);
+}
+
 std::string
-qMaster::FromList::getGenerated() {
+FromList::getGenerated() {
     QueryTemplate qt;
     renderTo(qt);
     return qt.dbgStr();
 }
 
 void
-qMaster::FromList::renderTo(qMaster::QueryTemplate& qt) const {
+FromList::renderTo(qMaster::QueryTemplate& qt) const {
     if(_tableRefns.get() && _tableRefns->size() > 0) {
         TableRefnList const& refList = *_tableRefns;
         std::for_each(refList.begin(), refList.end(), TableRefN::render(qt));
-    } 
+    }
 }
 
-boost::shared_ptr<qMaster::FromList> qMaster::FromList::copySyntax() {
+boost::shared_ptr<qMaster::FromList> FromList::copySyntax() {
     boost::shared_ptr<FromList> newL(new FromList(*this));
     // Shallow copy of expr list is okay.
     newL->_tableRefns.reset(new TableRefnList(*_tableRefns));
@@ -66,7 +71,7 @@ boost::shared_ptr<qMaster::FromList> qMaster::FromList::copySyntax() {
     return newL;
 }
 
-boost::shared_ptr<qMaster::FromList> qMaster::FromList::copyDeep() const {
+boost::shared_ptr<qMaster::FromList> FromList::copyDeep() const {
     // FIXME
     boost::shared_ptr<FromList> newL(new FromList(*this));
     // Shallow copy of expr list is okay.

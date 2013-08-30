@@ -1166,7 +1166,8 @@ table_subquery :
 
 //{ Rule #122 <cross_join> - leading  <table_ref> was skipped to avoid recursion, see rule #325 <joined_table>
 cross_join : 
-	"cross" "join" table_ref
+	"cross" "join" table_ref {
+            #cross_join = #([CROSS_JOIN,"CROSS_JOIN"], #cross_join); }
 ;
 //}
 
@@ -1175,9 +1176,12 @@ cross_join :
 //  The leading <table_ref> was skipped to avoid recursion, see rule #325 <joined_table>.
 qualified_join : 
 //	("natural")? (join_type)? "join" table_ref (options{greedy=true;}:join_spec)? 
-	  ( "inner" | outer_join_type ("outer")? )? "join" table_ref join_spec 
-	| "natural" ( "inner" | outer_join_type ("outer")? )? "join" table_ref 
-	| "union" "join" table_ref 
+	  ( "inner" | outer_join_type ("outer")? )? "join" table_ref join_spec {
+            #qualified_join = #([JOIN_WITH_SPEC,"JOIN_WITH_SPEC"], #qualified_join); }
+	| "natural" ( "inner" | outer_join_type ("outer")? )? "join" table_ref {
+            #qualified_join = #([JOIN_NO_SPEC,"JOIN_NO_SPEC"], #qualified_join); }
+	| "union" "join" table_ref {
+            #qualified_join = #([UNION_JOIN,"UNION_JOIN"], #qualified_join);}
 ;
 //}
 
@@ -1198,14 +1202,16 @@ join_spec :
 
 //{ Rule #327 <join_condition>
 join_condition : 
-	"on" search_condition 
+	"on" search_condition {
+            #join_condition = #([JOIN_CONDITION,"JOIN_CONDITION"], #join_condition);}
 ;
 //}
 
 //  Rule #326 <join_column_list> was replaced by the rule #094 <column_name_list>
 //{ Rule #357 <named_columns_join>
 named_columns_join : 
-	"using" LEFT_PAREN column_name_list/*join_column_list*/ RIGHT_PAREN 
+	"using" LEFT_PAREN column_name_list/*join_column_list*/ RIGHT_PAREN {
+            #named_columns_join = #([USING_SPEC,"USING_SPEC"], #named_columns_join);}
 ;
 //}
 
@@ -1691,7 +1697,8 @@ column_name :
 
 //{ Rule #094 <column_name_list>
 column_name_list : 
-	column_name (COMMA column_name)* 
+	column_name (COMMA column_name)* {
+            #column_name_list = #([COLUMN_NAME_LIST,"COLUMN_NAME_LIST"],#column_name_list); }
 ;
 //}
 
