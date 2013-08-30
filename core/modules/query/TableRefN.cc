@@ -28,10 +28,13 @@
   */
 #include "query/TableRefN.h"
 #include <sstream>
+#include "query/JoinSpec.h"
 
 namespace qMaster=lsst::qserv::master;
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst { 
+namespace qserv { 
+namespace master {
 ////////////////////////////////////////////////////////////////////////
 // TableRefN
 ////////////////////////////////////////////////////////////////////////
@@ -47,9 +50,45 @@ void TableRefN::render::operator()(TableRefN const& refN) {
     refN.putTemplate(_qt);
 }
 
-void JoinRefN::apply(TableRefN::Func& f) {
-    // Apply over myself and my join tables.
-    // FIXME
+
+////////////////////////////////////////////////////////////////////////
+// JoinTableN 
+////////////////////////////////////////////////////////////////////////
+void JoinRefN::putTemplate(QueryTemplate& qt) const {
+    if(!left || !right) {
+        throw std::logic_error("Invalid JoinTableN for templating");
+    }
+    left->putTemplate(qt);
+    _putJoinTemplate(qt);
+    right->putTemplate(qt);
+    if(spec) spec->putTemplate(qt);
 }
+
+void JoinRefN::apply(TableRefN::Func& f) {
+    if(left) { left->apply(f); }
+    if(right ) { right->apply(f); }
+}
+void JoinRefN::apply(TableRefN::FuncConst& f) const {
+    if(left) { left->apply(f); }
+    if(right ) { right->apply(f); }
+}
+
+void JoinRefN::_putJoinTemplate(QueryTemplate& qt) const {
+    if(isNatural) { qt.append("NATURAL"); }
+
+    switch(joinType) {
+    case DEFAULT: break;
+    case INNER: qt.append("INNER"); break;        
+    case LEFT: qt.append("LEFT"); qt.append("OUTER"); break;
+    case RIGHT: qt.append("RIGHT"); qt.append("OUTER"); break;
+    case FULL: qt.append("FULL"); qt.append("OUTER"); break;
+    case CROSS: qt.append("CROSS"); break;
+    case UNION: qt.append("INNER"); break;
+    }
+
+    qt.append("JOIN");
+}
+
+
 
 }}} // lsst::qserv::master

@@ -36,6 +36,9 @@
 // Package
 #include "parser/SqlSQL2Parser.hpp" // applies several "using antlr::***".
 #include "parser/ColumnRefH.h"
+#include "parser/BoolTermFactory.h"
+#include "query/ColumnRef.h"
+#include "query/JoinSpec.h"
 #include "parser/ParseAliasMap.h"
 #include "parser/ParseException.h"
 #include "parser/parseTreeUtil.h"
@@ -231,39 +234,20 @@ public:
 class FromFactory::RefGenerator {
 public:
     RefGenerator(antlr::RefAST firstRef,
-                 boost::shared_ptr<ParseAliasMap> aliases)
-        : _cursor(firstRef), _aliases(aliases) {
-        LOGGER_INF << *_aliases << std::endl;
-
+                 boost::shared_ptr<ParseAliasMap> aliases,
+                 BoolTermFactory& bFactory) 
+        : _cursor(firstRef), 
+          _aliases(aliases),
+          _bFactory(bFactory) {
+        //std::cout << *_aliases << std::endl;
     }
     TableRefN::Ptr get() const {
         if(_cursor->getType() != SqlSQL2TokenTypes::TABLE_REF) {
             throw std::logic_error("_cursor is not a TABLE_REF");
         }
         RefAST node = _cursor->getFirstChild();
-        RefAST child;
-
-        TableRefN::Ptr tn;
-        switch(node->getType()) {
-        case SqlSQL2TokenTypes::TABLE_REF_AUX:
-            child = node->getFirstChild();
-            switch(child->getType()) {
-            case SqlSQL2TokenTypes::QUALIFIED_NAME:
-                tn.reset(_processQualifiedName(child));
-                break;
-            case SqlSQL2TokenTypes::SUBQUERY:
-                tn.reset(_processSubquery(child));
-                break;
-            default:
-                break;
-            }
-            break;
-            // FIXME
-        default:
-            break;
-        }
-        return tn;
-    }
+        return _generate(node);
+    }      
     void next() {
         _cursor = _cursor->getNextSibling();
         if(!_cursor.get()) return; // Iteration complete
@@ -281,6 +265,39 @@ public:
         return !_cursor.get();
     }
 private:
+    inline TableRefN::Ptr _generate(RefAST node) const {
+        TableRefN* tn;
+        if(node->getType() == SqlSQL2TokenTypes::TABLE_REF_AUX) {
+            tn = _processTableRefAux(node->getFirstChild());
+        } else {
+            throw ParseException("Expected TABLE_REF_AUX, got", node);
+        }
+        node = node->getNextSibling();
+        
+        if(node.get()) {
+            switch(node->getType()) {
+            case SqlSQL2TokenTypes::JOIN_WITH_SPEC:
+                node = node->getFirstChild();
+                tn = _makeJoinWithSpec(tn, node);
+                break;
+            case SqlSQL2TokenTypes::JOIN_NO_SPEC:
+                node = node->getFirstChild();
+                tn = _makeJoinNoSpec(tn, node);
+                break;
+            case SqlSQL2TokenTypes::CROSS_JOIN:
+                node = node->getFirstChild();
+                tn = _makeCrossJoin(tn, node);
+                break;
+            case SqlSQL2TokenTypes::UNION_JOIN:
+                node = node->getFirstChild();
+                tn = _makeUnionJoin(tn, node);
+                break;
+            default:
+                throw ParseException("Unknown (non-join) node", node);
+            }
+        }
+        return TableRefN::Ptr(tn);
+    }
     void _setup() {
         // Sanity check: make sure we were constructed with a TABLE_REF
         if(_cursor->getType() == SqlSQL2TokenTypes::TABLE_REF) {
@@ -289,6 +306,189 @@ private:
             _cursor = RefAST(); // Clear out cursor so that isDone == true
         }
     }
+    TableRefN* _processTableRefAux(RefAST firstSib) const {
+        switch(firstSib->getType()) {
+        case SqlSQL2TokenTypes::QUALIFIED_NAME:
+            return _processQualifiedName(firstSib);
+        case SqlSQL2TokenTypes::SUBQUERY:
+            return _processSubquery(firstSib);
+        default:
+            throw ParseException("No TABLE_REF_AUX", firstSib);
+        }
+        return NULL;
+    }
+    
+    /// ( "inner" | outer_join_type ("outer")? )? "join" table_ref join_spec
+    // Takes ownership of @param left
+    JoinRefN* _makeJoinWithSpec(TableRefN* left, RefAST sib) const {
+        if(!sib.get()) { 
+            throw ParseException("Null JOIN_WITH_SPEC sibling", sib); }
+        
+        JoinRefN::JoinType j = _processJoinType(sib);
+        // Fast forward past the join types we already processed
+        while(sib->getType() != SqlSQL2TokenTypes::SQL2RW_join) {
+            sib = sib->getNextSibling();
+        }
+        sib = sib->getNextSibling();
+        RefAST tableChild = sib->getFirstChild();
+        TableRefN::Ptr right = _generate(tableChild);
+        sib = sib->getNextSibling();
+        boost::shared_ptr<JoinSpec> js = _processJoinSpec(sib);
+        std::string dummy;
+        return new JoinRefN(TableRefN::Ptr(left), right, 
+                            j,
+                            false,
+                            js);
+    }
+    /// "natural" ( "inner" | outer_join_type ("outer")? )? "join" table_ref 
+    JoinRefN* _makeJoinNoSpec(TableRefN* left, RefAST sib) const {
+        if(!sib.get() 
+           || sib->getType() != SqlSQL2TokenTypes::SQL2RW_natural) { 
+            throw ParseException("Invalid NATURAL token", sib); }
+        sib = sib->getNextSibling();
+        JoinRefN::JoinType j = _processJoinType(sib);
+        // Fast forward past the join types we already processed
+        while(sib->getType() != SqlSQL2TokenTypes::SQL2RW_join) {
+            sib = sib->getNextSibling();
+        }
+        sib = sib->getNextSibling(); // next is TABLE_REF
+        if(!sib.get() 
+           || sib->getType() != SqlSQL2TokenTypes::TABLE_REF) { 
+            throw ParseException("Invalid token, expected TABLE_REF", sib); 
+        }
+        RefAST tableChild = sib->getFirstChild();
+        TableRefN::Ptr right = _generate(tableChild);
+        return new JoinRefN(TableRefN::Ptr(left), right,
+                            j,
+                            true, // Natural join, no conditions
+                            JoinSpec::Ptr());
+    }
+    /// "union" "join" table_ref
+    JoinRefN* _makeUnionJoin(TableRefN* left, RefAST sib) const {
+        if(!sib.get() 
+           || sib->getType() != SqlSQL2TokenTypes::SQL2RW_union) { 
+            throw ParseException("Invalid UNION token", sib); }        
+        sib = sib->getNextSibling();
+        if(!sib.get()
+               || sib->getType() != SqlSQL2TokenTypes::SQL2RW_join) { 
+            throw ParseException("Invalid token, expected JOIN", sib); }
+        sib = sib->getNextSibling();
+        if(!sib.get()
+           || sib->getType() != SqlSQL2TokenTypes::TABLE_REF) { 
+            throw ParseException("Invalid token, expected TABLE_REF", sib); 
+        }
+        RefAST tableChild = sib->getFirstChild();
+        TableRefN::Ptr right = _generate(tableChild);
+        return new JoinRefN(TableRefN::Ptr(left), right, 
+                            JoinRefN::UNION, 
+                            false, // union join: no condititons
+                            JoinSpec::Ptr());
+    }
+    /// "cross" "join" table_ref
+    JoinRefN* _makeCrossJoin(TableRefN* left, RefAST sib) const {
+        if(!sib.get() 
+           || sib->getType() != SqlSQL2TokenTypes::SQL2RW_cross) { 
+            throw ParseException("Invalid CROSS token", sib); }
+        sib = sib->getNextSibling();
+        if(!sib.get()
+               || sib->getType() != SqlSQL2TokenTypes::SQL2RW_join) { 
+            throw ParseException("Invalid token, expected JOIN", sib); }
+        sib = sib->getNextSibling();
+        if(!sib.get()
+           || sib->getType() != SqlSQL2TokenTypes::TABLE_REF) { 
+            throw ParseException("Invalid token, expected TABLE_REF", sib); 
+        }
+        RefAST tableChild = sib->getFirstChild();
+        TableRefN::Ptr right = _generate(tableChild);
+        return new JoinRefN(TableRefN::Ptr(left), right, 
+                            JoinRefN::CROSS,
+                            false, // cross join: no conditions
+                            JoinSpec::Ptr());
+    }     
+    /// USING_SPEC:
+    /// "using" LEFT_PAREN column_name_list  RIGHT_PAREN 
+    boost::shared_ptr<JoinSpec>  _processJoinSpec(RefAST specToken) const {
+        boost::shared_ptr<JoinSpec> js;
+        std::cout << "remaining join spec: " << walkIndentedString(specToken) 
+                  << std::endl;
+        if(!specToken.get()) {
+            throw ParseException("Null join spec", specToken);
+        }
+        RefAST token = specToken;
+        boost::shared_ptr<BoolTerm> bt;
+        switch(specToken->getType()) {
+        case SqlSQL2TokenTypes::USING_SPEC:
+            token = specToken->getFirstChild(); // Descend to "using"
+            token = token->getNextSibling(); // Advance to LEFT_PAREN
+            // Some parse tree verification is unnecessary because the
+            // grammer will enforce it. Should we trim it? 
+            if(!token.get() 
+               || token->getType() != SqlSQL2TokenTypes::LEFT_PAREN) {
+                break;
+            }
+            token = token->getNextSibling(); 
+            if(!token.get() 
+               || token->getType() != SqlSQL2TokenTypes::COLUMN_NAME_LIST) {
+                break;
+            }
+            js.reset(new JoinSpec(_processColumn(token->getFirstChild())));
+            token = token->getNextSibling(); 
+            if(!token.get() 
+               || token->getType() != SqlSQL2TokenTypes::RIGHT_PAREN) {
+                break;
+            }
+            return js;
+        case SqlSQL2TokenTypes::SQL2RW_on:
+            token = specToken->getNextSibling();
+            bt = _bFactory.newBoolTerm(token);
+            return JoinSpec::Ptr(new JoinSpec(bt));
+
+        default:
+            break;
+        }
+        throw ParseException("Invalid join spec token", token);
+        return boost::shared_ptr<JoinSpec>(); // should never reach
+    }
+
+    JoinRefN::JoinType  _processJoinType(RefAST joinSequence) const {
+        while(1) {
+            if(!joinSequence.get()) {
+                throw ParseException("Null token for join type", joinSequence);
+            }        
+            switch(joinSequence->getType()) {
+            case SqlSQL2TokenTypes::SQL2RW_inner:
+                return JoinRefN::INNER;
+            case SqlSQL2TokenTypes::SQL2RW_left:
+                return JoinRefN::LEFT;
+            case SqlSQL2TokenTypes::SQL2RW_right:
+            return JoinRefN::RIGHT;
+            case SqlSQL2TokenTypes::SQL2RW_full:
+                return JoinRefN::FULL;
+            case SqlSQL2TokenTypes::SQL2RW_outer:
+                continue; // Implied by left, right, full
+            case SqlSQL2TokenTypes::SQL2RW_join:
+                return JoinRefN::DEFAULT; // No join type specified
+            default:
+                throw ParseException("Unexpected token for join type", 
+                                     joinSequence);
+            } // case
+        } // while(1)
+    }
+
+    /// Import a column ref
+    /// Bail out if multiple column refs
+    /// column_name_list :
+    ///    column_name (COMMA column_name)* 
+    /// ;
+    boost::shared_ptr<ColumnRef> _processColumn(RefAST sib) const {
+        if(!sib.get()) {
+            throw ParseException("NULL column node", sib); }
+        if(sib->getType() != SqlSQL2TokenTypes::REGULAR_ID) {
+            throw ParseException("Bad column node for USING", sib); }
+        return boost::shared_ptr<ColumnRef>(new ColumnRef("", "", 
+                                                          tokenText(sib)));
+    }
+
     SimpleTableN* _processQualifiedName(RefAST n) const {
         RefAST qnStub = n;
         RefAST aliasN = _aliases->getAlias(qnStub);
@@ -308,13 +508,15 @@ private:
     // Fields
     antlr::RefAST _cursor;
     boost::shared_ptr<ParseAliasMap> _aliases;
-
+    BoolTermFactory& _bFactory;
 };
 ////////////////////////////////////////////////////////////////////////
 // FromFactory (impl)
 ////////////////////////////////////////////////////////////////////////
-FromFactory::FromFactory(boost::shared_ptr<ParseAliasMap> aliases) :
-        _aliases(aliases) {
+FromFactory::FromFactory(boost::shared_ptr<ParseAliasMap> aliases,
+                         boost::shared_ptr<ValueExprFactory> vf)
+    : _aliases(aliases),
+      _bFactory(new BoolTermFactory(vf)) {
 }
 
 boost::shared_ptr<FromList>
@@ -339,7 +541,10 @@ FromFactory::_import(antlr::RefAST a) {
     //           << " (" << a->getType() << ")" << std::endl;
     std::stringstream ss;
     //LOGGER_INF << "FROM indented: " << walkIndentedString(a) << std::endl;
-    for(RefGenerator refGen(a, _aliases); !refGen.isDone(); refGen.next()) {
+    assert(_bFactory);
+    for(RefGenerator refGen(a, _aliases, *_bFactory); 
+        !refGen.isDone(); 
+        refGen.next()) {
         TableRefN::Ptr p = refGen.get();
         ss << "Found ref:" ;
         TableRefN& tn = *p;
