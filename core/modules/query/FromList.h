@@ -42,6 +42,8 @@ public:
     /// @return a list of TableRefN that occur
     TableRefnList const& getTableRefnList() const { return *_tableRefns; }
 
+    bool isJoin() const;
+
     /// @return a flattened string representation.
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;

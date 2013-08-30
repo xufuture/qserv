@@ -31,10 +31,12 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace master {
 // Forward
 class ColumnRef;
-class TableRefN;
+class SimpleTableN;
 
 /// QueryTemplate
 ///
@@ -91,7 +93,7 @@ public:
 
     void append(std::string const& s);
     void append(ColumnRef const& cr);
-    void append(TableRefN const& tr);
+    void append(SimpleTableN const& st);
     void append(boost::shared_ptr<Entry> const& e);
 
     std::string dbgStr() const;

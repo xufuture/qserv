@@ -86,8 +86,8 @@ struct MappingWrapper {
 ////////////////////////////////////////////////////////////////////////
 class TableEntry : public QueryTemplate::Entry {
 public:
-    TableEntry(TableRefN const& tr)
-        : db(tr.getDb()), table(tr.getTable()) {
+    TableEntry(SimpleTableN const& st) 
+        : db(st.getDb()), table(st.getTable()) {
     }
     virtual std::string getValue() const {
         std::stringstream ss;
@@ -165,8 +165,8 @@ void QueryTemplate::append(ColumnRef const& cr) {
     _entries.push_back(e);
 }
 
-void QueryTemplate::append(TableRefN const& tr) {
-    boost::shared_ptr<Entry> e(new TableEntry(tr));
+void QueryTemplate::append(SimpleTableN const& st) {
+    boost::shared_ptr<Entry> e(new TableEntry(st));
     _entries.push_back(e);
 }
 void QueryTemplate::append(boost::shared_ptr<QueryTemplate::Entry> const& e) {

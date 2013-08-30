@@ -89,11 +89,17 @@ public:
         if(t.get()) { t->apply(*this); }
     }
     void operator()(TableRefN& t) {
-        std::string table = t.getTable();
-        if(table.empty()) return; // Add context only to concrete refs
-        if(t.getDb().empty()) { t.setDb(context.defaultDb); }
-        if(firstDb.empty()) { firstDb = t.getDb(); }
+        SimpleTableN* p = dynamic_cast<SimpleTableN*>(&t);
+        if(p) {
+            std::string table = p->getTable();
+            if(table.empty()) { 
+                throw std::logic_error("No table in SimpleTableN"); }
+        if(p->getDb().empty()) { p->setDb(context.defaultDb); }
+        if(firstDb.empty()) { firstDb = p->getDb(); }
         if(firstTable.empty()) { firstTable = table; }
+        } else {
+            t.apply(*this);
+        }
     }
     QueryContext const& context;
     std::string& firstDb;
@@ -101,7 +107,7 @@ public:
 };
 
 template <typename G, typename A>
-class addAlias {
+class addAlias : public TableRefN::Func {
 public:
     addAlias(G g, A a) : _generate(g), _addMap(a) {}
     void operator()(TableRefN::Ptr t) {
@@ -109,13 +115,18 @@ public:
         // t->putStream(LOG_STRM(Info));
         // LOGGER_INF << std::endl;
         // If no alias, then add one.
-        std::string alias = t->getAlias();
-        if(alias.empty()) {
-            alias = _generate();
-            t->setAlias(alias);
+        if(t->isSimple()) {
+            SimpleTableN::Ptr st = boost::static_pointer_cast<SimpleTableN>(t);
+            std::string alias = st->getAlias();
+            if(alias.empty()) {
+                alias = _generate();
+                st->setAlias(alias);
+            }
+            // Save ref
+            _addMap(alias, st->getDb(), st->getTable());
+        } else { // complex: JoinRefN
+            t->apply(*this);
         }
-        // Save ref
-        _addMap(alias, t->getDb(), t->getTable());
     }
 private:
     G _generate; // Functor that creates a new alias name
@@ -266,8 +277,11 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     // from-list so that the later table-name substitution is confined
     // to modifying the from-list.
     FromList& fList = stmt.getFromList();
-    // LOGGER_INF << "TABLE:Logical:orig fromlist "
-    //           << fList.getGenerated() << std::endl;
+    // std::cout << "TABLE:Logical:orig fromlist "
+    //           << fList.getGenerated()
+    //           << (fList.isJoin() ? " is join" : "")
+    //           << std::endl;
+    
     TableRefnList& tList = fList.getTableRefnList();
 
     // For each tableref, modify to add alias.
