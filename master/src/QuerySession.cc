@@ -66,6 +66,7 @@ QuerySession::QuerySession(int metaCacheSession)
 
 void QuerySession::setQuery(std::string const& q) {
     _original = q;
+    _isFinal = false;
     _initContext();
     assert(_context.get());
 
@@ -127,6 +128,7 @@ boost::shared_ptr<ConstraintVector> QuerySession::getConstraints() const {
 }
 
 void QuerySession::addChunk(ChunkSpec const& cs) {
+    _context->chunkCount += 1;
     _chunks.push_back(cs);
 }
 
@@ -157,6 +159,16 @@ MergeFixup QuerySession::makeMergeFixup() const {
                       _stmtMerge->getLimit(), needsMerge);
 }
 
+void QuerySession::finalize() {
+    if(_isFinal) {
+        return;
+    }
+    PluginList::iterator i;
+    for(i=_plugins->begin(); i != _plugins->end(); ++i) {
+        (**i).applyFinal(*_context);
+    }    
+}
+
 QuerySession::Iter QuerySession::cQueryBegin() {
     return Iter(*this, _chunks.begin());
 }
@@ -170,6 +182,7 @@ void QuerySession::_initContext() {
     _context->defaultDb = "LSST";
     _context->username = "default";
     _context->needsMerge = false;
+    _context->chunkCount = 0;
     MetadataCache* metadata = getMetadataCache(_metaCacheSession).get();
     _context->metadata = metadata;
     if(!metadata) {
@@ -184,6 +197,7 @@ void QuerySession::_preparePlugins() {
     _plugins->push_back(QueryPlugin::newInstance("Table"));
     _plugins->push_back(QueryPlugin::newInstance("QservRestrictor"));
     _plugins->push_back(QueryPlugin::newInstance("Post"));
+    _plugins->push_back(QueryPlugin::newInstance("ScanTable"));
     PluginList::iterator i;
     for(i=_plugins->begin(); i != _plugins->end(); ++i) {
         (**i).prepare();
@@ -240,6 +254,14 @@ void QuerySession::_showFinal() {
 
     std::cout << "parallel: " << par.dbgStr() << std::endl;
     std::cout << "merge: " << mer.dbgStr() << std::endl;
+    if(!_context->scanTables.empty()) {
+        StringPairList::const_iterator i,e;
+        for(i=_context->scanTables.begin(), e=_context->scanTables.end();
+            i != e; ++i) {
+            std::cout << "ScanTable: " << i->first << "." << i->second
+                      << std::endl;
+        }
+    }
 }
 
 std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) {
@@ -298,6 +320,10 @@ ChunkQuerySpec& QuerySession::Iter::dereference() const {
 void QuerySession::Iter::_buildCache() const {
     assert(_qs != NULL);
     _cache.db = _qs->_context->defaultDb;
+    std::cout << "scantables " 
+              << (_qs->_context->scanTables.empty() ? "is " : "is not ")
+              << " empty" << std::endl;
+  
     _cache.scanTables = _qs->_context->scanTables;
     _cache.queries = _qs->_buildChunkQueries(*_pos);
     _cache.chunkId = _pos->chunkId;

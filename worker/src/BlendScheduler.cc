@@ -109,6 +109,13 @@ void BlendScheduler::queueTaskAct(Task::Ptr incoming) {
     assert(_scan);
     Foreman::Scheduler* s = 0;
     if(incoming->msg->scantables_size() > 0) { 
+        std::ostringstream ss;
+        int size = incoming->msg->scantables_size();
+        ss << "Blend chose scan for:";
+        for(int i=0; i < size; ++i) {
+            ss << i << " " << incoming->msg->scantables(i);
+        }
+        _logger->debug(ss.str());
         s = _scan.get();
     } else {
         s = _group.get();

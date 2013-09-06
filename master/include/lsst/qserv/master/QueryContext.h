@@ -67,8 +67,10 @@ public:
     TableAliasReverse tableAliasReverses;
 
     // Owned QueryMapping and query restrictors
-    boost::shared_ptr<QueryMapping> queryMapping;
+    boost::shared_ptr<QueryMapping> queryMapping;    
     boost::shared_ptr<RestrList> restrictors;
+
+    int chunkCount; //< -1: all, 0: none, N: #chunks
 
     bool needsMerge; ///< Does this query require a merge/post-processing step?
 
