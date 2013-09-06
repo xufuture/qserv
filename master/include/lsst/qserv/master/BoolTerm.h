@@ -69,12 +69,12 @@ public:
     virtual PtrList::iterator iterBegin() { return PtrList::iterator(); }
     /// @return the terminal iterator
     virtual PtrList::iterator iterEnd() { return PtrList::iterator(); }
-    
+
     virtual void visitBfTerm(BfTerm::ConstOp& o) const {}
     virtual void visitBfTerm(BfTerm::Op& o) {}
 
     /// @return the reduced form of this term, or null if no reduction is
-    /// possible.  
+    /// possible.
     virtual boost::shared_ptr<BoolTerm> getReduced() { return Ptr(); }
 
     virtual std::ostream& putStream(std::ostream& os) const = 0;
@@ -129,9 +129,13 @@ public:
 
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
+    virtual boost::shared_ptr<BoolTerm> copySyntax();
     virtual void findColumnRefs(ColumnRefMap::List& list);
 
     BfTerm::PtrList _terms;
+private:
+    bool _reduceTerms(BfTerm::PtrList& newTerms, BfTerm::PtrList& oldTerms);
+    bool _checkParen(BfTerm::PtrList& terms);
 };
 /// UnknownTerm is a catch-all term intended to help the framework pass-through
 /// syntax that is not analyzed, modified, or manipulated in Qserv.
@@ -158,6 +162,17 @@ public: // ( term, term, term )
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
     StringList _terms;
+};
+
+/// BoolTermFactor is a bool factor term that contains a bool term. Occurs often when parentheses are used within a bool term. The parenthetical group is an entire factor, and it contains bool terms.
+/// Might be obsolete
+class BoolTermFactor : public BfTerm {
+public:
+    typedef boost::shared_ptr<BoolTermFactor> Ptr;
+    virtual std::ostream& putStream(std::ostream& os) const;
+    virtual void renderTo(QueryTemplate& qt) const;
+    virtual void findColumnRefs(ColumnRefMap::List& list);
+    boost::shared_ptr<BoolTerm> _term;
 };
 
 /// ValueExprTerm is a bool factor term that contains a value expression
