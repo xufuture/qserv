@@ -100,6 +100,7 @@ public:
     BoolFactor::Ptr newBoolFactor(antlr::RefAST a);
     UnknownTerm::Ptr newUnknown(antlr::RefAST a);
     PassTerm::Ptr newPassTerm(antlr::RefAST a);
+    BoolTermFactor::Ptr newBoolTermFactor(antlr::RefAST a);
     ValueExprTerm::Ptr newValueExprTerm(antlr::RefAST a);
 
     boost::shared_ptr<ValueExprFactory> _vFactory;

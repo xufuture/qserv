@@ -80,7 +80,6 @@ void BoolTermFactory::bfImport::operator()(antlr::RefAST a) {
         _bfr._terms.push_back(_pf.newCompPredicate(a));
         break;
     case SqlSQL2TokenTypes::BETWEEN_PREDICATE:
-        printIndented(a);
         _bfr._terms.push_back(_pf.newBetweenPredicate(a));
         break;
     case SqlSQL2TokenTypes::IN_PREDICATE:
@@ -88,9 +87,7 @@ void BoolTermFactory::bfImport::operator()(antlr::RefAST a) {
         break;
     case SqlSQL2TokenTypes::AND_OP:
     case SqlSQL2TokenTypes::OR_OP:
-        printIndented(a);
-        _bfr._terms.push_back(_bf.newPassTerm(a));
-
+        _bfr._terms.push_back(_bf.newBoolTermFactor(a));
         break;
     default:
         _bfr._terms.push_back(_bf.newPassTerm(a));
@@ -172,6 +169,15 @@ BoolTermFactory::newPassTerm(antlr::RefAST a) {
     }
     return p;
 }
+
+/// Construct an BoolTermFactor
+BoolTermFactor::Ptr
+BoolTermFactory::newBoolTermFactor(antlr::RefAST a) {
+    BoolTermFactor::Ptr p(new BoolTermFactor());
+    p->_term = newBoolTerm(a);
+    return p;
+}
+
 /// Construct a new ValueExprTerm using the ValueExprFactory
 ValueExprTerm::Ptr
 BoolTermFactory::newValueExprTerm(antlr::RefAST a) {

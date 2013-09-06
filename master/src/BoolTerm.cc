@@ -54,15 +54,17 @@ std::ostream& BoolFactor::putStream(std::ostream& os) const {
     return os;
 }
 std::ostream& UnknownTerm::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
+    return os << "--UNKNOWNTERM--";
 }
 std::ostream& PassTerm::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
+    return os << _text;
 }
 std::ostream& PassListTerm::putStream(std::ostream& os) const {
     // FIXME
+    return os;
+}
+std::ostream& BoolTermFactor::putStream(std::ostream& os) const {
+    if(_term) { return _term->putStream(os); }
     return os;
 }
 std::ostream& ValueExprTerm::putStream(std::ostream& os) const {
@@ -112,6 +114,10 @@ void PassListTerm::renderTo(QueryTemplate& qt) const {
     }
     qt.append(")");
 }
+void BoolTermFactor::renderTo(QueryTemplate& qt) const {
+    if(_term) { _term->renderTo(qt); }
+}
+
 void ValueExprTerm::renderTo(QueryTemplate& qt) const {
     ValueExpr::render r(qt, false);
     r(_expr);
@@ -124,6 +130,19 @@ void BoolFactor::findColumnRefs(ColumnRefMap::List& list) {
         (**i).findColumnRefs(list);
     }
 }
+
+void BoolTermFactor::findColumnRefs(ColumnRefMap::List& cList) {
+    struct btFind : public BfTerm::Op {
+        btFind(ColumnRefMap::List& cList_) : cList(cList_) {}
+        virtual void operator()(BfTerm& t) { t.findColumnRefs(cList); }
+        ColumnRefMap::List& cList;
+    };
+    if(_term) {
+        btFind find(cList);
+        _term->visitBfTerm(find);
+    }
+}
+
 void ValueExprTerm::findColumnRefs(ColumnRefMap::List& list) {
     if(_expr) { _expr->findColumnRefs(list); }
 }
@@ -133,41 +152,108 @@ boost::shared_ptr<BoolTerm> OrTerm::getReduced() {
         boost::shared_ptr<BoolTerm> reduced = _terms.front();
         if(reduced) { return reduced; }
         else { return _terms.front(); }
-    } 
+    }
     return boost::shared_ptr<BoolTerm>();
 }
 
 boost::shared_ptr<BoolTerm> AndTerm::getReduced() {
     // Get reduced versions of my children.
-    // FIXME
-
     // Can I eliminate myself?
     if(_terms.size() == 1) {
         boost::shared_ptr<BoolTerm> reduced = _terms.front();
         if(reduced) { return reduced; }
         else { return _terms.front(); }
-    } 
+    }
     return boost::shared_ptr<BoolTerm>();
+}
+
+bool BoolFactor::_reduceTerms(BfTerm::PtrList& newTerms,
+                              BfTerm::PtrList& oldTerms) {
+    typedef BfTerm::PtrList::iterator Iter;
+    bool hasReduction = false;
+    for(Iter i=oldTerms.begin(), e=oldTerms.end(); i != e; ++i) {
+        BfTerm& term = **i;
+        QueryTemplate qt;
+        term.renderTo(qt);
+        //std::cout << "reduce? " << qt.generate() << std::endl;
+        BoolTermFactor* btf = dynamic_cast<BoolTermFactor*>(&term);
+
+        if(btf) {
+            if(btf->_term) {
+                boost::shared_ptr<BoolTerm> reduced = btf->_term->getReduced();
+                if(reduced) {
+                    BoolFactor* f =  dynamic_cast<BoolFactor*>(reduced.get());
+                    if(f) { // factor in a term in a factor --> factor
+                        newTerms.insert(newTerms.end(),
+                                        f->_terms.begin(), f->_terms.end());
+                        hasReduction = true;
+                    } else {
+                        // still a reduction in the term, replace
+                        boost::shared_ptr<BoolTermFactor> newBtf;
+                        newBtf.reset(new BoolTermFactor());
+                        newBtf->_term = reduced;
+                        newTerms.push_back(newBtf);
+                        hasReduction = true;
+                    }
+                } else { // The bfterm's term couldn't be reduced,
+                    // so just add it.
+                    newTerms.push_back(*i);
+                }
+            } else { // Term-less bool term factor. Ignore.
+                hasReduction = true;
+            }
+        } else {
+            // add old bfterm
+            newTerms.push_back(*i);
+        }
+    }
+    return hasReduction;
+}
+
+bool BoolFactor::_checkParen(BfTerm::PtrList& terms) {
+    if(terms.size() != 3) { return false; }
+
+    PassTerm* pt = dynamic_cast<PassTerm*>(terms.front().get());
+    if(!pt || (pt->_text != "(")) { return false; }
+
+    pt = dynamic_cast<PassTerm*>(terms.back().get());
+    if(!pt || (pt->_text != ")")) { return false; }
+
+    return true;
 }
 
 boost::shared_ptr<BoolTerm> BoolFactor::getReduced() {
     // Get reduced versions of my children.
-    QueryTemplate qt;    // FIXME
-    typedef BfTerm::PtrList::iterator Iter;
-    for(Iter i=_terms.begin(), e=_terms.end(); i != e; ++i) {
-        BfTerm& term = **i;
-        term.renderTo(qt);
+    BfTerm::PtrList newTerms;
+    bool hasReduction = false;
+    hasReduction = _reduceTerms(newTerms, _terms);
+    // Parentheses reduction
+    if(_checkParen(newTerms)) {
+        newTerms.pop_front();
+        newTerms.pop_back();
+        hasReduction = true;
     }
+    if(hasReduction) {
+        BoolFactor* bf = new BoolFactor();
+        bf->_terms = newTerms;
+        QueryTemplate qt;
+        bf->renderTo(qt);
+        //std::cout << "reduced. " << qt.generate() << std::endl;
 
-    std::cout << "Considering boolfactor " << std::endl;
+        return boost::shared_ptr<BoolFactor>(bf);
+    } else {
+        return boost::shared_ptr<BoolTerm>();
+    }
+#if 0
     if(_terms.size() >= 1) {
         QueryTemplate qt;
         std::string s;
         renderList(qt, _terms, "---");
-        
+
         std::cout << "Can I reduce " << qt.generate() << std::endl;
-    } 
-    return boost::shared_ptr<BoolTerm>();
+    }
+#endif
+
 }
 
 
@@ -180,5 +266,10 @@ boost::shared_ptr<BoolTerm> AndTerm::copySyntax() {
     boost::shared_ptr<AndTerm> at(new AndTerm());
     at->_terms = _terms; // shallow copy for now
     return at;
+}
+boost::shared_ptr<BoolTerm> BoolFactor::copySyntax() {
+    boost::shared_ptr<BoolFactor> bf(new BoolFactor());
+    bf->_terms = _terms; // shallow copy for now
+    return bf;
 }
 }}} // lsst::qserv::master
