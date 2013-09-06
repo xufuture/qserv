@@ -43,6 +43,18 @@ namespace master {
 
 class QueryTemplate; // Forward
 class ValueExpr;
+/// BfTerm is a term in a in a BoolFactor
+class BfTerm {
+public:
+    typedef boost::shared_ptr<BfTerm> Ptr;
+    typedef std::list<Ptr> PtrList;
+    virtual ~BfTerm() {}
+    virtual std::ostream& putStream(std::ostream& os) const = 0;
+    virtual void renderTo(QueryTemplate& qt) const = 0;
+    virtual void findColumnRefs(ColumnRefMap::List& list) {}
+    class ConstOp { public: virtual void operator()(BfTerm const& t) = 0; };
+    class Op { public: virtual void operator()(BfTerm& t) = 0; };
+};
 
 /// BoolTerm is a representation of a boolean-valued term in a SQL WHERE
 class BoolTerm {
@@ -58,6 +70,9 @@ public:
     /// @return the terminal iterator
     virtual PtrList::iterator iterEnd() { return PtrList::iterator(); }
     
+    virtual void visitBfTerm(BfTerm::ConstOp& o) const {}
+    virtual void visitBfTerm(BfTerm::Op& o) {}
+
     /// @return the reduced form of this term, or null if no reduction is
     /// possible.  
     virtual boost::shared_ptr<BoolTerm> getReduced() { return Ptr(); }
@@ -67,16 +82,6 @@ public:
     /// Deep copy this term.
     virtual boost::shared_ptr<BoolTerm> copySyntax() {
         return boost::shared_ptr<BoolTerm>(); }
-};
-/// BfTerm is a term in a in a BoolFactor
-class BfTerm {
-public:
-    typedef boost::shared_ptr<BfTerm> Ptr;
-    typedef std::list<Ptr> PtrList;
-    virtual ~BfTerm() {}
-    virtual std::ostream& putStream(std::ostream& os) const = 0;
-    virtual void renderTo(QueryTemplate& qt) const = 0;
-    void findColumnRefs(ColumnRefMap::List& list) {}
 };
 /// OrTerm is a set of OR-connected BoolTerms
 class OrTerm : public BoolTerm {

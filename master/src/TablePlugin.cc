@@ -215,7 +215,6 @@ public:
     virtual void applyLogical(SelectStmt& stmt, QueryContext& context);
     virtual void applyPhysical(QueryPlugin::Plan& p, QueryContext& context);
 private:
-    StringPairList _findScanTables(SelectStmt& stmt, QueryContext& context);
     int _rewriteTables(SelectStmtList& outList,
                        SelectStmt& in,
                        QueryContext& context,
@@ -304,7 +303,6 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     // wClause.walk(fixExprAlias(reverseAlias));
     // order by
     // having
-    context.scanTables = _findScanTables(stmt, context);
 }
 
 void
@@ -402,142 +400,9 @@ bool testIfSecondary(BoolTerm& t) {
     // FIXME: Look for secondary key in the bool term.
     std::cout << "Testing ";
     t.putStream(std::cout) << std::endl;
+    
     return false;
 }
 
-struct getPartitioned : public TableRefN::Func {
-    getPartitioned(StringPairList& sList_) : sList(sList_) {}
-    virtual void operator()(TableRefN& t) { 
-        (*this)(const_cast<TableRefN const&>(t));
-    }
-    virtual void operator()(TableRefN const& tRef) {
-        SimpleTableN const* t = dynamic_cast<SimpleTableN const*>(&tRef);
-        if(t) {
-            StringPair entry(t->getDb(), t->getTable());
-            if(found.end() != found.find(entry)) return;
-            sList.push_back(entry);
-            found.insert(entry);
-        } else {
-            throw std::logic_error("Unexpected non-simple table in apply()");
-        }
-    }
-    std::set<StringPair> found;
-    StringPairList& sList;
-};
-
-StringPairList filterPartitioned(TableRefnList const& tList) {
-    StringPairList list;
-    getPartitioned gp(list);
-    for(TableRefnList::const_iterator i=tList.begin(), e=tList.end();
-        i != e; ++i) {
-        (**i).apply(gp);
-    }
-    return list;
-}
-
-
-StringPairList
-TablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
-    // Might be better as a separate plugin
-
-    // All tables of a query are scan tables if the statement both:
-    // a. has non-trivial spatial scope (all chunks? >1 chunk?)
-    // b. requires column reading
-
-    // a. means that the there is a spatial scope specification in the
-    // WHERE clause or none at all (everything matches). However, an
-    // objectId specification counts as a trivial spatial scope,
-    // because it evaluates to a specific set of subchunks. We limit
-    // the objectId specification, but the limit can be large--each
-    // concrete objectId incurs at most the cost of one subchunk.
-
-    // b. means that columns are needed to process the query.
-    // In the SelectList, count(*) does not need columns, but *
-    // does. So do ra_PS and iFlux_SG*10
-    // In the WhereClause, this means that we have expressions that
-    // require columns to evaluate.
-
-    // When there is no WHERE clause that requires column reading,
-    // the presence of a small-valued LIMIT should be enough to
-    // de-classify a query as a scanning query.
-
-    bool hasSelectColumnRef = false; // Requires row-reading for
-                                     // results
-    bool hasSelectStar = false; // Requires reading all rows
-    bool hasSpatialSelect = false; // Recognized chunk restriction
-    bool hasWhereColumnRef = false; // Makes count(*) non-trivial
-    bool hasSecondaryKey = false; // Using secondaryKey to restrict
-                                  // coverage, e.g., via objectId=123
-                                  // or objectId IN (123,133) ?
-
-    if(stmt.hasWhereClause()) {
-        WhereClause& wc = stmt.getWhereClause();
-        // Check WHERE for spatial select
-        boost::shared_ptr<QsRestrictor::List const> restrs = wc.getRestrs();
-        hasSpatialSelect = restrs && !restrs->empty();
-
-
-        // Look for column refs
-        boost::shared_ptr<ColumnRefMap::List const> crl = wc.getColumnRefs();
-        if(crl) {
-            hasWhereColumnRef = !crl->empty();
-            boost::shared_ptr<AndTerm> aterm = wc.getRootAndTerm();
-            if(aterm) {
-                // Look for secondary key matches
-                typedef BoolTerm::PtrList PtrList;
-                for(PtrList::iterator i = aterm->iterBegin();
-                    i != aterm->iterEnd(); ++i) {
-                    if(testIfSecondary(**i)) {
-                        hasSecondaryKey = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-    }
-    SelectList& sList = stmt.getSelectList();
-    boost::shared_ptr<ValueExprList> sVexpr = sList.getValueExprList();
-
-    if(sVexpr) {
-        ColumnRef::List cList; // For each expr, get column refs.
-
-        typedef ValueExprList::const_iterator Iter;
-        for(Iter i=sVexpr->begin(), e=sVexpr->end(); i != e; ++i) {
-            (*i)->findColumnRefs(cList);
-        }
-        // Resolve column refs, see if they include partitioned
-        // tables.
-        typedef ColumnRef::List::const_iterator ColIter;
-        for(ColIter i=cList.begin(), e=cList.end(); i != e; ++i) {
-            // FIXME: Need to resolve and see if it's a partitioned table.
-            hasSelectColumnRef = true;
-        }
-    }
-
-    StringPairList scanTables;
-    // Right now, if there is any spatial restriction, it's not a shared scan.
-    // In the future, we may want a threshold area percentage, above
-    // which a query gets relegated as a "partial scan". Maybe 1% ?
-    if(hasSelectColumnRef || hasSelectStar) {
-        if(hasSpatialSelect || hasSecondaryKey) {
-            std::cout << "**** Not a scan ****" << std::endl;
-            // Not a scan? Leave scanTables alone
-        }
-        // 
-        std::cout << "**** SCAN (column ref, non-spatial-idx)****" << std::endl;
-        // Scan tables = all partitioned tables
-        scanTables = filterPartitioned(stmt.getFromList().getTableRefnList());
-
-        // FIXME: Add scan tables to scanTables
-        
-    } else {
-        // count(*): still a scan with a non-trivial where.
-        std::cout << "**** SCAN (filter) ****" << std::endl;
-        scanTables = filterPartitioned(stmt.getFromList().getTableRefnList());
-    }
-
-    return scanTables;
-}
 
 }}} // namespace lsst::qserv::master

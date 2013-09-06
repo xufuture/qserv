@@ -658,10 +658,12 @@ BOOST_AUTO_TEST_CASE(CountQuery2) {
 
 BOOST_AUTO_TEST_CASE(SimpleScan) {
     std::string stmt[] = {
-        "SELECT count(*) FROM Object WHERE iFlux < 0.4 ;",
-        "SELECT rFlux FROM Object WHERE iFlux < 0.4 ;"
+        "SELECT count(*) FROM Object WHERE iFlux < 0.4;",
+        "SELECT rFlux FROM Object WHERE iFlux < 0.4 ;",
+        "SELECT * FROM Object WHERE iRadius_SG between 0.02 AND 0.021 LIMIT 3;"
     };
-    for(int i=0; i < 2; ++i) {
+    int const num=3;
+    for(int i=0; i < num; ++i) {
         boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt[i]);
         
         boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
@@ -669,9 +671,11 @@ BOOST_AUTO_TEST_CASE(SimpleScan) {
         BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
         BOOST_CHECK(!context->restrictors);
         BOOST_CHECK_EQUAL(context->scanTables.size(), 1);
-        StringPair p = context->scanTables.front();
-        BOOST_CHECK_EQUAL(p.first, "LSST");
-        BOOST_CHECK_EQUAL(p.second, "Object");
+        if(context->scanTables.size() >= 1) {
+            StringPair p = context->scanTables.front();
+            BOOST_CHECK_EQUAL(p.first, "LSST");
+            BOOST_CHECK_EQUAL(p.second, "Object");
+        }
     }
 }
 

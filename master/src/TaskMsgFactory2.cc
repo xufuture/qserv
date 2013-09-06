@@ -49,6 +49,7 @@ namespace master {
 void flattenScanTables(StringList& outputList, 
                        StringPairList const& scanTables) {
     std::string db;
+    outputList.clear();
     for(StringPairList::const_iterator i=scanTables.begin(), 
             e=scanTables.end();
         i != e; ++i) {
@@ -57,6 +58,7 @@ void flattenScanTables(StringList& outputList,
         } else if(db != i->first) {
             throw std::logic_error("Multiple dbs prohibited");
         }
+        outputList.push_back(db + "." + i->second);
     }    
 }
 ////////////////////////////////////////////////////////////////////////
