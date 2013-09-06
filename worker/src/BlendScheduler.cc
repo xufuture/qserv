@@ -218,6 +218,7 @@ TaskQueuePtr BlendScheduler::_getNextIfAvail(TaskQueuePtr running) {
         if(ts) { tg->insert(tg->end(), ts->begin(), ts->end()); }
         return tg;
     } else { 
+        if(!ts) _logger->debug("BlendScheduler: no tasks available");
         return ts; 
     }
 }
