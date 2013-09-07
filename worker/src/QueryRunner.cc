@@ -152,19 +152,6 @@ void forEachSubChunk(std::string const& script, F& func) {
 ////////////////////////////////////////////////////////////////////////
 // lsst::qserv::worker::QueryRunner
 ////////////////////////////////////////////////////////////////////////
-// QueryRunner::QueryRunner(boost::shared_ptr<Logger> log, 
-//                          Task::Ptr task, 
-//                          std::string overrideDump) 
-//     : _log(log), _pResult(new QueryPhyResult()),
-//       _user(task->user.c_str()), _task(task), 
-//       _poisonedMutex(new boost::mutex()) {
-//     int rc = mysql_thread_init();
-//     assert(rc == 0);
-//     if(!overrideDump.empty()) {
-//         _task->resultPath = overrideDump;   
-//     }
-// }
-
 QueryRunner::QueryRunner(QueryRunnerManager& mgr, QueryRunnerArg const& a) 
     : _mgr(mgr),
       _log(a.log), _pResult(new QueryPhyResult()),

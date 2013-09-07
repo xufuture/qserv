@@ -60,9 +60,6 @@ class QueryRunner {
 public:
     typedef ResultTracker<std::string, ResultError> Tracker;
     typedef QueryRunnerManager Manager;
-    /* QueryRunner(boost::shared_ptr<Logger> log,  */
-    /*             Task::Ptr task, */
-    /*             std::string overrideDump=std::string()); */
     QueryRunner(QueryRunnerManager& mgr, QueryRunnerArg const& a);
     ~QueryRunner();
     bool operator()(); // exec and loop as long as there are queries

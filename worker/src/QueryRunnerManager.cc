@@ -76,13 +76,6 @@ qWorker::QueryRunnerManager::_getQueueHead() const {
     return _args.front();
 }
 
-void 
-qWorker::QueryRunnerManager::runOrEnqueue(qWorker::QueryRunnerArg const& a) {
-    boost::lock_guard<boost::mutex> m(_mutex);
-    _enqueue(a);
-    _tryLaunch();
-}
-
 bool qWorker::QueryRunnerManager::squashByHash(std::string const& hash) {
     boost::lock_guard<boost::mutex> m(_mutex);
     bool success = _cancelQueued(hash) || _cancelRunning(hash);
@@ -177,27 +170,4 @@ void qWorker::QueryRunnerManager::_enqueue(qWorker::QueryRunnerArg const& a) {
     assert(!_disks.empty());
     assert(_disks.front());
     //_disks.front()->enqueue(boost::make_shared<QueryRunnerArg>(a));
-}
-
-void qWorker::QueryRunnerManager::_tryLaunch() {
-    // FIXME: This is obsolete.
-    ::abort();
-#if 0
-    if(!hasSpace()) { return; }
-    
-    // Check disks for candidate ones.
-    // Pick one. Prefer a less-loaded disk: want to make use of i/o
-    // from both disks. (for multi-disk support)
-    assert(!_disks.empty());
-    boost::shared_ptr<ChunkDisk> disk = _disks[0]; // Only 1 right now
-    assert(disk);
-    // Allow another chunk if disk is not busy and there are tasks remaining.
-    bool allowNewChunk = (!disk->busy() && !disk->empty());
-    boost::shared_ptr<QueryRunnerArg> a = disk->getNext(allowNewChunk);
-    if(a) {
-        launchThread(qWorker::QueryRunner(*this, *a));
-        return;
-    } 
-    // Otherwise, don't run anything.
-#endif
 }
