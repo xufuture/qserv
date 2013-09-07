@@ -39,127 +39,9 @@
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/WhereClause.h"
 
-#if 0
-#include <deque>
-#include <string>
-#include <boost/pointer_cast.hpp>
-
-#include "lsst/qserv/master/ColumnRef.h"
-#include "lsst/qserv/master/FuncExpr.h"
-#include "lsst/qserv/master/MetadataCache.h"
-#include "lsst/qserv/master/Predicate.h"
-
-#include "lsst/qserv/master/ValueFactor.h"
-#include "lsst/qserv/master/ValueExpr.h"
-
-
-namespace { // File-scope helpers
-std::string const UDF_PREFIX = "scisql_";
-} // anonymous
-#endif
-
 namespace lsst {
 namespace qserv {
 namespace master {
-#if 0
-typedef std::pair<std::string,std::string> StringPair;
-
-ValueExprTerm::Ptr newColRef(std::string const& key) {
-    // FIXME: should apply QueryContext.
-    boost::shared_ptr<ColumnRef> cr(new ColumnRef("","", key));
-    ValueExprTerm::Ptr p(new ValueExprTerm);
-    p->_expr = ValueExpr::newSimple(ValueFactor::newColumnRefFactor(cr));
-    return p;
-}
-PassTerm::Ptr newPass(std::string const& s) {
-    PassTerm::Ptr p(new PassTerm);
-    p->_text = s;
-    return p;
-}
-template <typename C>
-PassListTerm::Ptr newPassList(C& c) {
-    PassListTerm::Ptr p(new PassListTerm);
-    p->_terms.insert(p->_terms.begin(), c.begin(), c.end());
-    return p;
-}
-
-template <typename C>
-ValueExprTerm::Ptr newFunc(char const fName[],
-                           std::string const& tableAlias,
-                           StringPair const& chunkColumns,
-                           C& c) {
-    typedef boost::shared_ptr<ColumnRef> CrPtr;
-    FuncExpr::Ptr fe(new FuncExpr);
-    fe->name = UDF_PREFIX + fName;
-    fe->params.push_back(ValueExpr::newSimple(
-                             ValueFactor::newColumnRefFactor(
-                                 CrPtr(new ColumnRef("", tableAlias,
-                                                     chunkColumns.first)))
-                             ));
-    fe->params.push_back(ValueExpr::newSimple(
-                             ValueFactor::newColumnRefFactor(
-                                 CrPtr(new ColumnRef("", tableAlias,
-                                                     chunkColumns.second)))
-                             ));
-
-    typename C::const_iterator i;
-    for(i = c.begin(); i != c.end(); ++i) {
-        fe->params.push_back(ValueExpr::newSimple(ValueFactor::newConstFactor(*i)));
-    }
-
-    ValueExprTerm::Ptr p(new ValueExprTerm);
-    p->_expr = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe));
-    return p;
-}
-
-
-struct RestrictorEntry {
-    RestrictorEntry(std::string const& alias_,
-                 StringPair const& chunkColumns_,
-                 std::string const& keyColumn_)
-        : alias(alias_),
-          chunkColumns(chunkColumns_),
-          keyColumn(keyColumn_)
-        {}
-    std::string alias;
-    StringPair chunkColumns;
-    std::string keyColumn;
-};
-typedef std::deque<RestrictorEntry> RestrictorEntries;
-class getTable {
-public:
-
-    explicit getTable(MetadataCache& metadata, RestrictorEntries& entries)
-        : _metadata(metadata),
-          _entries(entries) {}
-    void operator()(TableRefN::Ptr t) {
-        if(!t) {
-            throw std::invalid_argument("NULL TableRefN::Ptr");
-        }
-        std::string const& db = t->getDb();
-        std::string const& table = t->getTable();
-
-        // Is table chunked?
-        if(!_metadata.checkIfTableIsChunked(db, table)) {
-            return; // Do nothing for non-chunked tables
-        }
-        // Now save an entry for WHERE clause processing.
-        std::string alias = t->getAlias();
-        if(alias.empty()) {
-            // For now, only accept aliased tablerefs (should have
-            // been done earlier)
-            throw std::logic_error("Unexpected unaliased table reference");
-        }
-        std::vector<std::string> pCols = _metadata.getPartitionCols(db, table);
-        RestrictorEntry se(alias,
-                        StringPair(pCols[0], pCols[1]),
-                        pCols[2]);
-        _entries.push_back(se);
-    }
-    MetadataCache& _metadata;
-    RestrictorEntries& _entries;
-};
-#endif
 ////////////////////////////////////////////////////////////////////////
 // ScanTablePlugin declaration
 ////////////////////////////////////////////////////////////////////////
@@ -310,6 +192,8 @@ ScanTablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
         if(crl) {
             hasWhereColumnRef = !crl->empty();
 #if 0
+            // Consider removing: secondary key checking is implicit
+            //  if restrictors are detected.
             boost::shared_ptr<AndTerm> aterm = wc.getRootAndTerm();
             if(aterm) {
                 // Look for secondary key matches

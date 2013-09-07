@@ -74,7 +74,7 @@ void BoolTermFactory::bfImport::operator()(antlr::RefAST a) {
     int aType = a->getType(); // for gdb
     switch(a->getType()) {
     case SqlSQL2TokenTypes::VALUE_EXP:
-        _bfr._terms.push_back(_bf.newValueExprTerm(a));
+        throw std::logic_error("Unexpected VALUE_EXP in parse tree");
         break;
     case SqlSQL2TokenTypes::COMP_PREDICATE:
         _bfr._terms.push_back(_pf.newCompPredicate(a));
@@ -175,14 +175,6 @@ BoolTermFactor::Ptr
 BoolTermFactory::newBoolTermFactor(antlr::RefAST a) {
     BoolTermFactor::Ptr p(new BoolTermFactor());
     p->_term = newBoolTerm(a);
-    return p;
-}
-
-/// Construct a new ValueExprTerm using the ValueExprFactory
-ValueExprTerm::Ptr
-BoolTermFactory::newValueExprTerm(antlr::RefAST a) {
-    ValueExprTerm::Ptr p(new ValueExprTerm());
-    p->_expr = _vFactory->newExpr(a->getFirstChild());
     return p;
 }
 

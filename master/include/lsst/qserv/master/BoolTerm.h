@@ -165,7 +165,6 @@ public: // ( term, term, term )
 };
 
 /// BoolTermFactor is a bool factor term that contains a bool term. Occurs often when parentheses are used within a bool term. The parenthetical group is an entire factor, and it contains bool terms.
-/// Might be obsolete
 class BoolTermFactor : public BfTerm {
 public:
     typedef boost::shared_ptr<BoolTermFactor> Ptr;
@@ -174,18 +173,6 @@ public:
     virtual void findColumnRefs(ColumnRefMap::List& list);
     boost::shared_ptr<BoolTerm> _term;
 };
-
-/// ValueExprTerm is a bool factor term that contains a value expression
-/// Might be obsolete
-class ValueExprTerm : public BfTerm {
-public:
-    typedef boost::shared_ptr<ValueExprTerm> Ptr;
-    virtual std::ostream& putStream(std::ostream& os) const;
-    virtual void renderTo(QueryTemplate& qt) const;
-    virtual void findColumnRefs(ColumnRefMap::List& list);
-    boost::shared_ptr<ValueExpr> _expr;
-};
-
 }}} // namespace lsst::qserv::master
 
 

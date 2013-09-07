@@ -67,10 +67,6 @@ std::ostream& BoolTermFactor::putStream(std::ostream& os) const {
     if(_term) { return _term->putStream(os); }
     return os;
 }
-std::ostream& ValueExprTerm::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
-}
 namespace {
 template <typename Plist>
 inline void renderList(QueryTemplate& qt,
@@ -117,13 +113,6 @@ void PassListTerm::renderTo(QueryTemplate& qt) const {
 void BoolTermFactor::renderTo(QueryTemplate& qt) const {
     if(_term) { _term->renderTo(qt); }
 }
-
-void ValueExprTerm::renderTo(QueryTemplate& qt) const {
-    ValueExpr::render r(qt, false);
-    r(_expr);
-    if(!_expr) { throw std::invalid_argument("Null-ValueExpr for renderTo()"); }
-}
-
 void BoolFactor::findColumnRefs(ColumnRefMap::List& list) {
     BfTerm::PtrList::const_iterator i;
     for(i = _terms.begin(); i != _terms.end(); ++i) {
@@ -142,11 +131,6 @@ void BoolTermFactor::findColumnRefs(ColumnRefMap::List& cList) {
         _term->visitBfTerm(find);
     }
 }
-
-void ValueExprTerm::findColumnRefs(ColumnRefMap::List& list) {
-    if(_expr) { _expr->findColumnRefs(list); }
-}
-
 boost::shared_ptr<BoolTerm> OrTerm::getReduced() {
     if(_terms.size() == 1) {
         boost::shared_ptr<BoolTerm> reduced = _terms.front();
