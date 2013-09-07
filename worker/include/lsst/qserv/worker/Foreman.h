@@ -21,11 +21,10 @@
  */
 //  class Foreman -- A class that implements a pooling thread manager.
 //  The Foreman is parameterized with a scheduling algorithm that
-//  decides what tasks to run from a TodoList and how many threads can
-//  be allocated.  Thus the thread count is not fixed.  Foreman
-//  provides the scheduler with a TodoList and a list of current work,
-//  so that the scheduler can use resources efficiently and leverage
-//  "synergies" (e.g., I/O reuse) when possible.
+//  maintains its own container of ready-to-run and running tasks.
+//  Thus the thread count is not fixed, but delegated to the
+//  scheduler's responsiblity. The scheduler is solely responsible for
+//  any I/O optimizations performed.
 //
 //  Approach: Using WorkQueue's API as a starting point, expand to
 //  include a pluggable scheduler API and fill in the plumbing to make
@@ -49,7 +48,6 @@
 #ifndef LSST_QSERV_WORKER_FOREMAN_H
 #define LSST_QSERV_WORKER_FOREMAN_H
 #include <boost/shared_ptr.hpp>
-//#include "lsst/qserv/worker/TodoList.h" // FIXME remove
 #include "lsst/qserv/worker/Task.h"
 
 namespace lsst {

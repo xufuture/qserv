@@ -26,12 +26,9 @@ namespace lsst {
 namespace qserv {
 namespace worker {
 
-class TodoList; // Forward
 class Foreman; // Forward
 class Logger;
 
-// A container for a list of work (TodoList) and a dispatching scheduler 
-// (Foreman). 
 class Service {
 public:
     typedef boost::shared_ptr<Service> Ptr;

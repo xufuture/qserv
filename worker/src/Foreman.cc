@@ -33,7 +33,6 @@
 #include <boost/scoped_ptr.hpp>
 
 // Pkg: lsst::qserv::worker
-#include "lsst/qserv/worker/TodoList.h"
 #include "lsst/qserv/worker/QueryRunner.h"
 #include "lsst/qserv/worker/Base.h"
 #include "lsst/qserv/worker/FifoScheduler.h"
@@ -87,8 +86,6 @@ public:
     };
 
     friend class RunnerMgr;
-    class Watcher;
-    friend class Watcher;
 
 private:
     typedef std::deque<Runner*> RunnerDeque;
@@ -104,7 +101,7 @@ private:
     Logger::Ptr _log;
 
     TaskQueuePtr  _running;
-    boost::shared_ptr<Watcher> _watcher;
+//    boost::shared_ptr<Watcher> _watcher;
 
 };
 ////////////////////////////////////////////////////////////////////////
@@ -121,34 +118,6 @@ qWorker::newForeman(Foreman::Scheduler::Ptr sched, Logger::Ptr log) {
     return fmi;;
 }
 
-////////////////////////////////////////////////////////////////////////
-// ForemanImpl::Watcher
-////////////////////////////////////////////////////////////////////////
-class ForemanImpl::Watcher : public TodoList::Watcher {
-public:
-    typedef boost::shared_ptr<Watcher> Ptr;
-    Watcher(ForemanImpl& f);
-    virtual ~Watcher() {}
-    virtual void handleAccept(Task::Ptr t); // Must not block.
-private:
-    ForemanImpl& _f;
-};
-
-ForemanImpl::Watcher::Watcher(ForemanImpl& f) : _f(f) {
-}
-
-void ForemanImpl::Watcher::handleAccept(Task::Ptr t) {
-    // FIXME: deprecated with todolist elimination?
-    assert(_f._scheduler);
-    TaskQueuePtr newReady = _f._scheduler->newTaskAct(t, _f._running);
-    // Perform only what the scheduler requests.
-    if(newReady.get() && (newReady->size() > 0)) {
-        TodoList::TaskQueue::iterator i = newReady->begin();
-        for(; i != newReady->end(); ++i) {
-            _f._startRunner(*i);
-        }
-    }
-}
 ////////////////////////////////////////////////////////////////////////
 // class ForemanImpl::RunnerMgr
 ////////////////////////////////////////////////////////////////////////
@@ -309,13 +278,9 @@ ForemanImpl::ForemanImpl(Scheduler::Ptr s,
     }
     _rManager.reset(new RunnerMgr(*this));
     assert(s); // Cannot operate without scheduler.
-    //_watcher.reset(new Watcher(*this));
-    //_todo->addWatcher(_watcher); // Callbacks are now possible.
-    // ...
 
 }
 ForemanImpl::~ForemanImpl() {
-    _watcher.reset();
     // FIXME: Poison and drain runners.
 }
 
@@ -335,7 +300,7 @@ bool ForemanImpl::accept(boost::shared_ptr<lsst::qserv::TaskMsg> msg) {
     TaskQueuePtr newReady = _scheduler->newTaskAct(t, _running);
     // Perform only what the scheduler requests.
     if(newReady.get() && (newReady->size() > 0)) {
-        TodoList::TaskQueue::iterator i = newReady->begin();
+        TaskQueue::iterator i = newReady->begin();
         for(; i != newReady->end(); ++i) {
             _startRunner(*i);
         }
