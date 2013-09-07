@@ -56,6 +56,9 @@ void BetweenPredicate::findColumnRefs(ColumnRefMap::List& list) {
     if(minValue) { minValue->findColumnRefs(list); }
     if(maxValue) { maxValue->findColumnRefs(list); }
 }
+void LikePredicate::findColumnRefs(ColumnRefMap::List& list) {
+    if(value) { value->findColumnRefs(list); }
+}
 
 std::ostream& qMaster::CompPredicate::putStream(std::ostream& os) const {
     // FIXME
@@ -66,6 +69,10 @@ std::ostream& qMaster::InPredicate::putStream(std::ostream& os) const {
     return os;
 }
 std::ostream& qMaster::BetweenPredicate::putStream(std::ostream& os) const {
+    // FIXME
+    return os;
+}
+std::ostream& qMaster::LikePredicate::putStream(std::ostream& os) const {
     // FIXME
     return os;
 }
@@ -104,6 +111,12 @@ void qMaster::BetweenPredicate::renderTo(QueryTemplate& qt) const {
     qt.append("AND");
     r(maxValue);
 }
+void qMaster::LikePredicate::renderTo(QueryTemplate& qt) const {
+    ValueExpr::render r(qt, false);
+    r(value);
+    qt.append("LIKE");
+    r(charValue);
+}
 
 void CompPredicate::cacheValueExprList() {
     _cache.reset(new ValueExprList());
@@ -121,6 +134,13 @@ void BetweenPredicate::cacheValueExprList() {
     _cache->push_back(minValue);
     _cache->push_back(maxValue);
 }
+
+void LikePredicate::cacheValueExprList() {
+    _cache.reset(new ValueExprList());
+    _cache->push_back(value);
+    _cache->push_back(charValue);
+}
+
 
 // CompPredicate special function
 /// @return a parse token type that is the reversed operator of the

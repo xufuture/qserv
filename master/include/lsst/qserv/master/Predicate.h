@@ -186,6 +186,35 @@ private:
     boost::shared_ptr<Predicate::ValueExprList> _cache;
 };
 
+/// LikePredicate is a Predicate involving a row value compared to a pattern
+/// (pattern is a string literal)
+class LikePredicate : public Predicate {
+public:
+    typedef boost::shared_ptr<LikePredicate> Ptr;
+    typedef std::list<Ptr> PtrList;
+
+    virtual ~LikePredicate() {}
+    virtual char const* getName() const { return "LikePredicate"; }
+
+    virtual void cacheValueExprList();
+    virtual ValueExprList::iterator valueExprCacheBegin() { return _cache->begin(); }
+    virtual ValueExprList::iterator valueExprCacheEnd() { return _cache->end(); }
+    virtual void findColumnRefs(ColumnRefMap::List& list);
+
+    virtual std::ostream& putStream(std::ostream& os) const;
+    virtual void renderTo(QueryTemplate& qt) const;
+    /// Deep copy this term.
+    virtual boost::shared_ptr<Predicate> copySyntax() {
+        return boost::shared_ptr<Predicate>(); }
+
+    static int reverseOp(int op); // Reverses operator token
+
+    boost::shared_ptr<ValueExpr> value;
+    boost::shared_ptr<ValueExpr> charValue;
+private:
+    boost::shared_ptr<Predicate::ValueExprList> _cache;
+};
+
 }}} // namespace lsst::qserv::master
 
 

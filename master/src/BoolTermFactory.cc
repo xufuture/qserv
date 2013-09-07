@@ -85,6 +85,9 @@ void BoolTermFactory::bfImport::operator()(antlr::RefAST a) {
     case SqlSQL2TokenTypes::IN_PREDICATE:
         _bfr._terms.push_back(_pf.newInPredicate(a));
         break;
+    case SqlSQL2TokenTypes::LIKE_PREDICATE:
+        _bfr._terms.push_back(_pf.newLikePredicate(a));
+        break;
     case SqlSQL2TokenTypes::AND_OP:
     case SqlSQL2TokenTypes::OR_OP:
         _bfr._terms.push_back(_bf.newBoolTermFactor(a));
