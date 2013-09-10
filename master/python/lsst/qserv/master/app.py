@@ -563,7 +563,7 @@ class InbandQueryAction:
         """Signal dispatch to C++ layer and block until execution completes"""
         lastTime = time.time()
         queryMsgAddMsg(self.sessionId, -1, msgCode.MSG_CHUNK_DISPATCH, 
-                       "Dispatch Chunk Query.")
+                       "Dispatch Query.")
         submitQuery3(self.sessionId)
         elapsed = time.time() - lastTime
         print "Query dispatch (%s) took %f seconds" % (self.sessionId,
