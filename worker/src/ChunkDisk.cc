@@ -100,7 +100,9 @@ void ChunkDisk::enqueue(ChunkDisk::ElementPtr a) {
     }    
     _logger->debug(os.str());
     os.str("");
-    os << "Top of ACTIVE is now: " << elementChunkId(*_activeTasks.top());
+    os << "Top of ACTIVE is now: ";
+    if(_activeTasks.empty()) { os << "(empty)" ; }
+    else { elementChunkId(*_activeTasks.top()); }
     _logger->debug(os.str());
 }
 
