@@ -20,8 +20,8 @@ def download(target, source, env):
     url = Request(url_str)
     file_name = str(target[0])
 
-    file_size_dl = 0
-    file_size = 0
+    file_size_dl = -2
+    file_size = -1
 
     success = True
 
@@ -55,12 +55,12 @@ def download(target, source, env):
     #handle errors
     except HTTPError, e:
         logger.fatal("HTTP Error: %s %s" % (e, url_str))
-        succes = True
+        success = False
     except URLError, e:
         logger.fatal("URL Error: %s %s " % (e, url_str))
-        succes = False
+        success = False
 
-    if file_size_dl<file_size:
+    if file_size_dl != file_size:
         logger.fatal("Download of file %s failed" % url_str)
         success = False
 
@@ -123,26 +123,30 @@ def check_root_dirs(target, source, env):
     for (section,option) in (('qserv','base_dir'),('qserv','log_dir'),('qserv','tmp_dir'),('mysqld','data_dir')):
         dir = config[section][option]
         if not utils.exists_and_is_writable(dir):
-       	    logging.fatal("%s is not writable check/update permissions or update config[%s]['%s']" %
-                          (dir,section,option)
+       	    logging.fatal(  ("%s is not writable check/update permissions or"
+                            " change config['%s']['%s']") %
+                            (dir,section,option)
                          )
-            check_success=False
+            sys.exit(1)
 
     for suffix in ('etc', 'build', 'var', 'var/lib', 'var/run', 'var/run/mysqld'):
         dir = os.path.join(config['qserv']['base_dir'],suffix)
         if not utils.exists_and_is_writable(dir):
        	    logging.fatal("%s is not writable check/update permissions" % dir)
-            check_success=False
+            sys.exit(1)
+
+    # user config
+    # user_config_dir=os.path.join(os.getenv("HOME"),".lsst") 
+    # if not utils.exists_and_is_writable(user_config_dir) 
+    #   	    logging.fatal("%s is not writable check/update permissions" % dir)
+    #        sys.exit(1)
 
     if not commons.is_readable(config['lsst']['data_dir']):
-    	logging.error("LSST data directory (config['lsst']['data_dir']) is not readable : %s" %
+    	logging.warning("LSST data directory (config['lsst']['data_dir']) is not readable : %s" %
                        config['lsst']['data_dir']
                      )
 
-    if check_success :
-        logger.info("Qserv directory structure creation succeeded")
-    else:
-        sys.exit(1)
+    logger.info("Qserv directory structure creation succeeded")
 
 def check_root_symlinks(target, source, env):
     """ symlinks creation for directories externalised of qserv directory tree
@@ -187,3 +191,12 @@ def symlink_with_log(target, link_name):
     logger = logging.getLogger()
     logger.debug("Creating symlink, target : %s, link name : %s " % (target,link_name))
     os.symlink(target, link_name)
+
+def uninstall(target, source, env):
+    logger = logging.getLogger()
+    for path in env['uninstallpaths']:
+        if not os.path.exists(path):
+            logger.info("Not uninstalling %s because it doesn't exists." % path)
+        else:    
+            env.Execute(Delete(path))
+

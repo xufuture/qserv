@@ -208,7 +208,7 @@ sub create_test_sql {
 #check the mysql proxy use.
 sub check_proxy {
 
-	return check_sql_server( "mysql --port=$mysql_proxy_port --protocol=TCP" );
+	return check_sql_server( "mysql --host 127.0.0.1 --port=$mysql_proxy_port --protocol=TCP --user qsmaster" );
 
 }
 
@@ -332,7 +332,7 @@ sub start_proxy {
 
 sub start_mysqld {
 
-	system("$install_dir/bin/mysqld_safe &");
+	system("$install_dir/bin/mysqld_safe --defaults-file=$install_dir/etc/my.cnf &");
 
 }
 

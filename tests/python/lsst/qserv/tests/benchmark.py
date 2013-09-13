@@ -57,8 +57,7 @@ class Benchmark():
             self.config = commons.read_user_config()
         else:
             config_file_name=os.path.join(config_dir,"qserv-build.conf")
-            default_config_file_name=os.path.join(config_dir,"qserv-build.default.conf")
-            self.config = commons.read_config(config_file_name, default_config_file_name)
+            self.config = commons.read_config(config_file_name)
 
         self._case_id = case_id
         self._logFilePrefix = log_file_prefix
@@ -154,7 +153,7 @@ class Benchmark():
         """
         Creates tables and load data for input file located in caseXX/data/
         """
-        self.logger.info("Loading data from %s" % self._input_dirname)
+        self.logger.info("Loading data from %s (%s mode)" % (self._input_dirname, self._mode))
 
         for table_name in  self.dataReader.tables:
             self.logger.debug("Using data of %s" % table_name)

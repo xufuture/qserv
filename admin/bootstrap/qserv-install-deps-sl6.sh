@@ -1,5 +1,8 @@
 #!/bin/bash
 
+shopt -s expand_aliases
+alias yum="yum -y"
+
 yum install scons
 
 # Scientific Linux 6 dependencies
@@ -13,10 +16,10 @@ yum install gcc-c++ git zlib-devel
 yum install python-devel
 
 # mysql
-yum install ncurses-devel
+yum install ncurses-devel glibc-devel
 
 # qserv
-yum install boost-devel openssl-devel antlr swig
+yum install boost-devel openssl-devel antlr swig java
 
 # lua
 yum install readline-devel

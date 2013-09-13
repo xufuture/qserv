@@ -51,7 +51,6 @@ my $mysql_port = $opts{'mysql-port'} || "3306";
 my $db_pass = $opts{'mysql-pass'};
 my $build_dir   = $opts{'build-dir'} || "$install_dir/build";
 my $prod_user   = $opts{'user'} || $ENV{'USER'};
-my $qserv_master = $opts{'master'} || hostname;
 my $geometry_dir = $opts{'geometry-dir'};
 
 $install_dir = remove_trailing_slash($install_dir);
@@ -59,11 +58,13 @@ $log_dir = remove_trailing_slash($log_dir);
 $mysql_data_dir = remove_trailing_slash($mysql_data_dir);
 $build_dir = remove_trailing_slash($build_dir);
 
+my $fqdn = system("hostname -f");
+
 if ($geometry_dir) {
     $geometry_dir = remove_trailing_slash($geometry_dir);
 }
 
-print "qserv master :  $qserv_master\n" if( $debug );
+print "hostname :  $fqdn\n" if( $debug );
 
 my $build_opt = "all";
 $build_opt = "lua" if( $opts{'lua'} );
@@ -128,20 +129,22 @@ sub list_build_dir {
 
 #check on the xrootd source tar, untar, compile, configure for use.
 sub check_and_install_xrootd {
+        
+        my $xrootd_archive = "xrootd-qsPatch2.tar.bz2";
 	
 	#check if it is already installed
 	if( -e "$install_dir/xrootd" ) {
 		print "WARNING: Xrootd already installed...\n";
 		return;
 	}
-	
+
 	#untar xrootd
-	if( -e "$build_dir/xrootd.tar.gz" ) {
+	if( -e "$build_dir/$xrootd_archive" ) {
 		if( $opts{'test'} ) {
-			print "I would untar xrootd.tar.gz here.\n";
+			print "I would untar $xrootd_archive here.\n";
 		} else {
 			print "Untaring xrootd...\n";
-			run_command("tar zxf $build_dir/xrootd.tar.gz");
+			run_command("tar jxvf $build_dir/$xrootd_archive");
 		}
 	} else {
 		print "Sorry - I can't find the xrootd.tar.gz in the build dir.\n";
@@ -220,11 +223,13 @@ sub check_and_install_qserv {
 	#start mysql server and install init database
 	chdir "$install_dir";
 	print "Starting mysql server.\n";
-	system("$install_dir/bin/mysqld_safe &");
+	system("$install_dir/bin/mysqld_safe --defaults-file=$install_dir/etc/my.cnf &");
 	sleep 5;
 	print "Setting up init databases.\n";
+        run_command("./bin/mysql -S var/lib/mysql/mysql.sock -u root $pass_opt -e \"CREATE DATABASE IF NOT EXISTS LSST;\"");
 	run_command("./bin/mysql -S var/lib/mysql/mysql.sock -u root $pass_opt -e \"CREATE DATABASE IF NOT EXISTS qservResult;\"");
 	run_command("./bin/mysql -S var/lib/mysql/mysql.sock -u root $pass_opt -e \"CREATE DATABASE IF NOT EXISTS qservScratch;\"");
+        run_command("./bin/mysql -S var/lib/mysql/mysql.sock -u root $pass_opt -e \"GRANT ALL ON LSST.* TO \'qsmaster\'\@\'localhost\';\"");
 	run_command("./bin/mysql -S var/lib/mysql/mysql.sock -u root $pass_opt -e \"GRANT ALL ON qservResult.* TO \'qsmaster\'\@\'localhost\';\"");
 	run_command("./bin/mysql -S var/lib/mysql/mysql.sock -u root $pass_opt -e \"GRANT ALL ON qservScratch.* TO \'qsmaster\'\@\'localhost\';\"");
 	run_command("./bin/mysql -S var/lib/mysql/mysql.sock -u root $pass_opt < qserv/master/examples/qserv-master-perms.sql");
@@ -337,17 +342,17 @@ sub init_mysql_db {
 	system("killall mysqld mysqld_safe");	
         run_command("rm -rf $mysql_data_dir/*");
 	
-	run_command("mysql_install_db --user=$prod_user");
+	run_command("$install_dir/bin/mysql_install_db --defaults-file=$install_dir/etc/my.cnf --user=$prod_user");
 	
 	if ( length($db_pass) > 0) {
 		print "Starting mysql server.\n";
-		system("$install_dir/bin/mysqld_safe &");
+		system("$install_dir/bin/mysqld_safe --defaults-file=$install_dir/etc/my.cnf &");
 		sleep 5;
 		my $quiet=1;	
 		print ("Changing mysql root password.");
                 # password for root@127.0.0.1 won't be updated with next command.
 		# run_command("mysqladmin -S $install_dir/var/lib/mysql/mysql.sock -u root password '$db_pass'", $quiet);
-		# run_command("mysqladmin -h $qserv_master -P$mysql_port -u root password '$db_pass'", $quiet);
+		# run_command("mysqladmin -h $fqdn -P$mysql_port -u root password '$db_pass'", $quiet);
 		
 		run_command("$install_dir/bin/mysql -S $install_dir/var/lib/mysql/mysql.sock -u root < $install_dir/tmp/mysql-password.sql");
 		run_command("rm $install_dir/tmp/mysql-password.sql");
@@ -358,7 +363,7 @@ sub init_mysql_db {
 	else {
 		print "Please set the mysql root user password with: ";
 		print "mysqladmin -S $install_dir/var/lib/mysql/mysql.sock -u root password <password>\n";
-		print "mysqladmin -u root -h $qserv_master -P$mysql_port password <password>\n";
+		print "mysqladmin -u root -h $fqdn -P$mysql_port password <password>\n";
 	}
 
 	chdir "$install_dir";

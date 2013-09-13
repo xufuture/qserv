@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2008-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,11 +20,18 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
  
-// AsyncQueryManager: Manages/dispatches individual chunk queries,
-// waits for their completions, collects results, and invokes result
-// merging. Initiates query squashing when faults are detected. 
-// "Async" refers to the use of asynchronous xrootd client API, which
-// required some state management and liberal use of callbacks.
+/**
+  * @file AsyncQueryManager.cc
+  *
+  * @brief AsyncQueryManager: Manages/dispatches individual chunk
+  * queries, waits for their completions, collects results, and
+  * invokes result merging. Initiates query squashing when faults are
+  * detected.  "Async" refers to the use of asynchronous xrootd client
+  * API, which required some state management and liberal use of
+  * callbacks. 
+  *
+  * @author Daniel L. Wang, SLAC
+  */
 #include <iostream>
 
 #include <boost/format.hpp>
@@ -36,17 +43,25 @@
 #include "lsst/qserv/master/MessageStore.h"
 #include "lsst/qserv/master/TableMerger.h"
 #include "lsst/qserv/master/Timer.h"
+#include "lsst/qserv/master/QuerySession.h"
 #include "lsst/qserv/common/WorkQueue.h"
 #include "lsst/qserv/master/PacketIter.h"
 #include "lsst/qserv/master/msgCode.h"
 
 // Namespace modifiers
 using boost::make_shared;
-namespace qMaster = lsst::qserv::master;
 
+namespace lsst {
+namespace qserv {
+namespace master {
 
 // Local Helpers --------------------------------------------------
 namespace { 
+
+// TODO(smm): These should be created elsewhere, and the thread counts
+//            should come from a configuration file.
+static DynamicWorkQueue globalReadQueue(100, 10, 1100, 0);
+static DynamicWorkQueue globalWriteQueue(500, 3, 800, 0);
 
 // Doctors the query path to specify the async path.
 // Modifies the string in-place.
@@ -67,7 +82,7 @@ void doctorQueryPath(std::string& path) {
 // AsyncQueryManager nested classes
 ////////////////////////////////////////////////////////////
 
-class lsst::qserv::master::AsyncQueryManager::printQueryMapValue {
+class AsyncQueryManager::printQueryMapValue {
 public:
     printQueryMapValue(std::ostream& os_) : os(os_) {}
     void operator()(QueryMap::value_type const& qv) {
@@ -83,7 +98,7 @@ public:
     std::ostream& os;
 };
 
-class lsst::qserv::master::AsyncQueryManager::squashQuery {
+class AsyncQueryManager::squashQuery {
 public:
     squashQuery(boost::mutex& mutex_, QueryMap& queries_) 
         :mutex(mutex_), queries(queries_) {}
@@ -117,8 +132,8 @@ public:
 ////////////////////////////////////////////////////////////
 // AsyncQueryManager
 ////////////////////////////////////////////////////////////
-int qMaster::AsyncQueryManager::add(TransactionSpec const& t, 
-                                    std::string const& resultName) {
+int AsyncQueryManager::add(TransactionSpec const& t,
+                           std::string const& resultName) {
     int id = t.chunkId;
     // Use chunkId as id, and assume that it will be unique for the 
     // AsyncQueryManager instance.
@@ -147,9 +162,9 @@ int qMaster::AsyncQueryManager::add(TransactionSpec const& t,
     return id;
 }
 
-void qMaster::AsyncQueryManager::finalizeQuery(int id, 
-                                               XrdTransResult r,
-                                               bool aborted) {
+void AsyncQueryManager::finalizeQuery(int id,
+                                      XrdTransResult r,
+                                      bool aborted) {
     std::stringstream ss;
     Timer t1;
     t1.start();
@@ -235,7 +250,7 @@ void qMaster::AsyncQueryManager::finalizeQuery(int id,
 // thread call joinEverything, since that ensures that this object has 
 // ceased activity and can recycle resources.
 // This is a performance optimization.
-void qMaster::AsyncQueryManager::joinEverything() {
+void AsyncQueryManager::joinEverything() {
     boost::unique_lock<boost::mutex> lock(_queriesMutex);
     int lastCount = -1;
     int count;
@@ -256,25 +271,44 @@ void qMaster::AsyncQueryManager::joinEverything() {
         }
         _queriesEmpty.timed_wait(lock, boost::posix_time::seconds(5));
     }
-    _destroyPool();
     _merger->finalize();
     _merger.reset();
     std::cout << "Query finish. " << _queryCount << " dispatched." 
               << std::endl;
 }
 
-void qMaster::AsyncQueryManager::configureMerger(TableMergerConfig const& c) {
+void AsyncQueryManager::configureMerger(TableMergerConfig const& c) {
+    
     _merger = boost::make_shared<TableMerger>(c);
 }
 
-std::string qMaster::AsyncQueryManager::getMergeResultName() const {
+void AsyncQueryManager::configureMerger(MergeFixup const& m,
+                                        std::string const& resultTable) {
+    // Can we configure the merger without involving settings
+    // from the python layer? Historically, the Python layer was
+    // needed to generate the merging SQL statements, but we are now
+    // creating them without Python.
+    std::string mysqlBin="obsolete";
+    std::string dropMem;
+    TableMergerConfig cfg(_resultDbDb,  // cfg result db
+                          resultTable, // cfg resultname
+                          m, // merge fixup obj
+                          _resultDbUser, // result db credentials
+                          _resultDbSocket, // result db credentials
+                          mysqlBin,  // Obsolete
+                          dropMem // cfg
+        );
+    _merger = boost::make_shared<TableMerger>(cfg);
+}
+
+std::string AsyncQueryManager::getMergeResultName() const {
     if(_merger.get()) {
         return _merger->getTargetTable();
     }
     return std::string();
 }
 
-void qMaster::AsyncQueryManager::getReadPermission() {
+void AsyncQueryManager::getReadPermission() {
     boost::unique_lock<boost::mutex> lock(_canReadMutex);
     if(!_canRead) {
         while(!_canRead) {
@@ -286,7 +320,7 @@ void qMaster::AsyncQueryManager::getReadPermission() {
     }
 }
 
-void qMaster::AsyncQueryManager::getWritePermission() {
+void AsyncQueryManager::getWritePermission() {
     boost::unique_lock<boost::mutex> lock(_canReadMutex);
     while(!_canRead) { // only wait up to 5 seconds before continuing.
         _canReadCondition.timed_wait(lock, 
@@ -294,28 +328,36 @@ void qMaster::AsyncQueryManager::getWritePermission() {
     }
 }
 
-void qMaster::AsyncQueryManager::signalTooManyFiles() {
+void AsyncQueryManager::signalTooManyFiles() {
     boost::unique_lock<boost::mutex> lock(_canReadMutex);
     std::cout << "Too many files! relieving." << std::endl;
     _reliefFiles = 500;
     _canReadCondition.notify_all();
 }
 
-void qMaster::AsyncQueryManager::pauseReadTrans() {
+void AsyncQueryManager::pauseReadTrans() {
     boost::unique_lock<boost::mutex> lock(_canReadMutex);
     _canRead = false;
 }
 
-void qMaster::AsyncQueryManager::resumeReadTrans() {
+void AsyncQueryManager::resumeReadTrans() {
     boost::unique_lock<boost::mutex> lock(_canReadMutex);
     _canRead = true;
     _canReadCondition.notify_all();
 }
 
-boost::shared_ptr<qMaster::MessageStore> qMaster::AsyncQueryManager::getMessageStore() {
+void AsyncQueryManager::addToReadQueue(DynamicWorkQueue::Callable * callable) {
+    globalReadQueue.add(this, callable);
+}
+
+void AsyncQueryManager::addToWriteQueue(DynamicWorkQueue::Callable * callable) {
+    globalWriteQueue.add(this, callable);
+}
+
+boost::shared_ptr<MessageStore> AsyncQueryManager::getMessageStore() {
     if (!_messageStore) {
         // Lazy instantiation of MessageStore.
-        _messageStore = boost::make_shared<qMaster::MessageStore>();
+        _messageStore = boost::make_shared<MessageStore>();
     }
     return _messageStore;
 }
@@ -323,32 +365,67 @@ boost::shared_ptr<qMaster::MessageStore> qMaster::AsyncQueryManager::getMessageS
 ////////////////////////////////////////////////////////////////////////
 // private: ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
-void qMaster::AsyncQueryManager::_initPool() {
-    const int readThreads = 20;
-    const int writeThreads = 500; // Should grow/shrink more dynamically
-    _readQueue = boost::make_shared<lsst::qserv::common::WorkQueue>(readThreads);
-    _writeQueue = boost::make_shared<lsst::qserv::common::WorkQueue>(writeThreads);
-}
 
-void qMaster::AsyncQueryManager::_destroyPool() {
-    _readQueue.reset();
-    _writeQueue.reset();
+inline int coerceInt(std::string const& s, int defaultValue) {
+    try {
+        std::istringstream ss(s);
+        int output;
+        ss >> output;
+        return output;
+    } catch (...) {
+        return defaultValue;
+    }
 }
-
-void qMaster::AsyncQueryManager::_readConfig(std::map<std::string,
-                                                      std::string> const& cfg) {
-    StringMap::const_iterator i = cfg.find("frontend.xrootd");
-    if(i != cfg.end()) {
-        _xrootdHostPort = i->second;
-    } else {
-        std::cout << "WARNING! No xrootd spec. Using lsst-dev01:1094" 
-                  << std::endl;
-        _xrootdHostPort = "lsst-dev01:1094";
+inline std::string getConfigElement(std::map<std::string, 
+                                             std::string> const& cfg,
+                                    std::string const& key,
+                                    std::string const& errorMsg,
+                                    std::string const& defaultValue) {
+    std::map<std::string,std::string>::const_iterator i = cfg.find(key);
+    if(i != cfg.end()) { 
+        return i->second;
+    } else { 
+        std::cout << errorMsg << std::endl; 
+        return defaultValue; 
     }
 }
 
-void qMaster::AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,
-                                               std::string const& tableName) {
+void AsyncQueryManager::_readConfig(std::map<std::string,
+                                    std::string> const& cfg) {
+    /// localhost:1094 is the most reasonable default, even though it is
+    /// the wrong choice for all but small developer installations.
+    _xrootdHostPort = getConfigElement(
+        cfg, "frontend.xrootd", 
+        "WARNING! No xrootd spec. Using localhost:1094", 
+        "localhost:1094"); 
+    _scratchPath =  getConfigElement(
+        cfg, "frontend.scratch_path", 
+        "Error, no scratch path found. Using /tmp.",
+        "/tmp");
+    // This should be overriden by the installer properly.
+    _resultDbSocket =  getConfigElement(
+        cfg, "resultdb.unix_socket", 
+        "Error, resultdb.unix_socket not found. Using /u1/local/mysql.sock.",
+        "/u1/local/mysql.sock");
+    _resultDbUser =  getConfigElement(
+        cfg, "resultdb.user", 
+        "Error, resultdb.user not found. Using qsmaster.",
+        "qsmaster");
+    _resultDbDb =  getConfigElement(
+        cfg, "resultdb.db", 
+        "Error, resultdb.db not found. Using qservResult.",
+        "qservResult");
+    std::string metaStr =  getConfigElement(
+        cfg, "runtime.metaCacheSession", 
+        "No runtime.metaCacheSession. using default.",
+        "");
+    int metaCacheSession = coerceInt(metaStr, -1);
+    // Setup session
+    _qSession.reset(new QuerySession(metaCacheSession));
+}
+
+void AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,
+                                      std::string const& tableName) {
     bool mergeResult = _merger->merge(pacIter, tableName);
     _totalSize += pacIter->getTotalSize();
     
@@ -365,10 +442,12 @@ void qMaster::AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,
     }            
 }
 
-void qMaster::AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize, 
-                                               std::string const& dumpFile, 
-                                               std::string const& tableName) {
-    assert(dumpSize >= 0);
+void AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize,
+                                      std::string const& dumpFile,
+                                      std::string const& tableName) {
+    if(dumpSize < 0) {
+        throw std::invalid_argument("dumpSize < 0");
+    }
     {
         boost::lock_guard<boost::mutex> lock(_totalSizeMutex);
         _totalSize += dumpSize; 
@@ -400,12 +479,12 @@ void qMaster::AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize,
     }
 }
 
-void qMaster::AsyncQueryManager::_printState(std::ostream& os) {
+void AsyncQueryManager::_printState(std::ostream& os) {
     typedef std::map<int, boost::shared_ptr<ChunkQuery> > QueryMap;
     std::for_each(_queries.begin(), _queries.end(), printQueryMapValue(os));
 }
 
-void qMaster::AsyncQueryManager::_squashExecution() {
+void AsyncQueryManager::_squashExecution() {
     // Halt new query dispatches and cancel the ones in flight.
     // This attempts to save on resources and latency, once a query
     // fault is detected.
@@ -425,7 +504,7 @@ void qMaster::AsyncQueryManager::_squashExecution() {
         std::copy(_queries.begin(), _queries.end(), myQueries.begin());
     }
     std::cout << "AsyncQM squashQueued" << std::endl;
-    _writeQueue->cancelQueued();
+    globalWriteQueue.cancelQueued(this);
     std::cout << "AsyncQM squashExec iteration " <<  std::endl;
     std::for_each(myQueries.begin(), myQueries.end(), 
                   squashQuery(_queriesMutex, _queries));
@@ -436,6 +515,9 @@ void qMaster::AsyncQueryManager::_squashExecution() {
     getMessageStore()->addMessage(-1, MSG_EXEC_SQUASHED, "Query Execution Squashed.");
 }
 
-void qMaster::AsyncQueryManager::_squashRemaining() {
+void AsyncQueryManager::_squashRemaining() {
     _squashExecution();  // Not sure if this is right. FIXME
 }
+
+}}} // namespace lsst::qserv::master
+
