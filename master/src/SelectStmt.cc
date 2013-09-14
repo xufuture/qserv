@@ -111,15 +111,29 @@ qMaster::SelectStmt::getTemplate() const {
     renderTemplate(qt, "SELECT", _selectList);
     renderTemplate(qt, "FROM", _fromList);
     renderTemplate(qt, "WHERE", _whereClause);
-    renderTemplate(qt, "ORDER BY", _orderBy);
     renderTemplate(qt, "GROUP BY", _groupBy);
     renderTemplate(qt, "HAVING", _having);
+    renderTemplate(qt, "ORDER BY", _orderBy);
+
     if(_limit != -1) { 
         std::stringstream ss;
         ss << _limit;
         qt.append("LIMIT");
         qt.append(ss.str());
     }
+    return qt;    
+}
+
+/// getPostTemplate() is specialized to the needs of generating a
+/// "post" string for the aggregating table merger MergeFixup
+/// object. Hopefully, we will port the merger to use the merging
+/// statement more as-is (just patching the FROM part).
+qMaster::QueryTemplate 
+qMaster::SelectStmt::getPostTemplate() const {
+    QueryTemplate qt;
+    renderTemplate(qt, "GROUP BY", _groupBy);
+    renderTemplate(qt, "HAVING", _having);
+    renderTemplate(qt, "ORDER BY", _orderBy);
     return qt;    
 }
 
@@ -171,6 +185,13 @@ qMaster::SelectStmt::copySyntax() const {
     return newS;
 }
 
+void
+qMaster::SelectStmt::hasOrderBy(bool shouldHave) {
+    if(!shouldHave) { _orderBy.reset(); } // Get rid of it
+    // Make it if we want one.
+    else if(!_orderBy) { _orderBy.reset(new OrderByClause()); }
+}
+
 ////////////////////////////////////////////////////////////////////////
 // class SelectStmt (private)
 ////////////////////////////////////////////////////////////////////////
@@ -198,9 +219,9 @@ void qMaster::SelectStmt::_print() {
     print(std::cout, "from", _fromList);
     print(std::cout, "select", _selectList);
     print(std::cout, "where", _whereClause);
-    print(std::cout, "orderby", _orderBy);
     print(std::cout, "groupby", _groupBy);
     print(std::cout, "having", _having);
+    print(std::cout, "orderby", _orderBy);
     if(_limit != -1) { std::cout << " LIMIT " << _limit; }
 }
 

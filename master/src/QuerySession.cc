@@ -151,8 +151,8 @@ MergeFixup QuerySession::makeMergeFixup() const {
     QueryTemplate t;
     mergeSelect.renderTo(t);
     std::string select = t.generate();
-    t.clear();
-    std::string post; // TODO: handle GroupBy, etc.
+    t = _stmtMerge->getPostTemplate();
+    std::string post = t.generate();
     std::string orderBy; // TODO
     bool needsMerge = _context->needsMerge;
     return MergeFixup(select, post, orderBy,

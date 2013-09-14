@@ -125,6 +125,7 @@ import code, traceback, signal
 # Constant, long-term, this should be defined differently
 dummyEmptyChunk = 1234567890
 CHUNK_COL = "chunkId"
+SUBCHUNK_COL = "subChunkId"
 
 def debug(sig, frame):
     """Interrupt running process, and provide a python prompt for
@@ -356,6 +357,9 @@ class IndexLookup:
         self.keyVals = keyVals
         pass
 class SecondaryIndex:
+## FIXME: subchunk index creation
+##    "SELECT DISTINCT %s, %s FROM %s" % (CHUNK_COL, SUBCHUNK_COL, table)
+
     def lookup(self, indexLookups):
         sqls = []
         for lookup in indexLookups:

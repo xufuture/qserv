@@ -43,7 +43,12 @@
 namespace lsst { 
 namespace qserv { 
 namespace master {
-
+inline ValueExprPtr newExprFromAlias(std::string const& alias) {
+    boost::shared_ptr<ColumnRef> cr(new ColumnRef("", "", alias));
+    boost::shared_ptr<ValueFactor> vf;
+    vf = ValueFactor::newColumnRefFactor(cr);
+    return ValueExpr::newSimple(vf);
+}
 /// convertAgg build records for merge expressions from parallel expressions
 template <class C>
 class convertAgg {
@@ -71,11 +76,20 @@ private:
     void _makeRecord(ValueExpr const& e) {
         bool hasAgg = false;
         checkAgg ca(hasAgg);
+        std::string origAlias = e.getAlias();
         ValueExpr::FactorOpList const& factorOps = e.getFactorOps();
         std::for_each(factorOps.begin(), factorOps.end(), ca);
 
         if(!ca.hasAgg) {
-            pList.push_back(e.clone()); // Is this sufficient?
+            std::string interName;
+            if(origAlias.empty()) { interName = aMgr.getAggName("PASS");}
+            else { interName = origAlias; }
+            ValueExprPtr par(e.clone());
+            par->setAlias(interName);
+            pList.push_back(par); // Is this sufficient?
+            ValueExprPtr mer = newExprFromAlias(interName);
+            mList.push_back(mer); // Is this sufficient?
+            mer->setAlias(origAlias);
             return;
         } 
         // For exprs with aggregation, we must separate out the
@@ -109,6 +123,7 @@ private:
                 mergeFactorOps.push_back(m);
             }
         }
+        mergeExpr->setAlias(origAlias);
         mList.push_back(mergeExpr);
     }
     
@@ -220,6 +235,9 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
     for(Iter b=p.stmtParallel.begin(), i=b, e=p.stmtParallel.end(); 
         i != e; 
         ++i) {
+        // Strip ORDER BY from parallel if merging.
+        if(context.needsMerge) { (*i)->hasOrderBy(false); }
+
         if(i == b) continue;
         SelectList& pList2 = (*i)->getSelectList();
         boost::shared_ptr<ValueExprList> veList2 = pList2.getValueExprList();
