@@ -254,8 +254,10 @@ bool TableMerger::_applySqlLocal(std::string const& sql) {
             _sqlConn.reset();
             return false;
         } else {
+#if 0 //smm
             std::cout << "TableMerger " << (void*) this 
                       << " connected to db." << std::endl;
+#endif //smm
         }
     }
     if(!_sqlConn->runQuery(sql, errObj)) {

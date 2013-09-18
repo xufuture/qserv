@@ -33,7 +33,8 @@
 #include <deque>
 #include <sstream>
 
-#include <boost/regex.hpp>
+#include <stdexcept>
+//#include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include "lsst/qserv/master/ChunkSpec.h"
@@ -49,10 +50,27 @@ public:
              std::string const target,
              QueryMapping::Parameter p) 
         : reg(pat), tgt(target), param(p) {}
-    boost::regex reg;
+    //boost::regex reg;
+    std::string reg;
     std::string tgt;
     QueryMapping::Parameter param;
 };
+
+std::string const replace(std::string const & s, std::string const & pat, std::string const & value) {
+    std::string result;
+    size_t i = 0;
+    while (i != std::string::npos) {
+        size_t j = s.find(pat, i);
+        result.append(s, i, j - i);
+        if (j != std::string::npos) {
+            result.append(value);
+            i = j + pat.size();
+        } else {
+            i = j;
+        }
+    }
+    return result;
+}
 
 class Mapping : public QueryTemplate::EntryMapping {
 public:
@@ -83,7 +101,8 @@ public:
         //if(!e.isDynamic()) {return newE; }
 
         for(i=_map.begin(); i != _map.end(); ++i) {
-            newE->s = boost::regex_replace(newE->s, i->reg, i->tgt);
+            //newE->s = boost::regex_replace(newE->s, i->reg, i->tgt);
+            newE->s = replace(newE->s, i->reg, i->tgt);
             if(i->param == QueryMapping::SUBCHUNK) {
                 // Remember that we mapped a subchunk,
                     // so we know to iterate over subchunks.

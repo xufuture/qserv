@@ -57,8 +57,10 @@ namespace {
 
 // TODO(smm): These should be created elsewhere, and the thread counts
 //            should come from a configuration file.
-static DynamicWorkQueue globalReadQueue(100, 10, 1100, 0);
-static DynamicWorkQueue globalWriteQueue(500, 3, 800, 0);
+//static DynamicWorkQueue globalReadQueue(100, 10, 1100, 0);
+//static DynamicWorkQueue globalWriteQueue(500, 3, 800, 0);
+static DynamicWorkQueue globalReadQueue(25, 5, 50, 0);
+static DynamicWorkQueue globalWriteQueue(50, 2, 60, 0);
 
 // Doctors the query path to specify the async path.
 // Modifies the string in-place.
@@ -151,8 +153,10 @@ int AsyncQueryManager::add(TransactionSpec const& t,
         _queries[id] = qs;
         ++_queryCount;
     }
+#if 0 //smm
     std::cout << "Added query id=" << id << " url=" << ts.path 
               << " with save " << ts.savePath << "\n";
+#endif //smm
     qs.first->run();
     return id;
 }
@@ -195,7 +199,9 @@ void AsyncQueryManager::finalizeQuery(int id,
         }
         // Erase right before notifying.
         t2.stop();
+#if 0 //smm
         ss << id << " QmFinalizeMerge " << t2 << std::endl;
+#endif //smm
     } // end if 
     else { 
         Timer t2e;
@@ -230,11 +236,15 @@ void AsyncQueryManager::finalizeQuery(int id,
         } 
     }
     t3.stop();
+#if 0 //smm
     ss << id << " QmFinalizeResult " << t3 << std::endl;
+#endif //smm
     //std::cout << (void*)this << " Done finalizing query (" << id << ")" << std::endl;
     t1.stop();
+#if 0 //smm
     ss << id << " QmFinalize " << t1 << std::endl;
     std::cout << ss.str();
+#endif //smm
 }
 
 // FIXME: With squashing, we should be able to return the result earlier.
@@ -257,7 +267,7 @@ void AsyncQueryManager::joinEverything() {
             count = lastCount;
             ++complainCount;
             if(complainCount > moreDetailThreshold) {
-                _printState(std::cout);
+                //smm _printState(std::cout);
                 complainCount = 0;
             }
         }
@@ -298,44 +308,6 @@ std::string AsyncQueryManager::getMergeResultName() const {
         return _merger->getTargetTable();
     }
     return std::string();
-}
-
-void AsyncQueryManager::getReadPermission() {
-    boost::unique_lock<boost::mutex> lock(_canReadMutex);
-    if(!_canRead) {
-        while(!_canRead) {
-            _canReadCondition.timed_wait(lock, 
-                                         boost::posix_time::seconds(5));
-            if(_reliefFiles > 0)
-                break; // Allow "relief" from too many open files
-        }
-    }
-}
-
-void AsyncQueryManager::getWritePermission() {
-    boost::unique_lock<boost::mutex> lock(_canReadMutex);
-    while(!_canRead) { // only wait up to 5 seconds before continuing.
-        _canReadCondition.timed_wait(lock, 
-                                     boost::posix_time::seconds(5));
-    }
-}
-
-void AsyncQueryManager::signalTooManyFiles() {
-    boost::unique_lock<boost::mutex> lock(_canReadMutex);
-    std::cout << "Too many files! relieving." << std::endl;
-    _reliefFiles = 500;
-    _canReadCondition.notify_all();
-}
-
-void AsyncQueryManager::pauseReadTrans() {
-    boost::unique_lock<boost::mutex> lock(_canReadMutex);
-    _canRead = false;
-}
-
-void AsyncQueryManager::resumeReadTrans() {
-    boost::unique_lock<boost::mutex> lock(_canReadMutex);
-    _canRead = true;
-    _canReadCondition.notify_all();
 }
 
 void AsyncQueryManager::addToReadQueue(DynamicWorkQueue::Callable * callable) {
@@ -411,7 +383,11 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
 void AsyncQueryManager::_addNewResult(PacIterPtr pacIter,
                                       std::string const& tableName) {
     bool mergeResult = _merger->merge(pacIter, tableName);
-    _totalSize += pacIter->getTotalSize();
+    ssize_t sz = pacIter->getTotalSize();
+    {
+        boost::lock_guard<boost::mutex> lock(_totalSizeMutex);
+        _totalSize += sz;
+    }
     
     if(_shouldLimitResult && (_totalSize > _resultLimit)) {
         _squashRemaining();

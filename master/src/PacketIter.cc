@@ -110,9 +110,14 @@ void qMaster::PacketIter::_setup(bool debug) {
             return;
         }
     }
-    _current.second = _fragSize;
-    _current.first = static_cast<char*>(_buffer);
-    _fill(_current);
+    int ntries = 5;
+    do {
+        _current.second = _fragSize;
+        _current.first = static_cast<char*>(_buffer);
+        _fill(_current);
+        --ntries;
+    } while (_current.second == 0 && ntries > 0);
+    assert(ntries);
 }
 
 void qMaster::PacketIter::_increment() {
@@ -130,6 +135,9 @@ void qMaster::PacketIter::_fill(Value& v) {
     if(_xrdFd != 0) {
         readRes = xrdRead(_xrdFd, v.first, 
                           static_cast<unsigned long long>(v.second));
+        if (readRes == 0) {
+            std::cerr << "Huh!?" << std::endl;
+        }
     } else if(!_fileName.empty()) {
         readRes = ::read(_realFd, v.first, v.second);
     } else {

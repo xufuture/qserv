@@ -58,10 +58,7 @@ public:
         /// Execute work.
         virtual void operator()() = 0;
 
-        /// Halt while running or otherwise.
-        virtual void abort() { }
-
-        /// Cleanup. Must not throw.
+        /// Halt while running or otherwise and cleanup. Must not throw. 
         virtual void cancel() { }
 
     private:

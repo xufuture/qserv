@@ -98,17 +98,11 @@ from lsst.qserv.master import getDominantDb
 from lsst.qserv.master import configureSessionMerger3, submitQuery3
 
 
-from lsst.qserv.master import submitQuery, submitQueryMsg
-from lsst.qserv.master import initDispatcher
-from lsst.qserv.master import tryJoinQuery, joinSession
+from lsst.qserv.master import joinSession
 from lsst.qserv.master import getQueryStateString, getErrorDesc
 from lsst.qserv.master import SUCCESS as QueryState_SUCCESS
-from lsst.qserv.master import pauseReadTrans, resumeReadTrans
 # Parser
 from lsst.qserv.master import ChunkMeta
-# Merger
-from lsst.qserv.master import TableMerger, TableMergerError, TableMergerConfig
-from lsst.qserv.master import configureSessionMerger, getSessionResultName
 
 # Metadata
 from lsst.qserv.master import newMetadataSession, discardMetadataSession
@@ -371,11 +365,8 @@ class SecondaryIndex:
         db = Db()
         db.activate()
         cids = db.applySql(sql)
-        try:
-            print "cids are ", cids
-            cids = map(lambda t: t[0], cids)
-        except:
-            raise QueryHintError("mysqld error during index lookup q=" + sql)
+        print "cids are ", cids
+        cids = map(lambda t: t[0], cids)
         del db
         return cids
 

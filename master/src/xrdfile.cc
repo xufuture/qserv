@@ -43,10 +43,6 @@
 
 namespace qMaster = lsst::qserv::master;
 
-// Statics
-static bool qMasterXrdInitialized = false; // Library initialized?
-extern XrdPosixLinkage Xunix;
-
 namespace dbg {
 void recordTrans(char const* path, char const* buf, int len) {
     static char traceFile[] = "/dev/shm/xrdTransaction.trace";
@@ -58,7 +54,7 @@ void recordTrans(char const* path, char const* buf, int len) {
     }
     int fd = open(traceFile, O_CREAT|O_WRONLY|O_APPEND);
     if( fd != -1) {
-        int res = write(fd, record.data(), record.length());
+        write(fd, record.data(), record.length());
         close(fd);
     }
 }
@@ -67,8 +63,6 @@ void recordTrans(char const* path, char const* buf, int len) {
 
 
 #ifdef FAKE_XRD // Fake placeholder implemenation
-void qMaster::xrdInit() {}
-
 int qMaster::xrdOpen(const char *path, int oflag) {
     static int fakeDes=50;
     std::cout << "xrd openfile " << path << " returning ("
@@ -107,31 +101,41 @@ long long qMaster::xrdLseekSet(int fildes, off_t offset) {
 
 #else // Not faked: choose the real XrdPosix implementation.
 
-void qMaster::xrdInit() {
-    const int xrdOpenFiles = 1024*1024*1024; // 1 billion open files
-    static int Init = Xunix.Init(&Init);
-    // Use non-OS file descriptors
-    static XrdPosixXrootd posixXrd(-xrdOpenFiles);
-    qMasterXrdInitialized = true;
+extern XrdPosixLinkage Xunix;
 
-    // Set timeouts to effectively disable client timeouts.
-    //EnvPutInt(NAME_CONNECTTIMEOUT, 3600*24*10); // Don't set this!
-    
-    // Don't set these for two-file model?
-    //EnvPutInt(NAME_REQUESTTIMEOUT, std::numeric_limits<int>::max());
-    //    EnvPutInt(NAME_DATASERVERCONN_TTL, std::numeric_limits<int>::max());
+namespace {
+    struct XrdInit {
+        static const int OPEN_FILES = 1024*1024*1024; // ~1 billion open files
+        XrdPosixXrootd posixXrd;
+        XrdInit();
+    };
 
-    // TRANSACTIONTIMEOUT needs to get extended since it limits how
-    // long the client will wait for an open() callback response.
-    // Can't set to max, since it gets added to time(), and max would overflow.
-    // Set to 3 years.
-    EnvPutInt(NAME_TRANSACTIONTIMEOUT, 60*60*24*365*3); 
+    XrdInit::XrdInit() : posixXrd(-OPEN_FILES) { // Use non-OS file descriptors
+        Xunix.Init(0);
 
-    // Disable XrdClient read caching.
-    EnvPutInt(NAME_READCACHESIZE, 0);
+        // Set timeouts to effectively disable client timeouts.
 
-    // Don't need to lengthen load-balancer timeout.??
-    //EnvPutInt(NAME_LBSERVERCONN_TTL, std::numeric_limits<int>::max());
+        // Don't set this!
+        //EnvPutInt(NAME_CONNECTTIMEOUT, 3600*24*10);
+
+        // Don't set these for two-file model?
+        //EnvPutInt(NAME_REQUESTTIMEOUT, std::numeric_limits<int>::max());
+        //EnvPutInt(NAME_DATASERVERCONN_TTL, std::numeric_limits<int>::max());
+
+        // TRANSACTIONTIMEOUT needs to get extended since it limits how
+        // long the client will wait for an open() callback response.
+        // Can't set to max, since it gets added to time(), and max would overflow.
+        // Set to 3 years.
+        EnvPutInt(NAME_TRANSACTIONTIMEOUT, 60*60*24*365*3);
+
+        // Disable XrdClient read caching.
+        EnvPutInt(NAME_READCACHESIZE, 0);
+
+        // Don't need to lengthen load-balancer timeout.??
+        //EnvPutInt(NAME_LBSERVERCONN_TTL, std::numeric_limits<int>::max());
+    }
+
+    static XrdInit xrdInit;
 }
 
 #define QSM_TIMESTART(name, path) \
@@ -159,7 +163,6 @@ void qMaster::xrdInit() {
 #endif
 
 int qMaster::xrdOpen(const char *path, int oflag) {
-    if(!qMasterXrdInitialized) { xrdInit(); }
     char const* abbrev = path;  while((abbrev[0] != '\0') && *abbrev++ != '/');
     QSM_TIMESTART("Open", abbrev);
     //int res = XrdPosix_Open(path, oflag);
@@ -169,7 +172,6 @@ int qMaster::xrdOpen(const char *path, int oflag) {
 }
 
 int qMaster::xrdOpenAsync(const char* path, int oflag, XrdPosixCallBack *cbP) {
-    if(!qMasterXrdInitialized) { xrdInit(); }
     char const* abbrev = path;  while((abbrev[0] != '\0') && *abbrev++ != '/');
     while((abbrev[0] != '\0') && *abbrev++ != '/');
     while((abbrev[0] != '\0') && *abbrev++ != '/');

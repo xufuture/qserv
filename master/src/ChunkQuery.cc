@@ -61,9 +61,11 @@ namespace {
                 std::string const& desc, 
                 std::string const& comment,
                 std::string const& comment2) {
+#if 0 //smm
         std::cout << (std::string() + "Close (" + desc + ") of "
                       + boost::lexical_cast<std::string>(fd)  + " " 
                       + comment) << std::endl;
+#endif //smm
 	int res = qMaster::xrdClose(fd); 
         if(res != 0) {
             errnoComplain(("Faulty close " + comment2).c_str(), fd, errno);
@@ -71,12 +73,6 @@ namespace {
         return res;
     }
 
-    class scopedTrue {
-    public:
-        scopedTrue(bool& val_) : value(val_) { value = true; }
-        ~scopedTrue() { value = false; }
-        bool& value;
-    };
 }  // anonymous namespace
 
 //////////////////////////////////////////////////////////////////////
@@ -84,35 +80,55 @@ namespace {
 //////////////////////////////////////////////////////////////////////
 class lsst::qserv::master::ChunkQuery::ReadCallable : public DynamicWorkQueue::Callable {
 public:
-    explicit ReadCallable(qMaster::ChunkQuery& cq) : 
-        _cq(cq), _isRunning(false)
-    {}
-    virtual ~ReadCallable() {} // Must halt current operation.
+    explicit ReadCallable(qMaster::ChunkQuery& cq) : _cq(cq), _isRunning(false) { }
+    virtual ~ReadCallable() { } // Must halt current operation.
+
     virtual void operator()() {
-        // Use blocking reads to prevent implicit thread creation by 
-        // XrdClient
+        boost::unique_lock<boost::mutex> m(_cq._mutex);
         _cq._state = ChunkQuery::READ_OPEN;
         _cq._readOpenTimer.start();
         _isRunning = true;
+        m.unlock();
         int result = qMaster::xrdOpen(_cq._resultUrl.c_str(), O_RDONLY);
-        if(result == -1 ) {
-            if(errno == EINPROGRESS) {
-                std::cout << "Synchronous open returned EINPROGRESS!!!! "
-                          << _cq._spec.chunkId
-                          << std::endl;
-            }
+        m.lock();
+        if (result < 0) {
             _cq._result.read = -errno;
-            _cq._state = ChunkQuery::COMPLETE;
-            _cq._notifyManager(); 
-            return;
         }
-        _cq.Complete(result);
+        _cq._readOpenTimer.stop();
+        if (_cq._shouldSquash) {
+            if (result >= 0) {
+                _cq._readCloseTimer.start();
+                m.unlock();
+                qMaster::xrdClose(result);
+                m.lock();
+                _cq._readCloseTimer.stop();
+            }
+            _cq._state = ABORTED;
+        } else if (result < 0) {
+            _cq._state = ChunkQuery::COMPLETE;
+        } else {
+            int const fragmentSize = 4*1024*1024; // 4MB fragment size (param?)
+            _cq._state = READ_READ;
+            m.unlock();
+            PacketIter * p = new PacketIter(result, fragmentSize);
+            m.lock(); 
+            _cq._packetIter.reset(p);
+            _cq._result.localWrite = 1; // MAGIC: stuff the result so that it doesn't
+                                        // look like an error to skip the local write.
+            _cq._state = COMPLETE;
+        }
+        m.unlock();
+        _cq._notifyManager();
     }
-    virtual void abort() {
+
+    virtual void cancel() {
+        assert("NOT IMPLEMED!!!!");
+#if 0 //smm
         if(_isRunning) {
             // This is the best we can do for squashing.
             _cq._unlinkResult(_cq._resultUrl);             
         }
+#endif //smm
     }
 
 private:
@@ -125,14 +141,14 @@ private:
 //////////////////////////////////////////////////////////////////////
 class lsst::qserv::master::ChunkQuery::WriteCallable : public DynamicWorkQueue::Callable {
 public:
-    explicit WriteCallable(qMaster::ChunkQuery& cq) : 
-        _cq(cq)
-    {}
-    virtual ~WriteCallable() {} 
+    explicit WriteCallable(qMaster::ChunkQuery& cq) : _cq(cq) { }
+    virtual ~WriteCallable() { }
+
     virtual void operator()() {
-        // Use blocking calls to prevent implicit thread creation by 
-        // XrdClient
+        boost::unique_lock<boost::mutex> m(_cq._mutex);
         _cq._state = ChunkQuery::WRITE_OPEN;
+        m.unlock();
+
         int tries = 5; // Arbitrarily try 5 times.
         int result;
         while(tries > 0) {
@@ -140,24 +156,43 @@ public:
             result = qMaster::xrdOpen(_cq._spec.path.c_str(), O_WRONLY);
             if (result == -1) {
                 if(errno == ENOENT) {
+#if 0 //smm
                     std::cout << "Chunk not found for path:"
                               << _cq._spec.path << " , "
                               << tries << " tries left " << std::endl;
+#endif //smm
                     continue;
                 }
-            }
-            if ( result == -1 ) {
                 result = -errno;
             }
             break;
         }
-        _cq.Complete(result);
+        m.lock();
+        _cq._result.open = result;
+        _cq._writeOpenTimer.stop();
+        if (_cq._shouldSquash) {
+            if (result >= 0) {
+                _cq._writeCloseTimer.start();
+                m.unlock();
+                qMaster::xrdClose(result);
+                m.lock();
+                _cq._writeCloseTimer.stop();
+            }
+            _cq._state = ABORTED;
+        } else if (result < 0) {
+            _cq._state = COMPLETE;
+        } else {
+            _cq._state = WRITE_WRITE;
+            m.unlock();
+            _cq._sendQuery(result);
+            return;
+        }
+        m.unlock();
+        _cq._notifyManager();
     }
-    virtual void abort() {
-        // Can't really squash myself.
-    }
+
     virtual void cancel() {
-        _cq.Complete(-1);
+        assert("NOT IMPLEMENTED!!!!");
     }
 private:
     ChunkQuery& _cq;
@@ -183,10 +218,6 @@ char const* qMaster::ChunkQuery::getWaitStateStr(WaitState s) {
 }
 
 void qMaster::ChunkQuery::Complete(int Result) {
-    // Prevent multiple Complete() callbacks from stacking. 
-    boost::shared_ptr<boost::mutex> m(_completeMutexP);
-    boost::lock_guard<boost::mutex> lock(*m);
-
     std::stringstream ss;
     bool isReallyComplete = false;
     if(_shouldSquash) {        
@@ -198,7 +229,6 @@ void qMaster::ChunkQuery::Complete(int Result) {
         _writeOpenTimer.stop();
         ss << _hash << " WriteOpen " << _writeOpenTimer << std::endl;
         {
-            boost::lock_guard<boost::mutex> lock(_mutex);
             _result.open = Result;
         }
         if(Result < 0) { // error? 
@@ -225,7 +255,6 @@ void qMaster::ChunkQuery::Complete(int Result) {
         } else {
             _state = READ_READ;
             //_manager->getReadPermission();
-            //_readResults(Result);
             _readResultsDefer(Result);
         }
         break;
@@ -236,13 +265,14 @@ void qMaster::ChunkQuery::Complete(int Result) {
         _state = CORRUPT;
     }
     if(isReallyComplete) { _notifyManager(); }
+#if 0 //smm
     std::cout << ss.str();
+#endif //smm
 }
 
 qMaster::ChunkQuery::ChunkQuery(qMaster::TransactionSpec const& t, int id, 
                                 qMaster::AsyncQueryManager* mgr) 
-    : XrdPosixCallBack(),
-      _id(id), _spec(t), 
+    : _id(id), _spec(t), 
       _manager(mgr),
       _shouldSquash(false) {
     if(!_manager) {
@@ -256,7 +286,6 @@ qMaster::ChunkQuery::ChunkQuery(qMaster::TransactionSpec const& t, int id,
                                _spec.query.size());
     // Patch the spec to include the magic query terminator.
     _spec.query.append(4,0); // four null bytes.
-    _completeMutexP.reset(new boost::mutex);
 }
 
 qMaster::ChunkQuery::~ChunkQuery() {
@@ -265,45 +294,13 @@ qMaster::ChunkQuery::~ChunkQuery() {
 }
 
 void qMaster::ChunkQuery::run() {
+    std::cout << "Opening " << _spec.path << "\n";
     // This lock ensures that the remaining ChunkQuery::Complete() calls
     // do not proceed until this initial step completes.
     boost::unique_lock<boost::mutex> lock(_mutex);
-    std::cout << "Opening " << _spec.path << "\n";
     _writeOpenTimer.start();
-#if 0
-    int result = 0;
-    while(true) {
-        result = qMaster::xrdOpenAsync(_spec.path.c_str(), O_WRONLY, this);
-        if(result == -EMFILE) {
-            _manager->signalTooManyFiles();
-            _manager->getWritePermission();
-        } else {
-            break;
-        }
-    }
-    if(result != -EINPROGRESS) {
-        // don't continue, set result with the error.
-        std::cout << "Not EINPROGRESS (" << result 
-                  << "), should not continue with " 
-                  << _spec.path << "\n";
-        _result.open = result;
-        _state = COMPLETE;
-        _notifyManager(); // manager should delete me.
-    } else {
-        std::cout << "Waiting for " << _spec.path << "\n";	
-    }
-#elif 1
     _state = WRITE_QUEUE;
     _manager->addToWriteQueue(new WriteCallable(*this));
-#else     //synchronous open:    
-    result = qMaster::xrdOpen(_spec.path.c_str(), O_WRONLY);
-    if (result == -1) {
-        result = -errno;
-    }
-    lock.release()->unlock();
-    Complete(result);
-#endif
-    // Callback(Complete) will handle the rest.
 }
 
 std::string qMaster::ChunkQuery::getDesc() const {
@@ -450,29 +447,18 @@ void qMaster::ChunkQuery::_squashAtCallback(int result) {
     }
 }
     
-bool qMaster::ChunkQuery::_openForRead(std::string const& url) {
-    _state = READ_OPEN;
-
-    //std::cout  << "opening async read to " << url << "\n";
-    _readOpenTimer.start();
-    _result.read = qMaster::xrdOpenAsync(url.c_str(), 
-                                         O_RDONLY, this);
-    // std::cout << "Async read for " << _hash << " got " << _result.read
-    //           << " --> " 
-    //           << ((_result.read == -EINPROGRESS) ? "ASYNC OK" : "fail?")
-    //           << std::endl;
-    return _result.read == -EINPROGRESS; // -EINPROGRESS is successful.
-}
-
 void qMaster::ChunkQuery::_sendQuery(int fd) {
-    std::stringstream ss;
+    boost::unique_lock<boost::mutex> m(_mutex);
+    //smm std::stringstream ss;
     bool isReallyComplete = false;
     // Now write
     int len = _spec.query.length();
     _writeTimer.start();
+    m.unlock();
     int writeCount = qMaster::xrdWrite(fd, _spec.query.c_str(), len);
+    m.lock();
     _writeTimer.stop();
-    ss << _hash << " WriteQuery " << _writeTimer << std::endl;
+    //smm ss << _hash << " WriteQuery " << _writeTimer << std::endl;
     
     // Get rid of the query string to save space
     _spec.query.clear();
@@ -481,43 +467,52 @@ void qMaster::ChunkQuery::_sendQuery(int fd) {
         isReallyComplete = true;
         // To be safe, close file anyway.
         _writeCloseTimer.start();
-        ss << _hash << " WriteQuery " << _writeTimer << std::endl;
-        closeFd(fd, "Error-caused", "dumpPath " + _spec.savePath, 
-                "post-dispatch");
+        m.unlock();
+        //smm ss << _hash << " WriteQuery " << _writeTimer << std::endl;
+        //closeFd(fd, "Error-caused", "dumpPath " + _spec.savePath, 
+        //        "post-dispatch");
+        qMaster::xrdClose(fd);
+        m.lock();
         _writeCloseTimer.stop();
-        ss << _hash << " WriteClose " << _writeTimer << std::endl;
+        //ss << _hash << " WriteClose " << _writeTimer << std::endl;
     } else {
         _result.queryWrite = writeCount;
-        _queryHostPort = qMaster::xrdGetEndpoint(fd);
+        m.unlock();
+        std::string qhp = qMaster::xrdGetEndpoint(fd);
+        m.lock();
+        _queryHostPort = qhp;
         _resultUrl = qMaster::makeUrl(_queryHostPort.c_str(), "result", 
                                       _hash, 'r');
         _writeCloseTimer.start();
-        closeFd(fd, "Normal", "dumpPath " + _spec.savePath, 
-                "post-dispatch");
+        m.unlock();
+        qMaster::xrdClose(fd);
+        //smm closeFd(fd, "Normal", "dumpPath " + _spec.savePath, 
+        //        "post-dispatch");
+        m.lock();
         _writeCloseTimer.stop();
-        ss << _hash << " QuerySize " << len << std::endl;
-        ss << _hash << " WriteClose " << _writeTimer << std::endl;
+        //ss << _hash << " QuerySize " << len << std::endl;
+        //ss << _hash << " WriteClose " << _writeTimer << std::endl;
 
         if(_shouldSquash) {
-            _unlinkResult(_resultUrl);
+            std::string s = _resultUrl;
+            m.unlock();
+            _unlinkResult(s);
+            m.lock();
             isReallyComplete = true;
         } else {
-#if 1
             _state = READ_QUEUE;
             // Only attempt opening the read if not squashing.
             _manager->addToReadQueue(new ReadCallable(*this));
-#else
-            if(!_openForRead(_resultUrl)) {
-                isReallyComplete = true;
-            }  
-#endif
         }
     } // Write ok
     if(isReallyComplete) { 
         _state=COMPLETE;
+        m.unlock();
         _notifyManager(); 
     }
+#if 0 //smm
     std::cout << ss.str();
+#endif //smm
 }
 
 void qMaster::ChunkQuery::_readResultsDefer(int fd) {
@@ -531,34 +526,10 @@ void qMaster::ChunkQuery::_readResultsDefer(int fd) {
     _result.localWrite = 1; // MAGIC: stuff the result so that it doesn't
     // look like an error to skip the local write.
     _state = COMPLETE;
+#if 0 //smm
     std::cout << _hash << " ReadResults defer " << std::endl;
+#endif //smm
     _notifyManager();
-}
-
-void qMaster::ChunkQuery::_readResults(int fd) {
-    int const fragmentSize = 4*1024*1024; // 4MB fragment size (param?)
-    // Should limit cumulative result size for merging.  Now is a
-    // good time. Configurable, with default=1G?
-
-    // Now read.
-    _readTimer.start();
-    qMaster::xrdReadToLocalFile(fd, fragmentSize, _spec.savePath.c_str(), 
-                                &_shouldSquash,
-                                &(_result.localWrite), &(_result.read));
-    _readTimer.stop();
-    std::cout << _hash << " ReadResults " << _readTimer << std::endl;
-    _readCloseTimer.start();
-    int res = qMaster::xrdClose(fd);
-    _readCloseTimer.stop();
-    std::cout << _hash << " ReadClose " << _readTimer << std::endl;
-    if(res != 0) {
-        errnoComplain("Error closing after result read", fd, errno);
-    }
-    std::cout << _spec.chunkId << " " 
-              << _hash << " -- wrote " << _result.localWrite 
-              << " read " << _result.read << std::endl;
-    _state = COMPLETE;
-    _notifyManager(); // This is a successful completion.
 }
 
 void qMaster::ChunkQuery::_notifyManager() {

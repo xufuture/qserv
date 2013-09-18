@@ -24,9 +24,6 @@
 #ifndef LSST_QSERV_MASTER_CHUNKQUERY_H
 #define LSST_QSERV_MASTER_CHUNKQUERY_H
 
-// Scalla/xrootd
-#include "XrdPosix/XrdPosixCallBack.hh"
-
 // Package
 #include "lsst/qserv/master/transaction.h"
 #include "lsst/qserv/master/xrdfile.h"
@@ -47,7 +44,7 @@ class PacketIter;
 // threads.  Not sure if it will be enough though.
 // 
 //////////////////////////////////////////////////////////////////////
-class ChunkQuery : public XrdPosixCallBack {
+class ChunkQuery {
 public:
     enum WaitState {WRITE_QUEUE=100,
                     WRITE_OPEN, WRITE_WRITE, 
@@ -61,7 +58,6 @@ public:
     friend class ReadCallable;
     friend class WriteCallable;
     
-    virtual void Complete(int Result);
     explicit ChunkQuery(TransactionSpec const& t, int id,
 			AsyncQueryManager* mgr);
     virtual ~ChunkQuery();
@@ -83,6 +79,7 @@ private:
     void _sendQuery(int fd);
     void _readResults(int fd);
     void _readResultsDefer(int fd);
+    void Complete(int Result);
     void _notifyManager();
     bool _openForRead(std::string const& url);
     void _squashAtCallback(int result);
@@ -93,7 +90,6 @@ private:
     WaitState _state;
     XrdTransResult _result;
     boost::mutex _mutex;
-    boost::shared_ptr<boost::mutex> _completeMutexP;
     std::string _hash;
     std::string _resultUrl;
     std::string _queryHostPort;

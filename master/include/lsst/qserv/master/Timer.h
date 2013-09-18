@@ -45,7 +45,8 @@ public:
     }
     char const* getStartTimeStr() const {
         char* buf = const_cast<char*>(startTimeStr); // spiritually const
-        asctime_r(localtime(&stopTime.tv_sec), buf); 
+        struct ::tm lt;
+        asctime_r(localtime_r(&stopTime.tv_sec, &lt), buf); 
         buf[std::strlen(startTimeStr)-1] = 0;
         return startTimeStr;
     }
