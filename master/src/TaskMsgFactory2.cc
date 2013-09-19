@@ -33,9 +33,10 @@
   */
 #include "lsst/qserv/master/TaskMsgFactory2.h"
 
+#include <stdexcept>
+
 #include "lsst/qserv/master/ChunkQuerySpec.h"
 #include "lsst/qserv/master/common.h"
-#include "lsst/qserv/master/QueryError.h"
 #include "lsst/qserv/worker.pb.h"
 
 namespace qMaster=lsst::qserv::master;
