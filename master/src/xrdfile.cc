@@ -26,6 +26,9 @@
 #include <string>
 #include <sstream>
 
+// Boost
+#include <boost/thread/thread.hpp>
+
 #ifdef FAKE_XRD
 
 #else
@@ -40,6 +43,7 @@
 #endif
 
 #include "lsst/qserv/master/xrdfile.h"
+#include "lsst/qserv/master/Logger.h"
 
 namespace qMaster = lsst::qserv::master;
 
@@ -71,15 +75,15 @@ void qMaster::xrdInit() {}
 
 int qMaster::xrdOpen(const char *path, int oflag) {
     static int fakeDes=50;
-    std::cout << "xrd openfile " << path << " returning ("
-              << fakeDes << ")" << std::endl;
+    LOGGER_DBG << "xrd openfile " << path << " returning ("
+               << fakeDes << ")" << std::endl;
     return fakeDes;
 }
 
 long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     static char fakeResults[] = "This is totally fake.";
     int len=strlen(fakeResults);
-    std::cout << "xrd read " << fildes << ": faked" << std::endl;
+    LOGGER_DBG << "xrd read " << fildes << ": faked" << std::endl;
     if(nbyte > static_cast<unsigned long long>(len)) {
         nbyte = len+1;
     }
@@ -91,13 +95,13 @@ long long qMaster::xrdWrite(int fildes, const void *buf,
                             unsigned long long nbyte) {
     std::string s;
     s.assign(static_cast<const char*>(buf), nbyte);
-    std::cout << "xrd write (" <<  fildes << ") \"" 
-              << s << std::endl;
+    LOGGER_DBG << "xrd write (" <<  fildes << ") \"" 
+               << s << std::endl;
     return nbyte;
 }
 
 int qMaster::xrdClose(int fildes) {
-    std::cout << "xrd close (" << fildes << ")" << std::endl;
+    LOGGER_DBG << "xrd close (" << fildes << ")" << std::endl;
     return 0; // Always pretend to succeed.
 }
 
@@ -159,6 +163,29 @@ void qMaster::xrdInit() {
 #endif
 
 int qMaster::xrdOpen(const char *path, int oflag) {
+#ifdef DBG_TEST_OPEN_FAILURE_1
+    /*************************************************************
+     * TEST FAILURE MODE: Intermittent XRD Open for Read Failure
+     * ***********************************************************/
+    char *altPath = strdup(path);
+    if (oflag == O_RDONLY) {
+        int coinToss = rand()%2;
+        if (coinToss == 0) {
+            LOGGER_WRN << "YOU DODGED A BULLET, NO SABOTAGE THIS TIME!!" << std::endl;
+        } else {
+            LOGGER_WRN << "YOU ARE UNLUCKY, SABOTAGING XRD OPEN!!!!" << std::endl;
+            //altPath[strlen(altPath)-1] = '0'; // modify path to induce error
+            return -1;
+        }
+    }
+    if(!qMasterXrdInitialized) { xrdInit(); }
+    char const* abbrev = altPath;  while((abbrev[0] != '\0') && *abbrev++ != '/');
+    QSM_TIMESTART("Open", abbrev);
+    int res = XrdPosixXrootd::Open(altPath,oflag);
+    QSM_TIMESTOP("Open", abbrev);
+    return res;
+    /*************************************************/
+#else
     if(!qMasterXrdInitialized) { xrdInit(); }
     char const* abbrev = path;  while((abbrev[0] != '\0') && *abbrev++ != '/');
     QSM_TIMESTART("Open", abbrev);
@@ -166,6 +193,7 @@ int qMaster::xrdOpen(const char *path, int oflag) {
     int res = XrdPosixXrootd::Open(path,oflag);
     QSM_TIMESTOP("Open", abbrev);
     return res;
+#endif
 }
 
 int qMaster::xrdOpenAsync(const char* path, int oflag, XrdPosixCallBack *cbP) {
@@ -182,8 +210,8 @@ int qMaster::xrdOpenAsync(const char* path, int oflag, XrdPosixCallBack *cbP) {
 }
 
 long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
-    // std::cout << "xrd trying to read (" <<  fildes << ") "
-    // 	      << nbyte << " bytes" << std::endl;
+    LOGGER_DBG << "xrd trying to read (" <<  fildes << ") "
+               << nbyte << " bytes" << std::endl;
     QSM_TIMESTART("Read", fildes);
     long long readCount;
     readCount = XrdPosixXrootd::Read(fildes, buf, nbyte);
@@ -193,7 +221,7 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     /*************************************************
      * TEST FAILURE MODE: Reading query result fails.
      * ***********************************************/
-    std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
+    LOGGER_WRN << "SABOTAGING XRD READ!!!!" << std::endl;
     readCount = -1;
     /*************************************************/
 #endif
@@ -202,10 +230,10 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     /*************************************************
      * TEST FAILURE MODE: Fuzz testing - simulate incomplete results.
      * ***********************************************/
-    std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
-    std::cout << "DBG: XrdPosixXrootd::Read() returned: " << readCount << std::endl;
+    LOGGER_WRN << "SABOTAGING XRD READ!!!!" << std::endl;
+    LOGGER_WRN << "XrdPosixXrootd::Read() returned: " << readCount << std::endl;
     readCount = rand()%readCount;
-    std::cout << "Dbg: Set readCount = " << readCount << std::endl;
+    LOGGER_WRN << "Set readCount = " << readCount << std::endl;
     /*************************************************/
 #endif
 
@@ -213,11 +241,25 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     /*************************************************
      * TEST FAILURE MODE: Fuzz testing - simulate corrupted byte.
      * ***********************************************/
-    std::cout << "DBG: SABOTAGING XRD READ!!!!" << std::endl;
-    std::cout << "DBG: XrdPosixXrootd::Read() returned: " << readCount << std::endl;
+    LOGGER_WRN << "SABOTAGING XRD READ!!!!" << std::endl;
+    LOGGER_WRN << "XrdPosixXrootd::Read() returned: " << readCount << std::endl;
     int position = rand()%readCount;
     char value = (char)(rand()%256);
     *((char *)buf + position) = value;
+    /*************************************************/
+#endif
+
+#ifdef DBG_TEST_READ_FAILURE_4
+    /*************************************************
+     * TEST FAILURE MODE: Intermittent Read Failure
+     * ***********************************************/
+    int coinToss = rand()%2;
+    if (coinToss == 0) {
+        LOGGER_WRN << "YOU DODGED A BULLET, NO SABOTAGE THIS TIME!!" << std::endl;
+    } else {
+        LOGGER_WRN << "YOU ARE UNLUCKY, SABOTAGING XRD READ!!!!" << std::endl;
+        readCount = -1;
+    }
     /*************************************************/
 #endif
 
@@ -231,10 +273,10 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
 
 long long qMaster::xrdWrite(int fildes, const void *buf,
                             unsigned long long nbyte) {
-    // std::string s;
-    // s.assign(static_cast<const char*>(buf), nbyte);
-    // std::cout << "xrd write (" <<  fildes << ") \""
-    // 	      << s << "\"" << std::endl;
+    std::string s;
+    s.assign(static_cast<const char*>(buf), nbyte);
+    LOGGER_DBG << "xrd write (" <<  fildes << ") \""
+               << s << "\"" << std::endl;
     QSM_TIMESTART("Write", fildes);
     long long res = XrdPosixXrootd::Write(fildes, buf, nbyte);
     QSM_TIMESTOP("Write", fildes);
@@ -243,7 +285,7 @@ long long qMaster::xrdWrite(int fildes, const void *buf,
     /*************************************************
      * TEST FAILURE MODE: Writing query result fails.
      * ***********************************************/
-    std::cout << "DBG: SABOTAGING XRD WRITE!!!!" << std::endl;
+    LOGGER_WRN << "SABOTAGING XRD WRITE!!!!" << std::endl;
     res = -1;
     /*************************************************/
 #endif
@@ -322,7 +364,7 @@ void qMaster::xrdReadToLocalFile(int fildes, int fragmentSize,
                              S_IRUSR|S_IWUSR);
     if(localFileDesc == -1) {
         while(errno == -EMFILE) {
-            std::cout << "EMFILE while trying to write locally." << std::endl;
+            LOGGER_WRN << "EMFILE while trying to write locally." << std::endl;
             sleep(1);
             localFileDesc = open(filename, 
                                  O_CREAT|O_WRONLY|O_TRUNC,
@@ -363,8 +405,8 @@ void qMaster::xrdReadToLocalFile(int fildes, int fragmentSize,
     if(localFileDesc != -1) {
         int res = close(localFileDesc);
         if((res == -1) && (writeRes >= 0)) {
-            std::cout << "Bad local close for descriptor " << localFileDesc
-                      << std::endl;
+            LOGGER_ERR << "Bad local close for descriptor " << localFileDesc
+                       << std::endl;
             writeRes = -errno;
         } else {
             writeRes = bytesWritten; // Update successful result.

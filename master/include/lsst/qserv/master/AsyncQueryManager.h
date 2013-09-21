@@ -43,7 +43,8 @@
 #include <boost/thread.hpp>
 
 #include "lsst/qserv/master/DynamicWorkQueue.h"
-
+#include "lsst/qserv/master/xrdfile.h"
+#include "lsst/qserv/master/MessageStore.h"
 
 namespace lsst {
 namespace qserv {
@@ -54,12 +55,9 @@ class ChunkQuery;
 class MergeFixup;
 class PacketIter;
 class QuerySession;
-class MessageStore;
 class TableMerger;
 class TableMergerConfig;
 class TransactionSpec;
-class XrdTransResult;
-
 
 //////////////////////////////////////////////////////////////////////
 // class AsyncQueryManager 
