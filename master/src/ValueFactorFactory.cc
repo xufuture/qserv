@@ -39,6 +39,8 @@
 #include "lsst/qserv/master/ValueFactor.h" // For ValueFactor
 #include "SqlSQL2TokenTypes.hpp"
 
+#include "lsst/qserv/Logger.h"
+
 // namespace modifiers
 using antlr::RefAST;
 
@@ -80,7 +82,7 @@ newColumnFactor(antlr::RefAST t, ColumnRefNodeMap& cMap) {
     boost::shared_ptr<ValueFactor> vt(new ValueFactor());
     boost::shared_ptr<FuncExpr> fe;
     RefAST last;
-    // std::cout << "colterm: " << t->getType() << " "
+    // LOGGER_INF << "colterm: " << t->getType() << " "
     //           << t->getText() << std::endl;
     int tType = t->getType();
     switch(tType) {
@@ -105,7 +107,7 @@ newColumnFactor(antlr::RefAST t, ColumnRefNodeMap& cMap) {
         }
         return vt;
     case SqlSQL2TokenTypes::FUNCTION_SPEC:
-        //std::cout << "col child (fct): " << child->getType() << " "
+        //LOGGER_INF << "col child (fct): " << child->getType() << " "
         //          << child->getText() << std::endl;
         fe.reset(new FuncExpr());
         last = walkToSiblingBefore(child, SqlSQL2TokenTypes::LEFT_PAREN);
@@ -119,7 +121,7 @@ newColumnFactor(antlr::RefAST t, ColumnRefNodeMap& cMap) {
             current.get(); current = current->getNextSibling()) {
             // Should be a * or a value expr.
             boost::shared_ptr<ValueFactor> pvt;
-            //std::cout << "fctspec param: " << current->getType() << " "
+            //LOGGER_INF << "fctspec param: " << current->getType() << " "
             //          << current->getText() << std::endl;
 
             switch(current->getType()) {
@@ -150,7 +152,7 @@ newColumnFactor(antlr::RefAST t, ColumnRefNodeMap& cMap) {
 boost::shared_ptr<ValueFactor>
 newSetFctSpec(RefAST expr, ColumnRefNodeMap& cMap) {
     boost::shared_ptr<FuncExpr> fe(new FuncExpr());
-    //    std::cout << "set_fct_spec " << walkTreeString(expr) << std::endl;
+    //    LOGGER_INF << "set_fct_spec " << walkTreeString(expr) << std::endl;
     RefAST nNode = expr->getFirstChild();
     if(!nNode.get()) {
         throw ParseException("Missing name node of function spec", expr);
@@ -209,7 +211,7 @@ ValueFactorFactory::newFactor(antlr::RefAST a) {
         a = a->getFirstChild(); // FACTOR is a parent placeholder element
     }
     eType = a->getType();
-    //    std::cout << "new ValueFactor: " << tokenText(a) << std::endl;
+    //    LOGGER_INF << "new ValueFactor: " << tokenText(a) << std::endl;
     switch(a->getType()) {
     case SqlSQL2TokenTypes::COLUMN_REF:
         a = a->getFirstChild();

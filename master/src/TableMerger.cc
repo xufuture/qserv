@@ -39,17 +39,16 @@
 #include <iostream>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
+#include "lsst/qserv/Logger.h"
 #include "lsst/qserv/SqlConnection.hh"
 #include "lsst/qserv/master/SqlInsertIter.h"
 #include "lsst/qserv/master/MmapFile.h"
-#include "lsst/qserv/master/Logger.h"
 using lsst::qserv::SqlErrorObject;
 using lsst::qserv::SqlConfig;
 using lsst::qserv::SqlConnection;
 using lsst::qserv::master::TableMerger;
 using lsst::qserv::master::TableMergerError;
 using lsst::qserv::master::TableMergerConfig;
-
 
 namespace { // File-scope helpers
 

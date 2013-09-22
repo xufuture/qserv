@@ -21,11 +21,9 @@
  */
 // See Logger.h
 
-#include "lsst/qserv/master/Logger.h"
+#include "Logger.h"
 
-using lsst::qserv::master::Logger;
-
-namespace qMaster=lsst::qserv::master;
+using namespace lsst::qserv;
 
 // Thread local storage to ensure one instance of Logger per thread.
 boost::thread_specific_ptr<Logger> Logger::_instancePtr;

@@ -33,6 +33,7 @@
   */
 
 #include "lsst/qserv/master/MetadataCache.h"
+#include "lsst/qserv/Logger.h"
 
 namespace qMaster = lsst::qserv::master;
 
@@ -563,13 +564,13 @@ qMaster::MetadataCache::getDbInfo(std::string const& dbName) {
   */
 void
 qMaster::MetadataCache::printSelf() {
-    std::cout << "\n\nMetadata Cache in C++:" << std::endl;
+    LOGGER_INF << "\n\nMetadata Cache in C++:" << std::endl;
     std::map<std::string, DbInfo>::const_iterator itr;
     boost::lock_guard<boost::mutex> m(_mutex);
     for (itr=_dbs.begin() ; itr!=_dbs.end() ; ++itr) {
-        std::cout << "db: " << itr->first << ": " << itr->second << "\n";
+        LOGGER_INF << "db: " << itr->first << ": " << itr->second << "\n";
     }
-    std::cout << std::endl;
+    LOGGER_INF << std::endl;
 }
 
 /** Operator<< for printing DbInfo object

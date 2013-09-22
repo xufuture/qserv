@@ -44,6 +44,8 @@
 #include "SqlSQL2Parser.hpp" 
 #include "SqlSQL2TokenTypes.hpp"
 
+#include "lsst/qserv/Logger.h"
+
 #include "lsst/qserv/master/parseTreeUtil.h"
 #include "lsst/qserv/master/ColumnRefH.h"
 #include "lsst/qserv/master/SelectList.h"
@@ -193,17 +195,15 @@ inline OS& generate(OS& os, char const label[], boost::shared_ptr<T> t) {
 
 void qMaster::SelectStmt::_print() {
     //_selectList->getColumnRefList()->printRefs();
-    using std::cout;
-    using std::endl;
-    print(std::cout, "from", _fromList);
-    print(std::cout, "select", _selectList);
-    print(std::cout, "where", _whereClause);
-    print(std::cout, "orderby", _orderBy);
-    print(std::cout, "groupby", _groupBy);
-    print(std::cout, "having", _having);
-    if(_limit != -1) { std::cout << " LIMIT " << _limit; }
+    print(LOGGER_INF, "from", _fromList);
+    print(LOGGER_INF, "select", _selectList);
+    print(LOGGER_INF, "where", _whereClause);
+    print(LOGGER_INF, "orderby", _orderBy);
+    print(LOGGER_INF, "groupby", _groupBy);
+    print(LOGGER_INF, "having", _having);
+    if(_limit != -1) { LOGGER_INF << " LIMIT " << _limit; }
 }
 
 void qMaster::SelectStmt::_generate() {
-    std::cout << getTemplate().dbgStr() << std::endl;
+    LOGGER_INF << getTemplate().dbgStr() << std::endl;
 }

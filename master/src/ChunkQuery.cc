@@ -46,7 +46,7 @@
 #include "lsst/qserv/master/DynamicWorkQueue.h"
 #include "lsst/qserv/master/MessageStore.h"
 #include "lsst/qserv/master/msgCode.h"
-#include "lsst/qserv/master/Logger.h"
+#include "lsst/qserv/Logger.h"
 
 // Namespace modifiers
 using boost::make_shared;

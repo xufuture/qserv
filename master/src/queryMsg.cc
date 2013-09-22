@@ -30,9 +30,6 @@
 
 namespace qMaster=lsst::qserv::master;
 
-namespace { // File-scope helpers
-}
-
 int qMaster::queryMsgGetCount(int session) {
     qMaster::AsyncQueryManager& qm = qMaster::getAsyncManager(session);
     boost::shared_ptr<MessageStore> ms = qm.getMessageStore();

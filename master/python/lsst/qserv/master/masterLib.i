@@ -42,6 +42,7 @@ Access to the classes from the qserv_master library
 #include "lsst/qserv/master/common.h"
 #include "lsst/qserv/master/ifaceMeta.h"
 #include "lsst/qserv/master/queryMsg.h"
+#include "lsst/qserv/master/loggerInterface.h"
 %}
 
 // %include "lsst/p_lsstSwig.i"
@@ -126,6 +127,7 @@ namespace std {
 %include "lsst/qserv/master/TableMerger.h"
 %include "lsst/qserv/master/ifaceMeta.h"
 %include "lsst/qserv/master/queryMsg.h"
+%include "lsst/qserv/master/loggerInterface.h"
 
 // Instantiate any templates here:
 // %template(setBool) lsst::daf::base::PropertySet::set<bool>;

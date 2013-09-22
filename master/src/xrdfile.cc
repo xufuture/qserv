@@ -43,7 +43,7 @@
 #endif
 
 #include "lsst/qserv/master/xrdfile.h"
-#include "lsst/qserv/master/Logger.h"
+#include "lsst/qserv/Logger.h"
 
 namespace qMaster = lsst::qserv::master;
 

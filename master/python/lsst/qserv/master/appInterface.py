@@ -25,6 +25,7 @@ from itertools import ifilter
 import time
 
 # Package imports
+import logger
 import app
 import proxy
 import lsst.qserv.master.config as config
@@ -177,10 +178,10 @@ class AppInterface:
             args = sys.argv #take the original arguments
             args.insert(0, sys.executable) # add python
             os.execv(sys.executable, args) # replace self with new python.
-            print "Reset failed:",sys.executable, str(args)
+            logger.err("Reset failed:", sys.executable, str(args))
             return # This will not return.  os.execv should overwrite us.
         else:
-            print "<Not resetting: no reactor>"
+            logger.err("<Not resetting: no reactor>")
         pass
 
     def stop(self):

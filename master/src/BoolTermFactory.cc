@@ -33,6 +33,8 @@
 #include "lsst/qserv/master/PredicateFactory.h"
 #include "SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 
+#include "lsst/qserv/Logger.h"
+
 namespace lsst {
 namespace qserv {
 namespace master {
@@ -138,10 +140,10 @@ BoolTermFactory::newAndTerm(antlr::RefAST a) {
 BoolFactor::Ptr
 BoolTermFactory::newBoolFactor(antlr::RefAST a) {
 #if 0
-    std::cout << "bool factor:";
-    spacePrint sp(std::cout);
+    LOGGER_INF << "bool factor:";
+    spacePrint sp(LOGGER_INF);
     forEachSibs(a, sp);
-    std::cout << std::endl;
+    LOGGER_INF << std::endl;
 #endif
     BoolFactor::Ptr bf(new BoolFactor());
     bfImport bfi(*this, *bf);
@@ -151,7 +153,7 @@ BoolTermFactory::newBoolFactor(antlr::RefAST a) {
 /// Construct an UnknownTerm(BoolTerm)
 UnknownTerm::Ptr
 BoolTermFactory::newUnknown(antlr::RefAST a) {
-    std::cout << "unknown term:" << walkTreeString(a) << std::endl;
+    LOGGER_INF << "unknown term:" << walkTreeString(a) << std::endl;
     return UnknownTerm::Ptr(new UnknownTerm());
 }
 /// Construct an PassTerm

@@ -28,7 +28,7 @@
 
 #include "lsst/qserv/master/PacketIter.h"
 #include "lsst/qserv/master/xrdfile.h"
-#include "lsst/qserv/master/Logger.h"
+#include "lsst/qserv/Logger.h"
 #include <fcntl.h>
 #include <errno.h>
 #include <iostream>

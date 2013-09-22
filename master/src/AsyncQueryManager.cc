@@ -48,7 +48,7 @@
 #include "lsst/qserv/master/PacketIter.h"
 #include "lsst/qserv/master/msgCode.h"
 
-#include "lsst/qserv/master/Logger.h"
+#include "lsst/qserv/Logger.h"
 
 // Namespace modifiers
 using boost::make_shared;
