@@ -106,12 +106,18 @@ public:
                                << _cq._spec.chunkId
                                << std::endl;
                 }
-                _cq._result.read = -errno;
-                _cq._state = ChunkQuery::COMPLETE;
-                _cq._manager->getMessageStore()->addMessage(_cq._id,
-                    errno != 0 ? -abs(errno) : -1,
-                    "Remote I/O error during XRD open for read.");
-                _cq._notifyManager(); 
+                _cq._attempts += 1;
+                if (_cq._attempts < _cq.MAX_ATTEMPTS) {
+                    _cq._state = WRITE_QUEUE;
+                    _cq._manager->addToWriteQueue(new WriteCallable(_cq));
+                } else {
+                    _cq._result.read = -errno;
+                    _cq._state = ChunkQuery::COMPLETE;
+                    _cq._manager->getMessageStore()->addMessage(_cq._id,
+                        errno != 0 ? -abs(errno) : -1,
+                        "Remote I/O error during XRD open for read.");
+                    _cq._notifyManager(); 
+                }
                 return;
             }
             _cq.Complete(result);
@@ -139,7 +145,7 @@ private:
 //////////////////////////////////////////////////////////////////////
 class lsst::qserv::master::ChunkQuery::WriteCallable : public DynamicWorkQueue::Callable {
 public:
-    explicit WriteCallable(qMaster::ChunkQuery& cq) : 
+    explicit WriteCallable(qMaster::ChunkQuery& cq) :
         _cq(cq)
     {}
     virtual ~WriteCallable() {}
@@ -211,7 +217,6 @@ void qMaster::ChunkQuery::Complete(int Result) {
     // Prevent multiple Complete() callbacks from stacking. 
     boost::shared_ptr<boost::mutex> m(_completeMutexP);
     boost::lock_guard<boost::mutex> lock(*m);
-
     std::stringstream ss;
     bool isReallyComplete = false;
     if(_shouldSquash) {        
@@ -277,6 +282,7 @@ qMaster::ChunkQuery::ChunkQuery(qMaster::TransactionSpec const& t, int id,
     _result.queryWrite = 0;
     _result.read = 0;
     _result.localWrite = 0;
+    _attempts = 0;
     _hash = qMaster::hashQuery(_spec.query.c_str(), 
                                _spec.query.size());
     // Patch the spec to include the magic query terminator.
@@ -504,7 +510,7 @@ void qMaster::ChunkQuery::_sendQuery(int fd) {
     _manager->getMessageStore()->addMessage(_id, MSG_XRD_WRITE, "Query Written.");
     
     // Get rid of the query string to save space
-    _spec.query.clear();
+    //_spec.query.clear();
     if(writeCount != len) {
         _result.queryWrite = -errno;
         isReallyComplete = true;

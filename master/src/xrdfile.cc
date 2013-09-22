@@ -184,6 +184,23 @@ int qMaster::xrdOpen(const char *path, int oflag) {
     QSM_TIMESTOP("Open", abbrev);
     return res;
     /*************************************************/
+#elif defined DBG_TEST_OPEN_FAILURE_2
+    /*************************************************************
+     * TEST FAILURE MODE: Delay before XRD Open for Read
+     * (Provides time to manually kill worker process for testing
+     * chunk-level failure recovery.)
+     * ***********************************************************/
+    if (oflag == O_RDONLY) {
+        std::cout << "DBG: SLEEPING FOR 10 SECONDS" << std::endl;
+        boost::this_thread::sleep(boost::posix_time::seconds(10));
+    }
+    if(!qMasterXrdInitialized) { xrdInit(); }
+    char const* abbrev = path;  while((abbrev[0] != '\0') && *abbrev++ != '/');
+    QSM_TIMESTART("Open", abbrev);
+    int res = XrdPosixXrootd::Open(path,oflag);
+    QSM_TIMESTOP("Open", abbrev);
+    return res;
+    /*************************************************/
 #else
     if(!qMasterXrdInitialized) { xrdInit(); }
     char const* abbrev = path;  while((abbrev[0] != '\0') && *abbrev++ != '/');
