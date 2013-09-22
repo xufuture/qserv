@@ -249,12 +249,12 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     /*************************************************
      * TEST FAILURE MODE: Intermittent Read Failure
      * ***********************************************/
-    int coinToss = rand()%2;
+    int coinToss = rand()%10;
     if (coinToss == 0) {
-        std::cout << "YOU DODGED A BULLET, NO SABOTAGE THIS TIME!!" << std::endl;
-    } else {
         std::cout << "YOU ARE UNLUCKY, SABOTAGING XRD READ!!!!" << std::endl;
         readCount = -1;
+    } else {
+        std::cout << "YOU DODGED A BULLET, NO SABOTAGE THIS TIME!!" << std::endl;
     }
     /*************************************************/
 #endif
