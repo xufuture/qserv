@@ -121,6 +121,7 @@ qMaster::SqlInsertIter::SqlInsertIter(PacketIter::Ptr p,
 
         //Add next fragment, if available.
         if(!_incrementFragment()) {
+            errno = ENOTRECOVERABLE;
             throw "Failed to match Lock/Insert statements within SqlInsertIter.";
         }
     }
