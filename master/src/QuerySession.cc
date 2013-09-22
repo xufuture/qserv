@@ -46,6 +46,7 @@
 #include "lsst/qserv/master/QueryPlugin.h"
 #include "lsst/qserv/master/ParseException.h"
 #include "lsst/qserv/master/ifaceMeta.h" // Retrieve metadata object
+#include "lsst/qserv/Logger.h"
 
 namespace lsst {
 namespace qserv {
@@ -53,7 +54,7 @@ namespace master {
 
 void printConstraints(ConstraintVector const& cv) {
     std::copy(cv.begin(), cv.end(),
-              std::ostream_iterator<Constraint>(std::cout, ","));
+              std::ostream_iterator<Constraint>(LOGGER_INF, ","));
 
 }
 
@@ -120,7 +121,7 @@ boost::shared_ptr<ConstraintVector> QuerySession::getConstraints() const {
         //printConstraints(*cv);
         return cv;
     } else {
-        //std::cout << "No constraints." << std::endl;
+        //LOGGER_INF << "No constraints." << std::endl;
     }
     // No constraint vector
     return cv;
@@ -237,8 +238,8 @@ void QuerySession::_showFinal() {
     QueryTemplate par = _stmtParallel.front()->getTemplate();
     QueryTemplate mer = _stmtMerge->getTemplate();
 
-    std::cout << "parallel: " << par.dbgStr() << std::endl;
-    std::cout << "merge: " << mer.dbgStr() << std::endl;
+    LOGGER_INF << "parallel: " << par.dbgStr() << std::endl;
+    LOGGER_INF << "merge: " << mer.dbgStr() << std::endl;
 }
 
 std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) {

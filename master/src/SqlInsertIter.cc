@@ -26,6 +26,8 @@
 #include <iostream>
 #include <errno.h>
 
+#include "lsst/qserv/Logger.h"
+
 namespace qMaster = lsst::qserv::master;
 
 namespace {
@@ -57,13 +59,13 @@ void printInserts(char const* buf, off_t bufSize,
                   std::string const& tableName)  {
     for(qMaster::SqlInsertIter i(buf, bufSize, tableName, true); !i.isDone(); 
         ++i) {
-        std::cout << "Sql[" << tableName << "]: " 
-                  << (void*)i->first << "  --->  " 
-                  << (void*)i->second << "  "
-                  << *i;
+        LOGGER_INF << "Sql[" << tableName << "]: " 
+                   << (void*)i->first << "  --->  " 
+                   << (void*)i->second << "  "
+                   << *i;
         if(i.isNullInsert()) {
-            std::cout << "Null match" << std::endl;
-        } else { std::cout << std::endl; }
+            LOGGER_INF << "Null match" << std::endl;
+        } else { LOGGER_INF << std::endl; }
     }
 }
 
@@ -102,6 +104,8 @@ qMaster::SqlInsertIter::SqlInsertIter(PacketIter::Ptr p,
     // data into our buffer, and setup the regex match again.
     // Continue.  
     //
+    LOGGER_DBG << "EXECUTING SqlInsertIter(PacketIter::Ptr, " << tableName << 
+                  ", " << allowNull << ")" << std::endl;
     assert(!(*p).isDone());
     _pBufStart = 0;
     _pBufEnd = (*p)->second;
@@ -149,8 +153,8 @@ bool qMaster::SqlInsertIter::_incrementFragment() {
     BufOff needSize = v.second + keepSize;
     if(needSize > (_pBufSize - _pBufEnd)) {
         if(needSize > _pBufSize) {
-            // std::cout << _pBufSize << " is too small" << std::endl
-            //           << "sqliter Realloc to " << needSize << std::endl;
+            LOGGER_DBG << _pBufSize << " is too small" << std::endl
+                       << "sqliter Realloc to " << needSize << std::endl;
             void* res = realloc(_pBuffer, needSize);
             if (!res) {
                 errno = ENOMEM;
@@ -200,7 +204,6 @@ qMaster::SqlInsertIter& qMaster::SqlInsertIter::operator++() {
 }
 
 bool qMaster::SqlInsertIter::isDone() const {
-
     if(_pacIterP) {
         return (_iter == _nullIter) || _pacIterP->isDone();
     } else {

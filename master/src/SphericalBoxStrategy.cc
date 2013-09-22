@@ -42,6 +42,8 @@
 #include "lsst/qserv/master/MetadataCache.h"
 #include "lsst/qserv/master/ParseException.h"
 
+#include "lsst/qserv/Logger.h"
+
 #define CHUNKTAG "%CC%"
 #define SUBCHUNKTAG "%SS%"
 #define FULLOVERLAPSUFFIX "FullOverlap"
@@ -226,7 +228,7 @@ public:
         if(_i == _end) {
             throw std::invalid_argument("TableRefN missing table.");
         }
-        // std::cout << "Patching tablerefn:" << t << std::endl;
+        // LOGGER_INF << "Patching tablerefn:" << t << std::endl;
         t.setDb(_i->db);
         // Always use the first table. A different function will be
         // used when multiple tables are involved.
@@ -424,10 +426,10 @@ void SphericalBoxStrategy::_import(FromList const& f) {
     lookupTuple lookup(*_impl->context.metadata);
     std::for_each(_impl->tuples.begin(), _impl->tuples.end(), lookup);
 #if 0
-    std::cout << "Imported:::::";
+    LOGGER_INF << "Imported:::::";
     std::copy(_impl->tuples.begin(), _impl->tuples.end(),
-              std::ostream_iterator<Tuple>(std::cout, ","));
-    std::cout << std::endl;
+              std::ostream_iterator<Tuple>(LOGGER_INF, ","));
+    LOGGER_INF << std::endl;
 #endif
     // Patch tuples in preparation for patching the FromList
     int cTableCount = patchTuples(_impl->tuples);

@@ -39,6 +39,7 @@
 #include "lsst/qserv/master/SelectStmt.h"
 #include "lsst/qserv/master/AggOp.h"
 
+#include "lsst/qserv/Logger.h"
 
 namespace lsst { 
 namespace qserv { 
@@ -192,7 +193,7 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
         throw std::invalid_argument("No select list in original SelectStmt"); 
     }
     
-    printList(std::cout, "aggr origlist", *vlist) << std::endl;
+    printList(LOGGER_INF, "aggr origlist", *vlist) << std::endl;
     // Clear out select lists, since we are rewriting them.
     pList.getValueExprList()->clear();
     mList.getValueExprList()->clear();
@@ -203,10 +204,10 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
     std::for_each(vlist->begin(), vlist->end(), ca);
     QueryTemplate qt;
     pList.renderTo(qt);
-    std::cout << "pass: " << qt.dbgStr() << std::endl;
+    LOGGER_INF << "pass: " << qt.dbgStr() << std::endl;
     qt.clear();
     mList.renderTo(qt);
-    std::cout << "fixup: " << qt.dbgStr() << std::endl;
+    LOGGER_INF << "fixup: " << qt.dbgStr() << std::endl;
 
     // Also need to operate on GROUP BY.
     // update context.

@@ -65,6 +65,7 @@ import traceback
 from string import Template
 
 # Package imports
+import logger
 import metadata
 import spatial
 import lsst.qserv.master.config
@@ -240,7 +241,7 @@ class MetadataCacheIface:
         x = qmsClient.retrieveDbInfo(dbName)
         # call the c++ function
         if x["partitioningStrategy"] == "sphBox":
-            #print "add partitioned, ", db, x
+            #logger.inf("add partitioned, ", db, x)
             ret = addDbInfoPartitionedSphBox(
                 sessionId, dbName,
                 int(x["stripes"]),
@@ -248,7 +249,7 @@ class MetadataCacheIface:
                 float(x["defaultOverlap_fuzziness"]),
                 float(x["defaultOverlap_nearNeigh"]))
         elif x["partitioningStrategy"] == "None":
-            #print "add non partitioned, ", db
+            #logger.inf("add non partitioned, ", db)
             ret = addDbInfoNonPartitioned(sessionId, dbName)
         else:
             raise QmsException(Status.ERR_INVALID_PART)
@@ -376,7 +377,7 @@ class SecondaryIndex:
         db.activate()
         cids = db.applySql(sql)
         try:
-            print "cids are ", cids
+            logging.inf("cids are ", cids)
             cids = map(lambda t: t[0], cids)
         except:
             raise QueryHintError("mysqld error during index lookup q=" + sql)
@@ -432,7 +433,7 @@ class InbandQueryAction:
             self._error = str(e)
         except:
             self._error = "Unexpected error: " + str(sys.exc_info())
-            print self._error, traceback.format_exc()
+            logger.err(self._error, traceback.format_exc())
         pass
 
     def _reportError(self, message):
@@ -512,7 +513,7 @@ class InbandQueryAction:
         # FIXME: we should check if partitionined tables are being accessed,
         # and then act to support the heaviest need (e.g., if a chunked table
         # is being used, then issue chunked queries).
-        #print "Affected chunks: ", [x[0] for x in self._intersectIter]
+        #logger.inf("Affected chunks: ", [x[0] for x in self._intersectIter])
         pass
 
     def _applyConstraints(self):
@@ -520,7 +521,7 @@ class InbandQueryAction:
         call evaluateHints, and add the chunkIds into the query(C++) """
         # Retrieve constraints as (name, [param1,param2,param3,...])
         self.constraints = getConstraints(self.sessionId)
-        #print "Getting constraints", self.constraints, "size=",self.constraints.size()
+        #logger.inf("Getting constraints", self.constraints, "size=",self.constraints.size())
         dominantDb = getDominantDb(self.sessionId)
         self.pmap = spatial.makePmap(dominantDb, self.metaCacheSession)
 
@@ -528,7 +529,7 @@ class InbandQueryAction:
             for i in range(constraintVec.size()):
                 yield constraintVec.get(i)
         for constraint in iterateConstraints(self.constraints):
-            print "constraint=", constraint
+            logger.inf("constraint=", constraint)
             params = [constraint.paramsGet(i)
                       for i in range(constraint.paramsSize())]
             self.hints[constraint.name] = params
@@ -540,7 +541,7 @@ class InbandQueryAction:
         chunkLimit = self.chunkLimit
         for chunkId, subIter in self._intersectIter:
             if chunkId in self._emptyChunks:
-                print "Rejecting empty chunk:", chunkId
+                logger.inf("Rejecting empty chunk:", chunkId)
                 continue
             #prepare chunkspec
             c = ChunkSpec()
@@ -569,17 +570,15 @@ class InbandQueryAction:
                        "Dispatch Query.")
         submitQuery3(self.sessionId)
         elapsed = time.time() - lastTime
-        print "Query dispatch (%s) took %f seconds" % (self.sessionId,
-                                                       elapsed)
+        logger.inf("Query dispatch (%s) took %f seconds" % (self.sessionId, elapsed))
         lastTime = time.time()
         s = joinSession(self.sessionId)
         elapsed = time.time() - lastTime
-        print "Query exec (%s) took %f seconds" % (self.sessionId,
-                                                   elapsed)
+        logger.inf("Query exec (%s) took %f seconds" % (self.sessionId, elapsed))
 
         if s != QueryState_SUCCESS:
             self._reportError(getErrorDesc(self.sessionId))
-        print "Final state of all queries", getQueryStateString(s)
+        logger.inf("Final state of all queries", getQueryStateString(s))
         if not self.isValid:
             discardSession(self.sessionId)
             return
@@ -593,7 +592,7 @@ class InbandQueryAction:
         cfgLimit = int(cModule.config.get("debug", "chunkLimit"))
         if cfgLimit > 0:
             self.chunkLimit = cfgLimit
-            print "Using debugging chunklimit:",cfgLimit
+            logger.inf("Using debugging chunklimit:", cfgLimit)
 
         # Memory engine(unimplemented): Buffer results/temporaries in
         # memory on the master. (no control over worker)
@@ -616,7 +615,7 @@ class InbandQueryAction:
     def _computeIndexRegions(self, hintList):
         """Compute spatial region coverage based on hints.
         @return list of regions"""
-        print "Looking for indexhints in ", hintList
+        logger.inf("Looking for indexhints in ", hintList)
         secIndexSpecs = ifilter(lambda t: t[0] == "sIndex", hintList)
         lookups = []
         for s in secIndexSpecs:
@@ -626,7 +625,7 @@ class InbandQueryAction:
             pass
         index = SecondaryIndex()
         chunkIds = index.lookup(lookups)
-        print "lookup got chunks:", chunkIds
+        logger.inf("lookup got chunks:", chunkIds)
         return chunkIds
 
     def _computeSpatialRegions(self, hintList):

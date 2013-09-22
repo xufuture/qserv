@@ -24,6 +24,7 @@
 #include <iostream>
 #include <boost/format.hpp> 
 #include "lsst/qserv/master/MessageStore.h"
+#include "lsst/qserv/Logger.h"
 using lsst::qserv::master::MessageStore;
 
 namespace qMaster=lsst::qserv::master;
@@ -33,9 +34,16 @@ namespace qMaster=lsst::qserv::master;
 ////////////////////////////////////////////////////////////////////////
 
 void MessageStore::addMessage(int chunkId, int code, std::string const& description) {
-    boost::lock_guard<boost::mutex> lock(_storeMutex);
-    _queryMessages.insert(_queryMessages.end(), 
-        QueryMessage(chunkId, code, description, std::time(0)));
+    if (code < 0) {
+        LOGGER_ERR << "Msg: " << chunkId << " " << code << " " << description << std::endl;;
+    } else {
+        LOGGER_DBG << "Msg: " << chunkId << " " << code << " " << description << std::endl;;
+    }
+    {
+        boost::lock_guard<boost::mutex> lock(_storeMutex);
+        _queryMessages.insert(_queryMessages.end(), 
+            QueryMessage(chunkId, code, description, std::time(0)));
+    }
 }
 
 const qMaster::QueryMessage MessageStore::getMessage(int idx) {

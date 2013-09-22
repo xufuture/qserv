@@ -28,6 +28,7 @@
 
 #include "lsst/qserv/master/PacketIter.h"
 #include "lsst/qserv/master/xrdfile.h"
+#include "lsst/qserv/Logger.h"
 #include <fcntl.h>
 #include <errno.h>
 #include <iostream>
@@ -67,7 +68,7 @@ qMaster::PacketIter::~PacketIter() {
 }
 
 bool qMaster::PacketIter::incrementExtend() {
-    //std::cout << "packetiter Realloc to " << _current.second + _fragSize << std::endl;
+    LOGGER_DBG << "packetiter Realloc to " << _current.second + _fragSize << std::endl;
     void* ptr = ::realloc(_current.first, _current.second + _fragSize);
     if(!ptr) {
         errno = ENOMEM;

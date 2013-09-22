@@ -48,6 +48,8 @@
 #include "lsst/qserv/master/PacketIter.h"
 #include "lsst/qserv/master/msgCode.h"
 
+#include "lsst/qserv/Logger.h"
+
 // Namespace modifiers
 using boost::make_shared;
 
@@ -123,7 +125,7 @@ public:
         t.start();
         cq->requestSquash();
         t.stop();
-        std::cout << "qSquash " << t << std::endl;
+        LOGGER_INF << "qSquash " << t << std::endl;
     }
     boost::mutex& mutex;
     QueryMap& queries;
@@ -134,6 +136,8 @@ public:
 ////////////////////////////////////////////////////////////
 int AsyncQueryManager::add(TransactionSpec const& t,
                            std::string const& resultName) {
+    LOGGER_DBG << "EXECUTING AsyncQueryManager::add(TransactionSpec, "
+               << resultName << ")" << std::endl;
     int id = t.chunkId;
     // Use chunkId as id, and assume that it will be unique for the 
     // AsyncQueryManager instance.
@@ -156,8 +160,8 @@ int AsyncQueryManager::add(TransactionSpec const& t,
     }
     std::string msg = std::string("Query Added: url=") + ts.path + ", savePath=" + ts.savePath;
     getMessageStore()->addMessage(id, MSG_MGR_ADD, msg);
-    std::cout << "Added query id=" << id << " url=" << ts.path 
-              << " with save " << ts.savePath << "\n";
+    LOGGER_INF << "Added query id=" << id << " url=" << ts.path 
+               << " with save " << ts.savePath << "\n";
     qs.first->run();
     return id;
 }
@@ -174,9 +178,9 @@ void AsyncQueryManager::finalizeQuery(int id,
     std::string dumpFile;
     std::string tableName;
     int dumpSize;
-    // std::cout << "finalizing. read=" << r.read << " and status is "
-    //           << (aborted ? "ABORTED" : "okay") << std::endl;
-    //std::cout << ((void*)this) << "Finalizing query (" << id << ")" << std::endl;
+    LOGGER_DBG << "finalizing. read=" << r.read << " and status is "
+               << (aborted ? "ABORTED" : "okay") << std::endl;
+    LOGGER_DBG << ((void*)this) << "Finalizing query (" << id << ")" << std::endl;
     if((!aborted) && (r.open >= 0) && (r.queryWrite >= 0) 
        && (r.read >= 0)) {
         Timer t2;
@@ -208,13 +212,13 @@ void AsyncQueryManager::finalizeQuery(int id,
         t2e.start();
         if(!aborted) {
             _isExecFaulty = true;
-            std::cout << "Requesting squash " << id 
-                      << " because open=" << r.open
-                      << " queryWrite=" << r.queryWrite 
-                      << " read=" << r.read << std::endl;
+            LOGGER_INF << "Requesting squash " << id 
+                       << " because open=" << r.open
+                       << " queryWrite=" << r.queryWrite 
+                       << " read=" << r.read << std::endl;
             _squashExecution();
-            std::cout << " Skipped merge (read failed for id=" 
-                      << id << ")" << std::endl;
+            LOGGER_INF << " Skipped merge (read failed for id=" 
+                       << id << ")" << std::endl;
         } 
         t2e.stop();
         ss << id << " QmFinalizeError " << t2e << std::endl;
@@ -238,10 +242,10 @@ void AsyncQueryManager::finalizeQuery(int id,
     }
     t3.stop();
     ss << id << " QmFinalizeResult " << t3 << std::endl;
-    //std::cout << (void*)this << " Done finalizing query (" << id << ")" << std::endl;
+    LOGGER_DBG << (void*)this << " Done finalizing query (" << id << ")" << std::endl;
     t1.stop();
     ss << id << " QmFinalize " << t1 << std::endl;
-    std::cout << ss.str();
+    LOGGER_INF << ss.str();
     getMessageStore()->addMessage(id, MSG_FINALIZED, "Query Finalized.");
 }
 
@@ -256,16 +260,16 @@ void AsyncQueryManager::joinEverything() {
     int count;
     int moreDetailThreshold = 5;
     int complainCount = 0;
-    //_printState(std::cout);
+    _printState(LOGGER_DBG);
     while(!_queries.empty()) { 
         count = _queries.size();
         if(count != lastCount) {
-            std::cout << "Still " << count
-                      << " in flight." << std::endl;
+            LOGGER_INF << "Still " << count
+                       << " in flight." << std::endl;
             count = lastCount;
             ++complainCount;
             if(complainCount > moreDetailThreshold) {
-                _printState(std::cout);
+                _printState(LOGGER_WRN);
                 complainCount = 0;
             }
         }
@@ -273,8 +277,7 @@ void AsyncQueryManager::joinEverything() {
     }
     _merger->finalize();
     _merger.reset();
-    std::cout << "Query finish. " << _queryCount << " dispatched." 
-              << std::endl;
+    LOGGER_INF << "Query finish. " << _queryCount << " dispatched." << std::endl;
 }
 
 void AsyncQueryManager::configureMerger(TableMergerConfig const& c) {
@@ -330,7 +333,7 @@ void AsyncQueryManager::getWritePermission() {
 
 void AsyncQueryManager::signalTooManyFiles() {
     boost::unique_lock<boost::mutex> lock(_canReadMutex);
-    std::cout << "Too many files! relieving." << std::endl;
+    LOGGER_WRN << "Too many files! relieving." << std::endl;
     _reliefFiles = 500;
     _canReadCondition.notify_all();
 }
@@ -385,7 +388,7 @@ inline std::string getConfigElement(std::map<std::string,
     if(i != cfg.end()) { 
         return i->second;
     } else { 
-        std::cout << errorMsg << std::endl; 
+        LOGGER_ERR << errorMsg << std::endl; 
         return defaultValue; 
     }
 }
@@ -426,6 +429,8 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
 
 void AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,
                                       std::string const& tableName) {
+    LOGGER_DBG << "EXECUTING AsyncQueryManager::_addNewResult(" << id
+               << ", pacIter, " << tableName << ")" << std::endl;
     bool mergeResult = _merger->merge(pacIter, tableName);
     _totalSize += pacIter->getTotalSize();
     
@@ -461,8 +466,8 @@ void AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize,
         bool mergeResult = _merger->merge(dumpFile, tableName);
         int res = unlink(dumpFile.c_str()); // Hurry and delete dump file.
         if(0 != res) {
-            std::cout << "Error removing dumpFile " << dumpFile
-                      << " errno=" << errno << std::endl;
+            LOGGER_ERR << "Error removing dumpFile " << dumpFile
+                       << " errno=" << errno << std::endl;
         }        
         if(!mergeResult) {
             TableMergerError e = _merger->getError();
@@ -472,10 +477,10 @@ void AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize,
                 _squashRemaining();
             }
         }
-        // std::cout << "Merge of " << dumpFile << " into "
-        //           << tableName 
-        //           << (mergeResult ? " OK----" : " FAIL====") 
-        //           << std::endl;
+        LOGGER_DBG << "Merge of " << dumpFile << " into "
+                   << tableName 
+                   << (mergeResult ? " OK----" : " FAIL====") 
+                   << std::endl;
     }
 }
 
@@ -491,7 +496,7 @@ void AsyncQueryManager::_squashExecution() {
     
     if(_isSquashed) return;  
     _isSquashed = true; // Mark before acquiring lock--faster.
-    //std::cout << "Squash requested by "<<(void*)this << std::endl;
+    LOGGER_DBG << "Squash requested by "<<(void*)this << std::endl;
     Timer t;
     // Squashing is dependent on network latency and remote worker
     // responsiveness, so make a copy so others don't have to wait.
@@ -500,16 +505,16 @@ void AsyncQueryManager::_squashExecution() {
         boost::unique_lock<boost::mutex> lock(_queriesMutex);
         t.start();
         myQueries.resize(_queries.size());
-        std::cout << "AsyncQM squashExec copy " <<  std::endl;
+        LOGGER_INF << "AsyncQM squashExec copy " <<  std::endl;
         std::copy(_queries.begin(), _queries.end(), myQueries.begin());
     }
-    std::cout << "AsyncQM squashQueued" << std::endl;
+    LOGGER_INF << "AsyncQM squashQueued" << std::endl;
     globalWriteQueue.cancelQueued(this);
-    std::cout << "AsyncQM squashExec iteration " <<  std::endl;
+    LOGGER_INF << "AsyncQM squashExec iteration " <<  std::endl;
     std::for_each(myQueries.begin(), myQueries.end(), 
                   squashQuery(_queriesMutex, _queries));
     t.stop();
-    std::cout << "AsyncQM squashExec " << t << std::endl;
+    LOGGER_INF << "AsyncQM squashExec " << t << std::endl;
     _isSquashed = true; // Ensure that flag wasn't trampled.
 
     getMessageStore()->addMessage(-1, MSG_EXEC_SQUASHED, "Query Execution Squashed.");

@@ -24,14 +24,11 @@
 
 #include <iostream>
 #include "lsst/qserv/master/SessionManagerAsync.h"
-#include "lsst/qserv/master/xrdfile.h"
+#include "lsst/qserv/master/AsyncQueryManager.h"
 #include "lsst/qserv/master/MessageStore.h"
 #include "lsst/qserv/master/queryMsg.h"
 
 namespace qMaster=lsst::qserv::master;
-
-namespace { // File-scope helpers
-}
 
 int qMaster::queryMsgGetCount(int session) {
     qMaster::AsyncQueryManager& qm = qMaster::getAsyncManager(session);
