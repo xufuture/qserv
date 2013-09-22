@@ -422,9 +422,12 @@ bool TableMerger::_importIter(SqlInsertIter& sii,
                        dropDbContext(_mergeTable, _config.targetDb), 
                        dropQuote);
         if(!_applySql(q)) {
-            if(_error.resultTooBig())
-                std::cout << "Failed importing! " << tableName 
-                          << " " << _error.description << std::endl;
+            if(_error.resultTooBig()) {
+                std::stringstream errStrm;
+                errStrm << "Failed importing! " << tableName << " " << _error.description;
+                std::cout << errStrm.str() << std::endl;
+                throw errStrm.str();
+            }
             return false;
         }
         ++insertsCompleted;

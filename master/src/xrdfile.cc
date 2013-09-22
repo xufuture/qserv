@@ -159,6 +159,29 @@ void qMaster::xrdInit() {
 #endif
 
 int qMaster::xrdOpen(const char *path, int oflag) {
+#ifdef DBG_TEST_OPEN_FAILURE_1
+    /*************************************************************
+     * TEST FAILURE MODE: Intermittent XRD Open for Read Failure
+     * ***********************************************************/
+    char *altPath = strdup(path);
+    if (oflag == O_RDONLY) {
+        int coinToss = rand()%2;
+        if (coinToss == 0) {
+            std::cout << "YOU DODGED A BULLET, NO SABOTAGE THIS TIME!!" << std::endl;
+        } else {
+            std::cout << "YOU ARE UNLUCKY, SABOTAGING XRD OPEN!!!!" << std::endl;
+            //altPath[strlen(altPath)-1] = '0'; // modify path to induce error
+            return -1;
+        }
+    }
+    if(!qMasterXrdInitialized) { xrdInit(); }
+    char const* abbrev = altPath;  while((abbrev[0] != '\0') && *abbrev++ != '/');
+    QSM_TIMESTART("Open", abbrev);
+    int res = XrdPosixXrootd::Open(altPath,oflag);
+    QSM_TIMESTOP("Open", abbrev);
+    return res;
+    /*************************************************/
+#else
     if(!qMasterXrdInitialized) { xrdInit(); }
     char const* abbrev = path;  while((abbrev[0] != '\0') && *abbrev++ != '/');
     QSM_TIMESTART("Open", abbrev);
@@ -166,6 +189,7 @@ int qMaster::xrdOpen(const char *path, int oflag) {
     int res = XrdPosixXrootd::Open(path,oflag);
     QSM_TIMESTOP("Open", abbrev);
     return res;
+#endif
 }
 
 int qMaster::xrdOpenAsync(const char* path, int oflag, XrdPosixCallBack *cbP) {
@@ -218,6 +242,20 @@ long long qMaster::xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     int position = rand()%readCount;
     char value = (char)(rand()%256);
     *((char *)buf + position) = value;
+    /*************************************************/
+#endif
+
+#ifdef DBG_TEST_READ_FAILURE_4
+    /*************************************************
+     * TEST FAILURE MODE: Intermittent Read Failure
+     * ***********************************************/
+    int coinToss = rand()%2;
+    if (coinToss == 0) {
+        std::cout << "YOU DODGED A BULLET, NO SABOTAGE THIS TIME!!" << std::endl;
+    } else {
+        std::cout << "YOU ARE UNLUCKY, SABOTAGING XRD READ!!!!" << std::endl;
+        readCount = -1;
+    }
     /*************************************************/
 #endif
 

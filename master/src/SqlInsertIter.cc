@@ -121,7 +121,7 @@ qMaster::SqlInsertIter::SqlInsertIter(PacketIter::Ptr p,
 
         //Add next fragment, if available.
         if(!_incrementFragment()) {
-            return;
+            throw "Failed to match Lock/Insert statements within SqlInsertIter.";
         }
     }
     _blockFound = found;
@@ -201,7 +201,7 @@ qMaster::SqlInsertIter& qMaster::SqlInsertIter::operator++() {
 bool qMaster::SqlInsertIter::isDone() const {
 
     if(_pacIterP) {
-        return (_iter == _nullIter) && _pacIterP->isDone();
+        return (_iter == _nullIter) || _pacIterP->isDone();
     } else {
         return _iter == _nullIter;
     }
