@@ -191,7 +191,7 @@ int qMaster::xrdOpen(const char *path, int oflag) {
      * chunk-level failure recovery.)
      * ***********************************************************/
     if (oflag == O_RDONLY) {
-        std::cout << "DBG: SLEEPING FOR 10 SECONDS" << std::endl;
+        LOGGER_WRN << "SLEEPING FOR 10 SECONDS" << std::endl;
         boost::this_thread::sleep(boost::posix_time::seconds(10));
     }
     if(!qMasterXrdInitialized) { xrdInit(); }

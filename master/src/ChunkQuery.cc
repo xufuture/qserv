@@ -154,6 +154,7 @@ public:
             _isRunning = true;
             int result = qMaster::xrdOpen(_cq._resultUrl.c_str(), O_RDONLY);
             if(result == -1 ) {
+                LOGGER_WRN << "XRD open returned error." << std::endl;
                 if(errno == EINPROGRESS) {
                     LOGGER_ERR << "Synchronous open returned EINPROGRESS!!!! "
                                << _cq._spec.chunkId
