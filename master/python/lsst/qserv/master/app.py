@@ -399,6 +399,10 @@ class InbandQueryAction:
                           a handle (sessionId) for the caller to access query
                           messages.
         @param resultName name of result table for query results."""
+
+        # Set logging severity threshold.
+        logger.threshold_inf()
+
         ## Fields with leading underscores are internal-only
         ## Those without leading underscores may be read by clients
         self.queryStr = query.strip()# Pull trailing whitespace
@@ -541,7 +545,7 @@ class InbandQueryAction:
         chunkLimit = self.chunkLimit
         for chunkId, subIter in self._intersectIter:
             if chunkId in self._emptyChunks:
-                logger.inf("Rejecting empty chunk:", chunkId)
+                logger.dbg("Rejecting empty chunk:", chunkId)
                 continue
             #prepare chunkspec
             c = ChunkSpec()

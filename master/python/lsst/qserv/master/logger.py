@@ -29,6 +29,18 @@
 from lsst.qserv.master import logger_threshold
 from lsst.qserv.master import logger
 
+def threshold_dbg():
+    logger_threshold(0)
+
+def threshold_inf():
+    logger_threshold(1)
+
+def threshold_wrn():
+    logger_threshold(2)
+
+def threshold_err():
+    logger_threshold(3)
+
 def dbg(*args):
     logger(0, ' '.join(map(str, args)))
 
