@@ -82,7 +82,7 @@ class Runtime:
                 s = open(filename).read()
                 empty = set(map(tolerantInt, s.split("\n")))
         except:
-            logger.wrn(filename, "not found while loading empty chunks file.")
+            logger.inf(filename, "not found while loading empty chunks file.")
             return None
         return empty
 
