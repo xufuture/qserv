@@ -760,9 +760,10 @@ BOOST_AUTO_TEST_CASE(Petasky1) {
 }
 
 BOOST_AUTO_TEST_CASE(Expression) {
-    // An example slow query from French Petasky colleagues
+    // A query with some expressions
     std::string stmt = "SELECT "
         "ROUND(scisql_fluxToAbMag(uFlux_PS)-scisql_fluxToAbMag(gFlux_PS), 0) AS UG, "
+        "ROUND(scisql_fluxToAbMag(gFlux_PS)-scisql_fluxToAbMag(rFlux_PS), 0) AS GR "
         "FROM Object "
         "WHERE scisql_fluxToAbMag(gFlux_PS) < 0.2 "
         "AND scisql_fluxToAbMag(uFlux_PS)-scisql_fluxToAbMag(gFlux_PS) >=-0.27 "
