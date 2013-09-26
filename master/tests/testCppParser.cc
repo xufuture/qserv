@@ -246,23 +246,18 @@ void tryAggregate() {
 ////////////////////////////////////////////////////////////////////////
 BOOST_FIXTURE_TEST_SUITE(CppParser, ParserFixture)
 
-#if 0 // Convert these to test new parser. Defer to a later ticket.
 BOOST_AUTO_TEST_CASE(TrivialSub) {
     std::string stmt = "SELECT * FROM Object WHERE someField > 5.0;";
-    SqlParseRunner::Ptr spr = SqlParseRunner::newInstance(stmt,
-                                                          delimiter,
-                                                          config,
-                                                          metaCacheSessionId);
-    spr->setup(tableNames);
-    std::string parseResult = spr->getParseResult();
-    // std::cout << stmt << " is parsed into " << parseResult
-    //           << std::endl;
-    BOOST_CHECK(!parseResult.empty());
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(!spr->getHasSubChunks());
-    BOOST_CHECK(!spr->getHasAggregate());
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    SelectStmt const& ss = qs->getStmt();
+    BOOST_CHECK(context);
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_CHECK(!ss.hasGroupBy());
+    BOOST_CHECK(!context->needsMerge);
 }
-#endif
 
 BOOST_AUTO_TEST_CASE(NoSub) {
     std::string stmt = "SELECT * FROM Filter WHERE filterId=4;";
@@ -763,6 +758,21 @@ BOOST_AUTO_TEST_CASE(Petasky1) {
         " FROM Source GROUP BY objectId HAVING  c > 1000 LIMIT 10;";
     testStmt3(qsTest, stmt);
 }
+
+BOOST_AUTO_TEST_CASE(Expression) {
+    // An example slow query from French Petasky colleagues
+    std::string stmt = "SELECT "
+        "ROUND(scisql_fluxToAbMag(uFlux_PS)-scisql_fluxToAbMag(gFlux_PS), 0) AS UG, "
+        "FROM Object "
+        "WHERE scisql_fluxToAbMag(gFlux_PS) < 0.2 "
+        "AND scisql_fluxToAbMag(uFlux_PS)-scisql_fluxToAbMag(gFlux_PS) >=-0.27 "
+        "AND scisql_fluxToAbMag(gFlux_PS)-scisql_fluxToAbMag(rFlux_PS) >=-0.24 "
+        "AND scisql_fluxToAbMag(rFlux_PS)-scisql_fluxToAbMag(iFlux_PS) >=-0.27 "
+        "AND scisql_fluxToAbMag(iFlux_PS)-scisql_fluxToAbMag(zFlux_PS) >=-0.35 "
+        "AND scisql_fluxToAbMag(zFlux_PS)-scisql_fluxToAbMag(yFlux_PS) >=-0.40;";
+    testStmt3(qsTest, stmt);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 ////////////////////////////////////////////////////////////////////////
