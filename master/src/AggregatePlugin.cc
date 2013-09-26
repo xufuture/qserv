@@ -82,14 +82,23 @@ private:
 
         if(!ca.hasAgg) {
             std::string interName;
-            if(origAlias.empty()) { interName = aMgr.getAggName("PASS");}
-            else { interName = origAlias; }
+            if(origAlias.empty() && !e.isStar()) { 
+                interName = aMgr.getAggName("PASS");}
+            else { // Leave "*" alone
+                interName = origAlias; 
+            }
             ValueExprPtr par(e.clone());
             par->setAlias(interName);
-            pList.push_back(par); // Is this sufficient?
-            ValueExprPtr mer = newExprFromAlias(interName);
-            mList.push_back(mer); // Is this sufficient?
-            mer->setAlias(origAlias);
+            pList.push_back(par); 
+            
+            if(!interName.empty()) {
+                ValueExprPtr mer = newExprFromAlias(interName);
+                mList.push_back(mer); 
+                mer->setAlias(origAlias);
+            } else {
+                // No intermediate name (e.g., *) --> passthrough
+                mList.push_back(e.clone()); 
+            }
             return;
         } 
         // For exprs with aggregation, we must separate out the
