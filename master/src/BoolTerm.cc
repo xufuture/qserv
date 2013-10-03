@@ -28,6 +28,7 @@
   */
 #include "lsst/qserv/master/BoolTerm.h"
 #include <stdexcept>
+#include <algorithm>
 #include "lsst/qserv/master/QueryTemplate.h"
 #include "lsst/qserv/master/ValueExpr.h"
 
@@ -39,6 +40,23 @@ namespace master {
 ////////////////////////////////////////////////////////////////////////
 std::ostream& operator<<(std::ostream& os, BoolTerm const& bt) {
     return bt.putStream(os);
+}
+
+BfTerm::Ptr PassTerm::copySyntax() const {
+    PassTerm* p = new PassTerm;
+    p->_text = _text;
+    return BfTerm::Ptr(p);
+}
+
+BfTerm::Ptr PassListTerm::copySyntax() const {
+    PassListTerm* p = new PassListTerm;
+    p->_terms = _terms;
+    return BfTerm::Ptr(p);
+}
+BfTerm::Ptr BoolTermFactor::copySyntax() const {
+    BoolTermFactor* p = new BoolTermFactor;
+    if(_term) { p->_term = _term->copySyntax(); }
+    return BfTerm::Ptr(p);
 }
 
 std::ostream& OrTerm::putStream(std::ostream& os) const {
@@ -132,21 +150,27 @@ void BoolTermFactor::findColumnRefs(ColumnRefMap::List& cList) {
     }
 }
 boost::shared_ptr<BoolTerm> OrTerm::getReduced() {
+    // Can I eliminate myself?
     if(_terms.size() == 1) {
-        boost::shared_ptr<BoolTerm> reduced = _terms.front();
+        boost::shared_ptr<BoolTerm> reduced = _terms.front()->getReduced();
         if(reduced) { return reduced; }
         else { return _terms.front(); }
+    } else { // Get reduced versions of my children.
+        // FIXME: Apply reduction on each term.
+        // If reduction was successful on any child, construct a new or-term.
     }
     return boost::shared_ptr<BoolTerm>();
 }
 
 boost::shared_ptr<BoolTerm> AndTerm::getReduced() {
-    // Get reduced versions of my children.
     // Can I eliminate myself?
     if(_terms.size() == 1) {
-        boost::shared_ptr<BoolTerm> reduced = _terms.front();
+        boost::shared_ptr<BoolTerm> reduced = _terms.front()->getReduced();
         if(reduced) { return reduced; }
         else { return _terms.front(); }
+    } else { // Get reduced versions of my children.
+        // FIXME: Apply reduction on each term.
+        // If reduction was successful on any child, construct a new and-term.
     }
     return boost::shared_ptr<BoolTerm>();
 }
@@ -157,9 +181,6 @@ bool BoolFactor::_reduceTerms(BfTerm::PtrList& newTerms,
     bool hasReduction = false;
     for(Iter i=oldTerms.begin(), e=oldTerms.end(); i != e; ++i) {
         BfTerm& term = **i;
-        QueryTemplate qt;
-        term.renderTo(qt);
-        //std::cout << "reduce? " << qt.generate() << std::endl;
         BoolTermFactor* btf = dynamic_cast<BoolTermFactor*>(&term);
 
         if(btf) {
@@ -220,40 +241,43 @@ boost::shared_ptr<BoolTerm> BoolFactor::getReduced() {
     if(hasReduction) {
         BoolFactor* bf = new BoolFactor();
         bf->_terms = newTerms;
+#if 0
         QueryTemplate qt;
         bf->renderTo(qt);
-        //std::cout << "reduced. " << qt.generate() << std::endl;
-
+        std::cout << "reduced. " << qt.generate() << std::endl;
+#endif
         return boost::shared_ptr<BoolFactor>(bf);
     } else {
         return boost::shared_ptr<BoolTerm>();
     }
-#if 0
-    if(_terms.size() >= 1) {
-        QueryTemplate qt;
-        std::string s;
-        renderList(qt, _terms, "---");
-
-        std::cout << "Can I reduce " << qt.generate() << std::endl;
-    }
-#endif
-
 }
 
+struct deepCopy {
+    inline BoolTerm::Ptr operator()(BoolTerm::Ptr const& t) {
+        return t ? t->copySyntax() : BoolTerm::Ptr();
+    }
+    inline BfTerm::Ptr operator()(BfTerm::Ptr const& t) {
+        return t ? t->copySyntax() : BfTerm::Ptr();
+    }
+};
+template <typename List>
+inline void copyTerms(List& dest, List const& src) {
+    std::transform(src.begin(), src.end(), std::back_inserter(dest), deepCopy());
+}
 
-boost::shared_ptr<BoolTerm> OrTerm::copySyntax() {
+boost::shared_ptr<BoolTerm> OrTerm::copySyntax() const {
     boost::shared_ptr<OrTerm> ot(new OrTerm());
-    ot->_terms = _terms; // shallow copy for now
+    copyTerms(ot->_terms, _terms);
     return ot;
 }
-boost::shared_ptr<BoolTerm> AndTerm::copySyntax() {
+boost::shared_ptr<BoolTerm> AndTerm::copySyntax() const {
     boost::shared_ptr<AndTerm> at(new AndTerm());
-    at->_terms = _terms; // shallow copy for now
+    copyTerms(at->_terms, _terms);
     return at;
 }
-boost::shared_ptr<BoolTerm> BoolFactor::copySyntax() {
+boost::shared_ptr<BoolTerm> BoolFactor::copySyntax() const {
     boost::shared_ptr<BoolFactor> bf(new BoolFactor());
-    bf->_terms = _terms; // shallow copy for now
+    copyTerms(bf->_terms, _terms);
     return bf;
 }
 }}} // lsst::qserv::master

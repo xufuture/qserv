@@ -49,6 +49,7 @@ public:
     typedef boost::shared_ptr<BfTerm> Ptr;
     typedef std::list<Ptr> PtrList;
     virtual ~BfTerm() {}
+    virtual Ptr copySyntax() const = 0;
     virtual std::ostream& putStream(std::ostream& os) const = 0;
     virtual void renderTo(QueryTemplate& qt) const = 0;
     virtual void findColumnRefs(ColumnRefMap::List& list) {}
@@ -80,7 +81,7 @@ public:
     virtual std::ostream& putStream(std::ostream& os) const = 0;
     virtual void renderTo(QueryTemplate& qt) const = 0;
     /// Deep copy this term.
-    virtual boost::shared_ptr<BoolTerm> copySyntax() {
+    virtual boost::shared_ptr<BoolTerm> copySyntax() const {
         return boost::shared_ptr<BoolTerm>(); }
 };
 /// OrTerm is a set of OR-connected BoolTerms
@@ -96,7 +97,7 @@ public:
 
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
-    virtual boost::shared_ptr<BoolTerm> copySyntax();
+    virtual boost::shared_ptr<BoolTerm> copySyntax() const;
 
     BoolTerm::PtrList _terms;
 };
@@ -115,7 +116,7 @@ public:
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
 
-    virtual boost::shared_ptr<BoolTerm> copySyntax();
+    virtual boost::shared_ptr<BoolTerm> copySyntax() const;
     BoolTerm::PtrList _terms;
 };
 /// BoolFactor is a plain factor in a BoolTerm
@@ -129,7 +130,7 @@ public:
 
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
-    virtual boost::shared_ptr<BoolTerm> copySyntax();
+    virtual boost::shared_ptr<BoolTerm> copySyntax() const;
     virtual void findColumnRefs(ColumnRefMap::List& list);
 
     BfTerm::PtrList _terms;
@@ -150,6 +151,7 @@ public:
 class PassTerm : public BfTerm {
 public: // text
     typedef boost::shared_ptr<PassTerm> Ptr;
+    virtual BfTerm::Ptr copySyntax() const;
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
     std::string _text;
@@ -159,21 +161,24 @@ class PassListTerm : public BfTerm {
 public: // ( term, term, term )
     typedef std::list<std::string> StringList;
     typedef boost::shared_ptr<PassListTerm> Ptr;
+    virtual BfTerm::Ptr copySyntax() const;
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
     StringList _terms;
 };
 
-/// BoolTermFactor is a bool factor term that contains a bool term. Occurs often when parentheses are used within a bool term. The parenthetical group is an entire factor, and it contains bool terms.
+/// BoolTermFactor is a bool factor term that contains a bool term. Occurs often
+/// when parentheses are used within a bool term. The parenthetical group is an
+/// entire factor, and it contains bool terms.
 class BoolTermFactor : public BfTerm {
 public:
     typedef boost::shared_ptr<BoolTermFactor> Ptr;
+    virtual BfTerm::Ptr copySyntax() const;
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
     virtual void findColumnRefs(ColumnRefMap::List& list);
     boost::shared_ptr<BoolTerm> _term;
 };
 }}} // namespace lsst::qserv::master
-
 
 #endif // LSST_QSERV_MASTER_BOOLTERM_H

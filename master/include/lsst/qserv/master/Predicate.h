@@ -78,8 +78,8 @@ public:
     virtual std::ostream& putStream(std::ostream& os) const = 0;
     virtual void renderTo(QueryTemplate& qt) const = 0;
     /// Deep copy this term.
-    virtual boost::shared_ptr<Predicate> copySyntax() {
-        return boost::shared_ptr<Predicate>(); }
+    virtual BfTerm::Ptr copySyntax() const {
+        return BfTerm::Ptr(); }
 };
 
 /// GenericPredicate is a Predicate whose structure whose semantic meaning
@@ -100,8 +100,8 @@ public:
     virtual std::ostream& putStream(std::ostream& os) const = 0;
     virtual void renderTo(QueryTemplate& qt) const = 0;
     /// Deep copy this term.
-    virtual boost::shared_ptr<Predicate> copySyntax() {
-        return boost::shared_ptr<Predicate>(); }
+    virtual BfTerm::Ptr copySyntax() const {
+        return BfTerm::Ptr(); }
 };
 
 /// CompPredicate is a Predicate involving a row value compared to another row value.
@@ -122,8 +122,7 @@ public:
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
     /// Deep copy this term.
-    virtual boost::shared_ptr<Predicate> copySyntax() {
-        return boost::shared_ptr<Predicate>(); }
+    virtual BfTerm::Ptr copySyntax() const;
 
     static int reverseOp(int op); // Reverses operator token
 
@@ -151,8 +150,7 @@ public:
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
     /// Deep copy this term.
-    virtual boost::shared_ptr<Predicate> copySyntax() {
-        return boost::shared_ptr<Predicate>(); }
+    virtual BfTerm::Ptr copySyntax() const;
 
     boost::shared_ptr<ValueExpr> value;
 
@@ -176,8 +174,7 @@ public:
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
     /// Deep copy this term.
-    virtual boost::shared_ptr<Predicate> copySyntax() {
-        return boost::shared_ptr<Predicate>(); }
+    virtual BfTerm::Ptr copySyntax() const;
 
     boost::shared_ptr<ValueExpr> value;
     boost::shared_ptr<ValueExpr> minValue;
@@ -187,7 +184,7 @@ private:
 };
 
 /// LikePredicate is a Predicate involving a row value compared to a pattern
-/// (pattern is a string literal)
+/// (pattern is a char-valued value expression
 class LikePredicate : public Predicate {
 public:
     typedef boost::shared_ptr<LikePredicate> Ptr;
@@ -204,8 +201,7 @@ public:
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
     /// Deep copy this term.
-    virtual boost::shared_ptr<Predicate> copySyntax() {
-        return boost::shared_ptr<Predicate>(); }
+    virtual BfTerm::Ptr copySyntax() const;
 
     static int reverseOp(int op); // Reverses operator token
 
