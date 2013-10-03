@@ -40,10 +40,9 @@
 
 namespace lsst { namespace qserv { namespace admin { namespace dupr {
 
-/// A chunk index tracks how many records, self-overlap records and
-/// full-overlap records are in each chunk and sub-chunk of a
-/// partitioned input data set. It also provides methods to compute
-/// summary statistics over chunks or sub-chunks.
+/// A chunk index tracks how many records and overlap records are in each
+/// chunk and sub-chunk of a partitioned input data set. It also provides
+/// methods to compute summary statistics over chunks or sub-chunks.
 ///
 /// A chunk index has an implementation-defined binary file format with
 /// the following property: the concatenation of two index files containing

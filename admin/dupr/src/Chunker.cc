@@ -186,14 +186,12 @@ void Chunker::locate(pair<double, double> const & position,
     // Check whether the position is in the overlap regions of sub-chunks in
     // the sub-stripe above and below.
     if (subStripe > 0 && lat < latMin + _overlap) {
-        // The position is in the full-overlap region of sub-chunks
-        // 1 sub-stripe down.
+        // The position is in the overlap region of sub-chunks 1 sub-stripe down.
         _upDownOverlap(lon, chunkId, (subStripe - 1) / _numSubStripesPerStripe,
                        subStripe - 1, locations);
     }
     if (subStripe < numSubStripes - 1 && lat >= latMax - _overlap) {
-        // The position is in the full and self-overlap regions of sub-chunks
-        // 1 sub-stripe up.
+        // The position is in the overlap region of sub-chunks 1 sub-stripe up.
         _upDownOverlap(lon, chunkId, (subStripe + 1) / _numSubStripesPerStripe,
                        subStripe + 1, locations);
     }
@@ -204,8 +202,7 @@ void Chunker::locate(pair<double, double> const & position,
     }
     double const alpha = _alpha[subStripe];
     if (lon < lonMin + alpha) {
-        // The position is in the full and self-overlap region of the sub-chunk
-        // to the left.
+        // The position is in the overlap region of the sub-chunk to the left.
         int32_t overlapChunk, overlapSubChunk;
         if (subChunk == 0) {
             overlapChunk = numChunks - 1;
@@ -224,8 +221,7 @@ void Chunker::locate(pair<double, double> const & position,
         }
     }
     if (lon > lonMax - alpha) {
-        // The position is in the full-overlap region of the sub-chunk
-        // to the right.
+        // The position is in the overlap region of the sub-chunk to the right.
         int32_t overlapChunk, overlapSubChunk;
         if (subChunk == numSubChunks - 1) {
             overlapChunk = 0;
