@@ -209,6 +209,7 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
     // not necessarily true, unless the plugin is placed early enough
     // to ensure that other fragmenting activity has not taken place yet.
     SelectList& pList = p.stmtParallel.front()->getSelectList();
+    bool hasLimit = p.stmtOriginal.getLimit() != -1;
     SelectList& mList = p.stmtMerge.getSelectList();
     boost::shared_ptr<ValueExprList> vlist;
     vlist = oList.getValueExprList();
@@ -245,7 +246,9 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
         i != e;
         ++i) {
         // Strip ORDER BY from parallel if merging.
-        if(context.needsMerge) { (*i)->hasOrderBy(false); }
+        if(context.needsMerge && !hasLimit) {
+            (*i)->hasOrderBy(false);
+        }
 
         if(i == b) continue;
         SelectList& pList2 = (*i)->getSelectList();
