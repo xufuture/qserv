@@ -541,7 +541,7 @@ class InbandQueryAction:
                 pass
             def _print(self):
                         if(self.last - self.first > 1):
-                            print "Rejecting chunks: %d-%d" %(self.first, 
+                            print "Rejecting chunks: %d-%d" %(self.first,
                                                               self.last)
                         else: print "Rejecting chunk: %d" %(self.last)
             def finish(self):
@@ -574,7 +574,7 @@ class InbandQueryAction:
             addChunk(self.sessionId, c)
         rPrint.finish()
         pass
-    
+
 
     def _execAndJoin(self):
         """Signal dispatch to C++ layer and block until execution completes"""

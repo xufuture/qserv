@@ -400,7 +400,7 @@ bool testIfSecondary(BoolTerm& t) {
     // FIXME: Look for secondary key in the bool term.
     std::cout << "Testing ";
     t.putStream(std::cout) << std::endl;
-    
+
     return false;
 }
 

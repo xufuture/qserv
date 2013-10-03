@@ -2,7 +2,7 @@
 -- mysqlproxy instance so that it uses a Qserv frontend as a backend
 -- for executing queries. While it has some responsibilities now, it
 -- should eventually act as a thin wrapper to delegating all
--- functionality to a Qserv daemon. 
+-- functionality to a Qserv daemon.
 -- For questions, contact Jacek Becla or Daniel L. Wang
 
 require ("xmlrpc.http")
@@ -24,9 +24,9 @@ require ("xmlrpc.http")
 
 -- API between lua and qserv:
 --  * invoke(cleanQueryString, hintString)
---  * cleanQueryString is the query without special hints: objectId 
+--  * cleanQueryString is the query without special hints: objectId
 --    related hints are passed through, but bounding boxes are not
---  * hintString: "box", "1,2,11,12", "box", "5,55,6,66", 
+--  * hintString: "box", "1,2,11,12", "box", "5,55,6,66",
 --    "objectId", "3", "objectId", "5,6,7,8" and so on
 
 -------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ defaultRpcPort = 7080
 
 local rpcPort = os.getenv("QSERV_RPC_PORT")
 if (rpcPort == nil) then
-   rpcPort = defaultRpcPort 
+   rpcPort = defaultRpcPort
 end
 rpcHP = "http://" .. rpcHost .. ":" .. rpcPort .. "/x"
 print_debug("RPC url "..rpcHP,1)
@@ -144,7 +144,7 @@ function utilities()
 
     local tableToString = function(t)
         local s = ""
-        for k,v in pairs(t) do 
+        for k,v in pairs(t) do
             s = s .. '"' .. k .. '" "' .. v .. '" '
         end
         return s
@@ -209,7 +209,7 @@ function utilities()
        return string.sub(String,1,string.len(Start))==Start
     end
 
-    
+
     ---------------------------------------------------------------------------
     return {
         tableToString = tableToString,
@@ -246,7 +246,7 @@ function miniParser()
                      haveWhere = false
                      andNeeded = false
                   end
-    
+
 
     ---------------------------------------------------------------------------
 
@@ -268,13 +268,13 @@ function miniParser()
                                  "after qserv_areaSpec_box: '"..params.."'")
             end
             -- addWhereAndIfNeeded()
-            -- queryToPassStr = queryToPassStr .. 
+            -- queryToPassStr = queryToPassStr ..
             --               " ra BETWEEN "..t[1].." AND "..t[3].." AND"..
             --               " decl BETWEEN "..t[2].." AND "..t[4]
             -- parser.setAndNeeded()
             return p2
         end
-        return err.set(ERR_BAD_ARG, 
+        return err.set(ERR_BAD_ARG,
               "Invalid arguments after qserv_areaSpec_box: '"..params.."'")
     end
 
@@ -314,7 +314,7 @@ function miniParser()
         -- String that has not been parsed yet
         local s = string.sub(q, p)
 
-        -- Number of characters parsed already, counting 
+        -- Number of characters parsed already, counting
         -- from the beginning of q
         local nParsed = p
 
@@ -340,7 +340,7 @@ function miniParser()
                 s = string.sub(q, nParsed)
                 tokenFound = true
             elseif string.find(s, "^OBJECTID IN") then
-                return err.set(ERR_NOT_SUPPORTED, 
+                return err.set(ERR_NOT_SUPPORTED,
                                "Sorry, objectId IN is not supported")
             end
             -- end of looking for special tokens
@@ -355,7 +355,7 @@ function miniParser()
                 print "Done (no more predicates)"
                 return nParsed
             end
-           
+
             if string.byte(s) == 32 then -- skip space
                 s = string.sub(s, 2)
                 nParsed = nParsed + 1
@@ -364,10 +364,10 @@ function miniParser()
                 s = string.sub(s, 5)
                 nParsed = nParsed + 4
             elseif string.find(s, "^OR") then
-                return err.set(ERR_OR_NOT_ALLOWED, 
+                return err.set(ERR_OR_NOT_ALLOWED,
                                "'OR' is not allowed here: '"..s.."'")
             else
-                return err.set(ERR_AND_EXPECTED, 
+                return err.set(ERR_AND_EXPECTED,
                                "'AND' was expected here: '"..s.."'")
             end
         end
@@ -421,7 +421,7 @@ function queryType()
            string.find(qU, "^ALTER ") or
            string.find(qU, "^TRUNCATE ") or
            string.find(qU, "^DROP ") then
-            err.set(ERR_NOT_SUPPORTED, 
+            err.set(ERR_NOT_SUPPORTED,
                     "Sorry, this type of queries is disallowed.")
             return true
         end
@@ -438,7 +438,7 @@ function queryType()
     ---------------------------------------------------------------------------
 
     local isIgnored = function(qU)
-        if string.find(qU, "^SET ")  then 
+        if string.find(qU, "^SET ")  then
             return true
         end
         return false
@@ -449,8 +449,8 @@ function queryType()
     local isNotSupported = function(qU)
         if string.find(qU, "^EXPLAIN ") or
            string.find(qU, "^GRANT ") or
-           string.find(qU, "^FLUSH ") then 
-            err.set(ERR_NOT_SUPPORTED, 
+           string.find(qU, "^FLUSH ") then
+            err.set(ERR_NOT_SUPPORTED,
                     "Sorry, this type of queries is not supported in DC3b.")
             return true
         end
@@ -484,7 +484,7 @@ function queryProcessing()
 
     -- q  - original query
     -- qU - original query but all uppercase
-    -- 
+    --
     --
     local sendToQserv = function(q, qU)
         local p1 = string.find(qU, "WHERE")
@@ -494,7 +494,7 @@ function queryProcessing()
         queryToPassStr = q
         -- Add client db context
         hintsToPassArr["db"] = proxy.connection.client.default_db
-        
+
         -- Need to save thread_id and reuse for killing query
         hintsToPassArr["client_dst_name"] = proxy.connection.client.dst.name
         hintsToPassArr["server_thread_id"] = proxy.connection.server.thread_id
@@ -506,12 +506,12 @@ function queryProcessing()
         print ("Passing hints: " .. hintsToPassStr)
 
         local queryToPassProtect = "<![CDATA[" .. queryToPassStr .. "]]>"
-        -- Wrap this in a pcall so that a meaningful error can 
+        -- Wrap this in a pcall so that a meaningful error can
         -- be returned to the caller
-        -- xmlrpc.http.call(rpcHP, "submitQuery", 
+        -- xmlrpc.http.call(rpcHP, "submitQuery",
         --                 queryToPassProtect, hintsToPassArr)
-        local callError, ok, res = 
-           pcall(xmlrpc.http.call, 
+        local callError, ok, res =
+           pcall(xmlrpc.http.call,
                  rpcHP, "submitQuery", queryToPassProtect, hintsToPassArr)
         if (not callError) then
            return err.set(ERR_RPC_CALL, "Cannot connect to Qserv master; "
@@ -527,11 +527,11 @@ function queryProcessing()
         if resultTableName == "error" then
            return err.set(ERR_QSERV_PARSE, "Qserv error: " .. qservError)
         end
-        
+
 
         return SUCCESS
      end
-    
+
     ---------------------------------------------------------------------------
 
     local processLocally = function(q)
@@ -560,8 +560,8 @@ function queryProcessing()
 
     local killQservQuery = function(q, qU)
         proxy.response.type = proxy.MYSQLD_PACKET_OK
-        local callError, ok, res = 
-           pcall(xmlrpc.http.call, 
+        local callError, ok, res =
+           pcall(xmlrpc.http.call,
                  rpcHP, "killQuery", q, qU)
         if (not callError) then
            return err.set(ERR_RPC_CALL, "Cannot connect to Qserv master; "
@@ -639,7 +639,7 @@ function read_query(packet)
         local qU = string.upper(q) .. ' '
 
         -- check for special queries that can be handled locally
-        -- note we make no modifications to proxy.queries, 
+        -- note we make no modifications to proxy.queries,
         -- so the packet will be sent as-is
         if qType.isLocal(qU) then
            return qProc.processLocally(qU)
@@ -656,7 +656,7 @@ function read_query(packet)
         if qType.isNotSupported(qU) then
             return err.send()
         elseif qType.isKill(qU) then
-           return qProc.killQservQuery(q, qU)           
+           return qProc.killQservQuery(q, qU)
         end
         -- Reset error count
         queryErrorCount = 0
@@ -668,7 +668,7 @@ function read_query(packet)
             return err.send()
         end
 
-        -- configure proxy to fetch results from 
+        -- configure proxy to fetch results from
         -- the appropriate result table
         if qProc.prepForFetchingResults(proxy) < 0 then
             return err.send()
@@ -687,15 +687,15 @@ function read_query_result(inj)
               queryErrorCount  = queryErrorCount + 1
               return err.setAndSend(ERR_QSERV_RUNTIME,
                                     "Error during execution: '"..
-                                       string.sub(row[1], 5) .."'")   
+                                       string.sub(row[1], 5) .."'")
            end
         end
         return proxy.PROXY_IGNORE_RESULT
      elseif (inj.type == 3) or
-            (inj.type == 4) then 
+            (inj.type == 4) then
 	-- Proxy will complain if we try to touch 'inj' for these:
 	-- (critical) (read_query_result) ...attempt to call a nil value
-	-- (critical) proxy-plugin.c.303: got asked to send a resultset, 
+	-- (critical) proxy-plugin.c.303: got asked to send a resultset,
 	--            but ignoring it as we already have sent 1 resultset(s).
 	--            injection-id: 3
         print("cleanup q(3,4) - ignoring")
@@ -713,4 +713,4 @@ function read_query_result(inj)
             print("   " .. row[1])
         end
     end
- end 
+ end

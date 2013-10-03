@@ -47,11 +47,11 @@ namespace { // File-scope helpers
 namespace lsst {
 namespace qserv {
 namespace master {
-void flattenScanTables(StringList& outputList, 
+void flattenScanTables(StringList& outputList,
                        StringPairList const& scanTables) {
     std::string db;
     outputList.clear();
-    for(StringPairList::const_iterator i=scanTables.begin(), 
+    for(StringPairList::const_iterator i=scanTables.begin(),
             e=scanTables.end();
         i != e; ++i) {
         if(db.empty()) {
@@ -60,7 +60,7 @@ void flattenScanTables(StringList& outputList,
             throw std::logic_error("Multiple dbs prohibited");
         }
         outputList.push_back(db + "." + i->second);
-    }    
+    }
 }
 ////////////////////////////////////////////////////////////////////////
 // class TaskMsgFactory2::Impl

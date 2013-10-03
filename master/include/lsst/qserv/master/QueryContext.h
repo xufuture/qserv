@@ -31,6 +31,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 
+#include "lsst/qserv/master/common.h"
 #include "lsst/qserv/master/QueryMapping.h"
 #include "lsst/qserv/master/TableAlias.h"
 
@@ -41,9 +42,6 @@ namespace master {
 class ColumnRef;
 class QsRestrictor;
 class MetadataCache;
-
-typedef std::pair<std::string, std::string> StringPair;
-typedef std::list<StringPair> StringPairList;
 
 /// QueryContext is a value container for query state related to analyzing,
 /// rewriting, and generating queries. It is the primary mechanism for
@@ -67,7 +65,7 @@ public:
     TableAliasReverse tableAliasReverses;
 
     // Owned QueryMapping and query restrictors
-    boost::shared_ptr<QueryMapping> queryMapping;    
+    boost::shared_ptr<QueryMapping> queryMapping;
     boost::shared_ptr<RestrList> restrictors;
 
     int chunkCount; //< -1: all, 0: none, N: #chunks

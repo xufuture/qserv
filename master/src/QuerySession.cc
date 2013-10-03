@@ -166,7 +166,7 @@ void QuerySession::finalize() {
     PluginList::iterator i;
     for(i=_plugins->begin(); i != _plugins->end(); ++i) {
         (**i).applyFinal(*_context);
-    }    
+    }
 }
 
 QuerySession::Iter QuerySession::cQueryBegin() {
@@ -320,10 +320,10 @@ ChunkQuerySpec& QuerySession::Iter::dereference() const {
 void QuerySession::Iter::_buildCache() const {
     assert(_qs != NULL);
     _cache.db = _qs->_context->defaultDb;
-    std::cout << "scantables " 
+    std::cout << "scantables "
               << (_qs->_context->scanTables.empty() ? "is " : "is not ")
               << " empty" << std::endl;
-  
+
     _cache.scanTables = _qs->_context->scanTables;
     _cache.queries = _qs->_buildChunkQueries(*_pos);
     _cache.chunkId = _pos->chunkId;

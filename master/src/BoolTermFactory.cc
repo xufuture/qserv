@@ -72,7 +72,7 @@ void forEachSibs(antlr::RefAST a, F& f) {
 void BoolTermFactory::bfImport::operator()(antlr::RefAST a) {
     PredicateFactory _pf(*_bf._vFactory); // placeholder
     int aType = a->getType(); // for gdb
-    switch(a->getType()) {
+    switch(aType) {
     case SqlSQL2TokenTypes::VALUE_EXP:
         throw std::logic_error("Unexpected VALUE_EXP in parse tree");
         break;
@@ -167,9 +167,6 @@ PassTerm::Ptr
 BoolTermFactory::newPassTerm(antlr::RefAST a) {
     PassTerm::Ptr p(new PassTerm());
     p->_text = tokenText(a); // FIXME: Should this be a tree walk?
-    if(p->_text == "OR_OP") {
-        std::cout << "PassTerm(" << p->_text << ")";
-    }
     return p;
 }
 

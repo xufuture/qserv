@@ -91,7 +91,7 @@ public:
     bool hasGroupBy() const { return _groupBy; }
     GroupByClause const& getGroupBy() const { return *_groupBy; }
     GroupByClause& getGroupBy() { return *_groupBy; }
-    
+
  private:
     // Declarations
     friend class SelectFactory;
