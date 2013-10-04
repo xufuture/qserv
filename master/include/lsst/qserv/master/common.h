@@ -39,7 +39,8 @@ namespace master {
 
 typedef std::map<std::string, std::string> StringMap;
 typedef std::map<std::string, StringMap> StringMapMap;
-typedef std::list<std::pair<std::string, std::string> > StringPairList;
+typedef std::pair<std::string, std::string> StringPair;
+typedef std::list<StringPair> StringPairList;
 typedef std::list<std::string> StringList;
 
 template <class Map>

@@ -62,17 +62,16 @@ resolveAsColumnRef(QueryContext& context, ValueExprPtr vexpr) {
     if(!cr) {
         return cr;
     }
-    cr.reset(new ColumnRef(*cr));
     DbTablePair p = context.resolve(cr);
     cr->table = p.table;
     cr->db = p.db;
     return cr;
 }
 
-/// @return true if v represents a valid key column.
+/// @return true if cr represents a valid key column.
 bool
 lookupKey(QueryContext& context, boost::shared_ptr<ColumnRef> cr) {
-    // Match v as a column ref against the key column for a database's
+    // Match cr as a column ref against the key column for a database's
     // partitioning strategy.
     if((!cr) || !context.metadata) { return false; }
     std::string keyColumn = context.metadata->getKeyColumn(cr->db, cr->table);
@@ -91,9 +90,9 @@ PassListTerm::Ptr newPassList(C& c) {
     return p;
 }
 
-InPredicate::Ptr 
+InPredicate::Ptr
 newInPred(std::string const& aliasTable,
-          std::string const& keyColumn, 
+          std::string const& keyColumn,
           std::vector<std::string> const& params) {
     InPredicate::Ptr p(new InPredicate());
     boost::shared_ptr<ColumnRef> cr(new ColumnRef("", aliasTable, keyColumn));
@@ -205,7 +204,7 @@ private:
     BoolTerm::Ptr _makeCondition(boost::shared_ptr<QsRestrictor> const restr,
                                  RestrictorEntry const& restrictorEntry);
     boost::shared_ptr<QsRestrictor::List> _getKeyPreds(QueryContext& context, AndTerm::Ptr p);
-//    bool _lookupKey(QueryContext& context, boost::shared_ptr<ColumnRef>  cr);
+
     QsRestrictor::Ptr _newKeyRestrictor(QueryContext& context,
                                         boost::shared_ptr<ColumnRef> cr,
                                         ValueExprList& vList);

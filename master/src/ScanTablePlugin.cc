@@ -27,10 +27,10 @@
   * @author Daniel L. Wang, SLAC
   */
 
-// No public interface 
+// No public interface
 #include "lsst/qserv/master/QueryPlugin.h" // Parent class
 
-
+#include "lsst/qserv/master/common.h"
 #include "lsst/qserv/master/ColumnRefMap.h"
 #include "lsst/qserv/master/FromList.h"
 #include "lsst/qserv/master/QsRestrictor.h"
@@ -45,10 +45,13 @@ namespace master {
 ////////////////////////////////////////////////////////////////////////
 // ScanTablePlugin declaration
 ////////////////////////////////////////////////////////////////////////
-/// ScanTablePlugin replaces a qserv restrictor spec with directives
-/// that can be executed on a qserv mysqld. This plugin should be
-/// execute after aliases for tables have been generates, so that the
-/// new restrictor function clauses/phrases can use the aliases.
+/// ScanTablePlugin is a query plugin that detects the "scan tables"
+/// of a query. A scan table is a partitioned table that must be
+/// scanned in order to answer the query. If the number of chunks
+/// involved is less than a threshold number (2, currently), then the
+/// scan table annotation is removed--the query is no longer
+/// considered a "scanning" query because it involves a small piece of
+/// the data set.
 class ScanTablePlugin : public lsst::qserv::master::QueryPlugin {
 public:
     // Types
@@ -105,7 +108,7 @@ ScanTablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     context.scanTables = _scanTables;
 }
 
-void 
+void
 ScanTablePlugin::applyFinal(QueryContext& context) {
     int const scanThreshold = 2;
     if(context.chunkCount < scanThreshold) {
@@ -117,7 +120,7 @@ ScanTablePlugin::applyFinal(QueryContext& context) {
 
 struct getPartitioned : public TableRefN::Func {
     getPartitioned(StringPairList& sList_) : sList(sList_) {}
-    virtual void operator()(TableRefN& t) { 
+    virtual void operator()(TableRefN& t) {
         (*this)(const_cast<TableRefN const&>(t));
     }
     virtual void operator()(TableRefN const& tRef) {
@@ -173,7 +176,7 @@ ScanTablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
 
     bool hasSelectColumnRef = false; // Requires row-reading for
                                      // results
-    bool hasSelectStar = false; // Requires reading all rows
+    bool hasSelectStar = false; // Requires reading all columns
     bool hasSpatialSelect = false; // Recognized chunk restriction
     bool hasWhereColumnRef = false; // Makes count(*) non-trivial
     bool hasSecondaryKey = false; // Using secondaryKey to restrict
@@ -192,8 +195,11 @@ ScanTablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
         if(crl) {
             hasWhereColumnRef = !crl->empty();
 #if 0
-            // Consider removing: secondary key checking is implicit
-            //  if restrictors are detected.
+            // FIXME: Detect secondary key reference by Qserv
+            // restrictor detection, not by WHERE clause.
+            // The qserv restrictor must be a condition on the
+            // secondary key--spatial selects can still be part of
+            // scans if they involve >k chunks.
             boost::shared_ptr<AndTerm> aterm = wc.getRootAndTerm();
             if(aterm) {
                 // Look for secondary key matches
@@ -208,7 +214,6 @@ ScanTablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
             }
 #endif
         }
-
     }
     SelectList& sList = stmt.getSelectList();
     boost::shared_ptr<ValueExprList> sVexpr = sList.getValueExprList();
@@ -228,29 +233,27 @@ ScanTablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
             hasSelectColumnRef = true;
         }
     }
+    // FIXME hasSelectStar is not populated right now. Do we need it?
 
     StringPairList scanTables;
-    // Right now, if there is any spatial restriction, it's not a shared scan.
-    // In the future, we may want a threshold area percentage, above
-    // which a query gets relegated as a "partial scan". Maybe 1% ?
+    // Right now, queries involving less than a threshold number of
+    // chunks have their scanTables squashed as non-scanning in the
+    // plugin's applyFinal
     if(hasSelectColumnRef || hasSelectStar) {
-        if(hasSpatialSelect || hasSecondaryKey) {
+        if(hasSecondaryKey) {
             std::cout << "**** Not a scan ****" << std::endl;
             // Not a scan? Leave scanTables alone
+        } else {
+            std::cout << "**** SCAN (column ref, non-spatial-idx)****" << std::endl;
+            // Scan tables = all partitioned tables
+            scanTables = filterPartitioned(stmt.getFromList().getTableRefnList());
         }
-        // 
-        std::cout << "**** SCAN (column ref, non-spatial-idx)****" << std::endl;
-        // Scan tables = all partitioned tables
-        scanTables = filterPartitioned(stmt.getFromList().getTableRefnList());
-
-        // FIXME: Add scan tables to scanTables
-        
-    } else {
+    } else if(hasWhereColumnRef) {
+        // No column ref in SELECT, still a scan for non-trivial WHERE
         // count(*): still a scan with a non-trivial where.
         std::cout << "**** SCAN (filter) ****" << std::endl;
         scanTables = filterPartitioned(stmt.getFromList().getTableRefnList());
     }
-
     return scanTables;
 }
 
