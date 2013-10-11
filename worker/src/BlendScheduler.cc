@@ -43,7 +43,7 @@ template <class Sched>
 inline Sched* other(Sched* notThis, Sched* a, Sched* b) {
     return (notThis == a) ? b : a;
 }
-lsst::qserv::worker::BlendScheduler* dbgBlendScheduler=0; //< A symbol for gdb 
+lsst::qserv::worker::BlendScheduler* dbgBlendScheduler=0; //< A symbol for gdb
 namespace lsst {
 namespace qserv {
 namespace worker {
@@ -91,8 +91,8 @@ private:
 ////////////////////////////////////////////////////////////////////////
 BlendScheduler::BlendScheduler(boost::shared_ptr<Logger> logger,
                                boost::shared_ptr<GroupScheduler> group,
-                               boost::shared_ptr<ScanScheduler> scan) 
-    : _group(group), 
+                               boost::shared_ptr<ScanScheduler> scan)
+    : _group(group),
       _scan(scan),
       _logger(logger)
 {
@@ -102,13 +102,13 @@ BlendScheduler::BlendScheduler(boost::shared_ptr<Logger> logger,
 
 void BlendScheduler::queueTaskAct(Task::Ptr incoming) {
     // Check for scan tables
-    if(!incoming || !incoming->msg) { 
-        throw std::invalid_argument("null task"); 
+    if(!incoming || !incoming->msg) {
+        throw std::invalid_argument("null task");
     }
     assert(_group);
     assert(_scan);
     Foreman::Scheduler* s = 0;
-    if(incoming->msg->scantables_size() > 0) { 
+    if(incoming->msg->scantables_size() > 0) {
         std::ostringstream ss;
         int size = incoming->msg->scantables_size();
         ss << "Blend chose scan for:";
@@ -124,7 +124,7 @@ void BlendScheduler::queueTaskAct(Task::Ptr incoming) {
         boost::lock_guard<boost::mutex> guard(_mapMutex);
         _map[incoming.get()] = s;
     }
-    s->queueTaskAct(incoming);    
+    s->queueTaskAct(incoming);
 }
 
 TaskQueuePtr BlendScheduler::nopAct(TaskQueuePtr running) {
@@ -153,8 +153,8 @@ TaskQueuePtr BlendScheduler::taskFinishAct(Task::Ptr finished,
     {
         boost::lock_guard<boost::mutex> guard(_mapMutex);
         Map::iterator i = _map.find(finished.get());
-        if(i == _map.end()) { 
-            throw std::logic_error("Finished untracked task"); 
+        if(i == _map.end()) {
+            throw std::logic_error("Finished untracked task");
         }
         s = i->second;
         _map.erase(i);
@@ -167,7 +167,7 @@ TaskQueuePtr BlendScheduler::taskFinishAct(Task::Ptr finished,
     if(!t) { // Try other scheduler.
         _logger->debug("Blend trying other sched.");
         return other<Foreman::Scheduler>(s, _group.get(), _scan.get())->nopAct(running);
-    } 
+    }
     return t;
 }
 
@@ -193,8 +193,11 @@ Foreman::Scheduler* BlendScheduler::lookup(Task::Ptr p) {
 /// @return true if data is okay
 /// precondition: _mutex is locked.
 bool BlendScheduler::_integrityHelper() const {
-    if(!_group) return false;
-    if(!_scan) return false;
+    if(!_group) { return false; }
+    else if(!_group->checkIntegrity()) { return false; }
+
+    if(!_scan) { return false; }
+    else if(!_scan->checkIntegrity()) { return false; }
 
     Map::const_iterator i, e;
     // Make sure each map entry points at one of the schedulers.
@@ -203,7 +206,7 @@ bool BlendScheduler::_integrityHelper() const {
         if(i->second == _scan.get()) continue;
         return false;
     }
-    
+
     return true;
 }
 
@@ -217,9 +220,9 @@ TaskQueuePtr BlendScheduler::_getNextIfAvail(TaskQueuePtr running) {
     if(tg) {
         if(ts) { tg->insert(tg->end(), ts->begin(), ts->end()); }
         return tg;
-    } else { 
+    } else {
         if(!ts) _logger->debug("BlendScheduler: no tasks available");
-        return ts; 
+        return ts;
     }
 }
 

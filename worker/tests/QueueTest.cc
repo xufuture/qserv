@@ -86,7 +86,8 @@ struct PtrEqual {
 };
 
 struct QueueFixture {
-    GroupedQueue<KeyedElem, KeyedElem::KeyEqual> gQueue;
+    typedef GroupedQueue<KeyedElem, KeyedElem::KeyEqual> Gqueue;
+    Gqueue gQueue;
     CirclePqueue<KeyedElem, KeyedElem::Less, KeyedElem::GetKey> circle;
     ChunkState cState;
 };
@@ -100,6 +101,16 @@ KeyedElem const elts[] = {
     {3, "3 two"},
     {4, "4 one"},
     {4, "4 two"},
+};
+KeyedElem const orderElts[] = {
+    {1, "1 one"},
+    {2, "2 one"},
+    {3, "3 one"},
+    {4, "4 one"},
+    {5, "5 one"},
+    {6, "6 one"},
+    {7, "7 one"},
+    {8, "8 one"},
 };
 int const eltSize = 8;
 
@@ -150,6 +161,58 @@ BOOST_AUTO_TEST_CASE(Grouped_2) {
     BOOST_CHECK(gQueue.empty());
 }
 
+BOOST_AUTO_TEST_CASE(Grouped_3) {
+    // Set to FIFO mode (no groups)
+    // Insert in simple, pre-sorted order a few times and verify
+    // ordering is preserved.
+    gQueue = Gqueue(1);
+    for(int x=0; x < 2; ++x) {
+        for(int i=0; i < eltSize; ++i ) {
+            KeyedElem e(orderElts[i]);
+            gQueue.insert(e);
+        }
+    }
+    for(int x=0; x < 2; ++x) {
+        for(int i=0; i < eltSize; ++i ) {
+            KeyedElem e = gQueue.front();
+            BOOST_CHECK_EQUAL(orderElts[i], e);
+            gQueue.pop_front();
+        }
+    }
+    BOOST_CHECK(gQueue.empty());
+}
+BOOST_AUTO_TEST_CASE(Grouped_4) {
+    // Check clique size control.
+    // Check ordering: insert one element from each key, then more
+    // elements with the same key, and ensure that keys are grouped.
+    std::set<int> seen;
+
+    int last = -1;
+
+    gQueue = Gqueue(2); // Clique size=2
+    for(int x=0; x < 3; ++x) { // insert 3x
+        for(int i=0; i < eltSize; ++i ) {
+            KeyedElem e(orderElts[i]);
+            gQueue.insert(e);
+        }
+    }
+    BOOST_CHECK_EQUAL(gQueue.size(), eltSize*3);
+    // Remove the 2-groups
+    for(int i=0; i < eltSize*2; ++i ) {
+        KeyedElem e = gQueue.front();
+        BOOST_CHECK_EQUAL(orderElts[i/2], e);
+        gQueue.pop_front();
+    }
+    BOOST_CHECK_EQUAL(gQueue.size(), eltSize);
+    // Loner sequence should remain.
+    for(int i=0; i < eltSize; ++i ) {
+        KeyedElem e = gQueue.front();
+        BOOST_CHECK_EQUAL(orderElts[i], e);
+        gQueue.pop_front();
+    }
+    BOOST_CHECK(gQueue.empty());
+}
+
 BOOST_AUTO_TEST_CASE(Circle_1) {
     // Basic test: insert in simple, pre-sorted order and verify that
     // ordering is preserved.
@@ -185,7 +248,7 @@ BOOST_AUTO_TEST_CASE(Circle_2) {
     // Now pull contents out.
     for(int i=0; i < eltSize; ++i ) {
         KeyedElem e = circle.front();
-        std::cout << "Element: " << e << std::endl;
+        //std::cout << "Element: " << e << std::endl;
         if(seen.find(e.id) != seen.end()) { // Have we seen it?
             BOOST_CHECK_EQUAL(e.id, last); // It must continue the
                                            // current grouping

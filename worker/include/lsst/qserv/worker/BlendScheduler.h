@@ -31,9 +31,12 @@ namespace worker {
 class GroupScheduler;
 class ScanScheduler;
 
-/// BlendScheduler -- A scheduler that is a cross between FIFO and shared scan.
-/// Tasks are ordered as they come in, except that queries for the
-/// same chunks are grouped together. 
+/// BlendScheduler -- A scheduler that switches between two underlying
+/// schedulers based on the incoming task properties. If the incoming
+/// task has a scanTables spec in its message, it is scheduled with a
+/// ScanScheduler; otherwise it uses the GroupScheduler.
+/// The GroupScheduler has concessions for chunk grouping as well, but
+/// it should be set for reduced concurrency limited I/O sharing.
 class BlendScheduler : public Foreman::Scheduler {
 public:
     typedef boost::shared_ptr<BlendScheduler> Ptr;
@@ -70,5 +73,5 @@ private:
     boost::mutex _mapMutex;
 };
 }}} // lsst::qserv::worker
-extern lsst::qserv::worker::BlendScheduler* dbgBlendScheduler; //< A symbol for gdb 
+extern lsst::qserv::worker::BlendScheduler* dbgBlendScheduler; //< A symbol for gdb
 #endif // LSST_QSERV_WORKER_BLENDSCHEDULER_H

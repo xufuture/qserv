@@ -42,7 +42,9 @@ namespace worker {
 /// line. This is used to handle "interactive" queries in a roughly
 /// FIFO ordering, with opportunistic reuse of chunk I/O when
 /// possible. Because of line-jumping, there is a chance for
-/// starvation if these queries are not interactive.
+/// starvation if these queries are not interactive. Starvation is
+/// mitigated by a parameter which limits the size of the group of
+/// "friends".
 ///
 /// deque is chosen as the underlying data structure. A deque of lists
 /// of elements was considered, in order to eliminate the O(n)
@@ -58,19 +60,39 @@ template <class T, class KeyEqual>
 class GroupedQueue {
 public:
     typedef std::deque<T> Deque;
-    //GroupedQueue() {}
+
+    /// @param maxClique maximum group size
+    ///                  0=no limit, 1=singletons only
+    explicit GroupedQueue(int maxClique=0)
+        : _maxClique(maxClique) {}
+
     void insert(T const& t) {
+        if(_maxClique == 1) { // Never join friends
+            _deque.push_front(t);
+            return;
+        }
         typename Deque::iterator i = _deque.begin();
         typename Deque::const_iterator e = _deque.end();
         for(; i != e; ++i) {
-            if(_eq(t, *i)) {
-                _deque.insert(i, t);
-                return;
+            if(_eq(t, *i)) { // Found friend(s)
+                if(_maxClique > 1) { // Clique restriction?
+                    typename Deque::iterator j = i+1;
+                    for(int space=_maxClique-1; space > 0; --space, ++j) {
+                        if(!_eq(t, *j)) { // No match; there is space
+                            _deque.insert(i, t);
+                            return;
+                        }
+                    }
+                    // Friends found, but clique too big, don't join.
+                    break;
+                } else { // No clique restriction; join.
+                    _deque.insert(i, t);
+                    return;
+                }
             }
         }
-        if(i == e) {
-            _deque.push_front(t); // Place at the logical back.
-        }
+        // Either no friends found, or clique was too big.
+        _deque.push_front(t); // Place at the logical back.
     }
     T& front() { return _deque.back(); }
     T const& front() const { return _deque.back(); }
@@ -80,6 +102,7 @@ public:
 private:
     KeyEqual _eq;
     Deque _deque;
+    int _maxClique;
 };
 
 }}} // lsst::qserv::worker

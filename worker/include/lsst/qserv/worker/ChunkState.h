@@ -43,7 +43,7 @@ public:
     typedef std::set<int> IntSet;
     typedef std::deque<int> IntDeque;
 
-    explicit ChunkState(int cacheMax=2) 
+    explicit ChunkState(int cacheMax=2)
         : _cacheMax(cacheMax), _last(-1) {
     }
 
@@ -52,28 +52,24 @@ public:
     void addScan(int chunkId) {
         _scan.insert(chunkId);
         _last = chunkId;
-        _evictOldElements();        
+        _evictOldElements();
     }
 
     void markComplete(int chunkId) {
-        if(std::find(_cached.begin(), _cached.end(), chunkId) 
+        if(std::find(_cached.begin(), _cached.end(), chunkId)
            == _cached.end()) {
             _cached.push_back(chunkId);
         }
-        if(std::find(_scan.begin(), _scan.end(), chunkId) != _scan.end()) {
-            _scan.erase(chunkId);
-        }
+        _scan.erase(chunkId);
         _evictOldElements();
     }
-    int isCached(int chunkId) const {
+    bool isCached(int chunkId) const {
         IntDeque::const_iterator found;
         found = std::find(_cached.begin(), _cached.end(), chunkId);
         return found != _cached.end();
     }
-    int isScan(int chunkId) const {
-        IntSet::const_iterator found;
-        found = std::find(_scan.begin(), _scan.end(), chunkId);
-        return found != _scan.end();
+    bool isScan(int chunkId) const {
+        return _scan.end() != _scan.find(chunkId);
     }
     bool empty() const {
         return _scan.empty() && _cached.empty();

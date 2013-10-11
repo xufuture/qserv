@@ -37,7 +37,7 @@
 #include "lsst/qserv/worker/Foreman.h"
 #include "lsst/qserv/worker/Logger.h"
 
-lsst::qserv::worker::ScanScheduler* dbgScanScheduler = 0; //< A symbol for gdb 
+lsst::qserv::worker::ScanScheduler* dbgScanScheduler = 0; //< A symbol for gdb
 lsst::qserv::worker::ChunkDisk* dbgChunkDisk1 = 0; //< A symbol for gdb
 
 namespace lsst {
@@ -52,7 +52,6 @@ namespace worker {
 class ChunkDiskWatcher : public Foreman::RunnerWatcher {
 public:
     typedef ScanScheduler::ChunkDiskList ChunkDiskList;
-    typedef std::map<Task*, ChunkDisk::List::iterator> IteratorMap;
 
     ChunkDiskWatcher(ChunkDiskList& chunkDiskList, boost::mutex& mutex)
         : _disks(chunkDiskList), _mutex(mutex) {}

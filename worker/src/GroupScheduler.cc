@@ -32,12 +32,6 @@
 #include <sstream>
 #include <boost/thread.hpp>
 #include "lsst/qserv/worker/Logger.h"
-#if 0
-#include <boost/make_shared.hpp>
-
-#include "lsst/qserv/worker/ChunkDisk.h"
-#include "lsst/qserv/worker/Foreman.h"
-#endif
 
 namespace lsst {
 namespace qserv {
@@ -142,7 +136,7 @@ TaskQueuePtr GroupScheduler::_getNextIfAvail(int runCount) {
 
 /// Precondition: _mutex is already locked.
 /// @return new tasks to run
-TaskQueuePtr GroupScheduler::_getNextTasks(int max) {    
+TaskQueuePtr GroupScheduler::_getNextTasks(int max) {
     // FIXME: Select disk based on chunk location.
     if(max < 1) { throw std::invalid_argument("max < 1)"); }
     std::ostringstream os;
@@ -171,7 +165,7 @@ TaskQueuePtr GroupScheduler::_getNextTasks(int max) {
 /// Precondition: _mutex is locked.
 void GroupScheduler::_enqueueTask(Task::Ptr incoming) {
     if(!incoming) {
-        throw std::invalid_argument("null task");    
+        throw std::invalid_argument("null task");
     }
     _queue.insert(incoming);
     std::ostringstream os;

@@ -32,57 +32,56 @@
 #include <queue>
 #include <set>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
 
-#include "lsst/qserv/worker/ChunkState.h" 
-#include "lsst/qserv/worker/QueryRunnerManager.h" // QueryRunnerArg
+#include "lsst/qserv/worker/ChunkState.h"
+#include "lsst/qserv/worker/Task.h"
+
 namespace lsst {
 namespace qserv {
 namespace worker {
 class Logger;
-class Task;
 
 class ChunkDisk {
 public:
-    //typedef QueryRunnerArg Element;
-    typedef Task Element;
-    typedef boost::shared_ptr<Element> ElementPtr;
-    class TaskPtrCompare {
-        // pqueue takes "less" and provides a maxheap.
-        // We want minheap, so provide "more"
-    public:
-        bool operator()(ElementPtr const& x, ElementPtr const& y) {
-            if(!x || !y) { return false; }
-            if((!x->msg) || (!y->msg)) { return false; }
-            return x->msg->chunkid()  > y->msg->chunkid();
-        }
-    };
-    typedef std::priority_queue<ElementPtr, std::vector<ElementPtr>, TaskPtrCompare> QueueOrig;
-    class IterablePq : public QueueOrig {
-    public:
-        std::vector<value_type>& impl() { return c; }
-    };
-    typedef IterablePq Queue;
-    typedef std::list<ElementPtr> List;
+    typedef boost::shared_ptr<Task> TaskPtr;
     typedef std::set<Task const*> TaskSet;
-    //typedef std::deque<int> IntDeque;
 
     ChunkDisk(boost::shared_ptr<Logger> logger)
         : _logger(logger), _chunkState(2) {}
     TaskSet getInflight() const;
 
     // Queue management
-    void enqueue(ElementPtr a);
-    ElementPtr getNext(bool allowAdvance);
+    void enqueue(TaskPtr a);
+    TaskPtr getNext(bool allowAdvance);
     bool busy() const; /// Busy scanning a chunk?
     bool empty() const;
 
     // Inflight management
-    void registerInflight(ElementPtr const& e);
-    void removeInflight(ElementPtr const& e);
+    void registerInflight(TaskPtr const& e);
+    void removeInflight(TaskPtr const& e);
 
     bool checkIntegrity();
 
 private:
+    class TaskPtrCompare {
+        // pqueue takes "less" and provides a maxheap.
+        // We want minheap, so provide "more"
+    public:
+        bool operator()(TaskPtr const& x, TaskPtr const& y) {
+            if(!x || !y) { return false; }
+            if((!x->msg) || (!y->msg)) { return false; }
+            return x->msg->chunkid()  > y->msg->chunkid();
+        }
+    };
+    typedef std::priority_queue<TaskPtr, std::vector<TaskPtr>, TaskPtrCompare> QueueOrig;
+    class IterablePq : public QueueOrig {
+    public:
+        typedef std::vector<value_type> Container;
+        Container& impl() { return c; }
+    };
+    typedef IterablePq Queue;
+
     mutable boost::mutex _queueMutex;
     Queue _activeTasks;
     Queue _pendingTasks;

@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,14 +10,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #include "lsst/qserv/worker/ChunkDisk.h"
@@ -42,13 +42,14 @@
 /// that case the incoming task is passed to the pending queue as
 /// well.
 ///
-/// _currentChunkIds tracks the chunkIds that should be in-flight. _inflight is
-/// insufficient for this because it is populated as queries execute. There is a
-/// delay between the time that the scheduler returns task elements for
-/// execution and the starting of those tasks. Within that delay, the chunkdisk
-/// may get a request for more tasks. This happens infrequently, but can be
-/// reproduced with high probability (>50%) while testing with a shared-scan
-/// load: multiple chunks are launched and some queries complete much earlier
+/// _currentChunkIds tracks the chunkIds that should be
+/// in-flight. _inflight is insufficient for this because it is
+/// populated as queries execute. There is a delay between the time that
+/// the scheduler returns task elements for execution and the starting
+/// of those tasks. Within that delay, the chunkdisk may get a request
+/// for more tasks. This happens infrequently, but can be reproduced
+/// with high probability (>50%) while testing with a shared-scan load:
+/// multiple chunks are launched and some queries complete much earlier
 /// than others.
 
 namespace lsst {
@@ -58,8 +59,8 @@ namespace worker {
 // Helpers
 ////////////////////////////////////////////////////////////////////////
 
-/// @return chunkId of element
-inline int elementChunkId(ChunkDisk::Element const& e) {
+/// @return chunkId of task
+inline int taskChunkId(Task const& e) {
     assert(e.msg);
     assert(e.msg->has_chunkid());
     return e.msg->chunkid();
@@ -73,16 +74,16 @@ ChunkDisk::TaskSet ChunkDisk::getInflight() const {
     return TaskSet(_inflight);
 }
 
-void ChunkDisk::enqueue(ChunkDisk::ElementPtr a) {
+void ChunkDisk::enqueue(TaskPtr a) {
     boost::lock_guard<boost::mutex> lock(_queueMutex);
-    int chunkId = elementChunkId(*a);
+    int chunkId = taskChunkId(*a);
     time(&a->entryTime);
     /// Compute entry time to reduce spurious valgrind errors
     ::ctime_r(&a->entryTime, a->timestr);
 
     std::ostringstream os;
     os << "ChunkDisk enqueue " << chunkId;
-    
+
     if(_chunkState.empty()) {
         _activeTasks.push(a);
     } else {
@@ -97,18 +98,18 @@ void ChunkDisk::enqueue(ChunkDisk::ElementPtr a) {
             _activeTasks.push(a);
             os << "  ACTIVE";
         }
-    }    
+    }
     _logger->debug(os.str());
     os.str("");
     os << "Top of ACTIVE is now: ";
     if(_activeTasks.empty()) { os << "(empty)" ; }
-    else { elementChunkId(*_activeTasks.top()); }
+    else { taskChunkId(*_activeTasks.top()); }
     _logger->debug(os.str());
 }
 
 /// Get the next task, popping it off the queue. Client must do
 /// something with this task.
-ChunkDisk::ElementPtr ChunkDisk::getNext(bool allowAdvance) {
+ChunkDisk::TaskPtr ChunkDisk::getNext(bool allowAdvance) {
     boost::lock_guard<boost::mutex> lock(_queueMutex);
 
     // If the current queue is empty and the pending is not,
@@ -117,26 +118,26 @@ ChunkDisk::ElementPtr ChunkDisk::getNext(bool allowAdvance) {
         // Swap
         std::swap(_activeTasks, _pendingTasks);
         _logger->debug("ChunkDisk active-pending swap");
-    } 
-    // If the pending was empty too, nothing to do.    
-    if(_activeTasks.empty()) { return ElementPtr(); }
+    }
+    // If the pending was empty too, nothing to do.
+    if(_activeTasks.empty()) { return TaskPtr(); }
 
     // Check the chunkId.
-    ElementPtr e = _activeTasks.top();
+    TaskPtr e = _activeTasks.top();
     std::ostringstream os;
-    int chunkId = elementChunkId(*e); 
+    int chunkId = taskChunkId(*e);
     os << "ChunkDisk getNext: current="
        << _chunkState << " candidate=" << chunkId;
     _logger->debug(os.str());
     os.str("");
-    
+
     bool idle = !_chunkState.hasScan();
     bool inScan = _chunkState.isScan(chunkId);
     if(allowAdvance || idle || inScan) {
-        os << "ChunkDisk allowing task for " << chunkId 
-           << " (advance=" << (allowAdvance ? "yes" : "no") 
-           << " idle=" << (idle ? "yes" : "no") 
-           << " inScan=" << (inScan ? "yes" : "no") 
+        os << "ChunkDisk allowing task for " << chunkId
+           << " (advance=" << (allowAdvance ? "yes" : "no")
+           << " idle=" << (idle ? "yes" : "no")
+           << " inScan=" << (inScan ? "yes" : "no")
            << ")";
         _logger->debug(os.str());
         _activeTasks.pop();
@@ -145,10 +146,10 @@ ChunkDisk::ElementPtr ChunkDisk::getNext(bool allowAdvance) {
     } else {
         _logger->debug("ChunkDisk denying task");
     }
-    return ElementPtr();
+    return TaskPtr();
     // If next chunk is of a different chunk, only continue if current
-    // chunk has completed a scan already. 
-    
+    // chunk has completed a scan already.
+
     // FIXME: If time for chunk has expired, advance to next chunk
     // Get the next chunk from the queue.
 }
@@ -167,8 +168,8 @@ bool ChunkDisk::busy() const {
     // If we have finished one task on the current chunk, we are
     // non-busy. We infer that the resource is non-busy, assuming that
     // the chunk is now cached.
-    
-    // Should track which tables are loaded.    
+
+    // Should track which tables are loaded.
 }
 
 bool ChunkDisk::empty() const {
@@ -177,7 +178,7 @@ bool ChunkDisk::empty() const {
 }
 
 void
-ChunkDisk::registerInflight(ElementPtr const& e) {
+ChunkDisk::registerInflight(TaskPtr const& e) {
     boost::lock_guard<boost::mutex> lock(_inflightMutex);
     std::ostringstream os;
     os << "ChunkDisk registering for " << e->msg->chunkid()
@@ -188,7 +189,7 @@ ChunkDisk::registerInflight(ElementPtr const& e) {
 
 }
 
-void ChunkDisk::removeInflight(ElementPtr const& e) {
+void ChunkDisk::removeInflight(TaskPtr const& e) {
     boost::lock_guard<boost::mutex> lock(_inflightMutex);
     int chunkId = e->msg->chunkid();
     std::ostringstream os;
@@ -203,18 +204,19 @@ void ChunkDisk::removeInflight(ElementPtr const& e) {
 }
 
 namespace {
-inline bool taskOk(lsst::qserv::worker::ChunkDisk::ElementPtr ep) {
-    if(!ep->msg || !ep->msg->has_chunkid()) { return false; }
+/// @return true if the task is missing a TaskMsg or a chunkId
+inline bool taskBad(ChunkDisk::TaskPtr p) {
+    if(p->msg && p->msg->has_chunkid()) { return false; }
     return true;
 }
-inline bool checkQueueOk(lsst::qserv::worker::ChunkDisk::Queue& q) {
-    typedef lsst::qserv::worker::ChunkDisk::Queue Queue;
-    std::vector<Queue::value_type>::iterator i, e;
-    std::vector<Queue::value_type>& container = q.impl();
-    for(i=container.begin(), e=container.end(); i != e; ++i) {
-        if(!taskOk(*i)) { return false; }
-    }
-    return true;
+
+/// @return true if NO elements in the queue test true for taskBad
+///
+template <class Q> // Use template to avoid naming Queue, which is private
+inline bool checkQueueOk(Q& q) {
+    typename Q::Container& container = q.impl();
+    return container.end() == std::find_if(container.begin(), container.end(),
+                                           std::ptr_fun(taskBad));
 }
 } // anonymous
 
