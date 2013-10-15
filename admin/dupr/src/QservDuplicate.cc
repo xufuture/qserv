@@ -95,7 +95,7 @@ private:
     friend class Worker;
 };
 
-// Find non-empty source triangles for the HTM triangles overlapping
+// Find non-empty source triangles S for the HTM triangles T overlapping
 // the given chunk, and add corresponding source to target triangle
 // mappings to the duplication target map.
 void Duplicator::_makeTargets(int32_t chunkId) {
@@ -110,7 +110,8 @@ void Duplicator::_makeTargets(int32_t chunkId) {
     }
 }
 
-// Create map-reduce input from source HTM triangle IDs.
+// Create map-reduce input from source HTM triangle IDs -
+// each source triangle corresponds to one input file.
 InputLines const Duplicator::_makeInput() const {
     typedef TargetMap::const_iterator Iter;
     char file[32];
@@ -133,6 +134,27 @@ inline Duplicator const & dup() { return duplicator; }
 
 
 /// Functor for counting the number of IDs less than a given value.
+///
+/// The duplicator must adjust primary key column values. This is because a
+/// particular source triangle can and usually will be mapped to more than one
+/// target triangle, causing uniqueness constraint violations unless
+/// corrective action is taken. And once a primary key column has been updated,
+/// the corresponding foreign key columns must of course be updated to match.
+///
+/// Given source triangle S and target triangle T, the HTM index of the input /
+/// partitioning table can be used to quickly obtain all primary / foreign key
+/// values for an input record in triangle S. Let A be the sorted array of key
+/// values for S, and let J be the original key value. Then the output key
+/// value K is constructed by placing the HTM ID T in the 32 most significant
+/// bits of K, and the index of J in A in the 32 least significant bits. This
+/// guarantees uniqueness for the primary key since a triangle T is mapped to
+/// at most once. It also only requires localized knowledge of key values (A)
+/// to compute.
+///
+/// Reading (and sorting) the array A of key values for a given HTM source
+/// triangle is handled by `setup()`. Once `setup()` has been called,
+/// `operator()(int64_t)` finds the index of record J in A using binary
+/// search; this is just the number of records in A with ID less than J.
 class LessThanCounter {
 public:
     LessThanCounter() : _htmId(0) { }
@@ -195,7 +217,22 @@ public:
     static void defineOptions(po::options_description & opts);
 
 private:
-    // Decide whether or not to include a record based on the record ID.
+    // Decide whether or not to discard a record based solely on an
+    // associated ID.
+    //
+    // This is accomplished by hashing a combination of the ID and a
+    // PNRG seed to obtain a number H in the range [0, 2^64). If H is greater
+    // than 2^64 times the sampling fraction 0 < f <= 1, the record is thrown
+    // away.
+    //
+    // This is a simple way to ensure that if sampling is turned on, discarding
+    // an Object also results in all associated Sources being discarded, even
+    // though a Source record typically only records the ID (and currently also
+    // the position) of the associated Object.
+    //
+    // TODO: It's unclear how well this approach works - there is likely
+    // to be some statistical correlation between IDs and sky positions, and
+    // the hashing function employed is weak (though cheap to compute).
     bool _discard(int64_t id) const {
         return hash(static_cast<uint64_t>(id) ^ _seed) > _maxId;
     }
@@ -257,6 +294,7 @@ Worker::Worker(po::variables_map const & vm) :
 {
     typedef vector<string>::const_iterator StringIter;
 
+    // Extract sampling fraction as well as PNRG seed.
     _seed = vm["sample.seed"].as<uint64_t>();
     double d = vm["sample.fraction"].as<double>();
     if (d <= 0.0 || d > 1.0) {
@@ -268,7 +306,7 @@ Worker::Worker(po::variables_map const & vm) :
     } else {
         _maxId = static_cast<uint64_t>(std::ldexp(d, 64));
     }
-    // Map field names of interest to field indexes.
+    // Map partitioning position field names to field indexes.
     if (vm.count("part.pos") == 0) {
         throw runtime_error("The --part.pos option was not specified.");
     }
@@ -278,6 +316,14 @@ Worker::Worker(po::variables_map const & vm) :
     _partPos.lon = fields.resolve("part.pos", s, p.first);
     _partPos.lat = fields.resolve("part.pos", s, p.second);
     if (vm.count("pos") != 0) {
+        // Map non-partitioning position field names to field indexes.
+        //
+        // For example, a single-exposure Source record might contain both
+        // a single exposure position (ra,dec) as well as the position of the
+        // associated Object (partitioningRa, partitioningDec). If (ra,dec)
+        // is identified as a position with --pos, it too is subjected to the
+        // transformations that map (partitioningRa, partitioningDec) from
+        // source to target HTM triangles.
         vector<string> const & pos = vm["pos"].as<vector<string> >();
         for (StringIter i = pos.begin(), e = pos.end(); i != e; ++i) {
             p = parseFieldNamePair("pos", *i);
@@ -285,6 +331,7 @@ Worker::Worker(po::variables_map const & vm) :
                                fields.resolve("pos", *i, p.second)));
         }
     }
+    // Opionally map primary and secondary key field name to field index.
     if (vm.count("id") != 0) {
         s = vm["id"].as<string>();
         _idField = fields.resolve("id", s);
@@ -301,6 +348,7 @@ Worker::Worker(po::variables_map const & vm) :
     } else {
         _idsLessThan = _partIdsLessThan;
     }
+    // Map chunk and sub-chunk ID field names to field indexes.
     if (vm.count("part.chunk") != 0) {
         s = vm["part.chunk"].as<string>();
         _chunkIdField = fields.resolve("part.chunk", s);
@@ -341,6 +389,9 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
         int64_t partId = 0;
         bool partIdIsNull = _editor.isNull(_partIdField);
         if (!partIdIsNull) {
+            // Get the ID of the partitioning entity (e.g. Object), find its
+            // index in the source triangle, and decide whether to duplicate
+            // it or throw it away.
             partId = (*_partIdsLessThan)(_editor.get<int64_t>(_partIdField));
             if (_discard(partId)) {
                 continue;
@@ -349,6 +400,10 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
         int64_t id = 0;
         bool idIsNull = _editor.isNull(_idField);
         if (!idIsNull && _idField != _partIdField) {
+            // Get the ID of the record, find its index in the source HTM triangle,
+            // and, if there was no associated partitioning entity (e.g. a Source
+            // that wasn't associated with any Object), decide whether or not to
+            // duplicate it or throw it away.
             id = (*_idsLessThan)(_editor.get<int64_t>(_idField));
             if (partIdIsNull && _discard(id)) {
                 continue;
@@ -356,6 +411,10 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
         }
         // Loop over target HTM triangles/chunks
         for (TgtIter t = _targets.begin(), te = _targets.end(); t != te; ++t) {
+            // Place the target HTM triangle ID into the upper 32-bits of a
+            // 64-bit integer. To remap a record ID or partitioning ID, the index
+            // of that ID in a sorted list of all IDs for the source triangle is
+            // added to baseId.
             int64_t baseId = static_cast<int64_t>(t->htmId) << 32;
             bool mustTransform = (sourceHtmId != t->htmId);
             pair<double, double> pos =
@@ -364,13 +423,18 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
             _locations.clear();
             dup()._chunker->locate(pos, t->chunkId, _locations);
             if (_locations.empty()) {
+                // Transformed partitioning position does not lay inside
+                // the required chunk - nothing else to do for this record.
                 continue;
             }
             if (mustTransform) {
+                // Store transformed partitioning position in output record.
                 _editor.set(_partPos.lon, pos.first);
                 _editor.set(_partPos.lat, pos.second);
-                // Transform positions.
+                // Transform non-partitioning positions.
                 for (PosIter p = _pos.begin(), pe = _pos.end(); p != pe; ++p) {
+                    // If the position contains a NULL in either coordinate,
+                    // leave the original values untouched.
                     if (!p->null) {
                         pos = spherical(t->transform * p->v);
                         _editor.set(p->lon, pos.first);
@@ -378,14 +442,15 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
                     }
                 }
             }
-            // Set output IDs.
+            // Finally, set output IDs ...
             if (!partIdIsNull) {
                 _editor.set(_partIdField, baseId + partId);
             }
             if (!idIsNull && _idField != _partIdField) {
                 _editor.set(_idField, baseId + id);
             }
-            // Output a record for each location.
+            // ... and store a copy of the output record in each location.
+            // There can be more than one because of overlap.
             for (LocIter l = _locations.begin(), le = _locations.end();
                  l != le; ++l) {
                 _editor.set(_chunkIdField, l->chunkId);
@@ -495,7 +560,7 @@ typedef Job<Worker> DuplicateJob;
 
 
 shared_ptr<ChunkIndex> const Duplicator::run(po::variables_map const & vm) {
-    // Initialize state
+    // Initialize state.
     shared_ptr<Chunker> chunker(new Chunker(vm));
     vector<int32_t> chunks = chunksToDuplicate(*chunker, vm);
     _chunker.swap(chunker);

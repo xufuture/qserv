@@ -56,13 +56,13 @@ ChunkReducer::ChunkReducer(po::variables_map const & vm) :
     }
 }
 
-void ChunkReducer::reduce(ChunkReducer::RecordIter beg,
+void ChunkReducer::reduce(ChunkReducer::RecordIter begin,
                           ChunkReducer::RecordIter end)
 {
-    if (beg == end) {
+    if (begin == end) {
         return;
     }
-    int32_t const chunkId = beg->key.chunkId;
+    int32_t const chunkId = begin->key.chunkId;
     if (chunkId != _chunkId) {
         finish();
         _chunkId = chunkId;
@@ -70,7 +70,7 @@ void ChunkReducer::reduce(ChunkReducer::RecordIter beg,
     }
     // Store records and update statistics. Files are only created/
     // opened if there is data to write to them.
-    for (; beg != end; ++beg) {
+    for (RecordIter beg = begin; beg != end; ++beg) {
         _index->add(beg->key);
         if (beg->key.overlap) {
             if (!_overlapChunkAppender.isOpen()) {
@@ -101,7 +101,7 @@ void ChunkReducer::_makeFilePaths(int32_t chunkId) {
         uint32_t node = hash(static_cast<uint32_t>(chunkId)) % _numNodes;
         snprintf(subdir, sizeof(subdir), "node_%05lu",
                  static_cast<unsigned long>(node));
-        p /= subdir;
+        p = p / subdir;
         fs::create_directory(p);
     }
     char suffix[32];

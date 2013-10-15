@@ -222,16 +222,16 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
     }
 }
 
-void Worker::reduce(Worker::RecordIter beg, Worker::RecordIter end) {
-    if (beg == end) {
+void Worker::reduce(Worker::RecordIter begin, Worker::RecordIter end) {
+    if (begin == end) {
         return;
     }
-    int32_t const chunkId = beg->key.chunkId;
+    int32_t const chunkId = begin->key.chunkId;
     if (chunkId != _chunkId) {
         _chunkId = chunkId;
         _openFile(chunkId);
     }
-    for (; beg != end; ++beg) {
+    for (RecordIter beg = begin; beg != end; ++beg) {
         _index->add(beg->key);
         _chunk.append(beg->data, beg->size);
     }
@@ -281,7 +281,7 @@ void Worker::_openFile(int32_t chunkId) {
         uint32_t node = hash(static_cast<uint32_t>(chunkId)) % _numNodes;
         snprintf(subdir, sizeof(subdir), "node_%05lu",
                  static_cast<unsigned long>(node));
-        p /= subdir;
+        p = p / subdir;
         fs::create_directory(p);
     }
     char suffix[32];
@@ -342,3 +342,8 @@ int main(int argc, char const * const * argv) {
     }
     return EXIT_SUCCESS;
 }
+
+// FIXME(smm): The partitioner should store essential parameters so that
+//             it can detect whether the same ones are used by incremental
+//             additions to a partitioned data-set.
+

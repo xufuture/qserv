@@ -162,9 +162,10 @@ Worker::Worker(po::variables_map const & vm) :
     _pos.second = fields.resolve("part.pos", s, p.second);
 }
 
-void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
+void Worker::map(char const * begin, char const * end, Worker::Silo & silo) {
     Key k;
     pair<double, double> sc;
+    char const * beg = begin;
     while (beg < end) {
         beg = _editor.readRecord(beg, end);
         k.id = _editor.get<int64_t>(_idField);
@@ -175,11 +176,11 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
     }
 }
 
-void Worker::reduce(Worker::RecordIter beg, Worker::RecordIter end) {
-    if (beg == end) {
+void Worker::reduce(Worker::RecordIter begin, Worker::RecordIter end) {
+    if (begin == end) {
         return;
     }
-    uint32_t const htmId = beg->htmId;
+    uint32_t const htmId = begin->htmId;
     if (htmId != _htmId) {
         if (_htmId != 0) {
             _index->add(_htmId, _numRecords);
@@ -188,11 +189,11 @@ void Worker::reduce(Worker::RecordIter beg, Worker::RecordIter end) {
         _htmId = htmId;
         _openFiles(htmId);
     }
-    for (; beg != end; ++beg) {
+    for (RecordIter r = begin; r != end; ++r) {
         uint8_t buf[8];
         _numRecords += 1;
-        _records.append(beg->data, beg->size);
-        encode(buf, static_cast<uint64_t>(beg->id));
+        _records.append(r->data, r->size);
+        encode(buf, static_cast<uint64_t>(r->id));
         _ids.append(buf, sizeof(buf));
     }
 }
@@ -233,7 +234,7 @@ void Worker::_openFiles(uint32_t htmId) {
         uint32_t node = hash(htmId) % _numNodes;
         snprintf(subdir, sizeof(subdir), "node_%05lu",
                  static_cast<unsigned long>(node));
-        p /= subdir;
+        p = p / subdir;
         fs::create_directory(p);
     }
     char file[32];
@@ -286,3 +287,7 @@ int main(int argc, char const * const * argv) {
     }
     return EXIT_SUCCESS;
 }
+
+// FIXME(smm): The HTM indexer should store essential index parameters so that
+//             it can detect whether the same ones are used by incremental
+//             index additions.

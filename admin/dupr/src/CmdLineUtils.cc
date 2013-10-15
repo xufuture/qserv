@@ -22,7 +22,6 @@
 
 #include "CmdLineUtils.h"
 
-#include <cassert>
 #include <cstdlib>
 #include <algorithm>
 #include <iostream>
@@ -125,9 +124,9 @@ namespace {
         string const _join(vector<string> const & keys);
         string const _parseValue();
         string const _parseQuotedValue(char const quote);
-        void _parseUnicodeEscape(string & val);
+        string const _parseUnicodeEscape();
 
-        void _eatWhitespace() {
+        void _skipWhitespace() {
             for (; _beg < _end; ++_beg) {
                 char c = *_beg;
                 if (c != '\t' && c != '\n' && c != '\r' && c != ' ') {
@@ -135,7 +134,7 @@ namespace {
                 }
             }
         }
-        void _eatLine() {
+        void _skipLine() {
             for (; _beg < _end; ++_beg) {
                 char c = *_beg;
                 if (c == '\r' || c == '\n') {
@@ -149,6 +148,7 @@ namespace {
         _path(path), _data(0), _beg(0), _end(0), _sep(keySeparator)
     {
         lsst::qserv::admin::dupr::InputFile f(path);
+        // FIXME(smm): check that cast doesn't truncate 
         size_t sz = static_cast<size_t>(f.size());
         _data = static_cast<char *>(malloc(sz));
         if (!_data) {
@@ -208,7 +208,8 @@ namespace {
         return val;
     }
 
-    void Parser::_parseUnicodeEscape(string & value) {
+    string const Parser::_parseUnicodeEscape() {
+        string val;
         unsigned int cp = 0;
         int i = 0;
         // Extract 1-4 hexadecimal digits to build a Unicode
@@ -231,18 +232,22 @@ namespace {
         // UTF-8 encode the code-point.
         if (cp <= 0x7f) {
             // 0xxxxxxx
-            value.push_back(static_cast<char>(cp));
+            val.push_back(static_cast<char>(cp));
         } else if (cp <= 0x7ff) {
             // 110xxxxx 10xxxxxx
-            value.push_back(static_cast<char>(0xc0 | (cp >> 6)));
-            value.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
+            val.push_back(static_cast<char>(0xc0 | (cp >> 6)));
+            val.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
         } else {
-            assert(cp <= 0xffff);
+            if (cp <= 0xffff) {
+                throw logic_error("Unicode escape sequence produced code-point "
+                                  "outside the Basic Multilingual Plane");
+            }
             // 1110xxxx 10xxxxxx 10xxxxxx
-            value.push_back(static_cast<char>(0xe0 | (cp >> 12)));
-            value.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3f)));
-            value.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
+            val.push_back(static_cast<char>(0xe0 | (cp >> 12)));
+            val.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3f)));
+            val.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
         }
+        return val;
     }
 
     string const Parser::_parseQuotedValue(char const quote) {
@@ -270,7 +275,7 @@ namespace {
                     case 't': c = '\t'; break;
                     case 'u':
                         ++_beg;
-                        _parseUnicodeEscape(val);
+                        val.append(_parseUnicodeEscape());
                         continue;
                     default:
                         break;
@@ -301,13 +306,13 @@ namespace {
         pair<int, char> p(0, '\0');
         groups.push_back(p);
         int lvl = 0;
-        for (_eatWhitespace(); _beg < _end; _eatWhitespace()) {
+        for (_skipWhitespace(); _beg < _end; _skipWhitespace()) {
             char c = *_beg;
             string s;
             switch (c) {
                 case '#':
                     ++_beg;
-                    _eatLine();
+                    _skipLine();
                     continue;
                 case ',':
                     ++_beg;
@@ -341,7 +346,7 @@ namespace {
                     s = _parseValue();
                     break;
             }
-            _eatWhitespace();
+            _skipWhitespace();
             c = (_beg < _end) ? *_beg : ',';
             if (c == ':' || c == '=') {
                 ++_beg;

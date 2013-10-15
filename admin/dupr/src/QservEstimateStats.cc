@@ -100,14 +100,14 @@ void defineOptions(po::options_description & opts) {
 }
 
 
-void estimateStats(ChunkIndex            & chunkIndex,
-                   vector<int32_t> const & chunks,
-                   Chunker         const & chunker,
-                   HtmIndex        const & index,
-                   HtmIndex        const & partIndex)
+shared_ptr<ChunkIndex> const estimateStats(vector<int32_t> const & chunks,
+                                           Chunker         const & chunker,
+                                           HtmIndex        const & index,
+                                           HtmIndex        const & partIndex)
 {
     vector<int32_t> subChunks;
     vector<uint32_t> htmIds;
+    shared_ptr<ChunkIndex> chunkIndex(new ChunkIndex());
     // loop over chunks
     for (vector<int32_t>::size_type i = 0; i < chunks.size(); ++i) {
         int32_t chunkId = chunks[i];
@@ -133,14 +133,15 @@ void estimateStats(ChunkIndex            & chunkIndex,
                 loc.subChunkId = subChunkId;
                 uint64_t inTri = index(sourceHtmId);
                 size_t inBox = static_cast<size_t>((x/a)*inTri);
-                chunkIndex.add(loc, inBox);
+                chunkIndex->add(loc, inBox);
                 double ox = max(min(tri.intersectionArea(overlapBox), a), x);
                 size_t inOverlap = static_cast<size_t>((ox/a)*inTri) - inBox;
                 loc.overlap = true;
-                chunkIndex.add(loc, inOverlap);
+                chunkIndex->add(loc, inOverlap);
             }
         }
     }
+    return chunkIndex;
 }
 
 
@@ -150,6 +151,7 @@ shared_ptr<ChunkIndex> const estimateStats(po::variables_map const & vm) {
         throw runtime_error("One or both of the --index and --part.index "
                             "options must be specified.");
     }
+    // Load HTM indexes
     char const * opt = (vm.count("index") != 0 ? "index" : "part.index");
     fs::path indexPath(vm[opt].as<string>());
     opt = (vm.count("part.index") != 0 ? "part.index" : "index");
@@ -166,12 +168,10 @@ shared_ptr<ChunkIndex> const estimateStats(po::variables_map const & vm) {
                             "partitioning index (--part.index) do not match.");
     }
     vector<int32_t> chunks = chunksToDuplicate(chunker, vm);
-    shared_ptr<ChunkIndex> chunkIndex(new ChunkIndex());
     if (vm.count("verbose") != 0) {
         cerr << "Processing " << chunks.size() <<" chunks" << endl;
     }
-    estimateStats(*chunkIndex, chunks, chunker, *index, *partIndex);
-    return chunkIndex;
+    return estimateStats(chunks, chunker, *index, *partIndex);
 }
 
 }}}} // namespace lsst::qserv::admin::dupr

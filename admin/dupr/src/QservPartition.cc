@@ -100,9 +100,10 @@ Worker::Worker(po::variables_map const & vm) :
     _subChunkIdField = fields.resolve("part.sub-chunk", s);
 }
 
-void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
+void Worker::map(char const * begin, char const * end, Worker::Silo & silo) {
     typedef vector<ChunkLocation>::const_iterator LocIter;
     pair<double, double> sc;
+    char const * beg = begin;
     while (beg < end) {
         beg = _editor.readRecord(beg, end);
         sc.first = _editor.get<double>(_pos.first);
@@ -191,3 +192,8 @@ int main(int argc, char const * const * argv) {
     }
     return EXIT_SUCCESS;
 }
+
+// FIXME(smm): The partitioner should store essential parameters so that
+//             it can detect whether the same ones are used by incremental
+//             additions to a partitioned data-set.
+

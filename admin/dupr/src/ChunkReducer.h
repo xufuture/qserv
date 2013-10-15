@@ -50,7 +50,7 @@ class ChunkReducer : public WorkerBase<ChunkLocation, ChunkIndex> {
 public:
     ChunkReducer(boost::program_options::variables_map const & vm);
 
-    void reduce(RecordIter beg, RecordIter end);
+    void reduce(RecordIter begin, RecordIter end);
     void finish();
 
     boost::shared_ptr<ChunkIndex> const result() { return _index; }
