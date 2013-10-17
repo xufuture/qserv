@@ -523,18 +523,19 @@ class InbandQueryAction:
             self.hintList.append((constraint.name, params))
             pass
         self._evaluateHints(dominantDb, self.hintList, self.pmap)
-        self._emptyChunks = metadata.getEmptyChunks(dominantDb)
+        occupied = metadata.getOccupied(dominantDb)
         count = 0
         chunkLimit = self.chunkLimit
         for chunkId, subIter in self._intersectIter:
-            if chunkId in self._emptyChunks:
+            if chunkId not in occupied:
                 print "Rejecting empty chunk:", chunkId
                 continue
             #prepare chunkspec
             c = ChunkSpec()
             c.chunkId = chunkId
             scount=0
-            sList = [s for s in subIter]
+            # filter for occupied subchunks
+            sList = [s for s in subIter if s in occupied[chunkId]]
             #for s in sList: # debugging
             #    c.addSubChunk(s)
             #    scount += 1
