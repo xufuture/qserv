@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /* 
  * LSST Data Management System
  * Copyright 2008-2013 LSST Corporation.
@@ -59,6 +60,10 @@ class Foreman : public TaskAcceptor {
 public:
     typedef boost::shared_ptr<Foreman> Ptr;
 
+    /// An abstract interface. Runners receive a reference to an
+    /// object implementing this and make calls to report start and
+    /// finish events for tasks they run. Schedulers must return
+    /// RunnerWatcher objects so that runners can make reports.
     class RunnerWatcher {
     public:
         virtual ~RunnerWatcher() {}

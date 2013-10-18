@@ -58,7 +58,8 @@ public:
     std::string user;
     bool needsCreate;
     time_t entryTime;
-    char timestr[27]; ///< ::ctime_r(&t.entryTime, timestr)
+    char timestr[100]; ///< ::ctime_r(&t.entryTime, timestr)
+    // Note that manpage spec of "26 bytes"  is insufficient
 
     friend std::ostream& operator<<(std::ostream& os, Task const& t);
 };
