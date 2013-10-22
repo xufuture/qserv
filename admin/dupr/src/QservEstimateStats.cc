@@ -55,7 +55,10 @@ namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 void defineOptions(po::options_description & opts) {
     po::options_description dup("\\________________ Duplication", 80);
@@ -101,9 +104,9 @@ void defineOptions(po::options_description & opts) {
 
 
 shared_ptr<ChunkIndex> const estimateStats(vector<int32_t> const & chunks,
-                                           Chunker         const & chunker,
-                                           HtmIndex        const & index,
-                                           HtmIndex        const & partIndex)
+                                           Chunker const & chunker,
+                                           HtmIndex const & index,
+                                           HtmIndex const & partIndex)
 {
     vector<int32_t> subChunks;
     vector<uint32_t> htmIds;

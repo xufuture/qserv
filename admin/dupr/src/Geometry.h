@@ -37,7 +37,10 @@
 #include "Vector.h"
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// Clamp `lon` to be at most 360 degrees. Any input satisfying
 ///

@@ -46,7 +46,10 @@ using std::vector;
 namespace po = boost::program_options;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 namespace csv {
 
@@ -432,7 +435,9 @@ Editor::Editor(po::variables_map const & vm) :
 
 Editor::~Editor() { }
 
-char const * Editor::readRecord(char const * begin, char const * end) {
+char const * Editor::readRecord(char const * const begin,
+                                char const * const end)
+{
     if (end <= begin || begin == 0) {
         throw runtime_error("Empty or invalid input line.");
     } else if (_numInputFields == 0) {
@@ -445,8 +450,9 @@ char const * Editor::readRecord(char const * begin, char const * end) {
     Field * f = _fields.get();
     Field * fend = f + _numInputFields;
     f->inputValue = begin;
-    for (; begin < end; ++begin) {
-        char const c = *begin;
+    char const * cur = begin;
+    for (; cur < end; ++cur) {
+        char const c = *cur;
         if (c == '\n' || c == '\r') {
             break;
         } else if (c == '\0') {
@@ -456,7 +462,7 @@ char const * Editor::readRecord(char const * begin, char const * end) {
             // The previous character was an escape character.
             escaped = false;
         } else if (quoted) {
-            // begin is inside a quoted field.
+            // cur is inside a quoted field.
             if (c == _inputDialect.getEscape()) {
                 escaped = true;
             } else if (c == _inputDialect.getQuote()) {
@@ -464,12 +470,12 @@ char const * Editor::readRecord(char const * begin, char const * end) {
                 // last character in the input or is followed by
                 // a delimiter or line terminator, then c is the
                 // terminating quote of this field.
-                if (begin + 1 < end) {
-                    char const next = begin[1];
+                if (cur + 1 < end) {
+                    char const next = cur[1];
                     if (next == c) {
-                        ++begin;
+                        ++cur;
                     } else if (next == '\n' || next == '\r') {
-                        ++begin;
+                        ++cur;
                         quoted = false;
                         break;
                     } else if (next == _inputDialect.getDelimiter()) {
@@ -485,7 +491,7 @@ char const * Editor::readRecord(char const * begin, char const * end) {
                 decode = true;
             } else if (c == _inputDialect.getDelimiter()) {
                 // End of current field reached.
-                ptrdiff_t sz = begin - f->inputValue;
+                ptrdiff_t sz = cur - f->inputValue;
                 if (sz > MAX_FIELD_SIZE) {
                     throw runtime_error("CSV field value is too long.");
                 }
@@ -499,12 +505,12 @@ char const * Editor::readRecord(char const * begin, char const * end) {
                     throw runtime_error("CSV record contains more than the "
                                         "expected number of fields.");
                 }
-                f->inputValue = begin + 1;
-                if (begin + 1 < end && begin[1] == _inputDialect.getQuote()) {
+                f->inputValue = cur + 1;
+                if (cur + 1 < end && cur[1] == _inputDialect.getQuote()) {
                     // The next field is quoted.
                     quoted = true;
                     decode = true;
-                    ++begin;
+                    ++cur;
                 }
             }
         }
@@ -518,7 +524,7 @@ char const * Editor::readRecord(char const * begin, char const * end) {
         throw runtime_error("CSV record contains less than the expected "
                             "number of fields.");
     }
-    ptrdiff_t sz = begin - f->inputValue;
+    ptrdiff_t sz = cur - f->inputValue;
     if (sz > MAX_FIELD_SIZE) {
         throw runtime_error("CSV field value is too long.");
     }
@@ -534,13 +540,13 @@ char const * Editor::readRecord(char const * begin, char const * end) {
         f->flags = 0;
     }
     // Advance past the trailing line terminator character(s).
-    if (begin < end) {
-        char const c = *begin++;
-        if (c == '\r' && begin < end && *begin == '\n') {
-            ++begin;
+    if (cur < end) {
+        char const c = *cur++;
+        if (c == '\r' && cur < end && *cur == '\n') {
+            ++cur;
         }
     }
-    return begin;
+    return cur;
 }
 
 char * Editor::writeRecord(char * buf) const {

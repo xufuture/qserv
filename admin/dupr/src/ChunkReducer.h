@@ -34,15 +34,19 @@
 #include "FileUtils.h"
 #include "MapReduce.h"
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// Worker base class for the partitioner and duplicator which implements the
 /// reduction related half of the map-reduce API.
 ///
 /// The `reduce` function saves output records to files, each containing
-/// data for a single chunk ID. Chunk IDs are assigned to down-stream nodes
-/// by hashing, and the corresponding output files are created in node
-/// specific sub-directories of the output directory.
+/// data for a single chunk ID. Chunk ID C is assigned to down-stream node
+/// `hash(C) mod N`, where N is the total number of downstream nodes. Chunk
+/// files are created in node-specific sub-directories `node_XXXXX`, where
+/// `XXXXX` is just `hash(C) mod N` with leading zeros inserted as necessary.
 ///
 /// The worker result is a ChunkIndex that tracks per chunk/sub-chunk record
 /// counts.
@@ -50,7 +54,7 @@ class ChunkReducer : public WorkerBase<ChunkLocation, ChunkIndex> {
 public:
     ChunkReducer(boost::program_options::variables_map const & vm);
 
-    void reduce(RecordIter begin, RecordIter end);
+    void reduce(RecordIter const begin, RecordIter const end);
     void finish();
 
     boost::shared_ptr<ChunkIndex> const result() { return _index; }
@@ -59,14 +63,14 @@ private:
     void _makeFilePaths(int32_t chunkId);
 
     boost::shared_ptr<ChunkIndex> _index;
-    int32_t                       _chunkId;
-    uint32_t                      _numNodes;
-    std::string                   _prefix;
-    boost::filesystem::path       _outputDir;
-    boost::filesystem::path       _chunkPath;
-    boost::filesystem::path       _overlapChunkPath;
-    BufferedAppender              _chunkAppender;
-    BufferedAppender              _overlapChunkAppender;
+    int32_t _chunkId;
+    uint32_t _numNodes;
+    std::string _prefix;
+    boost::filesystem::path _outputDir;
+    boost::filesystem::path _chunkPath;
+    boost::filesystem::path _overlapChunkPath;
+    BufferedAppender _chunkAppender;
+    BufferedAppender _overlapChunkAppender;
 };
 
 }}}} // namespace lsst::qserv::admin::dupr

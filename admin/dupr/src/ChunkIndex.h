@@ -38,7 +38,10 @@
 #include "Chunker.h"
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// A chunk index tracks how many records and overlap records are in each
 /// chunk and sub-chunk of a partitioned input data set. It also provides
@@ -79,10 +82,10 @@ public:
         uint64_t min;         ///< Minimum record count.
         uint64_t max;         ///< Maximum record count.
         uint64_t quartile[3]; ///< Record count quartiles.
-        double   mean;        ///< Mean record count.
-        double   sigma;       ///< Standard deviation of the record count.
-        double   skewness;    ///< Skewness of the record count.
-        double   kurtosis;    ///< Kurtosis of the record count.
+        double mean;          ///< Mean record count.
+        double sigma;         ///< Standard deviation of the record count.
+        double skewness;      ///< Skewness of the record count.
+        double kurtosis;      ///< Kurtosis of the record count.
 
         Stats() { clear(); }
         void clear();
@@ -188,10 +191,10 @@ private:
     void _read(boost::filesystem::path const & path);
     void _computeStats() const;
 
-    ChunkMap      _chunks;
-    SubChunkMap   _subChunks;
+    ChunkMap _chunks;
+    SubChunkMap _subChunks;
 
-    bool  mutable _modified;
+    bool mutable _modified;
     Stats mutable _chunkStats;
     Stats mutable _overlapChunkStats;
     Stats mutable _subChunkStats;

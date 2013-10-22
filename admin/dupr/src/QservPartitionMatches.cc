@@ -82,7 +82,10 @@ namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// Map-reduce worker class for partitioning spatial match pairs.
 ///
@@ -101,8 +104,8 @@ class Worker : public WorkerBase<ChunkLocation, ChunkIndex> {
 public:
     Worker(po::variables_map const & vm);
 
-    void map(char const * beg, char const * end, Silo & silo);
-    void reduce(RecordIter beg, RecordIter end);
+    void map(char const * const begin, char const * const end, Silo & silo);
+    void reduce(RecordIter const begin, RecordIter const end);
     void finish();
 
     shared_ptr<ChunkIndex> const result() { return _index; }
@@ -112,19 +115,19 @@ public:
 private:
     void _openFile(int32_t chunkId);
 
-    csv::Editor            _editor;
-    pair<int,int>          _pos1;
-    pair<int,int>          _pos2;
-    int                    _chunkIdField;
-    int                    _subChunkIdField;
-    int                    _flagsField;
-    Chunker                _chunker;
+    csv::Editor _editor;
+    pair<int,int> _pos1;
+    pair<int,int> _pos2;
+    int _chunkIdField;
+    int _subChunkIdField;
+    int _flagsField;
+    Chunker _chunker;
     shared_ptr<ChunkIndex> _index;
-    int32_t                _chunkId;
-    uint32_t               _numNodes;
-    fs::path               _outputDir;
-    string                 _prefix;
-    BufferedAppender       _chunk;
+    int32_t _chunkId;
+    uint32_t _numNodes;
+    fs::path _outputDir;
+    string _prefix;
+    BufferedAppender _chunk;
 };
 
 Worker::Worker(po::variables_map const & vm) :
@@ -170,11 +173,15 @@ Worker::Worker(po::variables_map const & vm) :
     _flagsField = fields.resolve("part.flags", s);
 }
 
-void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
+void Worker::map(char const * const begin,
+                 char const * const end,
+                 Worker::Silo & silo)
+{
     pair<double, double> sc1, sc2;
     ChunkLocation loc1, loc2;
-    while (beg < end) {
-        beg = _editor.readRecord(beg, end);
+    char const * cur = begin;
+    while (cur < end) {
+        cur = _editor.readRecord(cur, end);
         bool null1 = _editor.isNull(_pos1.first) || _editor.isNull(_pos1.second);
         bool null2 = _editor.isNull(_pos2.first) || _editor.isNull(_pos2.second);
         if (null1 && null2) {
@@ -222,7 +229,8 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
     }
 }
 
-void Worker::reduce(Worker::RecordIter begin, Worker::RecordIter end) {
+void Worker::reduce(Worker::RecordIter const begin,
+                    Worker::RecordIter const end) {
     if (begin == end) {
         return;
     }
@@ -231,9 +239,9 @@ void Worker::reduce(Worker::RecordIter begin, Worker::RecordIter end) {
         _chunkId = chunkId;
         _openFile(chunkId);
     }
-    for (RecordIter beg = begin; beg != end; ++beg) {
-        _index->add(beg->key);
-        _chunk.append(beg->data, beg->size);
+    for (RecordIter cur = begin; cur != end; ++cur) {
+        _index->add(cur->key);
+        _chunk.append(cur->data, cur->size);
     }
 }
 

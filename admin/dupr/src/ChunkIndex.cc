@@ -50,7 +50,10 @@ using std::vector;
 namespace fs = boost::filesystem;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 void ChunkIndex::Stats::clear() {
     n = 0;

@@ -44,7 +44,10 @@ using std::vector;
 using boost::math::constants::pi;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 namespace {
 

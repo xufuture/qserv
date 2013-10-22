@@ -54,7 +54,10 @@ namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 class Worker : public ChunkReducer {
 public:
@@ -62,17 +65,17 @@ public:
 
     /// Compute all partitioning locations of each input
     /// record and store an output record per-location.
-    void map(char const * beg, char const * end, Silo & silo);
+    void map(char const * const begin, char const * const end, Silo & silo);
 
     static void defineOptions(po::options_description & opts);
 
 private:
-    csv::Editor            _editor;
-    pair<int,int>          _pos;
-    int                    _chunkIdField;
-    int                    _subChunkIdField;
-    Chunker                _chunker;
-    vector<ChunkLocation>  _locations;
+    csv::Editor _editor;
+    pair<int,int> _pos;
+    int _chunkIdField;
+    int _subChunkIdField;
+    Chunker _chunker;
+    vector<ChunkLocation> _locations;
 };
 
 Worker::Worker(po::variables_map const & vm) :
@@ -100,12 +103,15 @@ Worker::Worker(po::variables_map const & vm) :
     _subChunkIdField = fields.resolve("part.sub-chunk", s);
 }
 
-void Worker::map(char const * begin, char const * end, Worker::Silo & silo) {
+void Worker::map(char const * const begin,
+                 char const * const end,
+                 Worker::Silo & silo)
+{
     typedef vector<ChunkLocation>::const_iterator LocIter;
     pair<double, double> sc;
-    char const * beg = begin;
-    while (beg < end) {
-        beg = _editor.readRecord(beg, end);
+    char const * cur = begin;
+    while (cur < end) {
+        cur = _editor.readRecord(cur, end);
         sc.first = _editor.get<double>(_pos.first);
         sc.second = _editor.get<double>(_pos.second);
         // Locate partitioning position and output a record for each location.

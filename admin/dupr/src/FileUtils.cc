@@ -39,7 +39,10 @@ using std::runtime_error;
 namespace fs = boost::filesystem;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 InputFile::InputFile(fs::path const & path) : _path(path), _fd(-1), _sz(-1) {
     char msg[1024];

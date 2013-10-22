@@ -34,7 +34,10 @@
 #include "boost/shared_ptr.hpp"
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// The InputLines class reads lines from a list of input text files in an IO
 /// efficient and parallel way. Each file is split up into blocks, where all

@@ -35,7 +35,10 @@
 #include "boost/unordered_map.hpp"
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// An HTM index tracks how many records of an input data set are contained
 /// in all HTM triangles of a given subdivision level L. It also provides a

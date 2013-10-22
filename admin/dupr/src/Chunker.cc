@@ -43,7 +43,10 @@ using boost::scoped_array;
 namespace po = boost::program_options;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 int segments(double latMin, double latMax, double width) {
     double lat = max(fabs(latMin), fabs(latMax));

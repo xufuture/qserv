@@ -28,7 +28,10 @@
 
 #include <stdint.h>
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// 32-bit integer hash function from Brett Mulvey.
 /// See http://home.comcast.net/~bretm/hash/4.html

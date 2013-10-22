@@ -60,12 +60,15 @@ namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// An ID extracted from a CSV record, along with the HTM ID
 /// of the associated partitioning position.
 struct Key {
-    int64_t  id;
+    int64_t id;
     uint32_t htmId;
 };
 
@@ -73,10 +76,10 @@ struct Key {
 /// Minimize the size of `Record<Key>` by flattening `Key` fields into
 /// the record type.
 template <> struct Record<Key> {
-    int64_t  id;
+    int64_t id;
     uint32_t htmId;
     uint32_t size;
-    char *   data;
+    char * data;
 
     Record() : id(0), htmId(0), size(0), data(0) { }
 
@@ -107,8 +110,8 @@ class Worker : public WorkerBase<Key, HtmIndex> {
 public:
     Worker(po::variables_map const & vm);
 
-    void map(char const * beg, char const * end, Silo & silo);
-    void reduce(RecordIter beg, RecordIter end);
+    void map(char const * const begin, char const * const end, Silo & silo);
+    void reduce(RecordIter const begin, RecordIter const end);
     void finish();
 
     shared_ptr<HtmIndex> const result() { return _index; }
@@ -118,17 +121,17 @@ public:
 private:
     void _openFiles(uint32_t htmId);
 
-    csv::Editor          _editor;
-    int                  _idField;
-    pair<int,int>        _pos;
-    int                  _level;
+    csv::Editor _editor;
+    int _idField;
+    pair<int,int> _pos;
+    int _level;
     shared_ptr<HtmIndex> _index;
-    uint32_t             _htmId;
-    uint64_t             _numRecords;
-    uint32_t             _numNodes;
-    fs::path             _outputDir;
-    BufferedAppender     _records;
-    BufferedAppender     _ids;
+    uint32_t _htmId;
+    uint64_t _numRecords;
+    uint32_t _numNodes;
+    fs::path _outputDir;
+    BufferedAppender _records;
+    BufferedAppender _ids;
 };
 
 Worker::Worker(po::variables_map const & vm) :
@@ -162,12 +165,15 @@ Worker::Worker(po::variables_map const & vm) :
     _pos.second = fields.resolve("part.pos", s, p.second);
 }
 
-void Worker::map(char const * begin, char const * end, Worker::Silo & silo) {
+void Worker::map(char const * const begin,
+                 char const * const end,
+                 Worker::Silo & silo)
+{
     Key k;
     pair<double, double> sc;
-    char const * beg = begin;
-    while (beg < end) {
-        beg = _editor.readRecord(beg, end);
+    char const * cur = begin;
+    while (cur < end) {
+        cur = _editor.readRecord(cur, end);
         k.id = _editor.get<int64_t>(_idField);
         sc.first = _editor.get<double>(_pos.first);
         sc.second = _editor.get<double>(_pos.second);
@@ -176,7 +182,9 @@ void Worker::map(char const * begin, char const * end, Worker::Silo & silo) {
     }
 }
 
-void Worker::reduce(Worker::RecordIter begin, Worker::RecordIter end) {
+void Worker::reduce(Worker::RecordIter const begin,
+                    Worker::RecordIter const end)
+{
     if (begin == end) {
         return;
     }

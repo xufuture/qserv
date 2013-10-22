@@ -47,7 +47,10 @@
 #include "InputLines.h"
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// A line of CSV formatted text at most MAX_LINE_SIZE characters long
 /// and a key of copy-constructible and less-than comparable type K.
@@ -62,9 +65,9 @@ namespace lsst { namespace qserv { namespace admin { namespace dupr {
 /// type into the record structure itself may be able to save space.
 template <typename K>
 struct Record {
-    K        key;
+    K key;
     uint32_t size;
-    char *   data;
+    char * data;
 
     Record() : key(), size(0), data(0) { }
     explicit Record(K const & k) : key(k), size(0), data(0) { }
@@ -94,9 +97,9 @@ public:
     Silo() : _records(), _bytesUsed(0), _head(0), _cur(0), _end(0) { }
     ~Silo();
 
-    bool   empty()        const { return _records.empty(); }
-    size_t size()         const { return _records.size();  }
-    size_t getBytesUsed() const { return _bytesUsed;       }
+    bool empty() const { return _records.empty(); }
+    size_t size() const { return _records.size();  }
+    size_t getBytesUsed() const { return _bytesUsed; }
 
     /// Order silos by memory usage, from largest to smallest.
     bool operator<(Silo const & silo) const {
@@ -133,15 +136,15 @@ private:
 
     void _grow();
 
-    char                _pad0[CACHE_LINE_SIZE];
+    char _pad0[CACHE_LINE_SIZE];
 
     std::vector<Record> _records;
-    size_t              _bytesUsed;
-    char *              _head; // Head of linked allocation list.
-    char *              _cur;
-    char *              _end;  // End of current allocation.
+    size_t _bytesUsed;
+    char * _head; // Head of linked allocation list.
+    char * _cur;
+    char * _end;  // End of current allocation.
 
-    char                _pad1[CACHE_LINE_SIZE];
+    char _pad1[CACHE_LINE_SIZE];
 };
 
 template <typename K> Silo<K>::~Silo() {
@@ -301,9 +304,9 @@ template <typename K> void Silo<K>::_grow() {
 /// that the constructor needs to build an instance from a `variables_map`.
 template <typename KeyT, typename ResultT>
 struct WorkerBase {
-    typedef KeyT               Key;
-    typedef ResultT            Result;
-    typedef dupr::Silo<KeyT>   Silo;
+    typedef KeyT Key;
+    typedef ResultT Result;
+    typedef dupr::Silo<KeyT> Silo;
     typedef typename std::vector<Record<KeyT> >::const_iterator RecordIter;
 };
 
@@ -367,34 +370,34 @@ namespace detail {
         void _cleanup();
         void _fail(std::exception const & ex);
 
-        typedef typename Worker::Key                          Key;
-        typedef detail::SortedRecordRange<Key>                SortedRecordRange;
-        typedef typename SortedRecordRange::RecordIter        RecordIter;
-        typedef dupr::Silo<Key>                               Silo;
-        typedef boost::shared_ptr<Silo>                       SiloPtr;
-        typedef detail::SiloPtrCmp<Key>                       SiloPtrCmp;
+        typedef typename Worker::Key Key;
+        typedef detail::SortedRecordRange<Key> SortedRecordRange;
+        typedef typename SortedRecordRange::RecordIter RecordIter;
+        typedef dupr::Silo<Key> Silo;
+        typedef boost::shared_ptr<Silo> SiloPtr;
+        typedef detail::SiloPtrCmp<Key> SiloPtrCmp;
         typedef typename std::vector<SiloPtr>::const_iterator SiloPtrIter;
 
         boost::program_options::variables_map const * _vm;
 
-        InputLines                _input;
-        size_t                    _threshold;
-        uint32_t                  _numWorkers;
+        InputLines _input;
+        size_t _threshold;
+        uint32_t _numWorkers;
 
-        char                      _pad0[CACHE_LINE_SIZE];
+        char _pad0[CACHE_LINE_SIZE];
 
-        boost::mutex              _mutex;
-        bool                      _inputExhausted;
-        uint32_t                  _numMappers;
-        uint32_t                  _numReducers;
-        std::vector<SiloPtr>      _silos;
-        std::vector<SiloPtr>      _sorted;
+        boost::mutex _mutex;
+        bool _inputExhausted;
+        uint32_t _numMappers;
+        uint32_t _numReducers;
+        std::vector<SiloPtr> _silos;
+        std::vector<SiloPtr> _sorted;
         boost::condition_variable _mapCond;
         boost::condition_variable _reduceCond;
-        bool                      _failed;
-        std::string               _errorMessage;
+        bool _failed;
+        std::string _errorMessage;
 
-        char                      _pad1[CACHE_LINE_SIZE];
+        char _pad1[CACHE_LINE_SIZE];
 
         // DerivedT is responsible for storing worker results. Note
         // that _mutex is locked when this is called.

@@ -117,7 +117,7 @@ namespace {
 
         fs::path _path;
         char * _data;
-        char const * _beg;
+        char const * _cur;
         char const * _end;
         char _sep;
 
@@ -127,16 +127,16 @@ namespace {
         string const _parseUnicodeEscape();
 
         void _skipWhitespace() {
-            for (; _beg < _end; ++_beg) {
-                char c = *_beg;
+            for (; _cur < _end; ++_cur) {
+                char c = *_cur;
                 if (c != '\t' && c != '\n' && c != '\r' && c != ' ') {
                     break;
                 }
             }
         }
         void _skipLine() {
-            for (; _beg < _end; ++_beg) {
-                char c = *_beg;
+            for (; _cur < _end; ++_cur) {
+                char c = *_cur;
                 if (c == '\r' || c == '\n') {
                     break;
                 }
@@ -145,7 +145,7 @@ namespace {
     };
 
     Parser::Parser(fs::path const & path, char keySeparator) :
-        _path(path), _data(0), _beg(0), _end(0), _sep(keySeparator)
+        _path(path), _data(0), _cur(0), _end(0), _sep(keySeparator)
     {
         lsst::qserv::admin::dupr::InputFile f(path);
         // FIXME(smm): check that cast doesn't truncate 
@@ -154,7 +154,7 @@ namespace {
         if (!_data) {
             throw bad_alloc();
         }
-        _beg = _data;
+        _cur = _data;
         _end = _data + sz;
         f.read(_data, 0, sz);
     }
@@ -162,7 +162,7 @@ namespace {
     Parser::~Parser() {
         free(_data);
         _data = 0;
-        _beg = 0;
+        _cur = 0;
         _end = 0;
     }
 
@@ -188,8 +188,8 @@ namespace {
 
     string const Parser::_parseValue() {
         string val;
-        while (_beg < _end) {
-            char const c = *_beg;
+        while (_cur < _end) {
+            char const c = *_cur;
             switch (c) {
                 case '\t': case '\n': case '\r': case ' ':
                 case '#': case ',': case ':': case '=':
@@ -203,7 +203,7 @@ namespace {
                     break;
             }
             val.push_back(c);
-            ++_beg;
+            ++_cur;
         }
         return val;
     }
@@ -214,8 +214,8 @@ namespace {
         int i = 0;
         // Extract 1-4 hexadecimal digits to build a Unicode
         // code-point in the Basic Multilingual Plane.
-        for (; i < 4 && _beg < _end; ++i, ++_beg) {
-            char c = *_beg;
+        for (; i < 4 && _cur < _end; ++i, ++_cur) {
+            char c = *_cur;
             if (c >= '0' && c <= '9') {
                 cp = (cp << 4) + static_cast<unsigned int>(c - '0');
             } else if (c >= 'a' && c <= 'f') {
@@ -253,20 +253,20 @@ namespace {
     string const Parser::_parseQuotedValue(char const quote) {
         string val;
         while (true) {
-            if (_beg >= _end) {
+            if (_cur >= _end) {
                 throw runtime_error("Unmatched quote character.");
             }
-            char c = *_beg;
+            char c = *_cur;
             if (c == quote) {
-                ++_beg;
+                ++_cur;
                 break;
             } else if (c == '\\') {
                 // Handle escape sequence.
-                ++_beg;
-                if (_beg == _end) {
+                ++_cur;
+                if (_cur== _end) {
                     throw runtime_error("Unmatched quote character.");
                 }
-                c = *_beg;
+                c = *_cur;
                 switch (c) {
                     case 'b': c = '\b'; break;
                     case 'f': c = '\f'; break;
@@ -274,7 +274,7 @@ namespace {
                     case 'r': c = '\r'; break;
                     case 't': c = '\t'; break;
                     case 'u':
-                        ++_beg;
+                        ++_cur;
                         val.append(_parseUnicodeEscape());
                         continue;
                     default:
@@ -282,7 +282,7 @@ namespace {
                 }
             }
             val.push_back(c);
-            ++_beg;
+            ++_cur;
         }
         return val;
     }
@@ -306,23 +306,23 @@ namespace {
         pair<int, char> p(0, '\0');
         groups.push_back(p);
         int lvl = 0;
-        for (_skipWhitespace(); _beg < _end; _skipWhitespace()) {
-            char c = *_beg;
+        for (_skipWhitespace(); _cur < _end; _skipWhitespace()) {
+            char c = *_cur;
             string s;
             switch (c) {
                 case '#':
-                    ++_beg;
+                    ++_cur;
                     _skipLine();
                     continue;
                 case ',':
-                    ++_beg;
+                    ++_cur;
                     continue;
                 case '(': case '[': case '{':
-                    ++_beg;
+                    ++_cur;
                     groups.push_back(pair<int, char>(lvl, c));
                     continue;
                 case ')': case ']': case '}':
-                    ++_beg;
+                    ++_cur;
                     p = groups.back();
                     groups.pop_back();
                     if (p.second == '(' && c != ')') {
@@ -339,7 +339,7 @@ namespace {
                     }
                     continue;
                 case '"': case '\'':
-                    ++_beg;
+                    ++_cur;
                     s = _parseQuotedValue(c);
                     break;
                 default:
@@ -347,9 +347,9 @@ namespace {
                     break;
             }
             _skipWhitespace();
-            c = (_beg < _end) ? *_beg : ',';
+            c = (_cur < _end) ? *_cur : ',';
             if (c == ':' || c == '=') {
-                ++_beg;
+                ++_cur;
                 keys.push_back(s);
                 ++lvl;
                 continue;
@@ -385,8 +385,10 @@ namespace {
 } // unnamed namespace
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
-
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 FieldNameResolver::~FieldNameResolver() {
     _editor = 0;

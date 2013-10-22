@@ -38,7 +38,10 @@
 #include "Hash.h"
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// Compute the number of segments to divide the given latitude angle range
 /// (stripe) into. Two points in the latitude range separated by at least
@@ -56,7 +59,7 @@ double segmentWidth(double latMin, double latMax, int numSegments);
 struct ChunkLocation {
     int32_t chunkId;
     int32_t subChunkId;
-    bool    overlap;
+    bool overlap;
 
     ChunkLocation() : chunkId(-1), subChunkId(-1), overlap(false) { }
 

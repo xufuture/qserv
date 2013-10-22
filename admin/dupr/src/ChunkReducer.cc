@@ -39,7 +39,10 @@ using std::string;
 using boost::make_shared;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 ChunkReducer::ChunkReducer(po::variables_map const & vm) :
     _index(make_shared<ChunkIndex>()),
@@ -56,8 +59,8 @@ ChunkReducer::ChunkReducer(po::variables_map const & vm) :
     }
 }
 
-void ChunkReducer::reduce(ChunkReducer::RecordIter begin,
-                          ChunkReducer::RecordIter end)
+void ChunkReducer::reduce(ChunkReducer::RecordIter const begin,
+                          ChunkReducer::RecordIter const end)
 {
     if (begin == end) {
         return;
@@ -70,18 +73,18 @@ void ChunkReducer::reduce(ChunkReducer::RecordIter begin,
     }
     // Store records and update statistics. Files are only created/
     // opened if there is data to write to them.
-    for (RecordIter beg = begin; beg != end; ++beg) {
-        _index->add(beg->key);
-        if (beg->key.overlap) {
+    for (RecordIter cur = begin; cur != end; ++cur) {
+        _index->add(cur->key);
+        if (cur->key.overlap) {
             if (!_overlapChunkAppender.isOpen()) {
                 _overlapChunkAppender.open(_overlapChunkPath, false);
             }
-            _overlapChunkAppender.append(beg->data, beg->size);
+            _overlapChunkAppender.append(cur->data, cur->size);
         } else {
             if (!_chunkAppender.isOpen()) {
                 _chunkAppender.open(_chunkPath, false);
             }
-            _chunkAppender.append(beg->data, beg->size);
+            _chunkAppender.append(cur->data, cur->size);
         }
     }
 }

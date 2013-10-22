@@ -38,7 +38,10 @@
 #include "InputLines.h"
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// Helper class for mapping field names to indexes. The `resolve` method
 /// checks that a field exists, and optionally that the field name has not
@@ -95,7 +98,8 @@ void defineOutputOptions(boost::program_options::options_description & opts);
 
 /// Handle output directory checking/creation. Assumes `defineOutputOptions()`
 /// has been used.
-void makeOutputDirectory(boost::program_options::variables_map & vm, bool mayExist);
+void makeOutputDirectory(boost::program_options::variables_map & vm,
+                         bool mayExist);
 
 /// Ensure that the field name given by the option `opt` is listed as an output
 /// field (in `out.csv.field`) by appending it if necessary.
@@ -105,8 +109,7 @@ void ensureOutputFieldExists(boost::program_options::variables_map & vm,
 /// Compute the IDs of chunks for which data must be generated, or for which
 /// the record count must be estimated.
 std::vector<int32_t> const chunksToDuplicate(
-    Chunker const & chunker,
-    boost::program_options::variables_map const & vm);
+    Chunker const & chunker, boost::program_options::variables_map const & vm);
 
 }}}} // namespace lsst::qserv::admin::dupr
 

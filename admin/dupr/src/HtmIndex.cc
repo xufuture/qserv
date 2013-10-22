@@ -43,7 +43,10 @@ using std::vector;
 namespace fs = boost::filesystem;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 HtmIndex::HtmIndex(int level) :
     _numRecords(0),

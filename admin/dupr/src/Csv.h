@@ -43,7 +43,10 @@
 #include "Constants.h"
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 namespace csv {
 
@@ -123,14 +126,14 @@ public:
     std::string const & getNull() const { return _null; }
 
     char getDelimiter() const { return _delimiter; }
-    char getEscape()    const { return _escape; }
-    char getQuote()     const { return _quote; }
+    char getEscape() const { return _escape; }
+    char getQuote() const { return _quote; }
 
     bool operator==(Dialect const & d) const {
-        return _null      == d._null &&
+        return _null == d._null &&
                _delimiter == d._delimiter &&
-               _escape    == d._escape &&
-               _quote     == d._quote;
+               _escape == d._escape &&
+               _quote == d._quote;
     }
 
     /// Is the encoded field value identical to the NULL string?
@@ -359,10 +362,10 @@ private:
         static uint16_t const EDITED = 0x02;
 
         char const * inputValue;
-        char *       outputValue;
-        uint16_t     inputSize;
-        uint16_t     outputSize;
-        uint16_t     flags;
+        char * outputValue;
+        uint16_t inputSize;
+        uint16_t outputSize;
+        uint16_t flags;
 
         Field();
         ~Field();

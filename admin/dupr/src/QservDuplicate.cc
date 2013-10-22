@@ -62,7 +62,10 @@ namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 class Worker;
 
@@ -83,14 +86,14 @@ private:
     void _makeTargets(int32_t chunkId);
     InputLines const _makeInput() const;
 
-    TargetMap            _targets;
-    shared_ptr<Chunker>  _chunker;
+    TargetMap _targets;
+    shared_ptr<Chunker> _chunker;
     shared_ptr<HtmIndex> _partIndex;
     shared_ptr<HtmIndex> _index;
-    fs::path             _partIndexDir;
-    fs::path             _indexDir;
-    size_t               _blockSize;
-    int                  _level;
+    fs::path _partIndexDir;
+    fs::path _indexDir;
+    size_t _blockSize;
+    int _level;
 
     friend class Worker;
 };
@@ -212,7 +215,7 @@ class Worker : public ChunkReducer {
 public:
     Worker(po::variables_map const & vm);
 
-    void map(char const * beg, char const * end, Silo & silo);
+    void map(char const * const begin, char const * const end, Silo & silo);
 
     static void defineOptions(po::options_description & opts);
 
@@ -233,7 +236,7 @@ private:
     // TODO: It's unclear how well this approach works - there is likely
     // to be some statistical correlation between IDs and sky positions, and
     // the hashing function employed is weak (though cheap to compute).
-    bool _discard(int64_t id) const {
+    bool _shouldDiscard(int64_t id) const {
         return hash(static_cast<uint64_t>(id) ^ _seed) > _maxId;
     }
 
@@ -259,21 +262,21 @@ private:
         Pos(int i, int j) : v(0.0, 0.0, 0.0), lon(i), lat(j), null(false) { }
     };
 
-    csv::Editor           _editor;
-    vector<Target>        _targets;
-    Pos                   _partPos;
-    vector<Pos>           _pos;
-    uint64_t              _seed;
-    uint64_t              _maxId;
-    uint32_t              _sourceHtmId;
-    int                   _level;
-    int                   _partIdField;
-    int                   _idField;
-    int                   _chunkIdField;
-    int                   _subChunkIdField;
+    csv::Editor _editor;
+    vector<Target> _targets;
+    Pos _partPos;
+    vector<Pos> _pos;
+    uint64_t _seed;
+    uint64_t _maxId;
+    uint32_t _sourceHtmId;
+    int _level;
+    int _partIdField;
+    int _idField;
+    int _chunkIdField;
+    int _subChunkIdField;
     vector<ChunkLocation> _locations;
-    fs::path              _partIndexDir;
-    fs::path              _indexDir;
+    fs::path _partIndexDir;
+    fs::path _indexDir;
     shared_ptr<LessThanCounter> _partIdsLessThan;
     shared_ptr<LessThanCounter> _idsLessThan;
 };
@@ -331,7 +334,7 @@ Worker::Worker(po::variables_map const & vm) :
                                fields.resolve("pos", *i, p.second)));
         }
     }
-    // Opionally map primary and secondary key field name to field index.
+    // Opionally map primary and secondary key field names to field indexes.
     if (vm.count("id") != 0) {
         s = vm["id"].as<string>();
         _idField = fields.resolve("id", s);
@@ -357,14 +360,18 @@ Worker::Worker(po::variables_map const & vm) :
     _subChunkIdField = fields.resolve("part.sub-chunk", s);
 }
 
-void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
+void Worker::map(char const * const begin,
+                 char const * const end,
+                 Worker::Silo & silo)
+{
     typedef vector<ChunkLocation>::const_iterator LocIter;
     typedef vector<Target>::const_iterator TgtIter;
     typedef vector<Pos>::iterator PosIter;
 
     uint32_t sourceHtmId = 0;
-    while (beg < end) {
-        beg = _editor.readRecord(beg, end);
+    char const * cur = begin;
+    while (cur < end) {
+        cur = _editor.readRecord(cur, end);
         // Extract positions.
         pair<double, double> sc;
         for (PosIter p = _pos.begin(), pe = _pos.end(); p != pe; ++p) {
@@ -393,7 +400,7 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
             // index in the source triangle, and decide whether to duplicate
             // it or throw it away.
             partId = (*_partIdsLessThan)(_editor.get<int64_t>(_partIdField));
-            if (_discard(partId)) {
+            if (_shouldDiscard(partId)) {
                 continue;
             }
         }
@@ -405,7 +412,7 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
             // that wasn't associated with any Object), decide whether or not to
             // duplicate it or throw it away.
             id = (*_idsLessThan)(_editor.get<int64_t>(_idField));
-            if (partIdIsNull && _discard(id)) {
+            if (partIdIsNull && _shouldDiscard(id)) {
                 continue;
             }
         }
@@ -423,7 +430,7 @@ void Worker::map(char const * beg, char const * end, Worker::Silo & silo) {
             _locations.clear();
             dup()._chunker->locate(pos, t->chunkId, _locations);
             if (_locations.empty()) {
-                // Transformed partitioning position does not lay inside
+                // Transformed partitioning position does not lie inside
                 // the required chunk - nothing else to do for this record.
                 continue;
             }

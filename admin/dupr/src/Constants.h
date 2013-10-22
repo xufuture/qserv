@@ -46,7 +46,10 @@
 #endif
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 size_t const MiB = 1024*1024;
 size_t const GiB = 1024*MiB;

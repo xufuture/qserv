@@ -54,7 +54,10 @@ namespace fs = boost::filesystem;
 namespace this_thread = boost::this_thread;
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 namespace {
 
@@ -62,7 +65,7 @@ namespace {
 
     struct LineFragmentStorage {
         size_t size;
-        char   buf[MAX_LINE_SIZE];
+        char buf[MAX_LINE_SIZE];
 
         LineFragmentStorage(size_t sz, char * b) : size(sz) {
             memcpy(buf, b, sz);
@@ -103,9 +106,9 @@ namespace {
 
     // An input file block.
     struct Block {
-        shared_ptr<InputFile>    file;
-        off_t                    offset;
-        size_t                   size;
+        shared_ptr<InputFile> file;
+        off_t offset;
+        size_t size;
         shared_ptr<LineFragment> head;
         shared_ptr<LineFragment> tail;
 
@@ -230,22 +233,22 @@ private:
     Impl(Impl const &);
     Impl & operator=(Impl const &);
 
-    size_t const     _blockSize;
-    bool const       _skipFirstLine;
+    size_t const _blockSize;
+    bool const _skipFirstLine;
 
-    char             _pad0[CACHE_LINE_SIZE];
+    char _pad0[CACHE_LINE_SIZE];
 
-    mutex mutable    _mutex;
-    size_t           _blockCount;
-    vector<Block>    _queue;
+    mutex mutable _mutex;
+    size_t _blockCount;
+    vector<Block> _queue;
     vector<fs::path> _paths;
 
-    char             _pad1[CACHE_LINE_SIZE];
+    char _pad1[CACHE_LINE_SIZE];
 };
 
 InputLines::Impl::Impl(vector<fs::path> const & paths,
                        size_t blockSize,
-                       bool   skipFirstLine) :
+                       bool skipFirstLine) :
     _blockSize(min(max(blockSize, 1*MiB), 1*GiB)),
     _skipFirstLine(skipFirstLine),
     _mutex(),

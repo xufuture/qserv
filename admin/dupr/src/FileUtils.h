@@ -33,7 +33,10 @@
 #include "boost/static_assert.hpp"
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// An input file. Safe for use from multiple threads.
 class InputFile {

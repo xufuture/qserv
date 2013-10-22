@@ -34,7 +34,10 @@
 #include <cmath>
 
 
-namespace lsst { namespace qserv { namespace admin { namespace dupr {
+namespace lsst {
+namespace qserv {
+namespace admin {
+namespace dupr {
 
 /// A 3-component column vector.
 class Vector3d {
@@ -43,8 +46,8 @@ public:
     Vector3d(double x, double y, double z) { _c[0] = x; _c[1] = y; _c[2] = z; }
 
     // Return the `i`-th component of this vector.
-    double & operator()(int i)       { return _c[i]; }
-    double   operator()(int i) const { return _c[i]; }
+    double & operator()(int i) { return _c[i]; }
+    double operator()(int i) const { return _c[i]; }
 
     /// Return the dot (a.k.a. inner) product of this vector and `v`.
     double dot(Vector3d const & v) const {
@@ -103,12 +106,12 @@ class Matrix3d {
 public:
 
     // Return the `c`-th matrix column; bounds are not checked.
-    Vector3d       & col(int c)       { return _col[c]; }
+    Vector3d & col(int c) { return _col[c]; }
     Vector3d const & col(int c) const { return _col[c]; }
 
     // Return the scalar at row `r` and column `c`; bounds are not checked.
-    double & operator()(int r, int c)       { return _col[c](r); }
-    double   operator()(int r, int c) const { return _col[c](r); }
+    double & operator()(int r, int c) { return _col[c](r); }
+    double operator()(int r, int c) const { return _col[c](r); }
 
     /// Return the identity matrix.
     static Matrix3d const Identity() {
