@@ -29,7 +29,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include <queue>
+#include <vector>
 #include <set>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
@@ -56,6 +56,7 @@ public:
     TaskPtr getNext(bool allowAdvance);
     bool busy() const; /// Busy scanning a chunk?
     bool empty() const;
+    int removeByHash(std::string const& hash); ///< Remove queued elt by hash
 
     // Inflight management
     void registerInflight(TaskPtr const& e);
@@ -74,13 +75,43 @@ private:
             return x->msg->chunkid()  > y->msg->chunkid();
         }
     };
-    typedef std::priority_queue<TaskPtr, std::vector<TaskPtr>, TaskPtrCompare> QueueOrig;
-    class IterablePq : public QueueOrig {
+    class IterablePq {
     public:
+        typedef TaskPtr value_type;
+        typedef TaskPtrCompare compare;
         typedef std::vector<value_type> Container;
-        Container& impl() { return c; }
+        Container& impl() { return _c; }
+
+        bool empty() const { return _c.empty(); }
+        Container::size_type size() const { return _c.size(); }
+        value_type& top();
+        value_type const& top() const;
+        void push(value_type& v);
+        void pop();
+
+        template <class F>
+        int removeIf(F f) {
+            // Slightly expensive O(N logN) removal
+            int numErased = 0;
+            typename Container::iterator i = _c.begin();
+            typename Container::iterator e = _c.end();
+            while(i != e) {
+                if(f(*i)) {
+                    ++numErased;
+                i = _c.erase(i);
+                } else { // no match, continue
+                    ++i;
+                }
+            }
+            _maintainHeap();
+            return numErased;
+        }
+    private:
+        void _maintainHeap();
+        Container _c;
     };
     typedef IterablePq Queue;
+
 
     mutable boost::mutex _queueMutex;
     Queue _activeTasks;

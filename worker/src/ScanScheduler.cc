@@ -43,33 +43,6 @@ lsst::qserv::worker::ChunkDisk* dbgChunkDisk1 = 0; //< A symbol for gdb
 namespace lsst {
 namespace qserv {
 namespace worker {
-
-////////////////////////////////////////////////////////////////////////
-// class ChunkDiskWatcher
-// Lets the scheduler listen to a Foreman's Runners and pass to a
-// ChunkDisk instance.
-////////////////////////////////////////////////////////////////////////
-class ChunkDiskWatcher : public Foreman::RunnerWatcher {
-public:
-    typedef ScanScheduler::ChunkDiskList ChunkDiskList;
-
-    ChunkDiskWatcher(ChunkDiskList& chunkDiskList, boost::mutex& mutex)
-        : _disks(chunkDiskList), _mutex(mutex) {}
-    virtual void handleStart(Task::Ptr t) {
-        boost::lock_guard<boost::mutex> guard(_mutex);
-        assert(!_disks.empty());
-        _disks.front()->registerInflight(t);
-    }
-    virtual void handleFinish(Task::Ptr t) {
-        boost::lock_guard<boost::mutex> guard(_mutex);
-        assert(!_disks.empty());
-        _disks.front()->removeInflight(t);
-    }
-private:
-    ChunkDiskList& _disks;
-    boost::mutex& _mutex;
-};
-
 ////////////////////////////////////////////////////////////////////////
 // class ScanScheduler
 ////////////////////////////////////////////////////////////////////////
@@ -82,6 +55,15 @@ ScanScheduler::ScanScheduler(Logger::Ptr logger)
     dbgChunkDisk1 = _disks.front().get();
     dbgScanScheduler = this;
     assert(!_disks.empty());
+}
+
+bool ScanScheduler::removeByHash(std::string const& hash) {
+    boost::lock_guard<boost::mutex> guard(_mutex);
+    int numRemoved = _disks.front()->removeByHash(hash);
+    // Consider creating poisoned list, that is checked during later
+    // read/write ops; this would avoid O(nlogn) update for each
+    // removal.
+    return numRemoved > 0;
 }
 
 void ScanScheduler::queueTaskAct(Task::Ptr incoming) {
@@ -136,10 +118,15 @@ TaskQueuePtr ScanScheduler::taskFinishAct(Task::Ptr finished,
     return _getNextTasks(available);
 }
 
-boost::shared_ptr<Foreman::RunnerWatcher> ScanScheduler::getWatcher() {
-    boost::shared_ptr<ChunkDiskWatcher> w;
-    w.reset(new ChunkDiskWatcher(_disks, _mutex));
-    return w;
+void ScanScheduler::markStarted(Task::Ptr t) {
+    boost::lock_guard<boost::mutex> guard(_mutex);
+    assert(!_disks.empty());
+    _disks.front()->registerInflight(t);
+}
+void ScanScheduler::markFinished(Task::Ptr t) {
+    boost::lock_guard<boost::mutex> guard(_mutex);
+    assert(!_disks.empty());
+    _disks.front()->removeInflight(t);
 }
 
 /// @return true if data is okay.

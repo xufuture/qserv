@@ -52,14 +52,15 @@ public:
                                     TaskQueuePtr running);
     virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
                                        TaskQueuePtr running);
-    virtual boost::shared_ptr<Foreman::RunnerWatcher> getWatcher();
-    static std::string getName()  { return std::string("BlendSched"); }
 
+    // TaskWatcher interface
+    virtual void markStarted(Task::Ptr t);
+    virtual void markFinished(Task::Ptr t);
+
+    static std::string getName()  { return std::string("BlendSched"); }
     bool checkIntegrity();
 
     Foreman::Scheduler* lookup(Task::Ptr p);
-    class Watcher;
-    friend class Watcher;
 private:
     TaskQueuePtr _getNextIfAvail(TaskQueuePtr running);
     bool _integrityHelper() const;

@@ -36,29 +36,6 @@
 namespace lsst {
 namespace qserv {
 namespace worker {
-
-////////////////////////////////////////////////////////////////////////
-// class GroupWatcher
-// Lets the scheduler listen to a Foreman's Runners.
-////////////////////////////////////////////////////////////////////////
-class GroupWatcher : public Foreman::RunnerWatcher {
-public:
-
-    GroupWatcher(GroupScheduler& gs, boost::mutex& mutex)
-        : _gs(gs), _mutex(mutex) {}
-    virtual void handleStart(Task::Ptr t) {
-        boost::lock_guard<boost::mutex> guard(_mutex);
-        // FIXME!!!
-    }
-    virtual void handleFinish(Task::Ptr t) {
-        boost::lock_guard<boost::mutex> guard(_mutex);
-        // FIXME!!!
-    }
-private:
-    GroupScheduler& _gs;
-    boost::mutex& _mutex;
-};
-
 ////////////////////////////////////////////////////////////////////////
 // class GroupScheduler
 ////////////////////////////////////////////////////////////////////////
@@ -66,6 +43,18 @@ GroupScheduler::GroupScheduler(Logger::Ptr logger)
     : _maxRunning(4), // FIXME: set to some multiple of system proc count.
       _logger(logger)
 {
+}
+struct matchHash {
+    explicit matchHash(std::string const& hash_) : hash(hash_) {}
+    bool operator()(Task::Ptr const& t) {
+        return t && (t->hash == hash);
+    }
+    std::string const hash;
+};
+
+bool GroupScheduler::removeByHash(std::string const& hash) {
+    int removed = _queue.removeIf(matchHash(hash));
+    return removed > 0;
 }
 
 void GroupScheduler::queueTaskAct(Task::Ptr incoming) {
@@ -101,12 +90,6 @@ TaskQueuePtr GroupScheduler::taskFinishAct(Task::Ptr finished,
        << ")" << finished->msg->fragment(0).query(0);
     _logger->debug(os.str());
     return _getNextIfAvail(running->size());
-}
-
-boost::shared_ptr<Foreman::RunnerWatcher> GroupScheduler::getWatcher() {
-    boost::shared_ptr<GroupWatcher> w;
-    w.reset(new GroupWatcher(*this, _mutex));
-    return w;
 }
 
 /// @return true if data is okay.

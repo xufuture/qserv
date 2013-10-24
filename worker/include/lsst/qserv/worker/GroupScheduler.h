@@ -31,7 +31,7 @@ namespace qserv {
 namespace worker {
 /// GroupScheduler -- A scheduler that is a cross between FIFO and shared scan.
 /// Tasks are ordered as they come in, except that queries for the
-/// same chunks are grouped together. 
+/// same chunks are grouped together.
 class GroupScheduler : public Foreman::Scheduler {
 public:
     typedef boost::shared_ptr<GroupScheduler> Ptr;
@@ -39,16 +39,16 @@ public:
     GroupScheduler(boost::shared_ptr<Logger> logger);
     virtual ~GroupScheduler() {}
 
+    virtual bool removeByHash(std::string const& hash);
     virtual void queueTaskAct(Task::Ptr incoming);
     virtual TaskQueuePtr nopAct(TaskQueuePtr running);
     virtual TaskQueuePtr newTaskAct(Task::Ptr incoming,
                                     TaskQueuePtr running);
     virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
                                        TaskQueuePtr running);
-    virtual boost::shared_ptr<Foreman::RunnerWatcher> getWatcher();
     static std::string getName()  { return std::string("GroupSched"); }
     bool checkIntegrity();
-    
+
     struct ChunkEqual {
         bool operator()(Task::Ptr const& x, Task::Ptr const& y) {
             if(!x || !y) { return false; }

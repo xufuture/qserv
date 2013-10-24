@@ -65,6 +65,45 @@ inline int taskChunkId(Task const& e) {
     assert(e.msg->has_chunkid());
     return e.msg->chunkid();
 }
+namespace {
+/// @return true if the task is missing a TaskMsg or a chunkId
+inline bool taskBad(ChunkDisk::TaskPtr p) {
+    if(p->msg && p->msg->has_chunkid()) { return false; }
+    return true;
+}
+
+/// @return true if NO elements in the queue test true for taskBad
+///
+template <class Q> // Use template to avoid naming Queue, which is private
+inline bool checkQueueOk(Q& q) {
+    typename Q::Container& container = q.impl();
+    return container.end() == std::find_if(container.begin(), container.end(),
+                                           std::ptr_fun(taskBad));
+}
+
+} // anonymous
+
+////////////////////////////////////////////////////////////////////////
+// ChunkDisk implementation
+////////////////////////////////////////////////////////////////////////
+ChunkDisk::IterablePq::value_type& ChunkDisk::IterablePq::top() {
+    return _c.front();
+}
+ChunkDisk::IterablePq::value_type const& ChunkDisk::IterablePq::top() const {
+    return _c.front();
+}
+void ChunkDisk::IterablePq::push(ChunkDisk::IterablePq::value_type& v) {
+    _c.push_back(v);
+    std::push_heap(_c.begin(), _c.end());
+}
+void ChunkDisk::IterablePq::pop() {
+    std::pop_heap(_c.begin(), _c.end());
+    _c.pop_back();
+}
+void ChunkDisk::IterablePq::_maintainHeap() {
+    std::make_heap(_c.begin(), _c.end());
+}
+
 
 ////////////////////////////////////////////////////////////////////////
 // ChunkDisk implementation
@@ -176,6 +215,21 @@ bool ChunkDisk::empty() const {
     boost::lock_guard<boost::mutex> lock(_queueMutex);
     return _activeTasks.empty() && _pendingTasks.empty();
 }
+struct matchHash {
+    matchHash(std::string const& hash_) : hash(hash_) {}
+    bool operator()(ChunkDisk::TaskPtr const& t) {
+        return t && t->hash == hash;
+    }
+    std::string hash;
+};
+int ChunkDisk::removeByHash(std::string const& hash) {
+    boost::lock_guard<boost::mutex> lock(_queueMutex);
+    int numErased;
+    matchHash mh(hash);
+    numErased = _activeTasks.removeIf(mh);
+    numErased += _pendingTasks.removeIf(mh);
+    return numErased;
+}
 
 void
 ChunkDisk::registerInflight(TaskPtr const& e) {
@@ -203,22 +257,6 @@ void ChunkDisk::removeInflight(TaskPtr const& e) {
     }
 }
 
-namespace {
-/// @return true if the task is missing a TaskMsg or a chunkId
-inline bool taskBad(ChunkDisk::TaskPtr p) {
-    if(p->msg && p->msg->has_chunkid()) { return false; }
-    return true;
-}
-
-/// @return true if NO elements in the queue test true for taskBad
-///
-template <class Q> // Use template to avoid naming Queue, which is private
-inline bool checkQueueOk(Q& q) {
-    typename Q::Container& container = q.impl();
-    return container.end() == std::find_if(container.begin(), container.end(),
-                                           std::ptr_fun(taskBad));
-}
-} // anonymous
 
 // @return true if things are okay
 bool ChunkDisk::checkIntegrity() {

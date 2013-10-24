@@ -66,6 +66,22 @@ public:
     explicit GroupedQueue(int maxClique=0)
         : _maxClique(maxClique) {}
 
+    /// @return number removed
+    template <class F>
+    int removeIf(F f) {
+        int numErased = 0;
+        typename Deque::iterator i = _deque.begin();
+        typename Deque::iterator e = _deque.end();
+        while(i != e) {
+            if(f(*i)) {
+                ++numErased;
+                i = _deque.erase(i);
+            } else { // no match, continue
+                ++i;
+            }
+        }
+        return numErased;
+    }
     void insert(T const& t) {
         if(_maxClique == 1) { // Never join friends
             _deque.push_front(t);

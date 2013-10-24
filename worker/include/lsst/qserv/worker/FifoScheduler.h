@@ -1,6 +1,6 @@
-/* 
+/*
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2010-2013 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -42,9 +42,6 @@ public:
                                     TaskQueuePtr running);
     virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
                                        TaskQueuePtr running);
-    virtual boost::shared_ptr<Foreman::RunnerWatcher> getWatcher() {
-        return boost::shared_ptr<Foreman::RunnerWatcher>();
-    }
     static std::string getName() { return std::string("FifoSched"); }
 private:
     TaskQueuePtr _fetchTask();

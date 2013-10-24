@@ -40,13 +40,17 @@ public:
     ScanScheduler(boost::shared_ptr<Logger> logger);
     virtual ~ScanScheduler() {}
 
+    virtual bool removeByHash(std::string const& hash);
     virtual void queueTaskAct(Task::Ptr incoming);
     virtual TaskQueuePtr nopAct(TaskQueuePtr running);
     virtual TaskQueuePtr newTaskAct(Task::Ptr incoming,
                                     TaskQueuePtr running);
     virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
                                        TaskQueuePtr running);
-    virtual boost::shared_ptr<Foreman::RunnerWatcher> getWatcher();
+    // TaskWatcher interface
+    virtual void markStarted(Task::Ptr t);
+    virtual void markFinished(Task::Ptr t);
+
     static std::string getName()  { return std::string("ScanSched"); }
     bool checkIntegrity();
 private:
@@ -60,7 +64,7 @@ private:
     int _maxRunning;
 };
 }}} // lsst::qserv::worker
-extern lsst::qserv::worker::ScanScheduler* dbgScanScheduler; //< A symbol for gdb 
+extern lsst::qserv::worker::ScanScheduler* dbgScanScheduler; //< A symbol for gdb
 extern lsst::qserv::worker::ChunkDisk* dbgChunkDisk1; //< A symbol for gdb
 #endif // LSST_QSERV_WORKER_SCANSCHEDULER_H
 

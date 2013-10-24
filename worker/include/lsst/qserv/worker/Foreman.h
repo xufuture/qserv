@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,14 +10,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 //  class Foreman -- A class that implements a pooling thread manager.
@@ -29,8 +29,8 @@
 //
 //  Approach: Using WorkQueue's API as a starting point, expand to
 //  include a pluggable scheduler API and fill in the plumbing to make
-//  sure the scheduler can see queued and running tasks. 
-// 
+//  sure the scheduler can see queued and running tasks.
+//
 //  The scheduler must be defined to handle multiple scheduling events:
 //  nop: nothing has happened (no-operation) in terms of new tasks or
 //  task completions, but the scheduler may decide that additional
@@ -64,33 +64,29 @@ public:
     /// object implementing this and make calls to report start and
     /// finish events for tasks they run. Schedulers must return
     /// RunnerWatcher objects so that runners can make reports.
-    class RunnerWatcher {
+    class TaskWatcher {
     public:
-        virtual ~RunnerWatcher() {}
-        virtual void handleStart(Task::Ptr t) {}
-        virtual void handleFinish(Task::Ptr t) {}
+        virtual ~TaskWatcher() {}
+        virtual void markStarted(Task::Ptr t) {}
+        virtual void markFinished(Task::Ptr t) {}
     };
-    class Scheduler {
+    class Scheduler : public TaskWatcher {
     public:
         typedef boost::shared_ptr<Scheduler> Ptr;
         virtual ~Scheduler() {}
-    
+
+        virtual bool removeByHash(std::string const& hash) {}
         virtual void queueTaskAct(Task::Ptr incoming) = 0;
         virtual TaskQueuePtr nopAct(TaskQueuePtr running) = 0;
         virtual TaskQueuePtr newTaskAct(Task::Ptr incoming,
                                         TaskQueuePtr running) = 0;
         virtual TaskQueuePtr taskFinishAct(Task::Ptr finished,
                                            TaskQueuePtr running) = 0;
-        virtual boost::shared_ptr<RunnerWatcher> getWatcher() {
-            return boost::shared_ptr<RunnerWatcher>();
-        }
     };
 
-    virtual void squashByHash(std::string const& hash) {}
+    virtual bool squashByHash(std::string const& hash) {}
 
     virtual bool accept(boost::shared_ptr<TaskMsg> msg) { return false; }
-    //virtual void addWatcher(Watcher::Ptr w); // FIXME remove
-    //virtual void removeWatcher(Watcher::Ptr w); // FIXME remove
     virtual ~Foreman() {}
 
 protected:

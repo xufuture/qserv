@@ -35,9 +35,6 @@
 #include "lsst/qserv/worker/Logger.h"
 #include "lsst/qserv/worker/GroupScheduler.h"
 #include "lsst/qserv/worker/ScanScheduler.h"
-#if 0
-#include <boost/make_shared.hpp>
-#endif
 
 template <class Sched>
 inline Sched* other(Sched* notThis, Sched* a, Sched* b) {
@@ -47,45 +44,6 @@ lsst::qserv::worker::BlendScheduler* dbgBlendScheduler=0; //< A symbol for gdb
 namespace lsst {
 namespace qserv {
 namespace worker {
-
-////////////////////////////////////////////////////////////////////////
-// class BlendScheduler::Watcher
-// Lets the scheduler listen to a Foreman's Runners.
-////////////////////////////////////////////////////////////////////////
-class BlendScheduler::Watcher : public Foreman::RunnerWatcher {
-public:
-
-    Watcher(BlendScheduler& bs, boost::mutex& mutex)
-        : _bs(bs), _mutex(mutex) {
-        if(!_bs._group || !_bs._scan) {
-            throw std::logic_error("Unitialized schedulers");
-        }
-        _gWatcher = _bs._group->getWatcher();
-        _sWatcher = _bs._scan->getWatcher();
-    }
-    virtual void handleStart(Task::Ptr t) {
-        Foreman::Scheduler* s = _bs.lookup(t);
-        if(s == _bs._group.get()) {
-            _gWatcher->handleStart(t);
-        } else {
-            _sWatcher->handleStart(t);
-        }
-    }
-    virtual void handleFinish(Task::Ptr t) {
-        Foreman::Scheduler* s = _bs.lookup(t);
-        if(s == _bs._group.get()) {
-            _gWatcher->handleFinish(t);
-        } else {
-            _sWatcher->handleFinish(t);
-        }
-    }
-private:
-    BlendScheduler& _bs;
-    boost::mutex& _mutex;
-    boost::shared_ptr<Foreman::RunnerWatcher> _gWatcher;
-    boost::shared_ptr<Foreman::RunnerWatcher> _sWatcher;
-};
-
 ////////////////////////////////////////////////////////////////////////
 // class BlendScheduler
 ////////////////////////////////////////////////////////////////////////
@@ -171,10 +129,22 @@ TaskQueuePtr BlendScheduler::taskFinishAct(Task::Ptr finished,
     return t;
 }
 
-boost::shared_ptr<Foreman::RunnerWatcher> BlendScheduler::getWatcher() {
-    boost::shared_ptr<Watcher> w;
-    w.reset(new Watcher(*this, _mapMutex));
-    return w;
+void BlendScheduler::markStarted(Task::Ptr t) {
+    Foreman::Scheduler* s = lookup(t);
+    if(s == _group.get()) {
+        _group->markStarted(t);
+    } else {
+        _scan->markStarted(t);
+    }
+}
+
+void BlendScheduler::markFinished(Task::Ptr t) {
+    Foreman::Scheduler* s = lookup(t);
+    if(s == _group.get()) {
+        _group->markFinished(t);
+    } else {
+        _scan->markFinished(t);
+    }
 }
 
 /// @return true if data is okay.
