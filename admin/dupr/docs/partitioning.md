@@ -1,8 +1,26 @@
 Partitioning
 ============
 
-The motivations for partitioning data in Qserv are described in the following excerpt from
-[Qserv: A distributed shared-nothing database for the LSST catalog](http://dl.acm.org/citation.cfm?id=2063364):
+Overview
+--------
+
+The largest LSST tables will not fit on a single node in the projected
+production time-frame, and so must be partitioned into smaller pieces
+and spread over many nodes. Qserv uses a spatial partitioning scheme. A
+dominant table is chosen containing sky coordinates that are used for
+partitioning; for LSST data releases, this is the `Object` table. All other
+tables that contain a foreign key into the `Object` table are partitioned by
+the position of the associated `Object`, or by a fall-back position if an
+associated `Object` is not guaranteed to have been assigned. This means for
+example that all the single-exposure sources associated with a particular
+`Object` will end up in the same partition, even if that `Object` has
+non-trivial proper motion. Large tables (e.g. catalogs from other surveys)
+that are not directly related to `Object` are also partitioned by position,
+using the same scheme and parameters. This results in perfectly aligned
+partition boundaries, simplifying the implementation of near-neighbor joins.
+The following excerpt from
+[Qserv: A distributed shared-nothing database for the LSST catalog](http://dl.acm.org/citation.cfm?id=2063364)
+further describes some of the motivations for partitioning data in Qserv:
 
 > Qserv divides data into spatial partitions of roughly the same area. Since
 > objects occur at a similar density (within an order of magnitude) throughout
@@ -106,9 +124,8 @@ of the box must be computed.
 ![A subchunk with overlap and neighbors](subchunks.png)
 
 In the image above, the white square on the right is a subchunk. The
-full-overlap region of this subchunk consists of the union of the light blue
-and pink regions around it. The self-overlap region of the subchunk
-corresponds to the pink region. On the left, a tiling of multiple subchunks
+overlap region of this subchunk consists of the light blue
+region around it. On the left, a tiling of multiple subchunks
 is shown.
 
 Qserv implements a spatial join that finds objects in two distinct tables
@@ -128,48 +145,8 @@ following over all subchunks:
 ~~~
 
 Here, U_p and V_p correspond to the subchunk p of U and V (which must be
-identically partitioned), and OV_p contains the points inside the full-overlap
-region of p. For spatial self-join, one can instead run:
-
-~~~sql
-    (
-        SELECT ...
-        FROM T_p as t1, T_p as t2
-        WHERE scisql_angSep(t1.ra, t1.decl, t2.ra, t2.decl) <= R AND ...
-    ) UNION ALL (
-        SELECT ...
-        FROM T_p as t1, ST_p as t2
-        WHERE scisql_angSep(t1.ra, t1.decl, t2.ra, t2.decl) <= R AND ...
-    ) UNION ALL (
-        SELECT ...
-        FROM ST_p as t1, T_p as t2
-        WHERE scisql_angSep(t1.ra, t1.decl, t2.ra, t2.decl) <= R AND ...
-    )
-~~~
-
-Here, T_p is the subchunk p of T. ST_p contains the points inside the
-self-overlap region of p and will be approximately half the size of the
-full-overlap region. This works because the self overlap region is constructed
-such that for all u,v with u in T_p and v in ST_p, u is not in the self-overlap
-region of the subchunk for v (in other words, the query above will not return
-duplicates). If the `WHERE` clause is symmetric and only one of each pair of
-match pairs (u,v), (v,u) needs to be returned, then one can optimize further:
-
-~~~sql
-    (
-        SELECT ...
-        FROM T_p as t1, T_p as t2
-        WHERE t1.pk < t2.pk AND
-              scisql_angSep(t1.ra, t1.decl, t2.ra, t2.decl) <= R AND ...
-    ) UNION ALL (
-        SELECT ...
-        FROM T_p as t1, ST_p as t2
-        WHERE scisql_angSep(t1.ra, t1.decl, t2.ra, t2.decl) <= R AND ...
-    )
-~~~
-
-Distinguishing between full and self overlap might turn out to be more trouble
-than it is worth.
+identically partitioned), and OV_p contains the points inside the overlap
+region of p.
 
 Match Tables
 ------------
@@ -205,3 +182,18 @@ OV_p is the subset of V containing points in the full overlap region of
 subchunk p. Note that queries which involve only the match table need to be
 rewritten to discard duplicates, since a match pair linking positions in two
 different sub-chunks will be stored twice (once in each sub-chunk).
+
+Object movement
+---------------
+
+The fact all tables will be partitioned according to `Object` RA/Dec implies
+that in rare cases when an object is close to the partition edge, some of its
+sources may end up in a partition that is different from the "natural" one for
+the source’s own ra/dec. To address this issue, the qserv master will expand
+the search region by an distance R when determining which partitions to query,
+where R is large enough to capture object motion for the duration of the LSST
+survey to date. The WHERE clause applied by Qserv workers to their `Source`
+table partitions will use the original search region to ensure that the query
+semantics are preserved. Without this, some sources inside the search region
+assigned to objects outside the search region _and_ that lie across partition
+boundaries  might be missed.

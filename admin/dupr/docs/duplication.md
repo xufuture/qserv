@@ -264,6 +264,29 @@ For a description of the possible options, see the config files referenced
 above. Alternatively, run `qserv-htm-index --help` or `qserv-duplicate --help`
 for a complete list.
 
+Estimating Duplicated Data Volumes
+----------------------------------
+
+A natural question is whether there is a way to estimate how large a duplicated
+data set will be without actually generating it. Answering this question is the
+purpose of the `qserv-estimate-stats` utility. Passing the same parameters you
+would pass to `qserv-duplicate` will yield statistics over an estimate of the
+duplicated chunk and sub-chunk populations, including an estimate of the total
+record count. Continuing with the example above:
+
+~~~~sh
+qserv-estimate-stats \
+    --config-file=config/PT1.2/Object.cfg \
+    --config-file=config/PT1.2/common.cfg  \
+    --index=index/Object/htm_index.bin \
+    --lon-min=60 --lon-max=72 --lat-min=-30 --lat-max=-18 \
+    --out.dir=.
+~~~~
+
+will print out estimated statistics for the duplicated `Object` table in JSON
+format, and save the estimated chunk/sub-chunk populations to a file in the
+current directory.
+
 Distributed Operation
 =====================
 
@@ -279,7 +302,7 @@ storage (if available), but then indexing and duplication performance is
 not likely to scale well with node count.
 
 Both `qserv-htm-index` and `qserv-duplicate` have been designed with such
-scenarios in mind, and can be run in distributed fashion. Here's how.
+scenarios in mind, and can be run in distributed fashion. Here’s how.
 
 Distributed Indexing
 --------------------
@@ -287,7 +310,7 @@ Distributed Indexing
 The first task is to split up the input into pieces that fit on the local
 storage of the N indexing nodes. Each indexing node should have free space
 slightly larger than the amount of input it is processing, so that there is
-room for it's portion of the index.
+room for it’s portion of the index.
 
 Assuming that input pieces are stored in some well known location across the
 cluster, one would then run something like:
@@ -322,8 +345,8 @@ on each of the N duplication nodes. When M > 1, the contents of
 
 Note that if M = 1, the `node_XXXXX` directories are omitted. The indexer
 assigns non-empty triangles to a duplication node by hashing, so that each
-duplication node receives a roughly identical number of triangle files. The
-`htm_index.bin` file at the root of the output directory tree stores a record
+duplication node is assigned a roughly identical number of triangle files.
+The `htm_index.bin` file at the root of the output directory tree stores a record
 count for each non-empty triangle in the index. It is stored in a binary file
 format that is “catenable”, meaning that the index file obtained by
 concatenating the index files for inputs I1, I2, ... in any order is valid and
