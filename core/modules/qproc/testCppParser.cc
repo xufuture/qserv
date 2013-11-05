@@ -752,6 +752,22 @@ BOOST_AUTO_TEST_CASE(Petasky1) {
         " FROM Source GROUP BY objectId HAVING  c > 1000 LIMIT 10;";
     testStmt3(qsTest, stmt);
 }
+
+BOOST_AUTO_TEST_CASE(Expression) {
+    // A query with some expressions
+    std::string stmt = "SELECT "
+        "ROUND(scisql_fluxToAbMag(uFlux_PS)-scisql_fluxToAbMag(gFlux_PS), 0) AS UG, "
+        "ROUND(scisql_fluxToAbMag(gFlux_PS)-scisql_fluxToAbMag(rFlux_PS), 0) AS GR "
+        "FROM Object "
+        "WHERE scisql_fluxToAbMag(gFlux_PS) < 0.2 "
+        "AND scisql_fluxToAbMag(uFlux_PS)-scisql_fluxToAbMag(gFlux_PS) >=-0.27 "
+        "AND scisql_fluxToAbMag(gFlux_PS)-scisql_fluxToAbMag(rFlux_PS) >=-0.24 "
+        "AND scisql_fluxToAbMag(rFlux_PS)-scisql_fluxToAbMag(iFlux_PS) >=-0.27 "
+        "AND scisql_fluxToAbMag(iFlux_PS)-scisql_fluxToAbMag(zFlux_PS) >=-0.35 "
+        "AND scisql_fluxToAbMag(zFlux_PS)-scisql_fluxToAbMag(yFlux_PS) >=-0.40;";
+    testStmt3(qsTest, stmt);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(EquiJoin, ParserFixture)
@@ -799,22 +815,6 @@ BOOST_AUTO_TEST_CASE(Using) {
         "FROM Filter f JOIN Science_Ccd_Exposure USING(exposureId);";
     testStmt3(qsTest, stmt);
 }
-
-BOOST_AUTO_TEST_CASE(Expression) {
-    // A query with some expressions
-    std::string stmt = "SELECT "
-        "ROUND(scisql_fluxToAbMag(uFlux_PS)-scisql_fluxToAbMag(gFlux_PS), 0) AS UG, "
-        "ROUND(scisql_fluxToAbMag(gFlux_PS)-scisql_fluxToAbMag(rFlux_PS), 0) AS GR "
-        "FROM Object "
-        "WHERE scisql_fluxToAbMag(gFlux_PS) < 0.2 "
-        "AND scisql_fluxToAbMag(uFlux_PS)-scisql_fluxToAbMag(gFlux_PS) >=-0.27 "
-        "AND scisql_fluxToAbMag(gFlux_PS)-scisql_fluxToAbMag(rFlux_PS) >=-0.24 "
-        "AND scisql_fluxToAbMag(rFlux_PS)-scisql_fluxToAbMag(iFlux_PS) >=-0.27 "
-        "AND scisql_fluxToAbMag(iFlux_PS)-scisql_fluxToAbMag(zFlux_PS) >=-0.35 "
-        "AND scisql_fluxToAbMag(zFlux_PS)-scisql_fluxToAbMag(yFlux_PS) >=-0.40;";
-    testStmt3(qsTest, stmt);
-}
-
 
 BOOST_AUTO_TEST_SUITE_END()
 
