@@ -21,7 +21,7 @@
  */
 // xrdfile.h -- Wrapper for xrootd client API functions
 
-#include "lsst/qserv/master/xrdfile.h"
+#include "xrdc/xrdfile.h"
 
 //#define FAKE_XRD 1
 //#define QSM_PROFILE_XRD 1
@@ -43,7 +43,7 @@
 #endif
 
 #if QSM_PROFILE_XRD
-#include "lsst/qserv/master/Timer.h"
+#include "util/Timer.h"
 #endif
 
 #if FAKE_XRD // Fake placeholder implemenation

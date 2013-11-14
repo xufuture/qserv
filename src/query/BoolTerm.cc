@@ -26,11 +26,11 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/BoolTerm.h"
+#include "query/BoolTerm.h"
 #include <stdexcept>
 #include <algorithm>
-#include "lsst/qserv/master/QueryTemplate.h"
-#include "lsst/qserv/master/ValueExpr.h"
+#include "query/QueryTemplate.h"
+#include "query/ValueExpr.h"
 
 namespace lsst {
 namespace qserv {

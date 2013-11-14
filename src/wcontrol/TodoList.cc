@@ -20,11 +20,11 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
  
-#include "lsst/qserv/worker/TodoList.h"
+#include "wcontrol/TodoList.h"
 #include <boost/regex.hpp>
 
-#include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/TaskMsgDigest.h"
+#include "wbase/Base.h"
+#include "proto/TaskMsgDigest.h"
 
 namespace qWorker = lsst::qserv::worker;
 

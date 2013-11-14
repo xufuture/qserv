@@ -20,10 +20,10 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /// Implements MySqlFsDirectory, which rejects directory modification ops.  
-#include "lsst/qserv/worker/MySqlFsDirectory.h"
+#include "xrdfs/MySqlFsDirectory.h"
 
 #include "XrdSys/XrdSysError.hh"
-#include "lsst/qserv/worker/Logger.h"
+#include "log/Logger.h"
 
 #include <errno.h>
 

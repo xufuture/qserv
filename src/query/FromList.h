@@ -28,8 +28,8 @@
   * @author Daniel L. Wang, SLAC
   */
 #include <boost/shared_ptr.hpp>
-#include "lsst/qserv/master/ColumnRefMap.h"
-#include "lsst/qserv/master/TableRefN.h"
+#include "parser/ColumnRefMap.h"
+#include "query/TableRefN.h"
 
 namespace lsst {
 namespace qserv {

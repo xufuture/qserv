@@ -28,7 +28,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/QuerySession.h"
+#include "qproc/QuerySession.h"
 
 #include <algorithm>
 #include <iostream>
@@ -36,16 +36,16 @@
 
 #include <antlr/NoViableAltException.hpp>
 
-#include "lsst/qserv/master/Constraint.h"
-#include "lsst/qserv/master/SelectParser.h"
-#include "lsst/qserv/master/SelectStmt.h"
-#include "lsst/qserv/master/SelectList.h"
-#include "lsst/qserv/master/WhereClause.h"
-#include "lsst/qserv/master/QueryContext.h"
-#include "lsst/qserv/master/QueryMapping.h"
-#include "lsst/qserv/master/QueryPlugin.h"
-#include "lsst/qserv/master/ParseException.h"
-#include "lsst/qserv/master/ifaceMeta.h" // Retrieve metadata object
+#include "query/Constraint.h"
+#include "parser/SelectParser.h"
+#include "query/SelectStmt.h"
+#include "query/SelectList.h"
+#include "query/WhereClause.h"
+#include "query/QueryContext.h"
+#include "qana/QueryMapping.h"
+#include "qana/QueryPlugin.h"
+#include "parser/ParseException.h"
+#include "meta/ifaceMeta.h" // Retrieve metadata object
 
 #define DEBUG 0
 

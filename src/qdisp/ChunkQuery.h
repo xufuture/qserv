@@ -28,9 +28,9 @@
 #include "XrdPosix/XrdPosixCallBack.hh"
 
 // Package
-#include "lsst/qserv/master/transaction.h"
-#include "lsst/qserv/master/xrdfile.h"
-#include "lsst/qserv/master/Timer.h"
+#include "control/transaction.h"
+#include "xrdc/xrdfile.h"
+#include "util/Timer.h"
 
 namespace lsst {
 namespace qserv {

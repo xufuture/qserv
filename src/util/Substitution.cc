@@ -26,7 +26,7 @@
 #include <vector>
 
 // Package
-#include "lsst/qserv/master/Substitution.h"
+#include "util/Substitution.h"
 
 namespace qMaster = lsst::qserv::master;
 

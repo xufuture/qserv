@@ -23,8 +23,8 @@
 // simple logging facility that abstracts log messages away from the
 // xrootd system log so that qserv worker code can be debugged outside
 // of a running xrootd instance. It also provides levels of logging
-// priority as a mechanism for reducing logging clutter.
-#include "lsst/qserv/worker/Logger.h"
+// priority as a mechanism for reducing logging clutter. 
+#include "log/Logger.h"
 #include <sstream>
 #include <iostream>
 #include "XrdSys/XrdSysLogger.hh"

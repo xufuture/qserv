@@ -21,7 +21,7 @@
  */
 #ifndef LSST_QSERV_WORKER_XRDLOGGER_H
 #define LSST_QSERV_WORKER_XRDLOGGER_H
-#include "lsst/qserv/worker/Base.h"
+#include "wbase/Base.h"
 #include "XrdSys/XrdSysError.hh"
 
 namespace lsst {

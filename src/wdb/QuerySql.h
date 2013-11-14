@@ -33,7 +33,7 @@
 #include <deque>
 #include <boost/shared_ptr.hpp>
 
-#include "lsst/qserv/worker/Task.h"
+#include "wcontrol/Task.h"
 namespace lsst { namespace qserv { namespace worker {
 class Task;
 

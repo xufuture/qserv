@@ -31,10 +31,10 @@
 // Boost
 #include <boost/make_shared.hpp>
 // LSST 
-#include "lsst/qserv/master/xrdfile.h"
-#include "lsst/qserv/master/thread.h"
-#include "lsst/qserv/master/xrootd.h"
-#include "lsst/qserv/master/TableMerger.h"
+#include "xrdc/xrdfile.h"
+#include "control/thread.h"
+#include "xrdc/xrootd.h"
+#include "merger/TableMerger.h"
 // Xrootd
 #include "XrdPosix/XrdPosixCallBack.hh"
 

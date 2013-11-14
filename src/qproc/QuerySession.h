@@ -32,12 +32,12 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "lsst/qserv/master/Constraint.h"
-#include "lsst/qserv/master/ChunkQuerySpec.h"
-#include "lsst/qserv/master/ChunkSpec.h"
+#include "query/Constraint.h"
+#include "qdisp/ChunkQuerySpec.h"
+#include "qdisp/ChunkSpec.h"
 
-#include "lsst/qserv/master/QueryPlugin.h"
-#include "lsst/qserv/master/mergeTypes.h"
+#include "qana/QueryPlugin.h"
+#include "merger/mergeTypes.h"
 
 namespace lsst {
 namespace qserv {

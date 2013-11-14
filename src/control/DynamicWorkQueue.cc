@@ -20,7 +20,7 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /// @file
-#include "lsst/qserv/master/DynamicWorkQueue.h"
+#include "control/DynamicWorkQueue.h"
 
 #include <sys/time.h>
 #include <stdexcept>

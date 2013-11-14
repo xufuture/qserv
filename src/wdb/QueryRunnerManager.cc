@@ -19,9 +19,9 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#include "lsst/qserv/worker/QueryRunnerManager.h"
-#include "lsst/qserv/worker/QueryRunner.h"
-#include "lsst/qserv/worker/Config.h"
+#include "wdb/QueryRunnerManager.h"
+#include "wdb/QueryRunner.h"
+#include "wconfig/Config.h"
 namespace qWorker = lsst::qserv::worker;
 
 ////////////////////////////////////////////////////////////////////////

@@ -38,11 +38,11 @@
 #include "XrdPosix/XrdPosixXrootd.hh"
 
 // Package
-#include "lsst/qserv/master/ChunkQuery.h"
-#include "lsst/qserv/master/xrootd.h"
-#include "lsst/qserv/master/AsyncQueryManager.h"
-#include "lsst/qserv/master/PacketIter.h"
-#include "lsst/qserv/master/DynamicWorkQueue.h"
+#include "qdisp/ChunkQuery.h"
+#include "xrdc/xrootd.h"
+#include "control/AsyncQueryManager.h"
+#include "util/PacketIter.h"
+#include "control/DynamicWorkQueue.h"
 
 namespace lsst {
 namespace qserv {

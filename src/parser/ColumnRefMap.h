@@ -31,7 +31,7 @@
   * @author Daniel L. Wang, SLAC
   */
 #include <ostream>
-#include "lsst/qserv/master/ColumnRefH.h"
+#include "parser/ColumnRefH.h"
 namespace lsst {
 namespace qserv {
 namespace master {

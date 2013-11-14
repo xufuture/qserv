@@ -33,9 +33,9 @@
 #include <antlr/AST.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "lsst/qserv/master/ColumnRef.h"
-#include "lsst/qserv/master/ColumnRefMap.h"
-#include "lsst/qserv/master/ValueExpr.h"
+#include "query/ColumnRef.h"
+#include "parser/ColumnRefMap.h"
+#include "query/ValueExpr.h"
 
 namespace lsst {
 namespace qserv {

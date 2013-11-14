@@ -27,13 +27,13 @@
   * @author Daniel L. Wang, SLAC
   */
 
-#include "lsst/qserv/master/AggOp.h"
+#include "query/AggOp.h"
 
 #include <sstream>
 #include <stdexcept>
-#include "lsst/qserv/master/FuncExpr.h"
-#include "lsst/qserv/master/ValueExpr.h"
-#include "lsst/qserv/master/ValueFactor.h"
+#include "query/FuncExpr.h"
+#include "query/ValueExpr.h"
+#include "query/ValueFactor.h"
 
 namespace lsst { 
 namespace qserv {

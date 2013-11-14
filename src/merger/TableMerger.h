@@ -37,7 +37,7 @@
 #include <boost/thread.hpp> // for mutex. 
 #include <boost/shared_ptr.hpp> // for mutex. 
 
-#include "lsst/qserv/master/mergeTypes.h"
+#include "merger/mergeTypes.h"
 
 namespace lsst {
 namespace qserv {

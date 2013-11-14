@@ -27,8 +27,8 @@
   * instances.
   *
   * @author Daniel L. Wang, SLAC
-  */
-#include "lsst/qserv/worker/QueryRunner.h"
+  */ 
+#include "wdb/QueryRunner.h"
 #include <iostream>
 #include <fcntl.h>
 
@@ -36,14 +36,14 @@
 #include <boost/regex.hpp>
 #include "lsst/qserv/SqlErrorObject.hh"
 #include "lsst/qserv/SqlConnection.hh"
-#include "lsst/qserv/worker/QueryPhyResult.h"
-#include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/worker/Config.h"
-#include "lsst/qserv/worker/Logger.h"
-#include "lsst/qserv/worker/SqlFragmenter.h"
-#include "lsst/qserv/constants.h"
-#include "lsst/qserv/worker/QuerySql.h"
-#include "lsst/qserv/worker/QuerySql_Batch.h"
+#include "wdb/QueryPhyResult.h"
+#include "wbase/Base.h"
+#include "wconfig/Config.h"
+#include "log/Logger.h"
+#include "util/SqlFragmenter.h"
+#include "global/constants.h"
+#include "wdb/QuerySql.h"
+#include "wdb/QuerySql_Batch.h"
 
 using lsst::qserv::SqlErrorObject;
 using lsst::qserv::SqlConfig;

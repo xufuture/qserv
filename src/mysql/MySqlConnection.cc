@@ -25,7 +25,7 @@
 // delegates). 
 
 
-#include "MySqlConnection.h" // FIXME: switch to lsst/... namespace
+#include "mysql/MySqlConnection.h" // FIXME: switch to lsst/... namespace
 #include "SqlConfig.hh"
 
 using namespace lsst::qserv;

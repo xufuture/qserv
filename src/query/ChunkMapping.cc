@@ -26,8 +26,8 @@
 // query without requiring another walk through the original parse
 // tree.
 
-#include "lsst/qserv/master/ChunkMapping.h"
-#include "lsst/qserv/master/ChunkMeta.h"
+#include "query/ChunkMapping.h"
+#include "qdisp/ChunkMeta.h"
 namespace qMaster = lsst::qserv::master;
 
 qMaster::ChunkMapping::Map 

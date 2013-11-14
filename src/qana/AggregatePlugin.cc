@@ -27,17 +27,17 @@
 // No public interface (no AggregatePlugin.h)
 #include <string>
 #include <stdexcept>
-#include "lsst/qserv/master/common.h"
-#include "lsst/qserv/master/QueryContext.h"
-#include "lsst/qserv/master/QueryPlugin.h"
-#include "lsst/qserv/master/QueryTemplate.h"
-#include "lsst/qserv/master/ValueExpr.h"
-#include "lsst/qserv/master/ValueFactor.h"
-#include "lsst/qserv/master/FuncExpr.h"
+#include "util/common.h"
+#include "query/QueryContext.h"
+#include "qana/QueryPlugin.h"
+#include "query/QueryTemplate.h"
+#include "query/ValueExpr.h"
+#include "query/ValueFactor.h"
+#include "query/FuncExpr.h"
 
-#include "lsst/qserv/master/SelectList.h"
-#include "lsst/qserv/master/SelectStmt.h"
-#include "lsst/qserv/master/AggOp.h"
+#include "query/SelectList.h"
+#include "query/SelectStmt.h"
+#include "query/AggOp.h"
 
 
 namespace lsst {

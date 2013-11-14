@@ -25,7 +25,7 @@
 // When the WorkQueue is destructed, it poisons the queue and waits until
 // all threads have died before returning.
 //
-#include "lsst/qserv/common/WorkQueue.h"
+#include "util/WorkQueue.h"
 #include <iostream>
 namespace qCommon = lsst::qserv::common;
 

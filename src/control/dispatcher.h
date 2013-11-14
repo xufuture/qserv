@@ -30,9 +30,11 @@
    *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/Constraint.h" 
-#include "lsst/qserv/master/transaction.h"
-#include "lsst/qserv/master/TableMerger.h"
+#include "util/common.h"
+#include "query/Constraint.h" 
+#include "control/transaction.h" 
+#include "xrdc/xrdfile.h"
+#include "merger/TableMerger.h"
 
 namespace lsst { namespace qserv { namespace master {
 class ChunkSpec; // Forward    

@@ -26,13 +26,13 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/HavingClause.h"
+#include "query/HavingClause.h"
 
 #include <iostream>
 #include <boost/make_shared.hpp>
 
-#include "lsst/qserv/master/BoolTerm.h"
-#include "lsst/qserv/master/QueryTemplate.h"
+#include "query/BoolTerm.h"
+#include "query/QueryTemplate.h"
 
 namespace lsst { namespace qserv { namespace master {
 

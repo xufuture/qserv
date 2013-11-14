@@ -28,7 +28,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/worker/SqlFragmenter.h"
+#include "util/SqlFragmenter.h"
 
 namespace qWorker = lsst::qserv::worker;
 

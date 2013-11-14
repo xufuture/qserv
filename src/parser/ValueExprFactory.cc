@@ -26,12 +26,12 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/ValueExprFactory.h"
-#include "lsst/qserv/master/ValueFactorFactory.h"
-#include "lsst/qserv/master/ColumnRefH.h"
-#include "lsst/qserv/master/ValueExpr.h" // For ValueExpr, FuncExpr
-#include "lsst/qserv/master/ValueFactor.h" // For ValueFactor
-#include "lsst/qserv/master/ParseException.h" //
+#include "parser/ValueExprFactory.h"
+#include "parser/ValueFactorFactory.h"
+#include "parser/ColumnRefH.h"
+#include "query/ValueExpr.h" // For ValueExpr, FuncExpr
+#include "query/ValueFactor.h" // For ValueFactor
+#include "parser/ParseException.h" //
 #include "SqlSQL2TokenTypes.hpp" // antlr-generated
 
 using antlr::RefAST;

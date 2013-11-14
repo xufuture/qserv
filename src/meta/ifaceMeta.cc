@@ -31,10 +31,10 @@
   */
 
 
-#include "lsst/qserv/master/ifaceMeta.h"
+#include "meta/ifaceMeta.h"
 #include <stdexcept>
-#include "lsst/qserv/master/MetadataCache.h"
-#include "lsst/qserv/master/SessionManager.h"
+#include "meta/MetadataCache.h"
+#include "control/SessionManager.h"
 
 #include <boost/make_shared.hpp>
 

@@ -24,9 +24,9 @@
 /// response if a match is found (error if no match). StatVS() always
 /// provides a particular arbitrary response indicating a free disk
 /// space abundance. 
-#include "lsst/qserv/worker/QservOss.h"
+#include "xrdoss/QservOss.h"
 #include "lsst/qserv/QservPath.hh"
-#include "lsst/qserv/worker/Logger.h"
+#include "log/Logger.h"
 #include <algorithm>
 #include <cstdarg>
 #include <deque>
@@ -36,8 +36,8 @@
 #include <sstream>
 #include <sys/time.h>
 #include "XrdSys/XrdSysLogger.hh"
-#include "lsst/qserv/worker/MySqlExportMgr.h"
-#include "lsst/qserv/worker/XrdName.h"
+#include "xrdfs/MySqlExportMgr.h"
+#include "xrdfs/XrdName.h"
 
 using namespace lsst::qserv::worker;
 

@@ -39,7 +39,7 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 
 // Package
-#include "lsst/qserv/master/transaction.h"
+#include "control/transaction.h"
 
 namespace lsst {
 namespace qserv {

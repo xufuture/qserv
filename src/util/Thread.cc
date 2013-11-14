@@ -20,7 +20,7 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
  
-#include "lsst/qserv/worker/Thread.h"
+#include "util/Thread.h"
 
 namespace qWorker = lsst::qserv::worker;
 

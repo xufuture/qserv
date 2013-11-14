@@ -28,7 +28,7 @@
 #include <boost/signal.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include "lsst/qserv/worker/WorkQueue.h"
+#include "util/WorkQueue.h"
 
 namespace lsst {
 namespace qserv {

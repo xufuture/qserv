@@ -31,9 +31,8 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 
-#include "lsst/qserv/master/common.h"
-#include "lsst/qserv/master/QueryMapping.h"
-#include "lsst/qserv/master/TableAlias.h"
+#include "qana/QueryMapping.h"
+#include "query/TableAlias.h"
 
 namespace lsst {
 namespace qserv {
