@@ -26,12 +26,12 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/GroupByClause.h"
+#include "query/GroupByClause.h"
 #include <iostream>
 #include <iterator>
 #include <boost/make_shared.hpp>
-#include "lsst/qserv/master/QueryTemplate.h"
-#include "lsst/qserv/master/ValueExpr.h"
+#include "query/QueryTemplate.h"
+#include "query/ValueExpr.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::GroupByTerm;

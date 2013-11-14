@@ -30,15 +30,18 @@
   * user query latency).
   *
   * @author Daniel L. Wang, SLAC
+<<<<<<< HEAD
   */
 #include "lsst/qserv/master/TaskMsgFactory2.h"
-#include "lsst/qserv/Logger.h"
+
+#include "qproc/TaskMsgFactory2.h"
+#include "log/Logger.h"
 
 #include <stdexcept>
 
-#include "lsst/qserv/master/ChunkQuerySpec.h"
-#include "lsst/qserv/master/common.h"
-#include "lsst/qserv/worker.pb.h"
+#include "util/common.h"
+#include "qdisp/ChunkQuerySpec.h"
+#include "proto/worker.pb.h"
 
 namespace qMaster=lsst::qserv::master;
 

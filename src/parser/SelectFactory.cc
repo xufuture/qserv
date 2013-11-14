@@ -30,7 +30,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/SelectFactory.h"
+#include "parser/SelectFactory.h"
 
 // C++
 #include <deque>
@@ -38,22 +38,22 @@
 
 // Package
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
-#include "lsst/qserv/master/ColumnRefH.h"
+#include "parser/ColumnRefH.h"
 
-#include "lsst/qserv/master/SelectStmt.h"
+#include "query/SelectStmt.h"
 
-#include "lsst/qserv/master/SelectListFactory.h"
-#include "lsst/qserv/master/SelectList.h"
-#include "lsst/qserv/master/FromFactory.h"
-#include "lsst/qserv/master/WhereFactory.h"
-#include "lsst/qserv/master/ModFactory.h"
-#include "lsst/qserv/master/ValueExprFactory.h"
-#include "lsst/qserv/master/ValueFactor.h"
+#include "parser/SelectListFactory.h"
+#include "query/SelectList.h"
+#include "parser/FromFactory.h"
+#include "parser/WhereFactory.h"
+#include "parser/ModFactory.h"
+#include "parser/ValueExprFactory.h"
+#include "query/ValueFactor.h"
 
-#include "lsst/qserv/master/ParseAliasMap.h"
-#include "lsst/qserv/master/ParseException.h"
-#include "lsst/qserv/master/parseTreeUtil.h"
-#include "lsst/qserv/master/TableRefN.h"
+#include "parser/ParseAliasMap.h"
+#include "parser/ParseException.h"
+#include "parser/parseTreeUtil.h"
+#include "query/TableRefN.h"
 
 #include "lsst/qserv/Logger.h"
 

@@ -20,7 +20,7 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#include "lsst/qserv/worker/QservPathStructure.h"
+#include "obsolete/QservPathStructure.h"
 #include <dirent.h>
 #include <errno.h>
 #include <fstream>

@@ -42,9 +42,10 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
-#include "lsst/qserv/master/DynamicWorkQueue.h"
-#include "lsst/qserv/master/xrdfile.h"
-#include "lsst/qserv/master/MessageStore.h"
+#include "control/DynamicWorkQueue.h"
+#include "xrdc/xrdfile.h"
+#include "log/MessageStore.h"
+
 
 namespace lsst {
 namespace qserv {

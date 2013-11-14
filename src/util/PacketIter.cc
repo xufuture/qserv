@@ -26,9 +26,10 @@
 // reduce buffering and disk usage, theoretically improving overall
 // latency. 
 
-#include "lsst/qserv/master/PacketIter.h"
-#include "lsst/qserv/master/xrdfile.h"
-#include "lsst/qserv/Logger.h"
+#include "util/PacketIter.h"
+#include "xrdc/xrdfile.h"
+#include "log/Logger.h"
+
 #include <fcntl.h>
 #include <errno.h>
 #include <iostream>

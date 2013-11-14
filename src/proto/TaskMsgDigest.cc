@@ -19,7 +19,7 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#include "TaskMsgDigest.h"
+#include "proto/TaskMsgDigest.h"
 #include "worker.pb.h"
 #ifdef __SUNPRO_CC
 #include <sys/md5.h>

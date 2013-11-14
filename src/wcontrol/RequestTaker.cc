@@ -31,7 +31,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/worker/RequestTaker.h"
+#include "wcontrol/RequestTaker.h"
 #include "lsst/qserv/QservPath.hh"
 #include "lsst/qserv/worker.pb.h"
 

@@ -38,17 +38,16 @@
 #include <boost/make_shared.hpp>
 #include "boost/date_time/posix_time/posix_time_types.hpp" 
 
-#include "lsst/qserv/master/AsyncQueryManager.h"
-#include "lsst/qserv/master/ChunkQuery.h"
-#include "lsst/qserv/master/MessageStore.h"
-#include "lsst/qserv/master/TableMerger.h"
-#include "lsst/qserv/master/Timer.h"
-#include "lsst/qserv/master/QuerySession.h"
-#include "lsst/qserv/common/WorkQueue.h"
-#include "lsst/qserv/master/PacketIter.h"
-#include "lsst/qserv/master/msgCode.h"
-
-#include "lsst/qserv/Logger.h"
+#include "control/AsyncQueryManager.h"
+#include "qdisp/ChunkQuery.h"
+#include "log/Logger.h"
+#include "log/MessageStore.h"
+#include "log/msgCode.h"
+#include "merger/TableMerger.h"
+#include "util/Timer.h"
+#include "qproc/QuerySession.h"
+#include "util/WorkQueue.h"
+#include "util/PacketIter.h"
 
 // Namespace modifiers
 using boost::make_shared;

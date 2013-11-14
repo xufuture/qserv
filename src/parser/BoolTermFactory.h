@@ -28,7 +28,7 @@
   * @author Daniel L. Wang, SLAC
   */
 
-#include "lsst/qserv/master/WhereClause.h"
+#include "query/WhereClause.h"
 #include <antlr/AST.hpp>
 
 namespace lsst { namespace qserv { namespace master {

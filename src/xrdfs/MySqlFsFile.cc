@@ -22,7 +22,7 @@
 /// Implements MySqlFsFile, the primary way of interfacing qserv
 /// worker functionality to an xrootd file-system interface.
  
-#include "lsst/qserv/worker/MySqlFsFile.h"
+#include "xrdfs/MySqlFsFile.h"
 
 #include "XrdSec/XrdSecEntity.hh"
 #include "XrdSfs/XrdSfsAio.hh"
@@ -38,12 +38,12 @@
 #  include "boost/thread.hpp"
 #  include "boost/format.hpp"
 #endif
-#include "lsst/qserv/worker/Thread.h"
-#include "lsst/qserv/worker/QueryRunner.h"
-#include "lsst/qserv/worker/MySqlFsCommon.h"
-#include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/worker/RequestTaker.h"
-#include "lsst/qserv/worker/Logger.h"
+#include "util/Thread.h"
+#include "wdb/QueryRunner.h"
+#include "xrdfs/MySqlFsCommon.h"
+#include "wbase/Base.h"
+#include "wcontrol/RequestTaker.h"
+#include "log/Logger.h"
 #include "lsst/qserv/QservPath.hh"
 
 #include <algorithm>

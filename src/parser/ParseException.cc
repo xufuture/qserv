@@ -26,10 +26,10 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/ParseException.h"
+#include "parser/ParseException.h"
 
 // Package
-#include "lsst/qserv/master/parseTreeUtil.h"
+#include "parser/parseTreeUtil.h"
 
 ////////////////////////////////////////////////////////////////////////
 // ParseException

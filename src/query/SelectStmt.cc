@@ -32,7 +32,7 @@
   * @author Daniel L. Wang, SLAC
   */
 
-#include "lsst/qserv/master/SelectStmt.h"
+#include "query/SelectStmt.h"
 
 // Standard
 #include <map>
@@ -44,17 +44,17 @@
 #include "SqlSQL2Parser.hpp"
 #include "SqlSQL2TokenTypes.hpp"
 
-#include "lsst/qserv/Logger.h"
+#include "parser/parseTreeUtil.h"
+#include "parser/ColumnRefH.h"
+#include "query/SelectList.h"
+#include "query/FromList.h"
+#include "query/GroupByClause.h"
+#include "query/OrderByClause.h"
+#include "query/HavingClause.h"
+#include "query/WhereClause.h"
+#include "parser/WhereFactory.h"
+#include "log/Logger.h"
 
-#include "lsst/qserv/master/parseTreeUtil.h"
-#include "lsst/qserv/master/ColumnRefH.h"
-#include "lsst/qserv/master/SelectList.h"
-#include "lsst/qserv/master/FromList.h"
-#include "lsst/qserv/master/GroupByClause.h"
-#include "lsst/qserv/master/OrderByClause.h"
-#include "lsst/qserv/master/HavingClause.h"
-#include "lsst/qserv/master/WhereClause.h"
-#include "lsst/qserv/master/WhereFactory.h"
 // myself
 
 

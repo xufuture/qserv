@@ -28,7 +28,7 @@
 
 // Pkg
 #include "lsst/qserv/master/TableNamer.h"
-#include "lsst/qserv/master/MetadataCache.h"
+#include "meta/MetadataCache.h"
 
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;

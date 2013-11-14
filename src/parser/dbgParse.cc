@@ -21,9 +21,9 @@
  */
  
 #include <map>
-#include "lsst/qserv/master/parserBase.h"
-#include "lsst/qserv/master/parseTreeUtil.h"
-#include "lsst/qserv/Logger.h"
+#include "parser/parserBase.h"
+#include "parser/parseTreeUtil.h"
+#include "log/Logger.h"
 
 namespace qMaster = lsst::qserv::master;
 

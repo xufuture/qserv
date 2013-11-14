@@ -22,8 +22,8 @@
  */
 #ifndef LSST_QSERV_WORKER_QUERYRUNNERMANAGER_H
 #define LSST_QSERV_WORKER_QUERYRUNNERMANAGER_H
-#include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/worker/Task.h"
+#include "wbase/Base.h"
+#include "wcontrol/Task.h"
 
 namespace lsst {
 namespace qserv {

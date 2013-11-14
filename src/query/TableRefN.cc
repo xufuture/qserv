@@ -26,7 +26,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/master/TableRefN.h"
+#include "query/TableRefN.h"
 #include <sstream>
 
 namespace qMaster=lsst::qserv::master;

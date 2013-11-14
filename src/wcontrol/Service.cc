@@ -19,13 +19,14 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#include "lsst/qserv/worker/Foreman.h"
-#include "lsst/qserv/worker/Service.h"
-#include "lsst/qserv/worker/Logger.h"
-#include "lsst/qserv/worker/FifoScheduler.h"
-#include "lsst/qserv/worker/ScanScheduler.h"
-#include "lsst/qserv/worker/GroupScheduler.h"
-#include "lsst/qserv/worker/BlendScheduler.h"
+#include "wcontrol/Service.h"
+#include "wcontrol/TodoList.h"
+#include "wcontrol/Foreman.h"
+#include "wsched/FifoScheduler.h"
+#include "wsched/ScanScheduler.h"
+#include "wsched/GroupScheduler.h"
+#include "wsched/BlendScheduler.h"
+#include "log/Logger.h"
 
 namespace lsst {
 namespace qserv {

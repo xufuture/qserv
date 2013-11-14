@@ -33,7 +33,7 @@
 #include <list>
 #include <string>
 #include <boost/shared_ptr.hpp>
-#include "lsst/qserv/master/ColumnRef.h"
+#include "query/ColumnRef.h"
 
 namespace lsst {
 namespace qserv {

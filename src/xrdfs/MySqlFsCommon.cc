@@ -20,7 +20,7 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
  
-#include "lsst/qserv/worker/MySqlFsCommon.h"
+#include "xrdfs/MySqlFsCommon.h"
 
 #include <string>
 

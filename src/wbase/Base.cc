@@ -39,7 +39,7 @@
 #include <boost/format.hpp>
 
 // Myself:
-#include "lsst/qserv/worker/Base.h"
+#include "wbase/Base.h"
 
 namespace qWorker = lsst::qserv::worker;
 

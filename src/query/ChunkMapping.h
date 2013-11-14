@@ -31,7 +31,7 @@
 #include "boost/shared_ptr.hpp"
 
 // Package
-#include "lsst/qserv/master/common.h"
+#include "util/common.h"
 //#include "lsst/qserv/master/ChunkMeta.h"
 
 namespace lsst {

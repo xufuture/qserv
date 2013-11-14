@@ -29,7 +29,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/ModFactory.h"
+#include "parser/ModFactory.h"
 
 // Std
 #include <iterator>
@@ -38,14 +38,14 @@
 
 // Package
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
-#include "lsst/qserv/master/parserBase.h" // Handler base classes
-#include "lsst/qserv/master/parseTreeUtil.h"
-#include "lsst/qserv/master/ParseException.h"
-#include "lsst/qserv/master/BoolTermFactory.h"
-#include "lsst/qserv/master/ValueExprFactory.h"
-#include "lsst/qserv/master/HavingClause.h" // Clauses
-#include "lsst/qserv/master/OrderByClause.h" // Clauses
-#include "lsst/qserv/master/GroupByClause.h" // Clauses
+#include "parser/parserBase.h" // Handler base classes
+#include "parser/parseTreeUtil.h"
+#include "parser/ParseException.h"
+#include "parser/BoolTermFactory.h"
+#include "parser/ValueExprFactory.h"
+#include "query/HavingClause.h" // Clauses
+#include "query/OrderByClause.h" // Clauses
+#include "query/GroupByClause.h" // Clauses
 
 #include "lsst/qserv/Logger.h"
 

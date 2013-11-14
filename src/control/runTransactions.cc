@@ -28,10 +28,12 @@
 #include <deque>
 #include <fstream>
 #include <iostream>
-#include "lsst/qserv/Logger.h"
-#include "lsst/qserv/master/xrdfile.h"
-#include "lsst/qserv/master/thread.h"
-#include "lsst/qserv/master/dispatcher.h"
+
+#include "log/Logger.h"
+#include "xrdc/xrdfile.h"
+#include "control/thread.h"
+#include "control/dispatcher.h"
+
 #include "boost/thread.hpp"
 #include "boost/make_shared.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"

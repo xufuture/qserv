@@ -21,7 +21,7 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /// class Foreman implementation
-#include "lsst/qserv/worker/Foreman.h"
+#include "wcontrol/Foreman.h"
 
 // Std C++
 #include <deque>
@@ -33,10 +33,11 @@
 #include <boost/scoped_ptr.hpp>
 
 // Pkg: lsst::qserv::worker
-#include "lsst/qserv/worker/QueryRunner.h"
-#include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/worker/FifoScheduler.h"
-#include "lsst/qserv/worker/Logger.h"
+#include "wcontrol/TodoList.h"
+#include "wsched/FifoScheduler.h"
+#include "wdb/QueryRunner.h"
+#include "wbase/Base.h"
+#include "log/Logger.h"
 
 using namespace lsst::qserv::worker;
 namespace qWorker = lsst::qserv::worker;

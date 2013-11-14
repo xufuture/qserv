@@ -29,23 +29,22 @@
   * @author Daniel L. Wang, SLAC
   */
 // No public interface (no TablePlugin.h)
+
+#include "qana/QueryPlugin.h"
 #include <string>
 
-#include "lsst/qserv/Logger.h"
-
-#include "lsst/qserv/master/QueryPlugin.h"
-
-#include "lsst/qserv/master/common.h"
-#include "lsst/qserv/master/SelectList.h"
-#include "lsst/qserv/master/SelectStmt.h"
-#include "lsst/qserv/master/FromList.h"
-#include "lsst/qserv/master/WhereClause.h"
-#include "lsst/qserv/master/FuncExpr.h"
-#include "lsst/qserv/master/SphericalBoxStrategy.h"
-#include "lsst/qserv/master/QueryMapping.h"
-#include "lsst/qserv/master/QueryContext.h"
-#include "lsst/qserv/master/TableAlias.h"
-#include "lsst/qserv/master/ValueFactor.h"
+#include "util/common.h"
+#include "query/SelectList.h"
+#include "query/SelectStmt.h"
+#include "query/FromList.h"
+#include "query/WhereClause.h"
+#include "query/FuncExpr.h"
+#include "qana/SphericalBoxStrategy.h"
+#include "qana/QueryMapping.h"
+#include "query/QueryContext.h"
+#include "query/TableAlias.h"
+#include "query/ValueFactor.h"
+#include "log/Logger.h"
 
 namespace lsst {
 namespace qserv {

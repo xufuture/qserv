@@ -26,8 +26,8 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/QueryContext.h"
-#include "lsst/qserv/master/ColumnRef.h"
+#include "query/QueryContext.h"
+#include "query/ColumnRef.h"
 
 namespace lsst {
 namespace qserv {

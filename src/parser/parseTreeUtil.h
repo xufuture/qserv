@@ -38,7 +38,7 @@
 #include <list>
 
 #include "antlr/AST.hpp"
-#include "lsst/qserv/master/sqltoken.h"
+#include "util/sqltoken.h"
 
 // Forward
 namespace antlr {

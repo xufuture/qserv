@@ -32,8 +32,8 @@
   * with small tweaks: Daniel L. Wang, SLAC
   */
 
-#include "lsst/qserv/master/MetadataCache.h"
-#include "lsst/qserv/Logger.h"
+#include "log/Logger.h"
+#include "meta/MetadataCache.h"
 
 namespace qMaster = lsst::qserv::master;
 

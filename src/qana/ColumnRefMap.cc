@@ -27,10 +27,10 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/ColumnRefMap.h"
+#include "parser/ColumnRefMap.h"
 #include <stdexcept>
-#include "lsst/qserv/master/ColumnRef.h"
-#include "lsst/qserv/Logger.h"
+#include "query/ColumnRef.h"
+#include "log/Logger.h"
 
 namespace lsst {
 namespace qserv {

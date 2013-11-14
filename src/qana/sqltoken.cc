@@ -26,7 +26,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/master/sqltoken.h"
+#include "util/sqltoken.h"
 #include <set>
 
 namespace qMaster=lsst::qserv::master;

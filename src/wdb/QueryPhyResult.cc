@@ -20,15 +20,15 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /// QueryPhyResult instances contain and manage result table operations
-#include "lsst/qserv/worker/QueryPhyResult.h"
+#include "wdb/QueryPhyResult.h"
 
 #include <fcntl.h>
 #include <iterator>
 
 #include "lsst/qserv/SqlErrorObject.hh"
-#include "lsst/qserv/worker/Config.h"
-#include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/worker/Logger.h"
+#include "wconfig/Config.h"
+#include "wbase/Base.h"
+#include "log/Logger.h"
  
 using namespace lsst::qserv::worker;
 

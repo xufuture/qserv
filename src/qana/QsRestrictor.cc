@@ -24,11 +24,11 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/QsRestrictor.h"
+#include "query/QsRestrictor.h"
 
 #include <iostream>
 #include <iterator>
-#include "lsst/qserv/master/QueryTemplate.h"
+#include "query/QueryTemplate.h"
 
 namespace lsst {
 namespace qserv {

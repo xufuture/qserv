@@ -39,10 +39,10 @@
 #include "mysql/mysql.h"
 
 // package
-#include "lsst/qserv/SqlErrorObject.hh"
-#include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/worker/Task.h"
-#include "lsst/qserv/worker/ResultTracker.h"
+#include "util/SqlErrorObject.hh"
+#include "wbase/Base.h"
+#include "wcontrol/ResultTracker.h"
+#include "wdb/QueryRunnerManager.h"
 
 namespace lsst {
 namespace qserv {

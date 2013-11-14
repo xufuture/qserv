@@ -34,7 +34,7 @@
 #include <list>
 #include <string>
 #include <boost/shared_ptr.hpp>
-#include "lsst/qserv/master/BoolTerm.h"
+#include "query/BoolTerm.h"
 
 namespace lsst {
 namespace qserv {

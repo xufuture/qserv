@@ -27,17 +27,18 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/master/ValueFactorFactory.h"
-#include "lsst/qserv/Logger.h"
+#include "parser/ValueFactorFactory.h"
+#include "log/Logger.h"
+
 #include <stdexcept>
 
-#include "lsst/qserv/master/ColumnRefH.h"
-#include "lsst/qserv/master/ColumnRef.h"
-#include "lsst/qserv/master/FuncExpr.h"
-#include "lsst/qserv/master/parseTreeUtil.h"
-#include "lsst/qserv/master/ParseException.h" 
-#include "lsst/qserv/master/ValueExpr.h" // For ValueExpr
-#include "lsst/qserv/master/ValueFactor.h" // For ValueFactor
+#include "parser/ColumnRefH.h"
+#include "query/ColumnRef.h"
+#include "query/FuncExpr.h"
+#include "parser/parseTreeUtil.h"
+#include "parser/ParseException.h" 
+#include "query/ValueExpr.h" // For ValueExpr
+#include "query/ValueFactor.h" // For ValueFactor
 #include "SqlSQL2TokenTypes.hpp" 
 
 // namespace modifiers

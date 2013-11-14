@@ -32,10 +32,10 @@
 #include "mysql/mysql.h"
 
 // pkg includes
-#include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/worker/ResultTracker.h"
-#include "lsst/qserv/worker/MySqlFsCommon.h"
-#include "lsst/qserv/worker/Service.h"
+#include "wbase/Base.h"
+#include "wcontrol/ResultTracker.h"
+#include "xrdfs/MySqlFsCommon.h"
+#include "wcontrol/Service.h"
 
 // common
 #include "lsst/qserv/QservPath.hh"

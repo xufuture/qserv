@@ -33,8 +33,8 @@
 
 #include <map>
 #include <boost/shared_ptr.hpp>
-#include "lsst/qserv/master/AggRecord.h"
-#include "lsst/qserv/master/ValueExpr.h"
+#include "query/AggRecord.h"
+#include "query/ValueExpr.h"
 
 namespace lsst { namespace qserv { namespace master {
 

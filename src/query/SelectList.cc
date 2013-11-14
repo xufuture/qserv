@@ -37,12 +37,12 @@
 // Should we keep a hash table when column refs are detected, so we can
 // map them?
 // For now, just build the syntax tree without evaluating.
-#include "lsst/qserv/master/SelectList.h"
+#include "query/SelectList.h"
 #include <iterator>
 #include <stdexcept>
-#include "lsst/qserv/master/FuncExpr.h"
-#include "lsst/qserv/master/ValueFactor.h"
-#include "lsst/qserv/master/QueryTemplate.h"
+#include "query/FuncExpr.h"
+#include "query/ValueFactor.h"
+#include "query/QueryTemplate.h"
 
 #include "SqlSQL2TokenTypes.hpp" // For ANTLR typing.
 

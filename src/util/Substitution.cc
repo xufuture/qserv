@@ -26,8 +26,9 @@
 #include <vector>
 
 // Package
-#include "lsst/qserv/master/Substitution.h"
-#include "lsst/qserv/Logger.h"
+
+#include "util/Substitution.h"
+#include "log/Logger.h"
 
 namespace qMaster = lsst::qserv::master;
 

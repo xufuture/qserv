@@ -29,9 +29,9 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/worker/QuerySql.h"
-#include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/constants.h"
+#include "wdb/QuerySql.h"
+#include "wbase/Base.h"
+#include "global/constants.h"
 #include <iostream>
 
 namespace qWorker = lsst::qserv::worker;

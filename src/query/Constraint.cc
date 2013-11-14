@@ -27,7 +27,7 @@
   * @author Daniel L. Wang, SLAC
   */
 
-#include "lsst/qserv/master/Constraint.h"
+#include "query/Constraint.h"
 #include <iterator>
 
 namespace lsst { 

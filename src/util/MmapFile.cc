@@ -21,8 +21,9 @@
  */
 // MmapFile is a lightweight wrapper for a mmap'd file.
 
-#include "lsst/qserv/master/MmapFile.h"
-#include "lsst/qserv/Logger.h"
+#include "util/MmapFile.h"
+#include "log/Logger.h"
+
 #include <iostream>
 #include <fcntl.h>
 #include <sys/mman.h>

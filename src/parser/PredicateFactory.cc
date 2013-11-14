@@ -28,9 +28,9 @@
   * @author Daniel L. Wang, SLAC
   */
 
-#include "lsst/qserv/master/Predicate.h"
-#include "lsst/qserv/master/PredicateFactory.h"
-#include "lsst/qserv/master/ValueExprFactory.h"
+#include "query/Predicate.h"
+#include "parser/PredicateFactory.h"
+#include "parser/ValueExprFactory.h"
 #include "SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 
 #include "lsst/qserv/Logger.h"

@@ -32,17 +32,17 @@
 #include <string>
 #include <boost/pointer_cast.hpp>
 
-#include "lsst/qserv/master/QueryPlugin.h" // Parent class
-#include "lsst/qserv/master/ColumnRef.h"
-#include "lsst/qserv/master/FromList.h"
-#include "lsst/qserv/master/FuncExpr.h"
-#include "lsst/qserv/master/QueryContext.h"
-#include "lsst/qserv/master/MetadataCache.h"
-#include "lsst/qserv/master/Predicate.h"
-#include "lsst/qserv/master/SelectStmt.h"
-#include "lsst/qserv/master/ValueFactor.h"
-#include "lsst/qserv/master/ValueExpr.h"
-#include "lsst/qserv/master/WhereClause.h"
+#include "qana/QueryPlugin.h" // Parent class
+#include "query/ColumnRef.h"
+#include "query/FromList.h"
+#include "query/FuncExpr.h"
+#include "query/QueryContext.h"
+#include "meta/MetadataCache.h"
+#include "query/Predicate.h"
+#include "query/SelectStmt.h"
+#include "query/ValueFactor.h"
+#include "query/ValueExpr.h"
+#include "query/WhereClause.h"
 
 #include "SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 

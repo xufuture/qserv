@@ -31,7 +31,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/SelectParser.h"
+#include "parser/SelectParser.h"
 
 // Standard
 #include <functional>
@@ -49,10 +49,10 @@
 #include "SqlSQL2Parser.hpp"
 #include "SqlSQL2Lexer.hpp"
 #include "SqlSQL2TokenTypes.hpp"
-#include "lsst/qserv/master/SelectFactory.h"
-#include "lsst/qserv/master/SelectStmt.h"
-#include "lsst/qserv/master/ParseException.h"
-#include "lsst/qserv/master/parseTreeUtil.h"
+#include "parser/SelectFactory.h"
+#include "query/SelectStmt.h"
+#include "parser/ParseException.h"
+#include "parser/parseTreeUtil.h"
 
 #include <antlr/CommonAST.hpp>
 

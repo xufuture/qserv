@@ -37,7 +37,7 @@
 
 #include <boost/shared_ptr.hpp>
 // package
-#include "lsst/qserv/master/common.h"
+#include "util/common.h"
 namespace lsst {
 namespace qserv {
 namespace master {

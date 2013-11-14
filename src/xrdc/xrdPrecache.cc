@@ -34,10 +34,10 @@
 #include "XrdPosix/XrdPosixXrootd.hh"
 
 // Package
-#include "lsst/qserv/Logger.h"
-#include "lsst/qserv/common/WorkQueue.h"
-#include "lsst/qserv/master/xrootd.h"
-#include "lsst/qserv/master/xrdfile.h"
+#include "util/WorkQueue.h"
+#include "xrdc/xrootd.h"
+#include "xrdc/xrdfile.h"
+#include "log/Logger.h"
 
 using lsst::qserv::common::WorkQueue;
 namespace qMaster = lsst::qserv::master;
