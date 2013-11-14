@@ -28,12 +28,12 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/QueryTemplate.h"
+#include "query/QueryTemplate.h"
 #include <sstream>
 #include <iostream>
-#include "lsst/qserv/master/sqltoken.h" // sqlShouldSeparate
-#include "lsst/qserv/master/ColumnRef.h"
-#include "lsst/qserv/master/TableRefN.h"
+#include "util/sqltoken.h" // sqlShouldSeparate
+#include "query/ColumnRef.h"
+#include "query/TableRefN.h"
 
 namespace lsst {
 namespace qserv {

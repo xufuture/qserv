@@ -39,10 +39,10 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 // Qserv
-#include "lsst/qserv/master/ColumnRefMap.h"
-#include "lsst/qserv/master/BoolTerm.h"
-#include "lsst/qserv/master/QsRestrictor.h"
-#include "lsst/qserv/master/ValueExpr.h"
+#include "parser/ColumnRefMap.h"
+#include "query/BoolTerm.h"
+#include "query/QsRestrictor.h"
+#include "query/ValueExpr.h"
 
 namespace lsst {
 namespace qserv {

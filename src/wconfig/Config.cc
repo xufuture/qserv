@@ -22,7 +22,7 @@
  */
 /// Includes Config class implementation and declarations of key
 /// environment variables for qserv worker instances.
-#include "lsst/qserv/worker/Config.h"
+#include "wconfig/Config.h"
 
 #include <sstream>
 #include <boost/thread/once.hpp>

@@ -31,9 +31,9 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/master/TaskMsgFactory2.h"
+#include "qproc/TaskMsgFactory2.h"
 
-#include "lsst/qserv/master/ChunkQuerySpec.h"
+#include "qdisp/ChunkQuerySpec.h"
 #include "lsst/qserv/worker.pb.h"
 
 namespace qMaster=lsst::qserv::master;

@@ -30,8 +30,8 @@
 
 // mysql
 #include "SqlConnection.hh"
-#include "MySqlConnection.h"
-#include "SqlResults.h"
+#include "mysql/MySqlConnection.h"
+#include "util/SqlResults.h"
 
 using namespace lsst::qserv;
 

@@ -37,8 +37,8 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "lsst/qserv/master/parserBase.h" // VoidFourRefFunc
-#include "lsst/qserv/master/parseTreeUtil.h" // tokenText
+#include "parser/parserBase.h" // VoidFourRefFunc
+#include "parser/parseTreeUtil.h" // tokenText
 // Forward
 class SqlSQL2Parser;
 

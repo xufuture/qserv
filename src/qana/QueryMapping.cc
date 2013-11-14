@@ -28,7 +28,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/QueryMapping.h"
+#include "qana/QueryMapping.h"
 
 #include <deque>
 #include <sstream>
@@ -36,8 +36,8 @@
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include "lsst/qserv/master/ChunkSpec.h"
-#include "lsst/qserv/master/QueryTemplate.h"
+#include "qdisp/ChunkSpec.h"
+#include "query/QueryTemplate.h"
 
 namespace lsst { 
 namespace qserv { 

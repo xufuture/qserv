@@ -26,14 +26,14 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/QueryPlugin.h"
+#include "qana/QueryPlugin.h"
 
 #include <map>
 #include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>
 //#include <boost/thread/call_once.hpp>
 
-#include "lsst/qserv/master/PluginNotFoundError.h"
+#include "qana/PluginNotFoundError.h"
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::QueryPlugin;

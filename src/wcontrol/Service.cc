@@ -19,10 +19,10 @@
  * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#include "lsst/qserv/worker/TodoList.h"
-#include "lsst/qserv/worker/Foreman.h"
-#include "lsst/qserv/worker/Service.h"
-#include "lsst/qserv/worker/Logger.h"
+#include "wcontrol/TodoList.h"
+#include "wcontrol/Foreman.h"
+#include "wcontrol/Service.h"
+#include "log/Logger.h"
 
 using namespace lsst::qserv::worker;
 

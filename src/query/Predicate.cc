@@ -26,9 +26,9 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/Predicate.h"
-#include "lsst/qserv/master/QueryTemplate.h"
-#include "lsst/qserv/master/ValueExpr.h"
+#include "query/Predicate.h"
+#include "query/QueryTemplate.h"
+#include "query/ValueExpr.h"
 #include "SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 
 namespace qMaster=lsst::qserv::master;

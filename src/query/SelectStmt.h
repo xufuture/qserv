@@ -33,7 +33,7 @@
 
 // Boost
 #include <boost/shared_ptr.hpp>
-#include "lsst/qserv/master/QueryTemplate.h"
+#include "query/QueryTemplate.h"
 
 // Forward
 class SqlSQL2Parser;

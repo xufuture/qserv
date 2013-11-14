@@ -33,15 +33,15 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/master/TableMerger.h"
+#include "merger/TableMerger.h"
 #include <sys/time.h> 
 #include <sstream>
 #include <iostream>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 #include "lsst/qserv/SqlConnection.hh"
-#include "lsst/qserv/master/SqlInsertIter.h"
-#include "lsst/qserv/master/MmapFile.h"
+#include "merger/SqlInsertIter.h"
+#include "util/MmapFile.h"
 using lsst::qserv::SqlErrorObject;
 using lsst::qserv::SqlConfig;
 using lsst::qserv::SqlConnection;

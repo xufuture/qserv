@@ -35,7 +35,7 @@
 #include <list>
 #include <string>
 #include <boost/shared_ptr.hpp>
-#include "lsst/qserv/master/ColumnRefMap.h"
+#include "parser/ColumnRefMap.h"
 
 namespace lsst {
 namespace qserv {

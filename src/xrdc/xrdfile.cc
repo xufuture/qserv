@@ -39,7 +39,7 @@
 #include <assert.h>
 #endif
 
-#include "lsst/qserv/master/xrdfile.h"
+#include "xrdc/xrdfile.h"
 
 namespace qMaster = lsst::qserv::master;
 

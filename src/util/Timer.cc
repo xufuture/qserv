@@ -20,7 +20,7 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 // Generic timer class
-#include "lsst/qserv/master/Timer.h"
+#include "util/Timer.h"
 
 namespace lsst {
 namespace qserv {

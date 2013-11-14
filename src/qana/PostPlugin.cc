@@ -31,10 +31,10 @@
 #include <stdexcept>
 #include <string>
 
-#include "lsst/qserv/master/QueryContext.h"
-#include "lsst/qserv/master/QueryPlugin.h"
-#include "lsst/qserv/master/SelectList.h"
-#include "lsst/qserv/master/SelectStmt.h"
+#include "query/QueryContext.h"
+#include "qana/QueryPlugin.h"
+#include "query/SelectList.h"
+#include "query/SelectStmt.h"
 
 namespace lsst {
 namespace qserv {

@@ -31,16 +31,16 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/SphericalBoxStrategy.h"
+#include "qana/SphericalBoxStrategy.h"
 #include <sstream>
 #include <deque>
 #include <boost/lexical_cast.hpp>
 
-#include "lsst/qserv/master/FromList.h"
-#include "lsst/qserv/master/QueryMapping.h"
-#include "lsst/qserv/master/QueryContext.h"
-#include "lsst/qserv/master/MetadataCache.h"
-#include "lsst/qserv/master/ParseException.h"
+#include "query/FromList.h"
+#include "qana/QueryMapping.h"
+#include "query/QueryContext.h"
+#include "meta/MetadataCache.h"
+#include "parser/ParseException.h"
 
 #define CHUNKTAG "%CC%"
 #define SUBCHUNKTAG "%SS%"

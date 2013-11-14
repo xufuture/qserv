@@ -46,16 +46,16 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/xrdfile.h"
-#include "lsst/qserv/master/dispatcher.h"
-#include "lsst/qserv/master/thread.h"
-#include "lsst/qserv/master/xrootd.h"
-#include "lsst/qserv/master/SessionManager.h"
-#include "lsst/qserv/master/AsyncQueryManager.h"
-#include "lsst/qserv/master/ChunkSpec.h"
-#include "lsst/qserv/master/QuerySession.h"
+#include "xrdc/xrdfile.h"
+#include "control/dispatcher.h"
+#include "control/thread.h"
+#include "xrdc/xrootd.h"
+#include "control/SessionManager.h"
+#include "control/AsyncQueryManager.h"
+#include "qdisp/ChunkSpec.h"
+#include "qproc/QuerySession.h"
 #include "lsst/qserv/QservPath.hh"
-#include "lsst/qserv/master/TaskMsgFactory2.h"
+#include "qproc/TaskMsgFactory2.h"
 #include <sstream>
 
 namespace qMaster = lsst::qserv::master;

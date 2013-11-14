@@ -20,13 +20,13 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 // MySqlExportMgr implementation.
-#include "lsst/qserv/worker/MySqlExportMgr.h"
+#include "xrdfs/MySqlExportMgr.h"
 #include <sstream>
 #include <iostream>
 #include <boost/regex.hpp>
 #include "lsst/qserv/SqlConnection.hh"
-#include "lsst/qserv/worker/Config.h"
-#include "lsst/qserv/worker/Logger.h"
+#include "wconfig/Config.h"
+#include "log/Logger.h"
 
 using namespace lsst::qserv::worker;
 using namespace lsst::qserv;

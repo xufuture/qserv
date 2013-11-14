@@ -27,7 +27,7 @@
 /// @author Daniel L. Wang (danielw)
 #ifndef LSST_QSERV_WORKER_ORDERTAKER_H
 #define LSST_QSERV_WORKER_ORDERTAKER_H
-#include "lsst/qserv/worker/Base.h" // StringBuffer2
+#include "wbase/Base.h" // StringBuffer2
 namespace lsst {
 namespace qserv {
 class QservPath; // Forward

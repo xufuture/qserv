@@ -26,9 +26,9 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/worker/Task.h"
-#include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/TaskMsgDigest.h"
+#include "wcontrol/Task.h"
+#include "wbase/Base.h"
+#include "proto/TaskMsgDigest.h"
 #include <boost/regex.hpp>
 
 namespace qWorker = lsst::qserv::worker;

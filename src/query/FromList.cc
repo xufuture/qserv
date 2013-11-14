@@ -26,7 +26,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/FromList.h"
+#include "query/FromList.h"
 
 namespace qMaster=lsst::qserv::master;
 

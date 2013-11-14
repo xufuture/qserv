@@ -26,12 +26,12 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/WhereClause.h"
+#include "query/WhereClause.h"
 
 #include <iostream>
 #include <stdexcept>
-#include "lsst/qserv/master/Predicate.h"
-#include "lsst/qserv/master/QueryTemplate.h"
+#include "query/Predicate.h"
+#include "query/QueryTemplate.h"
 
 namespace lsst {
 namespace qserv {

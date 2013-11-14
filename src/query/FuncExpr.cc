@@ -27,12 +27,12 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/FuncExpr.h"
+#include "query/FuncExpr.h"
 
-#include "lsst/qserv/master/ColumnRef.h"
-#include "lsst/qserv/master/ValueExpr.h"
-#include "lsst/qserv/master/ValueFactor.h"
-#include "lsst/qserv/master/QueryTemplate.h"
+#include "query/ColumnRef.h"
+#include "query/ValueExpr.h"
+#include "query/ValueFactor.h"
+#include "query/QueryTemplate.h"
 #include <iostream>
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::FuncExpr;

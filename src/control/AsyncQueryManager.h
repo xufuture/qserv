@@ -42,7 +42,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
-#include "lsst/qserv/master/DynamicWorkQueue.h"
+#include "control/DynamicWorkQueue.h"
 
 
 namespace lsst {

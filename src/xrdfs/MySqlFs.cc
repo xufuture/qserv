@@ -20,21 +20,21 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
  
-#include "lsst/qserv/worker/MySqlFs.h"
+#include "xrdfs/MySqlFs.h"
 
 #include "XrdSec/XrdSecEntity.hh"
 #include "XrdSys/XrdSysError.hh"
 //#include "XrdOuc/XrdOucCallBack.hh" // For Open-callbacks(FinishListener)
 #include "XrdSfs/XrdSfsCallBack.hh" // For Open-callbacks(FinishListener)
 
-#include "lsst/qserv/worker/MySqlFsDirectory.h"
-#include "lsst/qserv/worker/MySqlFsFile.h"
-#include "lsst/qserv/worker/MySqlExportMgr.h"
-#include "lsst/qserv/worker/QueryRunner.h"
-#include "lsst/qserv/worker/Config.h"
-#include "lsst/qserv/worker/Service.h"
-#include "lsst/qserv/worker/Logger.h"
-#include "lsst/qserv/worker/XrdName.h"
+#include "xrdfs/MySqlFsDirectory.h"
+#include "xrdfs/MySqlFsFile.h"
+#include "xrdfs/MySqlExportMgr.h"
+#include "wdb/QueryRunner.h"
+#include "wconfig/Config.h"
+#include "wcontrol/Service.h"
+#include "log/Logger.h"
+#include "xrdfs/XrdName.h"
 
 
 #include "lsst/qserv/QservPath.hh"

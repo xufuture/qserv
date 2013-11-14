@@ -40,9 +40,9 @@
 
 // package
 #include "lsst/qserv/SqlErrorObject.hh"
-#include "lsst/qserv/worker/Base.h"
-#include "lsst/qserv/worker/ResultTracker.h"
-#include "lsst/qserv/worker/QueryRunnerManager.h"
+#include "wbase/Base.h"
+#include "wcontrol/ResultTracker.h"
+#include "wdb/QueryRunnerManager.h"
 
 namespace lsst {
 namespace qserv {

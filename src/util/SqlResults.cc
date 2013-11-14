@@ -20,10 +20,10 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 // SqlResults class implementation file.
-#include "SqlResults.h"
+#include "util/SqlResults.h"
 #include <sstream>
 
-#include "SqlResults.h"
+#include "util/SqlResults.h"
 
 using lsst::qserv::SqlResults;
 

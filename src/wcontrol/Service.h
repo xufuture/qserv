@@ -21,7 +21,7 @@
  */
 #ifndef LSST_QSERV_WORKER_SERVICE_H
 #define LSST_QSERV_WORKER_SERVICE_H
-#include "lsst/qserv/worker/Base.h"
+#include "wbase/Base.h"
 namespace lsst {
 namespace qserv {
 namespace worker {

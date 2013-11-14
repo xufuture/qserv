@@ -29,17 +29,17 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/master/WhereFactory.h"
+#include "parser/WhereFactory.h"
 
 // Std
 #include<iterator>
 
 // Package
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
-#include "lsst/qserv/master/parserBase.h" // Handler base classes
-#include "lsst/qserv/master/ParseException.h"
-#include "lsst/qserv/master/WhereClause.h" 
-#include "lsst/qserv/master/BoolTermFactory.h"
+#include "parser/parserBase.h" // Handler base classes
+#include "parser/ParseException.h"
+#include "query/WhereClause.h" 
+#include "parser/BoolTermFactory.h"
 
 
 // namespace modifiers

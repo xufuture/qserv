@@ -30,15 +30,15 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/ValueExpr.h"
+#include "query/ValueExpr.h"
 #include <iostream>
 #include <iterator>
 #include <sstream>
 #include <stdexcept>
 #include <boost/make_shared.hpp>
-#include "lsst/qserv/master/ValueFactor.h"
-#include "lsst/qserv/master/QueryTemplate.h"
-#include "lsst/qserv/master/FuncExpr.h"
+#include "query/ValueFactor.h"
+#include "query/QueryTemplate.h"
+#include "query/FuncExpr.h"
 
 namespace lsst {
 namespace qserv {

@@ -27,8 +27,8 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/ValueExpr.h"
-#include "lsst/qserv/master/ValueFactor.h"
+#include "query/ValueExpr.h"
+#include "query/ValueFactor.h"
 
 namespace lsst { namespace qserv { namespace master {
 

@@ -26,13 +26,13 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/OrderByClause.h"
+#include "query/OrderByClause.h"
 #include <iostream>
 #include <iterator>
 #include <sstream>
 
 #include <boost/make_shared.hpp>
-#include "lsst/qserv/master/QueryTemplate.h"
+#include "query/QueryTemplate.h"
 
 using lsst::qserv::master::OrderByClause;
 namespace qMaster=lsst::qserv::master;

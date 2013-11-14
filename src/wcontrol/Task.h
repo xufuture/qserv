@@ -29,7 +29,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include "lsst/qserv/worker.pb.h"
-#include "lsst/qserv/worker/Base.h"
+#include "wbase/Base.h"
 
 namespace lsst {
 namespace qserv {

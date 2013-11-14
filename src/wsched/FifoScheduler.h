@@ -30,7 +30,7 @@
 #define LSST_QSERV_WORKER_FIFOSCHEDULER_H
 
 #include <boost/thread/mutex.hpp>
-#include "lsst/qserv/worker/Foreman.h"
+#include "wcontrol/Foreman.h"
 
 namespace lsst {
 namespace qserv {

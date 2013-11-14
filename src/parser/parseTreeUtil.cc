@@ -27,7 +27,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/master/parseTreeUtil.h"
+#include "parser/parseTreeUtil.h"
 #include <stdexcept>
 #include <antlr/ASTFactory.hpp>
 

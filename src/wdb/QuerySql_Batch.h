@@ -29,7 +29,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */ 
-#include "lsst/qserv/worker/QuerySql.h"
+#include "wdb/QuerySql.h"
 namespace lsst { namespace qserv { namespace worker {
 
 struct QuerySql::Batch {

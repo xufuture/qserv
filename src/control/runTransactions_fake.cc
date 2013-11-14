@@ -1,5 +1,5 @@
 // Fake, no-op versions to allow certain builds to link.
-#include "lsst/qserv/master/QuerySession.h"
+#include "qproc/QuerySession.h"
 using lsst::qserv::master::QuerySession;
 
 QuerySession::QuerySession() {}

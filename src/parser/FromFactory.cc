@@ -27,20 +27,20 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/FromFactory.h"
-#include "lsst/qserv/master/FromList.h" // for class FromList
+#include "parser/FromFactory.h"
+#include "query/FromList.h" // for class FromList
 // C++
 #include <deque>
 #include <iterator>
 
 // Package
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
-#include "lsst/qserv/master/ColumnRefH.h"
-#include "lsst/qserv/master/ParseAliasMap.h"
-#include "lsst/qserv/master/ParseException.h"
-#include "lsst/qserv/master/parseTreeUtil.h"
-#include "lsst/qserv/master/TableRefN.h"
-#include "lsst/qserv/master/QueryTemplate.h"
+#include "parser/ColumnRefH.h"
+#include "parser/ParseAliasMap.h"
+#include "parser/ParseException.h"
+#include "parser/parseTreeUtil.h"
+#include "query/TableRefN.h"
+#include "query/QueryTemplate.h"
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;
 

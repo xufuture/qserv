@@ -31,14 +31,14 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/master/ValueFactor.h"
+#include "query/ValueFactor.h"
 #include <iostream>
 #include <sstream>
 #include <iterator>
-#include "lsst/qserv/master/ColumnRef.h"
-#include "lsst/qserv/master/QueryTemplate.h"
-#include "lsst/qserv/master/FuncExpr.h"
-#include "lsst/qserv/master/ValueExpr.h"
+#include "query/ColumnRef.h"
+#include "query/QueryTemplate.h"
+#include "query/FuncExpr.h"
+#include "query/ValueExpr.h"
 
 
 namespace lsst {
