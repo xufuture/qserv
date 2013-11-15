@@ -32,8 +32,8 @@
   * @author Daniel L. Wang, SLAC
   */ 
 #include "wcontrol/RequestTaker.h"
-#include "lsst/qserv/QservPath.hh"
-#include "lsst/qserv/worker.pb.h"
+#include "obsolete/QservPath.hh"
+#include "proto/worker.pb.h"
 
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>

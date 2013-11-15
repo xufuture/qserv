@@ -37,7 +37,7 @@
 #include "xrdfs/XrdName.h"
 
 
-#include "lsst/qserv/QservPath.hh"
+#include "obsolete/QservPath.hh"
 #include <cerrno>
 #include <iostream>
 

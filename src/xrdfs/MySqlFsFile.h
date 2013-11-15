@@ -38,7 +38,7 @@
 #include "wcontrol/Service.h"
 
 // common
-#include "lsst/qserv/QservPath.hh"
+#include "obsolete/QservPath.hh"
 
 // Forward
 class XrdSysError;

@@ -28,7 +28,7 @@
 #define LSST_QSERV_WORKER_TASK_H
 
 #include <boost/shared_ptr.hpp>
-#include "lsst/qserv/worker.pb.h"
+#include "proto/worker.pb.h"
 #include "wbase/Base.h"
 
 namespace lsst {

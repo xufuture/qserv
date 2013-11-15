@@ -39,7 +39,7 @@
 #include "mysql/mysql.h"
 
 // package
-#include "lsst/qserv/SqlErrorObject.hh"
+#include "util/SqlErrorObject.hh"
 #include "wbase/Base.h"
 #include "wcontrol/ResultTracker.h"
 #include "wdb/QueryRunnerManager.h"

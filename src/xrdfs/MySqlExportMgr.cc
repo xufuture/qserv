@@ -24,7 +24,7 @@
 #include <sstream>
 #include <iostream>
 #include <boost/regex.hpp>
-#include "lsst/qserv/SqlConnection.hh"
+#include "util/SqlConnection.hh"
 #include "wconfig/Config.h"
 #include "log/Logger.h"
 
