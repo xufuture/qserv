@@ -30,7 +30,7 @@
 
 #include <deque>
 #include <boost/shared_ptr.hpp>
-#include "lsst/qserv/worker.pb.h"
+#include "proto/worker.pb.h"
 #include "wbase/Base.h"
 
 

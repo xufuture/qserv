@@ -34,8 +34,8 @@
 
 #include "mysql/mysql.h"
 #include <boost/regex.hpp>
-#include "lsst/qserv/SqlErrorObject.hh"
-#include "lsst/qserv/SqlConnection.hh"
+#include "util/SqlErrorObject.hh"
+#include "util/SqlConnection.hh"
 #include "wdb/QueryPhyResult.h"
 #include "wbase/Base.h"
 #include "wconfig/Config.h"

@@ -44,7 +44,7 @@
 #include "wbase/Base.h"
 #include "wcontrol/RequestTaker.h"
 #include "log/Logger.h"
-#include "lsst/qserv/QservPath.hh"
+#include "obsolete/QservPath.hh"
 
 #include <algorithm>
 #include <cstdlib>

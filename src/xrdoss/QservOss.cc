@@ -25,7 +25,7 @@
 /// provides a particular arbitrary response indicating a free disk
 /// space abundance. 
 #include "xrdoss/QservOss.h"
-#include "lsst/qserv/QservPath.hh"
+#include "obsolete/QservPath.hh"
 #include "log/Logger.h"
 #include <algorithm>
 #include <cstdarg>

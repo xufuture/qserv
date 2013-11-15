@@ -36,9 +36,9 @@
 #include "log/Logger.h"
 #include "xrdfs/XrdName.h"
 
+#include "util/SqlConnection.hh"
+#include "obsolete/QservPath.hh"
 
-#include "lsst/qserv/SqlConnection.hh"
-#include "lsst/qserv/QservPath.hh"
 #include <cerrno>
 #include <iostream>
 #include <iterator>
