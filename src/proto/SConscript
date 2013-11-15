@@ -1,0 +1,38 @@
+# -*- python -*-
+Import('env')
+Import('extraTgts')
+import os
+#import export_deps
+
+# Construct proto env (add protoc Builder)
+pFiles = env.Protoc(
+    ["worker.proto"],
+    PROTOC_PATH='#',
+    PROTOC_CCOUT='#',
+    PROTOC_PYOUT='#',
+    # PROTOC_PATH='#src',
+    # PROTOC_CCOUT='#src',
+    # PROTOC_PYOUT='#src',
+    )
+
+sources = filter(lambda f: "pb" not in str(f), Glob("*.cc"))
+#print "sources", sources, type(sources)
+env.Append(CPPPATH=env["PROTOC_INC"])
+env.Append(CPPPATH=[".."])
+sourceObjs = []
+for s in sources:
+    #print "sources s=",s
+    #sObj = env.Object(s)
+    if str(s) == "TaskMsgDigest.cc":
+        headerDep = filter(lambda s: "worker.pb.h" in str(s), pFiles)
+        #print "headerDep", headerDep
+        env.Depends(s, headerDep)
+    sourceObjs.append(s)
+extraTgts["protoPy"] = filter(lambda s: "worker_pb2.py" in str(s), pFiles)
+extraTgts["protoHdr"] = filter(lambda s: "worker.pb.h" in str(s), pFiles)
+libObjs = sourceObjs + filter(lambda s: "worker.pb.cc" in str(s), pFiles)
+
+Return('libObjs')
+
+
+

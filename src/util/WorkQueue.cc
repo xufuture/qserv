@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2009-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -32,12 +32,11 @@
 #include "util/WorkQueue.h"
 >>>>>>> 53592b3... Update #include via auto-fix (plus header merges)
 #include <iostream>
-namespace qCommon = lsst::qserv::common;
 
 ////////////////////////////////////////////////////////////////////////
 // class WorkQueue::Runner
 ////////////////////////////////////////////////////////////////////////
-class lsst::qserv::common::WorkQueue::Runner {
+class lsst::qserv::WorkQueue::Runner {
 public:
     Runner(WorkQueue& w) : _w(w) { 
     }
@@ -68,13 +67,13 @@ public:
 ////////////////////////////////////////////////////////////////////////
 // class WorkQueue
 ////////////////////////////////////////////////////////////////////////
-qCommon::WorkQueue::WorkQueue(int numRunners) : _isDead(false) { 
+lsst::qserv::WorkQueue::WorkQueue(int numRunners) : _isDead(false) { 
     for(int i = 0; i < numRunners; ++i) {
         _addRunner();
     }
 }
 
-qCommon::WorkQueue::~WorkQueue() {
+lsst::qserv::WorkQueue::~WorkQueue() {
     _dropQueue(true);
     int poisonToMake = 2*_runners.size(); // double dose of poison
     for(int i = 0; i < poisonToMake; ++i) {
@@ -90,7 +89,7 @@ qCommon::WorkQueue::~WorkQueue() {
 }
 
 void 
-qCommon::WorkQueue::add(boost::shared_ptr<qCommon::WorkQueue::Callable> c) {
+lsst::qserv::WorkQueue::add(boost::shared_ptr<lsst::qserv::WorkQueue::Callable> c) {
     boost::lock_guard<boost::mutex> lock(_mutex);
     if(_isDead && !isPoison(c.get())) {
         LOGGER_INF << "Queue refusing work: dead" << std::endl;
@@ -100,7 +99,7 @@ qCommon::WorkQueue::add(boost::shared_ptr<qCommon::WorkQueue::Callable> c) {
     }
 }
 
-void qCommon::WorkQueue::cancelQueued() {
+void lsst::qserv::WorkQueue::cancelQueued() {
     boost::unique_lock<boost::mutex> lock(_mutex);
     boost::shared_ptr<Callable> c;
     while(!_queue.empty()) {
@@ -112,8 +111,8 @@ void qCommon::WorkQueue::cancelQueued() {
     }
 }
 
-boost::shared_ptr<qCommon::WorkQueue::Callable> 
-qCommon::WorkQueue::getNextCallable() {
+boost::shared_ptr<lsst::qserv::WorkQueue::Callable> 
+lsst::qserv::WorkQueue::getNextCallable() {
     boost::unique_lock<boost::mutex> lock(_mutex);
     while(_queue.empty()) {
         _queueNonEmpty.wait(lock);
@@ -123,13 +122,13 @@ qCommon::WorkQueue::getNextCallable() {
     return c;
 }
 
-void qCommon::WorkQueue::registerRunner(Runner* r) {
+void lsst::qserv::WorkQueue::registerRunner(Runner* r) {
     boost::lock_guard<boost::mutex> lock(_runnersMutex); 
     _runners.push_back(r);
     _runnerRegistered.notify_all();
 }
 
-void qCommon::WorkQueue::signalDeath(Runner* r) {
+void lsst::qserv::WorkQueue::signalDeath(Runner* r) {
     boost::lock_guard<boost::mutex> lock(_runnersMutex); 
     RunnerDeque::iterator end = _runners.end();
     //LOGGER_INF << (void*) r << " dying" << std::endl;
@@ -143,14 +142,14 @@ void qCommon::WorkQueue::signalDeath(Runner* r) {
     }
     LOGGER_INF << "couldn't find self to remove" << std::endl;
 }
-void qCommon::WorkQueue::_addRunner() {
+void lsst::qserv::WorkQueue::_addRunner() {
     boost::unique_lock<boost::mutex> lock(_runnersMutex); 
     boost::thread(Runner(*this));
     _runnerRegistered.wait(lock);
     //_runners.back()->run();
 }
 
-void qCommon::WorkQueue::_dropQueue(bool final) {
+void lsst::qserv::WorkQueue::_dropQueue(bool final) {
     boost::lock_guard<boost::mutex> lock(_mutex);
     _queue.clear();
     if(final) _isDead = true;
@@ -161,7 +160,7 @@ void qCommon::WorkQueue::_dropQueue(bool final) {
 //////////////////////////////////////////////////////////////////////
 
 namespace {
-class MyCallable : public qCommon::WorkQueue::Callable {
+class MyCallable : public lsst::qserv::WorkQueue::Callable {
 public:
     typedef boost::shared_ptr<MyCallable> Ptr;
 
@@ -196,7 +195,7 @@ void test() {
     //ts.tv_sec = 10;
     //ts.tv_nsec=0;
     cout << "main started" << endl;
-    qCommon::WorkQueue wq(10);
+    lsst::qserv::WorkQueue wq(10);
     cout << "wq started " << endl;
     for(int i=0; i < 50; ++i) {
         wq.add(MyCallable::Ptr(new MyCallable(i, 0.2)));

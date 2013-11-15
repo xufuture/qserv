@@ -1,0 +1,10 @@
+# -*- python -*-
+import distutils.sysconfig
+Import('env')
+Import('extraTgts')
+env.Tool('swig')
+env['SWIGFLAGS'] = ['-python', '-c++', '-Iinclude'],
+env.Append(CPPPATH = [distutils.sysconfig.get_python_inc()])
+env['SHLIBPREFIX'] = ""
+tgt = env.File("masterLib.i")
+Return('tgt')

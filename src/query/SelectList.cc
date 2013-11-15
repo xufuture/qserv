@@ -44,7 +44,7 @@
 #include "query/ValueFactor.h"
 #include "query/QueryTemplate.h"
 
-#include "SqlSQL2TokenTypes.hpp" // For ANTLR typing.
+#include "parser/SqlSQL2TokenTypes.hpp" // For ANTLR typing.
 
 #include "lsst/qserv/Logger.h"
 

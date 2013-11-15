@@ -39,8 +39,8 @@
 #include <iostream>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
-#include "lsst/qserv/Logger.h"
-#include "lsst/qserv/SqlConnection.hh"
+#include "util/SqlConnection.hh"
+#include "log/Logger.h"
 #include "merger/SqlInsertIter.h"
 #include "util/MmapFile.h"
 using lsst::qserv::SqlErrorObject;

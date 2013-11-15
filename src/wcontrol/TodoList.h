@@ -26,7 +26,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <deque>
-#include "lsst/qserv/worker.pb.h"
+#include "proto/worker.pb.h"
 #include "wbase/Base.h"
 #include "wcontrol/Task.h"
 

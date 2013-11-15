@@ -25,7 +25,7 @@
 #include <fcntl.h>
 #include <iterator>
 
-#include "lsst/qserv/SqlErrorObject.hh"
+#include "util/SqlErrorObject.hh"
 #include "wconfig/Config.h"
 #include "wbase/Base.h"
 #include "log/Logger.h"
