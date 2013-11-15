@@ -5,8 +5,7 @@ import os
 #import export_deps
 
 # Construct proto env (add protoc Builder)
-pEnv = env.Clone(tools=['default', 'protoc'])
-pFiles = pEnv.Protoc(
+pFiles = env.Protoc(
     ["worker.proto"],
     PROTOC_PATH='#',
     PROTOC_CCOUT='#',
@@ -16,56 +15,24 @@ pFiles = pEnv.Protoc(
     # PROTOC_PYOUT='#src',
     )
 
-#    PROTOCPROTOPATH=['.',],
-#    PROTOCPYTHONOUTDIR=".",
-#    PROTOCOUTDIR = ".",
-    #PROTOCOUTDIR = 'build', # defaults to same directory as .proto
-    # PROTOCCPPOUTFLAGS = "dllexport_decl=PROTOCONFIG_EXPORT:", too 
-
-print "pFiles=",pFiles
-pyFiles = filter(lambda s: str(s).endswith(".py"), pFiles)
-if pFiles:
-    pf = env.Install("../python", pyFiles[0])
-    ## This feels icky, but it's the simplest solution for now.
-    masterPython = "../../master/python/lsst/qserv/master"
-    env.Alias("master", env.Install(masterPython, pyFiles[0]))
-else:
-    print "WARNING: No python generated for protocol."
-
 sources = filter(lambda f: "pb" not in str(f), Glob("*.cc"))
 #print "sources", sources, type(sources)
-pEnv.Append(CPPPATH=pEnv["PROTOC_INC"])
-pEnv.Append(CPPPATH=[".."])
+env.Append(CPPPATH=env["PROTOC_INC"])
+env.Append(CPPPATH=[".."])
 sourceObjs = []
 for s in sources:
     #print "sources s=",s
-    #sObj = pEnv.Object(s)
+    #sObj = env.Object(s)
     if str(s) == "TaskMsgDigest.cc":
         headerDep = filter(lambda s: "worker.pb.h" in str(s), pFiles)
         #print "headerDep", headerDep
-        pEnv.Depends(s, headerDep)
+        env.Depends(s, headerDep)
     sourceObjs.append(s)
-#pEnv.Append(CPPPATH=[os.environ["PROTOC_INC"], ".."],
-#            LIBPATH=os.environ["PROTOC_LIB"],
-#            CPPFLAGS=['-fPIC'])
 extraTgts["protoPy"] = filter(lambda s: "worker_pb2.py" in str(s), pFiles)
 extraTgts["protoHdr"] = filter(lambda s: "worker.pb.h" in str(s), pFiles)
 libObjs = sourceObjs + filter(lambda s: "worker.pb.cc" in str(s), pFiles)
 
-# Export proto lib + dependency 
-#deps = {'LIBPATH' : [os.path.abspath(os.environ["PROTOC_LIB"])],
-#        'LIBS' : ['protobuf','ssl', 'crypto']}
-#tup = export_deps.installWithDeps(env, lib, "qserv_proto", "../lib", deps)
-#env.Append(built_libs=[tup[0]])
-
 Return('libObjs')
-## FIXME: export in a better way.
-# # Export proto header + dependency 
-# deps = {'CPPPATH' : [os.path.abspath(os.environ["PROTOC_INC"])]}
-# tup = export_deps.installWithDeps(env, "worker.pb.h", "worker.pb.h",
-#                                   "../include/lsst/qserv", deps)
-# # Export msg digest header + dependency 
-# env.Install("../include/lsst/qserv", "TaskMsgDigest.h")
 
 
 

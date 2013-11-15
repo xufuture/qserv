@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2009-2013 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -26,8 +26,8 @@
 //  Used to do lightweight concurrent things without thread
 //  creation/destruction overhead.
 //
-#ifndef LSST_QSERV_WORKER_WORKQUEUE_H
-#define LSST_QSERV_WORKER_WORKQUEUE_H
+#ifndef LSST_QSERV_WORKQUEUE_H
+#define LSST_QSERV_WORKQUEUE_H
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -35,20 +35,22 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
 
 class WorkQueue {
 public:
     class Callable {
     public:
-        virtual ~Callable() {}
+        virtual ~Callable() {} // Must halt current operation.
         virtual void operator()() = 0;
+        virtual void abort() {} // Halt while running or otherwise
+        virtual void cancel() {} // Cleanup (not run yet)
     };
 
     WorkQueue(int numRunners);
     ~WorkQueue();
 
     void add(boost::shared_ptr<Callable> c);
+    void cancelQueued();
 
     boost::shared_ptr<Callable> getNextCallable();
 
@@ -62,18 +64,21 @@ public:
 
 private:
     void _addRunner();
+    void _dropQueue(bool final=true);
 
     typedef std::deque<boost::shared_ptr<Callable> > WorkDeque;
     typedef std::deque<Runner*> RunnerDeque;
+
     boost::mutex _mutex;
     boost::mutex _runnersMutex;
     boost::condition_variable _queueNonEmpty;
     boost::condition_variable _runnersEmpty;
     boost::condition_variable _runnerRegistered;
     WorkDeque _queue;
+    bool _isDead;
     RunnerDeque _runners;
 };
 
-}}}  // namespace lsst::qserv::worker
+}}  // namespace lsst::qserv
 
-#endif // LSST_QSERV_WORKER_WORKQUEUE_H
+#endif // LSST_QSERV_WORKQUEUE_H

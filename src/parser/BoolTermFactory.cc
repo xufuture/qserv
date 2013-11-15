@@ -31,7 +31,7 @@
 #include "parser/ValueExprFactory.h"
 #include "query/Predicate.h"
 #include "parser/PredicateFactory.h"
-#include "SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
+#include "parser/SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 
 namespace lsst {
 namespace qserv {

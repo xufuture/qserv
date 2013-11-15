@@ -34,7 +34,7 @@
 #include "qproc/TaskMsgFactory2.h"
 
 #include "qdisp/ChunkQuerySpec.h"
-#include "lsst/qserv/worker.pb.h"
+#include "proto/worker.pb.h"
 
 namespace qMaster=lsst::qserv::master;
 

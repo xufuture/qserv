@@ -7,7 +7,7 @@ import glob, os, re, sys
 from itertools import chain, izip, repeat
 import SCons.Util
 ##import detect_deps
-env = Environment(tools=["default", "protoc"])
+env = Environment(tools=["default", "protoc", "antlr"])
 
 # Describe what your package contains here.
 env.Help("""
@@ -31,6 +31,7 @@ def findXrd():
 env.Append(CPPPATH=[os.getcwd()]) # top level
 env.Append(CPPPATH=[findXrd()])
 env.Append(CPPPATH=[env['PROTOC_INC']])
+env.Append(CPPFLAGS=["-D_FILE_OFFSET_BITS=64", "-fPIC"])
 # Products
 
 products = { "xrdfs" : """-lssl -lcrypto 
@@ -45,7 +46,9 @@ shProducts = { "xrdfs" : """proto xrdfs
                             log global
                          """.split(),
                "xrdoss" : "xrdoss".split(),
-               "_masterlib" : """czar""".split()               
+               "_masterlib" : """czar parser query
+                                 log merger meta mysql obsolete
+                                 qana qdisp qproc util xrdc""".split()
                }
 modList = [m for m in chain(*shProducts.values())]
 
@@ -58,7 +61,7 @@ def getLibDeps(mName):
         libDeps = open(os.path.join(mRoot, mName, libDepName)).read()
         return libDeps
     except IOError, e:
-        print "Warning, no %s for module %s" % (libDepName, mName)
+        #print "Warning, no %s for module %s" % (libDepName, mName)
         return []
 
 def getSrcs(mName):
@@ -67,14 +70,14 @@ def getSrcs(mName):
 
 extraTgts = {}
 def getTgts(mName):
-    tgts = SConscript(os.path.join(mRoot, mName, "SConscript"),
-                      exports={'env': env, 'extraTgts': extraTgts})
-    if not tgts:
-        print "No targets for %s, using glob" % mName
-        return Glob(os.path.join(mRoot, mName, "*.cc"))
-    else:
+    scriptPath = os.path.join(mRoot, mName, "SConscript")
+    if os.access(scriptPath, os.R_OK):
+        tgts = SConscript(os.path.join(mRoot, mName, "SConscript"),
+                          exports={'env': env, 'extraTgts': extraTgts})
         return tgts
-
+    else:
+        #print "No targets for %s, using glob" % mName
+        return Glob(os.path.join(mRoot, mName, "*.cc"))
 
 for mod in libProducts:
     objs = getTgts(mod)

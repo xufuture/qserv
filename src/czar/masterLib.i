@@ -32,15 +32,15 @@ Access to the classes from the qserv_master library
 %module("threads"=1, package="lsst.qserv.master") masterLib
 %{
 #define SWIG_FILE_WITH_INIT
-#include "lsst/qserv/master/xrdfile.h"
-#include "lsst/qserv/master/dispatcher.h"
-#include "lsst/qserv/master/mergeTypes.h"
-#include "lsst/qserv/master/Substitution.h"
-#include "lsst/qserv/master/ChunkMeta.h"
-#include "lsst/qserv/master/ChunkSpec.h"
-#include "lsst/qserv/master/TableMerger.h"
-#include "lsst/qserv/master/common.h"
-#include "lsst/qserv/master/ifaceMeta.h"%}
+#include "xrdc/xrdfile.h"
+#include "control/dispatcher.h"
+#include "merger/mergeTypes.h"
+#include "util/Substitution.h"
+#include "qdisp/ChunkMeta.h"
+#include "qdisp/ChunkSpec.h"
+#include "merger/TableMerger.h"
+#include "util/common.h"
+#include "meta/ifaceMeta.h"%}
 
 
 // %include "lsst/p_lsstSwig.i"
@@ -112,16 +112,16 @@ namespace std {
 %apply (char *STRING, int LENGTH) { (char *str, int len) };
 //%apply (const char *STRING, int LENGTH) { (const char *str, int len) };
 %apply int *OUTPUT { int *write, int *read };
-%include "lsst/qserv/master/transaction.h"
-%include "lsst/qserv/master/xrdfile.h"
-%include "lsst/qserv/master/mergeTypes.h"
-%include "lsst/qserv/master/dispatcher.h"
-%include "lsst/qserv/master/Substitution.h"
-%include "lsst/qserv/master/Constraint.h"
-%include "lsst/qserv/master/ChunkMeta.h"
-%include "lsst/qserv/master/ChunkSpec.h"
-%include "lsst/qserv/master/TableMerger.h"
-%include "lsst/qserv/master/ifaceMeta.h"
+%include "control/transaction.h"
+%include "xrdc/xrdfile.h"
+%include "merger/mergeTypes.h"
+%include "control/dispatcher.h"
+%include "util/Substitution.h"
+%include "query/Constraint.h"
+%include "qdisp/ChunkMeta.h"
+%include "qdisp/ChunkSpec.h"
+%include "merger/TableMerger.h"
+%include "meta/ifaceMeta.h"
 
 // Instantiate any templates here:
 // %template(setBool) lsst::daf::base::PropertySet::set<bool>;
