@@ -1,0 +1,16 @@
+# -*- python -*-
+Import('env')
+Import('extraTgts')
+import os
+#import export_deps
+
+# Construct proto env (add ANTLR Builder)
+antlrTgts = env.Antlr(['SqlSQL2.g'],                                
+    ANTLR_GLIB='DmlSQL2.g',
+    ANTLR_OUT='.',
+    )
+antlrSrcs = filter(lambda f: str(f).endswith(env.subst('$ANTLR_CCSUFFIX')), antlrTgts)
+antlrHdrs = filter(lambda f: str(f).endswith(env.subst('$ANTLR_HSUFFIX')), antlrTgts)
+extraTgts['antlrHdrs'] = antlrHdrs
+# ignore antlr .txt files for now.
+Return('antlrSrcs')

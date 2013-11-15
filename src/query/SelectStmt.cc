@@ -41,8 +41,8 @@
 #include <boost/algorithm/string/predicate.hpp> // string iequal
 
 // Local (placed in src/)
-#include "SqlSQL2Parser.hpp"
-#include "SqlSQL2TokenTypes.hpp"
+#include "parser/SqlSQL2Parser.hpp" 
+#include "parser/SqlSQL2TokenTypes.hpp"
 
 #include "parser/parseTreeUtil.h"
 #include "parser/ColumnRefH.h"

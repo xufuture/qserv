@@ -34,7 +34,7 @@
 #include <iterator>
 
 // Package
-#include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
+#include "parser/SqlSQL2Parser.hpp" // applies several "using antlr::***".
 #include "parser/ColumnRefH.h"
 #include "parser/ParseAliasMap.h"
 #include "parser/ParseException.h"

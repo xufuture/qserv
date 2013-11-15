@@ -96,7 +96,7 @@ using antlr::TokenStream;
 using antlr::RefAST;
 
 #endif
-#include "lsst/qserv/master/parserBase.h"
+#include "parser/parserBase.h"
 #include "boost/shared_ptr.hpp"
 //  Global header ends here
 }
