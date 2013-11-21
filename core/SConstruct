@@ -1,0 +1,6 @@
+# -*- python -*-
+# top level
+env = Environment(tools=['default', 'protoc', 'antlr', 'swig'])
+env.Append(CPPPATH="modules")
+SConscript('modules/SConscript', variant_dir='bld', duplicate=1,
+           exports=['env', 'ARGUMENTS'])
