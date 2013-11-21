@@ -2,9 +2,52 @@
 import distutils.sysconfig
 Import('env')
 Import('extraTgts')
-env.Tool('swig')
-env['SWIGFLAGS'] = ['-python', '-c++', '-Iinclude'],
-env.Append(CPPPATH = [distutils.sysconfig.get_python_inc()])
-env['SHLIBPREFIX'] = ""
-tgt = env.File("masterLib.i")
+#env.Tool('swig')
+#env['SWIGFLAGS'] = ['-python', '-c++', '-Iinclude'],
+#env.Append(CPPPATH = [distutils.sysconfig.get_python_inc()])
+#env['SHLIBPREFIX'] = "" # Pushed to higher level SConscript
+
+# Manual dependencies for masterLib.i, because the SCons SWIG builder
+# isn't knowledgeable enough to ensure their presence when using VariantDir
+depends = ['control/transaction.h',
+           'xrdc/xrdfile.h',
+           'merger/mergeTypes.h',
+           'control/dispatcher.h',
+           'util/Substitution.h',
+           'query/Constraint.h',
+           'qdisp/ChunkMeta.h',
+           'qdisp/ChunkSpec.h',
+           'merger/TableMerger.h',
+           'meta/ifaceMeta.h']
+depends = map(lambda f: env.File("../"+f), depends)
+
+localCpppath = env['CPPPATH']
+localCpppath.append(distutils.sysconfig.get_python_inc())
+swigged = env.SharedObject(source="masterLib.i",
+                           SWIGFLAGS=['-python', '-c++', '-Iinclude'],
+                           SWIGPATH=['..',
+                                     distutils.sysconfig.get_python_inc()],
+                           CPPPATH=localCpppath,
+                           LDMODULEPREFIX='_', LDMODULESUFFIX = '.so'
+                           )
+# swigged = env.swig(source="masterLib.i",
+#                    SWIGPATH=['..',
+#                              distutils.sysconfig.get_python_inc()],
+#                    LDMODULEPREFIX='_', LDMODULESUFFIX = '.so'
+#                    )
+
+#env.Append(SWIGPATH=['..', distutils.sysconfig.get_python_inc()])
+#swigged = [env.File("masterLib.i")]
+
+# print swigged # prints ['masterLib_wrap.os']
+env.Depends(swigged[0], depends)
+env.Depends(swigged[0], File('../control/transaction.h'))
+tgt = swigged
+
+# Create entry for python file, which SCons SWIG builder ignores
+pySwig = env.File('masterLib.py')
+#env.Depends(pySwig, swigged[0]) # This causes a cycle (why?), 
+# but "scons --tree=all" shows that a sufficient dep
+# is already there (on masterLib.i)
+extraTgts["masterLib.py"] = pySwig
 Return('tgt')
