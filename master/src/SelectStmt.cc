@@ -195,12 +195,12 @@ inline OS& generate(OS& os, char const label[], boost::shared_ptr<T> t) {
 
 void qMaster::SelectStmt::_print() {
     //_selectList->getColumnRefList()->printRefs();
-    print(LOGGER_INF, "from", _fromList);
-    print(LOGGER_INF, "select", _selectList);
-    print(LOGGER_INF, "where", _whereClause);
-    print(LOGGER_INF, "orderby", _orderBy);
-    print(LOGGER_INF, "groupby", _groupBy);
-    print(LOGGER_INF, "having", _having);
+    print(LOG_STRM(Info), "from", _fromList);
+    print(LOG_STRM(Info), "select", _selectList);
+    print(LOG_STRM(Info), "where", _whereClause);
+    print(LOG_STRM(Info), "orderby", _orderBy);
+    print(LOG_STRM(Info), "groupby", _groupBy);
+    print(LOG_STRM(Info), "having", _having);
     if(_limit != -1) { LOGGER_INF << " LIMIT " << _limit; }
 }
 

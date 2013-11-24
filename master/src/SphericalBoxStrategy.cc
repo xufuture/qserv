@@ -428,7 +428,7 @@ void SphericalBoxStrategy::_import(FromList const& f) {
 #if 0
     LOGGER_INF << "Imported:::::";
     std::copy(_impl->tuples.begin(), _impl->tuples.end(),
-              std::ostream_iterator<Tuple>(LOGGER_INF, ","));
+              std::ostream_iterator<Tuple>(LOG_STRM(Info), ","));
     LOGGER_INF << std::endl;
 #endif
     // Patch tuples in preparation for patching the FromList

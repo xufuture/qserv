@@ -141,7 +141,7 @@ BoolFactor::Ptr
 BoolTermFactory::newBoolFactor(antlr::RefAST a) {
 #if 0
     LOGGER_INF << "bool factor:";
-    spacePrint sp(LOGGER_INF);
+    spacePrint sp(LOG_STRM(Info));
     forEachSibs(a, sp);
     LOGGER_INF << std::endl;
 #endif

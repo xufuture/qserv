@@ -151,7 +151,7 @@ public:
     FromWhereH() {}
     virtual ~FromWhereH() {}
     virtual void operator()(antlr::RefAST fw) {
-        qMaster::printDigraph("fromwhere", LOGGER_INF, fw);
+        qMaster::printDigraph("fromwhere", LOG_STRM(Info), fw);
     }
 };
 ////////////////////////////////////////////////////////////////////////
@@ -223,7 +223,7 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     // }
     std::copy(pg.begin(), pg.end(), std::back_inserter(params));
     std::copy(params.begin(), params.end(),
-              std::ostream_iterator<std::string>(LOGGER_INF,", "));
+              std::ostream_iterator<std::string>(LOG_STRM(Info),", "));
     if(!_clause->_restrs) {
         throw std::logic_error("Invalid WhereClause._restrs");
     }
@@ -267,7 +267,7 @@ WhereFactory::_addOrSibs(antlr::RefAST a) {
 
     walkTreeVisit(a, p);
     LOGGER_INF << "Adding orsibs: " << p.result << std::endl;
-    // BoolTermFactory::tagPrint tp(LOGGER_INF, "addOr");
+    // BoolTermFactory::tagPrint tp(LOG_STRM(Info), "addOr");
     // forEachSibs(a, tp);
     BoolTermFactory f(_vf);
     _clause->_tree = f.newOrTerm(a);

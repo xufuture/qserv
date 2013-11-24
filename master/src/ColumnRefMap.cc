@@ -55,7 +55,7 @@ ColumnRefMap::getRef(antlr::RefAST r) const {
     RefMap::const_iterator ref = _refs.find(r);
     if(ref == _refs.end()) {
          LOGGER_ERR << "couldn't find " << tokenText(r) << " in";
-        printRefs(LOGGER_ERR);
+        printRefs(LOG_STRM(Error));
         throw std::invalid_argument("Node not tracked in _refs.");
     }
     return ref->second;

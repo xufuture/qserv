@@ -260,7 +260,7 @@ void AsyncQueryManager::joinEverything() {
     int count;
     int moreDetailThreshold = 5;
     int complainCount = 0;
-    _printState(LOGGER_DBG);
+    _printState(LOG_STRM(Debug));
     while(!_queries.empty()) { 
         count = _queries.size();
         if(count != lastCount) {
@@ -269,7 +269,7 @@ void AsyncQueryManager::joinEverything() {
             count = lastCount;
             ++complainCount;
             if(complainCount > moreDetailThreshold) {
-                _printState(LOGGER_WRN);
+                _printState(LOG_STRM(Warning));
                 complainCount = 0;
             }
         }

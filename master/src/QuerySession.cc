@@ -54,7 +54,7 @@ namespace master {
 
 void printConstraints(ConstraintVector const& cv) {
     std::copy(cv.begin(), cv.end(),
-              std::ostream_iterator<Constraint>(LOGGER_INF, ","));
+              std::ostream_iterator<Constraint>(LOG_STRM(Info), ","));
 
 }
 

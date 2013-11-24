@@ -28,19 +28,20 @@
 #define LSST_QSERV_LOGGER_H
 
 // These directives are for convenience.
-#define LOGGER lsst::qserv::Logger::Instance()
-#define LOGGER_DBG lsst::qserv::Logger::Instance(lsst::qserv::Logger::Debug)
-#define LOGGER_INF lsst::qserv::Logger::Instance(lsst::qserv::Logger::Info)
-#define LOGGER_WRN lsst::qserv::Logger::Instance(lsst::qserv::Logger::Warning)
-#define LOGGER_ERR lsst::qserv::Logger::Instance(lsst::qserv::Logger::Error)
-#define LOGGER_THRESHOLD_DBG lsst::qserv::Logger::Instance()\
-                             .setSeverityThreshold(lsst::qserv::Logger::Debug);
-#define LOGGER_THRESHOLD_INF lsst::qserv::Logger::Instance()\
-                             .setSeverityThreshold(lsst::qserv::Logger::Info);
-#define LOGGER_THRESHOLD_WRN lsst::qserv::Logger::Instance()\
-                             .setSeverityThreshold(lsst::qserv::Logger::Warning);
-#define LOGGER_THRESHOLD_ERR lsst::qserv::Logger::Instance()\
-                             .setSeverityThreshold(lsst::qserv::Logger::Error);
+#define LOG_STRM(level) lsst::qserv::Logger::Instance(lsst::qserv::Logger::level)
+#define LOGGER(level) if (lsst::qserv::Logger::level >= \
+    lsst::qserv::Logger::Instance().getSeverityThreshold()) \
+    lsst::qserv::Logger::Instance(lsst::qserv::Logger::level)
+#define LOGGER_DBG LOGGER(Debug)
+#define LOGGER_INF LOGGER(Info)
+#define LOGGER_WRN LOGGER(Warning)
+#define LOGGER_ERR LOGGER(Error)
+#define LOGGER_THRESHOLD(level) lsst::qserv::Logger::Instance()\
+    .setSeverityThreshold(lsst::qserv::Logger::level);
+#define LOGGER_THRESHOLD_DBG LOGGER_THRESHOLD(Debug)
+#define LOGGER_THRESHOLD_INF LOGGER_THRESHOLD(Info)
+#define LOGGER_THRESHOLD_WRN LOGGER_THRESHOLD(Warning)
+#define LOGGER_THRESHOLD_ERR LOGGER_THRESHOLD(Error)
 
 #include <stdio.h>
 #include <sys/time.h>

@@ -124,13 +124,12 @@ std::string Logger::LogFilter::getTimeStamp() {
     struct timeval tv;
     struct tm* tm;
     gettimeofday(&tv, NULL);
-    if ((tm = localtime(&tv.tv_sec)) != NULL) {
-        strftime(fmt, sizeof fmt, "%Y-%m-%d %H:%M:%S.%%06u", tm);
-        snprintf(buf, sizeof buf, fmt, tv.tv_usec);
-        return std::string(buf);
-    } else {
-        return NULL;
-    }
+    struct tm newtime;
+    memset(&newtime, 0, sizeof(struct tm));
+    localtime_r(&tv.tv_sec, &newtime);
+    strftime(fmt, sizeof fmt, "%Y%m%d %H:%M:%S.%%06u", &newtime);
+    snprintf(buf, sizeof buf, fmt, tv.tv_usec);
+    return std::string(buf);
 }
 
 std::string Logger::LogFilter::getSeverity() {

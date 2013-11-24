@@ -90,7 +90,7 @@ ValueExprFactory::newExpr(antlr::RefAST a) {
 #if 0
     LOGGER_INF << "Imported expr: ";
     std::copy(expr->_factorOps.begin(), expr->_factorOps.end(),
-              std::ostream_iterator<ValueExpr::FactorOp>(LOGGER_INF, ","));
+              std::ostream_iterator<ValueExpr::FactorOp>(LOG_STRM(Info), ","));
     LOGGER_INF << std::endl;
 #endif
     return expr;
