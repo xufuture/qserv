@@ -24,8 +24,13 @@ zookeeper-3.4.5/bin/zkServer.sh start
 
 export LD_LIBRARY_PATH=<path>/lib:<path>/lib/mysql
 core/bld/css/testCssException
+<<<<<<< HEAD
 core/bld/css/dist/testKvInterfaceImplDummy
 core/bld/css/dist/testKvInterfaceImplZoo
+=======
+core/bld/css/dist/testCssInterfaceImplDummy
+core/bld/css/dist/testCssInterfaceImplZoo
+>>>>>>> Central State System (CSS) - first (working) prototype. It replaces QMS.
 core/bld/css/dist/testStore
 
 

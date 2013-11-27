@@ -61,7 +61,6 @@ using lsst::qserv::query::QsRestrictor;
 using lsst::qserv::query::QueryContext;
 using lsst::qserv::util::StringPair;
 
-
 namespace test = boost::test_tools;
 
 namespace {

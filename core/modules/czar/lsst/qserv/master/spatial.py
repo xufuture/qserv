@@ -33,6 +33,7 @@ def makePmap(dominantDb, stripes, subStripes):
         raise lsst.qserv.master.config.ConfigError(msg)
     p = SphericalBoxPartitionMap(stripes, subStripes)
     logger.inf("Using %d stripes and %d substripes." % (stripes, subStripes))
+>>>>>>> Central State System (CSS) - first (working) prototype. It replaces QMS.
     return p
 
 

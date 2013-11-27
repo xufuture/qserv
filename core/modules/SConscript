@@ -80,7 +80,6 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                "_masterLib" : {'mods' : """css czar control global
                                            log merger mysql
                                            parser query
-issues
                                            sql util xrdc
                                            obsolete proto
                                            qana qdisp qproc""".split(),

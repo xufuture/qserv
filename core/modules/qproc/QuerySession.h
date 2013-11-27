@@ -39,9 +39,9 @@
 // Local imports
 #include "css/Facade.h"
 #include "merger/mergeTypes.h"
+#include "qana/QueryPlugin.h"
 #include "qproc/ChunkQuerySpec.h"
 #include "qproc/ChunkSpec.h"
-#include "qana/QueryPlugin.h"
 #include "query/Constraint.h"
 
 
