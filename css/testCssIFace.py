@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # LSST Data Management System
 # Copyright 2013 LSST Corporation.
 # 
@@ -37,12 +39,15 @@ class TestCssIFace(unittest.TestCase):
         # try second time, just for fun, that should work too
         self._iFace.deleteAll("/unittest", False)
         # define key/value for testing
-        k1 = "/unittest/my/first/test"
+        k1 = "/unittest/my/first/testX"
+        k2 = "/unittest/my/testY"
         v1 = "aaa"
         v2 = "AAA"
         # create the key
         self._iFace.create(k1, v1)
-        # get it
+        # and another one
+        self._iFace.create(k2, v2)
+        # get the first one
         v1a = self._iFace.get(k1)
         assert(v1a == v1)
         # try to create it again, this should fail
@@ -60,6 +65,9 @@ class TestCssIFace(unittest.TestCase):
         self.assertRaises(CssException, self._iFace.get, k1)
         # try to set it, it should fail
         self.assertRaises(CssException, self._iFace.set, k1, v1)
+        # get the second key
+        v2a = self._iFace.get(k2)
+        assert(v2a == v2)
         # print everything
         self._iFace.printAll()
 
