@@ -46,7 +46,7 @@ class CssIFace(object):
         # check if the key exists
         if self._zk.exists(k):
             raise CssException(Status.ERR_KEY_ALREADY_EXISTS, k)
-        p = self._extractPath(k)
+        p = self._chopLastSection(k)
         if p is None:
             raise CssException(Status.ERR_KEY_INVALID, k)
         self._zk.ensure_path(p)
@@ -75,7 +75,15 @@ class CssIFace(object):
     def delete(self, k):
         if not self._zk.exists(k):
             raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
+        print "deleting:", k
         self._zk.delete(k, recursive=False)
+        # remove orphan znodes
+        k = self._chopLastSection(k)
+        if k != -1:
+            children = self._zk.get_children(k)
+            if len(children) == 0:
+                print "requesting deleting of orphan znode:", k
+                self.delete(k)
 
     # -------------------------------------------------------------------------
     def watch(self, k):
@@ -94,12 +102,12 @@ class CssIFace(object):
         self._printOne("/")
 
     # -------------------------------------------------------------------------
-    # ---- P R I V A T E    M E T H O DS     B E L O W
-    # ------------------------------------------------------------------------ 
+    # ---- P R I V A T E    M E T H O D S     B E L O W
+    # ------------------------------------------------------------------------- 
 
     # -------------------------------------------------------------------------
-    # Returns path for given key, e.g, for key /a/b/c/key, it'll return /a/b/c
-    def _extractPath(self, k):
+    # Removes substring after last '/', e.g. for /xx/y/abc it'll return /xx/y
+    def _chopLastSection(self, k):
         x = k.rfind('/')
         if x == -1: return None
         return k[0:x]
@@ -119,7 +127,6 @@ class CssIFace(object):
                     self._printOne("%s%s" % (p, child))
             else:
                 self._printOne("%s/%s" % (p, child))
-
 
     # -------------------------------------------------------------------------
     # Recursive delete
