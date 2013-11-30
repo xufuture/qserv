@@ -21,8 +21,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
 """
-This module defines the interface to the Central State Service (CSS)
-.
+This module defines the interface to the Central State Service (CSS).
 """
 
 import time
