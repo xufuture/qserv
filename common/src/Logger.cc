@@ -32,11 +32,24 @@ boost::thread_specific_ptr<Logger> Logger::_instancePtr;
 Logger::Severity Logger::_severityThreshold = Info;
 boost::mutex Logger::_mutex;
 
-std::ostream* volatile Logger::logStreamPtr = &(std::cout);
+boost::mutex Logger::SyncSink::_mutex;
+Logger::SyncSink syncSink(&(std::cout));
+boost::iostreams::stream_buffer<Logger::SyncSink> syncBuffer(syncSink);
+std::ostream Logger::logStream(&syncBuffer);
 
 ////////////////////////////////////////////////////////////////////////
 // public
 ////////////////////////////////////////////////////////////////////////
+
+Logger::SyncSink::SyncSink(std::ostream* os) : boost::iostreams::sink() {
+    _os = os;
+}
+
+std::streamsize Logger::SyncSink::write(const char *s, std::streamsize n) {
+    boost::mutex::scoped_lock lock(Logger::SyncSink::_mutex);
+    std::string message(s, n);
+    *_os << message << std::flush;
+}
 
 Logger& Logger::Instance() {
     if (_instancePtr.get() == NULL) _instancePtr.reset(new Logger);
@@ -66,7 +79,7 @@ void Logger::setSeverityThreshold(Logger::Severity severity) {
     if (severity != _severityThreshold) {
         flush();
         {
-            boost::mutex::scoped_lock lock(_mutex);
+            boost::mutex::scoped_lock lock(Logger::_mutex);
             _severityThreshold = severity;
         }
     }
@@ -86,7 +99,7 @@ Logger::Logger() : boost::iostreams::filtering_ostream() {
     Logger::LogFilter logFilter(this);
     push(severityFilter);
     push(logFilter);
-    push(*logStreamPtr);
+    push(logStream);
 }
 
 Logger::SeverityFilter::SeverityFilter(Logger* loggerPtr) 

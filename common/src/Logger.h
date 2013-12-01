@@ -58,8 +58,17 @@ namespace qserv {
 
 class Logger : public boost::iostreams::filtering_ostream {
 public:
+    // Sink class responsible for synchronization.
+    class SyncSink : public boost::iostreams::sink {
+    public:
+        SyncSink(std::ostream* os);
+        std::streamsize write(const char *s, std::streamsize n);
+    private:
+        std::ostream* _os;
+        static boost::mutex _mutex;
+    };
+
     enum Severity { Debug = 0, Info, Warning, Error };
-    static std::ostream* volatile logStreamPtr;
     static Logger& Instance();
     static Logger& Instance(Severity severity);
     void setSeverity(Severity severity);
@@ -95,6 +104,7 @@ private:
     Logger(Logger const&);
     Logger& operator=(Logger const&);
 
+    static std::ostream logStream;
     Severity _severity;
     static Severity _severityThreshold; // Application-wide severity threshold.
     static boost::mutex _mutex;
