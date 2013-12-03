@@ -68,6 +68,10 @@ public:
         static boost::mutex _mutex;
     };
 
+    static SyncSink syncSink;
+    static boost::iostreams::stream_buffer<SyncSink> syncBuffer;
+    static std::ostream logStream;
+
     enum Severity { Debug = 0, Info, Warning, Error };
     static Logger& Instance();
     static Logger& Instance(Severity severity);
@@ -104,7 +108,6 @@ private:
     Logger(Logger const&);
     Logger& operator=(Logger const&);
 
-    static std::ostream logStream;
     Severity _severity;
     static Severity _severityThreshold; // Application-wide severity threshold.
     static boost::mutex _mutex;
