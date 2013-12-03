@@ -260,22 +260,23 @@ Database Watcher - runs on each Qserv node and maintains Qserv databases
 """
 
 import time
+import threading
 
 from cssIFace import CssIFace
 from cssStatus import CssException
 
-class DataWatcher(object):
-    """This class implementes watcher that watches for changes to existing
-       znode."""
-    def __init__(self, pathToWatch):
-        self._iFace = CssIFace()
+class DataWatcher(threading.Thread):
+    """This class implementes watcher that watches for changes to one znode."""
+    def __init__(self, iFace, pathToWatch):
+        self._iFace = iFace
         self._path = pathToWatch
+        threading.Thread.__init__(self)
             # temporarily here, for testing
         self._data = "a"
-        self._iFace.delete(self._path)
+        if self._iFace.exists(self._path): self._iFace.delete(self._path)
         self._iFace.create(self._path, self._data)
 
-    def watch(self):
+    def run(self):
         @self._iFace._zk.DataWatch(self._path)
         def my_watcher_func(data, stat):
             if data != self._data:
@@ -289,8 +290,7 @@ class DataWatcher(object):
             time.sleep(60)
 
 def main():
-    w = DataWatcher("/watchTest/a")
-    w.watch()
+    iFace = CssIFace()
 
 if __name__ == "__main__":
     main()
