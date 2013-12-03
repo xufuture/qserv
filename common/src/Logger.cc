@@ -32,11 +32,24 @@ boost::thread_specific_ptr<Logger> Logger::_instancePtr;
 Logger::Severity Logger::_severityThreshold = Info;
 boost::mutex Logger::_mutex;
 
-std::ostream* volatile Logger::logStreamPtr = &(std::cout);
+boost::mutex Logger::SyncSink::_mutex;
+Logger::SyncSink syncSink(&(std::cout));
+boost::iostreams::stream_buffer<Logger::SyncSink> syncBuffer(syncSink);
+std::ostream Logger::logStream(&syncBuffer);
 
 ////////////////////////////////////////////////////////////////////////
 // public
 ////////////////////////////////////////////////////////////////////////
+
+Logger::SyncSink::SyncSink(std::ostream* os) : boost::iostreams::sink() {
+    _os = os;
+}
+
+std::streamsize Logger::SyncSink::write(const char *s, std::streamsize n) {
+    boost::mutex::scoped_lock lock(Logger::SyncSink::_mutex);
+    std::string message(s, n);
+    *_os << message << std::flush;
+}
 
 Logger& Logger::Instance() {
     if (_instancePtr.get() == NULL) _instancePtr.reset(new Logger);
@@ -63,12 +76,10 @@ Logger::Severity Logger::getSeverity() const {
 }
 
 void Logger::setSeverityThreshold(Logger::Severity severity) {
+    boost::mutex::scoped_lock lock(Logger::_mutex);
     if (severity != _severityThreshold) {
         flush();
-        {
-            boost::mutex::scoped_lock lock(_mutex);
-            _severityThreshold = severity;
-        }
+        _severityThreshold = severity;
     }
 }
 
@@ -86,7 +97,7 @@ Logger::Logger() : boost::iostreams::filtering_ostream() {
     Logger::LogFilter logFilter(this);
     push(severityFilter);
     push(logFilter);
-    push(*logStreamPtr);
+    push(logStream);
 }
 
 Logger::SeverityFilter::SeverityFilter(Logger* loggerPtr) 
@@ -115,22 +126,21 @@ std::string Logger::LogFilter::do_filter(const std::string& line) {
     return getTimeStamp() + " " + getThreadId() + " " + getSeverity() + " " + line;
 }
 
-std::string Logger::LogFilter::getThreadId() {
-    return boost::lexical_cast<std::string>(boost::this_thread::get_id());
-}
-
 std::string Logger::LogFilter::getTimeStamp() {
     char fmt[64], buf[64];
     struct timeval tv;
     struct tm* tm;
     gettimeofday(&tv, NULL);
-    if ((tm = localtime(&tv.tv_sec)) != NULL) {
-        strftime(fmt, sizeof fmt, "%Y-%m-%d %H:%M:%S.%%06u", tm);
-        snprintf(buf, sizeof buf, fmt, tv.tv_usec);
-        return std::string(buf);
-    } else {
-        return NULL;
-    }
+    struct tm newtime;
+    memset(&newtime, 0, sizeof(struct tm));
+    localtime_r(&tv.tv_sec, &newtime);
+    strftime(fmt, sizeof fmt, "%Y%m%d %H:%M:%S.%%06u", &newtime);
+    snprintf(buf, sizeof buf, fmt, tv.tv_usec);
+    return std::string(buf);
+}
+
+std::string Logger::LogFilter::getThreadId() {
+    return boost::lexical_cast<std::string>(boost::this_thread::get_id());
 }
 
 std::string Logger::LogFilter::getSeverity() {

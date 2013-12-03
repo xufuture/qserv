@@ -88,7 +88,7 @@ SelectList::dbgPrint() const {
     LOGGER_INF << "Parsed value expression for select list." << std::endl;
     std::copy(_valueExprList->begin(),
               _valueExprList->end(),
-              std::ostream_iterator<ValueExprPtr>(LOGGER_INF, "\n"));    
+              std::ostream_iterator<ValueExprPtr>(LOG_STRM(Info), "\n"));    
 }
 
 std::ostream& 

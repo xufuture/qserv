@@ -193,7 +193,7 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
         throw std::invalid_argument("No select list in original SelectStmt"); 
     }
     
-    printList(LOGGER_INF, "aggr origlist", *vlist) << std::endl;
+    printList(LOG_STRM(Info), "aggr origlist", *vlist) << std::endl;
     // Clear out select lists, since we are rewriting them.
     pList.getValueExprList()->clear();
     mList.getValueExprList()->clear();

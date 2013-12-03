@@ -28,19 +28,20 @@
 #define LSST_QSERV_LOGGER_H
 
 // These directives are for convenience.
-#define LOGGER lsst::qserv::Logger::Instance()
-#define LOGGER_DBG lsst::qserv::Logger::Instance(lsst::qserv::Logger::Debug)
-#define LOGGER_INF lsst::qserv::Logger::Instance(lsst::qserv::Logger::Info)
-#define LOGGER_WRN lsst::qserv::Logger::Instance(lsst::qserv::Logger::Warning)
-#define LOGGER_ERR lsst::qserv::Logger::Instance(lsst::qserv::Logger::Error)
-#define LOGGER_THRESHOLD_DBG lsst::qserv::Logger::Instance()\
-                             .setSeverityThreshold(lsst::qserv::Logger::Debug);
-#define LOGGER_THRESHOLD_INF lsst::qserv::Logger::Instance()\
-                             .setSeverityThreshold(lsst::qserv::Logger::Info);
-#define LOGGER_THRESHOLD_WRN lsst::qserv::Logger::Instance()\
-                             .setSeverityThreshold(lsst::qserv::Logger::Warning);
-#define LOGGER_THRESHOLD_ERR lsst::qserv::Logger::Instance()\
-                             .setSeverityThreshold(lsst::qserv::Logger::Error);
+#define LOG_STRM(level) lsst::qserv::Logger::Instance(lsst::qserv::Logger::level)
+#define LOGGER(level) if (lsst::qserv::Logger::level >= \
+    lsst::qserv::Logger::Instance().getSeverityThreshold()) \
+    lsst::qserv::Logger::Instance(lsst::qserv::Logger::level)
+#define LOGGER_DBG LOGGER(Debug)
+#define LOGGER_INF LOGGER(Info)
+#define LOGGER_WRN LOGGER(Warning)
+#define LOGGER_ERR LOGGER(Error)
+#define LOGGER_THRESHOLD(level) lsst::qserv::Logger::Instance()\
+    .setSeverityThreshold(lsst::qserv::Logger::level);
+#define LOGGER_THRESHOLD_DBG LOGGER_THRESHOLD(Debug)
+#define LOGGER_THRESHOLD_INF LOGGER_THRESHOLD(Info)
+#define LOGGER_THRESHOLD_WRN LOGGER_THRESHOLD(Warning)
+#define LOGGER_THRESHOLD_ERR LOGGER_THRESHOLD(Error)
 
 #include <stdio.h>
 #include <sys/time.h>
@@ -57,8 +58,17 @@ namespace qserv {
 
 class Logger : public boost::iostreams::filtering_ostream {
 public:
+    // Sink class responsible for synchronization.
+    class SyncSink : public boost::iostreams::sink {
+    public:
+        SyncSink(std::ostream* os);
+        std::streamsize write(const char *s, std::streamsize n);
+    private:
+        std::ostream* _os;
+        static boost::mutex _mutex;
+    };
+
     enum Severity { Debug = 0, Info, Warning, Error };
-    static std::ostream* volatile logStreamPtr;
     static Logger& Instance();
     static Logger& Instance(Severity severity);
     void setSeverity(Severity severity);
@@ -83,8 +93,8 @@ private:
         LogFilter(Logger* loggerPtr);
     private:
         std::string do_filter(const std::string& line);
-        std::string getThreadId();
         std::string getTimeStamp();
+        std::string getThreadId();
         std::string getSeverity();
         Logger* _loggerPtr;
     };
@@ -94,6 +104,7 @@ private:
     Logger(Logger const&);
     Logger& operator=(Logger const&);
 
+    static std::ostream logStream;
     Severity _severity;
     static Severity _severityThreshold; // Application-wide severity threshold.
     static boost::mutex _mutex;

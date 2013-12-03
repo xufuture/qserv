@@ -107,7 +107,7 @@ public:
     addAlias(G g, A a) : _generate(g), _addMap(a) {}
     void operator()(TableRefN::Ptr t) {
         // LOGGER_INF << "tableref:";
-        // t->putStream(LOGGER_INF);
+        // t->putStream(LOG_STRM(Info));
         // LOGGER_INF << std::endl;
         // If no alias, then add one.
         std::string alias = t->getAlias();
@@ -403,7 +403,7 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
 bool testIfSecondary(BoolTerm& t) {
     // FIXME: Look for secondary key in the bool term.
     LOGGER_INF << "Testing ";
-    t.putStream(LOGGER_INF) << std::endl;
+    t.putStream(LOG_STRM(Info)) << std::endl;
     return false;
 }
 
