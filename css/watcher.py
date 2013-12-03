@@ -254,3 +254,39 @@ def main():
 
 if __name__ == "__main__":
     main()
+=======
+Database Watcher - runs on each Qserv node and maintains Qserv databases
+(creates databases, deletes databases, creates tables, drops tables etc).
+"""
+
+import time
+
+from cssIFace import CssIFace
+from cssStatus import CssException
+
+class Watcher(object):
+    def __init__(self, pathToWatch):
+        self._iFace = CssIFace()
+        self._path = pathToWatch
+        self._data = "a"                            # temporarily here, for testing
+        self._iFace.deleteAll(self._path)           # temporarily here, for testing
+        self._iFace.create(self._path, self._data)  # temporarily here, for testing
+
+    def watch(self):
+        @self._iFace._zk.DataWatch(self._path)
+        def my_watcher_func(data, stat):
+            if data != self._data:
+                print "Path %s changed: %s --> %s (version is: %s)" % \
+                (self._path, self._data, data, stat.version)
+            else:
+                print "Path %s updated, same value: %s --> %s (version is: %s)" % \
+                (self._path, self._data, data, stat.version)
+        while True:
+            time.sleep(60)
+
+def main():
+    w = Watcher("/watchTest/a")
+    w.watch()
+
+if __name__ == "__main__":
+    main()
