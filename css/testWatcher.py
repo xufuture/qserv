@@ -23,9 +23,13 @@
 """
 This is a unittest for the watcher.
 
-Run 
+To do a clean test:
+ 1) Run (while watcher is not running)
   ./testWatcher.py TestCssIFace.cleanAll
-to cleanup all metadata for this test (while watcher is not running)
+ 2) Start watcher
+ 3) Run
+  ./testWatcher.py
+ 4) Kill watcher
 """
 
 import time
