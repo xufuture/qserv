@@ -20,28 +20,26 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
-"""
-This module defines the interface to the Central State Service (CSS).
-"""
-
 import time
 
 from kazoo.client import KazooClient
 
 from cssStatus import Status, CssException
 
-
 # todo:
 #  - recover from lost connection by reconnecting
 
 class CssIFace(object):
+    """The CssIFace class defines the interface to the Central State Service
+       (CSS)."""
+
     def __init__(self):
         self._zk = KazooClient(hosts='127.0.0.1:2181')
         self._zk.start()
 
     # -------------------------------------------------------------------------
-    # Adds a new key/value entry. Creates entire path as necessary.
-    def create(self, k, v):
+    def create(self, k, v=''):
+        """ Adds a new key/value entry. Creates entire path as necessary."""
         # check if the key exists
         if self._zk.exists(k):
             raise CssException(Status.ERR_KEY_ALREADY_EXISTS, k)
@@ -56,16 +54,18 @@ class CssIFace(object):
         return self._zk.exists(k)
 
     # -------------------------------------------------------------------------
-    # Returns value for a given key. Raises exception if the key doesn't exist.
     def get(self, k):
+        """Returns value for a given key. Raises exception if the key doesn't
+           exist."""
         if not self._zk.exists(k):
             raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
         data, stat = self._zk.get(k)
         return data
 
     # -------------------------------------------------------------------------
-    # Sets value for a given key. Raises exception if the key doesn't exist.
     def set(self, k, v):
+        """Sets value for a given key. Raises exception if the key doesn't
+           exist."""
         # check if the key exists
         if not self._zk.exists(k):
             raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
@@ -74,10 +74,13 @@ class CssIFace(object):
         v2, stat = self._zk.get(k)
 
     # -------------------------------------------------------------------------
-    # Deletes the key. Raises exception if the key doesn't exist.
-    def delete(self, k):
+    def delete(self, k, ignoreNonExist=False):
+        """Deletes a key. Raises exception if the key doesn't exist."""
         if not self._zk.exists(k):
-            raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
+            if ignoreNonExist:
+                return
+            else:
+                raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
         print "deleting:", k
         self._zk.delete(k, recursive=False)
         # remove orphan znodes
@@ -89,19 +92,15 @@ class CssIFace(object):
                 self.delete(k)
 
     # -------------------------------------------------------------------------
-    def watch(self, k):
-        raise CssException(Status.ERR_NOT_IMPLEMENTED)
-
-    # -------------------------------------------------------------------------
-    # Deletes everything recursively starting from a given point in the tree.
-    # Prints to stdout deleted entries if verbose is set to True.
     def deleteAll(self, p, verbose=True):
+        """Deletes everything recursively starting from a given point in the
+           tree. Prints to stdout deleted entries if verbose is set to True."""
         if self._zk.exists(p):
             self._deleteOne(p, verbose)
 
     # -------------------------------------------------------------------------
-    # Prints entire contents to stdout
     def printAll(self):
+        """Prints entire contents to stdout."""
         self._printOne("/")
 
     # -------------------------------------------------------------------------
@@ -109,15 +108,16 @@ class CssIFace(object):
     # ------------------------------------------------------------------------- 
 
     # -------------------------------------------------------------------------
-    # Removes substring after last '/', e.g. for /xx/y/abc it'll return /xx/y
     def _chopLastSection(self, k):
+        """Removes substring after last '/', e.g. for /xx/y/abc it'll return 
+        /xx/y."""
         x = k.rfind('/')
         if x == -1: return None
         return k[0:x]
 
     # -------------------------------------------------------------------------
-    # Recursive print of the contents
     def _printOne(self, p):
+        """Recursive print of the contents."""
         children = self._zk.get_children(p)
         if len(children) == 0:
             data, stat = self._zk.get(p)
@@ -132,8 +132,8 @@ class CssIFace(object):
                 self._printOne("%s/%s" % (p, child))
 
     # -------------------------------------------------------------------------
-    # Recursive delete
     def _deleteOne(self, p, verbose=True):
+        """Recursive delete."""
         children = self._zk.get_children(p)
         for child in children:
             if p == "/":
