@@ -50,7 +50,11 @@ class CssIFace(object):
             raise CssException(Status.ERR_KEY_INVALID, k)
         self._zk.ensure_path(p)
         self._zk.create(k, v)
-        
+
+    # -------------------------------------------------------------------------
+    def exists(self, k):
+        return self._zk.exists(k)
+
     # -------------------------------------------------------------------------
     # Returns value for a given key. Raises exception if the key doesn't exist.
     def get(self, k):
