@@ -269,32 +269,32 @@ from cssStatus import CssException
 class DataWatcher(threading.Thread):
     """This class implements watcher that watches for changes to one znode."""
     def __init__(self, iFace, pathToWatch):
-        # make sure the path exists
-        if not iFace.exists(pathToWatch): iFace.create(p)
-
         self._iFace = iFace
         self._path = pathToWatch
+        self._data = None
         threading.Thread.__init__(self)
-        # temporarily here, for testing
-        self._data = "a"
-        self._iFace.create(self._path, self._data)
 
     def run(self):
-        @self._iFace._zk.DataWatch(self._path)
+        @self._iFace._zk.DataWatch(self._path, allow_missing_node=True)
         def my_watcher_func(data, stat):
             if data != self._data:
-                print "Path %s changed: %s --> %s (version is: %s)" % \
-                (self._path, self._data, data, stat.version)
+                if data is None:
+                    print "Path %s deleted. (was %s)" % (self._path, self._data)
+                else:
+                    print "Path %s changed. (%s --> %s, version %s)" % \
+                    (self._path, self._data, data, stat.version)
             else:
-                print "Path %s updated, same value: %s (version is: %s)" % \
-                (self._path, data, stat.version)
+                print "Path %s updated. Same value (%s)" % (self._path, data)
             self._data = data
         while True:
             time.sleep(60)
 
 
 class ChildrenWatcher(threading.Thread):
-    """This class implements watcher that watches for new znodes."""
+    """This class implements watcher that watches for new znodes. A new
+       DataWatch is setup for each new znode that is created. 
+       FIXME if we create/delete node multiple times, we will end up with
+       multipe watchers."""
     def __init__(self, iFace, pathToWatch):
         # make sure the path exists
         if not iFace.exists(pathToWatch): iFace.create(pathToWatch)
@@ -313,6 +313,11 @@ class ChildrenWatcher(threading.Thread):
             for val in children:
                 if not val in self._children:
                     print "node '%s' was added" % val
+                    # set data watcher for this node
+                    p2 = "%s/%s" % (self._path, val)
+                    print "setting new watcher for '%s'" % p2
+                    w = DataWatcher(self._iFace, p2)
+                    w.start()
                     self._children.append(val)
             # look for entries that were removed
             for val in self._children:
