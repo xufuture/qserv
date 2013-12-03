@@ -22,6 +22,10 @@
 
 """
 This is a unittest for the watcher.
+
+Run 
+  ./testWatcher.py TestCssIFace.cleanAll
+to cleanup all metadata for this test (while watcher is not running)
 """
 
 import time
@@ -45,11 +49,25 @@ class TestCssIFace(unittest.TestCase):
 
         self._iFace.create("/watchTest/a", "AA")
         time.sleep(1)
+        self._iFace.set("/watchTest/a", "AA22")
+        time.sleep(1)
         self._iFace.create("/watchTest/b", "BB")
         time.sleep(1)
         self._iFace.delete("/watchTest/b")
         time.sleep(1)
         self._iFace.create("/watchTest/c", "CC")
+        self._iFace.set("/watchTest/c", "CCa")
+        self._iFace.set("/watchTest/c", "CCb")
+        self._iFace.set("/watchTest/c", "CCc")
+        time.sleep(1)
+        # create node that existed but was deleted
+        self._iFace.create("/watchTest/b", "BBprime")
+        time.sleep(1)
+        self._iFace.set("/watchTest/b", "BBprime2")
+        time.sleep(1)
+
+    def cleanAll(self):
+        self._iFace.deleteAll("/watchTest")
 
 def main():
     unittest.main()
