@@ -30,6 +30,12 @@ To do a clean test:
  3) Run
   ./testWatcher.py
  4) Kill watcher
+
+An alternative way to play with watcher:
+  ./bin/zkCli.sh -server 127.0.0.1:2181
+     create /watchTest/a "aa"
+     set /watchTest/a "aa2"
+     delete /watchTest/a
 """
 
 import time
