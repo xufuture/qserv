@@ -33,8 +33,8 @@ Logger::Severity Logger::_severityThreshold = Info;
 boost::mutex Logger::_mutex;
 
 boost::mutex Logger::SyncSink::_mutex;
-Logger::SyncSink syncSink(&(std::cout));
-boost::iostreams::stream_buffer<Logger::SyncSink> syncBuffer(syncSink);
+Logger::SyncSink Logger::syncSink(&(std::cout));
+boost::iostreams::stream_buffer<Logger::SyncSink> Logger::syncBuffer(syncSink);
 std::ostream Logger::logStream(&syncBuffer);
 
 ////////////////////////////////////////////////////////////////////////
@@ -49,6 +49,7 @@ std::streamsize Logger::SyncSink::write(const char *s, std::streamsize n) {
     boost::mutex::scoped_lock lock(Logger::SyncSink::_mutex);
     std::string message(s, n);
     *_os << message << std::flush;
+    return n;
 }
 
 Logger& Logger::Instance() {
