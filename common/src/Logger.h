@@ -93,8 +93,8 @@ private:
         LogFilter(Logger* loggerPtr);
     private:
         std::string do_filter(const std::string& line);
-        std::string getThreadId();
         std::string getTimeStamp();
+        std::string getThreadId();
         std::string getSeverity();
         Logger* _loggerPtr;
     };

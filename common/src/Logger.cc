@@ -76,12 +76,10 @@ Logger::Severity Logger::getSeverity() const {
 }
 
 void Logger::setSeverityThreshold(Logger::Severity severity) {
+    boost::mutex::scoped_lock lock(Logger::_mutex);
     if (severity != _severityThreshold) {
         flush();
-        {
-            boost::mutex::scoped_lock lock(Logger::_mutex);
-            _severityThreshold = severity;
-        }
+        _severityThreshold = severity;
     }
 }
 
@@ -128,10 +126,6 @@ std::string Logger::LogFilter::do_filter(const std::string& line) {
     return getTimeStamp() + " " + getThreadId() + " " + getSeverity() + " " + line;
 }
 
-std::string Logger::LogFilter::getThreadId() {
-    return boost::lexical_cast<std::string>(boost::this_thread::get_id());
-}
-
 std::string Logger::LogFilter::getTimeStamp() {
     char fmt[64], buf[64];
     struct timeval tv;
@@ -143,6 +137,10 @@ std::string Logger::LogFilter::getTimeStamp() {
     strftime(fmt, sizeof fmt, "%Y%m%d %H:%M:%S.%%06u", &newtime);
     snprintf(buf, sizeof buf, fmt, tv.tv_usec);
     return std::string(buf);
+}
+
+std::string Logger::LogFilter::getThreadId() {
+    return boost::lexical_cast<std::string>(boost::this_thread::get_id());
 }
 
 std::string Logger::LogFilter::getSeverity() {
