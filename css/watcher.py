@@ -31,15 +31,18 @@ import threading
 from cssIFace import CssIFace
 from cssStatus import CssException
 
+
 class DataWatcher(threading.Thread):
-    """This class implementes watcher that watches for changes to one znode."""
+    """This class implements watcher that watches for changes to one znode."""
     def __init__(self, iFace, pathToWatch):
+        # make sure the path exists
+        if not iFace.exists(pathToWatch): iFace.create(p)
+
         self._iFace = iFace
         self._path = pathToWatch
         threading.Thread.__init__(self)
-            # temporarily here, for testing
+        # temporarily here, for testing
         self._data = "a"
-        if self._iFace.exists(self._path): self._iFace.delete(self._path)
         self._iFace.create(self._path, self._data)
 
     def run(self):
@@ -55,14 +58,50 @@ class DataWatcher(threading.Thread):
         while True:
             time.sleep(60)
 
+
+class ChildrenWatcher(threading.Thread):
+    """This class implements watcher that watches for new znodes."""
+    def __init__(self, iFace, pathToWatch):
+        # make sure the path exists
+        if not iFace.exists(pathToWatch): iFace.create(pathToWatch)
+
+        self._iFace = iFace
+        self._path = pathToWatch
+        self._children = []
+        threading.Thread.__init__(self)
+
+    def run(self):
+        # known issue: if the path is deleted, this will fail with:
+        # No handlers could be found for logger "kazoo.handlers.threading"
+        @self._iFace._zk.ChildrenWatch(self._path)
+        def my_watcher_func(children):
+            # look for new entries
+            for val in children:
+                if not val in self._children:
+                    print "node '%s' was added" % val
+                    self._children.append(val)
+            # look for entries that were removed
+            for val in self._children:
+                if not val in children:
+                    print "node '%s' was removed" % val
+                    self._children.remove(val)
+        while True:
+            time.sleep(60)
+
 def main():
     iFace = CssIFace()
 
-    w1 = DataWatcher(iFace, "/watchTest/a")
+    # watch for database changes (new db, deleted db)
+    w1 = ChildrenWatcher(iFace, "/watchTest")
     w1.start()
 
-    w2 = DataWatcher(iFace, "/watchTest/b")
-    w2.start()
+    #w2 = DataWatcher(iFace, "/watchTest/a")
+    #w2.start()
+
+    #w3 = DataWatcher(iFace, "/watchTest/b")
+    #w3.start()
+
+
 
 if __name__ == "__main__":
     main()
