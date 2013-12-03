@@ -264,13 +264,16 @@ import time
 from cssIFace import CssIFace
 from cssStatus import CssException
 
-class Watcher(object):
+class DataWatcher(object):
+    """This class implementes watcher that watches for changes to existing
+       znode."""
     def __init__(self, pathToWatch):
         self._iFace = CssIFace()
         self._path = pathToWatch
-        self._data = "a"                            # temporarily here, for testing
-        self._iFace.deleteAll(self._path)           # temporarily here, for testing
-        self._iFace.create(self._path, self._data)  # temporarily here, for testing
+            # temporarily here, for testing
+        self._data = "a"
+        self._iFace.delete(self._path)
+        self._iFace.create(self._path, self._data)
 
     def watch(self):
         @self._iFace._zk.DataWatch(self._path)
@@ -279,13 +282,14 @@ class Watcher(object):
                 print "Path %s changed: %s --> %s (version is: %s)" % \
                 (self._path, self._data, data, stat.version)
             else:
-                print "Path %s updated, same value: %s --> %s (version is: %s)" % \
-                (self._path, self._data, data, stat.version)
+                print "Path %s updated, same value: %s (version is: %s)" % \
+                (self._path, data, stat.version)
+            self._data = data
         while True:
             time.sleep(60)
 
 def main():
-    w = Watcher("/watchTest/a")
+    w = DataWatcher("/watchTest/a")
     w.watch()
 
 if __name__ == "__main__":
