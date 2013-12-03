@@ -91,7 +91,7 @@ class CssIFace(object):
     # -------------------------------------------------------------------------
     # Deletes everything recursively starting from a given point in the tree.
     # Prints to stdout deleted entries if verbose is set to True.
-    def deleteAll(self, p, verbose):
+    def deleteAll(self, p, verbose=True):
         if self._zk.exists(p):
             self._deleteOne(p, verbose)
 
