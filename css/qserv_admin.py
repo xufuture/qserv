@@ -21,12 +21,17 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
 """
-qserv client program. A thin shell that parses commands, reads all input data
-in the form of config files into arrays, and calls corresponding function.
+qserv client program used by all users that talk to qserv. A thin shell that
+parses commands, reads all input data in the form of config files into arrays,
+and calls corresponding function.
 """
 
+import os
 import re
 import readline
+import ConfigParser
+
+from qserv_admin_impl import QservAdminImpl
 
 SUCCESS = 0
 
@@ -45,6 +50,7 @@ class CommandParser(object):
             'RELEASE': self._parseRelease,
             'SHOW':    self._parseShow
             }
+        self._impl = QservAdminImpl()
 
     # ---------------------------------------------------------------------------
     def parse(self, cmd):
@@ -78,13 +84,15 @@ class CommandParser(object):
         if l == 2:
             dbName = tokens[0]
             configFile = tokens[1]
-            return self._createDb(dbName, configFile)
+            options = self._fetchOptionsFromConfigFile(configFile)
+            print "options are:", options
+            return self._impl.createDb(dbName, options)
         elif l == 3:
             if tokens[1].upper() != 'LIKE':
-                raise Exception('Bad cmd (expected LIKE): '+cmd)
+                raise Exception("Bad cmd (expected 'LIKE'): "+cmd)
             dbName = tokens[0]
             dbName2 = tokens[2]
-            return self._createDbLike(dbName, dbName2)
+            return self._impl.createDbLike(dbName, dbName2)
         else:
             raise Exception('Bad cmd (wrong token count:'+str(l)+")")
 
@@ -112,15 +120,24 @@ class CommandParser(object):
     def _createDb(self, dbName, configFile):
         """Create database through config file."""
         print "Creating db '%s' using config '%s'" % (dbName, configFile)
-        print "The guts are not quite implemented yet, come back soon..."
-        return SUCCESS
+        options = self._fetchOptionsFromConfigFile(configFile)
+        print "options are:", options
+        return self._impl.createDb(dbName, options)
 
-    # --------------------------------------------------------------------------
-    def _createDbLike(self, dbName, dbName2):
-        """Create database like some other existing database."""
-        print "Creating db '%s' like '%s'" % (dbName, dbName2)
-        print "The guts are not quite implemented yet, come back soon..."
-        return SUCCESS
+    def _fetchOptionsFromConfigFile(self, fName):
+        """It reads the config file for createDb or createTable command,
+           and returns key-value pair dictionary (flat, e.g., sections
+           are ignored.)"""
+        if not os.access(fName, os.R_OK):
+            raise Exception("Specified config file '%s' not found." % fName)
+        config = ConfigParser.ConfigParser()
+        config.optionxform = str # case sensitive
+        config.read(fName)
+        xx = {}
+        for section in config.sections():
+            for option in config.options(section):
+                xx[option] = config.get(section, option)
+        return xx
 
 # ------------------------------------------------------------------------------
 def receiveCommands():
