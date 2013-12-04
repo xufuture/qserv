@@ -44,11 +44,31 @@ class QservAdminImpl(object):
     # ---------------------------------------------------------------------------
     def createDb(self, dbName, options):
         """Creates database (options specified explicitly)."""
+
         if self._dbExists(dbName):
             print "ERROR: db already exists"
             return ERROR
-        self._iFace.create("/DATABASES/%s" % dbName)
-        print "createDb impl not finished"
+        try:
+            dbP = "/DATABASES/%s" % dbName
+            self._iFace.create(dbP)
+            p = self._iFace.create("/DATABASES/partitioning_", sequence=True)
+            self._iFace.create("%s/nStripes"    % p, options["nStripes"   ])
+            self._iFace.create("%s/nSubStripes" % p, options["nSubStripes"])
+            self._iFace.create("%s/overlap"     % p, options["overlap"    ])
+            self._iFace.create("%s/dbGroup" % dbP, options["level"])
+            pId = p[-10:] # the partitioning id is always 10 digit, 0 padded
+            self._iFace.create("%s/partitioningId" % dbP, str(pId))
+            self._iFace.create("%s/releaseStatus" % dbP,"UNRELEASED")
+            self._iFace.create("%s/objIdIndex" % dbP, options["objectIdIndex"])
+            self._iFace.create("%s/LOCK/comments" % dbP)
+            self._iFace.create("%s/LOCK/estimatedDuration" % dbP)
+            self._iFace.create("%s/LOCK/lockedBy" % dbP)
+            self._iFace.create("%s/LOCK/lockedTime" % dbP)
+            self._iFace.create("%s/LOCK/mode" % dbP)
+            self._iFace.create("%s/LOCK/reason" % dbP)
+        except CssException as e:
+            print e.getErrMsg()
+            return ERROR
         return SUCCESS
 
     # ---------------------------------------------------------------------------
@@ -77,6 +97,17 @@ class QservAdminImpl(object):
             print "No databases found."
         else:
             print self._iFace.getChildren("/DATABASES")
+
+    # ---------------------------------------------------------------------------
+    def showEverything(self):
+        """Dumps entire metadata in CSS to stdout. Very useful for debugging."""
+        self._iFace.printAll()
+
+    # ---------------------------------------------------------------------------
+    def dropEverything(self):
+        """Deletes everything from the CSS (very dangerous, very useful for
+        debugging."""
+        self._iFace.deleteAll("/")
 
     # ---------------------------------------------------------------------------
     def _dbExists(self, dbName):

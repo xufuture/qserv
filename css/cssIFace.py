@@ -41,16 +41,17 @@ class CssIFace(object):
         self._zk.start()
 
     # -------------------------------------------------------------------------
-    def create(self, k, v=''):
-        """ Adds a new key/value entry. Creates entire path as necessary."""
+    def create(self, k, v='', sequence=False):
+        """Adds a new key/value entry. Creates entire path as necessary.
+        If 'sequence' is true, it will append a suffix (10 digits, 0 padded,
+        unique sequential number). Returns real path to the just created node."""
         # check if the key exists
         if self._zk.exists(k):
             raise CssException(Status.ERR_KEY_ALREADY_EXISTS, k)
         p = self._chopLastSection(k)
         if p is None:
             raise CssException(Status.ERR_KEY_INVALID, k)
-        self._zk.ensure_path(p)
-        self._zk.create(k, v)
+        return self._zk.create(k, v, sequence=sequence, makepath=True)
 
     # -------------------------------------------------------------------------
     def exists(self, k):
@@ -115,7 +116,7 @@ class CssIFace(object):
         self._printOne("/")
 
     # -------------------------------------------------------------------------
-    # ---- P R I V A T E    M E T H O D S     B E L O W
+    # ---- P R I V A T E     M E T H O D S     B E L O W
     # ------------------------------------------------------------------------- 
 
     # -------------------------------------------------------------------------
@@ -130,11 +131,8 @@ class CssIFace(object):
     def _printOne(self, p):
         """Recursive print of the contents."""
         children = self._zk.get_children(p)
-        if len(children) == 0:
-            data, stat = self._zk.get(p)
-            print p, "=", data
-        else:
-            print p
+        data, stat = self._zk.get(p)
+        print p, "=", data
         for child in children:
             if p == "/":
                 if child != "zookeeper":
