@@ -28,6 +28,9 @@ from cssStatus import Status, CssException
 
 # todo:
 #  - recover from lost connection by reconnecting
+#  - issue: watcher is currently using the "_zk",
+#    and bypasses the official API!
+
 
 class CssIFace(object):
     """The CssIFace class defines the interface to the Central State Service
@@ -61,6 +64,14 @@ class CssIFace(object):
             raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
         data, stat = self._zk.get(k)
         return data
+
+    # -------------------------------------------------------------------------
+    def getChildren(self, k):
+        """Returns a list of children for a given key. Raises exception if the
+           key doesn't exist."""
+        if not self._zk.exists(k):
+            raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
+        return self._zk.get_children(k)
 
     # -------------------------------------------------------------------------
     def set(self, k, v):

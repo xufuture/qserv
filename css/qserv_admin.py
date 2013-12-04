@@ -41,7 +41,9 @@ class CommandParser(object):
     Supported commands:
     CREATE DATABASE <dbName> <configFile>
     CREATE DATABASE <dbName> LIKE <dbName2>
-    coming soon: DROP, RELEASE, SHOW and more...
+    SHOW DATABASES
+    DROP DATABASE <dbName>
+    ...more coming soon
     """
     def __init__(self):
         self._funcMap = {
@@ -104,7 +106,16 @@ class CommandParser(object):
     # --------------------------------------------------------------------------
     def _parseDrop(self, tokens):
         """Subparser, handles all DROP requests."""
-        print 'DROP not implemented.'
+        t = tokens[0].upper()
+        l = len(tokens)
+        if t == 'DATABASE':
+            if l != 2:
+                raise Exception('Bad cmd (wrong token count)')
+            return self._impl.dropDb(tokens[1])
+        elif t == 'TABLE':
+            print "drop table not implemented" 
+        else:
+            raise Exception('CREATE '+t+' not supported') 
 
     # --------------------------------------------------------------------------
     def _parseRelease(self, tokens):
@@ -114,7 +125,10 @@ class CommandParser(object):
     # --------------------------------------------------------------------------
     def _parseShow(self, tokens):
         """Subparser, handles all SHOW requests."""
-        print 'SHOW not implemented.'
+        t = tokens[0].upper()
+        if t == 'DATABASES':
+            return self._impl.showDatabases()
+        raise Exception('SHOW '+t+' not supported') 
 
     # --------------------------------------------------------------------------
     def _createDb(self, dbName, configFile):
@@ -170,6 +184,7 @@ readline.parse_and_bind("tab: complete")
 words = ['CONFIG',
          'CREATE',
          'DATABASE',
+         'DATABASES',
          'DROP',
          'INTO',
          'LIKE',

@@ -28,19 +28,26 @@ separately from the client, so this may not have access to local
 config files provided by user.
 """
 
+from cssIFace import CssIFace
+from cssStatus import CssException
 
 SUCCESS = 0
+ERROR = -1
 
 class QservAdminImpl(object):
     """
     Implements functions needed by qserv_admin client program.
     """
     def __init__(self):
-        None
+        self._iFace = CssIFace()
 
     # ---------------------------------------------------------------------------
     def createDb(self, dbName, options):
         """Creates database (options specified explicitly)."""
+        if self._dbExists(dbName):
+            print "ERROR: db already exists"
+            return ERROR
+        self._iFace.create("/DATABASES/%s" % dbName)
         print "createDb impl not finished"
         return SUCCESS
 
@@ -49,4 +56,30 @@ class QservAdminImpl(object):
         """Creates database using an existing database as a template."""
         print "Creating db '%s' like '%s'" % (dbName, dbName2)
         print "createDbLike impl not finished"
+        # need to create all other things in CSS related to that db
         return SUCCESS
+
+    # ---------------------------------------------------------------------------
+    def dropDb(self, dbName):
+        """Drops database."""
+        if not self._dbExists(dbName):
+            print "ERROR: db does not exist"
+            return ERROR
+        self._iFace.delete("/DATABASES/%s" % dbName)
+        print "createDb impl not finished"
+        # need to delete all other things in CSS related to that db
+        return SUCCESS
+
+    # ---------------------------------------------------------------------------
+    def showDatabases(self):
+        """Shows list of databases registered for Qserv use."""
+        if not self._iFace.exists("/DATABASES"):
+            print "No databases found."
+        else:
+            print self._iFace.getChildren("/DATABASES")
+
+    # ---------------------------------------------------------------------------
+    def _dbExists(self, dbName):
+        """Checks if the database exists."""
+        p = "/DATABASES/%s" % dbName
+        return self._iFace.exists(p)
