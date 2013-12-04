@@ -1,0 +1,8 @@
+# clean up everything
+'drop everything;' > /tmp/xxxx
+
+# in one window, start 
+./watcher.py
+
+#in second window, run
+./qserv_admin.py  < test_qserv_admin
