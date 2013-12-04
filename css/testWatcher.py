@@ -46,38 +46,34 @@ from cssStatus import CssException
 class TestCssIFace(unittest.TestCase):
     def setUp(self):
         self._iFace = CssIFace()
-        # we don't want to delete the "/watchTest"
+        # we don't want to delete the "/DATABASES"
         # node through cascade delete of orphan nodes
         # because it would confuse watcher (known issue)
-        if not self._iFace.exists("/watchTest/keepMe"):
-            self._iFace.create("/watchTest/keepMe", '')
+        if not self._iFace.exists("/DATABASES/keepMe"):
+            self._iFace.create("/DATABASES/keepMe", '')
 
     def testCreateGetSetDelete(self):
-        self._iFace.delete("/watchTest/a", True)
-        self._iFace.delete("/watchTest/b", True)
-        self._iFace.delete("/watchTest/c", True)
-
-        self._iFace.create("/watchTest/a", "AA")
+        self._iFace.create("/DATABASES/a", "AA")
         time.sleep(1)
-        self._iFace.set("/watchTest/a", "AA22")
+        self._iFace.set("/DATABASES/a", "AA22")
         time.sleep(1)
-        self._iFace.create("/watchTest/b", "BB")
+        self._iFace.create("/DATABASES/b", "BB")
         time.sleep(1)
-        self._iFace.delete("/watchTest/b")
+        self._iFace.delete("/DATABASES/b")
         time.sleep(1)
-        self._iFace.create("/watchTest/c", "CC")
-        self._iFace.set("/watchTest/c", "CCa")
-        self._iFace.set("/watchTest/c", "CCb")
-        self._iFace.set("/watchTest/c", "CCc")
+        self._iFace.create("/DATABASES/c", "CC")
+        self._iFace.set("/DATABASES/c", "CCa")
+        self._iFace.set("/DATABASES/c", "CCb")
+        self._iFace.set("/DATABASES/c", "CCc")
         time.sleep(1)
         # create node that existed but was deleted
-        self._iFace.create("/watchTest/b", "BBprime")
+        self._iFace.create("/DATABASES/b", "BBprime")
         time.sleep(1)
-        self._iFace.set("/watchTest/b", "BBprime2")
+        self._iFace.set("/DATABASES/b", "BBprime2")
         time.sleep(1)
 
     def cleanAll(self):
-        self._iFace.deleteAll("/watchTest")
+        self._iFace.deleteAll("/DATABASES")
 
 def main():
     unittest.main()
