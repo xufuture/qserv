@@ -31,9 +31,12 @@ import threading
 from cssIFace import CssIFace
 from cssStatus import CssException
 
-
-class DataWatcher(threading.Thread):
-    """This class implements watcher that watches for changes to one znode."""
+#################################################################################
+#### OneDbWatcher
+#################################################################################
+class OneDbWatcher(threading.Thread):
+    """This class implements watcher that watches for changes to one znode
+       that represents a database. It is based on Zookeeper's DataWatch."""
     def __init__(self, iFace, pathToWatch):
         self._iFace = iFace
         self._path = pathToWatch
@@ -56,18 +59,21 @@ class DataWatcher(threading.Thread):
             time.sleep(60)
 
 
-class ChildrenWatcher(threading.Thread):
-    """This class implements watcher that watches for new znodes. A new
-       DataWatch is setup for each new znode that is created. 
+#################################################################################
+#### AllDbsWatcher
+#################################################################################
+class AllDbsWatcher(threading.Thread):
+    """This class implements watcher that watches for new znodes that
+       represent databases. A new dbWatcher is setup for each new znode that 
+       is created. It is based on Zookeeper's ChildrenWatch.
        FIXME if we create/delete node multiple times, we will end up with
        multipe watchers."""
-    def __init__(self, iFace, pathToWatch):
-        # make sure the path exists
-        if not iFace.exists(pathToWatch): iFace.create(pathToWatch)
-
+    def __init__(self, iFace):
         self._iFace = iFace
-        self._path = pathToWatch
+        self._path =  "/DATABASES"
         self._children = []
+        # make sure the path exists
+        if not iFace.exists(self._path): iFace.create(self._path)
         threading.Thread.__init__(self)
 
     def run(self):
@@ -76,13 +82,14 @@ class ChildrenWatcher(threading.Thread):
         @self._iFace._zk.ChildrenWatch(self._path)
         def my_watcher_func(children):
             # look for new entries
+            print "children:", children
             for val in children:
                 if not val in self._children:
                     print "node '%s' was added" % val
                     # set data watcher for this node
                     p2 = "%s/%s" % (self._path, val)
                     print "setting new watcher for '%s'" % p2
-                    w = DataWatcher(self._iFace, p2)
+                    w = OneDbWatcher(self._iFace, p2)
                     w.start()
                     self._children.append(val)
             # look for entries that were removed
@@ -97,7 +104,7 @@ def main():
     iFace = CssIFace()
 
     # watch for database changes (new db, deleted db)
-    w1 = ChildrenWatcher(iFace, "/watchTest")
+    w1 = AllDbsWatcher(iFace)
     w1.start()
 
     #w2 = DataWatcher(iFace, "/watchTest/a")

@@ -1,4 +1,3 @@
-drop everything;
 create database db1a exampleConfigFiles/dbPartitioned.params;
 create database db1b like db1a;
 create database db2 exampleConfigFiles/dbPartitioned.params;

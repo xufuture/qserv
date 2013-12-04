@@ -53,7 +53,7 @@ class QservAdminImpl(object):
         try:
             dbP = "/DATABASES/%s" % dbName
             self._iFace.create(dbP)
-            p = self._iFace.create("/DATABASES/partitioning_", sequence=True)
+            p = self._iFace.create("/DATABASE_PARTITIONING/_", sequence=True)
             self._iFace.create("%s/nStripes"    % p, options["nStripes"   ])
             self._iFace.create("%s/nSubStripes" % p, options["nSubStripes"])
             self._iFace.create("%s/overlap"     % p, options["overlap"    ])
