@@ -86,22 +86,22 @@ class CssIFace(object):
         v2, stat = self._zk.get(k)
 
     # -------------------------------------------------------------------------
-    def delete(self, k, ignoreNonExist=False):
+    def delete(self, k, ignoreNonExist=False, recursive=False):
         """Deletes a key. Raises exception if the key doesn't exist."""
         if not self._zk.exists(k):
             if ignoreNonExist:
                 return
             else:
                 raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
-        print "deleting:", k
-        self._zk.delete(k, recursive=False)
+        print "deleting:'%s'" % k
+        self._zk.delete(k, recursive=recursive)
         # remove orphan znodes
         k = self._chopLastSection(k)
         if k != -1:
             children = self._zk.get_children(k)
             if len(children) == 0:
                 print "requesting deleting of orphan znode:", k
-                self.delete(k)
+                self.delete(k, recursive)
 
     # -------------------------------------------------------------------------
     def deleteAll(self, p, verbose=True):
