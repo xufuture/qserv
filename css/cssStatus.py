@@ -34,6 +34,9 @@ class Status:
     ERR_INTERNAL                = 9999
 
     errors = { 
+        ERR_KEY_ALREADY_EXISTS: ("Key already exists."),
+        ERR_KEY_INVALID: ("Invalid key."),
+        ERR_KEY_DOES_NOT_EXIST: ("Key does not exist."),
         ERR_NOT_IMPLEMENTED: ("This feature is not implemented yet."),
         ERR_INTERNAL: "Internal error."
         }
