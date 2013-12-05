@@ -265,9 +265,9 @@ import threading
 from cssIFace import CssIFace
 from cssStatus import CssException
 
-#################################################################################
+####################################################################################
 #### OneDbWatcher
-#################################################################################
+####################################################################################
 class OneDbWatcher(threading.Thread):
     """This class implements a database watcher. Each instance is responsible for
        creating / dropping one database. It is based on Zookeeper's DataWatch."""
@@ -293,13 +293,13 @@ class OneDbWatcher(threading.Thread):
             time.sleep(60)
 
 
-#################################################################################
+####################################################################################
 #### AllDbsWatcher
-#################################################################################
+####################################################################################
 class AllDbsWatcher(threading.Thread):
-    """This class implements watcher that watches for new znodes that
-       represent databases. A new dbWatcher is setup for each new znode that 
-       is created. It is based on Zookeeper's ChildrenWatch."""
+    """This class implements watcher that watches for new znodes that represent
+       databases. A new dbWatcher is setup for each new znode that is creeated.
+       It is based on Zookeeper's ChildrenWatch."""
     def __init__(self, iFace):
         self._iFace = iFace
         self._path =  "/DATABASES"
