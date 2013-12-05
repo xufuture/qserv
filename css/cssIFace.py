@@ -61,6 +61,8 @@ class CssIFace(object):
     #### exists
     ################################################################################
     def exists(self, k):
+        """Checks if a given key exists. Returns True if it does, otherwise returns
+           False."""
         return self._zk.exists(k)
 
     ################################################################################
@@ -103,31 +105,22 @@ class CssIFace(object):
     ################################################################################
     #### delete
     ################################################################################
-    def delete(self, k, ignoreNonExist=False, recursive=False):
-        """Deletes a key. Raises exception if the key doesn't exist."""
+    def delete(self, k, recursive=False):
+        """Deletes a key. If 'recursive' flag is set, it will delete all existing
+           children nodes. Raises exception if the key doesn't exist."""
         if not self._zk.exists(k):
-            if ignoreNonExist:
-                return
-            else:
-                raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
+            raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
         if self._verbose: print "cssIface: DELETE '%s'" % (k)
         self._zk.delete(k, recursive=recursive)
-        # remove orphan znodes
-        k = self._chopLastSection(k)
-        if k != -1:
-            children = self._zk.get_children(k)
-            if len(children) == 0:
-                if self._verbose: print "Requesting deleting of orphan znode:'%s'"%k
-                self.delete(k, recursive)
 
     ################################################################################
     #### deleteAll
     ################################################################################
-    def deleteAll(self, p, verbose=True):
-        """Deletes everything recursively starting from a given point in the
-           tree. Prints to stdout deleted entries if verbose is set to True."""
+    def deleteAll(self, p):
+        """Deletes everything recursively starting from a given point in the tree.
+        """
         if self._zk.exists(p):
-            self._deleteOne(p, verbose)
+            self._deleteOne(p)
 
     ################################################################################
     #### printAll
@@ -135,6 +128,13 @@ class CssIFace(object):
     def printAll(self):
         """Prints entire contents to stdout."""
         self._printOne("/")
+
+    ################################################################################
+    #### startTransaction
+    ################################################################################
+    def startTransaction(self):
+        """Starts transaction and returns transactionRequest instance."""
+        return self._zk.transaction()
 
     ################################################################################
     #### P R I V A T E     M E T H O D S     B E L O W
@@ -155,8 +155,15 @@ class CssIFace(object):
     ################################################################################
     def _printOne(self, p):
         """Recursive print of the contents."""
-        children = self._zk.get_children(p)
-        data, stat = self._zk.get(p)
+        t = self.startTransaction()
+        children = None
+        data = None
+        stat = None
+        if self.exists(p):
+            children = self._zk.get_children(p)
+            data, stat = self._zk.get(p)
+        t.commit()
+
         print p, "=", data
         for child in children:
             if p == "/":
@@ -168,15 +175,14 @@ class CssIFace(object):
     ################################################################################
     #### _deleteOne
     ################################################################################
-    def _deleteOne(self, p, verbose=True):
+    def _deleteOne(self, p):
         """Recursive delete."""
         children = self._zk.get_children(p)
         for child in children:
             if p == "/":
                 if child != "zookeeper": # skip "/zookeeper"
-                    self._deleteOne("%s%s" % (p, child), verbose)
+                    self._deleteOne("%s%s" % (p, child))
             else:
-                self._deleteOne("%s/%s" % (p, child), verbose)
+                self._deleteOne("%s/%s" % (p, child))
         if p != "/": 
-            if verbose: print "deleting", p
             self._zk.delete(p)
