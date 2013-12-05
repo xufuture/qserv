@@ -33,11 +33,9 @@ import ConfigParser
 
 from qserv_admin_impl import QservAdminImpl
 
-SUCCESS = 0
-
 class CommandParser(object):
     """
-    Parses commands and calls appropriate function.
+    Parses commands and calls appropriate function from qserv_admin_impl.
     Supported commands:
       CREATE DATABASE <dbName> <configFile>
       CREATE DATABASE <dbName> LIKE <dbName2>
@@ -57,7 +55,7 @@ class CommandParser(object):
         self._impl = QservAdminImpl()
 
     #############################################################################
-    #### parse
+    #### main parser
     #############################################################################
     def parse(self, cmd):
         """Main parser, dispatches to subparsers based on first word."""
@@ -73,7 +71,7 @@ class CommandParser(object):
             raise Exception('Bad cmd (not supported yet): '+cmd)
 
     #############################################################################
-    #### _parseCreate
+    #### subparser CREATE
     #############################################################################
     def _parseCreate(self, tokens):
         """Subparser, handles all CREATE requests."""
@@ -86,7 +84,7 @@ class CommandParser(object):
             raise Exception('CREATE '+t+' not supported') 
 
     #############################################################################
-    #### _parseCreateDatabase
+    #### subparser "CREATE DATABASE"
     #############################################################################
     def _parseCreateDatabase(self, tokens):
         """Subparser, handles all CREATE DATABASE requests."""
@@ -107,14 +105,14 @@ class CommandParser(object):
             raise Exception('Bad cmd (wrong token count:'+str(l)+")")
 
     #############################################################################
-    #### _parseCreateTable
+    #### subparser: CREATE TABLE
     #############################################################################
     def _parseCreateTable(self, tokens):
         """Subparser, handles all CREATE TABLE requests."""
         print 'CREATE TABLE not implemented.'
 
     #############################################################################
-    #### _parseCreateDrop
+    #### _subparser: DROP
     #############################################################################
     def _parseDrop(self, tokens):
         """Subparser, handles all DROP requests."""
@@ -132,14 +130,14 @@ class CommandParser(object):
             raise Exception('DROP '+t+' not supported') 
 
     #############################################################################
-    #### _parseRelease
+    #### subparser: RELEASE
     #############################################################################
     def _parseRelease(self, tokens):
         """Subparser, handles all RELEASE requests."""
         print 'RELEASE not implemented.'
 
     #############################################################################
-    #### _parseShow
+    #### subparser: SHOW
     #############################################################################
     def _parseShow(self, tokens):
         """Subparser, handles all SHOW requests."""
@@ -179,10 +177,10 @@ class CommandParser(object):
                 xx[option] = config.get(section, option)
         return xx
 
+    #############################################################################
     def _processDbOptions(self, opts):
         """Validates options used by createDb, adds default values for
         missing parameters."""
-
         if not opts.has_key("clusteredIndex"):
             print("param 'clusteredIndex' not found, will use default: ''")
             opts["clusteredIndex"] = ''
@@ -205,6 +203,7 @@ class CommandParser(object):
         self._validateKVOptions(opts, _crDbOpts, _crDbPSOpts, "db_info")
         return opts
 
+    #############################################################################
     def _validateKVOptions(self, x, xxOpts, psOpts, whichInfo):
         if not x.has_key("partitioning"):
             raise Exception ("Can't find required param 'partitioning'")
@@ -255,7 +254,9 @@ class CommandParser(object):
                             "supported strategies: 'sphBox'" % \
                                 x["partitioningStrategy"])
 
-# ------------------------------------------------------------------------------
+    #################################################################################
+#### receiveCommands
+#################################################################################
 def receiveCommands():
     """Receives user commands. End of command is determined by ';'. Multiple 
        commands per line are allowed. Multi-line commands are allowed. 
@@ -274,7 +275,11 @@ def receiveCommands():
                 sql = sql[pos+1:]
     except EOFError:
         return
-# ------------------------------------------------------------------------------
+
+
+#################################################################################
+#### auto-completion
+#################################################################################
 class VolcabCompleter:
     """Set auto-completion for commonly used words."""
     def __init__(self, volcab):
@@ -300,7 +305,10 @@ words = ['CONFIG',
 completer = VolcabCompleter(words)
 readline.set_completer(completer.complete)
 
-# ------------------------------------------------------------------------------
+
+#################################################################################
+#### main
+#################################################################################
 def main():
     receiveCommands()
 
