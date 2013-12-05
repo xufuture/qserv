@@ -263,7 +263,6 @@ Known todos:
  - need to go through cssIFace interface, now bypassing it in two places:
     - @self._iFace._zk.DataWatch
     - @self._iFace._zk.ChildrenWatch
- - need to react to CTRL-C
 """
 
 import time
@@ -278,36 +277,36 @@ from cssStatus import CssException
 class OneDbWatcher(threading.Thread):
     """This class implements a database watcher. Each instance is responsible for
        creating / dropping one database. It is based on Zookeeper's DataWatch."""
-    def __init__(self, iFace, pathToWatch):
+    def __init__(self, iFace, pathToWatch, verbose=True):
         self._iFace = iFace
         self._path = pathToWatch
         self._dbName = pathToWatch[11:]
         self._data = None
+        self._verbose = verbose
         threading.Thread.__init__(self)
 
     def run(self):
         @self._iFace._zk.DataWatch(self._path, allow_missing_node=True)
         def my_watcher_func(newData, stat):
-            if newData != self._data:
-                if newData is None:
+            if newData == self._data: return
+            if self._verbose:
+                print "Path %s changed. (%s --> %s, version %s)" % \
+                      (self._path, self._data, newData, stat.version)
+            if newData is None:
+                if self._verbose:
                     print "Path %s deleted. (was %s)" % (self._path, self._data)
-                else:
-                    print "Path %s changed. (%s --> %s, version %s)" % \
-                    (self._path, self._data, newData, stat.version)
-                    if newData == 'CREATE_REQUESTED':
-                        print "PRETENDING Creating database '%s'" % self._dbName
-                        self._iFace.set(self._path, "CREATED")
-                    elif newData == 'CREATED':
-                        print "Database '%s' status is CREATED" % self._dbName
-                    else:
-                        print "Unsupported status '%s' for db '%s'" % \
-                            (newData, self._dbName)
-                self._data = newData
-            #else:
-            #    print "Path %s updated. Same value (%s)" % (self._path, data)
-        while True:
-            time.sleep(60)
-
+                # deal with deleting here...
+            elif newData == 'CREATE_REQUESTED':
+                if self._verbose:
+                    print "PRETENDING Creating database '%s'" % self._dbName
+                self._iFace.set(self._path, "CREATED")
+            elif newData == 'CREATED':
+                if self._verbose:
+                    print "Database '%s' status is CREATED" % self._dbName
+            else:
+                print "Unsupported status '%s' for db '%s'" % \
+                    (newData, self._dbName)
+            self._data = newData
 
 ####################################################################################
 #### AllDbsWatcher
@@ -350,11 +349,10 @@ class AllDbsWatcher(threading.Thread):
                 if not val in children:
                     print "node '%s' was removed" % val
                     self._children.remove(val)
-        while True:
-            time.sleep(60)
 
 def main():
     iFace = CssIFace()
+qserv_admin
 
 if __name__ == "__main__":
     main()
