@@ -37,6 +37,11 @@ import threading
 from cssIFace import CssIFace
 from cssStatus import CssException
 
+# uncomment logging if you see errors:
+# No handlers could be found for logger "kazoo.recipe.watchers"
+# import logging
+# logging.basicConfig()
+
 ####################################################################################
 #### OneDbWatcher
 ####################################################################################
@@ -55,10 +60,7 @@ class OneDbWatcher(threading.Thread):
         @self._iFace._zk.DataWatch(self._path, allow_missing_node=True)
         def my_watcher_func(newData, stat):
             if newData == self._data: return
-            if self._verbose:
-                print "Path %s changed. (%s --> %s, version %s)" % \
-                      (self._path, self._data, newData, stat.version)
-            if newData is None:
+            if newData is None and stat is None:
                 if self._verbose:
                     print "Path %s deleted. (was %s)" % (self._path, self._data)
                 # deal with deleting here...
