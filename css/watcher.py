@@ -299,13 +299,12 @@ class OneDbWatcher(threading.Thread):
 class AllDbsWatcher(threading.Thread):
     """This class implements watcher that watches for new znodes that
        represent databases. A new dbWatcher is setup for each new znode that 
-       is created. It is based on Zookeeper's ChildrenWatch.
-       FIXME if we create/delete node multiple times, we will end up with
-       multipe watchers."""
+       is created. It is based on Zookeeper's ChildrenWatch."""
     def __init__(self, iFace):
         self._iFace = iFace
         self._path =  "/DATABASES"
         self._children = []
+        self._watchedDbs = [] # registry of all watched databases
         # make sure the path exists
         if not iFace.exists(self._path): iFace.create(self._path)
         threading.Thread.__init__(self)
@@ -320,11 +319,15 @@ class AllDbsWatcher(threading.Thread):
             for val in children:
                 if not val in self._children:
                     print "node '%s' was added" % val
-                    # set data watcher for this node
+                    # set data watcher for this node (unless it is already up)
                     p2 = "%s/%s" % (self._path, val)
-                    print "setting new watcher for '%s'" % p2
-                    w = OneDbWatcher(self._iFace, p2)
-                    w.start()
+                    if p2 not in self._watchedDbs:
+                        print "setting new watcher for '%s'" % p2
+                        w = OneDbWatcher(self._iFace, p2)
+                        w.start()
+                        self._watchedDbs.append(p2)
+                    else:
+                        print "already have watcher for '%s'" % p2
                     self._children.append(val)
             # look for entries that were removed
             for val in self._children:
