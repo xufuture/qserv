@@ -96,7 +96,6 @@ class QservAdminImpl(object):
             self._copyKeyValue(dbName, dbName2, 
                                ("dbGroup", "partitioningId", 
                                 "releaseStatus", "objIdIndex"))
-            self._iFace.create(dbP, "PENDING")
             t.commit()
             self._iFace.set(dbP, "READY")
         except CssException as e:
