@@ -38,6 +38,9 @@ import ConfigParser
 
 from qserv_admin_impl import QservAdminImpl
 
+####################################################################################
+#### class CommandParser
+####################################################################################
 class CommandParser(object):
     """
     Parses commands and calls appropriate function from qserv_admin_impl.
@@ -65,9 +68,26 @@ class CommandParser(object):
 """
 
     ################################################################################
+    #### receiveCommands
+    ################################################################################
+    def receiveCommands(self):
+        """Receives user commands. End of command is determined by ';'. Multiple 
+           commands per line are allowed. Multi-line commands are allowed. 
+           To terminate: CTRL-D, or "exit;" or quit;"."""
+        line = ''
+        sql = ''
+        while True:
+            line = raw_input("qserv > ")
+            sql += line.strip()+' '
+            while re.search(';', sql):
+                pos = sql.index(';')
+                self._parse(sql[:pos])
+                sql = sql[pos+1:]
+
+    ################################################################################
     #### main parser
     ################################################################################
-    def parse(self, cmd):
+    def _parse(self, cmd):
         """Main parser, dispatches to subparsers based on first word. Throws
            exceptions on errors."""
         cmd = cmd.strip()
@@ -272,23 +292,6 @@ class CommandParser(object):
             raise Exception("Unrecongnized partitioning strategy '%s', "
                              "supported strategies: 'sphBox'" % \
                                 x["partitioningStrategy"])
-    ####################################################################################
-#### receiveCommands
-####################################################################################
-def receiveCommands():
-    """Receives user commands. End of command is determined by ';'. Multiple 
-       commands per line are allowed. Multi-line commands are allowed. 
-       To terminate: CTRL-D, or "exit;" or quit;"."""
-    cp = CommandParser()
-    line = ''
-    sql = ''
-    while True:
-        line = raw_input("qserv > ")
-        sql += line.strip()+' '
-        while re.search(';', sql):
-            pos = sql.index(';')
-            cp.parse(sql[:pos])
-            sql = sql[pos+1:]
 
 ####################################################################################
 #### auto-completion
@@ -323,7 +326,7 @@ readline.set_completer(completer.complete)
 ####################################################################################
 def main():
     try:
-        receiveCommands()
+        CommandParser().receiveCommands()
     except(KeyboardInterrupt, SystemExit, EOFError):
         print ""
 
