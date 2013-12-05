@@ -30,7 +30,7 @@ config files provided by user.
 Known todos:
  - need to deal with error handling properly, e.g., define error status
    instead of using dummy SUCCESS, ERROR, 
- - need to make certain parts like creating db atomic.
+ - need to find out how to abort transaction.
 """
 
 from cssIFace import CssIFace
@@ -55,21 +55,26 @@ class QservAdminImpl(object):
         if self._dbExists(dbName):
             print "ERROR: db '%s' already exists" % dbName
             return ERROR
+        dbP = "/DATABASES/%s" % dbName
+        t = self._iFace.startTransaction()
         try:
-            dbP = "/DATABASES/%s" % dbName
-            self._iFace.create(dbP, "CREATE_REQUESTED")
-            p = self._iFace.create("/DATABASE_PARTITIONING/_", sequence=True)
-            self._iFace.create("%s/nStripes"    % p, options["nStripes"   ])
-            self._iFace.create("%s/nSubStripes" % p, options["nSubStripes"])
-            self._iFace.create("%s/overlap"     % p, options["overlap"    ])
+            self._iFace.create(dbP, "PENDING")
+            ptP = self._iFace.create("/DATABASE_PARTITIONING/_", sequence=True)
+            self._iFace.create("%s/nStripes"    % ptP, options["nStripes"   ])
+            self._iFace.create("%s/nSubStripes" % ptP, options["nSubStripes"])
+            self._iFace.create("%s/overlap"     % ptP, options["overlap"    ])
             self._iFace.create("%s/dbGroup" % dbP, options["level"])
-            pId = p[-10:] # the partitioning id is always 10 digit, 0 padded
+            pId = ptP[-10:] # the partitioning id is always 10 digit, 0 padded
             self._iFace.create("%s/partitioningId" % dbP, str(pId))
             self._iFace.create("%s/releaseStatus" % dbP,"UNRELEASED")
             self._iFace.create("%s/objIdIndex" % dbP, options["objectIdIndex"])
             self._createDbLockSection(dbP)
+            t.commit()
+            self._iFace.set(dbP, "READY")
         except CssException as e:
-            print e.getErrMsg()
+            print "Failed to create database, error was: ", e.getErrMsg()
+            self._iFace.delete(dbP, recursive=True)
+            self._iFace.delete(ptP, recursive=True)
             return ERROR
         return SUCCESS
 
@@ -86,13 +91,18 @@ class QservAdminImpl(object):
             print "ERROR: db '%s' does not exist." % dbName2
             return ERROR
         dbP = "/DATABASES/%s" % dbName
+        t = self._iFace.startTransaction()
         try:
-            self._iFace.create(dbP, "CREATE_REQUESTED")
+            self._iFace.create(dbP, "PENDING")
             self._copyKeyValue(dbName, dbName2, 
                                ("dbGroup", "partitioningId", 
                                 "releaseStatus", "objIdIndex"))
+            self._iFace.create(dbP, "PENDING")
+            t.commit()
+            self._iFace.set(dbP, "READY")
         except CssException as e:
-            print e.getErrMsg()
+            print "Failed to create database, error was: ", e.getErrMsg()
+            self._iFace.delete(dbP, recursive=True)
             return ERROR
         self._createDbLockSection(dbP)
         return SUCCESS
