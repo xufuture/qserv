@@ -21,9 +21,9 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
 """
-qserv client program used by all users that talk to qserv. A thin shell that
-parses commands, reads all input data in the form of config files into arrays,
-and calls corresponding function.
+qserv client program used by all users that talk to qserv. A thin shell that parses
+commands, reads all input data in the form of config files into arrays, and calls
+corresponding function.
 """
 
 import os
@@ -54,9 +54,9 @@ class CommandParser(object):
             }
         self._impl = QservAdminImpl()
 
-    #############################################################################
+    ################################################################################
     #### main parser
-    #############################################################################
+    ################################################################################
     def parse(self, cmd):
         """Main parser, dispatches to subparsers based on first word."""
         cmd = cmd.strip()
@@ -70,9 +70,9 @@ class CommandParser(object):
         else:
             raise Exception('Bad cmd (not supported yet): '+cmd)
 
-    #############################################################################
+    ################################################################################
     #### subparser CREATE
-    #############################################################################
+    ################################################################################
     def _parseCreate(self, tokens):
         """Subparser, handles all CREATE requests."""
         t = tokens[0].upper()
@@ -83,9 +83,9 @@ class CommandParser(object):
         else:
             raise Exception('CREATE '+t+' not supported') 
 
-    #############################################################################
+    ################################################################################
     #### subparser "CREATE DATABASE"
-    #############################################################################
+    ################################################################################
     def _parseCreateDatabase(self, tokens):
         """Subparser, handles all CREATE DATABASE requests."""
         l = len(tokens)
@@ -104,16 +104,16 @@ class CommandParser(object):
         else:
             raise Exception('Bad cmd (wrong token count:'+str(l)+")")
 
-    #############################################################################
+    ################################################################################
     #### subparser: CREATE TABLE
-    #############################################################################
+    ################################################################################
     def _parseCreateTable(self, tokens):
         """Subparser, handles all CREATE TABLE requests."""
         print 'CREATE TABLE not implemented.'
 
-    #############################################################################
+    ################################################################################
     #### _subparser: DROP
-    #############################################################################
+    ################################################################################
     def _parseDrop(self, tokens):
         """Subparser, handles all DROP requests."""
         t = tokens[0].upper()
@@ -129,16 +129,16 @@ class CommandParser(object):
         else:
             raise Exception('DROP '+t+' not supported') 
 
-    #############################################################################
+    ################################################################################
     #### subparser: RELEASE
-    #############################################################################
+    ################################################################################
     def _parseRelease(self, tokens):
         """Subparser, handles all RELEASE requests."""
         print 'RELEASE not implemented.'
 
-    #############################################################################
+    ################################################################################
     #### subparser: SHOW
-    #############################################################################
+    ################################################################################
     def _parseShow(self, tokens):
         """Subparser, handles all SHOW requests."""
         t = tokens[0].upper()
@@ -148,24 +148,22 @@ class CommandParser(object):
             return self._impl.showEverything()
         raise Exception('SHOW '+t+' not supported') 
 
-    #############################################################################
+    ################################################################################
     #### _createDb
-    #############################################################################
+    ################################################################################
     def _createDb(self, dbName, configFile):
         """Create database through config file."""
         print "Creating db '%s' using config '%s'" % (dbName, configFile)
-        print "\nGGG\n"
         options = self._fetchOptionsFromConfigFile(configFile)
         print "options are:", options
         return self._impl.createDb(dbName, options)
 
-    #############################################################################
+    ################################################################################
     #### _processing options for createDb and createTable
-    #############################################################################
+    ################################################################################
     def _fetchOptionsFromConfigFile(self, fName):
-        """It reads the config file for createDb or createTable command,
-           and returns key-value pair dictionary (flat, e.g., sections
-           are ignored.)"""
+        """It reads the config file for createDb or createTable command, and returns
+           key-value pair dictionary (flat, e.g., sections are ignored.)"""
         if not os.access(fName, os.R_OK):
             raise Exception("Specified config file '%s' not found." % fName)
         config = ConfigParser.ConfigParser()
@@ -177,10 +175,10 @@ class CommandParser(object):
                 xx[option] = config.get(section, option)
         return xx
 
-    #############################################################################
+    ################################################################################
     def _processDbOptions(self, opts):
-        """Validates options used by createDb, adds default values for
-        missing parameters."""
+        """Validates options used by createDb, adds default values for missing
+           parameters."""
         if not opts.has_key("clusteredIndex"):
             print("param 'clusteredIndex' not found, will use default: ''")
             opts["clusteredIndex"] = ''
@@ -203,7 +201,7 @@ class CommandParser(object):
         self._validateKVOptions(opts, _crDbOpts, _crDbPSOpts, "db_info")
         return opts
 
-    #############################################################################
+    ################################################################################
     def _validateKVOptions(self, x, xxOpts, psOpts, whichInfo):
         if not x.has_key("partitioning"):
             raise Exception ("Can't find required param 'partitioning'")
@@ -237,7 +235,7 @@ class CommandParser(object):
                 # check if all required options are specified
                 for o in theOpts:
                     if not x.has_key(o):
-                        raise Exception ("Can't find param '%s' required for "                                     "partitioning strategy '%s'" % (o, psName))
+                        raise Exception ("Can't find param '%s' required for "                                        "partitioning strategy '%s'" % (o, psName))
                 # check if there are any unrecognized options
                 for o in x:
                     if not ((o in xxOpts[whichInfo]) or (o in theOpts)):
@@ -251,12 +249,11 @@ class CommandParser(object):
                         raise Exception("Unrecognized param '%s' found" % o)
         if not psFound:
             raise Exception("Unrecongnized partitioning strategy '%s', "
-                            "supported strategies: 'sphBox'" % \
+                             "supported strategies: 'sphBox'" % \
                                 x["partitioningStrategy"])
-
-    #################################################################################
+    ####################################################################################
 #### receiveCommands
-#################################################################################
+####################################################################################
 def receiveCommands():
     """Receives user commands. End of command is determined by ';'. Multiple 
        commands per line are allowed. Multi-line commands are allowed. 
@@ -276,10 +273,9 @@ def receiveCommands():
     except EOFError:
         return
 
-
-#################################################################################
+####################################################################################
 #### auto-completion
-#################################################################################
+####################################################################################
 class VolcabCompleter:
     """Set auto-completion for commonly used words."""
     def __init__(self, volcab):
@@ -306,9 +302,9 @@ completer = VolcabCompleter(words)
 readline.set_completer(completer.complete)
 
 
-#################################################################################
+####################################################################################
 #### main
-#################################################################################
+####################################################################################
 def main():
     receiveCommands()
 
