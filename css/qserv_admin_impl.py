@@ -26,6 +26,11 @@ Note that this depends on kazoo, so it'd be best to avoid distributing
 this to every user. For that reason in the future we might run this
 separately from the client, so this may not have access to local
 config files provided by user.
+
+Known todos:
+ - need to deal with error handling properly, e.g., define error status
+   instead of using dummy SUCCESS, ERROR, 
+ - need to make certain parts like creating db atomic.
 """
 
 from cssIFace import CssIFace
@@ -52,7 +57,7 @@ class QservAdminImpl(object):
             return ERROR
         try:
             dbP = "/DATABASES/%s" % dbName
-            self._iFace.create(dbP, "REQUESTED")
+            self._iFace.create(dbP, "CREATE_REQUESTED")
             p = self._iFace.create("/DATABASE_PARTITIONING/_", sequence=True)
             self._iFace.create("%s/nStripes"    % p, options["nStripes"   ])
             self._iFace.create("%s/nSubStripes" % p, options["nSubStripes"])
