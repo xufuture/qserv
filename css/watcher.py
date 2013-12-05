@@ -269,7 +269,6 @@ import time
 import threading
 
 from cssIFace import CssIFace
-from cssStatus import CssException
 
 # uncomment logging if you see errors:
 # No handlers could be found for logger "kazoo.recipe.watchers"

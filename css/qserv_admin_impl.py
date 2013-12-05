@@ -33,8 +33,7 @@ Known todos:
  - need to find out how to abort transaction.
 """
 
-from cssIFace import CssIFace
-from cssStatus import CssException
+from cssIFace import CssIFace, CssException
 
 SUCCESS = 0
 ERROR = -1
