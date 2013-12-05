@@ -23,6 +23,13 @@
 """
 Database Watcher - runs on each Qserv node and maintains Qserv databases
 (creates databases, deletes databases, creates tables, drops tables etc).
+Known todos:
+ - deal properly with error handling, e.g., need to introduce dedicated
+   exception class and throw exceptions properly.
+ - need to go through cssIFace interface, now bypassing it in two places:
+    - @self._iFace._zk.DataWatch
+    - @self._iFace._zk.ChildrenWatch
+ - need to react to CTRL-C
 """
 
 import time
@@ -40,21 +47,30 @@ class OneDbWatcher(threading.Thread):
     def __init__(self, iFace, pathToWatch):
         self._iFace = iFace
         self._path = pathToWatch
+        self._dbName = pathToWatch[11:]
         self._data = None
         threading.Thread.__init__(self)
 
     def run(self):
         @self._iFace._zk.DataWatch(self._path, allow_missing_node=True)
-        def my_watcher_func(data, stat):
-            if data != self._data:
-                if data is None:
+        def my_watcher_func(newData, stat):
+            if newData != self._data:
+                if newData is None:
                     print "Path %s deleted. (was %s)" % (self._path, self._data)
                 else:
                     print "Path %s changed. (%s --> %s, version %s)" % \
-                    (self._path, self._data, data, stat.version)
-            else:
-                print "Path %s updated. Same value (%s)" % (self._path, data)
-            self._data = data
+                    (self._path, self._data, newData, stat.version)
+                    if newData == 'CREATE_REQUESTED':
+                        print "PRETENDING Creating database '%s'" % self._dbName
+                        self._iFace.set(self._path, "CREATED")
+                    elif newData == 'CREATED':
+                        print "Database '%s' status is CREATED" % self._dbName
+                    else:
+                        print "Unsupported status '%s' for db '%s'" % \
+                            (newData, self._dbName)
+                self._data = newData
+            #else:
+            #    print "Path %s updated. Same value (%s)" % (self._path, data)
         while True:
             time.sleep(60)
 
