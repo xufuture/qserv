@@ -123,7 +123,7 @@ class QservAdminImpl(object):
     #############################################################################
     def dropEverything(self):
         """Deletes everything from the CSS (very dangerous, very useful for
-        debugging."""
+        debugging.)"""
         self._iFace.deleteAll("/")
 
     #############################################################################
