@@ -34,10 +34,10 @@ from kazoo.client import KazooClient
 #### CssStatus class. Defines erorr codes and messages used by the CssIFace
 ####################################################################################
 class CssStatus:
-    SUCCESS                     = 0
+    SUCCESS                     =    0
     ERR_KEY_ALREADY_EXISTS      = 2001
-    ERR_KEY_INVALID             = 2002
-    ERR_KEY_DOES_NOT_EXIST      = 2003
+    ERR_KEY_DOES_NOT_EXIST      = 2002
+    ERR_KEY_INVALID             = 2003
     ERR_NOT_IMPLEMENTED         = 9998
     ERR_INTERNAL                = 9999
 
