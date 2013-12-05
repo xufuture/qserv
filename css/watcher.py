@@ -298,13 +298,14 @@ class OneDbWatcher(threading.Thread):
                 if self._verbose:
                     print "Path %s deleted. (was %s)" % (self._path, self._data)
                 # deal with deleting here...
-            elif newData == 'CREATE_REQUESTED':
+            elif newData == 'PENDING':
+                if self._verbose:
+                    print "Meta not initialized yet for '%s'" % self._dbName
+            elif newData == 'READY':
+                # check here if the database on this node already exists,
+                # if not, create it, otherwise do nothing.
                 if self._verbose:
                     print "PRETENDING Creating database '%s'" % self._dbName
-                self._iFace.set(self._path, "CREATED")
-            elif newData == 'CREATED':
-                if self._verbose:
-                    print "Database '%s' status is CREATED" % self._dbName
             else:
                 print "Unsupported status '%s' for db '%s'" % \
                     (newData, self._dbName)
