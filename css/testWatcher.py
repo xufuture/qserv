@@ -50,26 +50,25 @@ class TestCssIFace(unittest.TestCase):
         # node through cascade delete of orphan nodes
         # because it would confuse watcher (known issue)
         if not self._iFace.exists("/DATABASES/keepMe"):
-            self._iFace.create("/DATABASES/keepMe", '')
+            self._iFace.create("/DATABASES/keepMe", 'CREATED')
 
     def testCreateGetSetDelete(self):
-        self._iFace.create("/DATABASES/a", "AA")
+        self._iFace.create("/DATABASES/a", "CREATE_REQUESTED")
         time.sleep(1)
-        self._iFace.set("/DATABASES/a", "AA22")
+        self._iFace.set("/DATABASES/a", "CREATE_REQUESTED")
         time.sleep(1)
-        self._iFace.create("/DATABASES/b", "BB")
+        self._iFace.create("/DATABASES/b", "CREATE_REQUESTED")
         time.sleep(1)
         self._iFace.delete("/DATABASES/b")
         time.sleep(1)
-        self._iFace.create("/DATABASES/c", "CC")
-        self._iFace.set("/DATABASES/c", "CCa")
-        self._iFace.set("/DATABASES/c", "CCb")
-        self._iFace.set("/DATABASES/c", "CCc")
+        self._iFace.create("/DATABASES/c", "CREATE_REQUESTED")
+        self._iFace.set("/DATABASES/c", "weird")
+        self._iFace.set("/DATABASES/c", "CREATE_REQUESTED")
         time.sleep(1)
         # create node that existed but was deleted
-        self._iFace.create("/DATABASES/b", "BBprime")
+        self._iFace.create("/DATABASES/b", "CREATE_REQUESTED")
         time.sleep(1)
-        self._iFace.set("/DATABASES/b", "BBprime2")
+        self._iFace.set("/DATABASES/b", "CREATE_REQUESTED")
         time.sleep(1)
 
     def cleanAll(self):
