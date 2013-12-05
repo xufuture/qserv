@@ -36,9 +36,10 @@ class CssIFace(object):
     """The CssIFace class defines the interface to the Central State Service CSS).
     """
 
-    def __init__(self):
+    def __init__(self, verbose=True):
         self._zk = KazooClient(hosts='127.0.0.1:2181')
         self._zk.start()
+        self._verbose = verbose
 
     ################################################################################
     #### create
@@ -53,6 +54,7 @@ class CssIFace(object):
         p = self._chopLastSection(k)
         if p is None:
             raise CssException(Status.ERR_KEY_INVALID, k)
+        if self._verbose: print "cssIface: CREATE '%s' --> '%s'" % (k, v) 
         return self._zk.create(k, v, sequence=sequence, makepath=True)
 
     ################################################################################
@@ -69,8 +71,9 @@ class CssIFace(object):
            exist."""
         if not self._zk.exists(k):
             raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
-        data, stat = self._zk.get(k)
-        return data
+        v, stat = self._zk.get(k)
+        if self._verbose: print "cssIface: GET '%s' --> '%s'" % (k, v)
+        return v
 
     ################################################################################
     #### getChildren
@@ -80,6 +83,7 @@ class CssIFace(object):
            key doesn't exist."""
         if not self._zk.exists(k):
             raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
+        if self._verbose: print "cssIface: GETCHILDREN '%s'" % (k)
         return self._zk.get_children(k)
 
     ################################################################################
@@ -92,6 +96,7 @@ class CssIFace(object):
         if not self._zk.exists(k):
             raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
         v1, stat = self._zk.get(k)
+        if self._verbose: print "cssIface: SET '%s' --> '%s'" % (k, v)
         self._zk.set(k, v)
         v2, stat = self._zk.get(k)
 
@@ -105,14 +110,14 @@ class CssIFace(object):
                 return
             else:
                 raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
-        print "deleting:'%s'" % k
+        if self._verbose: print "cssIface: DELETE '%s'" % (k)
         self._zk.delete(k, recursive=recursive)
         # remove orphan znodes
         k = self._chopLastSection(k)
         if k != -1:
             children = self._zk.get_children(k)
             if len(children) == 0:
-                print "requesting deleting of orphan znode:", k
+                if self._verbose: print "Requesting deleting of orphan znode:'%s'"%k
                 self.delete(k, recursive)
 
     ################################################################################
