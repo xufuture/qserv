@@ -24,11 +24,18 @@
 qserv client program used by all users that talk to qserv. A thin shell that parses
 commands, reads all input data in the form of config files into arrays, and calls
 corresponding function.
+
+Known todos:
+ - many commands still need to be implemented
+ - need to separate dangerous admin commands like DROP EVERYTHING
+
 """
 
 import os
 import re
 import readline
+import signal
+import sys
 import ConfigParser
 
 from qserv_admin_impl import QservAdminImpl
@@ -251,7 +258,8 @@ class CommandParser(object):
                 # check if all required options are specified
                 for o in theOpts:
                     if not x.has_key(o):
-                        raise Exception ("Can't find param '%s' required for "                                        "partitioning strategy '%s'" % (o, psName))
+                        raise Exception ("Can't find param '%s' required for "
+                                         "partitioning strategy '%s'" % (o, psName))
                 # check if there are any unrecognized options
                 for o in x:
                     if not ((o in xxOpts[whichInfo]) or (o in theOpts)):
@@ -318,6 +326,14 @@ words = ['CONFIG',
 completer = VolcabCompleter(words)
 readline.set_completer(completer.complete)
 
+####################################################################################
+#### catching Ctrl-C
+####################################################################################
+def signal_handler(signal, frame):
+    print ""
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 ####################################################################################
 #### main
