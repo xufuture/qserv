@@ -24,14 +24,55 @@ import time
 
 from kazoo.client import KazooClient
 
-from cssStatus import Status, CssException
-
 # todo:
 #  - recover from lost connection by reconnecting
 #  - issue: watcher is currently using the "_zk",
 #    and bypasses the official API!
 
 
+####################################################################################
+#### CssStatus class. Defines erorr codes and messages used by the CssIFace
+####################################################################################
+class CssStatus:
+    SUCCESS                     = 0
+    ERR_KEY_ALREADY_EXISTS      = 2001
+    ERR_KEY_INVALID             = 2002
+    ERR_KEY_DOES_NOT_EXIST      = 2003
+    ERR_NOT_IMPLEMENTED         = 9998
+    ERR_INTERNAL                = 9999
+
+    errors = { 
+        ERR_KEY_ALREADY_EXISTS: ("Key already exists."),
+        ERR_KEY_INVALID: ("Invalid key."),
+        ERR_KEY_DOES_NOT_EXIST: ("Key does not exist."),
+        ERR_NOT_IMPLEMENTED: ("This feature is not implemented yet."),
+        ERR_INTERNAL: "Internal error."
+    }
+
+####################################################################################
+#### CssException class. Defines Css-specific exception
+####################################################################################
+class CssException(Exception):
+    def __init__(self, errNo, extraMsg1=None, extraMsg2=None):
+        self._errNo = errNo
+        self._extraMsg1 = extraMsg1
+        self._extraMsg2 = extraMsg2
+
+    def getErrMsg(self):
+        msg = ''
+        s = CssStatus()
+        if self._errNo in s.errors: msg = s.errors[self._errNo]
+        else: msg = "Undefined css error"
+        if self._extraMsg1 is not None: msg += " (%s)" % self._extraMsg1
+        if self._extraMsg2 is not None: msg += " (%s)" % self._extraMsg2
+        return msg
+
+    def getErrNo(self):
+        return self._errNo
+
+####################################################################################
+#### CssIFace class.
+####################################################################################
 class CssIFace(object):
     """The CssIFace class defines the interface to the Central State Service CSS).
     """
@@ -50,10 +91,10 @@ class CssIFace(object):
         unique sequential number). Returns real path to the just created node."""
         # check if the key exists
         if self._zk.exists(k):
-            raise CssException(Status.ERR_KEY_ALREADY_EXISTS, k)
+            raise CssException(CssStatus.ERR_KEY_ALREADY_EXISTS, k)
         p = self._chopLastSection(k)
         if p is None:
-            raise CssException(Status.ERR_KEY_INVALID, k)
+            raise CssException(CssStatus.ERR_KEY_INVALID, k)
         if self._verbose: print "cssIface: CREATE '%s' --> '%s'" % (k, v) 
         return self._zk.create(k, v, sequence=sequence, makepath=True)
 
@@ -72,7 +113,7 @@ class CssIFace(object):
         """Returns value for a given key. Raises exception if the key doesn't
            exist."""
         if not self._zk.exists(k):
-            raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
+            raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
         v, stat = self._zk.get(k)
         if self._verbose: print "cssIface: GET '%s' --> '%s'" % (k, v)
         return v
@@ -84,7 +125,7 @@ class CssIFace(object):
         """Returns a list of children for a given key. Raises exception if the
            key doesn't exist."""
         if not self._zk.exists(k):
-            raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
+            raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
         if self._verbose: print "cssIface: GETCHILDREN '%s'" % (k)
         return self._zk.get_children(k)
 
@@ -96,7 +137,7 @@ class CssIFace(object):
            exist."""
         # check if the key exists
         if not self._zk.exists(k):
-            raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
+            raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
         v1, stat = self._zk.get(k)
         if self._verbose: print "cssIface: SET '%s' --> '%s'" % (k, v)
         self._zk.set(k, v)
@@ -109,7 +150,7 @@ class CssIFace(object):
         """Deletes a key. If 'recursive' flag is set, it will delete all existing
            children nodes. Raises exception if the key doesn't exist."""
         if not self._zk.exists(k):
-            raise CssException(Status.ERR_KEY_DOES_NOT_EXIST, k)
+            raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
         if self._verbose: print "cssIface: DELETE '%s'" % (k)
         self._zk.delete(k, recursive=recursive)
 
