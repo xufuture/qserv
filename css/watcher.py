@@ -269,8 +269,8 @@ from cssStatus import CssException
 #### OneDbWatcher
 #################################################################################
 class OneDbWatcher(threading.Thread):
-    """This class implements watcher that watches for changes to one znode
-       that represents a database. It is based on Zookeeper's DataWatch."""
+    """This class implements a database watcher. Each instance is responsible for
+       creating / dropping one database. It is based on Zookeeper's DataWatch."""
     def __init__(self, iFace, pathToWatch):
         self._iFace = iFace
         self._path = pathToWatch
