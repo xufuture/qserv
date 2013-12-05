@@ -85,14 +85,16 @@ class QservAdminImpl(object):
         if not self._dbExists(dbName2):
             print "ERROR: db '%s' does not exist." % dbName2
             return ERROR
+        dbP = "/DATABASES/%s" % dbName
         try:
+            self._iFace.create(dbP, "CREATE_REQUESTED")
             self._copyKeyValue(dbName, dbName2, 
                                ("dbGroup", "partitioningId", 
                                 "releaseStatus", "objIdIndex"))
         except CssException as e:
             print e.getErrMsg()
             return ERROR
-        self._createDbLockSection("/DATABASES/%s" % dbName)
+        self._createDbLockSection(dbP)
         return SUCCESS
 
     ################################################################################
