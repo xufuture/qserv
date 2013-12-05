@@ -259,18 +259,21 @@ class CommandParser(object):
 def receiveCommands():
     """Receives user commands. End of command is determined by ';'. Multiple 
        commands per line are allowed. Multi-line commands are allowed. 
-       Terminates when command "exit" is received."""
+       To terminate: CTRL-D, or "exit;" or quit;"."""
     cp = CommandParser()
     line = ''
     sql = ''
-    while not re.match('exit', line):
-        line = raw_input("qserv > ")
-        sql += line.strip()+' '
-        while re.search(';', sql):
-            pos = sql.index(';')
-            cp.parse(sql[:pos])
-            sql = sql[pos+1:]
-
+    try:
+        while True:
+            line = raw_input("qserv > ")
+            sql += line.strip()+' '
+            while re.search(';', sql):
+                pos = sql.index(';')
+                if sql[:pos] == 'exit' or sql[:pos] == 'quit': return
+                cp.parse(sql[:pos])
+                sql = sql[pos+1:]
+    except EOFError:
+        return
 # ------------------------------------------------------------------------------
 class VolcabCompleter:
     """Set auto-completion for commonly used words."""
