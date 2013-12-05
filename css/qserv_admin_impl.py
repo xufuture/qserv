@@ -52,7 +52,7 @@ class QservAdminImpl(object):
             return ERROR
         try:
             dbP = "/DATABASES/%s" % dbName
-            self._iFace.create(dbP)
+            self._iFace.create(dbP, "REQUESTED")
             p = self._iFace.create("/DATABASE_PARTITIONING/_", sequence=True)
             self._iFace.create("%s/nStripes"    % p, options["nStripes"   ])
             self._iFace.create("%s/nSubStripes" % p, options["nSubStripes"])
