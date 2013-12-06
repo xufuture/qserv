@@ -84,7 +84,7 @@ class OneDbWatcher(threading.Thread):
 ####################################################################################
 class AllDbsWatcher(threading.Thread):
     """This class implements watcher that watches for new znodes that represent
-       databases. A new dbWatcher is setup for each new znode that is creeated.
+       databases. A new OnedbWatcher is setup for each new znode that is creeated.
        It is based on Zookeeper's ChildrenWatch."""
     def __init__(self, iFace, db):
         self._iFace = iFace
