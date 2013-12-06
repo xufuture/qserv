@@ -28,7 +28,6 @@ corresponding function.
 Known todos:
  - many commands still need to be implemented
  - need to separate dangerous admin commands like DROP EVERYTHING
-
 """
 
 import os
