@@ -258,8 +258,7 @@ if __name__ == "__main__":
 Database Watcher - runs on each Qserv node and maintains Qserv databases
 (creates databases, deletes databases, creates tables, drops tables etc).
 Known todos:
- - deal properly with error handling, e.g., need to introduce dedicated
-   exception class and throw exceptions properly.
+ - mysql host/port user/passwd/socket
  - need to go through cssIFace interface, now bypassing it in two places:
     - @self._iFace._zk.DataWatch
     - @self._iFace._zk.ChildrenWatch
@@ -269,11 +268,12 @@ import time
 import threading
 
 from cssIFace import CssIFace
+from db import Db, DbException, DbStatus
 
 # uncomment logging if you see errors:
 # No handlers could be found for logger "kazoo.recipe.watchers"
-# import logging
-# logging.basicConfig()
+import logging
+logging.basicConfig()
 
 ####################################################################################
 #### OneDbWatcher
@@ -281,8 +281,9 @@ from cssIFace import CssIFace
 class OneDbWatcher(threading.Thread):
     """This class implements a database watcher. Each instance is responsible for
        creating / dropping one database. It is based on Zookeeper's DataWatch."""
-    def __init__(self, iFace, pathToWatch, verbose=True):
+    def __init__(self, iFace, db, pathToWatch, verbose=True):
         self._iFace = iFace
+        self._db = db
         self._path = pathToWatch
         self._dbName = pathToWatch[11:]
         self._data = None
@@ -296,15 +297,17 @@ class OneDbWatcher(threading.Thread):
             if newData is None and stat is None:
                 if self._verbose:
                     print "Path %s deleted. (was %s)" % (self._path, self._data)
-                # deal with deleting here...
+                if self._db.checkDbExists(self._dbName):
+                    self._db.dropDb(self._dbName)
             elif newData == 'PENDING':
                 if self._verbose:
                     print "Meta not initialized yet for '%s'" % self._dbName
             elif newData == 'READY':
-                # check here if the database on this node already exists,
-                # if not, create it, otherwise do nothing.
-                if self._verbose:
-                    print "PRETENDING Creating database '%s'" % self._dbName
+                if self._db.checkDbExists(self._dbName):
+                    if self._verbose: print "Database '%s' exists." % self._dbName
+                else:
+                    if self._verbose: print "Creating database '%s'" % self._dbName
+                    self._db.createDb(self._dbName)
             else:
                 print "Unsupported status '%s' for db '%s'" % \
                     (newData, self._dbName)
@@ -317,8 +320,9 @@ class AllDbsWatcher(threading.Thread):
     """This class implements watcher that watches for new znodes that represent
        databases. A new dbWatcher is setup for each new znode that is creeated.
        It is based on Zookeeper's ChildrenWatch."""
-    def __init__(self, iFace):
+    def __init__(self, iFace, db):
         self._iFace = iFace
+        self._db = db
         self._path =  "/DATABASES"
         self._children = []
         self._watchedDbs = [] # registry of all watched databases
@@ -332,19 +336,18 @@ class AllDbsWatcher(threading.Thread):
         @self._iFace._zk.ChildrenWatch(self._path)
         def my_watcher_func(children):
             # look for new entries
-            print "children:", children
             for val in children:
                 if not val in self._children:
                     print "node '%s' was added" % val
                     # set data watcher for this node (unless it is already up)
                     p2 = "%s/%s" % (self._path, val)
                     if p2 not in self._watchedDbs:
-                        print "setting new watcher for '%s'" % p2
-                        w = OneDbWatcher(self._iFace, p2)
+                        print "Setting a new watcher for '%s'" % p2
+                        w = OneDbWatcher(self._iFace, self._db, p2)
                         w.start()
                         self._watchedDbs.append(p2)
                     else:
-                        print "already have watcher for '%s'" % p2
+                        print "Already have a watcher for '%s'" % p2
                     self._children.append(val)
             # look for entries that were removed
             for val in self._children:
@@ -354,7 +357,6 @@ class AllDbsWatcher(threading.Thread):
 
 def main():
     iFace = CssIFace()
-qserv_admin
 
 if __name__ == "__main__":
     main()

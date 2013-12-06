@@ -240,7 +240,6 @@ class Db:
            Note, it will not connect to that database."""
         self.connectToMySQLServer()
         if self.checkDbExists(dbName):
-            print "in createDb, checked, ", dbName, " exists, exception"
             raise DbException(DbStatus.ERR_DB_EXISTS)
         self.execCommand0("CREATE DATABASE %s" % dbName)
 
