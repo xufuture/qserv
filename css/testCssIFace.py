@@ -22,22 +22,25 @@
 
 """
 This is a unittest for the Central State System Interface class.
+
+@author  Jacek Becla, SLAC
+
 """
 
 import time
 import unittest
-from cssIFace import CssIFace
-from cssStatus import CssException
+from cssIFace import CssIFace, CssException
 
 class TestCssIFace(unittest.TestCase):
     def setUp(self):
         self._iFace = CssIFace()
 
+    ################################################################################
     def testCreateGetSetDelete(self):
         # first delete everything
-        self._iFace.deleteAll("/unittest", False)
+        self._iFace.deleteAll("/unittest")
         # try second time, just for fun, that should work too
-        self._iFace.deleteAll("/unittest", False)
+        self._iFace.deleteAll("/unittest")
         # define key/value for testing
         k1 = "/unittest/my/first/testX"
         k2 = "/unittest/my/testY"
@@ -71,6 +74,7 @@ class TestCssIFace(unittest.TestCase):
         # print everything
         self._iFace.printAll()
 
+    ################################################################################
     def testBadKeys(self):
         # try to create invalid key
         self.assertRaises(CssException, self._iFace.create, "badKey", "v")
@@ -85,6 +89,10 @@ class TestCssIFace(unittest.TestCase):
     #    elapsed = time.clock()-start
     #    print "It took", elapsed, "to create", n, "entries"
 
+
+####################################################################################
+####################################################################################
+####################################################################################
 def main():
     unittest.main()
 

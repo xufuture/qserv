@@ -22,6 +22,12 @@
 
 """
 This is a unittest for the Db class.
+
+@author  Jacek Becla, SLAC
+
+
+Known todos:
+ - implement proper logging instead of print
 """
 
 import time
@@ -38,6 +44,7 @@ dbA = "_dbWrapperTestDb_A"
 dbB = "_dbWrapperTestDb_B"
 dbC = "_dbWrapperTestDb_C"
 
+
 class TestDb(unittest.TestCase):
     def setUp(self):
         self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
@@ -47,8 +54,12 @@ class TestDb(unittest.TestCase):
         if self._db.checkDbExists(dbC): self._db.dropDb(dbC)
         self._db.disconnect()
 
+    ################################################################################
     def test1Basic(self):
-        """Basic test: connect through port, create db and connect to it, create one table, drop the db, disconnect."""
+        """
+        Basic test: connect through port, create db and connect to it, create one
+        table, drop the db, disconnect.
+        """
         self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
                       socket=theSock)
         self._db.createDb(dbA)
@@ -57,8 +68,11 @@ class TestDb(unittest.TestCase):
         self._db.dropDb(dbA)
         self._db.disconnect()
 
+    ################################################################################
     def testMultiDbs(self):
-        """Try interleaving operations on multiple databases."""
+        """
+        Try interleaving operations on multiple databases.
+        """
         self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
                       socket=theSock)
         self._db.createDb(dbA)
@@ -77,8 +91,11 @@ class TestDb(unittest.TestCase):
         self._db.dropDb(dbC)
         self._db.disconnect()
 
+    ################################################################################
     def testMultiCreateDef(self):
-        """Test creating db/table that already exists (in default db)."""
+        """
+        Test creating db/table that already exists (in default db).
+        """
         self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
                       socket=theSock)
         self._db.createDb(dbA)
@@ -91,9 +108,11 @@ class TestDb(unittest.TestCase):
         self.assertRaises(DbException, self._db.dropDb, dbA)
         self._db.disconnect()
 
-
+    ################################################################################
     def testMultiCreateNonDef(self):
-        """Test creating db/table that already exists (in non default db)."""
+        """
+        Test creating db/table that already exists (in non default db).
+        """
         self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
                       socket=theSock)
         self._db.createDb(dbA)
@@ -117,9 +136,11 @@ class TestDb(unittest.TestCase):
         self._db.dropDb(dbB)
         self._db.disconnect()
 
-
+    ################################################################################
     def testCheckExists(self):
-        """Test checkExist for databases and tables."""
+        """
+        Test checkExist for databases and tables.
+        """
         self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
                       socket=theSock)
         if self._db.checkDbExists("bla"):
@@ -147,7 +168,9 @@ class TestDb(unittest.TestCase):
         self._db.dropDb(dbA)
         self._db.disconnect()
 
-
+####################################################################################
+####################################################################################
+####################################################################################
 def main():
     unittest.main()
 

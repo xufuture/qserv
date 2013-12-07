@@ -20,20 +20,33 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
+
+"""
+This module implements interface to the Central State System (CSS).
+
+@author  Jacek Becla, SLAC
+
+
+Known todos:
+ - connection information for the Kazoo Client needs to be configurable.
+ - recover from lost connection by reconnecting
+ - issue: watcher is currently using the "_zk", and bypasses the official API!
+ - implement proper logging instead of print
+
+"""
+
 import time
 
 from kazoo.client import KazooClient
 
-# todo:
-#  - recover from lost connection by reconnecting
-#  - issue: watcher is currently using the "_zk",
-#    and bypasses the official API!
-
 
 ####################################################################################
-#### CssStatus class. Defines erorr codes and messages used by the CssIFace
+####################################################################################
 ####################################################################################
 class CssStatus:
+    """
+    CssStatus defines erorr codes and messages used by the CssIFace
+    """
     SUCCESS                     =    0
     ERR_KEY_ALREADY_EXISTS      = 2001
     ERR_KEY_DOES_NOT_EXIST      = 2002
@@ -50,15 +63,32 @@ class CssStatus:
     }
 
 ####################################################################################
-#### CssException class. Defines Css-specific exception
+####################################################################################
 ####################################################################################
 class CssException(Exception):
+    """
+    Exception raised by CSSIFace.
+    """
+    ### __init__ ###################################################################
     def __init__(self, errNo, extraMsg1=None, extraMsg2=None):
+        """
+        Initialize the shared data.
+
+        @param errNo      Error number.
+        @param extraMsg1  Optional 1st message string.
+        @param extraMsg2  Optional 2nd message string.
+        """
         self._errNo = errNo
         self._extraMsg1 = extraMsg1
         self._extraMsg2 = extraMsg2
 
+    ### getErrMsg ##################################################################
     def getErrMsg(self):
+        """
+        Get error message
+
+        @return string  Error message string, including all optional messages.
+        """
         msg = ''
         s = CssStatus()
         if self._errNo in s.errors: msg = s.errors[self._errNo]
@@ -67,25 +97,43 @@ class CssException(Exception):
         if self._extraMsg2 is not None: msg += " (%s)" % self._extraMsg2
         return msg
 
+    ### getErrNo ###################################################################
     def getErrNo(self):
+        """
+        Get error number.
+
+        @return integer  Error number.
+        """
         return self._errNo
 
 ####################################################################################
-#### CssIFace class.
+####################################################################################
 ####################################################################################
 class CssIFace(object):
-    """The CssIFace class defines the interface to the Central State Service CSS)."""
+    """
+    @brief CssIFace class defines the interface to the Central State Service CSS).
+    """
 
+    ### __init__ ###################################################################
     def __init__(self, verbose=True):
-        self._zk = KazooClient(hosts='127.0.0.1:2181')
+        """
+        Initialize KazooClient and connect to it.
+
+        @param verbose Verbose flag, default is True.
+        """
+        self._zk = KazooClient(hosts='127.0.0.1:2181') # FIXME
         self._zk.start()
         self._verbose = verbose
 
-    ################################################################################
-    #### create
-    ################################################################################
+    ### create #####################################################################
     def create(self, k, v='', sequence=False):
-        """Adds a new key/value entry. Creates entire path as necessary. If 'sequence' is true, it will append a suffix (10 digits, 0 padded, unique sequential number). Returns real path to the just created node."""
+        """
+        Add a new key/value entry. Create entire path as necessary. 
+
+        @param sequence  Sequence flag -- if set to True, a 10-digid, 0-padded
+                         suffix (unique sequential number) will be added to the key.
+        @return string   Real path to the just created node.
+        """
         # check if the key exists
         if self._zk.exists(k):
             raise CssException(CssStatus.ERR_KEY_ALREADY_EXISTS, k)
@@ -95,39 +143,54 @@ class CssIFace(object):
         if self._verbose: print "cssIface: CREATE '%s' --> '%s'" % (k, v) 
         return self._zk.create(k, v, sequence=sequence, makepath=True)
 
-    ################################################################################
-    #### exists
-    ################################################################################
+    ### exists #####################################################################
     def exists(self, k):
-        """Checks if a given key exists. Returns True if it does, otherwise returns False."""
+        """
+        Check if a given key exists.
+
+        @param k Key.
+
+        @return boolean  True if the key exists, False otherwise.
+        """
         return self._zk.exists(k)
 
-    ################################################################################
-    #### get
-    ################################################################################
+    ### get ########################################################################
     def get(self, k):
-        """Returns value for a given key. Raises exception if the key doesn't exist."""
+        """
+        Get value for a key. Raise exception if the key doesn't exist.
+
+        @param k   Key.
+
+        @return string  Value for a given key. 
+        """
         if not self._zk.exists(k):
             raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
         v, stat = self._zk.get(k)
         if self._verbose: print "cssIface: GET '%s' --> '%s'" % (k, v)
         return v
 
-    ################################################################################
-    #### getChildren
-    ################################################################################
+    ### getChildren ################################################################
     def getChildren(self, k):
-        """Returns a list of children for a given key. Raises exception if the key doesn't exist."""
+        """
+        Get children for a given key. Raise exception if the key doesn't exist.
+
+        @param k   Key.
+
+        @return    List_of_strings  A list of children for a given key. 
+        """
         if not self._zk.exists(k):
             raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
         if self._verbose: print "cssIface: GETCHILDREN '%s'" % (k)
         return self._zk.get_children(k)
 
-    ################################################################################
-    #### set
-    ################################################################################
+    ### set ########################################################################
     def set(self, k, v):
-        """Sets value for a given key. Raises exception if the key doesn't exist."""
+        """
+        Set value for a given key. Raise exception if the key doesn't exist.
+
+        @param k  Key.
+        @param v  Value.
+        """
         # check if the key exists
         if not self._zk.exists(k):
             raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
@@ -136,56 +199,67 @@ class CssIFace(object):
         self._zk.set(k, v)
         v2, stat = self._zk.get(k)
 
-    ################################################################################
-    #### delete
-    ################################################################################
+    ### delete #####################################################################
     def delete(self, k, recursive=False):
-        """Deletes a key. If 'recursive' flag is set, it will delete all existing children nodes. Raises exception if the key doesn't exist."""
+        """
+        Delete a key, including all children if recursive flag is set. Raise
+        exception if the key doesn't exist.
+
+        @param k         Key.
+        @param recursive Flag. If set, all existing children nodes will be
+                         deleted.  
+        """
         if not self._zk.exists(k):
             raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
         if self._verbose: print "cssIface: DELETE '%s'" % (k)
         self._zk.delete(k, recursive=recursive)
 
-    ################################################################################
-    #### deleteAll
-    ################################################################################
+    ### deleteAll ##################################################################
     def deleteAll(self, p):
-        """Deletes everything recursively starting from a given point in the tree."""
+        """
+        Delete everything recursively starting from a given point in the tree.
+
+        @param p  Path.
+        """
         if self._zk.exists(p):
             self._deleteOne(p)
 
-    ################################################################################
-    #### printAll
-    ################################################################################
+    ### printAll ###################################################################
     def printAll(self):
-        """Prints entire contents to stdout."""
+        """
+        Print entire contents to stdout.
+        """
         self._printOne("/")
 
-    ################################################################################
-    #### startTransaction
-    ################################################################################
+    ### startTransaction ###########################################################
     def startTransaction(self):
-        """Starts transaction and returns transactionRequest instance."""
+        """
+        Start transaction and return transactionRequest instance.
+        """
         return self._zk.transaction()
 
-    ################################################################################
-    #### P R I V A T E     M E T H O D S     B E L O W
-    ################################################################################
-
-    ################################################################################
-    #### _chopLastSection
-    ################################################################################
+    ### _chopLastSection PRIVATE ###################################################
     def _chopLastSection(self, k):
-        """Removes substring after last '/', e.g. for /xx/y/abc it'll return /xx/y."""
+        """
+        Remove substring after last '/', e.g. for /xx/y/abc it'll return /xx/y.
+
+        @param k  Key.
+
+        @return string
+        """
         x = k.rfind('/')
         if x == -1: return None
         return k[0:x]
 
-    ################################################################################
-    #### _printOne
-    ################################################################################
+    ### _printOne PRIVATE ##########################################################
     def _printOne(self, p):
-        """Recursive print of the contents."""
+        """
+        Print content of one znode. Note, this function is recursive.
+
+        @param p  Path.
+
+        @return   string
+        """
         t = self.startTransaction()
         children = None
         data = None
@@ -203,11 +277,13 @@ class CssIFace(object):
             else:
                 self._printOne("%s/%s" % (p, child))
 
-    ################################################################################
-    #### _deleteOne
-    ################################################################################
+    ### _deleteOne PRIVATE #########################################################
     def _deleteOne(self, p):
-        """Recursive delete."""
+        """
+        Delete one znode. Note, this function is recursive.
+
+        @param p  Path.
+        """
         children = self._zk.get_children(p)
         for child in children:
             if p == "/":
