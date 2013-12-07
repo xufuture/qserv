@@ -23,6 +23,9 @@
 """
 Internals that do the actual work for the qserv client program. Note that this depends on kazoo, so it'd be best to avoid distributing this to every user. For that reason in the future we might run this separately from the client, so this may not have access to local config files provided by user.
 
+@author  Jacek Becla, SLAC
+
+
 Known todos:
  - need to deal with error handling properly, e.g., define error status
    instead of using dummy SUCCESS, ERROR, 
@@ -35,15 +38,22 @@ SUCCESS = 0
 ERROR = -1
 
 class QservAdminImpl(object):
-    """Implements functions needed by qserv_admin client program."""
+    """
+    QservAdminImpl implements functions needed by qserv_admin client program.
+    """
+
+    ### __init__ ###################################################################
     def __init__(self):
         self._iFace = CssIFace()
 
-    ################################################################################
-    #### createDb
-    ################################################################################
+    ### createDb ###################################################################
     def createDb(self, dbName, options):
-        """Creates database (options specified explicitly)."""
+        """
+        Create database (options specified explicitly).
+
+        @param dbName    Database name
+        @param options   Array with options (key/value)
+        """
 
         if self._dbExists(dbName):
             print "ERROR: db '%s' already exists" % dbName
@@ -71,11 +81,14 @@ class QservAdminImpl(object):
             return ERROR
         return SUCCESS
 
-    ################################################################################
-    #### createDbLike
-    ################################################################################
+    ### createDbLike ###############################################################
     def createDbLike(self, dbName, dbName2):
-        """Creates database using an existing database as a template."""
+        """
+        Create database using an existing database as a template.
+
+        @param dbName    Database name (of the database to create)
+        @param dbName2   Database name (of the template database)
+        """
         print "Creating db '%s' like '%s'" % (dbName, dbName2)
         if self._dbExists(dbName):
             print "ERROR: db '%s' already exists" % dbName
@@ -99,65 +112,75 @@ class QservAdminImpl(object):
         self._createDbLockSection(dbP)
         return SUCCESS
 
-    ################################################################################
-    #### dropDb
-    ################################################################################
+    ### dropDb #####################################################################
     def dropDb(self, dbName):
-        """Drops database."""
+        """
+        Drop database.
+
+        @param dbName    Database name.
+        """
         if not self._dbExists(dbName):
             print "ERROR: db does not exist"
             return ERROR
         self._iFace.delete("/DATABASES/%s" % dbName, recursive=True)
         return SUCCESS
 
-    ################################################################################
-    #### showDatabases
-    ################################################################################
+    ### showDatabases ##############################################################
     def showDatabases(self):
-        """Shows list of databases registered for Qserv use."""
+        """
+        Show list of databases registered for Qserv use.
+        """
         if not self._iFace.exists("/DATABASES"):
             print "No databases found."
         else:
             print self._iFace.getChildren("/DATABASES")
 
-    ################################################################################
-    #### showEverything
-    ################################################################################
+    ### showEverything #############################################################
     def showEverything(self):
-        """Dumps entire metadata in CSS to stdout. Very useful for debugging."""
+        """
+        Dumps entire metadata in CSS to stdout. Very useful for debugging.
+        """
         self._iFace.printAll()
 
-    ################################################################################
-    #### dropEverything
-    ################################################################################
+    ### dropEverything #############################################################
     def dropEverything(self):
-        """Deletes everything from the CSS (very dangerous, very useful for debugging.)"""
+        """
+        Delete everything from the CSS (very dangerous, very useful for debugging.)
+        """
         self._iFace.deleteAll("/")
 
-    ################################################################################
-    #### _dbExists
-    ################################################################################
+    ### _dbExists PRIVATE ##########################################################
     def _dbExists(self, dbName):
-        """Checks if the database exists."""
+        """
+        Check if the database exists.
+
+        @param dbName    Database name.
+        """
         p = "/DATABASES/%s" % dbName
         return self._iFace.exists(p)
 
-    ################################################################################
-    #### _copyKeyValue
-    ################################################################################
+    ### _copyKeyValue PRIVATE ######################################################
     def _copyKeyValue(self, dbDest, dbSrc, theList):
-        """It copies items specified in theList from dbSrc to dbDest."""
+        """
+        Copy items specified in theList from dbSrc to dbDest.
+
+        @param dbDest    Destination database name.
+        @param dbSrc     Source database name
+        @param theList   The list of elements to copy.
+        """
         dbS  = "/DATABASES/%s" % dbSrc
         dbD = "/DATABASES/%s" % dbDest
         for x in theList:
             v = self._iFace.get("%s/%s" % (dbS, x))
             self._iFace.create("%s/%s" % (dbD, x), v)
 
-    ################################################################################
-    #### _createDbLockSection
-    ################################################################################
+    ### _createDbLockSection PRIVATE ###############################################
     def _createDbLockSection(self, dbP):
-        """It creates key/values related to "LOCK" for a given db path."""
+        """
+        Create key/values related to "LOCK" for a given db path.
+
+        @param dbP    Path to the database.
+        """
         self._iFace.create("%s/LOCK/comments" % dbP)
         self._iFace.create("%s/LOCK/estimatedDuration" % dbP)
         self._iFace.create("%s/LOCK/lockedBy" % dbP)

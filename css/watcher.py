@@ -23,11 +23,16 @@
 """
 Database Watcher - runs on each Qserv node and maintains Qserv databases (creates databases, deletes databases, creates tables, drops tables etc).
 
+@author  Jacek Becla, SLAC
+
+
 Known todos:
  - mysql host/port user/passwd/socket
  - need to go through cssIFace interface, now bypassing it in two places:
     - @self._iFace._zk.DataWatch
     - @self._iFace._zk.ChildrenWatch
+ - considering implementing garbage collection for threads corresponding to
+   deleted databases.
 """
 
 import time
@@ -36,17 +41,26 @@ import threading
 from cssIFace import CssIFace
 from db import Db, DbException, DbStatus
 
-# uncomment logging if you see errors:
+# IThis helps uncomment logging if you see errors:
 # No handlers could be found for logger "kazoo.recipe.watchers"
 import logging
 logging.basicConfig()
 
 ####################################################################################
-#### OneDbWatcher
+####################################################################################
 ####################################################################################
 class OneDbWatcher(threading.Thread):
-    """This class implements a database watcher. Each instance is responsible for creating / dropping one database. It is based on Zookeeper's DataWatch."""
+    """
+    This class implements a database watcher. Each instance is responsible for
+    creating / dropping one database. It is relying on Zookeeper's DataWatch.
+    It runs in a dedicated thread.
+    """
+
+    ### __init__ ###################################################################
     def __init__(self, iFace, db, pathToWatch, verbose=True):
+        """
+        Initialize shared state.
+        """
         self._iFace = iFace
         self._db = db
         self._path = pathToWatch
@@ -55,7 +69,11 @@ class OneDbWatcher(threading.Thread):
         self._verbose = verbose
         threading.Thread.__init__(self)
 
+    ### run ########################################################################
     def run(self):
+        """
+        Watch for changes, and act upon them: create/drop databases.
+        """
         @self._iFace._zk.DataWatch(self._path, allow_missing_node=True)
         def my_watcher_func(newData, stat):
             if newData == self._data: return
@@ -79,11 +97,23 @@ class OneDbWatcher(threading.Thread):
             self._data = newData
 
 ####################################################################################
-#### AllDbsWatcher
+####################################################################################
 ####################################################################################
 class AllDbsWatcher(threading.Thread):
-    """This class implements watcher that watches for new znodes that represent databases. A new OnedbWatcher is setup for each new znode that is creeated. It is based on Zookeeper's ChildrenWatch."""
+    """
+    This class implements watcher that watches for new znodes that represent
+    databases. A new OnedbWatcher is setup for each new znode that is creeated. 
+    If ensures only one watcher runs, even if a database is created/deleted/created
+    again. It currently does NOT do any garbage collection of threads for deleted
+    databases. It is relying on Zookeeper's ChildrenWatch. It runs in a dedicated
+    thread.
+    """
+
+    ### __init__ ###################################################################
     def __init__(self, iFace, db):
+        """
+        Initialize shared data.
+        """
         self._iFace = iFace
         self._db = db
         self._path =  "/DATABASES"
@@ -93,9 +123,14 @@ class AllDbsWatcher(threading.Thread):
         if not iFace.exists(self._path): iFace.create(self._path)
         threading.Thread.__init__(self)
 
+    ### run ########################################################################
     def run(self):
-        # known issue: if the path is deleted, this will fail with:
-        # No handlers could be found for logger "kazoo.handlers.threading"
+        """
+        Watch for new/deleted nodes, and act upon them: setup new watcher for each
+        new database. Note, if the path "/DATABASES" is deleted, this will fail
+        with an error: No handlers could be found for logger
+        "kazoo.handlers.threading".
+        """
         @self._iFace._zk.ChildrenWatch(self._path)
         def my_watcher_func(children):
             # look for new entries
@@ -118,6 +153,9 @@ class AllDbsWatcher(threading.Thread):
                     print "node '%s' was removed" % val
                     self._children.remove(val)
 
+####################################################################################
+####################################################################################
+####################################################################################
 def main():
     iFace = CssIFace(verbose=True)
     db = Db(host='localhost', port=3306, user='becla', passwd='') # FIXME
