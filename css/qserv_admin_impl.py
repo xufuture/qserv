@@ -21,11 +21,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
 """
-Internals that do the actual work for the qserv client program.
-Note that this depends on kazoo, so it'd be best to avoid distributing
-this to every user. For that reason in the future we might run this
-separately from the client, so this may not have access to local
-config files provided by user.
+Internals that do the actual work for the qserv client program. Note that this depends on kazoo, so it'd be best to avoid distributing this to every user. For that reason in the future we might run this separately from the client, so this may not have access to local config files provided by user.
 
 Known todos:
  - need to deal with error handling properly, e.g., define error status
@@ -39,9 +35,7 @@ SUCCESS = 0
 ERROR = -1
 
 class QservAdminImpl(object):
-    """
-    Implements functions needed by qserv_admin client program.
-    """
+    """Implements functions needed by qserv_admin client program."""
     def __init__(self):
         self._iFace = CssIFace()
 
@@ -137,8 +131,7 @@ class QservAdminImpl(object):
     #### dropEverything
     ################################################################################
     def dropEverything(self):
-        """Deletes everything from the CSS (very dangerous, very useful for
-        debugging.)"""
+        """Deletes everything from the CSS (very dangerous, very useful for debugging.)"""
         self._iFace.deleteAll("/")
 
     ################################################################################
