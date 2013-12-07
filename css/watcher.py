@@ -21,8 +21,8 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
 """
-Database Watcher - runs on each Qserv node and maintains Qserv databases
-(creates databases, deletes databases, creates tables, drops tables etc).
+Database Watcher - runs on each Qserv node and maintains Qserv databases (creates databases, deletes databases, creates tables, drops tables etc).
+
 Known todos:
  - mysql host/port user/passwd/socket
  - need to go through cssIFace interface, now bypassing it in two places:
@@ -45,8 +45,7 @@ logging.basicConfig()
 #### OneDbWatcher
 ####################################################################################
 class OneDbWatcher(threading.Thread):
-    """This class implements a database watcher. Each instance is responsible for
-       creating / dropping one database. It is based on Zookeeper's DataWatch."""
+    """This class implements a database watcher. Each instance is responsible for creating / dropping one database. It is based on Zookeeper's DataWatch."""
     def __init__(self, iFace, db, pathToWatch, verbose=True):
         self._iFace = iFace
         self._db = db
@@ -83,9 +82,7 @@ class OneDbWatcher(threading.Thread):
 #### AllDbsWatcher
 ####################################################################################
 class AllDbsWatcher(threading.Thread):
-    """This class implements watcher that watches for new znodes that represent
-       databases. A new OnedbWatcher is setup for each new znode that is creeated.
-       It is based on Zookeeper's ChildrenWatch."""
+    """This class implements watcher that watches for new znodes that represent databases. A new OnedbWatcher is setup for each new znode that is creeated. It is based on Zookeeper's ChildrenWatch."""
     def __init__(self, iFace, db):
         self._iFace = iFace
         self._db = db
