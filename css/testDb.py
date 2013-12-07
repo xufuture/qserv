@@ -28,40 +28,129 @@ import time
 import unittest
 from db import Db, DbException, DbStatus
 
+theHost = 'localhost'
+thePort = 3306
+theUser = 'becla'
+thePass  = ''
+theSock  = ''
+
+dbA = "_dbWrapperTestDb_A"
+dbB = "_dbWrapperTestDb_B"
+dbC = "_dbWrapperTestDb_C"
+
 class TestDb(unittest.TestCase):
     def setUp(self):
-        None
+        self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
+                      socket=theSock)
+        if self._db.checkDbExists(dbA): self._db.dropDb(dbA)
+        if self._db.checkDbExists(dbB): self._db.dropDb(dbB)
+        if self._db.checkDbExists(dbC): self._db.dropDb(dbC)
+        self._db.disconnect()
 
-    def test1(self):
-        self._db = Db(host='localhost',
-                      port=3306,
-                      user='becla',
-                      passwd='',
-                      socket=None)
-        self._db.createDb("myDb1")
-        self._db.connectToDb("myDb1")
+    def test1Basic(self):
+        """Basic test: connect through port, create db and connect to it, 
+           create one table, drop the db, disconnect."""
+        self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
+                      socket=theSock)
+        self._db.createDb(dbA)
+        self._db.connectToDb(dbA)
         self._db.createTable("t1", "(i int)")
-        self._db.createDb("myDb2")
-        self._db.createTable("t2a", "(i int)")
-        self._db.createTableInDb("myDb2", "t2a", "(i int)")
-        self._db.dropDb("myDb2")
-        self._db.createTable("t2b", "(i int)")
-        self._db.createDb("myDb2")
-        self._db.createTableInDb("myDb2", "t2b", "(i int)")
-        # this db already exists, so that should fail
-        self.assertRaises(DbException, self._db.createDb, "myDb1")
-        # this table already exists, so that should fail
-        self.assertRaises(DbException, self._db.createTable, "t2a", "(i int)")
-        # simply cleanup after yourself
-        self._db.dropDb("myDb1")
-        self._db.dropDb("myDb2")
+        self._db.dropDb(dbA)
+        self._db.disconnect()
+
+    def testMultiDbs(self):
+        """Try interleaving operations on multiple databases."""
+        self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
+                      socket=theSock)
+        self._db.createDb(dbA)
+        self._db.createDb(dbB)
+        self._db.createDb(dbC)
+        self._db.connectToDb(dbA)
+        self._db.createTable("t1", "(i int)", dbB)
+        self._db.createTable("t1", "(i int)")
+        self._db.createTable("t1", "(i int)", dbC)
+        self._db.dropDb(dbB)
+        self._db.createTable("t2", "(i int)", dbA)
+        self._db.dropDb(dbA)
+        self._db.connectToDb(dbC)
+        self._db.createTable("t2", "(i int)")
+        self._db.createTable("t3", "(i int)", dbC)
+        self._db.dropDb(dbC)
+        self._db.disconnect()
+
+    def testMultiCreateDef(self):
+        """Test creating db/table that already exists (in default db)."""
+        self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
+                      socket=theSock)
+        self._db.createDb(dbA)
+        self.assertRaises(DbException, self._db.createDb, dbA)
+        self._db.connectToDb(dbA)
+        self.assertRaises(DbException, self._db.createDb, dbA)
+        self._db.createTable("t1", "(i int)")
+        self.assertRaises(DbException, self._db.createTable, "t1", "(i int)")
+        self._db.dropDb(dbA)
+        self.assertRaises(DbException, self._db.dropDb, dbA)
+        self._db.disconnect()
+
+
+    def testMultiCreateNonDef(self):
+        """Test creating db/table that already exists (in non default db)."""
+        self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
+                      socket=theSock)
+        self._db.createDb(dbA)
+        self.assertRaises(DbException, self._db.createDb, dbA)
+        self._db.connectToDb(dbA)
+        self._db.createDb(dbB)
+        self.assertRaises(DbException, self._db.createDb, dbA)
+        self._db.createTable("t1", "(i int)")
+        self.assertRaises(DbException, self._db.createTable, "t1", "(i int)")
+        self._db.createTable("t2", "(i int)", dbA)
+        self.assertRaises(DbException, self._db.createTable, "t1", "(i int)", dbA)
+        self.assertRaises(DbException, self._db.createTable, "t2", "(i int)", dbA)
+
+        self._db.createTable("t1", "(i int)", dbB)
+        self.assertRaises(DbException, self._db.createTable, "t1", "(i int)", dbB)
+
+        self._db.dropDb(dbA)
+        self.assertRaises(DbException, self._db.dropDb, dbA)
+        self.assertRaises(DbException, self._db.createTable, "t1", "(i int)", dbB)
+
+        self._db.dropDb(dbB)
+        self._db.disconnect()
+
+
+    def testCheckExists(self):
+        """Test checkExist for databases and tables."""
+        self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
+                      socket=theSock)
+        if self._db.checkDbExists("bla"):
+            print "yes"
+        else:
+            print "no"
+        self.assertFalse(self._db.checkDbExists("bla"))
+        self.assertFalse(self._db.checkTableExists("bla"))
+        self.assertFalse(self._db.checkTableExists("bla", "blaBla"))
+
+        self._db.createDb(dbA)
+        self.assertTrue(self._db.checkDbExists(dbA))
+        self.assertFalse(self._db.checkDbExists("bla"))
+        self.assertFalse(self._db.checkTableExists("bla"))
+        self.assertFalse(self._db.checkTableExists("bla", "blaBla"))
+
+        self._db.createTable("t1", "(i int)", dbA)
+        self.assertTrue(self._db.checkDbExists(dbA))
+        self.assertFalse(self._db.checkDbExists("bla"))
+        self.assertTrue(self._db.checkTableExists("t1", dbA))
+        self._db.connectToDb(dbA)
+        self.assertTrue(self._db.checkTableExists("t1"))
+        self.assertFalse(self._db.checkTableExists("bla"))
+        self.assertFalse(self._db.checkTableExists("bla", "blaBla"))
+        self._db.dropDb(dbA)
+        self._db.disconnect()
+
 
 def main():
-    # try:
     unittest.main()
-    # except DbException as e:
-    #     print "Oops", e.getErrMsg()
-
 
 if __name__ == "__main__":
     main()

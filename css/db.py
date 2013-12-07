@@ -56,13 +56,15 @@ class DbStatus:
     ERR_MYSQL_ERROR        = 1540
     ERR_NO_DB_SELECTED     = 1545
     ERR_NOT_CONNECTED      = 1550
+    ERR_TB_DOES_NOT_EXIST  = 1555
+    ERR_TB_EXISTS          = 1560
     ERR_INTERNAL           = 9999
 
     errors = {
         ERR_CANT_CONNECT_TO_DB: ("Can't connect to database."),
         ERR_CANT_EXEC_SCRIPT: ("Can't execute script."),
-        ERR_DB_EXISTS: ("The database already exists."),
-        ERR_DB_DOES_NOT_EXIST: ("The database does not exist."),
+        ERR_DB_EXISTS: ("Database already exists."),
+        ERR_DB_DOES_NOT_EXIST: ("Database does not exist."),
         ERR_INVALID_DB_NAME: ("Invalid database name."),
         ERR_MISSING_CON_INFO: ("Missing connection information -- must provide "
                                "either host/port or socket."),
@@ -72,6 +74,8 @@ class DbStatus:
         ERR_MYSQL_ERROR: ("Internal MySQL error."),
         ERR_NO_DB_SELECTED: ("No database selected."),
         ERR_NOT_CONNECTED: ("Not connected to MySQL."),
+        ERR_TB_DOES_NOT_EXIST: ("Table does not exist."),
+        ERR_TB_EXISTS: ("Table already exists."),
         ERR_INTERNAL: ("Internal error.")
     }
 
@@ -101,8 +105,7 @@ class DbException(Exception):
 #### Class Db
 ####################################################################################
 class Db:
-    """This class implements the wrapper around MySQLdb. Either host/port or
-    socket must be passed. DbName is optional. Password can be empty."""
+    """This class implements the wrapper around MySQLdb. Either host/port or socket must be passed. DbName is optional. Password can be empty."""
 
     def __init__(self, user, passwd=None, host=None, port=None, 
                  socket=None, dbName=None):
@@ -116,7 +119,7 @@ class Db:
         self._user = user
         self._passwd = passwd
         self._socket = socket
-        self._dbName = dbName
+        self._defaultDbName = dbName
 
     def __del__(self):
         self.disconnect()
@@ -127,8 +130,7 @@ class Db:
 
     ### connectToMySQLServer #######################################################
     def connectToMySQLServer(self):
-        """Connects to MySQL Server. If socket is available, it will try to use
-           it first. If fails, it will then try to use host:port."""
+        """Connects to MySQL Server. If socket is available, it will try to use it first. If fails, it will then try to use host:port."""
         if self._checkIsConnected(): 
             return
         if self._socket is not None: 
@@ -188,33 +190,32 @@ class Db:
         self._isConnectedToDb = False
 
     ################################################################################
-    #### dealing with current db: connecting, checking the name
+    #### connecting to database, checking default database name
     ################################################################################
-    def connectToDb(self, dbName):
-        """It connects to a database <dbName>. If it is not connected to the server,
-           it will connect first."""
+    def connectToDb(self, dbName=None):
+        """It connects to a database <dbName>. If <dbName> is None, it will use the default database. If it is not connected to the server, it will connect first."""
+        dbName = self._getDefaultDbNameIfNeeded(dbName)
         if self._checkIsConnectedToDb(dbName): return
         try:
             self.connectToMySQLServer()
             self._conn.select_db(dbName)
         except MySQLdb.Error, e:
-            # self._logger.debug("Failed to select db '%s'." % self._dbName)
-            raise DbException(DbStatus.ERR_CANT_CONNECT_TO_DB, self._dbName)
+            # self._logger.debug("Failed to select db '%s'." % dbName)
+            raise DbException(DbStatus.ERR_CANT_CONNECT_TO_DB, dbName)
         self._isConnectedToDb = True
-        self._dbName = dbName
+        self._defaultDbName = dbName
         # self._logger.debug("Connected to db '%s'." % self._dbName)
 
     ################################################################################
-    def getDbName(self):
-        """It returns current database name."""
-        return self._dbName
+    def getDefaultDbName(self):
+        """It returns the name of the default database."""
+        return self._defaultDbName
 
     ################################################################################
     #### commit
     ################################################################################
     def commit(self):
-        """It commits a transaction. Throws exception if it is not connected to the
-           server."""
+        """It commits a transaction. Throws exception if it is not connected to the server."""
         if not self._checkIsConnected():
             raise DbException(DbStatus.ERR_NOT_CONNECTED)
         self._conn.commit()
@@ -224,46 +225,46 @@ class Db:
     ################################################################################
 
     ### checkDbExists ##############################################################
-    def checkDbExists(self, dbName):
-        """It checks if a given database exists. It will connect to the server if
-           not connected already."""
+    def checkDbExists(self, dbName=None):
+        """It checks if a database <dbName> exists. If it is None, it will use the default database. It will connect to the server if not connected already."""
+        if dbName is None and self.getDefaultDbName() is None: return False
+        dbName = self._getDefaultDbNameIfNeeded(dbName)
         self.connectToMySQLServer()
         cmd = "SELECT COUNT(*) FROM information_schema.schemata "
         cmd += "WHERE schema_name = '%s'" % dbName
         count = self.execCommand1(cmd)
         return count[0] == 1
 
-    ### createDb ##################################################################
+    ### createDb ###################################################################
     def createDb(self, dbName):
-        """It creates a new database <dbName>. Raises exception if the database
-           already exists. It will connect to the server if not connected already.
-           Note, it will not connect to that database."""
+        """It creates a new database <dbName>. Raises exception if the database already exists. It will connect to the server if not connected already.  Note, it will not connect to that database and it will not make it default."""
+        if dbName is None: 
+            raise DbException(DbStatus.ERR_INVALID_DB_NAME, "<None>")
         self.connectToMySQLServer()
         if self.checkDbExists(dbName):
-            raise DbException(DbStatus.ERR_DB_EXISTS)
+            raise DbException(DbStatus.ERR_DB_EXISTS, dbName)
         self.execCommand0("CREATE DATABASE %s" % dbName)
 
     ### dropDb #####################################################################
-    def dropDb(self, dbName):
-        """It drop a database <dbName>. Raises exception if the database
-           does not exists. It will connect to the server if not connected
-           already. If this is current db, it will disconnect from it."""
+    def dropDb(self, dbName=None):
+        """It drop a database <dbName>. If <dbName> is None, it will use the default database. If it drops the default database, it will disconnect from it. Raises exception if the database does not exists. It will connect to the server if not connected already."""
+        dbName = self._getDefaultDbNameIfNeeded(dbName)
         self.connectToMySQLServer()
         if not self.checkDbExists(dbName):
-            raise DbException(DbStatus.ERR_DB_DOES_NOT_EXIST)
+            raise DbException(DbStatus.ERR_DB_DOES_NOT_EXIST, dbName)
         self.execCommand0("DROP DATABASE %s" % dbName)
-        if self._dbName == dbName:
-            self._dbName = None
-            self.disconnect()
+        if dbName == self.getDefaultDbName():
+            self._resetDefaultDbName()
 
     ################################################################################
     #### dealing with tables
     ################################################################################
 
     ### checkTableExists ###########################################################
-    def checkTableExists(self, dbName, tableName):
-        """It checks if a given table exists in the current database. It will
-           connect to the server if not connected already."""
+    def checkTableExists(self, tableName, dbName=None):
+        """It checks if a <tableName> table exists in database <dbName>. If <dbName> is None, it will use the default database. It will connect to the server if not connected already."""
+        if dbName is None and self.getDefaultDbName() is None: return False
+        dbName = self._getDefaultDbNameIfNeeded(dbName)
         self.connectToMySQLServer()
         cmd = "SELECT COUNT(*) FROM information_schema.tables "
         cmd += "WHERE table_schema = '%s' AND table_name = '%s'" % \
@@ -271,30 +272,27 @@ class Db:
         count = self.execCommand1(cmd)
         return  count[0] == 1
 
-    #### checkTableExists ##########################################################
-    def checkTableExists(self, tableName):
-        """It checks if a given table exists in the current database. It will
-           connect to the server if not connected already."""
-        return self.checkTableExists(self._dbName, tableName)
-
     ### createTable ################################################################
-    def createTable(self, tableName, tableSchema):
-        """It creates table in current database. It will connect to the server if
-           not connected already."""
+    def createTable(self, tableName, tableSchema, dbName=None):
+        """It creates a table <tableName>. If database <dbName> is None, it will use the default database. It will connect to the server if not connected already."""
+        dbName = self._getDefaultDbNameIfNeeded(dbName)
         self.connectToMySQLServer()
-        self.execCommand0("CREATE TABLE %s %s" % (tableName, tableSchema))
-
-    ### createTableInDb ############################################################
-    def createTableInDb(self, dbName, tableName, tableSchema):
-        """It creates table in the specified database. It will connect to the
-           server if not connected already."""
-        self.connectToMySQLServer()
+        if self.checkTableExists(tableName, dbName):
+            raise DbException(DbStatus.ERR_TB_EXISTS)
         self.execCommand0("CREATE TABLE %s.%s %s" % (dbName,tableName,tableSchema))
+
+    ### dropTable  #################################################################
+    def dropTable(self, tableName, dbName=None):
+        """It drops table in a given database. It will connect to the server if not connected already."""
+        if dbName == None: dbName = self._dbName
+        self.connectToMySQLServer()
+        if not self.checkTableExists(tableName, dbName):
+            raise DbException(DbStatus.ERR_TB_DOES_NOT_EXIST)
+        self.execCommand0("DROP TABLE %s.%s %s" % (dbName, tableName, tableSchema))
 
     ### printTable #################################################################
     def printTable(self, tableName):
-        """It prints the contents of the table. It will connect to the server if
-           not connected already."""
+        """It prints the contents of the table. It will connect to the server if not connected already."""
         self.connectToMySQLServer()
         ret = self.execCommandN("SELECT * FROM %s" % tableName)
         s = StringIO.StringIO()
@@ -352,12 +350,7 @@ class Db:
     #### private method: _execCommand
     ################################################################################
     def _execCommand(self, command, nRowsRet):
-        """Executes mysql commands which return any number of rows.
-        Expected number of returned rows should be given in nRowSet 
-        ('0', '1', 'n'). If this function is called after mysqld was
-        restarted, or if the connection timed out because of long period 
-        of inactivity, the command will fail. This function catches 
-        such problems and recovers by reconnecting and retrying."""
+        """Executes mysql commands which return any number of rows. Expected number of returned rows should be given in nRowSet ('0', '1', 'n'). If this function is called after mysqld was restarted, or if the connection timed out because of long period of inactivity, the command will fail. This function catches such problems and recovers by reconnecting and retrying."""
         if not self._checkIsConnected():
             self.connectToMySQLServer()
 
@@ -410,3 +403,22 @@ class Db:
                 self._isConnectedToDb and 
                 dbName == _self._dbName)
 
+    ################################################################################
+    ### _getDefaultDbNameIfNeeded
+    ################################################################################
+    def _getDefaultDbNameIfNeeded(self, dbName):
+        """If the <dbName> is not None, it just returns it. Otherwise, it tries to use the defaultDbName. If the defaultDbName is also None, it raises an exception."""
+        if dbName is not None: 
+            return dbName
+        dbName = self.getDefaultDbName()
+        if dbName is None:
+            raise DbException(DbStatus.ERR_INVALID_DB_NAME, "<None>")
+        return dbName
+
+    ################################################################################
+    ### _resetDefaultDbName
+    ################################################################################
+    def _resetDefaultDbName(self):
+        """Resets the default database (that includes disconnecting from the server."""
+        self._defaultDbName = None
+        self.disconnect()
