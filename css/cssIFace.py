@@ -74,8 +74,7 @@ class CssException(Exception):
 #### CssIFace class.
 ####################################################################################
 class CssIFace(object):
-    """The CssIFace class defines the interface to the Central State Service CSS).
-    """
+    """The CssIFace class defines the interface to the Central State Service CSS)."""
 
     def __init__(self, verbose=True):
         self._zk = KazooClient(hosts='127.0.0.1:2181')
@@ -86,9 +85,7 @@ class CssIFace(object):
     #### create
     ################################################################################
     def create(self, k, v='', sequence=False):
-        """Adds a new key/value entry. Creates entire path as necessary.
-        If 'sequence' is true, it will append a suffix (10 digits, 0 padded,
-        unique sequential number). Returns real path to the just created node."""
+        """Adds a new key/value entry. Creates entire path as necessary. If 'sequence' is true, it will append a suffix (10 digits, 0 padded, unique sequential number). Returns real path to the just created node."""
         # check if the key exists
         if self._zk.exists(k):
             raise CssException(CssStatus.ERR_KEY_ALREADY_EXISTS, k)
@@ -102,16 +99,14 @@ class CssIFace(object):
     #### exists
     ################################################################################
     def exists(self, k):
-        """Checks if a given key exists. Returns True if it does, otherwise returns
-           False."""
+        """Checks if a given key exists. Returns True if it does, otherwise returns False."""
         return self._zk.exists(k)
 
     ################################################################################
     #### get
     ################################################################################
     def get(self, k):
-        """Returns value for a given key. Raises exception if the key doesn't
-           exist."""
+        """Returns value for a given key. Raises exception if the key doesn't exist."""
         if not self._zk.exists(k):
             raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
         v, stat = self._zk.get(k)
@@ -122,8 +117,7 @@ class CssIFace(object):
     #### getChildren
     ################################################################################
     def getChildren(self, k):
-        """Returns a list of children for a given key. Raises exception if the
-           key doesn't exist."""
+        """Returns a list of children for a given key. Raises exception if the key doesn't exist."""
         if not self._zk.exists(k):
             raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
         if self._verbose: print "cssIface: GETCHILDREN '%s'" % (k)
@@ -133,8 +127,7 @@ class CssIFace(object):
     #### set
     ################################################################################
     def set(self, k, v):
-        """Sets value for a given key. Raises exception if the key doesn't
-           exist."""
+        """Sets value for a given key. Raises exception if the key doesn't exist."""
         # check if the key exists
         if not self._zk.exists(k):
             raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
@@ -147,8 +140,7 @@ class CssIFace(object):
     #### delete
     ################################################################################
     def delete(self, k, recursive=False):
-        """Deletes a key. If 'recursive' flag is set, it will delete all existing
-           children nodes. Raises exception if the key doesn't exist."""
+        """Deletes a key. If 'recursive' flag is set, it will delete all existing children nodes. Raises exception if the key doesn't exist."""
         if not self._zk.exists(k):
             raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, k)
         if self._verbose: print "cssIface: DELETE '%s'" % (k)
@@ -158,8 +150,7 @@ class CssIFace(object):
     #### deleteAll
     ################################################################################
     def deleteAll(self, p):
-        """Deletes everything recursively starting from a given point in the tree.
-        """
+        """Deletes everything recursively starting from a given point in the tree."""
         if self._zk.exists(p):
             self._deleteOne(p)
 
@@ -185,8 +176,7 @@ class CssIFace(object):
     #### _chopLastSection
     ################################################################################
     def _chopLastSection(self, k):
-        """Removes substring after last '/', e.g. for /xx/y/abc it'll return 
-        /xx/y."""
+        """Removes substring after last '/', e.g. for /xx/y/abc it'll return /xx/y."""
         x = k.rfind('/')
         if x == -1: return None
         return k[0:x]

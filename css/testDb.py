@@ -48,8 +48,7 @@ class TestDb(unittest.TestCase):
         self._db.disconnect()
 
     def test1Basic(self):
-        """Basic test: connect through port, create db and connect to it, 
-           create one table, drop the db, disconnect."""
+        """Basic test: connect through port, create db and connect to it, create one table, drop the db, disconnect."""
         self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
                       socket=theSock)
         self._db.createDb(dbA)
