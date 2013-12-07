@@ -25,10 +25,14 @@ qserv client program used by all users that talk to qserv. A thin shell that par
 commands, reads all input data in the form of config files into arrays, and calls
 corresponding function.
 
+@author  Jacek Becla, SLAC
+
+
 Known todos:
  - user authentication
  - many commands still need to be implemented
  - need to separate dangerous admin commands like DROP EVERYTHING
+ - implement proper logging instead of print
 """
 
 import os
@@ -39,9 +43,12 @@ import ConfigParser
 from qserv_admin_impl import QservAdminImpl
 
 ####################################################################################
-#### QAdmStatus class. Defines erorr codes and messages used by the CssIFace
+####################################################################################
 ####################################################################################
 class QAdmStatus:
+    """
+    QAdmStatus class defines erorr codes and messages used by the CssIFace.
+    """
     SUCCESS                     =    0
     ERR_BAD_CMD                 = 3001
     ERR_CONFIG_NOT_FOUND        = 3002
@@ -60,15 +67,33 @@ class QAdmStatus:
     }
 
 ####################################################################################
-#### QAdmException class. Defines qserv_admin-specific exception
+####################################################################################
 ####################################################################################
 class QAdmException(Exception):
+    """
+    QAdmException class defines qserv_admin-specific exception
+    """
+
+    ### __init__ ###################################################################
     def __init__(self, errNo, extraMsg1=None, extraMsg2=None):
+        """
+        Initialize the shared data.
+
+        @param errNo      Error number.
+        @param extraMsg1  Optional 1st message string.
+        @param extraMsg2  Optional 2nd message string.
+        """
         self._errNo = errNo
         self._extraMsg1 = extraMsg1
         self._extraMsg2 = extraMsg2
 
+    ### getErrMsg ##################################################################
     def getErrMsg(self):
+        """
+        Get error message
+
+        @return string  Error message string, including all optional messages.
+        """
         msg = ''
         s = QAdmStatus()
         if self._errNo in s.errors: msg = s.errors[self._errNo]
@@ -77,15 +102,28 @@ class QAdmException(Exception):
         if self._extraMsg2 is not None: msg += " (%s)" % self._extraMsg2
         return msg
 
+    ### getErrMsg ##################################################################
     def getErrNo(self):
+        """
+        Get error message
+
+        @return string  Error message string, including all optional messages.
+        """
         return self._errNo
 
 ####################################################################################
-#### class CommandParser
+####################################################################################
 ####################################################################################
 class CommandParser(object):
-    """Parses commands and calls appropriate function from qserv_admin_impl."""
+    """
+    Parse commands and calls appropriate function from qserv_admin_impl.
+    """
+
+    ### __init__ ###################################################################
     def __init__(self):
+        """
+        Initialize shared metadata, including list of supported commands.
+        """
         self._funcMap = {
             'CREATE':  self._parseCreate,
             'DROP':    self._parseDrop,
@@ -107,11 +145,13 @@ class CommandParser(object):
     ...more coming soon
 """
 
-    ################################################################################
-    #### receiveCommands
-    ################################################################################
+    ### receiveCommands ############################################################
     def receiveCommands(self):
-        """Receives user commands. End of command is determined by ';'. Multiple commands per line are allowed. Multi-line commands are allowed. To terminate: CTRL-D, or "exit;" or quit;"."""
+        """
+        Receive user commands. End of command is determined by ';'. Multiple
+        commands per line are allowed. Multi-line commands are allowed. To
+        terminate: CTRL-D, or "exit;" or quit;".
+        """
         line = ''
         sql = ''
         while True:
@@ -125,11 +165,12 @@ class CommandParser(object):
                     print "ERROR: ", e1.getErrMsg()
                 sql = sql[pos+1:]
 
-    ################################################################################
-    #### main parser
-    ################################################################################
+    ### main parser PRIVATE ########################################################
     def _parse(self, cmd):
-        """Main parser, dispatches to subparsers based on first word. Throws exceptions on errors."""
+        """
+        Parser, dispatch to subparsers based on first word. Raise exceptions on
+        errors.
+        """
         cmd = cmd.strip()
         # ignore empty commands, these can be generated by typing ;;
         if len(cmd) == 0: return 
@@ -142,11 +183,11 @@ class CommandParser(object):
         else:
             print "Unsupported command '%s', see HELP for details." % cmd
 
-    ################################################################################
-    #### subparser CREATE
-    ################################################################################
+    ### _parseCreate PRIVATE #######################################################
     def _parseCreate(self, tokens):
-        """Subparser, handles all CREATE requests."""
+        """
+        Subparser, handle all CREATE requests.
+        """
         t = tokens[0].upper()
         if t == 'DATABASE':
             self._parseCreateDatabase(tokens[1:])
@@ -155,11 +196,11 @@ class CommandParser(object):
         else:
             print "CREATE '%s' is not supported yet." % t
 
-    ################################################################################
-    #### subparser "CREATE DATABASE"
-    ################################################################################
+    ### _parseCreateDatabase #######################################################
     def _parseCreateDatabase(self, tokens):
-        """Subparser, handles all CREATE DATABASE requests."""
+        """
+        Subparser, handle all CREATE DATABASE requests.
+        """
         l = len(tokens)
         if l == 2:
             dbName = tokens[0]
@@ -178,18 +219,18 @@ class CommandParser(object):
             raise QAdmException(QAdmStatus.ERR_BAD_CMD, 
                                 "unexpected number of arguments")
 
-    ################################################################################
-    #### subparser: CREATE TABLE
-    ################################################################################
+    ### _parseCreateTable ##########################################################
     def _parseCreateTable(self, tokens):
-        """Subparser, handles all CREATE TABLE requests."""
+        """
+        Subparser, handle all CREATE TABLE requests.
+        """
         print 'CREATE TABLE not implemented.'
 
-    ################################################################################
-    #### _subparser: DROP
-    ################################################################################
+    ### _parseDrop #################################################################
     def _parseDrop(self, tokens):
-        """Subparser, handles all DROP requests."""
+        """
+        Subparser, handle all DROP requests.
+        """
         t = tokens[0].upper()
         l = len(tokens)
         if t == 'DATABASE':
@@ -204,25 +245,25 @@ class CommandParser(object):
         else:
             print "DROP '%s' is not supported yet." % t
 
-    ###############################################################################
-    #### _printHelp
-    ################################################################################
+    ### _printHelp #################################################################
     def _printHelp(self, tokens):
-        """Prints available commands."""
+        """
+        Print available commands.
+        """
         print self._supportedCommands
 
-    ################################################################################
-    #### subparser: RELEASE
-    ################################################################################
+    ### _parseRelease ##############################################################
     def _parseRelease(self, tokens):
-        """Subparser, handles all RELEASE requests."""
+        """
+        Subparser, handle all RELEASE requests.
+        """
         print 'RELEASE not implemented.'
 
-    ################################################################################
-    #### subparser: SHOW
-    ################################################################################
+    ### _parseShow #################################################################
     def _parseShow(self, tokens):
-        """Subparser, handles all SHOW requests."""
+        """
+        Subparser, handle all SHOW requests.
+        """
         t = tokens[0].upper()
         if t == 'DATABASES':
             self._impl.showDatabases()
@@ -231,21 +272,22 @@ class CommandParser(object):
         else:
             print "SHOW '%s' is not supported yet." % t
 
-    ################################################################################
-    #### _createDb
-    ################################################################################
+    ### _createDb ##################################################################
     def _createDb(self, dbName, configFile):
-        """Create database through config file."""
+        """
+        Create database through config file.
+        """
         print "Creating db '%s' using config '%s'" % (dbName, configFile)
         options = self._fetchOptionsFromConfigFile(configFile)
         print "options are:", options
         self._impl.createDb(dbName, options)
 
-    ################################################################################
-    #### _processing options for createDb and createTable
-    ################################################################################
+    ### _fetchOptionsFromConfigFile ################################################
     def _fetchOptionsFromConfigFile(self, fName):
-        """It reads the config file for createDb or createTable command, and returns key-value pair dictionary (flat, e.g., sections are ignored.)"""
+        """
+        Read config file <fName> for createDb and createTable command, and return
+        key-value pair dictionary (flat, e.g., sections are ignored.)
+        """
         if not os.access(fName, os.R_OK):
             raise QAdmException(QAdmStatus.ERR_CONFIG_NOT_FOUND, fName)
         config = ConfigParser.ConfigParser()
@@ -257,9 +299,12 @@ class CommandParser(object):
                 xx[option] = config.get(section, option)
         return xx
 
-    ################################################################################
+    ### _processDbOptions ##########################################################
     def _processDbOptions(self, opts):
-        """Validates options used by createDb, adds default values for missing parameters."""
+        """
+        Validate options used by createDb, add default values for missing
+        parameters.
+        """
         if not opts.has_key("clusteredIndex"):
             print("param 'clusteredIndex' not found, will use default: ''")
             opts["clusteredIndex"] = ''
@@ -282,7 +327,7 @@ class CommandParser(object):
         self._validateKVOptions(opts, _crDbOpts, _crDbPSOpts, "db_info")
         return opts
 
-    ################################################################################
+    ### _validateKVOptions #########################################################
     def _validateKVOptions(self, x, xxOpts, psOpts, whichInfo):
         if not x.has_key("partitioning"):
             raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, "partitioning")
@@ -337,10 +382,12 @@ class CommandParser(object):
                                 x["partitioningStrategy"])
 
 ####################################################################################
-#### auto-completion
+####################################################################################
 ####################################################################################
 class VolcabCompleter:
-    """Set auto-completion for commonly used words."""
+    """
+    Set auto-completion for commonly used words.
+    """
     def __init__(self, volcab):
         self.volcab = volcab
 
@@ -365,7 +412,7 @@ completer = VolcabCompleter(words)
 readline.set_completer(completer.complete)
 
 ####################################################################################
-#### main
+####################################################################################
 ####################################################################################
 def main():
     try:
