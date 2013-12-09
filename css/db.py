@@ -50,6 +50,19 @@ class DbStatus:
     """
     DbStatus class. Defines erorr codes and messages used by the Db class.
     """
+
+
+    def getMsg(self, errNo):
+        return errors.get(errNo, "Undefined database error")
+
+####################################################################################
+####################################################################################
+####################################################################################
+class DbException(Exception):
+    """
+    Exception raised by Db class.
+    """
+
     # note: error numbered 1000 - 1200 are used by mysql,
     # see mysqld_ername.h in mysql source code
     SUCCESS                =    0
@@ -68,35 +81,6 @@ class DbStatus:
     ERR_TB_EXISTS          = 1560
     ERR_INTERNAL           = 9999
 
-    errors = {
-        ERR_CANT_CONNECT_TO_DB: ("Can't connect to database."),
-        ERR_CANT_EXEC_SCRIPT: ("Can't execute script."),
-        ERR_DB_EXISTS: ("Database already exists."),
-        ERR_DB_DOES_NOT_EXIST: ("Database does not exist."),
-        ERR_INVALID_DB_NAME: ("Invalid database name."),
-        ERR_MISSING_CON_INFO: ("Missing connection information -- must provide "
-                               "either host/port or socket."),
-        ERR_MYSQL_CONNECT: ("Unable to connect to mysql server."),
-        ERR_MYSQL_DISCONN: ("Failed to commit transaction and "
-                            "disconnect from mysql server."),
-        ERR_MYSQL_ERROR: ("Internal MySQL error."),
-        ERR_NO_DB_SELECTED: ("No database selected."),
-        ERR_NOT_CONNECTED: ("Not connected to MySQL."),
-        ERR_TB_DOES_NOT_EXIST: ("Table does not exist."),
-        ERR_TB_EXISTS: ("Table already exists."),
-        ERR_INTERNAL: ("Internal error.")
-    }
-
-    def getMsg(self, errNo):
-        return errors.get(errNo, "Undefined database error")
-
-####################################################################################
-####################################################################################
-####################################################################################
-class DbException(Exception):
-    """
-    Exception raised by Db class.
-    """
     def __init__(self, errNo, extraMsgList=None):
         """
         Initialize the shared data.
@@ -106,6 +90,24 @@ class DbException(Exception):
         """
         self._errNo = errNo
         self._extraMsgList = extraMsgList
+
+        self._errors = {
+            DbException.ERR_CANT_CONNECT_TO_DB: ("Can't connect to database."),
+            DbException.ERR_CANT_EXEC_SCRIPT: ("Can't execute script."),
+            DbException.ERR_DB_EXISTS: ("Database already exists."),
+            DbException.ERR_DB_DOES_NOT_EXIST: ("Database does not exist."),
+            DbException.ERR_INVALID_DB_NAME: ("Invalid database name."),
+            DbException.ERR_MISSING_CON_INFO: ("Missing connection information -- "                                       "must provide either host/port or socket."),
+            DbException.ERR_MYSQL_CONNECT: ("Unable to connect to mysql server."),
+            DbException.ERR_MYSQL_DISCONN: ("Failed to commit transaction and "
+                                "disconnect from mysql server."),
+            DbException.ERR_MYSQL_DbException.ERROR: ("Internal MySQL error."),
+            DbException.ERR_NO_DB_SELECTED: ("No database selected."),
+            DbException.ERR_NOT_CONNECTED: ("Not connected to MySQL."),
+            DbException.ERR_TB_DOES_NOT_EXIST: ("Table does not exist."),
+            DbException.ERR_TB_EXISTS: ("Table already exists."),
+            DbException.ERR_INTERNAL: ("Internal error.")
+        }
 
     ### __str__ ####################################################################
     def __str__(self):
@@ -162,7 +164,7 @@ class Db:
         invalid.
         """
         if host is None and port is None and socketIsNone:
-            raise DbException(ERR_MISSING_CON_INFO)
+            raise DbException(DbException.ERR_MISSING_CON_INFO)
         self._conn = None
         self._isConnectedToDb = False
         self._maxRetryCount = maxRetryCount
@@ -234,7 +236,7 @@ class Db:
             print "Waiting for mysqld to come back..."
             sleep(3)
         else:
-            raise DbException(DbStatus.ERR_MYSQL_CONNECT, [msg])
+            raise DbException(DbException.ERR_MYSQL_CONNECT, [msg])
 
     ### disconnect #################################################################
     def disconnect(self):
@@ -249,7 +251,7 @@ class Db:
             msg = "DB Error %d: %s." % \
                                    (e.args[0], e.args[1])
             # self._logger.error(msg)
-            raise DbException(DbStatus.ERR_MYSQL_DISCONN, [msg])
+            raise DbException(DbException.ERR_MYSQL_DISCONN, [msg])
         # self._logger.debug("MySQL connection closed.")
         self._conn = None
         self._isConnectedToDb = False
@@ -270,7 +272,7 @@ class Db:
             self._conn.select_db(dbName)
         except MySQLdb.Error, e:
             # self._logger.debug("Failed to select db '%s'." % dbName)
-            raise DbException(DbStatus.ERR_CANT_CONNECT_TO_DB, [dbName])
+            raise DbException(DbException.ERR_CANT_CONNECT_TO_DB, [dbName])
         self._isConnectedToDb = True
         self._defaultDbName = dbName
         # self._logger.debug("Connected to db '%s'." % self._defaultDbName)
@@ -303,7 +305,7 @@ class Db:
         Commit a transaction. Raise exception if not connected to the server.
         """
         if not self.checkIsConnected():
-            raise DbException(DbStatus.ERR_NOT_CONNECTED)
+            raise DbException(DbException.ERR_NOT_CONNECTED)
         self._conn.commit()
 
     ### checkDbExists ##############################################################
@@ -335,10 +337,10 @@ class Db:
         @param dbName     Database name.
         """
         if dbName is None: 
-            raise DbException(DbStatus.ERR_INVALID_DB_NAME, ["<None>"])
+            raise DbException(DbException.ERR_INVALID_DB_NAME, ["<None>"])
         self.connectToMySQLServer()
         if self.checkDbExists(dbName):
-            raise DbException(DbStatus.ERR_DB_EXISTS, [dbName])
+            raise DbException(DbException.ERR_DB_EXISTS, [dbName])
         self.execCommand0("CREATE DATABASE %s" % dbName)
 
     ### dropDb #####################################################################
@@ -354,7 +356,7 @@ class Db:
         dbName = self._getDefaultDbNameIfNeeded(dbName)
         self.connectToMySQLServer()
         if not self.checkDbExists(dbName):
-            raise DbException(DbStatus.ERR_DB_DOES_NOT_EXIST, [dbName])
+            raise DbException(DbException.ERR_DB_DOES_NOT_EXIST, [dbName])
         self.execCommand0("DROP DATABASE %s" % dbName)
         if dbName == self.getDefaultDbName():
             self._resetDefaultDbName()
@@ -394,7 +396,7 @@ class Db:
         dbName = self._getDefaultDbNameIfNeeded(dbName)
         self.connectToMySQLServer()
         if self.checkTableExists(tableName, dbName):
-            raise DbException(DbStatus.ERR_TB_EXISTS)
+            raise DbException(DbException.ERR_TB_EXISTS)
         self.execCommand0("CREATE TABLE %s.%s %s" % (dbName,tableName,tableSchema))
 
     ### dropTable ##################################################################
@@ -410,7 +412,7 @@ class Db:
         dbName = self._getDefaultDbNameIfNeeded(dbName)
         self.connectToMySQLServer()
         if not self.checkTableExists(tableName, dbName):
-            raise DbException(DbStatus.ERR_TB_DOES_NOT_EXIST)
+            raise DbException(DbException.ERR_TB_DOES_NOT_EXIST)
         self.execCommand0("DROP TABLE %s.%s %s" % (dbName, tableName, tableSchema))
 
     ### getTableContent ############################################################
@@ -473,7 +475,7 @@ class Db:
         with file(scriptPath) as scriptFile:
             if subprocess.call(cmd.split(), stdin=scriptFile) != 0:
                 msg = "Failed to execute %s < %s" % (cmd,scriptPath)
-                raise DbException(DbStatus.ERR_CANT_EXEC_SCRIPT, [msg])
+                raise DbException(DbException.ERR_CANT_EXEC_SCRIPT, [msg])
 
     ### execCommand0 ###############################################################
     def execCommand0(self, command):
@@ -521,7 +523,7 @@ class Db:
         """
         self.connectToMySQLServer()
         if self._conn is None:
-            raise DbException(DbStatus.ERR_INTERNAL, 
+            raise DbException(DbException.ERR_INTERNAL, 
                               ["self._conn is <None> in _execCommand"])
         cursor = self._conn.cursor()
         try:
@@ -562,7 +564,7 @@ class Db:
             return dbName
         dbName = self.getDefaultDbName()
         if dbName is None:
-            raise DbException(DbStatus.ERR_INVALID_DB_NAME, ["<None>"])
+            raise DbException(DbException.ERR_INVALID_DB_NAME, ["<None>"])
         return dbName
 
     ### _closeConnection ###########################################################
