@@ -213,7 +213,7 @@ class TestDb(unittest.TestCase):
         Testing recovery from lost connection.
         """
         self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
-                      socket=theSock)
+                      socket=theSock, maxRetryCount=3)
         self._db.createDb(dbA)
         self._db.connectToDb(dbA)
         self._db.createTable("t1", "(i int)")

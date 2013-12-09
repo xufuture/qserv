@@ -45,7 +45,7 @@ import threading
 from cssIFace import CssIFace
 from db import Db, DbException, DbStatus
 
-# IThis helps uncomment logging if you see errors:
+# This helps if kazoo needs to generate an errror, otherwise we'd get:
 # No handlers could be found for logger "kazoo.recipe.watchers"
 import logging
 logging.basicConfig()

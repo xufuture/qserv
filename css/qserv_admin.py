@@ -42,6 +42,11 @@ import ConfigParser
 
 from qserv_admin_impl import QservAdminImpl
 
+# This helps if kazoo needs to generate an errror, otherwise we'd get:
+# No handlers could be found for logger "kazoo.recipe.watchers"
+import logging
+logging.basicConfig()
+
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -75,17 +80,15 @@ class QAdmException(Exception):
     """
 
     ### __init__ ###################################################################
-    def __init__(self, errNo, extraMsg1=None, extraMsg2=None):
+    def __init__(self, errNo, extraMsgList=None):
         """
         Initialize the shared data.
 
         @param errNo      Error number.
-        @param extraMsg1  Optional 1st message string.
-        @param extraMsg2  Optional 2nd message string.
+        @param extraMsgList  Optional list of extra messages.
         """
         self._errNo = errNo
-        self._extraMsg1 = extraMsg1
-        self._extraMsg2 = extraMsg2
+        self._extraMsgList = extraMsgList
 
     ### getErrMsg ##################################################################
     def getErrMsg(self):
@@ -98,8 +101,8 @@ class QAdmException(Exception):
         s = QAdmStatus()
         if self._errNo in s.errors: msg = s.errors[self._errNo]
         else: msg = "Undefined qserv_admin error"
-        if self._extraMsg1 is not None: msg += " (%s)" % self._extraMsg1
-        if self._extraMsg2 is not None: msg += " (%s)" % self._extraMsg2
+        if self._extraMsgList is not None:
+            for s in self._extraMsgList: msg += " (%s)" % s
         return msg
 
     ### getErrMsg ##################################################################
@@ -211,13 +214,13 @@ class CommandParser(object):
         elif l == 3:
             if tokens[1].upper() != 'LIKE':
                 raise QAdmException(QAdmStatus.ERR_BAD_CMD, 
-                                    "expected 'LIKE', found: '%s'" % tokens[1])
+                                    ["expected 'LIKE', found: '%s'" % tokens[1]])
             dbName = tokens[0]
             dbName2 = tokens[2]
             self._impl.createDbLike(dbName, dbName2)
         else:
             raise QAdmException(QAdmStatus.ERR_BAD_CMD, 
-                                "unexpected number of arguments")
+                                ["unexpected number of arguments"])
 
     ### _parseCreateTable ##########################################################
     def _parseCreateTable(self, tokens):
@@ -236,7 +239,7 @@ class CommandParser(object):
         if t == 'DATABASE':
             if l != 2:
                 raise QAdmException(QAdmStatus.ERR_BAD_CMD,  
-                                    "unexpected number of arguments")
+                                    ["unexpected number of arguments"])
             self._impl.dropDb(tokens[1])
         elif t == 'TABLE':
             print "drop table not implemented" 
@@ -289,7 +292,7 @@ class CommandParser(object):
         key-value pair dictionary (flat, e.g., sections are ignored.)
         """
         if not os.access(fName, os.R_OK):
-            raise QAdmException(QAdmStatus.ERR_CONFIG_NOT_FOUND, fName)
+            raise QAdmException(QAdmStatus.ERR_CONFIG_NOT_FOUND, [fName])
         config = ConfigParser.ConfigParser()
         config.optionxform = str # case sensitive
         config.read(fName)
@@ -330,7 +333,7 @@ class CommandParser(object):
     ### _validateKVOptions #########################################################
     def _validateKVOptions(self, x, xxOpts, psOpts, whichInfo):
         if not x.has_key("partitioning"):
-            raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, "partitioning")
+            raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, ["partitioning"])
 
         partOff = x["partitioning"] == "off" 
         for (theName, theOpts) in xxOpts.items():
@@ -343,19 +346,19 @@ class CommandParser(object):
                 if not (o == "partitiongStrategy" and partOff):
                     continue
                 if not x.has_key(o):
-                    raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, o)
+                    raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, [o])
         if partOff:
             return
         if x["partitioning"] != "on":
             raise QAdmException(QAdmStatus.ERR_WRONG_PARAM_VALUE,
-                                "partitioning", 
+                                ["partitioning", 
                                 "got: '%s'" % x["partitioning"],
-                                "expecting: on/off")
+                                "expecting: on/off"])
 
         if not x.has_key("partitioningStrategy"):
             raise QAdmException(QAdmStatus.ERR_MISSING_PARAM,
-                                "partitioningStrategy",
-                                "(required if partitioning is on)")
+                                ["partitioningStrategy",
+                                "(required if partitioning is on)"])
 
         psFound = False
         for (psName, theOpts) in psOpts.items():
@@ -364,7 +367,7 @@ class CommandParser(object):
                 # check if all required options are specified
                 for o in theOpts:
                     if not x.has_key(o):
-                        raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, o)
+                        raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, [o])
 
                 # check if there are any unrecognized options
                 for o in x:
@@ -376,10 +379,10 @@ class CommandParser(object):
                             continue
                         if whichInfo=="table_info" and o=="partitioningStrategy":
                             continue
-                        raise QAdmException(QAdmStatus.ERR_WRONG_PARAM, o)
+                        raise QAdmException(QAdmStatus.ERR_WRONG_PARAM, [o])
         if not psFound:
             raise QAdmException(QAdmStatus.ERR_WRONG_PARAM,
-                                x["partitioningStrategy"])
+                                [x["partitioningStrategy"]])
 
 ####################################################################################
 ####################################################################################
