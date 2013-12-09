@@ -26,7 +26,7 @@ Internals that do the actual work for the qserv client program. Note that this d
 @author  Jacek Becla, SLAC
 
 
-Known todos:
+Known issues and todos:
  - need to deal with error handling properly, e.g., define error status
    instead of using dummy SUCCESS, ERROR, 
  - need to find out how to abort transaction.
