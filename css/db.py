@@ -183,7 +183,7 @@ class Db:
         """
         Connect to MySQL Server. Socket has higher priority than host/port.
         """
-        if self._checkIsConnected(): 
+        if self.checkIsConnected(): 
             return
         if self._socket is not None: 
             self._connectThroughSocket()
@@ -215,8 +215,7 @@ class Db:
                                          host=self._host,
                                          port=self._port)
         except MySQLdb.Error, e2:
-            self._conn.close()
-            self._conn = None
+            self._closeConnection()
             msg = "Couldn't connect to MySQL using socket "
             msg += "'%s' or host:port: '%s:%s'. Error: %d: %s." % \
                 (self._socket, self._host,self._port, e2.args[0], e2.args[1])
@@ -233,7 +232,7 @@ class Db:
         if self._conn == None: return
         try:
             self.commit()
-            self._conn.close()
+            self._closeConnection()
         except MySQLdb.Error, e:
             msg = "DB Error %d: %s." % \
                                    (e.args[0], e.args[1])
@@ -253,7 +252,7 @@ class Db:
         @param dbName     Database name.
         """
         dbName = self._getDefaultDbNameIfNeeded(dbName)
-        if self._checkIsConnectedToDb(dbName): return
+        if self.checkIsConnectedToDb(dbName): return
         try:
             self.connectToMySQLServer()
             self._conn.select_db(dbName)
@@ -262,7 +261,20 @@ class Db:
             raise DbException(DbStatus.ERR_CANT_CONNECT_TO_DB, dbName)
         self._isConnectedToDb = True
         self._defaultDbName = dbName
-        # self._logger.debug("Connected to db '%s'." % self._dbName)
+        # self._logger.debug("Connected to db '%s'." % self._defaultDbName)
+
+    ### checkIsConnected ###########################################################
+    def checkIsConnected(self):
+        """
+        Check if there is connection to the server.
+        """
+        return self._conn != None
+
+    ### checkIsConnectedToDb #######################################################
+    def checkIsConnectedToDb(self, dbName):
+        return (self.checkIsConnected() and
+                self._isConnectedToDb and 
+                dbName == self.getDefaultDbName())
 
     ### getDefaultDbName ###########################################################
     def getDefaultDbName(self):
@@ -278,7 +290,7 @@ class Db:
         """
         Commit a transaction. Raise exception if not connected to the server.
         """
-        if not self._checkIsConnected():
+        if not self.checkIsConnected():
             raise DbException(DbStatus.ERR_NOT_CONNECTED)
         self._conn.commit()
 
@@ -383,7 +395,7 @@ class Db:
         @param tableName  Table name.
         @param dbName     Database name.
         """
-        if dbName == None: dbName = self._dbName
+        dbName = self._getDefaultDbNameIfNeeded(dbName)
         self.connectToMySQLServer()
         if not self.checkTableExists(tableName, dbName):
             raise DbException(DbStatus.ERR_TB_DOES_NOT_EXIST)
@@ -502,30 +514,23 @@ class Db:
             # self._logger.debug("Executing '%s'." % command)
             print ("Executing: %s." % command)
             cursor.execute(command)
-        except MySQLdb.Error, e:
-            self._conn.close()
-            self._conn = None
+        except (MySQLdb.Error, MySQLdb.OperationalError) as e:
+            self._closeConnection()
             self._isConnectedToDb = False
             cursor = None
             msg = "MySQL Error [%d]: %s." % (e.args[0], e.args[1])
-            raise DbException(DbStatus.ERR_MYSQL_ERROR, msg)
-        except MySQLdb.OperationalError as e:
-            self._conn.close()
-            self._conn = None
-            self._isConnectedToDb = False
-            cursor = None
-            print "'%s' failed. Err: %d: %s. Trying to recover..." % \
-                                    (command, e.args[0], e.args[1])
-
+            print "Trying to recover..."
             # make sure we don't try to recover in a tight loop, sleep few sec
             if self._lastFailedConnectAttempt is not None:
                 diff = datetime.now() - self._lastFailedConnectAttempt
                 diff = diff.seconds + diff.microseconds/1E6
-                if diff < 5: sleep(5)
+                if diff < 5:
+                    print "sleeping 5 sec between recovery attempts." 
+                    sleep(5)
             self._lastFailedConnectAttempt = datetime.now()
             # self._logger.debug("Forcing reconnect.")
-            if self._dbName is not None:
-                self.connectToDb(self._dbName)
+            if self.getDefaultDbName() is not None:
+                self.connectToDb(self.getDefaultDbName())
             return self._execCommand(command, nRowsRet)
         if nRowsRet == 0:
             ret = ""
@@ -537,14 +542,6 @@ class Db:
             # self._logger.debug("Got: %s" % str(ret))
         cursor.close()
         return ret
-
-    def _checkIsConnected(self):
-        return self._conn != None
-
-    def _checkIsConnectedToDb(self, dbName):
-        return (self._checkIsConnected() and
-                self._isConnectedToDb and 
-                dbName == _self._dbName)
 
     ### _getDefaultDbNameIfNeeded ##################################################
     def _getDefaultDbNameIfNeeded(self, dbName):
@@ -563,6 +560,15 @@ class Db:
         if dbName is None:
             raise DbException(DbStatus.ERR_INVALID_DB_NAME, "<None>")
         return dbName
+
+    ### _closeConnection ###########################################################
+    def _closeConnection(self):
+        """
+        Close connection to the server.
+        """
+        if self._conn is None: return
+        self._conn.close()
+        self._conn = None
 
     ### _resetDefaultDbName ########################################################
     def _resetDefaultDbName(self):
