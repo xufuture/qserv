@@ -235,7 +235,7 @@ class CommandParser(object):
         l = len(tokens)
         if t == 'DATABASE':
             if l != 2:
-                raise QAdmException(QAdmStatus.ERR_BAD_CMD, cmd, 
+                raise QAdmException(QAdmStatus.ERR_BAD_CMD,  
                                     "unexpected number of arguments")
             self._impl.dropDb(tokens[1])
         elif t == 'TABLE':
