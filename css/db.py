@@ -145,7 +145,7 @@ class Db:
     """
     ### __init__ ###################################################################
     def __init__(self, user, passwd=None, host=None, port=None, 
-                 socket=None, dbName=None):
+                 socket=None, dbName=None, maxRetryCount=12*60):
         """
         Initialize the shared data. Raise exception if arguments are wrong.
 
@@ -155,6 +155,9 @@ class Db:
         @param port       Port number.
         @param socket     Socket.
         @param dbName     Database name.
+        @param maxRetryCount Number of retries in case there is connection
+                          failure. There is a 5 sec sleep between each retry.
+                          Default is one hour: 12*60 * 5 sec sleep
 
         Initialize shared state. Raise exception if host/port AND socket are
         invalid.
@@ -163,7 +166,8 @@ class Db:
             raise DbException(ERR_MISSING_CON_INFO)
         self._conn = None
         self._isConnectedToDb = False
-        self._lastFailedConnectAttempt = None
+        self._maxRetryCount = maxRetryCount
+        self._curRetryCount = 0
         self._host = host
         self._port = port
         self._user = user
@@ -183,29 +187,32 @@ class Db:
         """
         Connect to MySQL Server. Socket has higher priority than host/port.
         """
-        if self.checkIsConnected(): 
-            return
-        if self._socket is not None: 
-            self._connectThroughSocket()
-        else:
-            self._connectThroughPort()
-        self._lastFailedConnectAttempt = None
+        while self._curRetryCount <= self._maxRetryCount:
+            if self.checkIsConnected(): 
+                return
+            if self._socket is not None:
+                self._connectThroughSocket()
+            else:
+                self._connectThroughPort()
+            if self.checkIsConnected(): 
+                self._curRetryCount = 0
+                return
 
     ### _connectThroughSocket PRIVATE ##############################################
     def _connectThroughSocket(self):
+        """
+        Connect through socket, if that fails, and host/port is available, connect
+        through host/port.
+        """
         try:
             self._conn = MySQLdb.connect(user=self._user,
                                          passwd=self._passwd,
                                          unix_socket=self._socket)
-        except MySQLdb.Error as e: # if failed, try port
-            if self._host is None and self._port is None:
-                msg = "Couldn't connect to MySQL via socket "
-                msg += "'%s', " % self._socket
-                msg += "and host:port not set, giving up."
-                # self._logger.error(msg)
-                raise DbException(DbStatus.ERR_MYSQL_CONNECT, msg)
-            self._connectThroughPort()
-        # self._logger.debug("Connected to MySQL through socket)."
+        except MySQLdb.Error as e:
+            if self._host is not None and self._port is not None:
+                self._connectThroughPort()
+            else:
+                self._handleConnectionFailure(e.args[0], e.args[1])
 
     ### _connectThroughPort PRIVATE ################################################
     def _connectThroughPort(self):
@@ -214,15 +221,21 @@ class Db:
                                          passwd=self._passwd,
                                          host=self._host,
                                          port=self._port)
-        except MySQLdb.Error, e2:
-            self._closeConnection()
-            msg = "Couldn't connect to MySQL using socket "
-            msg += "'%s' or host:port: '%s:%s'. Error: %d: %s." % \
-                (self._socket, self._host,self._port, e2.args[0], e2.args[1])
-            self._lastFailedConnectAttempt = datetime.now()
-            # self._logger.error(msg)
+        except MySQLdb.Error as e:
+            self._handleConnectionFailure(e.args[0], e.args[1])
+
+    ### _handleConnectionFailure ###################################################
+    def _handleConnectionFailure(self, e0, e1):
+        self._closeConnection()
+        msg = "Couldn't connect to MySQL using socket "
+        msg += "'%s' or host:port: '%s:%s'. Error: %d: %s." % \
+            (self._socket, self._host, self._port, e0, e1)
+        self._curRetryCount += 1
+        if e0 == 2002 and self._curRetryCount <= self._maxRetryCount:
+            print "Waiting for mysqld to come back..."
+            sleep(3)
+        else:
             raise DbException(DbStatus.ERR_MYSQL_CONNECT, msg)
-        # self._logger.debug("Connected to MySQL through host/port)."
 
     ### disconnect #################################################################
     def disconnect(self):
@@ -518,17 +531,7 @@ class Db:
             self._closeConnection()
             self._isConnectedToDb = False
             cursor = None
-            msg = "MySQL Error [%d]: %s." % (e.args[0], e.args[1])
-            print "Trying to recover..."
-            # make sure we don't try to recover in a tight loop, sleep few sec
-            if self._lastFailedConnectAttempt is not None:
-                diff = datetime.now() - self._lastFailedConnectAttempt
-                diff = diff.seconds + diff.microseconds/1E6
-                if diff < 5:
-                    print "sleeping 5 sec between recovery attempts." 
-                    sleep(5)
-            self._lastFailedConnectAttempt = datetime.now()
-            # self._logger.debug("Forcing reconnect.")
+            msg = "MySQL Error [%d]: %s. Trying to recover..,"%(e.args[0],e.args[1])
             if self.getDefaultDbName() is not None:
                 self.connectToDb(self.getDefaultDbName())
             return self._execCommand(command, nRowsRet)

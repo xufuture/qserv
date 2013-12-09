@@ -59,7 +59,7 @@ class TestDb(unittest.TestCase):
         self._db.disconnect()
 
     ################################################################################
-    def test1Basic(self):
+    def testBasic(self):
         """
         Basic test: connect through port, create db and connect to it, create one
         table, drop the db, disconnect.
@@ -217,21 +217,19 @@ class TestDb(unittest.TestCase):
         self._db.createDb(dbA)
         self._db.connectToDb(dbA)
         self._db.createTable("t1", "(i int)")
-        print "sleeping 5 sec, please run: sudo /etc/init.d/mysql stop"
-        time.sleep(5)
-        try:
-            self._db.createTable("t2", "(i int)")
-        except DbException as e:
-            print e.getErrMsg()
+        print "sleeping 10 sec, run: sudo /etc/init.d/mysql stop"
+        time.sleep(10)
+        self._db.createTable("t2", "(i int)")
+        self._db.dropDb(dbA)
 
 ####################################################################################
 ####################################################################################
 ####################################################################################
 def main():
-    try:
-        unittest.main()
-    except DbException as e:
-        print e.getErrMsg()
+    #try:
+    unittest.main()
+    #except DbException as e:
+    #    print e.getErrMsg()
 
 if __name__ == "__main__":
     main()
