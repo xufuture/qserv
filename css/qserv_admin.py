@@ -90,10 +90,10 @@ class QAdmException(Exception):
         self._errNo = errNo
         self._extraMsgList = extraMsgList
 
-    ### getErrMsg ##################################################################
-    def getErrMsg(self):
+    ### __str__ ####################################################################
+    def __str__(self):
         """
-        Get error message
+        Return string representation of the error.
 
         @return string  Error message string, including all optional messages.
         """
@@ -105,10 +105,10 @@ class QAdmException(Exception):
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
 
-    ### getErrMsg ##################################################################
-    def getErrNo(self):
+    ### __str__ ####################################################################
+    def __str__(self):
         """
-        Get error message
+        Return string representation of the error.
 
         @return string  Error message string, including all optional messages.
         """
@@ -165,7 +165,7 @@ class CommandParser(object):
                 try:
                     self._parse(sql[:pos])
                 except QAdmException as e1:
-                    print "ERROR: ", e1.getErrMsg()
+                    print "ERROR: ", e1
                 sql = sql[pos+1:]
 
     ### main parser PRIVATE ########################################################

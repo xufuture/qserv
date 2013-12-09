@@ -75,9 +75,9 @@ class QservAdminImpl(object):
             t.commit()
             self._iFace.set(dbP, "READY")
         except CssException as e:
-            print "Failed to create database, error was: ", e.getErrMsg()
+            print "Failed to create database, error was: ", e
             self._iFace.delete(dbP, recursive=True)
-            self._iFace.delete(ptP, recursive=True)
+            if ptP is not None: self._iFace.delete(ptP, recursive=True)
             return ERROR
         return SUCCESS
 
@@ -106,7 +106,7 @@ class QservAdminImpl(object):
             t.commit()
             self._iFace.set(dbP, "READY")
         except CssException as e:
-            print "Failed to create database, error was: ", e.getErrMsg()
+            print "Failed to create database, error was: ", e
             self._iFace.delete(dbP, recursive=True)
             return ERROR
         self._createDbLockSection(dbP)
