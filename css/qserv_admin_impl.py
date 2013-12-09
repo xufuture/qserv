@@ -59,8 +59,10 @@ class QservAdminImpl(object):
             print "ERROR: db '%s' already exists" % dbName
             return ERROR
         dbP = "/DATABASES/%s" % dbName
+        ptP = None
         t = self._iFace.startTransaction()
         try:
+            self._iFace.create(dbP, "PENDING")
             self._iFace.create(dbP, "PENDING")
             ptP = self._iFace.create("/DATABASE_PARTITIONING/_", sequence=True)
             self._iFace.create("%s/nStripes"    % ptP, options["nStripes"   ])

@@ -90,6 +90,9 @@ class QAdmException(Exception):
         self._errNo = errNo
         self._extraMsgList = extraMsgList
 
+    def getMsg(self, errNo):
+        return errors.get(errNo, "Undefined qserv_admin error")
+
     ### __str__ ####################################################################
     def __str__(self):
         """
@@ -99,8 +102,7 @@ class QAdmException(Exception):
         """
         msg = ''
         s = QAdmStatus()
-        if self._errNo in s.errors: msg = s.errors[self._errNo]
-        else: msg = "Undefined qserv_admin error"
+        msg = s.getMsg([self._errNo])
         if self._extraMsgList is not None:
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
