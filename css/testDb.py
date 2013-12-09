@@ -143,10 +143,6 @@ class TestDb(unittest.TestCase):
         """
         self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
                       socket=theSock)
-        if self._db.checkDbExists("bla"):
-            print "yes"
-        else:
-            print "no"
         self.assertFalse(self._db.checkDbExists("bla"))
         self.assertFalse(self._db.checkTableExists("bla"))
         self.assertFalse(self._db.checkTableExists("bla", "blaBla"))
@@ -166,6 +162,10 @@ class TestDb(unittest.TestCase):
         self.assertFalse(self._db.checkTableExists("bla"))
         self.assertFalse(self._db.checkTableExists("bla", "blaBla"))
         self._db.dropDb(dbA)
+
+        self.assertFalse(self._db.checkUserExists("d_Xx_u12my", "localhost"))
+        self.assertTrue(self._db.checkUserExists("root", "localhost"))
+
         self._db.disconnect()
 
 ####################################################################################
