@@ -62,6 +62,9 @@ class CssStatus:
         ERR_INTERNAL: "Internal error."
     }
 
+    def getMsg(self, errNo):
+        return self.errors.get(errNo, "Undefined css error")
+
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -89,8 +92,7 @@ class CssException(Exception):
         """
         msg = ''
         s = CssStatus()
-        if self._errNo in s.errors: msg = s.errors[self._errNo]
-        else: msg = "Undefined css error"
+        msg = s.getMsg(self._errNo)
         if self._extraMsgList is not None: 
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
