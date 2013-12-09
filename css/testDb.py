@@ -45,6 +45,10 @@ dbB = "_dbWrapperTestDb_B"
 dbC = "_dbWrapperTestDb_C"
 
 
+# Todo:
+# - test dropping tables
+
+
 class TestDb(unittest.TestCase):
     def setUp(self):
         self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
@@ -67,6 +71,42 @@ class TestDb(unittest.TestCase):
         self._db.createTable("t1", "(i int)")
         self._db.dropDb(dbA)
         self._db.disconnect()
+
+    ################################################################################
+    def testIsConnected(self):
+        """
+        Test isConnected and isConnectedToDb.
+        """
+        # not connected at all
+        self.assertFalse(self._db.checkIsConnected())
+        self.assertFalse(self._db.checkIsConnectedToDb(dbA))
+        self.assertFalse(self._db.checkIsConnectedToDb(dbB))
+        # just initialize state, still not connected at all
+        self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
+                      socket=theSock)
+        self.assertFalse(self._db.checkIsConnected())
+        self.assertFalse(self._db.checkIsConnectedToDb(dbA))
+        self.assertFalse(self._db.checkIsConnectedToDb(dbB))
+        # connect to server, not to db
+        self._db.connectToMySQLServer()
+        self.assertTrue(self._db.checkIsConnected())
+        self.assertFalse(self._db.checkIsConnectedToDb(dbA))
+        self.assertFalse(self._db.checkIsConnectedToDb(dbB))
+        # create db, still don't connect to ti
+        self._db.createDb(dbA)
+        self.assertTrue(self._db.checkIsConnected())
+        self.assertFalse(self._db.checkIsConnectedToDb(dbA))
+        self.assertFalse(self._db.checkIsConnectedToDb(dbB))
+        # finally connect to it
+        self._db.connectToDb(dbA)
+        self.assertTrue(self._db.checkIsConnected())
+        self.assertTrue(self._db.checkIsConnectedToDb(dbA))
+        self.assertFalse(self._db.checkIsConnectedToDb(dbB))
+        # delete that database
+        self._db.dropDb(dbA)
+        self.assertFalse(self._db.checkIsConnected())
+        self.assertFalse(self._db.checkIsConnectedToDb(dbA))
+        self.assertFalse(self._db.checkIsConnectedToDb(dbB))
 
     ################################################################################
     def testMultiDbs(self):
@@ -168,11 +208,30 @@ class TestDb(unittest.TestCase):
 
         self._db.disconnect()
 
+    def testServerRestart(self):
+        """
+        Testing recovery from lost connection.
+        """
+        self._db = Db(host=theHost, port=thePort, user=theUser, passwd=thePass,
+                      socket=theSock)
+        self._db.createDb(dbA)
+        self._db.connectToDb(dbA)
+        self._db.createTable("t1", "(i int)")
+        print "sleeping 5 sec, please run: sudo /etc/init.d/mysql stop"
+        time.sleep(5)
+        try:
+            self._db.createTable("t2", "(i int)")
+        except DbException as e:
+            print e.getErrMsg()
+
 ####################################################################################
 ####################################################################################
 ####################################################################################
 def main():
-    unittest.main()
+    try:
+        unittest.main()
+    except DbException as e:
+        print e.getErrMsg()
 
 if __name__ == "__main__":
     main()
