@@ -26,7 +26,7 @@ This is a unittest for the Db class.
 @author  Jacek Becla, SLAC
 
 
-Known todos:
+Known issues and todos:
  - implement proper logging instead of print
 """
 

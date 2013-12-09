@@ -27,7 +27,7 @@ This module implements interface to the Central State System (CSS).
 @author  Jacek Becla, SLAC
 
 
-Known todos:
+Known issues and todos:
  - connection information for the Kazoo Client needs to be configurable.
  - recover from lost connection by reconnecting
  - issue: watcher is currently using the "_zk", and bypasses the official API!
