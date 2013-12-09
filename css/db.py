@@ -412,6 +412,16 @@ class Db:
             print >> s, "   ", r
         return s.getvalue()
 
+    ### checkUserExists ############################################################
+    def checkUserExists(self, userName, hostName):
+        """
+        Check if user <hostName>@<userName> exists.
+        """
+        ret = self.execCommand1(
+            "SELECT COUNT(*) FROM mysql.user WHERE user='%s' AND host='%s'" %\
+            (userName, hostName))
+        return ret[0] != 0
+
     ### loadSqlScript ##############################################################
     def loadSqlScript(self, scriptPath, dbName):
         """
