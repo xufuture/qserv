@@ -28,7 +28,7 @@ corresponding function.
 @author  Jacek Becla, SLAC
 
 
-Known todos:
+Known issues and todos:
  - user authentication
  - many commands still need to be implemented
  - need to separate dangerous admin commands like DROP EVERYTHING
