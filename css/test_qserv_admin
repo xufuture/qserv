@@ -4,4 +4,12 @@ create database db2 exampleConfigFiles/dbPartitioned.params;
 show everything;
 drop database db1a;
 show everything;
+drop database db1b;
+drop database db2;
+create database dbA exampleConfigFiles/dbPartitioned.params;
+drop database dbA;
+create database dbA exampleConfigFiles/dbPartitioned.params;
+drop database dbA;
+create database dbA exampleConfigFiles/dbPartitioned.params;
+drop database dbA;
 exit
