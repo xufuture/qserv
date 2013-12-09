@@ -87,6 +87,8 @@ class DbStatus:
         ERR_INTERNAL: ("Internal error.")
     }
 
+    def getMsg(self, errNo):
+        return errors.get(errNo, "Undefined database error")
 
 ####################################################################################
 ####################################################################################
@@ -114,8 +116,7 @@ class DbException(Exception):
         """
         msg = ''
         s = DbStatus()
-        if self._errNo in s.errors: msg = s.errors[self._errNo]
-        else: msg = "Undefined Db error"
+        msg = s.getMsg(self._errNo)
         if self._extraMsgList is not None:
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
