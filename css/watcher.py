@@ -47,14 +47,7 @@ import threading
 from kvInterface import KvInterface
 from lsst.db.db import Db, DbException
 
-# This helps uncomment logging if you see errors:
-# No handlers could be found for logger "kazoo.recipe.watchers"
-import logging
-logging.basicConfig()
 
-####################################################################################
-####################################################################################
-####################################################################################
 class OneDbWatcher(threading.Thread):
     """
     This class implements a database watcher. Each instance is responsible for
@@ -62,12 +55,11 @@ class OneDbWatcher(threading.Thread):
     It runs in a dedicated thread.
     """
 
-    ### __init__ ###################################################################
-    def __init__(self, iFace, db, pathToWatch, verbose=True):
+    def __init__(self, kvI, db, pathToWatch):
         """
         Initialize shared state.
         """
-        self._iFace = iFace
+        self._kvI = kvI
         self._db = db
         self._path = pathToWatch
         self._dbName = pathToWatch[11:] # skip '/DATABASES/'
@@ -75,7 +67,6 @@ class OneDbWatcher(threading.Thread):
         self._logger = logging.getLogger("WATCHER.DB_%s" % self._dbName)
         threading.Thread.__init__(self)
 
-    ### run ########################################################################
     def run(self):
         """
         Watch for changes, and act upon them: create/drop databases.
@@ -122,7 +113,6 @@ class AllDbsWatcher(threading.Thread):
         self._logger = logging.getLogger("WATCHER.ALLDBS")
         threading.Thread.__init__(self)
 
-    ### run ########################################################################
     def run(self):
         """
         Watch for new/deleted nodes, and act upon them: setup new watcher for each
@@ -221,6 +211,46 @@ OPTIONS
         if options.credF: self._credF = options.credF
 
 ####################################################################################
+def main():
+    # parse arguments
+    p = SimpleOptionParser()
+    p.parse()
+
+    # configure logging
+    if p.logFileName:
+        logging.basicConfig(
+            filename=p.logFileName,
+            format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
+            datefmt='%m/%d/%Y %I:%M:%S', 
+            level=p.verbosity)
+    else:
+        logging.basicConfig(
+            format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
+            datefmt='%m/%d/%Y %I:%M:%S', 
+            level=p.verbosity)
+
+    # disable kazoo logging if requested
+    kL = os.getenv('KAZOO_LOGGING')
+    if kL: logging.getLogger("kazoo.client").setLevel(int(kL))
+
+    # initialize CSS
+    kvI = KvInterface(p.connInfo)
+
+    # initialize database connection, and connect (to catch issues early)
+    db = Db(read_default_file=p.credFile)
+    try:
+        db.connect()
+    except DbException as e:
+        print e.getErrMgs()
+        return
+
+    # setup the thread watching
+    try:
+        w1 = AllDbsWatcher(kvI, db)
+        w1.start()
+        while True: time.sleep(60)
+    except(KeyboardInterrupt, SystemExit):
+        print ""
 
 if __name__ == "__main__":
     main()
