@@ -43,10 +43,11 @@ from kazoo.client import KazooClient
 ####################################################################################
 ####################################################################################
 ####################################################################################
-class CssStatus:
+class CssException(Exception):
     """
-    CssStatus defines erorr codes and messages used by the CssIFace
+    Exception raised by CSSIFace.
     """
+
     SUCCESS                     =    0
     ERR_KEY_ALREADY_EXISTS      = 2001
     ERR_KEY_DOES_NOT_EXIST      = 2002
@@ -54,24 +55,6 @@ class CssStatus:
     ERR_NOT_IMPLEMENTED         = 9998
     ERR_INTERNAL                = 9999
 
-    errors = { 
-        ERR_KEY_ALREADY_EXISTS: ("Key already exists."),
-        ERR_KEY_INVALID: ("Invalid key."),
-        ERR_KEY_DOES_NOT_EXIST: ("Key does not exist."),
-        ERR_NOT_IMPLEMENTED: ("This feature is not implemented yet."),
-        ERR_INTERNAL: "Internal error."
-    }
-
-    def getMsg(self, errNo):
-        return self.errors.get(errNo, "Undefined css error")
-
-####################################################################################
-####################################################################################
-####################################################################################
-class CssException(Exception):
-    """
-    Exception raised by CSSIFace.
-    """
     ### __init__ ###################################################################
     def __init__(self, errNo, extraMsgList=None):
         """
@@ -83,6 +66,14 @@ class CssException(Exception):
         self._errNo = errNo
         self._extraMsgList = extraMsgList
 
+        self._errors = { 
+            CssException.ERR_KEY_ALREADY_EXISTS: ("Key already exists."),
+            CssException.ERR_KEY_INVALID: ("Invalid key."),
+            CssException.ERR_KEY_DOES_NOT_EXIST: ("Key does not exist."),
+            CssException.ERR_NOT_IMPLEMENTED: ("Fature not implemented yet."),
+            CssException.ERR_INTERNAL: "Internal error."
+        }
+
     ### __str__ ####################################################################
     def __str__(self):
         """
@@ -90,9 +81,7 @@ class CssException(Exception):
 
         @return string  Error message string, including all optional messages.
         """
-        msg = ''
-        s = CssStatus()
-        msg = s.getMsg(self._errNo)
+        msg = self._errors.get(self._errNo, "Undefined css error.")
         if self._extraMsgList is not None: 
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
@@ -136,10 +125,10 @@ class CssIFace(object):
         """
         # check if the key exists
         if self._zk.exists(k):
-            raise CssException(CssStatus.ERR_KEY_ALREADY_EXISTS, [k])
+            raise CssException(CssException.ERR_KEY_ALREADY_EXISTS, [k])
         p = self._chopLastSection(k)
         if p is None:
-            raise CssException(CssStatus.ERR_KEY_INVALID, [k])
+            raise CssException(CssException.ERR_KEY_INVALID, [k])
         if self._verbose: print "cssIface: CREATE '%s' --> '%s'" % (k, v) 
         return self._zk.create(k, v, sequence=sequence, makepath=True)
 
@@ -164,7 +153,7 @@ class CssIFace(object):
         @return string  Value for a given key. 
         """
         if not self._zk.exists(k):
-            raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, [k])
+            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
         v, stat = self._zk.get(k)
         if self._verbose: print "cssIface: GET '%s' --> '%s'" % (k, v)
         return v
@@ -179,7 +168,7 @@ class CssIFace(object):
         @return    List_of_strings  A list of children for a given key. 
         """
         if not self._zk.exists(k):
-            raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, [k])
+            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
         if self._verbose: print "cssIface: GETCHILDREN '%s'" % (k)
         return self._zk.get_children(k)
 
@@ -193,7 +182,7 @@ class CssIFace(object):
         """
         # check if the key exists
         if not self._zk.exists(k):
-            raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, [k])
+            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
         v1, stat = self._zk.get(k)
         if self._verbose: print "cssIface: SET '%s' --> '%s'" % (k, v)
         self._zk.set(k, v)
@@ -210,7 +199,7 @@ class CssIFace(object):
                          deleted.  
         """
         if not self._zk.exists(k):
-            raise CssException(CssStatus.ERR_KEY_DOES_NOT_EXIST, [k])
+            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
         if self._verbose: print "cssIface: DELETE '%s'" % (k)
         self._zk.delete(k, recursive=recursive)
 
