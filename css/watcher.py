@@ -33,6 +33,10 @@ Known todos:
     - @self._iFace._zk.ChildrenWatch
  - considering implementing garbage collection for threads corresponding to
    deleted databases.
+ - If all metadata is deleted when the watcher is running, the watcher will die
+   with: ERROR:kazoo.handlers.threading:Exception in worker queue thread.
+   To reproduce, just run: 
+       echo "drop everything;" | ./qserv_admin.py
 """
 
 import time
