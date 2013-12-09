@@ -229,7 +229,7 @@ def main():
     #try:
     unittest.main()
     #except DbException as e:
-    #    print e.getErrMsg()
+    #    print e
 
 if __name__ == "__main__":
     main()

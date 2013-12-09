@@ -80,10 +80,10 @@ class CssException(Exception):
         self._errNo = errNo
         self._extraMsgList = extraMsgList
 
-    ### getErrMsg ##################################################################
-    def getErrMsg(self):
+    ### __str__ ####################################################################
+    def __str__(self):
         """
-        Get error message
+        Return string representation of the error.
 
         @return string  Error message string, including all optional messages.
         """
