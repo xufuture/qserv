@@ -26,7 +26,7 @@ Database Watcher - runs on each Qserv node and maintains Qserv databases (create
 @author  Jacek Becla, SLAC
 
 
-Known todos:
+Known issues and todos:
  - mysql host/port user/passwd/socket
  - need to go through cssIFace interface, now bypassing it in two places:
     - @self._iFace._zk.DataWatch
