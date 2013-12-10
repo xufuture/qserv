@@ -141,6 +141,7 @@ class AllDbsWatcher(threading.Thread):
                     self._children.remove(val)
 
 ####################################################################################
+<<<<<<< HEAD
 class SimpleOptionParser:
     """
     Parse command line options.

@@ -58,7 +58,6 @@ class TestDb(unittest.TestCase):
         if self._db.checkDbExists(dbC): self._db.dropDb(dbC)
         self._db.disconnect()
 
-    ################################################################################
     def testBasic(self):
         """
         Basic test: connect through port, create db and connect to it, create one
@@ -72,7 +71,6 @@ class TestDb(unittest.TestCase):
         self._db.dropDb(dbA)
         self._db.disconnect()
 
-    ################################################################################
     def testIsConnected(self):
         """
         Test isConnected and isConnectedToDb.
@@ -108,7 +106,6 @@ class TestDb(unittest.TestCase):
         self.assertFalse(self._db.checkIsConnectedToDb(dbA))
         self.assertFalse(self._db.checkIsConnectedToDb(dbB))
 
-    ################################################################################
     def testMultiDbs(self):
         """
         Try interleaving operations on multiple databases.
@@ -131,7 +128,6 @@ class TestDb(unittest.TestCase):
         self._db.dropDb(dbC)
         self._db.disconnect()
 
-    ################################################################################
     def testMultiCreateDef(self):
         """
         Test creating db/table that already exists (in default db).
@@ -148,7 +144,6 @@ class TestDb(unittest.TestCase):
         self.assertRaises(DbException, self._db.dropDb, dbA)
         self._db.disconnect()
 
-    ################################################################################
     def testMultiCreateNonDef(self):
         """
         Test creating db/table that already exists (in non default db).
@@ -176,7 +171,6 @@ class TestDb(unittest.TestCase):
         self._db.dropDb(dbB)
         self._db.disconnect()
 
-    ################################################################################
     def testCheckExists(self):
         """
         Test checkExist for databases and tables.
@@ -222,8 +216,6 @@ class TestDb(unittest.TestCase):
         self._db.createTable("t2", "(i int)")
         self._db.dropDb(dbA)
 
-####################################################################################
-####################################################################################
 ####################################################################################
 def main():
     #try:
