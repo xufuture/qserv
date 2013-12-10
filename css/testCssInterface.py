@@ -35,6 +35,7 @@ class TestCssInterface(unittest.TestCase):
     def setUp(self):
         self._cssI = CssInterface()
 
+    ################################################################################
     def testCreateGetSetDelete(self):
         # first delete everything
         self._cssI.deleteAll("/unittest")
@@ -70,15 +71,13 @@ class TestCssInterface(unittest.TestCase):
         # get the second key
         v2a = self._cssI.get(k2)
         assert(v2a == v2)
-        # test getChildren
-        self._cssI.getChildren("/unittest/")
-        self.assertRaises(CssException, self._cssI.getChildren, "/whatever")
-        # try to set for invalid key
-        self.assertRaises(CssException, self._cssI.set, "/whatever", "value")
-        # try to delete invalid key
-        self.assertRaises(CssException, self._cssI.delete, "/whatever")
         # print everything
-        self._cssI.dumpAll()
+        self._cssI.printAll()
+
+    ################################################################################
+    def testBadKeys(self):
+        # try to create invalid key
+        self.assertRaises(CssException, self._cssI.create, "badKey", "v")
 
     #def testPerformance(self):
     #    n = 10 # set it to something larger for real test...

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # LSST Data Management System
-# Copyright 2013-2014 LSST Corporation.
+# Copyright 2013 LSST Corporation.
 # 
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -35,69 +35,95 @@ Known issues and todos:
 
 """
 
-# standard library imports
-import logging
-import sys
 import time
 
-# third-party software imports
 from kazoo.client import KazooClient
-from kazoo.exceptions import NodeExistsError, NoNodeError
 
-# local imports
-from lsst.db.exception import produceExceptionClass
 
 ####################################################################################
-CssException = produceExceptionClass('CssException', [
-        (2001, "DB_EXISTS",          "Database already exists."),
-        (2005, "DB_DOES_NOT_EXIST",  "Database does not exist."),
-        (2010, "INVALID_CONNECTION", "Invalid connection information."),
-        (2015, "KEY_EXISTS",         "Key already exists."),
-        (2020, "KEY_DOES_NOT_EXIST", "Key does not exist."),
-        (2025, "KEY_INVALID",        "Key Invalid key."),
-        (2030, "MISSING_PARAM",      "Missing parameter."),
-        (2035, "TB_EXISTS",          "Table already exists."),
-        (2040, "TB_DOES_NOT_EXIST",  "Table does not exist."),
-        (9998, "NOT_IMPLEMENTED",    "Feature not implemented yet."),
-        (9999, "INTERNAL",           "Internal error.")])
+####################################################################################
+####################################################################################
+class CssException(Exception):
+    """
+    Exception raised by CSSInterface.
+    """
 
+    SUCCESS                     =    0
+    ERR_KEY_ALREADY_EXISTS      = 2001
+    ERR_KEY_DOES_NOT_EXIST      = 2002
+    ERR_KEY_INVALID             = 2003
+    ERR_NOT_IMPLEMENTED         = 9998
+    ERR_INTERNAL                = 9999
+
+    ### __init__ ###################################################################
+    def __init__(self, errNo, extraMsgList=None):
+        """
+        Initialize the shared data.
+
+        @param errNo      Error number.
+        @param extraMsgList  Optional list of extra messages.
+        """
+        self._errNo = errNo
+        self._extraMsgList = extraMsgList
+
+        self._errors = { 
+            CssException.ERR_KEY_ALREADY_EXISTS: ("Key already exists."),
+            CssException.ERR_KEY_INVALID: ("Invalid key."),
+            CssException.ERR_KEY_DOES_NOT_EXIST: ("Key does not exist."),
+            CssException.ERR_NOT_IMPLEMENTED: ("Fature not implemented yet."),
+            CssException.ERR_INTERNAL: "Internal error."
+        }
+
+    ### __str__ ####################################################################
+    def __str__(self):
+        """
+        Return string representation of the error.
+
+        @return string  Error message string, including all optional messages.
+        """
+        msg = self._errors.get(self._errNo, "Undefined css error.")
+        if self._extraMsgList is not None: 
+            for s in self._extraMsgList: msg += " (%s)" % s
+        return msg
+
+####################################################################################
+####################################################################################
 ####################################################################################
 class CssInterface(object):
     """
     @brief CssInterface class defines interface to the Central State Service CSS).
-
-    @param connInfo  Connection information.
     """
 
-    def __init__(self, connInfo):
+    ### __init__ ###################################################################
+    def __init__(self, verbose=True):
         """
-        Initialize the interface.
-        """
-        self._logger = logging.getLogger("CSS")
-        if connInfo is None:
-            raise CssException(CssException.INVALID_CONNECTION, "<None>")
-        self._logger.info("conn is: %s" % connInfo)
-        self._zk = KazooClient(hosts=connInfo)
-        self._zk.start()
+        Initialize KazooClient and connect to it.
 
+        @param verbose Verbose flag, default is True.
+        """
+        self._zk = KazooClient(hosts='127.0.0.1:2181') # FIXME
+        self._zk.start()
+        self._verbose = verbose
+
+    ### create #####################################################################
     def create(self, k, v='', sequence=False):
         """
         Add a new key/value entry. Create entire path as necessary. 
 
         @param sequence  Sequence flag -- if set to True, a 10-digid, 0-padded
                          suffix (unique sequential number) will be added to the key.
-
         @return string   Real path to the just created node.
-
-        @raise     CssException if the key k already exists.
         """
-        self._logger.info("CREATE '%s' --> '%s'" % (k, v))
-        try:
-            return self._zk.create(k, v, sequence=sequence, makepath=True)
-        except NodeExistsError:
-            self._logger.error("in create(), key %s exists" % k)
-            raise CssException(CssException.KEY_EXISTS, k)
+        # check if the key exists
+        if self._zk.exists(k):
+            raise CssException(CssException.ERR_KEY_ALREADY_EXISTS, [k])
+        p = self._chopLastSection(k)
+        if p is None:
+            raise CssException(CssException.ERR_KEY_INVALID, [k])
+        if self._verbose: print "cssInterface: CREATE '%s' --> '%s'" % (k, v) 
+        return self._zk.create(k, v, sequence=sequence, makepath=True)
 
+    ### exists #####################################################################
     def exists(self, k):
         """
         Check if a given key exists.
@@ -108,140 +134,142 @@ class CssInterface(object):
         """
         return self._zk.exists(k)
 
+    ### get ########################################################################
     def get(self, k):
         """
-        Return value for a key.
+        Get value for a key. Raise exception if the key doesn't exist.
 
         @param k   Key.
 
         @return string  Value for a given key. 
-
-        @raise     Raise CssException if the key doesn't exist.
         """
-        try:
-            v, stat = self._zk.get(k)
-            self._logger.info("GET '%s' --> '%s'" % (k, v))
-            return v
-        except NoNodeError:
-            self._logger.error("in get(), key %s does not exist" % k)
-            raise CssException(CssException.KEY_DOES_NOT_EXIST, k)
+        if not self._zk.exists(k):
+            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
+        v, stat = self._zk.get(k)
+        if self._verbose: print "cssInterface: GET '%s' --> '%s'" % (k, v)
+        return v
 
+    ### getChildren ################################################################
     def getChildren(self, k):
         """
-        Return the list of the children of the node k.
+        Get children for a given key. Raise exception if the key doesn't exist.
 
         @param k   Key.
 
-        @return    List_of_children of the node k. 
-
-        @raise     Raise CssException if the key does not exists.
+        @return    List_of_strings  A list of children for a given key. 
         """
-        try:
-            self._logger.info("GETCHILDREN '%s'" % (k))
-            return self._zk.get_children(k)
-        except NoNodeError:
-            self._logger.error("in getChildren(), key %s does not exist" % k)
-            raise CssException(CssException.KEY_DOES_NOT_EXIST, k)
+        if not self._zk.exists(k):
+            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
+        if self._verbose: print "cssInterface: GETCHILDREN '%s'" % (k)
+        return self._zk.get_children(k)
 
+    ### set ########################################################################
     def set(self, k, v):
         """
         Set value for a given key. Raise exception if the key doesn't exist.
 
         @param k  Key.
         @param v  Value.
-
-        @raise     Raise CssException if the key doesn't exist.
         """
-        try:
-            self._logger.info("SET '%s' --> '%s'" % (k, v))
-            self._zk.set(k, v)
-        except NoNodeError:
-            self._logger.error("in set(), key %s does not exist" % k)
-            raise CssException(CssException.KEY_DOES_NOT_EXIST, k)
+        # check if the key exists
+        if not self._zk.exists(k):
+            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
+        v1, stat = self._zk.get(k)
+        if self._verbose: print "cssInterface: SET '%s' --> '%s'" % (k, v)
+        self._zk.set(k, v)
+        v2, stat = self._zk.get(k)
 
+    ### delete #####################################################################
     def delete(self, k, recursive=False):
         """
-        Delete a key, including all children if recursive flag is set.
+        Delete a key, including all children if recursive flag is set. Raise
+        exception if the key doesn't exist.
 
         @param k         Key.
         @param recursive Flag. If set, all existing children nodes will be
-                         deleted.
-
-        @raise     Raise CssException if the key doesn't exist.
+                         deleted.  
         """
-        try:
-            self._logger.info("DELETE '%s'" % (k))
-            self._zk.delete(k, recursive=recursive)
-        except NoNodeError:
-            self._logger.error("in delete(), key %s does not exist" % k)
-            raise CssException(CssException.KEY_DOES_NOT_EXIST, k)
+        if not self._zk.exists(k):
+            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
+        if self._verbose: print "cssInterface: DELETE '%s'" % (k)
+        self._zk.delete(k, recursive=recursive)
 
+    ### deleteAll ##################################################################
     def deleteAll(self, p):
         """
         Delete everything recursively starting from a given point in the tree.
-        This can be used to wipe out everything. It is too dangerous to expose
-        to users, it'll be well hidden, or disabled when we move to production.
 
         @param p  Path.
-
-        Raise exception if the key doesn't exist.
         """
         if self._zk.exists(p):
             self._deleteOne(p)
 
-    def dumpAll(self, dest=None):
+    ### printAll ###################################################################
+    def printAll(self):
         """
-        Returns entire contents.
+        Print entire contents to stdout.
         """
-        fileH = sys.stdout
-        if dest is not None:
-            fileH = open(dest, "w")
-        self._printOne("/", fileH)
+        self._printOne("/")
 
-    def _printOne(self, p, fileH=None):
+    ### startTransaction ###########################################################
+    def startTransaction(self):
         """
-        Print content of one key/value to stdout. Note, this function is recursive.
+        Start transaction and return transactionRequest instance.
+        """
+        return self._zk.transaction()
+
+    ### _chopLastSection PRIVATE ###################################################
+    def _chopLastSection(self, k):
+        """
+        Remove substring after last '/', e.g. for /xx/y/abc it'll return /xx/y.
+
+        @param k  Key.
+
+        @return string
+        """
+        x = k.rfind('/')
+        if x == -1: return None
+        return k[0:x]
+
+    ### _printOne PRIVATE ##########################################################
+    def _printOne(self, p):
+        """
+        Print content of one znode. Note, this function is recursive.
 
         @param p  Path.
+
+        @return   string
         """
+        t = self.startTransaction()
         children = None
         data = None
         stat = None
-        try:
+        if self.exists(p):
             children = self._zk.get_children(p)
             data, stat = self._zk.get(p)
-            if fileH is not None:
-                fileH.write(p)
-                fileH.write('\t')
-                fileH.write((data if data else '\N'))
-                fileH.write('\n')
-            else:
-                print p, '\t', (data if data else '\N')
-            for child in children:
-                if p == "/":
-                    if child != "zookeeper":
-                        self._printOne("%s%s" % (p, child), fileH)
-                else:
-                    self._printOne("%s/%s" % (p, child), fileH)
-        except NoNodeError:
-            self._logger.warning("Caught NoNodeError, someone deleted node just now")
-            None
+        t.commit()
 
+        print p, "=", data
+        for child in children:
+            if p == "/":
+                if child != "zookeeper":
+                    self._printOne("%s%s" % (p, child))
+            else:
+                self._printOne("%s/%s" % (p, child))
+
+    ### _deleteOne PRIVATE #########################################################
     def _deleteOne(self, p):
         """
         Delete one znode. Note, this function is recursive.
 
         @param p  Path.
         """
-        try:
-            children = self._zk.get_children(p)
-            for child in children:
-                if p == "/":
-                    if child != "zookeeper": # skip "/zookeeper"
-                        self._deleteOne("%s%s" % (p, child))
-                else:
-                    self._deleteOne("%s/%s" % (p, child))
-            if p != "/": 
-                self._zk.delete(p)
-        except NoNodeError:
-            None
+        children = self._zk.get_children(p)
+        for child in children:
+            if p == "/":
+                if child != "zookeeper": # skip "/zookeeper"
+                    self._deleteOne("%s%s" % (p, child))
+            else:
+                self._deleteOne("%s/%s" % (p, child))
+        if p != "/": 
+            self._zk.delete(p)
