@@ -292,7 +292,7 @@ class CommandParser(object):
                 xx[option] = config.get(section, option)
         return xx
 
-    ### _processDbOptions ##########################################################
+    ################################################################################
     def _processDbOptions(self, opts):
         """
         Validate options used by createDb, add default values for missing

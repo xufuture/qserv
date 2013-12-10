@@ -49,9 +49,10 @@ class CssException(Exception):
     """
 
     SUCCESS                     =    0
-    ERR_KEY_ALREADY_EXISTS      = 2001
-    ERR_KEY_DOES_NOT_EXIST      = 2002
-    ERR_KEY_INVALID             = 2003
+    ERR_DB_DOES_NOT_EXIST       = 2001
+    ERR_KEY_ALREADY_EXISTS      = 2002
+    ERR_KEY_DOES_NOT_EXIST      = 2003
+    ERR_KEY_INVALID             = 2004
     ERR_NOT_IMPLEMENTED         = 9998
     ERR_INTERNAL                = 9999
 
@@ -67,6 +68,7 @@ class CssException(Exception):
         self._extraMsgList = extraMsgList
 
         self._errors = { 
+            CssException.ERR_DB_DOES_NOT_EXIST: ("Database does not exist."),
             CssException.ERR_KEY_ALREADY_EXISTS: ("Key already exists."),
             CssException.ERR_KEY_INVALID: ("Invalid key."),
             CssException.ERR_KEY_DOES_NOT_EXIST: ("Key does not exist."),
@@ -86,6 +88,13 @@ class CssException(Exception):
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
 
+    ################################################################################
+    def getErrNo(self):
+        """
+        Return error number.
+        """
+        return self._errNo
+
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -97,7 +106,7 @@ class CssInterface(object):
     ### __init__ ###################################################################
     def __init__(self, verbose=True):
         """
-        Initialize KazooClient and connect to it.
+        Initialize the interface.
 
         @param verbose Verbose flag, default is True.
         """

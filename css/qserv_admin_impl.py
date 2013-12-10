@@ -21,15 +21,17 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
 """
-Internals that do the actual work for the qserv client program. Note that this depends on kazoo, so it'd be best to avoid distributing this to every user. For that reason in the future we might run this separately from the client, so this may not have access to local config files provided by user.
+Internals that do the actual work for the qserv client program.
 
 @author  Jacek Becla, SLAC
 
 
 Known issues and todos:
- - need to deal with error handling properly, e.g., define error status
-   instead of using dummy SUCCESS, ERROR, 
- - need to find out how to abort transaction.
+ - Note that this depends on kazoo, so it'd be best to avoid distributing this to
+   every user. For that reason in the future we might run this separately from the
+   client, so this may not have access to local config files provided by user
+   - and that will complicate error handling, e.g., if we raise exception here, the
+     qserv_admin which will run on a separate server will not be able to catch it.
 """
 
 from cssInterface import CssInterface, CssException
@@ -79,8 +81,8 @@ class QservAdminImpl(object):
             print "Failed to create database, error was: ", e
             self._cssI.delete(dbP, recursive=True)
             if ptP is not None: self._cssI.delete(ptP, recursive=True)
-            return ERROR
-        return SUCCESS
+            return e.getErrNo()
+        return CssException.SUCCESS
 
     ### createDbLike ###############################################################
     def createDbLike(self, dbName, dbName2):
@@ -109,9 +111,9 @@ class QservAdminImpl(object):
         except CssException as e:
             print "Failed to create database, error was: ", e
             self._cssI.delete(dbP, recursive=True)
-            return ERROR
+            return e.getErrNo()
         self._createDbLockSection(dbP)
-        return SUCCESS
+        return CssException.SUCCESS
 
     ### dropDb #####################################################################
     def dropDb(self, dbName):
@@ -122,9 +124,9 @@ class QservAdminImpl(object):
         """
         if not self._dbExists(dbName):
             print "ERROR: db does not exist"
-            return ERROR
+            return CssException.ERR_DB_DOES_NOT_EXIST
         self._cssI.delete("/DATABASES/%s" % dbName, recursive=True)
-        return SUCCESS
+        return CssException.SUCCESS
 
     ### showDatabases ##############################################################
     def showDatabases(self):
