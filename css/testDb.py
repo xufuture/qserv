@@ -217,8 +217,8 @@ class TestDb(unittest.TestCase):
         self._db.createDb(dbA)
         self._db.connectToDb(dbA)
         self._db.createTable("t1", "(i int)")
-        print "sleeping 10 sec, run: sudo /etc/init.d/mysql stop"
-        time.sleep(10)
+        raw_input("\nRun: 'sudo /etc/init.d/mysql stop', then press Enter to "
+                 "continue...\n")
         self._db.createTable("t2", "(i int)")
         self._db.dropDb(dbA)
 
