@@ -27,16 +27,15 @@ This is a unittest for the Central State System Interface class.
 
 """
 
-import logging
-import os
 import time
 import unittest
 from cssInterface import CssInterface, CssException
 
 class TestCssInterface(unittest.TestCase):
     def setUp(self):
-        self._cssI = CssInterface('127.0.0.1:2181')
+        self._cssI = CssInterface()
 
+    ################################################################################
     def testCreateGetSetDelete(self):
         # first delete everything
         self._cssI.deleteAll("/unittest")
@@ -72,15 +71,13 @@ class TestCssInterface(unittest.TestCase):
         # get the second key
         v2a = self._cssI.get(k2)
         assert(v2a == v2)
-        # test getChildren
-        self._cssI.getChildren("/unittest/")
-        self.assertRaises(CssException, self._cssI.getChildren, "/whatever")
-        # try to set for invalid key
-        self.assertRaises(CssException, self._cssI.set, "/whatever", "value")
-        # try to delete invalid key
-        self.assertRaises(CssException, self._cssI.delete, "/whatever")
         # print everything
-        self._cssI.dumpAll()
+        self._cssI.printAll()
+
+    ################################################################################
+    def testBadKeys(self):
+        # try to create invalid key
+        self.assertRaises(CssException, self._cssI.create, "badKey", "v")
 
     #def testPerformance(self):
     #    n = 10 # set it to something larger for real test...
@@ -94,16 +91,9 @@ class TestCssInterface(unittest.TestCase):
 
 
 ####################################################################################
-def setLogging():
-    logging.basicConfig(
-        #filename="/tmp/testCssInterface.log",
-        format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
-        datefmt='%m/%d/%Y %I:%M:%S', 
-        level=logging.DEBUG)
-    logging.getLogger("kazoo.client").setLevel(logging.ERROR)
-
+####################################################################################
+####################################################################################
 def main():
-    setLogging()
     unittest.main()
 
 if __name__ == "__main__":

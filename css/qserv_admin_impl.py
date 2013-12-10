@@ -32,7 +32,7 @@ Known issues and todos:
  - need to find out how to abort transaction.
 """
 
-from cssIFace import CssIFace, CssException
+from cssInterface import CssInterface, CssException
 
 SUCCESS = 0
 ERROR = -1
@@ -44,7 +44,7 @@ class QservAdminImpl(object):
 
     ### __init__ ###################################################################
     def __init__(self):
-        self._iFace = CssIFace()
+        self._cssI = CssInterface()
 
     ### createDb ###################################################################
     def createDb(self, dbName, options):
@@ -60,25 +60,25 @@ class QservAdminImpl(object):
             return ERROR
         dbP = "/DATABASES/%s" % dbName
         ptP = None
-        t = self._iFace.startTransaction()
+        t = self._cssI.startTransaction()
         try:
-            self._iFace.create(dbP, "PENDING")
-            ptP = self._iFace.create("/DATABASE_PARTITIONING/_", sequence=True)
-            self._iFace.create("%s/nStripes"    % ptP, options["nStripes"   ])
-            self._iFace.create("%s/nSubStripes" % ptP, options["nSubStripes"])
-            self._iFace.create("%s/overlap"     % ptP, options["overlap"    ])
-            self._iFace.create("%s/dbGroup" % dbP, options["level"])
+            self._cssI.create(dbP, "PENDING")
+            ptP = self._cssI.create("/DATABASE_PARTITIONING/_", sequence=True)
+            self._cssI.create("%s/nStripes"    % ptP, options["nStripes"   ])
+            self._cssI.create("%s/nSubStripes" % ptP, options["nSubStripes"])
+            self._cssI.create("%s/overlap"     % ptP, options["overlap"    ])
+            self._cssI.create("%s/dbGroup" % dbP, options["level"])
             pId = ptP[-10:] # the partitioning id is always 10 digit, 0 padded
-            self._iFace.create("%s/partitioningId" % dbP, str(pId))
-            self._iFace.create("%s/releaseStatus" % dbP,"UNRELEASED")
-            self._iFace.create("%s/objIdIndex" % dbP, options["objectIdIndex"])
+            self._cssI.create("%s/partitioningId" % dbP, str(pId))
+            self._cssI.create("%s/releaseStatus" % dbP,"UNRELEASED")
+            self._cssI.create("%s/objIdIndex" % dbP, options["objectIdIndex"])
             self._createDbLockSection(dbP)
             t.commit()
-            self._iFace.set(dbP, "READY")
+            self._cssI.set(dbP, "READY")
         except CssException as e:
             print "Failed to create database, error was: ", e
-            self._iFace.delete(dbP, recursive=True)
-            if ptP is not None: self._iFace.delete(ptP, recursive=True)
+            self._cssI.delete(dbP, recursive=True)
+            if ptP is not None: self._cssI.delete(ptP, recursive=True)
             return ERROR
         return SUCCESS
 
@@ -98,17 +98,17 @@ class QservAdminImpl(object):
             print "ERROR: db '%s' does not exist." % dbName2
             return ERROR
         dbP = "/DATABASES/%s" % dbName
-        t = self._iFace.startTransaction()
+        t = self._cssI.startTransaction()
         try:
-            self._iFace.create(dbP, "PENDING")
+            self._cssI.create(dbP, "PENDING")
             self._copyKeyValue(dbName, dbName2, 
                                ("dbGroup", "partitioningId", 
                                 "releaseStatus", "objIdIndex"))
             t.commit()
-            self._iFace.set(dbP, "READY")
+            self._cssI.set(dbP, "READY")
         except CssException as e:
             print "Failed to create database, error was: ", e
-            self._iFace.delete(dbP, recursive=True)
+            self._cssI.delete(dbP, recursive=True)
             return ERROR
         self._createDbLockSection(dbP)
         return SUCCESS
@@ -123,7 +123,7 @@ class QservAdminImpl(object):
         if not self._dbExists(dbName):
             print "ERROR: db does not exist"
             return ERROR
-        self._iFace.delete("/DATABASES/%s" % dbName, recursive=True)
+        self._cssI.delete("/DATABASES/%s" % dbName, recursive=True)
         return SUCCESS
 
     ### showDatabases ##############################################################
@@ -131,24 +131,24 @@ class QservAdminImpl(object):
         """
         Show list of databases registered for Qserv use.
         """
-        if not self._iFace.exists("/DATABASES"):
+        if not self._cssI.exists("/DATABASES"):
             print "No databases found."
         else:
-            print self._iFace.getChildren("/DATABASES")
+            print self._cssI.getChildren("/DATABASES")
 
     ### showEverything #############################################################
     def showEverything(self):
         """
         Dumps entire metadata in CSS to stdout. Very useful for debugging.
         """
-        self._iFace.printAll()
+        self._cssI.printAll()
 
     ### dropEverything #############################################################
     def dropEverything(self):
         """
         Delete everything from the CSS (very dangerous, very useful for debugging.)
         """
-        self._iFace.deleteAll("/")
+        self._cssI.deleteAll("/")
 
     ### _dbExists PRIVATE ##########################################################
     def _dbExists(self, dbName):
@@ -158,7 +158,7 @@ class QservAdminImpl(object):
         @param dbName    Database name.
         """
         p = "/DATABASES/%s" % dbName
-        return self._iFace.exists(p)
+        return self._cssI.exists(p)
 
     ### _copyKeyValue PRIVATE ######################################################
     def _copyKeyValue(self, dbDest, dbSrc, theList):
@@ -172,8 +172,8 @@ class QservAdminImpl(object):
         dbS  = "/DATABASES/%s" % dbSrc
         dbD = "/DATABASES/%s" % dbDest
         for x in theList:
-            v = self._iFace.get("%s/%s" % (dbS, x))
-            self._iFace.create("%s/%s" % (dbD, x), v)
+            v = self._cssI.get("%s/%s" % (dbS, x))
+            self._cssI.create("%s/%s" % (dbD, x), v)
 
     ### _createDbLockSection PRIVATE ###############################################
     def _createDbLockSection(self, dbP):
@@ -182,9 +182,9 @@ class QservAdminImpl(object):
 
         @param dbP    Path to the database.
         """
-        self._iFace.create("%s/LOCK/comments" % dbP)
-        self._iFace.create("%s/LOCK/estimatedDuration" % dbP)
-        self._iFace.create("%s/LOCK/lockedBy" % dbP)
-        self._iFace.create("%s/LOCK/lockedTime" % dbP)
-        self._iFace.create("%s/LOCK/mode" % dbP)
-        self._iFace.create("%s/LOCK/reason" % dbP)
+        self._cssI.create("%s/LOCK/comments" % dbP)
+        self._cssI.create("%s/LOCK/estimatedDuration" % dbP)
+        self._cssI.create("%s/LOCK/lockedBy" % dbP)
+        self._cssI.create("%s/LOCK/lockedTime" % dbP)
+        self._cssI.create("%s/LOCK/mode" % dbP)
+        self._cssI.create("%s/LOCK/reason" % dbP)
