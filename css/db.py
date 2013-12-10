@@ -46,18 +46,6 @@ from time import sleep
 ####################################################################################
 ####################################################################################
 ####################################################################################
-class DbStatus:
-    """
-    DbStatus class. Defines erorr codes and messages used by the Db class.
-    """
-
-
-    def getMsg(self, errNo):
-        return errors.get(errNo, "Undefined database error")
-
-####################################################################################
-####################################################################################
-####################################################################################
 class DbException(Exception):
     """
     Exception raised by Db class.
@@ -101,7 +89,7 @@ class DbException(Exception):
             DbException.ERR_MYSQL_CONNECT: ("Unable to connect to mysql server."),
             DbException.ERR_MYSQL_DISCONN: ("Failed to commit transaction and "
                                 "disconnect from mysql server."),
-            DbException.ERR_MYSQL_DbException.ERROR: ("Internal MySQL error."),
+            DbException.ERR_MYSQL_ERROR: ("Internal MySQL error."),
             DbException.ERR_NO_DB_SELECTED: ("No database selected."),
             DbException.ERR_NOT_CONNECTED: ("Not connected to MySQL."),
             DbException.ERR_TB_DOES_NOT_EXIST: ("Table does not exist."),
@@ -116,21 +104,10 @@ class DbException(Exception):
 
         @return string  Error message string, including all optional messages.
         """
-        msg = ''
-        s = DbStatus()
-        msg = s.getMsg(self._errNo)
+        msg = self._errors.get(self._errNo, "Undefined database error")
         if self._extraMsgList is not None:
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
-
-    ### getErrNo ###################################################################
-    def getErrNo(self):
-        """
-        Get error number.
-
-        @return integer   Error number.
-        """
-        return self._errNo
 
 ####################################################################################
 ####################################################################################
