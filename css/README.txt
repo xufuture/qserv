@@ -26,11 +26,14 @@
 
 #### T E S T I N G #################################################################
 
+# set path to the cssInterface
+# export PYTHONPATH=<kazooPath>:<YourBasePath>/dbserv/python/lsst/dbserv/:<YourBasePath>/qserv/css/
+
 # clean up everything
-echo "drop everything;" | ./qserv_admin.py
+echo "drop everything;" | ./client/qserv_admin.py
 
 # in one window, start 
-./watcher.py
+./css/watcher.py
 
 # in second window, run
-./qserv_admin.py  < test_qserv_admin
+./client/qserv_admin.py  < ./client/tests/test_qserv_admin
