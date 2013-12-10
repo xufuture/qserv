@@ -34,7 +34,6 @@ Known issues and todos:
  - implement proper logging instead of print
 """
 
-from __future__ import with_statement
 import _mysql_exceptions
 import MySQLdb
 import StringIO
