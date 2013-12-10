@@ -32,7 +32,7 @@ Known issues and todos:
 
 import time
 import unittest
-from db import Db, DbException, DbStatus
+from db import Db, DbException
 
 theHost = 'localhost'
 thePort = 3306

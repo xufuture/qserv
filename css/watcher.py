@@ -43,7 +43,7 @@ import time
 import threading
 
 from cssIFace import CssIFace
-from db import Db, DbException, DbStatus
+from db import Db, DbException
 
 # This helps if kazoo needs to generate an errror, otherwise we'd get:
 # No handlers could be found for logger "kazoo.recipe.watchers"

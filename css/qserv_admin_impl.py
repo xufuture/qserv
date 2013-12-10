@@ -63,7 +63,6 @@ class QservAdminImpl(object):
         t = self._iFace.startTransaction()
         try:
             self._iFace.create(dbP, "PENDING")
-            self._iFace.create(dbP, "PENDING")
             ptP = self._iFace.create("/DATABASE_PARTITIONING/_", sequence=True)
             self._iFace.create("%s/nStripes"    % ptP, options["nStripes"   ])
             self._iFace.create("%s/nSubStripes" % ptP, options["nSubStripes"])

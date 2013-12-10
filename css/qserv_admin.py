@@ -47,29 +47,6 @@ from qserv_admin_impl import QservAdminImpl
 import logging
 logging.basicConfig()
 
-####################################################################################
-####################################################################################
-####################################################################################
-class QAdmStatus:
-    """
-    QAdmStatus class defines erorr codes and messages used by the CssIFace.
-    """
-    SUCCESS                     =    0
-    ERR_BAD_CMD                 = 3001
-    ERR_CONFIG_NOT_FOUND        = 3002
-    ERR_MISSING_PARAM           = 3003
-    ERR_WRONG_PARAM             = 3004
-    ERR_WRONG_PARAM_VALUE       = 3005
-    ERR_INTERNAL                = 9999
-
-    errors = { 
-        ERR_BAD_CMD: ("Bad command, see HELP for details."),
-        ERR_CONFIG_NOT_FOUND: ("Config file not found."),
-        ERR_MISSING_PARAM: ("Missing parameter."),
-        ERR_WRONG_PARAM: ("Unrecognized parameter."),
-        ERR_WRONG_PARAM_VALUE: ("Unrecognized value for parameter."),
-        ERR_INTERNAL: "Internal error."
-    }
 
 ####################################################################################
 ####################################################################################
@@ -78,6 +55,13 @@ class QAdmException(Exception):
     """
     QAdmException class defines qserv_admin-specific exception
     """
+    SUCCESS                     =    0
+    ERR_BAD_CMD                 = 3001
+    ERR_CONFIG_NOT_FOUND        = 3002
+    ERR_MISSING_PARAM           = 3003
+    ERR_WRONG_PARAM             = 3004
+    ERR_WRONG_PARAM_VALUE       = 3005
+    ERR_INTERNAL                = 9999
 
     ### __init__ ###################################################################
     def __init__(self, errNo, extraMsgList=None):
@@ -90,8 +74,14 @@ class QAdmException(Exception):
         self._errNo = errNo
         self._extraMsgList = extraMsgList
 
-    def getMsg(self, errNo):
-        return errors.get(errNo, "Undefined qserv_admin error")
+        self._errors = { 
+            ERR_BAD_CMD: ("Bad command, see HELP for details."),
+            ERR_CONFIG_NOT_FOUND: ("Config file not found."),
+            ERR_MISSING_PARAM: ("Missing parameter."),
+            ERR_WRONG_PARAM: ("Unrecognized parameter."),
+            ERR_WRONG_PARAM_VALUE: ("Unrecognized value for parameter."),
+            ERR_INTERNAL: "Internal error."
+        }
 
     ### __str__ ####################################################################
     def __str__(self):
@@ -100,9 +90,7 @@ class QAdmException(Exception):
 
         @return string  Error message string, including all optional messages.
         """
-        msg = ''
-        s = QAdmStatus()
-        msg = s.getMsg([self._errNo])
+        msg = self._errors.get(self._errNo, "Undefined qserv_admin error")
         if self._extraMsgList is not None:
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
