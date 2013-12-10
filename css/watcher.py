@@ -131,9 +131,7 @@ class AllDbsWatcher(threading.Thread):
     def run(self):
         """
         Watch for new/deleted nodes, and act upon them: setup new watcher for each
-        new database. Note, if the path "/DATABASES" is deleted, this will fail
-        with an error: No handlers could be found for logger
-        "kazoo.handlers.threading".
+        new database.
         """
         @self._cssI._zk.ChildrenWatch(self._path)
         def my_watcher_func(children):
