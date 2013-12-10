@@ -60,7 +60,7 @@ class OneDbWatcher(threading.Thread):
     It runs in a dedicated thread.
     """
 
-    ### __init__ ###################################################################
+    ################################################################################
     def __init__(self, cssI, db, pathToWatch, verbose=True):
         """
         Initialize shared state.
@@ -73,7 +73,7 @@ class OneDbWatcher(threading.Thread):
         self._verbose = verbose
         threading.Thread.__init__(self)
 
-    ### run ########################################################################
+    ################################################################################
     def run(self):
         """
         Watch for changes, and act upon them: create/drop databases.
@@ -113,7 +113,7 @@ class AllDbsWatcher(threading.Thread):
     thread.
     """
 
-    ### __init__ ###################################################################
+    ################################################################################
     def __init__(self, cssI, db):
         """
         Initialize shared data.
@@ -127,7 +127,7 @@ class AllDbsWatcher(threading.Thread):
         if not cssI.exists(self._path): cssI.create(self._path)
         threading.Thread.__init__(self)
 
-    ### run ########################################################################
+    ################################################################################
     def run(self):
         """
         Watch for new/deleted nodes, and act upon them: setup new watcher for each

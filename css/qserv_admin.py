@@ -63,7 +63,7 @@ class QAdmException(Exception):
     ERR_WRONG_PARAM_VALUE       = 3005
     ERR_INTERNAL                = 9999
 
-    ### __init__ ###################################################################
+    ################################################################################
     def __init__(self, errNo, extraMsgList=None):
         """
         Initialize the shared data.
@@ -83,7 +83,7 @@ class QAdmException(Exception):
             ERR_INTERNAL: "Internal error."
         }
 
-    ### __str__ ####################################################################
+    ################################################################################
     def __str__(self):
         """
         Return string representation of the error.
@@ -95,7 +95,7 @@ class QAdmException(Exception):
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
 
-    ### __str__ ####################################################################
+    ################################################################################
     def __str__(self):
         """
         Return string representation of the error.
@@ -112,7 +112,7 @@ class CommandParser(object):
     Parse commands and calls appropriate function from qserv_admin_impl.
     """
 
-    ### __init__ ###################################################################
+    ################################################################################
     def __init__(self):
         """
         Initialize shared metadata, including list of supported commands.
@@ -138,7 +138,7 @@ class CommandParser(object):
     ...more coming soon
 """
 
-    ### receiveCommands ############################################################
+    ################################################################################
     def receiveCommands(self):
         """
         Receive user commands. End of command is determined by ';'. Multiple
@@ -158,7 +158,7 @@ class CommandParser(object):
                     print "ERROR: ", e1
                 sql = sql[pos+1:]
 
-    ### main parser PRIVATE ########################################################
+    ################################################################################
     def _parse(self, cmd):
         """
         Parser, dispatch to subparsers based on first word. Raise exceptions on
@@ -176,7 +176,7 @@ class CommandParser(object):
         else:
             print "Unsupported command '%s', see HELP for details." % cmd
 
-    ### _parseCreate PRIVATE #######################################################
+    ################################################################################
     def _parseCreate(self, tokens):
         """
         Subparser, handle all CREATE requests.
@@ -189,7 +189,7 @@ class CommandParser(object):
         else:
             print "CREATE '%s' is not supported yet." % t
 
-    ### _parseCreateDatabase #######################################################
+    ################################################################################
     def _parseCreateDatabase(self, tokens):
         """
         Subparser, handle all CREATE DATABASE requests.
@@ -212,14 +212,14 @@ class CommandParser(object):
             raise QAdmException(QAdmStatus.ERR_BAD_CMD, 
                                 ["unexpected number of arguments"])
 
-    ### _parseCreateTable ##########################################################
+    ################################################################################
     def _parseCreateTable(self, tokens):
         """
         Subparser, handle all CREATE TABLE requests.
         """
         print 'CREATE TABLE not implemented.'
 
-    ### _parseDrop #################################################################
+    ################################################################################
     def _parseDrop(self, tokens):
         """
         Subparser, handle all DROP requests.
@@ -238,21 +238,21 @@ class CommandParser(object):
         else:
             print "DROP '%s' is not supported yet." % t
 
-    ### _printHelp #################################################################
+    ################################################################################
     def _printHelp(self, tokens):
         """
         Print available commands.
         """
         print self._supportedCommands
 
-    ### _parseRelease ##############################################################
+    ################################################################################
     def _parseRelease(self, tokens):
         """
         Subparser, handle all RELEASE requests.
         """
         print 'RELEASE not implemented.'
 
-    ### _parseShow #################################################################
+    ################################################################################
     def _parseShow(self, tokens):
         """
         Subparser, handle all SHOW requests.
@@ -265,7 +265,7 @@ class CommandParser(object):
         else:
             print "SHOW '%s' is not supported yet." % t
 
-    ### _createDb ##################################################################
+    ################################################################################
     def _createDb(self, dbName, configFile):
         """
         Create database through config file.
@@ -275,7 +275,7 @@ class CommandParser(object):
         print "options are:", options
         self._impl.createDb(dbName, options)
 
-    ### _fetchOptionsFromConfigFile ################################################
+    ################################################################################
     def _fetchOptionsFromConfigFile(self, fName):
         """
         Read config file <fName> for createDb and createTable command, and return
@@ -292,7 +292,7 @@ class CommandParser(object):
                 xx[option] = config.get(section, option)
         return xx
 
-    ### _processDbOptions ##########################################################
+    $###############################################################################
     def _processDbOptions(self, opts):
         """
         Validate options used by createDb, add default values for missing
@@ -320,7 +320,7 @@ class CommandParser(object):
         self._validateKVOptions(opts, _crDbOpts, _crDbPSOpts, "db_info")
         return opts
 
-    ### _validateKVOptions #########################################################
+    ################################################################################
     def _validateKVOptions(self, x, xxOpts, psOpts, whichInfo):
         if not x.has_key("partitioning"):
             raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, ["partitioning"])
