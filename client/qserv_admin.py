@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # LSST Data Management System
-# Copyright 2013-2014 LSST Corporation.
+# Copyright 2013 LSST Corporation.
 # 
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -27,37 +27,76 @@ corresponding function.
 
 @author  Jacek Becla, SLAC
 
+
 Known issues and todos:
- - deal with user authentication
+ - user authentication
  - many commands still need to be implemented
  - need to separate dangerous admin commands like DROP EVERYTHING
+ - implement proper logging instead of print
 """
 
-# standard library imports
-import ConfigParser
-import logging
-from argparse import ArgumentParser
 import os
 import re
 import readline
-import sys
+import ConfigParser
 
-# local imports
-from lsst.db.exception import produceExceptionClass
-from kvInterface import CssException
 from qserv_admin_impl import QservAdminImpl
 
-####################################################################################
-QAdmException = produceExceptionClass('QAdmException', [
-    (3001, "AUTH_PROBLEM",      "Can't access the config file."),
-    (3002, "BAD_CMD",          "Bad command, see HELP for details."),
-    (3003, "CONFIG_NOT_FOUND", "Config file not found."),
-    (3004, "MISSING_PARAM",    "Missing parameter."),
-    (3005, "WRONG_PARAM",      "Unrecognized parameter."),
-    (3006, "WRONG_PARAM_VAL",  "Unrecognized value for parameter."),
-    (9997, "CSSERR",           "CSS error."),
-    (9998, "NOT_IMPLEMENTED",  "Feature not implemented yet."),
-    (9999, "INTERNAL",         "Internal error.")])
+# This helps if kazoo needs to generate an errror, otherwise we'd get:
+# No handlers could be found for logger "kazoo.recipe.watchers"
+import logging
+logging.basicConfig()
+
+
+class QAdmException(Exception):
+    """
+    QAdmException class defines qserv_admin-specific exception
+    """
+    SUCCESS                     =    0
+    ERR_BAD_CMD                 = 3001
+    ERR_CONFIG_NOT_FOUND        = 3002
+    ERR_MISSING_PARAM           = 3003
+    ERR_WRONG_PARAM             = 3004
+    ERR_WRONG_PARAM_VALUE       = 3005
+    ERR_INTERNAL                = 9999
+
+    def __init__(self, errNo, extraMsgList=None):
+        """
+        Initialize the shared data.
+
+        @param errNo      Error number.
+        @param extraMsgList  Optional list of extra messages.
+        """
+        self._errNo = errNo
+        self._extraMsgList = extraMsgList
+
+        self._errors = { 
+            ERR_BAD_CMD: ("Bad command, see HELP for details."),
+            ERR_CONFIG_NOT_FOUND: ("Config file not found."),
+            ERR_MISSING_PARAM: ("Missing parameter."),
+            ERR_WRONG_PARAM: ("Unrecognized parameter."),
+            ERR_WRONG_PARAM_VALUE: ("Unrecognized value for parameter."),
+            ERR_INTERNAL: "Internal error."
+        }
+
+    def __str__(self):
+        """
+        Return string representation of the error.
+
+        @return string  Error message string, including all optional messages.
+        """
+        msg = self._errors.get(self._errNo, "Undefined qserv_admin error")
+        if self._extraMsgList is not None:
+            for s in self._extraMsgList: msg += " (%s)" % s
+        return msg
+
+    def __str__(self):
+        """
+        Return string representation of the error.
+
+        @return string  Error message string, including all optional messages.
+        """
+        return self._errNo
 
 ####################################################################################
 class CommandParser(object):
@@ -65,34 +104,26 @@ class CommandParser(object):
     Parse commands and calls appropriate function from qserv_admin_impl.
     """
 
-    def __init__(self, connInfo):
+    def __init__(self):
         """
         Initialize shared metadata, including list of supported commands.
-
-        @param connInfo     Connection information.
         """
-        self._initLogging()
         self._funcMap = {
             'CREATE':  self._parseCreate,
             'DROP':    self._parseDrop,
-            'DUMP':    self._parseDump,
-            'EXIT':    self._justExit,
             'HELP':    self._printHelp,
-            'QUIT':    self._justExit,
             'RELEASE': self._parseRelease,
             'SHOW':    self._parseShow
             }
-        self._impl = QservAdminImpl(connInfo)
+        self._impl = QservAdminImpl()
         self._supportedCommands = """
   Supported commands:
     CREATE DATABASE <dbName> <configFile>;
     CREATE DATABASE <dbName> LIKE <dbName2>;
-    CREATE TABLE <dbName>.<tableName> <configFile>;
-    CREATE TABLE <dbName>.<tableName> LIKE <dbName2>.<tableName2>;
     DROP DATABASE <dbName>;
     DROP EVERYTHING;
-    DUMP EVERYTHING [<outFile>];
     SHOW DATABASES;
+    SHOW EVERYTHING;
     QUIT;
     EXIT;
     ...more coming soon
@@ -102,27 +133,24 @@ class CommandParser(object):
         """
         Receive user commands. End of command is determined by ';'. Multiple
         commands per line are allowed. Multi-line commands are allowed. To
-        terminate: CTRL-D, or 'exit;' or 'quit;'.
+        terminate: CTRL-D, or "exit;" or quit;".
         """
         line = ''
-        cmd = ''
-        prompt = "qserv > "
+        sql = ''
         while True:
-            line = raw_input(prompt).decode("utf-8").strip()
-            cmd += line + ' '
-            prompt = "qserv > " if line.endswith(';') else "~ "
-            while re.search(';', cmd):
-                pos = cmd.index(';')
+            line = raw_input("qserv > ")
+            sql += line.strip()+' '
+            while re.search(';', sql):
+                pos = sql.index(';')
                 try:
-                    self._parse(cmd[:pos])
-                except QAdmException as e:
-                    self._logger.error(e.__str__())
-                    print "ERROR: ", e.__str__()
-                cmd = cmd[pos+1:]
+                    self._parse(sql[:pos])
+                except QAdmException as e1:
+                    print "ERROR: ", e1
+                sql = sql[pos+1:]
 
     def _parse(self, cmd):
         """
-        Parse, and dispatch to subparsers based on first word. Raise exceptions on
+        Parser, dispatch to subparsers based on first word. Raise exceptions on
         errors.
         """
         cmd = cmd.strip()
@@ -132,12 +160,14 @@ class CommandParser(object):
         t = tokens[0].upper()
         if t in self._funcMap:
             self._funcMap[t](tokens[1:])
+        elif t == 'EXIT' or t == 'QUIT':
+            raise SystemExit()
         else:
-            raise QAdmException(QAdmException.NOT_IMPLEMENTED, cmd)
+            print "Unsupported command '%s', see HELP for details." % cmd
 
     def _parseCreate(self, tokens):
         """
-        Subparser - handles all CREATE requests.
+        Subparser, handle all CREATE requests.
         """
         t = tokens[0].upper()
         if t == 'DATABASE':
@@ -145,11 +175,11 @@ class CommandParser(object):
         elif t == 'TABLE':
             self._parseCreateTable(tokens[1:])
         else:
-            raise QAdmException(QAdmException.BAD_CMD)
+            print "CREATE '%s' is not supported yet." % t
 
     def _parseCreateDatabase(self, tokens):
         """
-        Subparser - handles all CREATE DATABASE requests.
+        Subparser, handle all CREATE DATABASE requests.
         """
         l = len(tokens)
         if l == 2:
@@ -157,114 +187,41 @@ class CommandParser(object):
             configFile = tokens[1]
             options = self._fetchOptionsFromConfigFile(configFile)
             options = self._processDbOptions(options)
-            try:
-                self._impl.createDb(dbName, options)
-            except CssException as e:
-                raise QAdmException(QAdmException.CSSERR, 
-                                    "Failed to create database '" + dbName + \
-                                    "', error was: " +  e.__str__())
+            self._impl.createDb(dbName, options)
         elif l == 3:
             if tokens[1].upper() != 'LIKE':
-                raise QAdmException(QAdmException.BAD_CMD, 
-                                    "Expected 'LIKE', found: '%s'." % tokens[1])
+                raise QAdmException(QAdmStatus.ERR_BAD_CMD, 
+                                    ["expected 'LIKE', found: '%s'" % tokens[1]])
             dbName = tokens[0]
             dbName2 = tokens[2]
-            try:
-                self._impl.createDbLike(dbName, dbName2)
-            except CssException as e:
-                raise QAdmException(QAdmException.CSSERR, 
-                             "Failed to create database '" + dbName + "' like '" + \
-                             dbName2 + "', error was: ", e.__str__())
+            self._impl.createDbLike(dbName, dbName2)
         else:
-            raise QAdmException(QAdmException.BAD_CMD, 
-                                "Unexpected number of arguments.")
+            raise QAdmException(QAdmStatus.ERR_BAD_CMD, 
+                                ["unexpected number of arguments"])
 
     def _parseCreateTable(self, tokens):
         """
-        Subparser - handles all CREATE TABLE requests.
+        Subparser, handle all CREATE TABLE requests.
         """
-        l = len(tokens)
-        if l == 2:
-            (dbTbName, configFile) = tokens
-            if '.' not in dbTbName:
-                raise QAdmException(QAdmException.BAD_CMD, 
-                   "Invalid argument '%s', should be <dbName>.<tbName>" % dbTbName)
-            (dbName, tbName) = dbTbName.split('.')
-            options = self._fetchOptionsFromConfigFile(configFile)
-            options = self._processTbOptions(options)
-            try:
-                self._impl.createTable(dbName, tbName, options)
-            except CssException as e:
-                raise QAdmException(QAdmException.CSSERR, 
-                          "Failed to create table '" + dbName + "." + tbName + \
-                          "', error was: " +  e.__str__())
-        elif l == 3:
-            (dbTbName, likeToken, dbTbName2) = tokens
-            if likeToken.upper() != 'LIKE':
-                raise QAdmException(QAdmException.BAD_CMD, 
-                                    "Expected 'LIKE', found: '%s'." % tokens[2])
-            if '.' not in dbTbName:
-                raise QAdmException(QAdmException.BAD_CMD, 
-                   "Invalid argument '%s', should be <dbName>.<tbName>" % dbTbName)
-            (dbName, tbName) = dbTbName.split('.')
-            if '.' not in dbTbName2:
-                raise QAdmException(QAdmException.BAD_CMD, 
-                   "Invalid argument '%s', should be <dbName>.<tbName>" % dbTbName2)
-            (dbName2, tbName2) = dbTbName2.split('.')
-            try:
-                # FIXME, createTableLike is not implemented!
-                self._impl.createTableLike(dbName, tableName, dbName2, tableName2,
-                                           options)
-            except CssException as e:
-                raise QAdmException(QAdmException.CSSERR, 
-                         "Failed to create table '" + dbName + "." + tbName + \
-                         "' LIKE '" + dbName2 + "." + tbName2 + "', " + \
-                         "'error was: ", e.__str__())
-        else:
-            raise QAdmException(QAdmException.BAD_CMD, 
-                                "Unexpected number of arguments.")
+        print 'CREATE TABLE not implemented.'
 
     def _parseDrop(self, tokens):
         """
-        Subparser - handles all DROP requests.
+        Subparser, handle all DROP requests.
         """
         t = tokens[0].upper()
         l = len(tokens)
         if t == 'DATABASE':
             if l != 2:
-                raise QAdmException(QAdmException.BAD_CMD,  
-                                    "unexpected number of arguments")
-            try:
-                self._impl.dropDb(tokens[1])
-            except CssException as e:
-                raise QAdmException(QAdmException.CSSERR, 
-                                    "Failed to drop database '" + tokens[1] + 
-                                    ", error was: ", e.__str__())
+                raise QAdmException(QAdmStatus.ERR_BAD_CMD,  
+                                    ["unexpected number of arguments"])
+            self._impl.dropDb(tokens[1])
         elif t == 'TABLE':
-            raise QAdmException(QAdmException.NOT_IMPLEMENTED, "DROP TABLE")
-
+            print "drop table not implemented" 
         elif t == 'EVERYTHING':
-            try:
-                self._impl.dropEverything()
-            except CssException as e:
-                raise QAdmException(QAdmException.CSSERR, 
-                             "Failed to drop everything, error was: ", e.__str__())
+            self._impl.dropEverything()
         else:
-            raise QAdmException(QAdmException.BAD_CMD)
-
-    def _parseDump(self, tokens):
-        """
-        Subparser, handle all DUMP requests.
-        """
-        t = tokens[0].upper()
-        dest = tokens[1] if len(tokens) > 1 else None
-        if t == 'EVERYTHING':
-            self._impl.dumpEverything(dest)
-        else:
-            raise QAdmException(QAdmException.BAD_CMD)
-
-    def _justExit(self, tokens):
-        raise SystemExit()
+            print "DROP '%s' is not supported yet." % t
 
     def _printHelp(self, tokens):
         """
@@ -274,9 +231,9 @@ class CommandParser(object):
 
     def _parseRelease(self, tokens):
         """
-        Subparser - handles all RELEASE requests.
+        Subparser, handle all RELEASE requests.
         """
-        raise QAdmException(QAdmException.NOT_IMPLEMENTED, "RELEASE")
+        print 'RELEASE not implemented.'
 
     def _parseShow(self, tokens):
         """
@@ -285,16 +242,18 @@ class CommandParser(object):
         t = tokens[0].upper()
         if t == 'DATABASES':
             self._impl.showDatabases()
+        elif t == 'EVERYTHING':
+            self._impl.showEverything()
         else:
-            raise QAdmException(QAdmException.BAD_CMD)
+            print "SHOW '%s' is not supported yet." % t
 
     def _createDb(self, dbName, configFile):
         """
         Create database through config file.
         """
-        self._logger.info("Creating db '%s' using config '%s'" % \
-                              (dbName, configFile))
+        print "Creating db '%s' using config '%s'" % (dbName, configFile)
         options = self._fetchOptionsFromConfigFile(configFile)
+        print "options are:", options
         self._impl.createDb(dbName, options)
 
     def _fetchOptionsFromConfigFile(self, fName):
@@ -302,10 +261,8 @@ class CommandParser(object):
         Read config file <fName> for createDb and createTable command, and return
         key-value pair dictionary (flat, e.g., sections are ignored.)
         """
-        if not os.path.exists(fName):
-            raise QAdmException(QAdmException.CONFIG_NOT_FOUND, fName)
         if not os.access(fName, os.R_OK):
-            raise QAdmException(QAdmException.AUTH_PROBLEM, fName)
+            raise QAdmException(QAdmStatus.ERR_CONFIG_NOT_FOUND, [fName])
         config = ConfigParser.ConfigParser()
         config.optionxform = str # case sensitive
         config.read(fName)
@@ -321,71 +278,91 @@ class CommandParser(object):
         parameters.
         """
         if not opts.has_key("clusteredIndex"):
-            self._logger.info(
-                "param 'clusteredIndex' not found, will use default: ''")
+            print("param 'clusteredIndex' not found, will use default: ''")
             opts["clusteredIndex"] = ''
         if not opts.has_key("partitioning"):
-            self._logger.info(
-                "param 'partitioning' not found, will use default: 0")
-            opts["partitioning"] = "0"
-        if not opts.has_key("objIdIndex"):
-            self._logger.info(
-                "param 'objIdIndex' not found, will use default: ''")
-            opts["objIdIndex"] = ''
+            print("param 'partitioning' not found, will use default: off")
+            opts["partitioning"] = "off"
+        if not opts.has_key("objectIdIndex"):
+            print("param 'objectIdIndex' not found, will use default: ''")
+            opts["objectIdIndex"] = ''
         # these are required options for createDb
         _crDbOpts = { 
-            "db_info": ("dbGroup", 
+            "db_info": ("level", 
                         "partitioning", 
                         "partitioningStrategy")}
         _crDbPSOpts = {
-            "sphBox": ("nStripes", 
-                       "nSubStripes", 
-                       "overlap")}
+            "sphBox":("nStripes", 
+                      "nSubStripes", 
+                      "overlap")}
+        # validate the options
+        self._validateKVOptions(opts, _crDbOpts, _crDbPSOpts, "db_info")
         return opts
 
-    def _processTbOptions(self, opts):
-        """
-        Validate options used by createTable, add default values for missing
-        parameters.
-        """
-        if not opts.has_key("clusteredIndex"):
-            self._logger.info(
-                "param 'clusteredIndex' not found, will use default: ''")
-            opts["clusteredIndex"] = "NULL"
-        if not opts.has_key("isRefMatch"):
-            self._logger.info("param 'isRefMatch' not found, will use default: No")
-            opts["isRefMatch"] = "No"
-        # these are required options for createTable
-        _crTbOpts = {
-            "table_info":("tableName",
-                          "partitioning",
-                          "schemaFile",
-                          "clusteredIndex",
-                          "isRefMatch",
-                          "isView")}
-        _crTbPSOpts = {
-            "sphBox":("overlap",
-                      "lonColName", 
-                      "latColName")}
-        return opts
+    def _validateKVOptions(self, x, xxOpts, psOpts, whichInfo):
+        if not x.has_key("partitioning"):
+            raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, ["partitioning"])
 
+        partOff = x["partitioning"] == "off" 
+        for (theName, theOpts) in xxOpts.items():
+            for o in theOpts:
+                # skip optional parameters
+                if o == "partitioning":
+                    continue
+                # if partitioning is "off", partitioningStrategy does not 
+                # need to be specified 
+                if not (o == "partitiongStrategy" and partOff):
+                    continue
+                if not x.has_key(o):
+                    raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, [o])
+        if partOff:
+            return
+        if x["partitioning"] != "on":
+            raise QAdmException(QAdmStatus.ERR_WRONG_PARAM_VALUE,
+                                ["partitioning", 
+                                "got: '%s'" % x["partitioning"],
+                                "expecting: on/off"])
 
-    def _initLogging(self):
-        self._logger = logging.getLogger("QADM")
-        kL = os.getenv('KAZOO_LOGGING')
-        if kL: logging.getLogger("kazoo.client").setLevel(int(kL))
+        if not x.has_key("partitioningStrategy"):
+            raise QAdmException(QAdmStatus.ERR_MISSING_PARAM,
+                                ["partitioningStrategy",
+                                "(required if partitioning is on)"])
+
+        psFound = False
+        for (psName, theOpts) in psOpts.items():
+            if x["partitioningStrategy"] == psName:
+                psFound = True
+                # check if all required options are specified
+                for o in theOpts:
+                    if not x.has_key(o):
+                        raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, [o])
+
+                # check if there are any unrecognized options
+                for o in x:
+                    if not ((o in xxOpts[whichInfo]) or (o in theOpts)):
+                        # skip non required, these are not in xxOpts/theOpts
+                        if whichInfo=="db_info" and o=="clusteredIndex":
+                            continue
+                        if whichInfo=="db_info" and o=="objectIdIndex":
+                            continue
+                        if whichInfo=="table_info" and o=="partitioningStrategy":
+                            continue
+                        raise QAdmException(QAdmStatus.ERR_WRONG_PARAM, [o])
+        if not psFound:
+            raise QAdmException(QAdmStatus.ERR_WRONG_PARAM,
+                                [x["partitioningStrategy"]])
 
 ####################################################################################
-class WordCompleter(object):
+class VolcabCompleter:
     """
     Set auto-completion for commonly used words.
     """
-    def __init__(self, words):
-        self.words = words
+    def __init__(self, volcab):
+        self.volcab = volcab
 
     def complete(self, text, state):
-        results = [word+' ' for word in self.words 
-                   if word.startswith(text.upper())] + [None]
+        results = [x+' ' for x in self.volcab 
+                   if x.startswith(text.upper())] + [None]
         return results[state]
 
 readline.parse_and_bind("tab: complete")
@@ -394,70 +371,19 @@ words = ['CONFIG',
          'DATABASE',
          'DATABASES',
          'DROP',
-         'DUMP',
          'INTO',
          'LIKE',
          'LOAD',
          'RELEASE',
          'SHOW',
          'TABLE']
-completer = WordCompleter(words)
+completer = VolcabCompleter(words)
 readline.set_completer(completer.complete)
 
 ####################################################################################
-
-def getOptions():
-    usage = \
-"""
-
-NAME
-        qserv_admin - the client program for Central State System (CSS)
-
-SYNOPSIS
-        qserv_admin [OPTIONS]
-
-OPTIONS
-   -v
-        Verbosity threshold. Logging messages which are less severe than
-        provided will be ignored. Expected value range: 0=50: (CRITICAL=50,
-        ERROR=40, WARNING=30, INFO=20, DEBUG=10). Default value is ERROR.
-   -f
-        Name of the output log file. If not specified, the output goes to stderr.
-   -c
-        Connection information.
-"""
-
-    parser = ArgumentParser(usage=usage)
-    parser.add_argument("-v", dest="verbT", default=40) # default is ERROR
-    parser.add_argument("-f", dest="logF", default=None)
-    parser.add_argument("-c", dest="connI", default = '127.0.0.1:2181')
-                      # default for kazoo (single node, local))
-    args = parser.parse_args()
-    if args.verbT > 50: args.verbT = 50
-    if args.verbT <  0: args.verbT = 0
-    return (args.verbT, args.logF, args.connI)
-
-####################################################################################
 def main():
-
-    (verbosity, logFileName, connInfo) = getOptions()
-
-    # configure logging
-    if logFileName:
-        logging.basicConfig(
-            filename=logFileName,
-            format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
-            datefmt='%m/%d/%Y %I:%M:%S', 
-            level=verbosity)
-    else:
-        logging.basicConfig(
-            format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
-            datefmt='%m/%d/%Y %I:%M:%S', 
-            level=verbosity)
-
-    # wait for commands and process
     try:
-        CommandParser(connInfo).receiveCommands()
+        CommandParser().receiveCommands()
     except(KeyboardInterrupt, SystemExit, EOFError):
         print ""
 
