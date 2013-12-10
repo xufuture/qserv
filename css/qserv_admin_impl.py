@@ -42,11 +42,11 @@ class QservAdminImpl(object):
     QservAdminImpl implements functions needed by qserv_admin client program.
     """
 
-    ### __init__ ###################################################################
+    ################################################################################
     def __init__(self):
         self._cssI = CssInterface()
 
-    ### createDb ###################################################################
+    ################################################################################
     def createDb(self, dbName, options):
         """
         Create database (options specified explicitly).
@@ -82,7 +82,7 @@ class QservAdminImpl(object):
             return ERROR
         return SUCCESS
 
-    ### createDbLike ###############################################################
+    ################################################################################
     def createDbLike(self, dbName, dbName2):
         """
         Create database using an existing database as a template.
@@ -113,7 +113,7 @@ class QservAdminImpl(object):
         self._createDbLockSection(dbP)
         return SUCCESS
 
-    ### dropDb #####################################################################
+    ################################################################################
     def dropDb(self, dbName):
         """
         Drop database.
@@ -126,7 +126,7 @@ class QservAdminImpl(object):
         self._cssI.delete("/DATABASES/%s" % dbName, recursive=True)
         return SUCCESS
 
-    ### showDatabases ##############################################################
+    ################################################################################
     def showDatabases(self):
         """
         Show list of databases registered for Qserv use.
@@ -136,21 +136,21 @@ class QservAdminImpl(object):
         else:
             print self._cssI.getChildren("/DATABASES")
 
-    ### showEverything #############################################################
+    ################################################################################
     def showEverything(self):
         """
         Dumps entire metadata in CSS to stdout. Very useful for debugging.
         """
         self._cssI.printAll()
 
-    ### dropEverything #############################################################
+    ################################################################################
     def dropEverything(self):
         """
         Delete everything from the CSS (very dangerous, very useful for debugging.)
         """
         self._cssI.deleteAll("/")
 
-    ### _dbExists PRIVATE ##########################################################
+    ################################################################################
     def _dbExists(self, dbName):
         """
         Check if the database exists.
@@ -160,7 +160,7 @@ class QservAdminImpl(object):
         p = "/DATABASES/%s" % dbName
         return self._cssI.exists(p)
 
-    ### _copyKeyValue PRIVATE ######################################################
+    ################################################################################
     def _copyKeyValue(self, dbDest, dbSrc, theList):
         """
         Copy items specified in theList from dbSrc to dbDest.
@@ -175,7 +175,7 @@ class QservAdminImpl(object):
             v = self._cssI.get("%s/%s" % (dbS, x))
             self._cssI.create("%s/%s" % (dbD, x), v)
 
-    ### _createDbLockSection PRIVATE ###############################################
+    ################################################################################
     def _createDbLockSection(self, dbP):
         """
         Create key/values related to "LOCK" for a given db path.
