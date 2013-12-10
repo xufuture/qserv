@@ -191,12 +191,14 @@ class CssInterface(object):
     ### delete #####################################################################
     def delete(self, k, recursive=False):
         """
-        Delete a key, including all children if recursive flag is set. Raise
-        exception if the key doesn't exist.
+        Delete a key, including all children if recursive flag is set.
 
         @param k         Key.
         @param recursive Flag. If set, all existing children nodes will be
-                         deleted.  
+                         deleted.
+
+        Delete a key, including all children if recursive flag is set. Raise
+        exception if the key doesn't exist.
         """
         if not self._zk.exists(k):
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
