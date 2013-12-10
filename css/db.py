@@ -136,7 +136,7 @@ class Db:
                           failure. There is a 5 sec sleep between each retry.
                           Default is one hour: 12*60 * 5 sec sleep
 
-        Initialize shared state. Raise exception if host/port AND socket are
+        Initialize shared state. Raise exception if both host/port AND socket are
         invalid.
         """
         if host is None and port is None and socketIsNone:
@@ -178,8 +178,7 @@ class Db:
     ################################################################################
     def _connectThroughSocket(self):
         """
-        Connect through socket, if that fails, and host/port is available, connect
-        through host/port.
+        Connect through socket. On failure, try connecting through host/port.
         """
         try:
             self._conn = MySQLdb.connect(user=self._user,
@@ -235,11 +234,13 @@ class Db:
     ################################################################################
     def connectToDb(self, dbName=None):
         """
+        Connect to database <dbName>, or if <dbName>, to the default database.
+
+        @param dbName     Database name.
+
         Connect to database <dbName>. If <dbName> is None, the default database
         name will be used. Connect to the server first if connection not open
         already.
-
-        @param dbName     Database name.
         """
         dbName = self._getDefaultDbNameIfNeeded(dbName)
         if self.checkIsConnectedToDb(dbName): return
@@ -287,13 +288,15 @@ class Db:
     ################################################################################
     def checkDbExists(self, dbName=None):
         """
-        Check if a database <dbName> exists. If it is None, the default database
-        name will be used. Connect to the server first if connection not open
-        already.
+        Check if database <dbName> exists, if <dbName> none, use default database.
 
         @param dbName     Database name.
 
         @return boolean   True if the database exists, False otherwise.
+
+        Check if a database <dbName> exists. If it is not set, the default database
+        name will be used. Connect to the server first if connection not open
+        already.
         """
         if dbName is None and self.getDefaultDbName() is None: return False
         dbName = self._getDefaultDbNameIfNeeded(dbName)
@@ -306,11 +309,13 @@ class Db:
     ################################################################################
     def createDb(self, dbName):
         """
+        Create database <dbName>.
+
+        @param dbName     Database name.
+
         Create a new database <dbName>. Raise exception if the database already
         exists. Connect to the server first if connection not open already. Note,
         it will not connect to that database and it will not make it default.
-
-        @param dbName     Database name.
         """
         if dbName is None: 
             raise DbException(DbException.ERR_INVALID_DB_NAME, ["<None>"])
@@ -322,12 +327,14 @@ class Db:
     ################################################################################
     def dropDb(self, dbName=None):
         """
+        Drop database <dbName>.
+
+        @param dbName     Database name.
+
         Drop a database <dbName>. If <dbName> is None, the default database name
         will be used. Raise exception if the database does not exists. Connect to
         the server first if connection not open already. Disconnect from the
         database if it is the default database.
-
-        @param dbName     Database name.
         """
         dbName = self._getDefaultDbNameIfNeeded(dbName)
         self.connectToMySQLServer()
@@ -340,14 +347,16 @@ class Db:
     ################################################################################
     def checkTableExists(self, tableName, dbName=None):
         """
-        Check if a <tableName> table exists in database <dbName>. If <dbName> is
-        None, the default database name will be used. Connect to the server first
-        if connection not open already.
+        Check if table <tableName> exists in database <dbName>.
 
         @param tableName  Table name.
         @param dbName     Database name.
 
         @return boolean   True if the table exists, False otherwise.
+
+        Check if table <tableName> exists in database <dbName>. If <dbName> is not
+        set, the default database name will be used. Connect to the server first if
+        connection not open already.
         """
         if dbName is None and self.getDefaultDbName() is None: return False
         dbName = self._getDefaultDbNameIfNeeded(dbName)
@@ -361,13 +370,15 @@ class Db:
     ################################################################################
     def createTable(self, tableName, tableSchema, dbName=None):
         """
-        Create a table <tableName>. If database <dbName> is None, the default
-        database name will be used. Connect to the server first if connection not
-        open already.
+        Create table <tableName> in database <dbName>.
 
         @param tableName   Table name.
         @param tableSchema Table schema starting with opening bracket.
         @param dbName      Database name.
+
+        Create a table <tableName> in database <dbName>. If database <dbName> is not
+        set, the default database name will be used. Connect to the server first if
+        connection not open already.
         """
         dbName = self._getDefaultDbNameIfNeeded(dbName)
         self.connectToMySQLServer()
@@ -378,12 +389,14 @@ class Db:
     ################################################################################
     def dropTable(self, tableName, dbName=None):
         """
-        Drop a table <tableName in a database <dbName>. If <dbName> is None, the
-        default database name will be used. Connect to the server first if
-        connection not open already.
+        Drop table <tableName> in database <dbName>. 
 
         @param tableName  Table name.
         @param dbName     Database name.
+
+        Drop table <tableName> in database <dbName>. If <dbName> is not set, the
+        default database name will be used. Connect to the server first if
+        connection not open already.
         """
         dbName = self._getDefaultDbNameIfNeeded(dbName)
         self.connectToMySQLServer()
@@ -427,7 +440,7 @@ class Db:
     ################################################################################
     def loadSqlScript(self, scriptPath, dbName):
         """
-        Load sql script from the file in <scriptPath> into the database <dbName>.
+        Load sql script from the file in <scriptPath> into database <dbName>.
 
         @param scriptPath Path the the SQL script.
         @param dbName     Database name.
@@ -487,15 +500,17 @@ class Db:
     ################################################################################
     def _execCommand(self, command, nRowsRet):
         """
-        Execute mysql command which return any number of rows. If this function
-        is called after mysqld was restarted, or if the connection timed out
-        because of long period of inactivity, the command will fail. This function
-        catches such problems and recovers by reconnecting and retrying.
+        Execute mysql command which return any number of rows.
 
         @param command    MySQL command.
         @param nRowsRet   Expected number of returned rows (valid: '0', '1', 'n').
 
         @return string Results from the query. Empty string if not results.
+
+        Execute mysql command which return any number of rows. If this function
+        is called after mysqld was restarted, or if the connection timed out
+        because of long period of inactivity, the command will fail. This function
+        catches such problems and recovers by reconnecting and retrying.
         """
         self.connectToMySQLServer()
         if self._conn is None:
@@ -528,13 +543,15 @@ class Db:
     ################################################################################
     def _getDefaultDbNameIfNeeded(self, dbName):
         """
-        Get valid dbName (the one passed, or default database name). If neither is
-        valid, raise exception.
+        Get valid dbName.
 
         @param dbName     Database name.
 
         @return string    Return <dbName> if it is valid, otherwise if the the
                           default database name if valid return it.
+
+        Get valid dbName (the one passed, or default database name). If neither is
+        valid, raise exception.
         """
         if dbName is not None: 
             return dbName
