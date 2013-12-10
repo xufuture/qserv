@@ -57,7 +57,7 @@ class QAdmException(Exception):
     ERR_CONFIG_NOT_FOUND        = 3002
     ERR_MISSING_PARAM           = 3003
     ERR_WRONG_PARAM             = 3004
-    ERR_WRONG_PARAM_VALUE       = 3005
+    ERR_WRONG_PARAM_VAL         = 3005
     ERR_INTERNAL                = 9999
 
     def __init__(self, errNo, extraMsgList=None):
@@ -71,12 +71,12 @@ class QAdmException(Exception):
         self._extraMsgList = extraMsgList
 
         self._errors = { 
-            ERR_BAD_CMD: ("Bad command, see HELP for details."),
-            ERR_CONFIG_NOT_FOUND: ("Config file not found."),
-            ERR_MISSING_PARAM: ("Missing parameter."),
-            ERR_WRONG_PARAM: ("Unrecognized parameter."),
-            ERR_WRONG_PARAM_VALUE: ("Unrecognized value for parameter."),
-            ERR_INTERNAL: "Internal error."
+            QAdmException.ERR_BAD_CMD: ("Bad command, see HELP for details."),
+            QAdmException.ERR_CONFIG_NOT_FOUND: ("Config file not found."),
+            QAdmException.ERR_MISSING_PARAM: ("Missing parameter."),
+            QAdmException.ERR_WRONG_PARAM: ("Unrecognized parameter."),
+            QAdmException.ERR_WRONG_PARAM_VAL: "Unrecognized value for parameter.",
+            QAdmException.ERR_INTERNAL: "Internal error."
         }
 
     def __str__(self):
@@ -89,14 +89,6 @@ class QAdmException(Exception):
         if self._extraMsgList is not None:
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
-
-    def __str__(self):
-        """
-        Return string representation of the error.
-
-        @return string  Error message string, including all optional messages.
-        """
-        return self._errNo
 
 ####################################################################################
 class CommandParser(object):
@@ -144,8 +136,8 @@ class CommandParser(object):
                 pos = sql.index(';')
                 try:
                     self._parse(sql[:pos])
-                except QAdmException as e1:
-                    print "ERROR: ", e1
+                except QAdmException as e:
+                    print "ERROR: ", e
                 sql = sql[pos+1:]
 
     def _parse(self, cmd):
@@ -190,13 +182,13 @@ class CommandParser(object):
             self._impl.createDb(dbName, options)
         elif l == 3:
             if tokens[1].upper() != 'LIKE':
-                raise QAdmException(QAdmStatus.ERR_BAD_CMD, 
+                raise QAdmException(QAdmException.ERR_BAD_CMD, 
                                     ["expected 'LIKE', found: '%s'" % tokens[1]])
             dbName = tokens[0]
             dbName2 = tokens[2]
             self._impl.createDbLike(dbName, dbName2)
         else:
-            raise QAdmException(QAdmStatus.ERR_BAD_CMD, 
+            raise QAdmException(QAdmException.ERR_BAD_CMD, 
                                 ["unexpected number of arguments"])
 
     def _parseCreateTable(self, tokens):
@@ -213,7 +205,7 @@ class CommandParser(object):
         l = len(tokens)
         if t == 'DATABASE':
             if l != 2:
-                raise QAdmException(QAdmStatus.ERR_BAD_CMD,  
+                raise QAdmException(QAdmException.ERR_BAD_CMD,  
                                     ["unexpected number of arguments"])
             self._impl.dropDb(tokens[1])
         elif t == 'TABLE':
@@ -262,7 +254,7 @@ class CommandParser(object):
         key-value pair dictionary (flat, e.g., sections are ignored.)
         """
         if not os.access(fName, os.R_OK):
-            raise QAdmException(QAdmStatus.ERR_CONFIG_NOT_FOUND, [fName])
+            raise QAdmException(QAdmException.ERR_CONFIG_NOT_FOUND, [fName])
         config = ConfigParser.ConfigParser()
         config.optionxform = str # case sensitive
         config.read(fName)
@@ -301,7 +293,7 @@ class CommandParser(object):
 
     def _validateKVOptions(self, x, xxOpts, psOpts, whichInfo):
         if not x.has_key("partitioning"):
-            raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, ["partitioning"])
+            raise QAdmException(QAdmException.ERR_MISSING_PARAM, ["partitioning"])
 
         partOff = x["partitioning"] == "off" 
         for (theName, theOpts) in xxOpts.items():
@@ -314,17 +306,17 @@ class CommandParser(object):
                 if not (o == "partitiongStrategy" and partOff):
                     continue
                 if not x.has_key(o):
-                    raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, [o])
+                    raise QAdmException(QAdmException.ERR_MISSING_PARAM, [o])
         if partOff:
             return
         if x["partitioning"] != "on":
-            raise QAdmException(QAdmStatus.ERR_WRONG_PARAM_VALUE,
+            raise QAdmException(QAdmException.ERR_WRONG_PARAM_VAL,
                                 ["partitioning", 
                                 "got: '%s'" % x["partitioning"],
                                 "expecting: on/off"])
 
         if not x.has_key("partitioningStrategy"):
-            raise QAdmException(QAdmStatus.ERR_MISSING_PARAM,
+            raise QAdmException(QAdmException.ERR_MISSING_PARAM,
                                 ["partitioningStrategy",
                                 "(required if partitioning is on)"])
 
@@ -335,7 +327,7 @@ class CommandParser(object):
                 # check if all required options are specified
                 for o in theOpts:
                     if not x.has_key(o):
-                        raise QAdmException(QAdmStatus.ERR_MISSING_PARAM, [o])
+                        raise QAdmException(QAdmException.ERR_MISSING_PARAM, [o])
 
                 # check if there are any unrecognized options
                 for o in x:
@@ -347,9 +339,9 @@ class CommandParser(object):
                             continue
                         if whichInfo=="table_info" and o=="partitioningStrategy":
                             continue
-                        raise QAdmException(QAdmStatus.ERR_WRONG_PARAM, [o])
+                        raise QAdmException(QAdmException.ERR_WRONG_PARAM, [o])
         if not psFound:
-            raise QAdmException(QAdmStatus.ERR_WRONG_PARAM,
+            raise QAdmException(QAdmException.ERR_WRONG_PARAM,
                                 [x["partitioningStrategy"]])
 
 ####################################################################################
