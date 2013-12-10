@@ -29,55 +29,55 @@ This is a unittest for the Central State System Interface class.
 
 import time
 import unittest
-from cssIFace import CssIFace, CssException
+from cssInterface import CssInterface, CssException
 
-class TestCssIFace(unittest.TestCase):
+class TestCssInterface(unittest.TestCase):
     def setUp(self):
-        self._iFace = CssIFace()
+        self._cssI = CssInterface()
 
     ################################################################################
     def testCreateGetSetDelete(self):
         # first delete everything
-        self._iFace.deleteAll("/unittest")
+        self._cssI.deleteAll("/unittest")
         # try second time, just for fun, that should work too
-        self._iFace.deleteAll("/unittest")
+        self._cssI.deleteAll("/unittest")
         # define key/value for testing
         k1 = "/unittest/my/first/testX"
         k2 = "/unittest/my/testY"
         v1 = "aaa"
         v2 = "AAA"
         # create the key
-        self._iFace.create(k1, v1)
+        self._cssI.create(k1, v1)
         # and another one
-        self._iFace.create(k2, v2)
+        self._cssI.create(k2, v2)
         # get the first one
-        v1a = self._iFace.get(k1)
+        v1a = self._cssI.get(k1)
         assert(v1a == v1)
         # try to create it again, this should fail
-        self.assertRaises(CssException, self._iFace.create, k1, v1)
+        self.assertRaises(CssException, self._cssI.create, k1, v1)
         # set the value to something else
-        self._iFace.set(k1, v2)
+        self._cssI.set(k1, v2)
         # get it
-        v2a = self._iFace.get(k1)
+        v2a = self._cssI.get(k1)
         assert(v2a == v2)
         # delete it
-        self._iFace.delete(k1)
+        self._cssI.delete(k1)
         # try deleting it again, this should fail
-        self.assertRaises(CssException, self._iFace.delete, k1)
+        self.assertRaises(CssException, self._cssI.delete, k1)
         # try to get it, it should fail
-        self.assertRaises(CssException, self._iFace.get, k1)
+        self.assertRaises(CssException, self._cssI.get, k1)
         # try to set it, it should fail
-        self.assertRaises(CssException, self._iFace.set, k1, v1)
+        self.assertRaises(CssException, self._cssI.set, k1, v1)
         # get the second key
-        v2a = self._iFace.get(k2)
+        v2a = self._cssI.get(k2)
         assert(v2a == v2)
         # print everything
-        self._iFace.printAll()
+        self._cssI.printAll()
 
     ################################################################################
     def testBadKeys(self):
         # try to create invalid key
-        self.assertRaises(CssException, self._iFace.create, "badKey", "v")
+        self.assertRaises(CssException, self._cssI.create, "badKey", "v")
 
     #def testPerformance(self):
     #    n = 10 # set it to something larger for real test...
@@ -85,7 +85,7 @@ class TestCssIFace(unittest.TestCase):
     #    for i in range(1,n+1):
     #        k = "unittest/node_%02i" % i
     #        # print ("creating %s --> %i" % (k, i))
-    #        self._iFace.create(k, str(i))
+    #        self._cssI.create(k, str(i))
     #    elapsed = time.clock()-start
     #    print "It took", elapsed, "to create", n, "entries"
 

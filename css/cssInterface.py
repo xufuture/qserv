@@ -45,7 +45,7 @@ from kazoo.client import KazooClient
 ####################################################################################
 class CssException(Exception):
     """
-    Exception raised by CSSIFace.
+    Exception raised by CSSInterface.
     """
 
     SUCCESS                     =    0
@@ -89,9 +89,9 @@ class CssException(Exception):
 ####################################################################################
 ####################################################################################
 ####################################################################################
-class CssIFace(object):
+class CssInterface(object):
     """
-    @brief CssIFace class defines the interface to the Central State Service CSS).
+    @brief CssInterface class defines interface to the Central State Service CSS).
     """
 
     ### __init__ ###################################################################
@@ -120,7 +120,7 @@ class CssIFace(object):
         p = self._chopLastSection(k)
         if p is None:
             raise CssException(CssException.ERR_KEY_INVALID, [k])
-        if self._verbose: print "cssIface: CREATE '%s' --> '%s'" % (k, v) 
+        if self._verbose: print "cssInterface: CREATE '%s' --> '%s'" % (k, v) 
         return self._zk.create(k, v, sequence=sequence, makepath=True)
 
     ### exists #####################################################################
@@ -146,7 +146,7 @@ class CssIFace(object):
         if not self._zk.exists(k):
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
         v, stat = self._zk.get(k)
-        if self._verbose: print "cssIface: GET '%s' --> '%s'" % (k, v)
+        if self._verbose: print "cssInterface: GET '%s' --> '%s'" % (k, v)
         return v
 
     ### getChildren ################################################################
@@ -160,7 +160,7 @@ class CssIFace(object):
         """
         if not self._zk.exists(k):
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
-        if self._verbose: print "cssIface: GETCHILDREN '%s'" % (k)
+        if self._verbose: print "cssInterface: GETCHILDREN '%s'" % (k)
         return self._zk.get_children(k)
 
     ### set ########################################################################
@@ -175,7 +175,7 @@ class CssIFace(object):
         if not self._zk.exists(k):
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
         v1, stat = self._zk.get(k)
-        if self._verbose: print "cssIface: SET '%s' --> '%s'" % (k, v)
+        if self._verbose: print "cssInterface: SET '%s' --> '%s'" % (k, v)
         self._zk.set(k, v)
         v2, stat = self._zk.get(k)
 
@@ -191,7 +191,7 @@ class CssIFace(object):
         """
         if not self._zk.exists(k):
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
-        if self._verbose: print "cssIface: DELETE '%s'" % (k)
+        if self._verbose: print "cssInterface: DELETE '%s'" % (k)
         self._zk.delete(k, recursive=recursive)
 
     ### deleteAll ##################################################################

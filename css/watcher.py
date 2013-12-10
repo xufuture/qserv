@@ -28,9 +28,9 @@ Database Watcher - runs on each Qserv node and maintains Qserv databases (create
 
 Known issues and todos:
  - mysql host/port user/passwd/socket
- - need to go through cssIFace interface, now bypassing it in two places:
-    - @self._iFace._zk.DataWatch
-    - @self._iFace._zk.ChildrenWatch
+ - need to go through cssInterface interface, now bypassing it in two places:
+    - @self._interface._zk.DataWatch
+    - @self._interface._zk.ChildrenWatch
  - considering implementing garbage collection for threads corresponding to
    deleted databases.
  - If all metadata is deleted when the watcher is running, the watcher will die
@@ -42,7 +42,7 @@ Known issues and todos:
 import time
 import threading
 
-from cssIFace import CssIFace
+from cssInterface import CssInterface
 from db import Db, DbException
 
 # This helps if kazoo needs to generate an errror, otherwise we'd get:
@@ -61,11 +61,11 @@ class OneDbWatcher(threading.Thread):
     """
 
     ### __init__ ###################################################################
-    def __init__(self, iFace, db, pathToWatch, verbose=True):
+    def __init__(self, cssI, db, pathToWatch, verbose=True):
         """
         Initialize shared state.
         """
-        self._iFace = iFace
+        self._cssI = cssI
         self._db = db
         self._path = pathToWatch
         self._dbName = pathToWatch[11:]
@@ -78,7 +78,7 @@ class OneDbWatcher(threading.Thread):
         """
         Watch for changes, and act upon them: create/drop databases.
         """
-        @self._iFace._zk.DataWatch(self._path, allow_missing_node=True)
+        @self._cssI._zk.DataWatch(self._path, allow_missing_node=True)
         def my_watcher_func(newData, stat):
             if newData == self._data: return
             if newData is None and stat is None:
@@ -114,17 +114,17 @@ class AllDbsWatcher(threading.Thread):
     """
 
     ### __init__ ###################################################################
-    def __init__(self, iFace, db):
+    def __init__(self, cssI, db):
         """
         Initialize shared data.
         """
-        self._iFace = iFace
+        self._cssI = cssI
         self._db = db
         self._path =  "/DATABASES"
         self._children = []
         self._watchedDbs = [] # registry of all watched databases
         # make sure the path exists
-        if not iFace.exists(self._path): iFace.create(self._path)
+        if not cssI.exists(self._path): cssI.create(self._path)
         threading.Thread.__init__(self)
 
     ### run ########################################################################
@@ -135,7 +135,7 @@ class AllDbsWatcher(threading.Thread):
         with an error: No handlers could be found for logger
         "kazoo.handlers.threading".
         """
-        @self._iFace._zk.ChildrenWatch(self._path)
+        @self._cssI._zk.ChildrenWatch(self._path)
         def my_watcher_func(children):
             # look for new entries
             for val in children:
@@ -145,7 +145,7 @@ class AllDbsWatcher(threading.Thread):
                     p2 = "%s/%s" % (self._path, val)
                     if p2 not in self._watchedDbs:
                         print "Setting a new watcher for '%s'" % p2
-                        w = OneDbWatcher(self._iFace, self._db, p2)
+                        w = OneDbWatcher(self._cssI, self._db, p2)
                         w.start()
                         self._watchedDbs.append(p2)
                     else:
@@ -161,10 +161,10 @@ class AllDbsWatcher(threading.Thread):
 ####################################################################################
 ####################################################################################
 def main():
-    iFace = CssIFace(verbose=True)
+    cssI = CssInterface(verbose=True)
     db = Db(host='localhost', port=3306, user='becla', passwd='') # FIXME
     try:
-        w1 = AllDbsWatcher(iFace, db)
+        w1 = AllDbsWatcher(cssI, db)
         w1.start()
         while True: time.sleep(60)
     except(KeyboardInterrupt, SystemExit):
