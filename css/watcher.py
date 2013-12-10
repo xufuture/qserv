@@ -50,9 +50,7 @@ from db import Db, DbException
 import logging
 logging.basicConfig()
 
-####################################################################################
-####################################################################################
-####################################################################################
+
 class OneDbWatcher(threading.Thread):
     """
     This class implements a database watcher. Each instance is responsible for
@@ -60,7 +58,6 @@ class OneDbWatcher(threading.Thread):
     It runs in a dedicated thread.
     """
 
-    ################################################################################
     def __init__(self, cssI, db, pathToWatch, verbose=True):
         """
         Initialize shared state.
@@ -73,7 +70,6 @@ class OneDbWatcher(threading.Thread):
         self._verbose = verbose
         threading.Thread.__init__(self)
 
-    ################################################################################
     def run(self):
         """
         Watch for changes, and act upon them: create/drop databases.
@@ -101,8 +97,6 @@ class OneDbWatcher(threading.Thread):
             self._data = newData
 
 ####################################################################################
-####################################################################################
-####################################################################################
 class AllDbsWatcher(threading.Thread):
     """
     This class implements watcher that watches for new znodes that represent
@@ -113,7 +107,6 @@ class AllDbsWatcher(threading.Thread):
     thread.
     """
 
-    ################################################################################
     def __init__(self, cssI, db):
         """
         Initialize shared data.
@@ -127,7 +120,6 @@ class AllDbsWatcher(threading.Thread):
         if not cssI.exists(self._path): cssI.create(self._path)
         threading.Thread.__init__(self)
 
-    ################################################################################
     def run(self):
         """
         Watch for new/deleted nodes, and act upon them: setup new watcher for each
@@ -155,8 +147,6 @@ class AllDbsWatcher(threading.Thread):
                     print "node '%s' was removed" % val
                     self._children.remove(val)
 
-####################################################################################
-####################################################################################
 ####################################################################################
 def main():
     cssI = CssInterface(verbose=True)

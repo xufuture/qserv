@@ -35,7 +35,6 @@ class TestCssInterface(unittest.TestCase):
     def setUp(self):
         self._cssI = CssInterface()
 
-    ################################################################################
     def testCreateGetSetDelete(self):
         # first delete everything
         self._cssI.deleteAll("/unittest")
@@ -74,7 +73,6 @@ class TestCssInterface(unittest.TestCase):
         # print everything
         self._cssI.printAll()
 
-    ################################################################################
     def testBadKeys(self):
         # try to create invalid key
         self.assertRaises(CssException, self._cssI.create, "badKey", "v")
@@ -90,8 +88,6 @@ class TestCssInterface(unittest.TestCase):
     #    print "It took", elapsed, "to create", n, "entries"
 
 
-####################################################################################
-####################################################################################
 ####################################################################################
 def main():
     unittest.main()
