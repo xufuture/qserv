@@ -14,7 +14,7 @@
 
 # Kazoo:
 #  1) python -V
-#  2)  mkdir -p localPython/lib/python<version>/site-packages
+#  2) mkdir -p localPython/lib/python<version>/site-packages
 #  3) export PYTHONPATH=<YourBasePath>/localPython/lib/python<version>/site-packages
 #  4) easy_install --prefix=<YourBasePath>/localPython kazoo
 
