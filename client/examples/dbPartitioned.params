@@ -1,7 +1,7 @@
 [db_info]
 
-# For LSST, this represents L1, L2, L3
-dbGroup: L2
+# Supported levels: L1, L2, L3
+level: L2
 
 # To turn on/off database partitioning, use:
 # partitioning: on|off
@@ -19,7 +19,7 @@ partitioning: on
 partitioningStrategy: sphBox
 
 [sphBox]
-nStripes: 85
-nSubStripes: 12
+nStripes: 10
+nSubStripes: 23
 overlap: 0.0001
-objIdIndex: objectId
+objectIdIndex: objectId
