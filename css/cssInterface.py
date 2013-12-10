@@ -40,9 +40,6 @@ import time
 from kazoo.client import KazooClient
 
 
-####################################################################################
-####################################################################################
-####################################################################################
 class CssException(Exception):
     """
     Exception raised by CSSInterface.
@@ -56,7 +53,6 @@ class CssException(Exception):
     ERR_NOT_IMPLEMENTED         = 9998
     ERR_INTERNAL                = 9999
 
-    ################################################################################
     def __init__(self, errNo, extraMsgList=None):
         """
         Initialize the shared data.
@@ -76,7 +72,6 @@ class CssException(Exception):
             CssException.ERR_INTERNAL: "Internal error."
         }
 
-    ################################################################################
     def __str__(self):
         """
         Return string representation of the error.
@@ -88,7 +83,6 @@ class CssException(Exception):
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
 
-    ################################################################################
     def getErrNo(self):
         """
         Return error number.
@@ -96,14 +90,11 @@ class CssException(Exception):
         return self._errNo
 
 ####################################################################################
-####################################################################################
-####################################################################################
 class CssInterface(object):
     """
     @brief CssInterface class defines interface to the Central State Service CSS).
     """
 
-    ################################################################################
     def __init__(self, verbose=True):
         """
         Initialize the interface.
@@ -114,7 +105,6 @@ class CssInterface(object):
         self._zk.start()
         self._verbose = verbose
 
-    ################################################################################
     def create(self, k, v='', sequence=False):
         """
         Add a new key/value entry. Create entire path as necessary. 
@@ -132,7 +122,6 @@ class CssInterface(object):
         if self._verbose: print "cssInterface: CREATE '%s' --> '%s'" % (k, v) 
         return self._zk.create(k, v, sequence=sequence, makepath=True)
 
-    ################################################################################
     def exists(self, k):
         """
         Check if a given key exists.
@@ -143,7 +132,6 @@ class CssInterface(object):
         """
         return self._zk.exists(k)
 
-    ################################################################################
     def get(self, k):
         """
         Get value for a key. Raise exception if the key doesn't exist.
@@ -158,7 +146,6 @@ class CssInterface(object):
         if self._verbose: print "cssInterface: GET '%s' --> '%s'" % (k, v)
         return v
 
-    ################################################################################
     def getChildren(self, k):
         """
         Get children for a given key. Raise exception if the key doesn't exist.
@@ -172,7 +159,6 @@ class CssInterface(object):
         if self._verbose: print "cssInterface: GETCHILDREN '%s'" % (k)
         return self._zk.get_children(k)
 
-    ################################################################################
     def set(self, k, v):
         """
         Set value for a given key. Raise exception if the key doesn't exist.
@@ -188,7 +174,6 @@ class CssInterface(object):
         self._zk.set(k, v)
         v2, stat = self._zk.get(k)
 
-    ################################################################################
     def delete(self, k, recursive=False):
         """
         Delete a key, including all children if recursive flag is set.
@@ -197,15 +182,13 @@ class CssInterface(object):
         @param recursive Flag. If set, all existing children nodes will be
                          deleted.
 
-        Delete a key, including all children if recursive flag is set. Raise
-        exception if the key doesn't exist.
+        Raise exception if the key doesn't exist.
         """
         if not self._zk.exists(k):
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
         if self._verbose: print "cssInterface: DELETE '%s'" % (k)
         self._zk.delete(k, recursive=recursive)
 
-    ################################################################################
     def deleteAll(self, p):
         """
         Delete everything recursively starting from a given point in the tree.
@@ -215,21 +198,18 @@ class CssInterface(object):
         if self._zk.exists(p):
             self._deleteOne(p)
 
-    ################################################################################
     def printAll(self):
         """
         Print entire contents to stdout.
         """
         self._printOne("/")
 
-    ################################################################################
     def startTransaction(self):
         """
         Start transaction and return transactionRequest instance.
         """
         return self._zk.transaction()
 
-    ################################################################################
     def _chopLastSection(self, k):
         """
         Remove substring after last '/', e.g. for /xx/y/abc it'll return /xx/y.
@@ -242,7 +222,6 @@ class CssInterface(object):
         if x == -1: return None
         return k[0:x]
 
-    ################################################################################
     def _printOne(self, p):
         """
         Print content of one znode. Note, this function is recursive.
@@ -268,7 +247,6 @@ class CssInterface(object):
             else:
                 self._printOne("%s/%s" % (p, child))
 
-    ################################################################################
     def _deleteOne(self, p):
         """
         Delete one znode. Note, this function is recursive.
