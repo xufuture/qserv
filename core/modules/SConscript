@@ -18,6 +18,16 @@ Qserv core code
 
 # Detect protobufs
 ##detect_deps.detectProtobufs()
+canBuild = True
+try:
+    import custom
+    print "using custom.py"
+    libVars = filter(lambda s: s.endswith("_LIB"), dir(custom))
+    libDirs = map(lambda i: getattr(custom, i), libVars)
+    env.Append(LIBPATH=libDirs)
+except:
+    pass
+
 
 # Handle debug
 debug = ARGUMENTS.get('debug', 0) 
@@ -30,15 +40,31 @@ if int(debug):
 # Must do all env modifiers here, otherwise SCons complains
 # about different environments used to build files in shared components.
 if not env.GetOption('clean'):
+    conf = env.Configure()
+    canBuild = canBuild and conf.CheckLibWithHeader("mysqlclient_r",
+                                                    "mysql/mysql.h",
+                                                    language="C++", 
+                                                    autoadd=0)
+    conf.Finish()
     detect.addExtern(env, ARGUMENTS.get('extern', None))
-    detect.setXrootd(env)
+    if detect.setXrootd(env): 
+        canBuild = canBuild and detect.checkXrdPosix(env)
+    else: canBuild = False
     env.Append(CPPPATH=[os.getcwd()]) # top level
     env.Append(CPPPATH=[env['PROTOC_INC']])
 
     env.Append(CPPFLAGS=["-D_FILE_OFFSET_BITS=64", "-fPIC"])
     env.Append(CPPPATH=env["PROTOC_INC"])
     env.Append(CPPPATH=["modules"])
+    
+if not canBuild:
+    raise StandardError("can't build")
 
+# all modules
+allModules = """control czar global log merger meta mysql obsolete 
+                parser proto qana qdisp qproc query util 
+                wbase wconfig wcontrol wdb wsched 
+                xrdc xrdfs xrdoss""".split()
 
 
 # Products
@@ -62,10 +88,11 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                       boost_signals""".split(),
                                'SHLIBPREFIX' : ''}
                }
+# modules used in shProducts
 modList = [m for m in chain(*map(lambda d: d['mods'], 
                                 shProducts.values()))] 
-
 libProducts = dict(izip(modList, repeat(None)))
+
 # libDepName = "extLibs"
 # def getLibDeps(mName):
 #     try:
@@ -85,7 +112,7 @@ extraTgts = {}
 def getTgts(mName):
     scriptPath = os.path.join(mName, "SConscript")
     if env.Glob(scriptPath): # os.access is faulty with VariantDir 
-        tgts = SConscript(os.path.join(mName, "SConscript"),
+        tgts = SConscript(scriptPath,
                           exports={'env': env, 'extraTgts': extraTgts})
         return tgts
     else:
@@ -101,19 +128,31 @@ def findLibs(libList):
             return boostChecker.getLibName(libName)
         else: return libName
     return map(cheapCheckLib, libList)
+hasMysql = detect.checkMySql2(env)
 
 def makeSharedObjectCC(env, ccFile):
     if str(ccFile).endswith(".cc"): return env.SharedObject(ccFile)
     else: return ccFile
 
+def getTests(mName):
+    scriptPath = os.path.join(mName, "SConscript.test")
+    if env.Glob(scriptPath): 
+        tests = SConscript(scriptPath, exports={'env': env, 
+                                                'libProducts': libProducts})
+        return tgts
+    else:
+        return None
 ########################################################################
 ## Real work now.
 ########################################################################
 
 # Gather up source files
-for mod in libProducts:
-    objs = getTgts(mod)
-    libProducts[mod] = objs
+#for mod in libProducts:
+#    objs = getTgts(mod)
+#    libProducts[mod] = objs
+for mod in allModules:
+    libProducts[mod] = getTgts(mod)
+
 
 # Compute shlib targets 
 for (pkg, opts) in shProducts.items():
@@ -138,13 +177,26 @@ for (pkg, opts) in shProducts.items():
         env.SharedLibrary(pkg + ".so", srcs, LIBS=extLibs)
         
 # Install targets
-
 # Tests
+
+
 # module tests
 for m in libProducts.keys():
+    tgts = getTests(m)
+    if tgts: print tgts
+if False:
     testCc = env.Glob(m+'/test*cc')
     for t in testCc:
         (path,f) = os.path.split(str(t))
+        (pName, ext) = os.path.splitext(f)
+        dep = env.Glob(os.path.join(path, pName + ".depend"))
+        depList = []
+        if dep:
+            v = env.Variables(dep[0])
+            print v
+            for line in open(dep[0]).readlines():
+                print "["+line+"]"
+                #depList.append(env.Glob(os.path.join(path, 
         # FIXME
         #p = env.Program(f+"bin", [t] + libProducts[m] + )
 #

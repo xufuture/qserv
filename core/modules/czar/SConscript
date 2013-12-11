@@ -16,12 +16,13 @@ depends = ['control/transaction.h',
            'util/Substitution.h',
            'query/Constraint.h',
            'qdisp/ChunkMeta.h',
-           'qdisp/ChunkSpec.h',
+           'qproc/ChunkSpec.h',
            'merger/TableMerger.h',
            'meta/ifaceMeta.h']
 depends = map(lambda f: env.File("../"+f), depends)
 
 localCpppath = env['CPPPATH']
+if type(localCpppath) == type(""): localCpppath = [localCpppath]
 localCpppath.append(distutils.sysconfig.get_python_inc())
 swigged = env.SharedObject(source="masterLib.i",
                            SWIGFLAGS=['-python', '-c++', '-Iinclude'],

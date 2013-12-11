@@ -35,7 +35,7 @@
 #include <stdexcept>
 
 #include "util/common.h"
-#include "qdisp/ChunkQuerySpec.h"
+#include "qproc/ChunkQuerySpec.h"
 #include "proto/worker.pb.h"
 
 namespace qMaster=lsst::qserv::master;

@@ -36,16 +36,16 @@
 #include <string>
 #include <antlr/NoViableAltException.hpp>
 
-#include "lsst/qserv/master/ChunkMeta.h"
-#include "lsst/qserv/master/ifaceMeta.h"
-#include "lsst/qserv/master/MetadataCache.h"
-#include "lsst/qserv/master/QsRestrictor.h"
-#include "lsst/qserv/master/QueryContext.h"
-#include "lsst/qserv/master/QuerySession.h"
-#include "lsst/qserv/master/ParseException.h"
-#include "lsst/qserv/master/SelectParser.h"
-#include "lsst/qserv/master/SelectStmt.h"
-#include "lsst/qserv/master/Constraint.h"
+#include "qdisp/ChunkMeta.h"
+#include "meta/ifaceMeta.h"
+#include "meta/MetadataCache.h"
+#include "query/QsRestrictor.h"
+#include "query/QueryContext.h"
+#include "qproc/QuerySession.h"
+#include "parser/ParseException.h"
+#include "parser/SelectParser.h"
+#include "query/SelectStmt.h"
+#include "query/Constraint.h"
 
 using lsst::qserv::master::ChunkMeta;
 using lsst::qserv::master::ChunkSpec;

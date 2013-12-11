@@ -27,7 +27,7 @@
   * @author Daniel L. Wang, SLAC
   */
 
-#include "qdisp/ChunkSpec.h"
+#include "qproc/ChunkSpec.h"
 #include <iterator>
 #include <cassert>
 #include <stdexcept>

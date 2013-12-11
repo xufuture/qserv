@@ -47,12 +47,12 @@
 #include "xrdc/xrdfile.h"
 #include "control/dispatcher.h"
 #include "control/thread.h"
-#include "xrdc/xrootd.h"
+#include "util/xrootd.h"
 #include "control/SessionManager.h"
 #include "control/AsyncQueryManager.h"
-#include "qdisp/ChunkSpec.h"
+#include "qproc/ChunkSpec.h"
 #include "qproc/QuerySession.h"
-#include "lsst/qserv/QservPath.hh"
+#include "global/QservPath.hh"
 #include "qproc/TaskMsgFactory2.h"
 #include <sstream>
 

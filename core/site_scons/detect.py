@@ -97,6 +97,38 @@ def checkMySql(env, Configure):
             + " or find multithreaded mysql lib(mysqlclient_r)"
     # MySQL support not found or inadequate.
     return None
+def checkMySql2(env):
+    """Checks for MySQL includes and libraries in the following directories:
+    * each prefix in searchRoots (lib/, lib64/, include/)
+    * a built MySQL directory specified by the env var MYSQL_ROOT
+    Must pass Configure class from SCons
+    """
+    if os.environ.has_key('MYSQL_ROOT'):
+        mysqlRoots = [os.environ['MYSQL_ROOT']]
+        env.Prepend(CPPPATH=[os.path.join(mysqlRoots[0], "include")])
+        # Look for mysql sub-directories. lib64 is important on RH/Fedora
+        searchLibs = filter(os.path.exists, 
+                            [os.path.join(r, lb, "mysql") 
+                             for r in mysqlRoots for lb in ["lib","lib64"]])
+        if searchLibs:
+            env.Prepend(LIBPATH=searchLibs)
+        pass
+
+    conf = env.Configure()
+    if conf.CheckLibWithHeader("mysqlclient_r", "mysql/mysql.h",
+                                   language="C++", autoadd=0):
+        if conf.CheckDeclaration("mysql_next_result", 
+                                 "#include <mysql/mysql.h>","c++" ):
+            conf.Finish()
+            return True
+        else:
+            print >> sys.stderr, "mysqlclient too old. (check MYSQL_ROOT)."
+    else:
+        print >> sys.stderr, "Could not locate MySQL headers (mysql/mysql.h)"\
+            + " or find multithreaded mysql lib(mysqlclient_r)"
+    # MySQL support not found or inadequate.
+    return None
+
 
 def guessMySQL(env):
     """Guesses the detected mysql dependencies based on the environment.
@@ -237,17 +269,40 @@ def checkAddMySql(conf):
         print >> sys.stderr, "multithreaded MySQL (mysqlclient_r)"
     return found
 
-def checkAddXrdPosix(conf):
+null_source_file = """
+int main(int argc, char **argv) {
+        return 0;
+}
+"""
+
+def checkLibs(context, libList):
+    lastLIBS = context.env['LIBS']
+    context.Message('Checking for %s...' % ",".join(libList))
+    context.env.Append(LIBS=libList)
+    result = context.TryLink(null_source_file, '.cc')
+    context.Result(result)
+    context.env.Replace(LIBS=lastLIBS)
+    return result
+
+def checkXrdPosix(env, autoadd=0):
+    libList = "XrdUtils XrdClient XrdPosix XrdPosixPreload".split()
+    conf = env.Configure(custom_tests={
+            'CheckLibs' : lambda c: checkLibs(c,libList)})
     def require(conf, libName):
-        if not conf.CheckLib(libName, language="C++"):
+        if not conf.CheckLib(libName, language="C++", autoadd=autoadd):
             print >> sys.stderr, "Could not find %s lib" % (libName)
             return False
         return True
-    found = (require(conf, "XrdUtils") and 
-             require(conf, "XrdClient") and 
-             require(conf, "XrdPosix") and
-             require(conf, "XrdPosixPreload"))
+
+    found = conf.CheckLibs()
+
+    if False:
+        found = (require(conf, "XrdUtils") and 
+                 require(conf, ["XrdUtils","XrdClient"]) and 
+                 require(conf, "XrdPosix") and
+                 require(conf, "XrdPosixPreload"))
     found = found and conf.CheckCXXHeader("XrdPosix/XrdPosixLinkage.hh")
+    conf.Finish()
     if not found:
         print >> sys.stderr, "Missing at least one xrootd lib/header"
     return found
@@ -271,7 +326,6 @@ def setXrootd(env):
     conf = env.Configure()
     
     haveInc = conf.CheckCXXHeader(hdrName)
-    conf.Finish()
     if not haveInc:
         pList = env.Dump("CPPPATH") # Dumped returns a stringified list
 
@@ -282,13 +336,19 @@ def setXrootd(env):
             path = os.path.join(p, "xrootd")
             if os.access(os.path.join(path, hdrName), os.R_OK):
                 env.Append(CPPPATH=[path])
-                return
-        raise StandardError("Xrootd includes not found")
-    pass
+                haveInc = conf.CheckCXXHeader(hdrName)
+        conf.Finish()
+        if not haveInc: 
+            raise StandardError("Xrootd includes not found")
+    return haveInc
     
 
 ########################################################################
 # dependency propagation tools
+        
+
+
+### Obsolete
 def importDeps(env, f):
     post = {}
     fName = f+".deps"
