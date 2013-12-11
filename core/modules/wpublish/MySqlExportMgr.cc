@@ -20,7 +20,7 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 // MySqlExportMgr implementation.
-#include "xrdfs/MySqlExportMgr.h"
+#include "wpublish/MySqlExportMgr.h"
 #include <sstream>
 #include <iostream>
 #include <boost/regex.hpp>

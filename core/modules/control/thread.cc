@@ -34,7 +34,7 @@
 #include "log/Logger.h"
 #include "xrdc/xrdfile.h"
 #include "control/thread.h"
-#include "xrdc/xrootd.h"
+#include "util/xrootd.h"
 #include "merger/TableMerger.h"
 
 // Xrootd

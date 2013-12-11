@@ -36,7 +36,7 @@
 #include <sstream>
 #include <sys/time.h>
 #include "XrdSys/XrdSysLogger.hh"
-#include "xrdfs/MySqlExportMgr.h"
+#include "wpublish/MySqlExportMgr.h"
 #include "xrdfs/XrdName.h"
 
 using namespace lsst::qserv::worker;

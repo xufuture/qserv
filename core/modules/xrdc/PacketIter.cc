@@ -26,7 +26,7 @@
 // reduce buffering and disk usage, theoretically improving overall
 // latency. 
 
-#include "util/PacketIter.h"
+#include "xrdc/PacketIter.h"
 #include "xrdc/xrdfile.h"
 #include "log/Logger.h"
 

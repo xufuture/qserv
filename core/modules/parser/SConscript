@@ -4,6 +4,8 @@ Import('extraTgts')
 import os
 #import export_deps
 
+myDeps = filter(lambda i: not str(i).startswith("test"), env.Glob("*.cc"))
+
 # Construct proto env (add ANTLR Builder)
 glib=File('DmlSQL2.g')
 
@@ -20,4 +22,5 @@ extraTgts['antlrHdrs'] = antlrHdrs
 #print "ANTLR srcs=", map(str, antlrSrcs)
 #print "ANTLR hdrs=", antlrHdrs
 # Ignore output antlr .txt files for now.
-Return('antlrSrcs')
+outs = antlrSrcs + myDeps
+Return('outs')
