@@ -26,7 +26,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "qdisp/ChunkQuerySpec.h"
+#include "qproc/ChunkQuerySpec.h"
 #include <algorithm>
 #include <iterator>
 #include <iostream>

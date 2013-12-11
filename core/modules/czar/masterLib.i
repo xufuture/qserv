@@ -37,7 +37,7 @@ Access to the classes from the qserv_master library
 #include "merger/mergeTypes.h"
 #include "util/Substitution.h"
 #include "qdisp/ChunkMeta.h"
-#include "qdisp/ChunkSpec.h"
+#include "qproc/ChunkSpec.h"
 #include "merger/TableMerger.h"
 #include "util/common.h"
 #include "meta/ifaceMeta.h"%}
@@ -119,7 +119,7 @@ namespace std {
 %include "util/Substitution.h"
 %include "query/Constraint.h"
 %include "qdisp/ChunkMeta.h"
-%include "qdisp/ChunkSpec.h"
+%include "qproc/ChunkSpec.h"
 %include "merger/TableMerger.h"
 %include "meta/ifaceMeta.h"
 

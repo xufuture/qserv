@@ -40,9 +40,9 @@
 
 // Package
 #include "qdisp/ChunkQuery.h"
-#include "xrdc/xrootd.h"
 #include "control/AsyncQueryManager.h"
 #include "util/PacketIter.h"
+#include "util/xrootd.h"
 #include "control/DynamicWorkQueue.h"
 
 // Namespace modifiers

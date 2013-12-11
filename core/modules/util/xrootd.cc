@@ -26,7 +26,7 @@
 #include <openssl/md5.h>
 #include <sstream>
 #include "boost/format.hpp"
-#include "xrdc/xrootd.h"
+#include "util/xrootd.h"
 
 namespace qMaster = lsst::qserv::master;
 

@@ -33,8 +33,8 @@
 #include <boost/shared_ptr.hpp>
 
 #include "query/Constraint.h"
-#include "qdisp/ChunkQuerySpec.h"
-#include "qdisp/ChunkSpec.h"
+#include "qproc/ChunkQuerySpec.h"
+#include "qproc/ChunkSpec.h"
 
 #include "qana/QueryPlugin.h"
 #include "merger/mergeTypes.h"

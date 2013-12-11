@@ -36,7 +36,7 @@
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include "qdisp/ChunkSpec.h"
+#include "qproc/ChunkSpec.h"
 #include "query/QueryTemplate.h"
 
 namespace lsst { 

@@ -6,12 +6,13 @@
 import glob, os, re, sys
 from itertools import chain, izip, repeat
 import SCons.Util
+import detect # Qserv dep detector
 ##import detect_deps
 env = Environment(tools=["default", "protoc", "antlr"])
 
 # Describe what your package contains here.
 env.Help("""
-Qserv common code
+Qserv core code
 """)
 
 # Detect protobufs
@@ -23,36 +24,44 @@ print "debug is", debug
 if int(debug):
     print "Debug build requested."
     env.Append(CCFLAGS = '-g')
-def findXrd():
-    """replace with real version soon"""
-    return "/u1/lsst/xrootd-inst/include/xrootd"
 
 # Environment
-env.Append(CPPPATH=[os.getcwd()]) # top level
-env.Append(CPPPATH=[findXrd()])
-env.Append(CPPPATH=[env['PROTOC_INC']])
-env.Append(CPPFLAGS=["-D_FILE_OFFSET_BITS=64", "-fPIC"])
+if not env.GetOption('clean'):
+    detect.addExtern(env, ARGUMENTS.get('extern', None))
+    env.Append(CPPPATH=[os.getcwd()]) # top level
+    env.Append(CPPPATH=[env['PROTOC_INC']])
+    detect.setXrootd(env)
+    env.Append(CPPFLAGS=["-D_FILE_OFFSET_BITS=64", "-fPIC"])
+
+# Build dir
+bldDir = ARGUMENTS.get('bld', None)
+if bldDir:
+    env.VariantDir(bldDir, ".")
+    env.Append(variant_dir=bldDir)
+
 # Products
-
-products = { "xrdfs" : """-lssl -lcrypto 
-                       -lboost_regex -lboost_thread -lboost_signals
-                       -lXrdSys -lXrdServer -lXrdClient -lXrdOfs -lXrdSfs -lXrdUtils
-                       proto xrdfs""" ,
-             "xrdoss" : """-lXrdSys -lXrdServer -lXrdClient -lXrdOfs -lXrdSfs -lXrdUtils
-
- """}
-shProducts = { "xrdfs" : """proto xrdfs 
-                            wbase wconfig wcontrol wdb wsched
-                            log global
-                         """.split(),
-               "xrdoss" : "xrdoss".split(),
-               "_masterlib" : """czar parser query
-                                 log merger meta mysql obsolete
-                                 qana qdisp qproc util xrdc""".split()
+shProducts = { "xrdfs" : {'mods' : """proto xrdfs 
+                                      wbase wconfig wcontrol wdb wsched
+                                      log global""".split(),
+                          'libs' : """ssl crypto 
+                                      boost_regex boost_thread 
+                                      boost_signals
+                                      XrdSys XrdServer XrdClient
+                                      XrdOfs XrdSfs XrdUtils""".split()},
+      
+               "xrdoss" : {'mods' : ["xrdoss"],
+                           'libs' : """ssl crypto""".split()},
+               "_masterlib" : {'mods' : """czar parser query
+                                           log merger meta mysql util xrdc
+                                           obsolete
+                                           qana qdisp qproc""".split(),
+                               'libs' : """ssl crypto 
+                                      boost_regex boost_thread 
+                                      boost_signals""".split() }
                }
-modList = [m for m in chain(*shProducts.values())]
+modList = [m for m in chain(*map(lambda d: d['mods'], 
+                                shProducts.values()))] 
 
-libProducts = dict(izip(["proto", "xrdoss","xrdfs"], repeat(None)))
 libProducts = dict(izip(modList, repeat(None)))
 mRoot = "."
 libDepName = "extLibs"
@@ -79,21 +88,45 @@ def getTgts(mName):
         #print "No targets for %s, using glob" % mName
         return Glob(os.path.join(mRoot, mName, "*.cc"))
 
+boostChecker = detect.BoostChecker(env)
+def findLibs(libList):
+    def cheapCheckLib(libName):
+        if libName.startswith("boost"):
+            return boostChecker.getLibName(libName)
+        else: return libName
+    return map(cheapCheckLib, libList)
+
+########################################################################
+## Real work now.
+########################################################################
+
+# Gather up source files
 for mod in libProducts:
     objs = getTgts(mod)
     libProducts[mod] = objs
-    
-for (pkg, moddeps) in shProducts.items():
+
+# Compute shlib targets 
+for (pkg, opts) in shProducts.items():
     srcs = []
     libs = []
-    for m in moddeps: # Visit modules and compose union of LIBS
-        libs.append(getLibDeps(m))
-        srcs.append(libProducts[m])
+    for m in opts['mods']: # Visit modules and compose union of LIBS
+        libs.extend(getLibDeps(m))
+        prods = libProducts[m]
+        srcs.extend(prods)
         pass
-    env.Append(LIBS=libs)    
-    env.SharedLibrary(pkg + ".so", srcs)
+    
+    # eliminate dupes for srcs and libs
+    libs = [a for a in set(libs)]
+    srcs = [a for a in set(srcs)]
+    env.Append(LIBS=libs)
+    #extLibFlags = ["-l"+lib for lib in findLibs(opts['libs'])]
+    extLibs = [lib for lib in findLibs(opts['libs'])]
 
+    env.SharedLibrary(pkg + ".so", srcs, LIBS=extLibs)
 
+# Install targets
+
+# Tests
 
 #
 # Build/install things
