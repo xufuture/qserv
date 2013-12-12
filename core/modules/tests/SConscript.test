@@ -1,0 +1,19 @@
+# -*- python -*-
+Import("env")
+Import("libProducts")
+import glob
+import itertools
+
+programs = []
+
+# deps on other modules
+modDeps = """merger util mysql xrdc""".split() 
+deps = itertools.chain(map(lambda m: libProducts[m], modDeps))
+deps = map(lambda i:i, deps) # un-chain
+myDeps = filter(lambda i: not str(i).startswith("test"), env.Glob("*.cc"))
+extDeps = "boost_regex mysqlclient_r boost_thread-mt crypto XrdPosix XrdPosixPreload XrdClient XrdUtils".split()
+p = env.Program(["testIter.cc"] + deps, LIBS=extDeps)
+
+programs.append(p)
+
+Return('programs')

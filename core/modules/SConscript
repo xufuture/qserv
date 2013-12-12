@@ -62,7 +62,7 @@ if not canBuild:
 
 # all modules
 allModules = """control czar global log merger meta mysql obsolete 
-                parser proto qana qdisp qproc query util 
+                parser proto qana qdisp qproc query tests util 
                 wbase wconfig wcontrol wdb wsched 
                 xrdc xrdfs xrdoss""".split()
 
