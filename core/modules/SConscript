@@ -75,18 +75,24 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                       boost_regex boost_thread 
                                       boost_signals
                                       XrdSys XrdServer XrdClient
-                                      XrdOfs XrdSfs XrdUtils""".split()},
+                                      XrdOfs XrdSfs XrdUtils""".split(),
+                          'distDir' : 'lib'},
       
                "xrdoss" : {'mods' : ["xrdoss"],
-                           'libs' : """ssl crypto""".split()},
-               "_masterlib" : {'mods' : """czar parser query
+                           'libs' : """ssl crypto""".split(),
+                           'distDir' : 'lib'
+                           },
+               "_masterLib" : {'mods' : """czar control parser query
                                            log merger meta mysql util xrdc
-                                           obsolete
+                                           obsolete proto
                                            qana qdisp qproc""".split(),
-                               'libs' : """ssl crypto 
+                               'libs' : """ssl crypto antlr
+                                      mysqlclient_r protobuf
+                                      XrdPosix XrdPosixPreload XrdUtils
                                       boost_regex boost_thread 
                                       boost_signals""".split(),
-                               'SHLIBPREFIX' : ''}
+                               'SHLIBPREFIX' : '',
+                               'distDir' : 'lsst/qserv/master'}
                }
 # modules used in shProducts
 modList = [m for m in chain(*map(lambda d: d['mods'], 
@@ -109,6 +115,8 @@ def getSrcs(mName):
     return map(lambda s: os.path.join(mName, s), srcs)
 
 extraTgts = {}
+extraTgts['dist'] = []
+
 def getTgts(mName):
     scriptPath = os.path.join(mName, "SConscript")
     if env.Glob(scriptPath): # os.access is faulty with VariantDir 
@@ -171,14 +179,25 @@ for (pkg, opts) in shProducts.items():
     #extLibFlags = ["-l"+lib for lib in findLibs(opts['libs'])]
     extLibs = [lib for lib in findLibs(opts['libs'])]
     if opts.has_key('SHLIBPREFIX'):
-        env.SharedLibrary(pkg + ".so", srcs, LIBS=extLibs,
-                          SHLIBPREFIX=opts['SHLIBPREFIX'])
+        out = env.SharedLibrary(pkg + ".so", srcs, LIBS=extLibs,
+                                SHLIBPREFIX=opts['SHLIBPREFIX'])
     else:
-        env.SharedLibrary(pkg + ".so", srcs, LIBS=extLibs)
+        out = env.SharedLibrary(pkg + ".so", srcs, LIBS=extLibs)
+    extraTgts['dist'].append((opts['distDir'], out))
+
+#Runner wrapper
+import runner
+f = runner.WrapperScript(env, "qsEnv.sh")
+extraTgts['dist'].append(('bin', f))
         
 # Install targets
-# Tests
+distDir = 'dist'
+for (path, f) in extraTgts['dist']:
+    print "REally installing:", f
+    env.Install(os.path.join(distDir, path), f)
 
+
+# Tests
 
 # module tests
 for m in libProducts.keys():
