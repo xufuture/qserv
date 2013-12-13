@@ -56,28 +56,35 @@ extraTgts["masterLib.py"] = pySwig
 
 
 
-def installToDist(env, targetDir, pathList, extras):
-    pyDir = os.path.join(targetDir, *pathList)
+def markForInstall(env, pathList, extras):
+    pyDir = os.path.join(*pathList)
     srcPyDir = os.path.join(*pathList)
 
     # install py files
     for s in env.Glob(os.path.join(srcPyDir,"*.py")):
-        print "Installing ", s
+        #print "Installing ", s
         if s.name == "argv.py": continue # workaround Scons missing argv.py
-        env.Alias("install", env.Install(pyDir, s))
+        extraTgts['dist'].append((pyDir, s))
+        #env.Alias("install", env.Install(pyDir, s))
     for s in extras:
-        env.Install(pyDir, s)
+        print "Installing: ", pyDir, s
+        extraTgts['dist'].append((pyDir, s))
+        #env.Install(pyDir, s)
     # touch init files
     for p in range(1,len(pathList)):
-        plist = [targetDir] + pathList[:p] + ["__init__.py"]
+        plist = pathList[:p] + ["__init__.py"]
         fname = os.path.join(*plist)
-        open(fname, "w").close()
+        print "touching fname",fname
+        f = env.Command(fname, None, [Touch("$TARGET")])
+        
+        extraTgts['dist'].append((os.path.join(*pathList[:p]), f))
 distDir = "../dist"
 distTgts = [swigged, pySwig]
-installToDist(env, distDir, ["lsst","qserv","master"], distTgts)
+markForInstall(env, ["lsst","qserv","master"], distTgts)
 
 for f in env.Glob("bin/*py"):
-    env.Install(distDir, f)
+    extraTgts['dist'].append(('bin', f))
+    #env.Install(distDir, f)
 
 extraTgts["czarPy"] = distTgts
 Return('tgt')
