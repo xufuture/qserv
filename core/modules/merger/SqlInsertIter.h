@@ -33,7 +33,7 @@
 #include <boost/regex.hpp>
 
 // Pkg
-#include "util/PacketIter.h"
+#include "xrdc/PacketIter.h"
 
 namespace lsst {
 namespace qserv {

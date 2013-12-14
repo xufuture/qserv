@@ -61,24 +61,29 @@ if not canBuild:
 
 # all modules
 allModules = """control czar global log merger meta mysql obsolete
-                parser proto qana qdisp qproc query tests util
-                wbase wconfig wcontrol wdb wsched
+                parser proto proxy qana qdisp qproc query tests util
+                wbase wconfig wcontrol wdb wpublish wsched
                 xrdc xrdfs xrdoss""".split()
 
-
+# Dependencies to fix:
+# packetiter in util depends on xrdc, util shouldn't depend on anything
 # Products
 shProducts = { "xrdfs" : {'mods' : """proto xrdfs
-                                      wbase wconfig wcontrol wdb wsched
+                                      mysql util
+                                      wbase wconfig wcontrol wdb 
+                                      wpublish wsched
                                       log global""".split(),
-                          'libs' : """ssl crypto
+                          'libs' : """ssl crypto mysqlclient_r protobuf
                                       boost_regex boost_thread
                                       boost_signals
                                       XrdSys XrdServer XrdClient
                                       XrdOfs XrdSfs XrdUtils""".split(),
                           'distDir' : 'lib'},
 
-               "xrdoss" : {'mods' : ["xrdoss"],
-                           'libs' : """ssl crypto""".split(),
+               "xrdoss" : {'mods' : """log mysql obsolete util wbase wconfig
+                                       xrdoss wpublish""".split(),
+                           'libs' : """boost_regex boost_signals boost_thread 
+                                       mysqlclient_r ssl crypto""".split(),
                            'distDir' : 'lib'
                            },
                "_masterLib" : {'mods' : """czar control parser query
@@ -183,7 +188,6 @@ for (pkg, opts) in shProducts.items():
     extraTgts['dist'].append((opts['distDir'], out))
 
 #Runner wrapper
-
 import runner
 print extraTgts["PYTHONPATH"]
 env["PYTHONPATH"] = extraTgts["PYTHONPATH"]

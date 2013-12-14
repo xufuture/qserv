@@ -27,7 +27,7 @@
 #include <string>
 #include <cstring>
 #include "merger/SqlInsertIter.h"
-#include "util/PacketIter.h"
+#include "xrdc/PacketIter.h"
 
 namespace test = boost::test_tools;
 using lsst::qserv::master::PacketIter;
