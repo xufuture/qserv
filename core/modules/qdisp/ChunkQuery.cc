@@ -41,7 +41,7 @@
 // Package
 #include "qdisp/ChunkQuery.h"
 #include "control/AsyncQueryManager.h"
-#include "util/PacketIter.h"
+#include "xrdc/PacketIter.h"
 #include "util/xrootd.h"
 #include "control/DynamicWorkQueue.h"
 

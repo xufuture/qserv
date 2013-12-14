@@ -29,7 +29,7 @@
 
 #include "xrdfs/MySqlFsDirectory.h"
 #include "xrdfs/MySqlFsFile.h"
-#include "xrdfs/MySqlExportMgr.h"
+#include "wpublish/MySqlExportMgr.h"
 #include "wdb/QueryRunner.h"
 #include "wconfig/Config.h"
 #include "wcontrol/Service.h"

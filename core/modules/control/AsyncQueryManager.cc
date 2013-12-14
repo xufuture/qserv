@@ -43,7 +43,7 @@
 #include "util/Timer.h"
 #include "qproc/QuerySession.h"
 #include "util/WorkQueue.h"
-#include "util/PacketIter.h"
+#include "xrdc/PacketIter.h"
 
 // Namespace modifiers
 using boost::make_shared;
