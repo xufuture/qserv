@@ -1,7 +1,7 @@
-# 
+#
 # LSST Data Management System
 # Copyright 2012-2013 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -9,33 +9,33 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 # detect_deps.py handles dependency detection for Qserv software
 
-import SCons 
+import SCons
 import os, subprocess, sys
 
 def detectProtobufs():
     """Checks for protobufs support (in the broadest sense)
-    If PROTOC, PROTOC_INC and PROTOC_LIB do not exist as environment 
+    If PROTOC, PROTOC_INC and PROTOC_LIB do not exist as environment
     variables, try to autodetect a system-installed ProtoBufs and set the
-    environment variable accordingly. No other values are modified or 
+    environment variable accordingly. No other values are modified or
     returned."""
 
     if not (os.environ.has_key("PROTOC")
-            and os.environ["PROTOC_INC"] 
+            and os.environ["PROTOC_INC"]
             and os.environ["PROTOC_LIB"]):
         try:
-            output = subprocess.Popen(["protoc", "--version"], 
+            output = subprocess.Popen(["protoc", "--version"],
                                       stdout=subprocess.PIPE).communicate()[0]
             guessRoot = "/usr"
             incPath = os.path.join([guessRoot]
@@ -49,21 +49,21 @@ def detectProtobufs():
             print """
 Can't continue without Google Protocol Buffers.
 Make sure PROTOC, PROTOC_INC, and PROTOC_LIB env vars are set.
-e.g., PROTOC=/usr/local/bin/protoc 
-      PROTOC_INC=/usr/local/include 
+e.g., PROTOC=/usr/local/bin/protoc
+      PROTOC_INC=/usr/local/include
       PROTOC_LIB=/usr/local/lib"""
             raise StandardError("FATAL ERROR: Can't build protocol without ProtoBufs")
         pass
     # Print what we're using.
     print "Protocol buffers using protoc=%s with include=%s and lib=%s" %(
-        os.environ["PROTOC"], os.environ["PROTOC_INC"], 
+        os.environ["PROTOC"], os.environ["PROTOC_INC"],
         os.environ["PROTOC_LIB"])
 
 def composeEnv(env, roots=[], includes=[], libs=[]):
     assert env
     env.Append(CPPPATH=includes)
     env.Append(CPPPATH=[os.path.join(x, "include") for x in roots])
-    env.Append(LIBPATH=libs)    
+    env.Append(LIBPATH=libs)
     env.Append(LIBPATH=[os.path.join(x, "lib") for x in roots])
     return env
 
@@ -77,8 +77,8 @@ def checkMySql(env, Configure):
         mysqlRoots = [os.environ['MYSQL_ROOT']]
         env.Prepend(CPPPATH=[os.path.join(mysqlRoots[0], "include")])
         # Look for mysql sub-directories. lib64 is important on RH/Fedora
-        searchLibs = filter(os.path.exists, 
-                            [os.path.join(r, lb, "mysql") 
+        searchLibs = filter(os.path.exists,
+                            [os.path.join(r, lb, "mysql")
                              for r in mysqlRoots for lb in ["lib","lib64"]])
         if searchLibs:
             env.Prepend(LIBPATH=searchLibs)
@@ -87,7 +87,7 @@ def checkMySql(env, Configure):
     conf = Configure(env)
     if conf.CheckLibWithHeader("mysqlclient_r", "mysql/mysql.h",
                                    language="C++"):
-        if conf.CheckDeclaration("mysql_next_result", 
+        if conf.CheckDeclaration("mysql_next_result",
                                  "#include <mysql/mysql.h>","c++" ):
             return conf.Finish()
         else:
@@ -107,8 +107,8 @@ def checkMySql2(env):
         mysqlRoots = [os.environ['MYSQL_ROOT']]
         env.Prepend(CPPPATH=[os.path.join(mysqlRoots[0], "include")])
         # Look for mysql sub-directories. lib64 is important on RH/Fedora
-        searchLibs = filter(os.path.exists, 
-                            [os.path.join(r, lb, "mysql") 
+        searchLibs = filter(os.path.exists,
+                            [os.path.join(r, lb, "mysql")
                              for r in mysqlRoots for lb in ["lib","lib64"]])
         if searchLibs:
             env.Prepend(LIBPATH=searchLibs)
@@ -117,7 +117,7 @@ def checkMySql2(env):
     conf = env.Configure()
     if conf.CheckLibWithHeader("mysqlclient_r", "mysql/mysql.h",
                                    language="C++", autoadd=0):
-        if conf.CheckDeclaration("mysql_next_result", 
+        if conf.CheckDeclaration("mysql_next_result",
                                  "#include <mysql/mysql.h>","c++" ):
             conf.Finish()
             return True
@@ -132,8 +132,8 @@ def checkMySql2(env):
 
 def guessMySQL(env):
     """Guesses the detected mysql dependencies based on the environment.
-    Would be nice to reuse conf.CheckLib, but that doesn't report what 
-    actually got detected, just that it was available. This solution 
+    Would be nice to reuse conf.CheckLib, but that doesn't report what
+    actually got detected, just that it was available. This solution
     doesn't actually check beyond simple file existence.
     Returns (includepath, libpath, libname) """
     libName = "mysqlclient_r"
@@ -143,12 +143,12 @@ def guessMySQL(env):
                        [(p, os.path.join(p, libp + libName + libs))
                          for p in env["LIBPATH"]])
     assert foundLibs
-    foundIncs = filter(os.path.exists, 
-                       [os.path.join(p, "mysql/mysql.h") 
+    foundIncs = filter(os.path.exists,
+                       [os.path.join(p, "mysql/mysql.h")
                         for p in env["CPPPATH"]])
     assert foundIncs
     return (foundIncs[0], foundLibs[0][0], libName)
-    
+
 # Xrootd/Scalla search helper
 class XrdHelper:
     def __init__(self, roots):
@@ -177,7 +177,7 @@ class XrdHelper:
         if os.path.exists(neededFile):
             return p
         return None
-        
+
     def getXrdLibInc(self):
         for c in self.cands:
             (inc, lib) = (self._findXrdInc(c), self._findXrdLibCmake(c))
@@ -212,18 +212,18 @@ def checkBoostHeader(conf, pkgList=[]):
         if not conf.CheckCXXHeader('boost/' + p + '.hpp'):
             return False
     return True
-    
+
 def checkAddBoost(conf, lib):
     """Check for a boost lib with various suffixes and add it to a Configure
     if found. (e.g. 'boost_regex' or 'boost_thread')"""
-    return (conf.CheckLib(lib + "-gcc34-mt", language="C++") 
-            or conf.CheckLib(lib + "-gcc41-mt", language="C++") 
+    return (conf.CheckLib(lib + "-gcc34-mt", language="C++")
+            or conf.CheckLib(lib + "-gcc41-mt", language="C++")
             or conf.CheckLib(lib + "-mt", language="C++")
-            or conf.CheckLib(lib, language="C++") 
+            or conf.CheckLib(lib, language="C++")
             )
 
 def checkAddAntlr(conf):
-    found = conf.CheckLibWithHeader("antlr", "antlr/AST.hpp", 
+    found = conf.CheckLibWithHeader("antlr", "antlr/AST.hpp",
                                     language="C++")
     if not found:
         print >> sys.stderr, "Could not locate libantlr or antlr/AST.hpp"
@@ -243,17 +243,17 @@ class BoostChecker:
             def checkSuffix(sfx):
                 return conf.CheckLib(libName + sfx, language="C++", autoadd=0)
             for i in self.suffixes:
-                if checkSuffix(i): 
+                if checkSuffix(i):
                     self.suffix = i
                     break
-            if self.suffix == None: 
+            if self.suffix == None:
                 print "Can't find boost_" + libName
                 assert self.suffix != None
             conf.Finish()
             pass
         return libName + self.suffix
     pass # BoostChecker
-        
+
 
 def checkAddSslCrypto(conf):
     found =  conf.CheckLib("ssl") and conf.CheckLib("crypto")
@@ -262,7 +262,7 @@ def checkAddSslCrypto(conf):
     return found
 
 def checkAddMySql(conf):
-    found = conf.CheckLibWithHeader("mysqlclient_r", "mysql/mysql.h", 
+    found = conf.CheckLibWithHeader("mysqlclient_r", "mysql/mysql.h",
                                     language="C++")
     if not found:
         print >> sys.stderr, "Could not find  mysql/mysql.h or",
@@ -297,8 +297,8 @@ def checkXrdPosix(env, autoadd=0):
     found = conf.CheckLibs()
 
     if False:
-        found = (require(conf, "XrdUtils") and 
-                 require(conf, ["XrdUtils","XrdClient"]) and 
+        found = (require(conf, "XrdUtils") and
+                 require(conf, ["XrdUtils","XrdClient"]) and
                  require(conf, "XrdPosix") and
                  require(conf, "XrdPosixPreload"))
     found = found and conf.CheckCXXHeader("XrdPosix/XrdPosixLinkage.hh")
@@ -324,7 +324,7 @@ def addExtern(env, externPaths):
 def setXrootd(env):
     hdrName = "XrdPosix/XrdPosixLinkage.hh"
     conf = env.Configure()
-    
+
     haveInc = conf.CheckCXXHeader(hdrName)
     if not haveInc:
         pList = env.Dump("CPPPATH") # Dumped returns a stringified list
@@ -338,37 +338,47 @@ def setXrootd(env):
                 env.Append(CPPPATH=[path])
                 haveInc = conf.CheckCXXHeader(hdrName)
         conf.Finish()
-        if not haveInc: 
+        if not haveInc:
             raise StandardError("Xrootd includes not found")
     return haveInc
-    
+
+
+def findMeta(env):
+    metaFiles = "../../meta/python/lsst/qserv/meta/*py"
+    files = env.Glob(metaFiles)
+    return files
+
 
 ########################################################################
-# dependency propagation tools
-        
+# custom.py mechanism
+########################################################################
+def importCustom(env, extraTgts):
+    try:
+        import custom
+    except:
+        return
+
+    print "using custom.py"
+    libVars = filter(lambda s: s.endswith("_LIB"), dir(custom))
+    libDirs = map(lambda i: getattr(custom, i), libVars)
+    env.Append(LIBPATH=libDirs)
+    ppVars = filter(lambda s: s.endswith("PYTHONPATH"), dir(custom))
+    ppDirs = map(lambda i: getattr(custom, i), ppVars)
+    existPp = os.getenv("PYTHONPATH", None)
+    if existPp: ppDirs.prepend(existPp)
+    pp = env.get("PYTHONPATH", [])
+    pp.extend(ppDirs)
+    extraTgts["PYTHONPATH"] = ppDirs
+    return custom
+
+def extractGeometry(custom):
+    geomLib = getattr(custom, "GEOMETRY", None)
+    if geomLib:
+        if os.access(geomLib, os.R_OK):
+            return geomLib
+        else:
+            print "Invalid GEOMETRY entry in custom.py"
+            Abort(1)
+    pass
 
 
-### Obsolete
-def importDeps(env, f):
-    post = {}
-    fName = f+".deps"
-    if os.access(fName, os.R_OK):
-        deps = eval(open(fName).read()) # import dep file directly
-        if "LIBS" in deps:
-            post["LIBS"] = deps.pop("LIBS")
-        #print "imported deps", deps
-        env.Append(**deps)
-    return post
-
-def mergeDict(d1, d2):
-    """Merge list values from d2 to d1"""
-    for k in d2:
-        if k in d1: d1[k].extend(d2[k])
-        else: d1[k] = d2[k]
-    return d1
-
-def checkLibsFromDict(conf, depDict, autoadd=1):
-    if "LIBS" in depDict:
-        for lib in depDict["LIBS"]:
-            conf.CheckLib(lib, language="C++", autoadd=autoadd)
-    return conf

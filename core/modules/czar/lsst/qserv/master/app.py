@@ -73,7 +73,6 @@ from lsst.qserv.master.geometry import SphericalBox
 from lsst.qserv.master.geometry import SphericalConvexPolygon, convexHull
 from lsst.qserv.master.db import TaskDb as Persistence
 from lsst.qserv.master.db import Db
-from lsst.qserv.master import protocol
 
 from lsst.qserv.meta.status import Status, QmsException
 from lsst.qserv.meta.client import Client
