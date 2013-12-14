@@ -18,19 +18,18 @@ Qserv core code
 
 # Detect protobufs
 ##detect_deps.detectProtobufs()
+extraTgts = {}
+extraTgts['dist'] = []
 canBuild = True
-try:
-    import custom
-    print "using custom.py"
-    libVars = filter(lambda s: s.endswith("_LIB"), dir(custom))
-    libDirs = map(lambda i: getattr(custom, i), libVars)
-    env.Append(LIBPATH=libDirs)
-except:
-    pass
-
+custom = detect.importCustom(env, extraTgts)
+geomLib = detect.extractGeometry(custom)
+if geomLib:
+    extraTgts['dist'].append(('lsst/qserv/master', env.File(geomLib)))
+metaFiles = detect.findMeta(env)
+for f in metaFiles: extraTgts['dist'].append(('lsst/qserv/meta', f))
 
 # Handle debug
-debug = ARGUMENTS.get('debug', 0) 
+debug = ARGUMENTS.get('debug', 0)
 print "debug is", debug
 if int(debug):
     print "Debug build requested."
@@ -43,11 +42,11 @@ if not env.GetOption('clean'):
     conf = env.Configure()
     canBuild = canBuild and conf.CheckLibWithHeader("mysqlclient_r",
                                                     "mysql/mysql.h",
-                                                    language="C++", 
+                                                    language="C++",
                                                     autoadd=0)
     conf.Finish()
     detect.addExtern(env, ARGUMENTS.get('extern', None))
-    if detect.setXrootd(env): 
+    if detect.setXrootd(env):
         canBuild = canBuild and detect.checkXrdPosix(env)
     else: canBuild = False
     env.Append(CPPPATH=[os.getcwd()]) # top level
@@ -56,28 +55,28 @@ if not env.GetOption('clean'):
     env.Append(CPPFLAGS=["-D_FILE_OFFSET_BITS=64", "-fPIC"])
     env.Append(CPPPATH=env["PROTOC_INC"])
     env.Append(CPPPATH=["modules"])
-    
+
 if not canBuild:
     raise StandardError("can't build")
 
 # all modules
-allModules = """control czar global log merger meta mysql obsolete 
-                parser proto qana qdisp qproc query tests util 
-                wbase wconfig wcontrol wdb wsched 
+allModules = """control czar global log merger meta mysql obsolete
+                parser proto qana qdisp qproc query tests util
+                wbase wconfig wcontrol wdb wsched
                 xrdc xrdfs xrdoss""".split()
 
 
 # Products
-shProducts = { "xrdfs" : {'mods' : """proto xrdfs 
+shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                       wbase wconfig wcontrol wdb wsched
                                       log global""".split(),
-                          'libs' : """ssl crypto 
-                                      boost_regex boost_thread 
+                          'libs' : """ssl crypto
+                                      boost_regex boost_thread
                                       boost_signals
                                       XrdSys XrdServer XrdClient
                                       XrdOfs XrdSfs XrdUtils""".split(),
                           'distDir' : 'lib'},
-      
+
                "xrdoss" : {'mods' : ["xrdoss"],
                            'libs' : """ssl crypto""".split(),
                            'distDir' : 'lib'
@@ -89,14 +88,14 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                'libs' : """ssl crypto antlr
                                       mysqlclient_r protobuf
                                       XrdPosix XrdPosixPreload XrdUtils
-                                      boost_regex boost_thread 
+                                      boost_regex boost_thread
                                       boost_signals""".split(),
                                'SHLIBPREFIX' : '',
                                'distDir' : 'lsst/qserv/master'}
                }
 # modules used in shProducts
-modList = [m for m in chain(*map(lambda d: d['mods'], 
-                                shProducts.values()))] 
+modList = [m for m in chain(*map(lambda d: d['mods'],
+                                shProducts.values()))]
 libProducts = dict(izip(modList, repeat(None)))
 
 # libDepName = "extLibs"
@@ -114,12 +113,10 @@ def getSrcs(mName):
     srcs = os.listdir(mName)
     return map(lambda s: os.path.join(mName, s), srcs)
 
-extraTgts = {}
-extraTgts['dist'] = []
 
 def getTgts(mName):
     scriptPath = os.path.join(mName, "SConscript")
-    if env.Glob(scriptPath): # os.access is faulty with VariantDir 
+    if env.Glob(scriptPath): # os.access is faulty with VariantDir
         tgts = SConscript(scriptPath,
                           exports={'env': env, 'extraTgts': extraTgts})
         return tgts
@@ -144,8 +141,8 @@ def makeSharedObjectCC(env, ccFile):
 
 def getTests(mName):
     scriptPath = os.path.join(mName, "SConscript.test")
-    if env.Glob(scriptPath): 
-        tests = SConscript(scriptPath, exports={'env': env, 
+    if env.Glob(scriptPath):
+        tests = SConscript(scriptPath, exports={'env': env,
                                                 'libProducts': libProducts})
         return tgts
     else:
@@ -162,15 +159,15 @@ for mod in allModules:
     libProducts[mod] = getTgts(mod)
 
 
-# Compute shlib targets 
+# Compute shlib targets
 for (pkg, opts) in shProducts.items():
     srcs = []
     for m in opts['mods']: # Visit modules and compose union of LIBS
         prods = libProducts[m]
         srcs.extend(prods)
         pass
-    
-    # Eliminate dupes for srcs and libs, and 
+
+    # Eliminate dupes for srcs and libs, and
     # convert .cc to SharedObject to prevent warning
     # (scons: warning: Two different environments)
     srcs = [makeSharedObjectCC(env, a) for a in set(srcs)]
@@ -186,10 +183,13 @@ for (pkg, opts) in shProducts.items():
     extraTgts['dist'].append((opts['distDir'], out))
 
 #Runner wrapper
+
 import runner
+print extraTgts["PYTHONPATH"]
+env["PYTHONPATH"] = extraTgts["PYTHONPATH"]
 f = runner.WrapperScript(env, "qsEnv.sh")
 extraTgts['dist'].append(('bin', f))
-        
+
 # Install targets
 distDir = 'dist'
 for (path, f) in extraTgts['dist']:
@@ -215,7 +215,7 @@ if False:
             print v
             for line in open(dep[0]).readlines():
                 print "["+line+"]"
-                #depList.append(env.Glob(os.path.join(path, 
+                #depList.append(env.Glob(os.path.join(path,
         # FIXME
         #p = env.Program(f+"bin", [t] + libProducts[m] + )
 #
@@ -224,14 +224,14 @@ if False:
 
 #####################################################################
 # Variant support
-#    VariantDir(bldDir, 'src')               
+#    VariantDir(bldDir, 'src')
 #    SConscript("src/SConscript.lib", variant_dir=bldDir,
 #               exports={'env' : expEnv, 'detect_deps' : detect_deps})
 
-# for d in Split("proto src tests doc"): 
+# for d in Split("proto src tests doc"):
 #     if os.path.isdir(d):
 #         try:
-#             SConscript(os.path.join(d, "SConscript"), 
+#             SConscript(os.path.join(d, "SConscript"),
 #                        exports={'env' : env})
 #         except Exception, e:
 #             print >> sys.stderr, "%s: %s" % (os.path.join(d, "SConscript"), e)
