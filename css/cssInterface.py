@@ -30,6 +30,8 @@ This module implements interface to the Central State System (CSS).
 Known issues and todos:
  - connection information for the Kazoo Client needs to be configurable.
  - recover from lost connection by reconnecting
+ - need to catch all exceptions that ZooKeeper and Kazoo might raise, see:
+   http://kazoo.readthedocs.org/en/latest/api/client.html
  - issue: watcher is currently using the "_zk", and bypasses the official API!
  - implement proper logging instead of print
 
@@ -112,7 +114,10 @@ class CssInterface(object):
 
         @param sequence  Sequence flag -- if set to True, a 10-digid, 0-padded
                          suffix (unique sequential number) will be added to the key.
+
         @return string   Real path to the just created node.
+
+        @raise     CssException if the key k already exists.
         """
         if self._verbose: print "cssInterface: CREATE '%s' --> '%s'" % (k, v) 
         try:
@@ -132,11 +137,13 @@ class CssInterface(object):
 
     def get(self, k):
         """
-        Get value for a key. Raise exception if the key doesn't exist.
+        Return value for a key.
 
         @param k   Key.
 
         @return string  Value for a given key. 
+
+        @raise     Raise CssException if the key doesn't exist.
         """
         try:
             v, stat = self._zk.get(k)
@@ -147,11 +154,13 @@ class CssInterface(object):
 
     def getChildren(self, k):
         """
-        Get children for a given key. Raise exception if the key doesn't exist.
+        Return the list of the children of the node k.
 
         @param k   Key.
 
-        @return    List_of_strings  A list of children for a given key. 
+        @return    List_of_children of the node k. 
+
+        @raise     Raise CssException if the key does not exists.
         """
         try:
             if self._verbose: print "cssInterface: GETCHILDREN '%s'" % (k)
@@ -165,6 +174,8 @@ class CssInterface(object):
 
         @param k  Key.
         @param v  Value.
+
+        @raise     Raise CssException if the key doesn't exist.
         """
         try:
             if self._verbose: print "cssInterface: SET '%s' --> '%s'" % (k, v)
@@ -180,7 +191,7 @@ class CssInterface(object):
         @param recursive Flag. If set, all existing children nodes will be
                          deleted.
 
-        Raise exception if the key doesn't exist.
+        @raise     Raise CssException if the key doesn't exist.
         """
         try:
             if self._verbose: print "cssInterface: DELETE '%s'" % (k)
@@ -191,25 +202,27 @@ class CssInterface(object):
     def deleteAll(self, p):
         """
         Delete everything recursively starting from a given point in the tree.
+        This can be used to wipe out everything. It is too dangerous to expose
+        to users, it'll be well hidden, or disabled when we move to production.
 
         @param p  Path.
+
+        Raise exception if the key doesn't exist.
         """
         if self._zk.exists(p):
             self._deleteOne(p)
 
     def printAll(self):
         """
-        Print entire contents to stdout.
+        Print entire contents to stdout. This is handy for debugging.
         """
         self._printOne("/")
 
     def _printOne(self, p):
         """
-        Print content of one znode. Note, this function is recursive.
+        Print content of one key/value to stdout. Note, this function is recursive.
 
         @param p  Path.
-
-        @return   string
         """
         children = None
         data = None

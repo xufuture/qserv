@@ -80,10 +80,6 @@ class TestCssInterface(unittest.TestCase):
         # print everything
         self._cssI.printAll()
 
-    def testBadKeys(self):
-        # try to create invalid key
-        self.assertRaises(CssException, self._cssI.create, "badKey", "v")
-
     #def testPerformance(self):
     #    n = 10 # set it to something larger for real test...
     #    start = time.clock()
