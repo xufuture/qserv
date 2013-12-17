@@ -60,7 +60,6 @@ class QservAdminImpl(object):
             return ERROR
         dbP = "/DATABASES/%s" % dbName
         ptP = None
-        t = self._cssI.startTransaction()
         try:
             self._cssI.create(dbP, "PENDING")
             ptP = self._cssI.create("/DATABASE_PARTITIONING/_", sequence=True)
@@ -73,7 +72,6 @@ class QservAdminImpl(object):
             self._cssI.create("%s/releaseStatus" % dbP,"UNRELEASED")
             self._cssI.create("%s/objIdIndex" % dbP, options["objectIdIndex"])
             self._createDbLockSection(dbP)
-            t.commit()
             self._cssI.set(dbP, "READY")
         except CssException as e:
             print "Failed to create database, error was: ", e
@@ -97,19 +95,17 @@ class QservAdminImpl(object):
             print "ERROR: db '%s' does not exist." % dbName2
             return ERROR
         dbP = "/DATABASES/%s" % dbName
-        t = self._cssI.startTransaction()
         try:
             self._cssI.create(dbP, "PENDING")
             self._copyKeyValue(dbName, dbName2, 
                                ("dbGroup", "partitioningId", 
                                 "releaseStatus", "objIdIndex"))
-            t.commit()
+            self._createDbLockSection(dbP)
             self._cssI.set(dbP, "READY")
         except CssException as e:
             print "Failed to create database, error was: ", e
             self._cssI.delete(dbP, recursive=True)
             return e.getErrNo()
-        self._createDbLockSection(dbP)
         return CssException.SUCCESS
 
     def dropDb(self, dbName):
