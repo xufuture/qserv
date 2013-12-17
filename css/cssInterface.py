@@ -116,9 +116,6 @@ class CssInterface(object):
         # check if the key exists
         if self._zk.exists(k):
             raise CssException(CssException.ERR_KEY_ALREADY_EXISTS, [k])
-        p = self._chopLastSection(k)
-        if p is None:
-            raise CssException(CssException.ERR_KEY_INVALID, [k])
         if self._verbose: print "cssInterface: CREATE '%s' --> '%s'" % (k, v) 
         return self._zk.create(k, v, sequence=sequence, makepath=True)
 
@@ -209,18 +206,6 @@ class CssInterface(object):
         Start transaction and return transactionRequest instance.
         """
         return self._zk.transaction()
-
-    def _chopLastSection(self, k):
-        """
-        Remove substring after last '/', e.g. for /xx/y/abc it'll return /xx/y.
-
-        @param k  Key.
-
-        @return string
-        """
-        x = k.rfind('/')
-        if x == -1: return None
-        return k[0:x]
 
     def _printOne(self, p):
         """
