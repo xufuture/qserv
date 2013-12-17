@@ -38,6 +38,7 @@ Known issues and todos:
 import time
 
 from kazoo.client import KazooClient
+from kazoo.exceptions import NodeExistsError, NoNodeError
 
 
 class CssException(Exception):
@@ -113,11 +114,11 @@ class CssInterface(object):
                          suffix (unique sequential number) will be added to the key.
         @return string   Real path to the just created node.
         """
-        # check if the key exists
-        if self._zk.exists(k):
-            raise CssException(CssException.ERR_KEY_ALREADY_EXISTS, [k])
         if self._verbose: print "cssInterface: CREATE '%s' --> '%s'" % (k, v) 
-        return self._zk.create(k, v, sequence=sequence, makepath=True)
+        try:
+            return self._zk.create(k, v, sequence=sequence, makepath=True)
+        except NodeExistsError:
+            raise CssException(CssException.ERR_KEY_ALREADY_EXISTS, [k])
 
     def exists(self, k):
         """
@@ -137,11 +138,12 @@ class CssInterface(object):
 
         @return string  Value for a given key. 
         """
-        if not self._zk.exists(k):
+        try:
+            v, stat = self._zk.get(k)
+            if self._verbose: print "cssInterface: GET '%s' --> '%s'" % (k, v)
+            return v
+        except NoNodeError:
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
-        v, stat = self._zk.get(k)
-        if self._verbose: print "cssInterface: GET '%s' --> '%s'" % (k, v)
-        return v
 
     def getChildren(self, k):
         """
@@ -151,10 +153,11 @@ class CssInterface(object):
 
         @return    List_of_strings  A list of children for a given key. 
         """
-        if not self._zk.exists(k):
+        try:
+            if self._verbose: print "cssInterface: GETCHILDREN '%s'" % (k)
+            return self._zk.get_children(k)
+        except NoNodeError:
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
-        if self._verbose: print "cssInterface: GETCHILDREN '%s'" % (k)
-        return self._zk.get_children(k)
 
     def set(self, k, v):
         """
@@ -163,13 +166,11 @@ class CssInterface(object):
         @param k  Key.
         @param v  Value.
         """
-        # check if the key exists
-        if not self._zk.exists(k):
+        try:
+            if self._verbose: print "cssInterface: SET '%s' --> '%s'" % (k, v)
+            self._zk.set(k, v)
+        except NoNodeError:
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
-        v1, stat = self._zk.get(k)
-        if self._verbose: print "cssInterface: SET '%s' --> '%s'" % (k, v)
-        self._zk.set(k, v)
-        v2, stat = self._zk.get(k)
 
     def delete(self, k, recursive=False):
         """
@@ -181,10 +182,11 @@ class CssInterface(object):
 
         Raise exception if the key doesn't exist.
         """
-        if not self._zk.exists(k):
+        try:
+            if self._verbose: print "cssInterface: DELETE '%s'" % (k)
+            self._zk.delete(k, recursive=recursive)
+        except NoNodeError:
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
-        if self._verbose: print "cssInterface: DELETE '%s'" % (k)
-        self._zk.delete(k, recursive=recursive)
 
     def deleteAll(self, p):
         """
@@ -201,12 +203,6 @@ class CssInterface(object):
         """
         self._printOne("/")
 
-    def startTransaction(self):
-        """
-        Start transaction and return transactionRequest instance.
-        """
-        return self._zk.transaction()
-
     def _printOne(self, p):
         """
         Print content of one znode. Note, this function is recursive.
@@ -215,22 +211,22 @@ class CssInterface(object):
 
         @return   string
         """
-        t = self.startTransaction()
         children = None
         data = None
         stat = None
-        if self.exists(p):
+        try:
             children = self._zk.get_children(p)
             data, stat = self._zk.get(p)
-        t.commit()
-
-        print p, "=", data
-        for child in children:
-            if p == "/":
-                if child != "zookeeper":
-                    self._printOne("%s%s" % (p, child))
-            else:
-                self._printOne("%s/%s" % (p, child))
+            print p, "=", data
+            for child in children:
+                if p == "/":
+                    if child != "zookeeper":
+                        self._printOne("%s%s" % (p, child))
+                else:
+                    self._printOne("%s/%s" % (p, child))
+        except NoNodeError:
+            print "Caught NoNodeError, someone deleted node just now"
+            None
 
     def _deleteOne(self, p):
         """
@@ -238,12 +234,15 @@ class CssInterface(object):
 
         @param p  Path.
         """
-        children = self._zk.get_children(p)
-        for child in children:
-            if p == "/":
-                if child != "zookeeper": # skip "/zookeeper"
-                    self._deleteOne("%s%s" % (p, child))
-            else:
-                self._deleteOne("%s/%s" % (p, child))
-        if p != "/": 
-            self._zk.delete(p)
+        try:
+            children = self._zk.get_children(p)
+            for child in children:
+                if p == "/":
+                    if child != "zookeeper": # skip "/zookeeper"
+                        self._deleteOne("%s%s" % (p, child))
+                else:
+                    self._deleteOne("%s/%s" % (p, child))
+            if p != "/": 
+                self._zk.delete(p)
+        except NoNodeError:
+            None

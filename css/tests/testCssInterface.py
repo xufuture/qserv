@@ -70,6 +70,13 @@ class TestCssInterface(unittest.TestCase):
         # get the second key
         v2a = self._cssI.get(k2)
         assert(v2a == v2)
+        # test getChildren
+        self._cssI.getChildren("/unittest/")
+        self.assertRaises(CssException, self._cssI.getChildren, "/whatever")
+        # try to set for invalid key
+        self.assertRaises(CssException, self._cssI.set, "/whatever", "value")
+        # try to delete invalid key
+        self.assertRaises(CssException, self._cssI.delete, "/whatever")
         # print everything
         self._cssI.printAll()
 
