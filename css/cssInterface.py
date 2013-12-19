@@ -48,10 +48,11 @@ class CssException(Exception):
     """
 
     SUCCESS                     =    0
-    ERR_DB_DOES_NOT_EXIST       = 2001
-    ERR_KEY_ALREADY_EXISTS      = 2002
-    ERR_KEY_DOES_NOT_EXIST      = 2003
-    ERR_KEY_INVALID             = 2004
+    ERR_DB_EXISTS               = 2001
+    ERR_DB_DOES_NOT_EXIST       = 2005
+    ERR_KEY_EXISTS              = 2010
+    ERR_KEY_DOES_NOT_EXIST      = 2015
+    ERR_KEY_INVALID             = 2020
     ERR_NOT_IMPLEMENTED         = 9998
     ERR_INTERNAL                = 9999
 
@@ -67,7 +68,7 @@ class CssException(Exception):
 
         self._errors = { 
             CssException.ERR_DB_DOES_NOT_EXIST: ("Database does not exist."),
-            CssException.ERR_KEY_ALREADY_EXISTS: ("Key already exists."),
+            CssException.ERR_KEY_EXISTS: ("Key already exists."),
             CssException.ERR_KEY_INVALID: ("Invalid key."),
             CssException.ERR_KEY_DOES_NOT_EXIST: ("Key does not exist."),
             CssException.ERR_NOT_IMPLEMENTED: ("Fature not implemented yet."),
@@ -101,11 +102,11 @@ class CssInterface(object):
         """
         Initialize the interface.
 
-        @param     verbosityT   Verbosity threshold. Logging messages which are
-        less severe than verbosityT will be ignored. Expected values match python
-        logging numeric values (CRITICAL=50, ERROR=40, WARNING=30, INFO=20,
-        DEBUG=10, NOTSET=0). The default is ERROR.
-
+        @param verbosityT   Verbosity threshold. Logging messages which are less
+                            severe than verbosityT will be ignored. Expected values
+                            match python logging numeric values (CRITICAL=50,
+                            ERROR=40, WARNING=30, INFO=20, DEBUG=10, NOTSET=0). 
+                            The default is ERROR.
         """
         self._zk = KazooClient(hosts='127.0.0.1:2181') # FIXME
         self._zk.start()
@@ -131,7 +132,7 @@ class CssInterface(object):
             return self._zk.create(k, v, sequence=sequence, makepath=True)
         except NodeExistsError:
             self._logger.error("in create(), key %s exists" % k)
-            raise CssException(CssException.ERR_KEY_ALREADY_EXISTS, [k])
+            raise CssException(CssException.ERR_KEY_EXISTS, [k])
 
     def exists(self, k):
         """
