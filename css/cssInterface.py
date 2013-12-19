@@ -40,6 +40,7 @@ import time
 from kazoo.client import KazooClient
 from kazoo.exceptions import NodeExistsError, NoNodeError
 
+import logging
 
 class CssException(Exception):
     """
@@ -104,7 +105,13 @@ class CssInterface(object):
         """
         self._zk = KazooClient(hosts='127.0.0.1:2181') # FIXME
         self._zk.start()
-        self._verbose = verbose
+        if verbose: theLevel = logging.DEBUG
+        else:       theLevel = logging.ERROR
+        logging.basicConfig(
+                format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
+                datefmt='%m/%d/%Y %I:%M:%S', 
+                level=theLevel)
+        self._logger = logging.getLogger("CSS")
 
     def create(self, k, v='', sequence=False):
         """
@@ -117,10 +124,11 @@ class CssInterface(object):
 
         @raise     CssException if the key k already exists.
         """
-        if self._verbose: print "cssInterface: CREATE '%s' --> '%s'" % (k, v) 
+        self._logger.info("CREATE '%s' --> '%s'" % (k, v))
         try:
             return self._zk.create(k, v, sequence=sequence, makepath=True)
         except NodeExistsError:
+            self._logger.error("in create(), key %s exists" % k)
             raise CssException(CssException.ERR_KEY_ALREADY_EXISTS, [k])
 
     def exists(self, k):
@@ -145,9 +153,10 @@ class CssInterface(object):
         """
         try:
             v, stat = self._zk.get(k)
-            if self._verbose: print "cssInterface: GET '%s' --> '%s'" % (k, v)
+            self._logger.info("GET '%s' --> '%s'" % (k, v))
             return v
         except NoNodeError:
+            self._logger.error("in get(), key %s does not exist" % k)
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
 
     def getChildren(self, k):
@@ -161,9 +170,10 @@ class CssInterface(object):
         @raise     Raise CssException if the key does not exists.
         """
         try:
-            if self._verbose: print "cssInterface: GETCHILDREN '%s'" % (k)
+            self._logger.info("GETCHILDREN '%s'" % (k))
             return self._zk.get_children(k)
         except NoNodeError:
+            self._logger.error("in getChildren(), key %s does not exist" % k)
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
 
     def set(self, k, v):
@@ -176,9 +186,10 @@ class CssInterface(object):
         @raise     Raise CssException if the key doesn't exist.
         """
         try:
-            if self._verbose: print "cssInterface: SET '%s' --> '%s'" % (k, v)
+            self._logger.info("SET '%s' --> '%s'" % (k, v))
             self._zk.set(k, v)
         except NoNodeError:
+            self._logger.error("in set(), key %s does not exist" % k)
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
 
     def delete(self, k, recursive=False):
@@ -192,9 +203,10 @@ class CssInterface(object):
         @raise     Raise CssException if the key doesn't exist.
         """
         try:
-            if self._verbose: print "cssInterface: DELETE '%s'" % (k)
+            self._logger.info("DELETE '%s'" % (k))
             self._zk.delete(k, recursive=recursive)
         except NoNodeError:
+            self._logger.error("in delete(), key %s does not exist" % k)
             raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
 
     def deleteAll(self, p):
@@ -236,7 +248,7 @@ class CssInterface(object):
                 else:
                     self._printOne("%s/%s" % (p, child))
         except NoNodeError:
-            print "Caught NoNodeError, someone deleted node just now"
+            self._logger.warning("Caught NoNodeError, someone deleted node just now")
             None
 
     def _deleteOne(self, p):
