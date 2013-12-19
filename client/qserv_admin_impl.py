@@ -45,7 +45,7 @@ class QservAdminImpl(object):
     """
 
     def __init__(self):
-        self._cssI = CssInterface()
+        self._cssI = CssInterface(verbose=True)
 
     def createDb(self, dbName, options):
         """

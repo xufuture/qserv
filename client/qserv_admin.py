@@ -29,6 +29,7 @@ corresponding function.
 
 
 Known issues and todos:
+ - add "verbose" flag
  - user authentication
  - many commands still need to be implemented
  - need to separate dangerous admin commands like DROP EVERYTHING
@@ -41,12 +42,6 @@ import readline
 import ConfigParser
 
 from qserv_admin_impl import QservAdminImpl
-
-# This helps if kazoo needs to generate an errror, otherwise we'd get:
-# No handlers could be found for logger "kazoo.recipe.watchers"
-import logging
-logging.basicConfig()
-
 
 class QAdmException(Exception):
     """
