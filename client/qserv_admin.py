@@ -29,14 +29,14 @@ corresponding function.
 
 
 Known issues and todos:
- - add "verbose" flag
- - user authentication
+ - deal with user authentication
  - many commands still need to be implemented
  - need to separate dangerous admin commands like DROP EVERYTHING
  - implement proper logging instead of print
 """
 
 import os
+from optparse import OptionParser
 import re
 import readline
 import ConfigParser
@@ -45,7 +45,7 @@ from qserv_admin_impl import QservAdminImpl
 
 class QAdmException(Exception):
     """
-    QAdmException class defines qserv_admin-specific exception
+    Defines qserv_admin-specific exception.
     """
     SUCCESS                     =    0
     ERR_BAD_CMD                 = 3001
@@ -91,9 +91,14 @@ class CommandParser(object):
     Parse commands and calls appropriate function from qserv_admin_impl.
     """
 
-    def __init__(self):
+    def __init__(self, verbosityT):
         """
         Initialize shared metadata, including list of supported commands.
+
+        @param     verbosityT   Verbosity threshold. Logging messages which are
+        less severe than verbosityT will be ignored. Expected values match python
+        logging numeric values (CRITICAL=50, ERROR=40, WARNING=30, INFO=20,
+        DEBUG=10, NOTSET=0).
         """
         self._funcMap = {
             'CREATE':  self._parseCreate,
@@ -102,7 +107,7 @@ class CommandParser(object):
             'RELEASE': self._parseRelease,
             'SHOW':    self._parseShow
             }
-        self._impl = QservAdminImpl()
+        self._impl = QservAdminImpl(verbosityT)
         self._supportedCommands = """
   Supported commands:
     CREATE DATABASE <dbName> <configFile>;
@@ -368,9 +373,53 @@ completer = VolcabCompleter(words)
 readline.set_completer(completer.complete)
 
 ####################################################################################
+class SimpleOptionParser:
+    """
+    Parse command line options.
+    """
+
+    def __init__(self):
+        self._verbosityT = 40 # default is ERROR
+        self._usage = \
+"""
+
+NAME
+        qserv_admin - the client program for Central State System (CSS)
+
+SYNOPSIS
+        qserv_admin [OPTIONS]
+
+OPTIONS
+   -v
+        Verbosity threshold. Logging messages which are less severe than
+        provided will be ignored. Expected value range: 0=50: (CRITICAL=50,
+        ERROR=40, WARNING=30, INFO=20, DEBUG=10). Default value is ERROR.
+"""
+
+    def getVerbosityT(self):
+        """
+        Return verbosity threshold.
+        """
+        return self._verbosityT
+
+    def parse(self):
+        """
+        Parse options.
+        """
+        parser = OptionParser(usage=self._usage)
+        parser.add_option("-v", dest="verbT")
+        (options, args) = parser.parse_args()
+        if options.verbT: 
+            self._verbosityT = int(options.verbT)
+            if   self._verbosityT > 50: self._verbosityT = 50
+            elif self._verbosityT <  0: self._verbosityT = 0
+
+####################################################################################
 def main():
+    p = SimpleOptionParser()
+    p.parse()
     try:
-        CommandParser().receiveCommands()
+        CommandParser(p.getVerbosityT()).receiveCommands()
     except(KeyboardInterrupt, SystemExit, EOFError):
         print ""
 
