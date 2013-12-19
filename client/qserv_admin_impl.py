@@ -34,26 +34,29 @@ Known issues and todos:
      qserv_admin which will run on a separate server will not be able to catch it.
 """
 
-from cssInterface import CssInterface, CssException
+import logging
 
-SUCCESS = 0
-ERROR = -1
+from cssInterface import CssInterface, CssException
 
 class QservAdminImpl(object):
     """
     QservAdminImpl implements functions needed by qserv_admin client program.
     """
 
-    def __init__(self, verbosityT=40):
+    def __init__(self, loggerName, verbosityT=40):
         """
         Initialize: create CssInterface object.
 
-        @param     verbosityT   Verbosity threshold. Logging messages which are
-        less severe than verbosityT will be ignored. Expected values match python
-        logging numeric values (CRITICAL=50, ERROR=40, WARNING=30, INFO=20,
-        DEBUG=10, NOTSET=0). The default is ERROR.
+        @param verbosityT   Verbosity threshold. Logging messages which are less
+                            severe than verbosityT will be ignored. Expected values
+                            values match python logging numeric values (CRITICAL=50,
+                            ERROR=40, WARNING=30, INFO=20, DEBUG=10, NOTSET=0). 
+                            The default is ERROR.
+        @param loggerName   Name of the logger. The logger should be already
+                            initialized.
         """
         self._cssI = CssInterface(verbosityT)
+        self._logger = logging.getLogger(loggerName)
 
     def createDb(self, dbName, options):
         """
@@ -64,8 +67,8 @@ class QservAdminImpl(object):
         """
 
         if self._dbExists(dbName):
-            print "ERROR: db '%s' already exists" % dbName
-            return ERROR
+            self._logger.error("Database '%s' already exists." % dbName)
+            return CssException.ERR_DB_EXISTS
         dbP = "/DATABASES/%s" % dbName
         ptP = None
         try:
@@ -82,7 +85,7 @@ class QservAdminImpl(object):
             self._createDbLockSection(dbP)
             self._cssI.set(dbP, "READY")
         except CssException as e:
-            print "Failed to create database, error was: ", e
+            self._logger.error("Failed to create database, error was: ", e)
             self._cssI.delete(dbP, recursive=True)
             if ptP is not None: self._cssI.delete(ptP, recursive=True)
             return e.getErrNo()
@@ -95,13 +98,13 @@ class QservAdminImpl(object):
         @param dbName    Database name (of the database to create)
         @param dbName2   Database name (of the template database)
         """
-        print "Creating db '%s' like '%s'" % (dbName, dbName2)
+        self._logger.info("Creating db '%s' like '%s'" % (dbName, dbName2))
         if self._dbExists(dbName):
-            print "ERROR: db '%s' already exists" % dbName
-            return ERROR
+            self._logger.error("Database '%s' already exists." % dbName)
+            return CssException.DB_EXISTS
         if not self._dbExists(dbName2):
-            print "ERROR: db '%s' does not exist." % dbName2
-            return ERROR
+            self._logger.error("Database '%s' does not exist." % dbName2)
+            return CssException.ERR_DB_DOES_NOT_EXIST
         dbP = "/DATABASES/%s" % dbName
         try:
             self._cssI.create(dbP, "PENDING")
@@ -111,7 +114,7 @@ class QservAdminImpl(object):
             self._createDbLockSection(dbP)
             self._cssI.set(dbP, "READY")
         except CssException as e:
-            print "Failed to create database, error was: ", e
+            self._logger.error( "Failed to create database, error was: ", e)
             self._cssI.delete(dbP, recursive=True)
             return e.getErrNo()
         return CssException.SUCCESS
@@ -123,14 +126,14 @@ class QservAdminImpl(object):
         @param dbName    Database name.
         """
         if not self._dbExists(dbName):
-            print "ERROR: db does not exist"
+            self._logger.error("Database '%s' does not exist." % dbName)
             return CssException.ERR_DB_DOES_NOT_EXIST
         self._cssI.delete("/DATABASES/%s" % dbName, recursive=True)
         return CssException.SUCCESS
 
     def showDatabases(self):
         """
-        Show list of databases registered for Qserv use.
+        Print to stdout the list of databases registered for Qserv use.
         """
         if not self._cssI.exists("/DATABASES"):
             print "No databases found."

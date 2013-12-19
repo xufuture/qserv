@@ -35,6 +35,7 @@ Known issues and todos:
  - implement proper logging instead of print
 """
 
+import logging
 import os
 from optparse import OptionParser
 import re
@@ -100,6 +101,7 @@ class CommandParser(object):
         logging numeric values (CRITICAL=50, ERROR=40, WARNING=30, INFO=20,
         DEBUG=10, NOTSET=0).
         """
+        self._initLogging(verbosityT)
         self._funcMap = {
             'CREATE':  self._parseCreate,
             'DROP':    self._parseDrop,
@@ -107,7 +109,7 @@ class CommandParser(object):
             'RELEASE': self._parseRelease,
             'SHOW':    self._parseShow
             }
-        self._impl = QservAdminImpl(verbosityT)
+        self._impl = QservAdminImpl(self._loggerName, verbosityT)
         self._supportedCommands = """
   Supported commands:
     CREATE DATABASE <dbName> <configFile>;
@@ -137,7 +139,7 @@ class CommandParser(object):
                 try:
                     self._parse(sql[:pos])
                 except QAdmException as e:
-                    print "ERROR: ", e
+                    self._logger.error(e)
                 sql = sql[pos+1:]
 
     def _parse(self, cmd):
@@ -155,7 +157,7 @@ class CommandParser(object):
         elif t == 'EXIT' or t == 'QUIT':
             raise SystemExit()
         else:
-            print "Unsupported command '%s', see HELP for details." % cmd
+            self._logger.error("Unsupported command '%s', see HELP." % cmd)
 
     def _parseCreate(self, tokens):
         """
@@ -167,7 +169,7 @@ class CommandParser(object):
         elif t == 'TABLE':
             self._parseCreateTable(tokens[1:])
         else:
-            print "CREATE '%s' is not supported yet." % t
+            self._logger.error("CREATE '%s' is not supported yet." % t)
 
     def _parseCreateDatabase(self, tokens):
         """
@@ -183,19 +185,19 @@ class CommandParser(object):
         elif l == 3:
             if tokens[1].upper() != 'LIKE':
                 raise QAdmException(QAdmException.ERR_BAD_CMD, 
-                                    ["expected 'LIKE', found: '%s'" % tokens[1]])
+                                    ["expected 'LIKE', found: '%s'." % tokens[1]])
             dbName = tokens[0]
             dbName2 = tokens[2]
             self._impl.createDbLike(dbName, dbName2)
         else:
             raise QAdmException(QAdmException.ERR_BAD_CMD, 
-                                ["unexpected number of arguments"])
+                                ["unexpected number of arguments."])
 
     def _parseCreateTable(self, tokens):
         """
         Subparser, handle all CREATE TABLE requests.
         """
-        print 'CREATE TABLE not implemented.'
+        self._logger.error('CREATE TABLE not implemented.')
 
     def _parseDrop(self, tokens):
         """
@@ -209,11 +211,11 @@ class CommandParser(object):
                                     ["unexpected number of arguments"])
             self._impl.dropDb(tokens[1])
         elif t == 'TABLE':
-            print "drop table not implemented" 
+            self._logger.error("drop table not implemented")
         elif t == 'EVERYTHING':
             self._impl.dropEverything()
         else:
-            print "DROP '%s' is not supported yet." % t
+            self._logger.error("DROP '%s' is not supported yet." % t)
 
     def _printHelp(self, tokens):
         """
@@ -225,7 +227,7 @@ class CommandParser(object):
         """
         Subparser, handle all RELEASE requests.
         """
-        print 'RELEASE not implemented.'
+        self._logger.error('RELEASE not implemented.')
 
     def _parseShow(self, tokens):
         """
@@ -237,15 +239,15 @@ class CommandParser(object):
         elif t == 'EVERYTHING':
             self._impl.showEverything()
         else:
-            print "SHOW '%s' is not supported yet." % t
+            self._logger.error("SHOW '%s' is not supported yet." % t)
 
     def _createDb(self, dbName, configFile):
         """
         Create database through config file.
         """
-        print "Creating db '%s' using config '%s'" % (dbName, configFile)
+        self._logger.info("Creating db '%s' using config '%s'" % \
+                              (dbName, configFile))
         options = self._fetchOptionsFromConfigFile(configFile)
-        print "options are:", options
         self._impl.createDb(dbName, options)
 
     def _fetchOptionsFromConfigFile(self, fName):
@@ -270,13 +272,16 @@ class CommandParser(object):
         parameters.
         """
         if not opts.has_key("clusteredIndex"):
-            print("param 'clusteredIndex' not found, will use default: ''")
+            self._logger.info(
+                "param 'clusteredIndex' not found, will use default: ''")
             opts["clusteredIndex"] = ''
         if not opts.has_key("partitioning"):
-            print("param 'partitioning' not found, will use default: off")
+            self._logger.info(
+                "param 'partitioning' not found, will use default: off")
             opts["partitioning"] = "off"
         if not opts.has_key("objectIdIndex"):
-            print("param 'objectIdIndex' not found, will use default: ''")
+            self._logger.info(
+                "param 'objectIdIndex' not found, will use default: ''")
             opts["objectIdIndex"] = ''
         # these are required options for createDb
         _crDbOpts = { 
@@ -343,6 +348,15 @@ class CommandParser(object):
         if not psFound:
             raise QAdmException(QAdmException.ERR_WRONG_PARAM,
                                 [x["partitioningStrategy"]])
+
+    def _initLogging(self, verbosityT):
+        self._loggerName = "qadm"
+        logging.basicConfig(
+            format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
+            datefmt='%m/%d/%Y %I:%M:%S', 
+            level=verbosityT)
+        self._logger = logging.getLogger(self._loggerName)
+
 
 ####################################################################################
 class VolcabCompleter:

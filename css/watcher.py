@@ -35,20 +35,17 @@ Known issues and todos:
    deleted databases.
  - If all metadata is deleted when the watcher is running, the watcher will die
    with: ERROR:kazoo.handlers.threading:Exception in worker queue thread.
-   To reproduce, just run: 
+   To reproduce, just run (when watcher is running): 
        echo "drop everything;" | ./qserv_admin.py
 """
 
+import logging
+from optparse import OptionParser
 import time
 import threading
 
 from cssInterface import CssInterface
 from db import Db, DbException
-
-# This helps if kazoo needs to generate an errror, otherwise we'd get:
-# No handlers could be found for logger "kazoo.recipe.watchers"
-import logging
-logging.basicConfig()
 
 
 class OneDbWatcher(threading.Thread):
@@ -58,7 +55,7 @@ class OneDbWatcher(threading.Thread):
     It runs in a dedicated thread.
     """
 
-    def __init__(self, cssI, db, pathToWatch, verbose=True):
+    def __init__(self, cssI, db, pathToWatch):
         """
         Initialize shared state.
         """
@@ -67,7 +64,7 @@ class OneDbWatcher(threading.Thread):
         self._path = pathToWatch
         self._dbName = pathToWatch[11:]
         self._data = None
-        self._verbose = verbose
+        self._logger = logging.getLogger("DB_%s" % self._dbName)
         threading.Thread.__init__(self)
 
     def run(self):
@@ -78,22 +75,21 @@ class OneDbWatcher(threading.Thread):
         def my_watcher_func(newData, stat):
             if newData == self._data: return
             if newData is None and stat is None:
-                if self._verbose:
-                    print "Path %s deleted. (was %s)" % (self._path, self._data)
+                self._logger.info(
+                    "Path %s deleted. (was %s)" % (self._path, self._data))
                 if self._db.checkDbExists(self._dbName):
+                    self._logger.info("Dropping my database")
                     self._db.dropDb(self._dbName)
             elif newData == 'PENDING':
-                if self._verbose:
-                    print "Meta not initialized yet for '%s'" % self._dbName
+                    self._logger.info("Meta not initialized yet for my database.")
             elif newData == 'READY':
                 if self._db.checkDbExists(self._dbName):
-                    if self._verbose: print "Database '%s' exists." % self._dbName
+                    self._logger.info("My database already exists.")
                 else:
-                    if self._verbose: print "Creating database '%s'" % self._dbName
+                    self._logger.info("Creating my database")
                     self._db.createDb(self._dbName)
             else:
-                print "Unsupported status '%s' for db '%s'" % \
-                    (newData, self._dbName)
+                self._logger.error("Unsupported status '%s' for my db." % newData)
             self._data = newData
 
 ####################################################################################
@@ -118,6 +114,7 @@ class AllDbsWatcher(threading.Thread):
         self._watchedDbs = [] # registry of all watched databases
         # make sure the path exists
         if not cssI.exists(self._path): cssI.create(self._path)
+        self._logger = logging.getLogger("ALLDBS")
         threading.Thread.__init__(self)
 
     def run(self):
@@ -130,27 +127,78 @@ class AllDbsWatcher(threading.Thread):
             # look for new entries
             for val in children:
                 if not val in self._children:
-                    print "node '%s' was added" % val
+                    self._logger.info("node '%s' was added" % val)
                     # set data watcher for this node (unless it is already up)
                     p2 = "%s/%s" % (self._path, val)
                     if p2 not in self._watchedDbs:
-                        print "Setting a new watcher for '%s'" % p2
+                        self._logger.info("Setting a new watcher for '%s'" % p2)
                         w = OneDbWatcher(self._cssI, self._db, p2)
                         w.start()
                         self._watchedDbs.append(p2)
                     else:
-                        print "Already have a watcher for '%s'" % p2
+                        self._logger.debug("Already have a watcher for '%s'" % p2)
                     self._children.append(val)
             # look for entries that were removed
             for val in self._children:
                 if not val in children:
-                    print "node '%s' was removed" % val
+                    self._logger.info("node '%s' was removed" % val)
                     self._children.remove(val)
 
 ####################################################################################
+class SimpleOptionParser:
+    """
+    Parse command line options.
+    """
+
+    def __init__(self):
+        self._verbosityT = 40 # default is ERROR
+        self._usage = \
+"""
+
+NAME
+        watcher - Watches CSS and acts upon changes to keep node up to date.
+
+SYNOPSIS
+        watcher [OPTIONS]
+
+OPTIONS
+   -v
+        Verbosity threshold. Logging messages which are less severe than
+        provided will be ignored. Expected value range: 0=50: (CRITICAL=50,
+        ERROR=40, WARNING=30, INFO=20, DEBUG=10). Default value is ERROR.
+"""
+
+    def getVerbosityT(self):
+        """
+        Return verbosity threshold.
+        """
+        return self._verbosityT
+
+    def parse(self):
+        """
+        Parse options.
+        """
+        parser = OptionParser(usage=self._usage)
+        parser.add_option("-v", dest="verbT")
+        (options, args) = parser.parse_args()
+        if options.verbT: 
+            self._verbosityT = int(options.verbT)
+            if   self._verbosityT > 50: self._verbosityT = 50
+            elif self._verbosityT <  0: self._verbosityT = 0
+
+####################################################################################
 def main():
-    cssI = CssInterface(verbose=True)
+    p = SimpleOptionParser()
+    p.parse()
+
+    logging.basicConfig(
+        format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
+        datefmt='%m/%d/%Y %I:%M:%S', 
+        level=p.getVerbosityT())
+
+    cssI = CssInterface(p.getVerbosityT())
     db = Db(host='localhost', port=3306, user='becla', passwd='') # FIXME
+
     try:
         w1 = AllDbsWatcher(cssI, db)
         w1.start()
