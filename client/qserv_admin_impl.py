@@ -44,8 +44,16 @@ class QservAdminImpl(object):
     QservAdminImpl implements functions needed by qserv_admin client program.
     """
 
-    def __init__(self):
-        self._cssI = CssInterface(verbose=True)
+    def __init__(self, verbosityT=40):
+        """
+        Initialize: create CssInterface object.
+
+        @param     verbosityT   Verbosity threshold. Logging messages which are
+        less severe than verbosityT will be ignored. Expected values match python
+        logging numeric values (CRITICAL=50, ERROR=40, WARNING=30, INFO=20,
+        DEBUG=10, NOTSET=0). The default is ERROR.
+        """
+        self._cssI = CssInterface(verbosityT)
 
     def createDb(self, dbName, options):
         """
