@@ -92,16 +92,11 @@ class CommandParser(object):
     Parse commands and calls appropriate function from qserv_admin_impl.
     """
 
-    def __init__(self, verbosityT):
+    def __init__(self):
         """
         Initialize shared metadata, including list of supported commands.
-
-        @param     verbosityT   Verbosity threshold. Logging messages which are
-        less severe than verbosityT will be ignored. Expected values match python
-        logging numeric values (CRITICAL=50, ERROR=40, WARNING=30, INFO=20,
-        DEBUG=10, NOTSET=0).
         """
-        self._initLogging(verbosityT)
+        self._initLogging()
         self._funcMap = {
             'CREATE':  self._parseCreate,
             'DROP':    self._parseDrop,
@@ -109,7 +104,7 @@ class CommandParser(object):
             'RELEASE': self._parseRelease,
             'SHOW':    self._parseShow
             }
-        self._impl = QservAdminImpl(self._loggerName, verbosityT)
+        self._impl = QservAdminImpl(self._loggerName)
         self._supportedCommands = """
   Supported commands:
     CREATE DATABASE <dbName> <configFile>;
@@ -433,7 +428,7 @@ def main():
     p = SimpleOptionParser()
     p.parse()
     try:
-        CommandParser(p.getVerbosityT()).receiveCommands()
+        CommandParser().receiveCommands()
     except(KeyboardInterrupt, SystemExit, EOFError):
         print ""
 
