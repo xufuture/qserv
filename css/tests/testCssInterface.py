@@ -27,13 +27,15 @@ This is a unittest for the Central State System Interface class.
 
 """
 
+import logging
+import os
 import time
 import unittest
 from cssInterface import CssInterface, CssException
 
 class TestCssInterface(unittest.TestCase):
     def setUp(self):
-        self._cssI = CssInterface()
+        self._cssI = CssInterface('127.0.0.1:2181')
 
     def testCreateGetSetDelete(self):
         # first delete everything
@@ -92,7 +94,16 @@ class TestCssInterface(unittest.TestCase):
 
 
 ####################################################################################
+def setLogging():
+    logging.basicConfig(
+        #filename="/tmp/testCssInterface.log",
+        format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
+        datefmt='%m/%d/%Y %I:%M:%S', 
+        level=logging.DEBUG)
+    logging.getLogger("kazoo.client").setLevel(logging.ERROR)
+
 def main():
+    setLogging()
     unittest.main()
 
 if __name__ == "__main__":
