@@ -32,7 +32,6 @@ Known issues and todos:
  * need to catch *all* exceptions that ZooKeeper and Kazoo might raise, see:
    http://kazoo.readthedocs.org/en/latest/api/client.html
  * issue: watcher is currently using the "_zk", and bypasses the official API!
-
 """
 
 import time
