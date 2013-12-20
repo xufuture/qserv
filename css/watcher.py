@@ -274,11 +274,18 @@ def main():
 
     # initialize CSS
     cssI = CssInterface(p.getConnInfo())
+
+    # initialize database connection, and connect (to catch issues early)
     db = Db(socket=p.getMySqlSock(),
             host  =p.getMySqlHost(), 
             port  =p.getMySqlPort(),
             user  =p.getMySqlUser(),
             passwd=p.getMySqlPass())
+    try:
+        db.connectToMySQLServer()
+    except DbException as e:
+        print e.getErrMgs()
+        return
 
     # setup the thread watching
     try:
