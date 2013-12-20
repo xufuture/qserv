@@ -279,6 +279,7 @@ def main():
             port  =p.getMySqlPort(),
             user  =p.getMySqlUser(),
             passwd=p.getMySqlPass())
+
     # setup the thread watching
     try:
         w1 = AllDbsWatcher(cssI, db)
