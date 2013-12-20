@@ -43,15 +43,14 @@ class QservAdminImpl(object):
     QservAdminImpl implements functions needed by qserv_admin client program.
     """
 
-    def __init__(self, loggerName, connInfo):
+    def __init__(self, connInfo):
         """
         Initialize: create CssInterface object.
 
-        @param loggerName   Name of the logger to use.
         @param connInfo     Connection information.
         """
         self._cssI = CssInterface(connInfo)
-        self._logger = logging.getLogger(loggerName)
+        self._logger = logging.getLogger("QADMI")
 
     def createDb(self, dbName, options):
         """
@@ -60,7 +59,8 @@ class QservAdminImpl(object):
         @param dbName    Database name
         @param options   Array with options (key/value)
         """
-
+        self._logger.debug("Create database '%s', options: %s" % \
+                               (dbName, str(options)))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
             return CssException.ERR_DB_EXISTS
@@ -84,6 +84,7 @@ class QservAdminImpl(object):
             self._cssI.delete(dbP, recursive=True)
             if ptP is not None: self._cssI.delete(ptP, recursive=True)
             return e.getErrNo()
+        self._logger.debug("Create database '%s' succeeded." % dbName)
         return CssException.SUCCESS
 
     def createDbLike(self, dbName, dbName2):
@@ -96,7 +97,7 @@ class QservAdminImpl(object):
         self._logger.info("Creating db '%s' like '%s'" % (dbName, dbName2))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
-            return CssException.DB_EXISTS
+            return CssException.ERR_DB_EXISTS
         if not self._dbExists(dbName2):
             self._logger.error("Database '%s' does not exist." % dbName2)
             return CssException.ERR_DB_DOES_NOT_EXIST
@@ -120,6 +121,7 @@ class QservAdminImpl(object):
 
         @param dbName    Database name.
         """
+        self._logger.info("Drop database '%s'" % dbName)
         if not self._dbExists(dbName):
             self._logger.error("Database '%s' does not exist." % dbName)
             return CssException.ERR_DB_DOES_NOT_EXIST

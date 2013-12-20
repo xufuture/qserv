@@ -29,17 +29,22 @@ corresponding function.
 
 
 Known issues and todos:
+ - !!!!!! 
+
+need to catch exceptions from impl and handle them correctly!!!!!!!!
+
+
  - deal with user authentication
  - many commands still need to be implemented
  - need to separate dangerous admin commands like DROP EVERYTHING
 """
 
+import ConfigParser
 import logging
-import os
 from optparse import OptionParser
+import os
 import re
 import readline
-import ConfigParser
 
 from qserv_admin_impl import QservAdminImpl
 
@@ -105,7 +110,7 @@ class CommandParser(object):
             'RELEASE': self._parseRelease,
             'SHOW':    self._parseShow
             }
-        self._impl = QservAdminImpl(self._loggerName, connInfo)
+        self._impl = QservAdminImpl(connInfo)
         self._supportedCommands = """
   Supported commands:
     CREATE DATABASE <dbName> <configFile>;
@@ -346,8 +351,7 @@ class CommandParser(object):
                                 [x["partitioningStrategy"]])
 
     def _initLogging(self):
-        self._loggerName = "QADM"
-        self._logger = logging.getLogger(self._loggerName)
+        self._logger = logging.getLogger("QADM")
         kL = os.getenv('KAZOO_LOGGING')
         if kL: logging.getLogger("kazoo.client").setLevel(int(kL))
 
