@@ -32,7 +32,6 @@ Known issues and todos:
  - deal with user authentication
  - many commands still need to be implemented
  - need to separate dangerous admin commands like DROP EVERYTHING
- - implement proper logging instead of print
 """
 
 import logging
@@ -350,13 +349,10 @@ class CommandParser(object):
                                 [x["partitioningStrategy"]])
 
     def _initLogging(self, verbosityT):
-        self._loggerName = "qadm"
-        logging.basicConfig(
-            format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
-            datefmt='%m/%d/%Y %I:%M:%S', 
-            level=verbosityT)
+        self._loggerName = "QADM"
         self._logger = logging.getLogger(self._loggerName)
-
+        kL = os.getenv('KAZOO_LOGGING')
+        if kL: logging.getLogger("kazoo.client").setLevel(int(kL))
 
 ####################################################################################
 class VolcabCompleter:
@@ -394,6 +390,7 @@ class SimpleOptionParser:
 
     def __init__(self):
         self._verbosityT = 40 # default is ERROR
+        self._logFileName = None
         self._usage = \
 """
 
@@ -408,6 +405,8 @@ OPTIONS
         Verbosity threshold. Logging messages which are less severe than
         provided will be ignored. Expected value range: 0=50: (CRITICAL=50,
         ERROR=40, WARNING=30, INFO=20, DEBUG=10). Default value is ERROR.
+   -f
+        Name of the output log file. If not specified, the output goes to stderr.
 """
 
     def getVerbosityT(self):
@@ -416,22 +415,47 @@ OPTIONS
         """
         return self._verbosityT
 
+    def getLogFileName(self):
+        """
+        Return the name of the output log file.
+        """
+        return self._logFileName
+
     def parse(self):
         """
         Parse options.
         """
         parser = OptionParser(usage=self._usage)
         parser.add_option("-v", dest="verbT")
+        parser.add_option("-f", dest="logF")
         (options, args) = parser.parse_args()
         if options.verbT: 
             self._verbosityT = int(options.verbT)
             if   self._verbosityT > 50: self._verbosityT = 50
             elif self._verbosityT <  0: self._verbosityT = 0
+        if options.logF:
+            self._logFileName = options.logF
 
 ####################################################################################
 def main():
+    # parse arguments
     p = SimpleOptionParser()
     p.parse()
+
+    # configure logging
+    if p.getLogFileName():
+        logging.basicConfig(
+            filename=p.getLogFileName(),
+            format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
+            datefmt='%m/%d/%Y %I:%M:%S', 
+            level=p.getVerbosityT())
+    else:
+        logging.basicConfig(
+            format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
+            datefmt='%m/%d/%Y %I:%M:%S', 
+            level=p.getVerbosityT())
+
+    # wait for commands and process
     try:
         CommandParser(p.getVerbosityT()).receiveCommands()
     except(KeyboardInterrupt, SystemExit, EOFError):

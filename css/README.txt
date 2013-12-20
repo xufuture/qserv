@@ -26,14 +26,24 @@
 
 #### T E S T I N G #################################################################
 
-# set path to the cssInterface
-# export PYTHONPATH=<kazooPath>:<YourBasePath>/dbserv/python/lsst/dbserv/:<YourBasePath>/qserv/css/
+#### set path to the cssInterface
+export PYTHONPATH=<kazooPath>:<YourBasePath>/dbserv/python/lsst/dbserv/:<YourBasePath>/qserv/css/
 
-# clean up everything
+#### change kazoo logging level (if you find that it clatters css output)
+#### 50- critical, 40-error, 30-warning, 20-info, 10-debug
+export KAZOO_LOGGING=50
+
+#### clean up everything
 echo "drop everything;" | ./client/qserv_admin.py
 
-# in one window, start 
-./css/watcher.py
+#### in one window, start the watcher
+  ## this is without logging:
+  ./css/watcher.py
+  ## this is with logging:
+  ./css/watcher.py -v 10 -f watcher.log
 
-# in second window, run
-./client/qserv_admin.py  < ./client/tests/test_qserv_admin
+#### in second window, run the test:
+  ## this is without logging:
+  ./client/qserv_admin.py  < ./client/tests/test_qserv_admin
+  ## this is with logging:
+  ./client/qserv_admin.py 0v 10 -f qadm.log < ./client/tests/test_qserv_admin
