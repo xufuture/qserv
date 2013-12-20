@@ -29,18 +29,23 @@
 #### set path to the cssInterface
 export PYTHONPATH=<kazooPath>:<YourBasePath>/dbserv/python/lsst/dbserv/:<YourBasePath>/qserv/css/
 
+
 #### change kazoo logging level (if you find that it clatters css output)
 #### 50- critical, 40-error, 30-warning, 20-info, 10-debug
 export KAZOO_LOGGING=50
 
+
 #### clean up everything
 echo "drop everything;" | ./client/qserv_admin.py
 
+
 #### in one window, start the watcher
   ## this is without logging:
-  ./css/watcher.py
+  ./css/watcher.py -u becla --host localhost --port 3306 
+  ./css/watcher.py -u becla -s /var/run/mysqld/mysqld.sock
   ## this is with logging:
-  ./css/watcher.py -v 10 -f watcher.log
+  ./css/watcher.py --host localhost --port 3306 -u becla -v 10 -f watcher.log
+
 
 #### in second window, run the test:
   ## this is without logging:

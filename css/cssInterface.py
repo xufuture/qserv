@@ -28,10 +28,10 @@ This module implements interface to the Central State System (CSS).
 
 
 Known issues and todos:
- - recover from lost connection by reconnecting
- - need to catch all exceptions that ZooKeeper and Kazoo might raise, see:
+ * recover from lost connection by reconnecting
+ * need to catch *all* exceptions that ZooKeeper and Kazoo might raise, see:
    http://kazoo.readthedocs.org/en/latest/api/client.html
- - issue: watcher is currently using the "_zk", and bypasses the official API!
+ * issue: watcher is currently using the "_zk", and bypasses the official API!
 
 """
 

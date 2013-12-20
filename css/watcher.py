@@ -27,13 +27,12 @@ Database Watcher - runs on each Qserv node and maintains Qserv databases (create
 
 
 Known issues and todos:
- - mysql host/port user/passwd/socket
- - need to go through cssInterface interface, now bypassing it in two places:
+ * need to go through cssInterface interface, now bypassing it in two places:
     - @self._interface._zk.DataWatch
     - @self._interface._zk.ChildrenWatch
- - considering implementing garbage collection for threads corresponding to
+ * considering implementing garbage collection for threads corresponding to
    deleted databases.
- - If all metadata is deleted when the watcher is running, the watcher will die
+ * If all metadata is deleted when the watcher is running, the watcher will die
    with: ERROR:kazoo.handlers.threading:Exception in worker queue thread.
    To reproduce, just run (when watcher is running): 
        echo "drop everything;" | ./qserv_admin.py
@@ -153,8 +152,14 @@ class SimpleOptionParser:
 
     def __init__(self):
         self._verbosityT = 40 # default is ERROR
-        self._logFileName = None
-        self._connInfo = '127.0.0.1:2181' # default for kazoo (single node, local)
+        self._logFN = None
+        self._connI = '127.0.0.1:2181' # default for kazoo (single node, local)
+        self._mSock = None
+        self._mHost = None
+        self._mPort = 0
+        self._mUser = None
+        self._mPass = ''
+
         self._usage = \
 """
 
@@ -165,51 +170,84 @@ SYNOPSIS
         watcher [OPTIONS]
 
 OPTIONS
-   -v
+   -v, --verbose=#
         Verbosity threshold. Logging messages which are less severe than
         provided will be ignored. Expected value range: 0=50: (CRITICAL=50,
         ERROR=40, WARNING=30, INFO=20, DEBUG=10). Default value is ERROR.
-   -f
+   -f, --logFile
         Name of the output log file. If not specified, the output goes to stderr.
-   -c
-        Connection information.
+   -c, --connection=name
+        Connection information for the metadata server.
+   -s, --socket=name
+        MySQL Socket
+   -H, --host=name
+        MySQL Host name.
+   -P, --port=#
+        MySql port number.
+   -u, --user=name
+        MySQL user name.
+   -p, --password[=name]
+        MySQL Password
 """
 
     def getVerbosityT(self):
-        """
-        Return verbosity threshold.
-        """
+        """Return verbosity threshold."""
         return self._verbosityT
 
     def getLogFileName(self):
-        """
-        Return the name of the output log file.
-        """
-        return self._logFileName
+        """Return the name of the output log file."""
+        return self._logFN
 
     def getConnInfo(self):
-        """
-        Return connection information. 
-        """
-        return self._connInfo
+        """Return connection information."""
+        return self._connI
+
+    def getMySqlSock(self):
+        """Return MySql socket."""
+        return self._mSock
+
+    def getMySqlHost(self):
+        """Return MySql host."""
+        return self._mHost
+
+    def getMySqlPort(self):
+        """Return MySql port."""
+        return self._mPort
+
+    def getMySqlUser(self):
+        """Return MySql user."""
+        return self._mUser
+
+    def getMySqlPass(self):
+        """Return MySql password."""
+        return self._mPass
 
     def parse(self):
         """
         Parse options.
         """
         parser = OptionParser(usage=self._usage)
-        parser.add_option("-v", dest="verbT")
-        parser.add_option("-f", dest="logF")
-        parser.add_option("-c", dest="connI")
+        parser.add_option("-v", "--verbose",    dest="verbT")
+        parser.add_option("-f", "--logFile",    dest="logFN")
+        parser.add_option("-c", "--connection", dest="connI")
+        parser.add_option("-s", "--socket",     dest="mSock")
+        parser.add_option("-H", "--host",       dest="mHost")
+        parser.add_option("-P", "--port",       dest="mPort")
+        parser.add_option("-u", "--user",       dest="mUser")        
+        parser.add_option("-p", "--pwd",        dest="mPass")
+
         (options, args) = parser.parse_args()
         if options.verbT: 
             self._verbosityT = int(options.verbT)
             if   self._verbosityT > 50: self._verbosityT = 50
             elif self._verbosityT <  0: self._verbosityT = 0
-        if options.logF:
-            self._logFileName = options.logF
-        if options.connI:
-            self._connInfo = options.connI
+        if options.logFN: self._logFN = options.logFN
+        if options.connI: self._connI = options.connI
+        if options.mSock: self._mSock = options.mSock
+        if options.mHost: self._mHost = options.mHost
+        if options.mPort: self._mPort = int(options.mPort)
+        if options.mUser: self._mUser = options.mUser
+        if options.mPass: self._mPass = options.mPass
 
 ####################################################################################
 def main():
@@ -236,8 +274,11 @@ def main():
 
     # initialize CSS
     cssI = CssInterface(p.getConnInfo())
-    db = Db(host='localhost', port=3306, user='becla', passwd='') # FIXME
-
+    db = Db(socket=p.getMySqlSock(),
+            host  =p.getMySqlHost(), 
+            port  =p.getMySqlPort(),
+            user  =p.getMySqlUser(),
+            passwd=p.getMySqlPass())
     # setup the thread watching
     try:
         w1 = AllDbsWatcher(cssI, db)
