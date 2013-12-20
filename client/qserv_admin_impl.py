@@ -43,13 +43,14 @@ class QservAdminImpl(object):
     QservAdminImpl implements functions needed by qserv_admin client program.
     """
 
-    def __init__(self, loggerName):
+    def __init__(self, loggerName, connInfo):
         """
         Initialize: create CssInterface object.
 
         @param loggerName   Name of the logger to use.
+        @param connInfo     Connection information.
         """
-        self._cssI = CssInterface()
+        self._cssI = CssInterface(connInfo)
         self._logger = logging.getLogger(loggerName)
 
     def createDb(self, dbName, options):

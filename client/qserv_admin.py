@@ -91,9 +91,11 @@ class CommandParser(object):
     Parse commands and calls appropriate function from qserv_admin_impl.
     """
 
-    def __init__(self):
+    def __init__(self, connInfo):
         """
         Initialize shared metadata, including list of supported commands.
+
+        @param connInfo     Connection information.
         """
         self._initLogging()
         self._funcMap = {
@@ -103,7 +105,7 @@ class CommandParser(object):
             'RELEASE': self._parseRelease,
             'SHOW':    self._parseShow
             }
-        self._impl = QservAdminImpl(self._loggerName)
+        self._impl = QservAdminImpl(self._loggerName, connInfo)
         self._supportedCommands = """
   Supported commands:
     CREATE DATABASE <dbName> <configFile>;
@@ -386,6 +388,7 @@ class SimpleOptionParser:
     def __init__(self):
         self._verbosityT = 40 # default is ERROR
         self._logFileName = None
+        self._connInfo = '127.0.0.1:2181' # default for kazoo (single node, local)
         self._usage = \
 """
 
@@ -402,6 +405,8 @@ OPTIONS
         ERROR=40, WARNING=30, INFO=20, DEBUG=10). Default value is ERROR.
    -f
         Name of the output log file. If not specified, the output goes to stderr.
+   -c
+        Connection information.
 """
 
     def getVerbosityT(self):
@@ -416,6 +421,12 @@ OPTIONS
         """
         return self._logFileName
 
+    def getConnInfo(self):
+        """
+        Return connection information. 
+        """
+        return self._connInfo
+
     def parse(self):
         """
         Parse options.
@@ -423,6 +434,7 @@ OPTIONS
         parser = OptionParser(usage=self._usage)
         parser.add_option("-v", dest="verbT")
         parser.add_option("-f", dest="logF")
+        parser.add_option("-c", dest="connI")
         (options, args) = parser.parse_args()
         if options.verbT: 
             self._verbosityT = int(options.verbT)
@@ -430,6 +442,8 @@ OPTIONS
             elif self._verbosityT <  0: self._verbosityT = 0
         if options.logF:
             self._logFileName = options.logF
+        if options.connI:
+            self._connInfo = options.connI
 
 ####################################################################################
 def main():
@@ -452,7 +466,7 @@ def main():
 
     # wait for commands and process
     try:
-        CommandParser().receiveCommands()
+        CommandParser(p.getConnInfo()).receiveCommands()
     except(KeyboardInterrupt, SystemExit, EOFError):
         print ""
 
