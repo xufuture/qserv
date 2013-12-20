@@ -28,7 +28,6 @@ This module implements interface to the Central State System (CSS).
 
 
 Known issues and todos:
- - connection information for the Kazoo Client needs to be configurable.
  - recover from lost connection by reconnecting
  - need to catch all exceptions that ZooKeeper and Kazoo might raise, see:
    http://kazoo.readthedocs.org/en/latest/api/client.html
@@ -51,6 +50,7 @@ class CssException(Exception):
     SUCCESS                     =    0
     ERR_DB_EXISTS               = 2001
     ERR_DB_DOES_NOT_EXIST       = 2005
+    ERR_INVALID_CONNECTION      = 2007
     ERR_KEY_EXISTS              = 2010
     ERR_KEY_DOES_NOT_EXIST      = 2015
     ERR_KEY_INVALID             = 2020
@@ -68,11 +68,12 @@ class CssException(Exception):
         self._extraMsgList = extraMsgList
 
         self._errors = { 
-            CssException.ERR_DB_DOES_NOT_EXIST: ("Database does not exist."),
-            CssException.ERR_KEY_EXISTS: ("Key already exists."),
-            CssException.ERR_KEY_INVALID: ("Invalid key."),
-            CssException.ERR_KEY_DOES_NOT_EXIST: ("Key does not exist."),
-            CssException.ERR_NOT_IMPLEMENTED: ("Fature not implemented yet."),
+            CssException.ERR_DB_DOES_NOT_EXIST: "Database does not exist.",
+            CssException.ERR_INVALID_CONNECTION: "Invalid connection information.",
+            CssException.ERR_KEY_EXISTS: "Key already exists.",
+            CssException.ERR_KEY_INVALID: "Invalid key.",
+            CssException.ERR_KEY_DOES_NOT_EXIST: "Key does not exist.",
+            CssException.ERR_NOT_IMPLEMENTED: "Fature not implemented yet.",
             CssException.ERR_INTERNAL: "Internal error."
         }
 
@@ -97,15 +98,20 @@ class CssException(Exception):
 class CssInterface(object):
     """
     @brief CssInterface class defines interface to the Central State Service CSS).
+
+    @param connInfo  Connection information.
     """
 
-    def __init__(self):
+    def __init__(self, connInfo):
         """
         Initialize the interface.
         """
-        self._zk = KazooClient(hosts='127.0.0.1:2181') # FIXME
-        self._zk.start()
         self._logger = logging.getLogger("CSS")
+        if connInfo is None:
+            raise CssException(CssException.ERR_INVALID_CONNECTION, ["<None>"])
+        self._logger.info("conn is: %s" % connInfo)
+        self._zk = KazooClient(hosts=connInfo)
+        self._zk.start()
 
     def create(self, k, v='', sequence=False):
         """
