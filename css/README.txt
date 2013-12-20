@@ -27,7 +27,7 @@
 #### T E S T I N G #################################################################
 
 #### set path to the cssInterface
-export PYTHONPATH=<kazooPath>:<YourBasePath>/dbserv/python/lsst/dbserv/:<YourBasePath>/qserv/css/
+export PYTHONPATH=<kazooPath>:<YourBasePath>/dbserv/python/lsst/dbserv/:<YourBasePath>/qserv/css/:<YourBasePath>/qserv/client/
 
 
 #### change kazoo logging level (if you find that it clatters css output)
