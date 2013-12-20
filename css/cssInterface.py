@@ -99,22 +99,12 @@ class CssInterface(object):
     @brief CssInterface class defines interface to the Central State Service CSS).
     """
 
-    def __init__(self, verbosityT=40):
+    def __init__(self):
         """
         Initialize the interface.
-
-        @param verbosityT   Verbosity threshold. Logging messages which are less
-                            severe than verbosityT will be ignored. Expected values
-                            match python logging numeric values (CRITICAL=50,
-                            ERROR=40, WARNING=30, INFO=20, DEBUG=10, NOTSET=0). 
-                            The default is ERROR.
         """
         self._zk = KazooClient(hosts='127.0.0.1:2181') # FIXME
         self._zk.start()
-        logging.basicConfig(
-                format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
-                datefmt='%m/%d/%Y %I:%M:%S', 
-                level=verbosityT)
         self._logger = logging.getLogger("CSS")
 
     def create(self, k, v='', sequence=False):

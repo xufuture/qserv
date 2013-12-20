@@ -91,16 +91,11 @@ class CommandParser(object):
     Parse commands and calls appropriate function from qserv_admin_impl.
     """
 
-    def __init__(self, verbosityT):
+    def __init__(self):
         """
         Initialize shared metadata, including list of supported commands.
-
-        @param     verbosityT   Verbosity threshold. Logging messages which are
-        less severe than verbosityT will be ignored. Expected values match python
-        logging numeric values (CRITICAL=50, ERROR=40, WARNING=30, INFO=20,
-        DEBUG=10, NOTSET=0).
         """
-        self._initLogging(verbosityT)
+        self._initLogging()
         self._funcMap = {
             'CREATE':  self._parseCreate,
             'DROP':    self._parseDrop,
@@ -108,7 +103,7 @@ class CommandParser(object):
             'RELEASE': self._parseRelease,
             'SHOW':    self._parseShow
             }
-        self._impl = QservAdminImpl(self._loggerName, verbosityT)
+        self._impl = QservAdminImpl(self._loggerName)
         self._supportedCommands = """
   Supported commands:
     CREATE DATABASE <dbName> <configFile>;
@@ -348,7 +343,7 @@ class CommandParser(object):
             raise QAdmException(QAdmException.ERR_WRONG_PARAM,
                                 [x["partitioningStrategy"]])
 
-    def _initLogging(self, verbosityT):
+    def _initLogging(self):
         self._loggerName = "QADM"
         self._logger = logging.getLogger(self._loggerName)
         kL = os.getenv('KAZOO_LOGGING')
@@ -457,7 +452,7 @@ def main():
 
     # wait for commands and process
     try:
-        CommandParser(p.getVerbosityT()).receiveCommands()
+        CommandParser().receiveCommands()
     except(KeyboardInterrupt, SystemExit, EOFError):
         print ""
 

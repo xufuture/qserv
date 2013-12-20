@@ -223,7 +223,7 @@ def main():
     if kL: logging.getLogger("kazoo.client").setLevel(int(kL))
 
     # initialize CSS
-    cssI = CssInterface(p.getVerbosityT())
+    cssI = CssInterface()
     db = Db(host='localhost', port=3306, user='becla', passwd='') # FIXME
 
     # setup the thread watching

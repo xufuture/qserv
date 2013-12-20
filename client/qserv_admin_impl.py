@@ -43,19 +43,13 @@ class QservAdminImpl(object):
     QservAdminImpl implements functions needed by qserv_admin client program.
     """
 
-    def __init__(self, loggerName, verbosityT=40):
+    def __init__(self, loggerName):
         """
         Initialize: create CssInterface object.
 
-        @param verbosityT   Verbosity threshold. Logging messages which are less
-                            severe than verbosityT will be ignored. Expected values
-                            values match python logging numeric values (CRITICAL=50,
-                            ERROR=40, WARNING=30, INFO=20, DEBUG=10, NOTSET=0). 
-                            The default is ERROR.
-        @param loggerName   Name of the logger. The logger should be already
-                            initialized.
+        @param loggerName   Name of the logger to use.
         """
-        self._cssI = CssInterface(verbosityT)
+        self._cssI = CssInterface()
         self._logger = logging.getLogger(loggerName)
 
     def createDb(self, dbName, options):
