@@ -53,6 +53,8 @@ class CssException(Exception):
     ERR_KEY_EXISTS              = 2010
     ERR_KEY_DOES_NOT_EXIST      = 2015
     ERR_KEY_INVALID             = 2020
+    ERR_TB_EXISTS               = 2025
+    ERR_TB_DOES_NOT_EXIST       = 2030
     ERR_NOT_IMPLEMENTED         = 9998
     ERR_INTERNAL                = 9999
 
@@ -73,6 +75,8 @@ class CssException(Exception):
             CssException.ERR_KEY_EXISTS: "Key already exists.",
             CssException.ERR_KEY_INVALID: "Invalid key.",
             CssException.ERR_KEY_DOES_NOT_EXIST: "Key does not exist.",
+            CssException.ERR_TB_EXISTS: "Table already exists.",
+            CssException.ERR_TB_DOES_NOT_EXIST: "Table does not exist.",
             CssException.ERR_NOT_IMPLEMENTED: "Fature not implemented yet.",
             CssException.ERR_INTERNAL: "Internal error."
         }

@@ -66,6 +66,27 @@ class TestQservAdminImpl(unittest.TestCase):
         self._impl.createDb("dbA", dd)
         self._impl.dropDb("dbA")
         self._impl.createDb("dbA", dd)
+<<<<<<< HEAD
+=======
+
+        print "=====>> create table Object"
+        s = "%s/tbSchema_Object.sql" % self._baseDir
+        dd = { "tableName":    "Object",
+               "compression":  "1",
+               "drivingTable": "Object",
+               "isRefMatch":   " 0",
+               "keyColName":   "ra_PS",
+               "lonColName":   "ra_PS",
+               "latColName":   "decl_PS",
+               "objIdColName": "objectId",
+               "schema":       "(objectId BIGINT, ra_PS DOUBLE, decl_PS DOUBLE)",
+               "subChunks":    "0" }
+        self._impl.createTable("dbA", "Summer2012", dd)
+
+        self._impl.dropDb("dbA")
+
+
+>>>>>>> work on createTable, not finished
 
         print "=====>> create table Object"
         s = "%s/tbSchema_Object.sql" % self._baseDir
