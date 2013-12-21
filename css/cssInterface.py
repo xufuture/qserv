@@ -46,7 +46,6 @@ class CssException(Exception):
     Exception raised by CSSInterface.
     """
 
-    SUCCESS                     =    0
     ERR_DB_EXISTS               = 2001
     ERR_DB_DOES_NOT_EXIST       = 2005
     ERR_INVALID_CONNECTION      = 2007
@@ -67,6 +66,7 @@ class CssException(Exception):
         self._extraMsgList = extraMsgList
 
         self._errors = { 
+            CssException.ERR_DB_EXISTS: "Database already exists.",
             CssException.ERR_DB_DOES_NOT_EXIST: "Database does not exist.",
             CssException.ERR_INVALID_CONNECTION: "Invalid connection information.",
             CssException.ERR_KEY_EXISTS: "Key already exists.",
@@ -82,7 +82,8 @@ class CssException(Exception):
 
         @return string  Error message string, including all optional messages.
         """
-        msg = self._errors.get(self._errNo, "Undefined css error.")
+        msg = self._errors.get(self._errNo, 
+                               "Unrecognized css error: %d." % self._errNo)
         if self._extraMsgList is not None: 
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
