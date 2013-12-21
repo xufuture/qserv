@@ -146,6 +146,19 @@ class QservAdminImpl(object):
         @param tableName Table name
         @param options   Array with options (key/value)
         """
+        possibleOptions = [
+            [""             , "schema"         ],
+            [""             , "compression"    ],
+            [""             , "isRefMatch"     ],
+            ["/isRefMatch"  , "keyColInTable1" ],
+            ["/isRefMatch"  , "keyColInTable2" ],
+            ["/partitioning", "subChunks"      ],
+            ["/partitioning", "secIndexColName"],
+            ["/partitioning", "drivingTable"   ],
+            ["/partitioning", "lonColName"     ],
+            ["/partitioning", "latColName"     ],
+            ["/partitioning", "keyColName"     ] ]
+
         self._logger.debug("Create table '%s.%s', options: %s" % \
                                (dbName, tableName, str(options)))
         if not self._dbExists(dbName):
@@ -158,15 +171,13 @@ class QservAdminImpl(object):
         tbP = "/DATABASES/%s/TABLES/%s" % (dbName, tableName)
         try:
             self._cssI.create(tbP, "PENDING")
-            self._cssI.create("%s/compression"  % tbP, options["compression" ])
-            self._cssI.create("%s/drivingTable" % tbP, options["drivingTable"])
-            self._cssI.create("%s/isRefMatch"   % tbP, options["isRefMatch"  ])
-            self._cssI.create("%s/keyColName"   % tbP, options["keyColName"  ])
-            self._cssI.create("%s/latColName"   % tbP, options["latColName"  ])
-            self._cssI.create("%s/lonColName"   % tbP, options["lonColName"  ])
-            self._cssI.create("%s/objIdColName" % tbP, options["objIdColName"])
-            self._cssI.create("%s/schema"       % tbP, options["schema"      ])
-            self._cssI.create("%s/subChunks"    % tbP, options["subChunks"   ])
+            for o in possibleOptions:
+                if o[1] in options:
+                    k = "%s%s/%s" % (tbP, o[0], o[1])
+                    v = options[o[1]]
+                    self._cssI.create(k, v)
+                else:
+                    self._logger.info("'%s' not provided" % o[0])
             self._cssI.set(tbP, "READY")
         except CssException as e:
             self._logger.error("Failed to create table '%s.%s', " % \
