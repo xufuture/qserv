@@ -63,7 +63,7 @@ class QservAdminImpl(object):
                                (dbName, str(options)))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
-            return CssException.ERR_DB_EXISTS
+            raise CssException(CssException.ERR_DB_EXISTS, [dbName])
         dbP = "/DATABASES/%s" % dbName
         ptP = None
         try:
@@ -80,12 +80,12 @@ class QservAdminImpl(object):
             self._createDbLockSection(dbP)
             self._cssI.set(dbP, "READY")
         except CssException as e:
-            self._logger.error("Failed to create database, error was: ", e)
+            self._logger.error("Failed to create database '%s', " % dbName +
+                               "error was: " + e.__str__())
             self._cssI.delete(dbP, recursive=True)
             if ptP is not None: self._cssI.delete(ptP, recursive=True)
-            return e.getErrNo()
+            raise
         self._logger.debug("Create database '%s' succeeded." % dbName)
-        return CssException.SUCCESS
 
     def createDbLike(self, dbName, dbName2):
         """
@@ -97,10 +97,10 @@ class QservAdminImpl(object):
         self._logger.info("Creating db '%s' like '%s'" % (dbName, dbName2))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
-            return CssException.ERR_DB_EXISTS
+            raise CssException(CssException.ERR_DB_EXISTS, [dbName])
         if not self._dbExists(dbName2):
             self._logger.error("Database '%s' does not exist." % dbName2)
-            return CssException.ERR_DB_DOES_NOT_EXIST
+            raise CssException(CssException.ERR_DB_DOES_NOT_EXIST, [dbName2])
         dbP = "/DATABASES/%s" % dbName
         try:
             self._cssI.create(dbP, "PENDING")
@@ -110,10 +110,10 @@ class QservAdminImpl(object):
             self._createDbLockSection(dbP)
             self._cssI.set(dbP, "READY")
         except CssException as e:
-            self._logger.error( "Failed to create database, error was: ", e)
+            self._logger.error("Failed to create database '%s', " % dbName +
+                               "error was: " + e.__str__())
             self._cssI.delete(dbP, recursive=True)
-            return e.getErrNo()
-        return CssException.SUCCESS
+            raise
 
     def dropDb(self, dbName):
         """
@@ -124,9 +124,8 @@ class QservAdminImpl(object):
         self._logger.info("Drop database '%s'" % dbName)
         if not self._dbExists(dbName):
             self._logger.error("Database '%s' does not exist." % dbName)
-            return CssException.ERR_DB_DOES_NOT_EXIST
+            raise CssException(CssException.ERR_DB_DOES_NOT_EXIST, [dbName])
         self._cssI.delete("/DATABASES/%s" % dbName, recursive=True)
-        return CssException.SUCCESS
 
     def showDatabases(self):
         """
