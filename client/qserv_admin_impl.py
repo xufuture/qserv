@@ -52,6 +52,7 @@ class QservAdminImpl(object):
         self._cssI = CssInterface(connInfo)
         self._logger = logging.getLogger("QADMI")
 
+    #### DATABASES #################################################################
     def createDb(self, dbName, options):
         """
         Create database (options specified explicitly).
@@ -136,6 +137,45 @@ class QservAdminImpl(object):
         else:
             print self._cssI.getChildren("/DATABASES")
 
+    #### TABLES ####################################################################
+    def createTable(self, dbName, tableName, options):
+        """
+        Create table (options specified explicitly).
+
+        @param dbName    Database name
+        @param tableName Table name
+        @param options   Array with options (key/value)
+        """
+        self._logger.debug("Create table '%s.%s', options: %s" % \
+                               (dbName, tableName, str(options)))
+        if not self._dbExists(dbName):
+            self._logger.error("Database '%s' does not exist." % dbName)
+            raise CssException(CssException.ERR_DB_DOES_NOT_EXIST, [dbName])
+        if self._tableExists(dbName, tableName):
+            self._logger.error("Table '%s.%s' exists." % (dbName, tableName))
+            raise CssException(CssException.ERR_TB_EXISTS, 
+                               ["%s.%s" % (dbName, tableName)])
+        tbP = "/DATABASES/%s/TABLES/%s" % (dbName, tableName)
+        try:
+            self._cssI.create(tbP, "PENDING")
+            self._cssI.create("%s/compression"  % tbP, options["compression" ])
+            self._cssI.create("%s/drivingTable" % tbP, options["drivingTable"])
+            self._cssI.create("%s/isRefMatch"   % tbP, options["isRefMatch"  ])
+            self._cssI.create("%s/keyColName"   % tbP, options["keyColName"  ])
+            self._cssI.create("%s/latColName"   % tbP, options["latColName"  ])
+            self._cssI.create("%s/lonColName"   % tbP, options["lonColName"  ])
+            self._cssI.create("%s/objIdColName" % tbP, options["objIdColName"])
+            self._cssI.create("%s/schema"       % tbP, options["schema"      ])
+            self._cssI.create("%s/subChunks"    % tbP, options["subChunks"   ])
+            self._cssI.set(tbP, "READY")
+        except CssException as e:
+            self._logger.error("Failed to create table '%s.%s', " % \
+                                (dbName, tableName) + "error was: " + e.__str__())
+            self._cssI.delete(tbP, recursive=True)
+            raise
+        self._logger.debug("Create table '%s.%s' succeeded." % (dbName, tableName))
+
+    ################################################################################
     def showEverything(self):
         """
         Dumps entire metadata in CSS to stdout. Very useful for debugging.
@@ -155,6 +195,16 @@ class QservAdminImpl(object):
         @param dbName    Database name.
         """
         p = "/DATABASES/%s" % dbName
+        return self._cssI.exists(p)
+
+    def _tableExists(self, dbName, tableName):
+        """
+        Check if the table exists.
+
+        @param dbName    Database name.
+        @param tableName Table name.
+        """
+        p = "/DATABASES/%s/TABLES/%s" % (dbName, tableName)
         return self._cssI.exists(p)
 
     def _copyKeyValue(self, dbDest, dbSrc, theList):

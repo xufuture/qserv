@@ -37,6 +37,7 @@ from qserv_admin_impl import QservAdminImpl
 class TestQservAdminImpl(unittest.TestCase):
     def setUp(self):
         self._impl = QservAdminImpl('127.0.0.1:2181')
+        self._baseDir = "client/examples"
 
     def testCreateDb(self):
         dd = {"level": "L2",
@@ -65,6 +66,21 @@ class TestQservAdminImpl(unittest.TestCase):
         self._impl.createDb("dbA", dd)
         self._impl.dropDb("dbA")
         self._impl.createDb("dbA", dd)
+
+        print "=====>> create table Object"
+        s = "%s/tbSchema_Object.sql" % self._baseDir
+        dd = { "tableName":    "Object",
+               "compression":  "1",
+               "drivingTable": "Object",
+               "isRefMatch":   " 0",
+               "keyColName":   "ra_PS",
+               "lonColName":   "ra_PS",
+               "latColName":   "decl_PS",
+               "objIdColName": "objectId",
+               "schema":       "(objectId BIGINT, ra_PS DOUBLE, decl_PS DOUBLE)",
+               "subChunks":    "0" }
+        self._impl.createTable("dbA", "Summer2012", dd)
+
         self._impl.dropDb("dbA")
 
 
