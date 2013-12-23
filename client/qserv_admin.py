@@ -28,11 +28,6 @@ corresponding function.
 @author  Jacek Becla, SLAC
 
 Known issues and todos:
- - !!!!!! 
-
-need to catch exceptions from impl and handle them correctly!!!!!!!!
-
-
  - deal with user authentication
  - many commands still need to be implemented
  - need to separate dangerous admin commands like DROP EVERYTHING

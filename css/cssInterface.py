@@ -77,7 +77,7 @@ class CssException(Exception):
             CssException.ERR_KEY_DOES_NOT_EXIST: "Key does not exist.",
             CssException.ERR_TB_EXISTS: "Table already exists.",
             CssException.ERR_TB_DOES_NOT_EXIST: "Table does not exist.",
-            CssException.ERR_NOT_IMPLEMENTED: "Fature not implemented yet.",
+            CssException.ERR_NOT_IMPLEMENTED: "Feature not implemented yet.",
             CssException.ERR_INTERNAL: "Internal error."
         }
 
