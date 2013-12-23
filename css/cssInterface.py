@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # LSST Data Management System
-# Copyright 2013 LSST Corporation.
+# Copyright 2013-2014 LSST Corporation.
 # 
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -34,65 +34,31 @@ Known issues and todos:
  * issue: watcher is currently using the "_zk", and bypasses the official API!
 """
 
+# standard library imports
+import logging
+import sys
 import time
 
+# third-party software imports
 from kazoo.client import KazooClient
 from kazoo.exceptions import NodeExistsError, NoNodeError
 
-import logging
+# local imports
+from lsst.db.exception import produceExceptionClass
 
-class CssException(Exception):
-    """
-    Exception raised by CSSInterface.
-    """
-
-    ERR_DB_EXISTS               = 2001
-    ERR_DB_DOES_NOT_EXIST       = 2005
-    ERR_INVALID_CONNECTION      = 2007
-    ERR_KEY_EXISTS              = 2010
-    ERR_KEY_DOES_NOT_EXIST      = 2015
-    ERR_KEY_INVALID             = 2020
-    ERR_NOT_IMPLEMENTED         = 9998
-    ERR_INTERNAL                = 9999
-
-    def __init__(self, errNo, extraMsgList=None):
-        """
-        Initialize the shared data.
-
-        @param errNo      Error number.
-        @param extraMsgList  Optional list of extra messages.
-        """
-        self._errNo = errNo
-        self._extraMsgList = extraMsgList
-
-        self._errors = { 
-            CssException.ERR_DB_EXISTS: "Database already exists.",
-            CssException.ERR_DB_DOES_NOT_EXIST: "Database does not exist.",
-            CssException.ERR_INVALID_CONNECTION: "Invalid connection information.",
-            CssException.ERR_KEY_EXISTS: "Key already exists.",
-            CssException.ERR_KEY_INVALID: "Invalid key.",
-            CssException.ERR_KEY_DOES_NOT_EXIST: "Key does not exist.",
-            CssException.ERR_NOT_IMPLEMENTED: "Fature not implemented yet.",
-            CssException.ERR_INTERNAL: "Internal error."
-        }
-
-    def __str__(self):
-        """
-        Return string representation of the error.
-
-        @return string  Error message string, including all optional messages.
-        """
-        msg = self._errors.get(self._errNo, 
-                               "Unrecognized css error: %d." % self._errNo)
-        if self._extraMsgList is not None: 
-            for s in self._extraMsgList: msg += " (%s)" % s
-        return msg
-
-    def getErrNo(self):
-        """
-        Return error number.
-        """
-        return self._errNo
+####################################################################################
+CssException = produceExceptionClass('CssException', [
+        (2001, "DB_EXISTS",          "Database already exists."),
+        (2005, "DB_DOES_NOT_EXIST",  "Database does not exist."),
+        (2010, "INVALID_CONNECTION", "Invalid connection information."),
+        (2015, "KEY_EXISTS",         "Key already exists."),
+        (2020, "KEY_DOES_NOT_EXIST", "Key does not exist."),
+        (2025, "KEY_INVALID",        "Key Invalid key."),
+        (2030, "MISSING_PARAM",      "Missing parameter."),
+        (2035, "TB_EXISTS",          "Table already exists."),
+        (2040, "TB_DOES_NOT_EXIST",  "Table does not exist."),
+        (9998, "NOT_IMPLEMENTED",    "Feature not implemented yet."),
+        (9999, "INTERNAL",           "Internal error.")])
 
 ####################################################################################
 class CssInterface(object):
@@ -108,7 +74,7 @@ class CssInterface(object):
         """
         self._logger = logging.getLogger("CSS")
         if connInfo is None:
-            raise CssException(CssException.ERR_INVALID_CONNECTION, ["<None>"])
+            raise CssException(CssException.INVALID_CONNECTION, "<None>")
         self._logger.info("conn is: %s" % connInfo)
         self._zk = KazooClient(hosts=connInfo)
         self._zk.start()
@@ -129,7 +95,7 @@ class CssInterface(object):
             return self._zk.create(k, v, sequence=sequence, makepath=True)
         except NodeExistsError:
             self._logger.error("in create(), key %s exists" % k)
-            raise CssException(CssException.ERR_KEY_EXISTS, [k])
+            raise CssException(CssException.KEY_EXISTS, k)
 
     def exists(self, k):
         """
@@ -157,7 +123,7 @@ class CssInterface(object):
             return v
         except NoNodeError:
             self._logger.error("in get(), key %s does not exist" % k)
-            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
+            raise CssException(CssException.KEY_DOES_NOT_EXIST, k)
 
     def getChildren(self, k):
         """
@@ -174,7 +140,7 @@ class CssInterface(object):
             return self._zk.get_children(k)
         except NoNodeError:
             self._logger.error("in getChildren(), key %s does not exist" % k)
-            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
+            raise CssException(CssException.KEY_DOES_NOT_EXIST, k)
 
     def set(self, k, v):
         """
@@ -190,7 +156,7 @@ class CssInterface(object):
             self._zk.set(k, v)
         except NoNodeError:
             self._logger.error("in set(), key %s does not exist" % k)
-            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
+            raise CssException(CssException.KEY_DOES_NOT_EXIST, k)
 
     def delete(self, k, recursive=False):
         """
@@ -207,7 +173,7 @@ class CssInterface(object):
             self._zk.delete(k, recursive=recursive)
         except NoNodeError:
             self._logger.error("in delete(), key %s does not exist" % k)
-            raise CssException(CssException.ERR_KEY_DOES_NOT_EXIST, [k])
+            raise CssException(CssException.KEY_DOES_NOT_EXIST, k)
 
     def deleteAll(self, p):
         """
@@ -222,13 +188,16 @@ class CssInterface(object):
         if self._zk.exists(p):
             self._deleteOne(p)
 
-    def printAll(self):
+    def dumpAll(self, dest=None):
         """
-        Print entire contents to stdout. This is handy for debugging.
+        Returns entire contents.
         """
-        self._printOne("/")
+        fileH = sys.stdout
+        if dest is not None:
+            fileH = open(dest, "w")
+        self._printOne("/", fileH)
 
-    def _printOne(self, p):
+    def _printOne(self, p, fileH=None):
         """
         Print content of one key/value to stdout. Note, this function is recursive.
 
@@ -240,13 +209,19 @@ class CssInterface(object):
         try:
             children = self._zk.get_children(p)
             data, stat = self._zk.get(p)
-            print p, "=", data
+            if fileH is not None:
+                fileH.write(p)
+                fileH.write('\t')
+                fileH.write((data if data else '\N'))
+                fileH.write('\n')
+            else:
+                print p, '\t', (data if data else '\N')
             for child in children:
                 if p == "/":
                     if child != "zookeeper":
-                        self._printOne("%s%s" % (p, child))
+                        self._printOne("%s%s" % (p, child), fileH)
                 else:
-                    self._printOne("%s/%s" % (p, child))
+                    self._printOne("%s/%s" % (p, child), fileH)
         except NoNodeError:
             self._logger.warning("Caught NoNodeError, someone deleted node just now")
             None
