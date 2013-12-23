@@ -46,18 +46,21 @@ import os
 import re
 import readline
 
+from cssInterface import CssException
 from qserv_admin_impl import QservAdminImpl
+
 
 class QAdmException(Exception):
     """
     Defines qserv_admin-specific exception.
     """
-    SUCCESS                     =    0
     ERR_BAD_CMD                 = 3001
     ERR_CONFIG_NOT_FOUND        = 3002
     ERR_MISSING_PARAM           = 3003
     ERR_WRONG_PARAM             = 3004
     ERR_WRONG_PARAM_VAL         = 3005
+    ERR_CUSTOM                  = 9997
+    ERR_NOT_IMPLEMENTED         = 9998
     ERR_INTERNAL                = 9999
 
     def __init__(self, errNo, extraMsgList=None):
@@ -76,6 +79,8 @@ class QAdmException(Exception):
             QAdmException.ERR_MISSING_PARAM: ("Missing parameter."),
             QAdmException.ERR_WRONG_PARAM: ("Unrecognized parameter."),
             QAdmException.ERR_WRONG_PARAM_VAL: "Unrecognized value for parameter.",
+            QAdmException.ERR_CUSTOM: "",
+            QAdmException.ERR_NOT_IMPLEMENTED: "Feature not implemented yet.",
             QAdmException.ERR_INTERNAL: "Internal error."
         }
 
@@ -85,7 +90,8 @@ class QAdmException(Exception):
 
         @return string  Error message string, including all optional messages.
         """
-        msg = self._errors.get(self._errNo, "Undefined qserv_admin error")
+        msg = self._errors.get(self._errNo, 
+                               "Unrecognized qserv_admin error: %d" % self._errNo)
         if self._extraMsgList is not None:
             for s in self._extraMsgList: msg += " (%s)" % s
         return msg
@@ -140,12 +146,13 @@ class CommandParser(object):
                 try:
                     self._parse(sql[:pos])
                 except QAdmException as e:
-                    self._logger.error(e)
+                    self._logger.error(e.__str__())
+                    print "ERROR: ", e.__str__()
                 sql = sql[pos+1:]
 
     def _parse(self, cmd):
         """
-        Parser, dispatch to subparsers based on first word. Raise exceptions on
+        Parse, and dispatch to subparsers based on first word. Raise exceptions on
         errors.
         """
         cmd = cmd.strip()
@@ -158,11 +165,11 @@ class CommandParser(object):
         elif t == 'EXIT' or t == 'QUIT':
             raise SystemExit()
         else:
-            self._logger.error("Unsupported command '%s', see HELP." % cmd)
+            raise QAdmException(QAdmException.ERR_NOT_IMPLEMENTED, [cmd])
 
     def _parseCreate(self, tokens):
         """
-        Subparser, handle all CREATE requests.
+        Subparser - handles all CREATE requests.
         """
         t = tokens[0].upper()
         if t == 'DATABASE':
@@ -170,11 +177,11 @@ class CommandParser(object):
         elif t == 'TABLE':
             self._parseCreateTable(tokens[1:])
         else:
-            self._logger.error("CREATE '%s' is not supported yet." % t)
+            raise QAdmException(QAdmException.ERR_BAD_CMD)
 
     def _parseCreateDatabase(self, tokens):
         """
-        Subparser, handle all CREATE DATABASE requests.
+        Subparser - handles all CREATE DATABASE requests.
         """
         l = len(tokens)
         if l == 2:
@@ -182,27 +189,40 @@ class CommandParser(object):
             configFile = tokens[1]
             options = self._fetchOptionsFromConfigFile(configFile)
             options = self._processDbOptions(options)
-            self._impl.createDb(dbName, options)
+            try:
+                self._impl.createDb(dbName, options)
+            except CssException as e:
+                raise QAdmException(
+                    QAdmException.ERR_CUSTOM, 
+                    ["Failed to create database '" + dbName + "', error was: " +
+                    e.__str__()])
         elif l == 3:
             if tokens[1].upper() != 'LIKE':
-                raise QAdmException(QAdmException.ERR_BAD_CMD, 
-                                    ["expected 'LIKE', found: '%s'." % tokens[1]])
+                raise QAdmException(
+                    QAdmException.ERR_BAD_CMD, 
+                    ["expected 'LIKE', found: '%s'." % tokens[1]])
             dbName = tokens[0]
             dbName2 = tokens[2]
-            self._impl.createDbLike(dbName, dbName2)
+            try:
+                self._impl.createDbLike(dbName, dbName2)
+            except CssException as e:
+                raise QAdmException(
+                    QAdmException.ERR_CUSTOM, 
+                    ["Failed to create database '" + dbName + "' like '" + dbName2 +
+                    "', error was: ", e.__str__()])
         else:
             raise QAdmException(QAdmException.ERR_BAD_CMD, 
                                 ["unexpected number of arguments."])
 
     def _parseCreateTable(self, tokens):
         """
-        Subparser, handle all CREATE TABLE requests.
+        Subparser - handles all CREATE TABLE requests.
         """
-        self._logger.error('CREATE TABLE not implemented.')
+        raise QAdmException(QAdmException.ERR_NOT_IMPLEMENTED, ["CREATE TABLE"])
 
     def _parseDrop(self, tokens):
         """
-        Subparser, handle all DROP requests.
+        Subparser - handles all DROP requests.
         """
         t = tokens[0].upper()
         l = len(tokens)
@@ -210,13 +230,25 @@ class CommandParser(object):
             if l != 2:
                 raise QAdmException(QAdmException.ERR_BAD_CMD,  
                                     ["unexpected number of arguments"])
-            self._impl.dropDb(tokens[1])
+            try:
+                self._impl.dropDb(tokens[1])
+            except CssException as e:
+                raise QAdmException(
+                    QAdmException.ERR_CUSTOM, 
+                    ["Failed to drop database '" + tokens[1] + 
+                    ", error was: ", e.__str__()])
         elif t == 'TABLE':
-            self._logger.error("drop table not implemented")
+            raise QAdmException(QAdmException.ERR_NOT_IMPLEMENTED, ["DROP TABLE"])
+
         elif t == 'EVERYTHING':
-            self._impl.dropEverything()
+            try:
+                self._impl.dropEverything()
+            except CssException as e:
+                raise QAdmException(
+                    QAdmException.ERR_CUSTOM, 
+                    ["Failed to drop everything, error was: ", e.__str__()])
         else:
-            self._logger.error("DROP '%s' is not supported yet." % t)
+            raise QAdmException(QAdmException.ERR_BAD_CMD)
 
     def _printHelp(self, tokens):
         """
@@ -226,9 +258,9 @@ class CommandParser(object):
 
     def _parseRelease(self, tokens):
         """
-        Subparser, handle all RELEASE requests.
+        Subparser - handles all RELEASE requests.
         """
-        self._logger.error('RELEASE not implemented.')
+        raise QAdmException(QAdmException.ERR_NOT_IMPLEMENTED, ["RELEASE"])
 
     def _parseShow(self, tokens):
         """
@@ -240,7 +272,7 @@ class CommandParser(object):
         elif t == 'EVERYTHING':
             self._impl.showEverything()
         else:
-            self._logger.error("SHOW '%s' is not supported yet." % t)
+            raise QAdmException(QAdmException.ERR_BAD_CMD)
 
     def _createDb(self, dbName, configFile):
         """
