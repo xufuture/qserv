@@ -12,15 +12,15 @@ Import('extraTgts')
 # Manual dependencies for masterLib.i, because the SCons SWIG builder
 # isn't knowledgeable enough to ensure their presence when using VariantDir
 depends = ['control/transaction.h',
-           'xrdc/xrdfile.h',
-           'merger/mergeTypes.h',
            'control/dispatcher.h',
-           'util/Substitution.h',
+           'merger/TableMerger.h',
+           'merger/mergeTypes.h',
+           'meta/ifaceMeta.h',
            'query/Constraint.h',
            'qdisp/ChunkMeta.h',
            'qproc/ChunkSpec.h',
-           'merger/TableMerger.h',
-           'meta/ifaceMeta.h']
+           'util/Substitution.h',
+           'xrdc/xrdfile.h']
 depends = map(lambda f: env.File("../"+f), depends)
 
 localCpppath = env['CPPPATH']
@@ -43,8 +43,7 @@ swigged = env.SharedObject(source="masterLib.i",
 #swigged = [env.File("masterLib.i")]
 
 # print swigged # prints ['masterLib_wrap.os']
-env.Depends(swigged[0], depends)
-env.Depends(swigged[0], File('../control/transaction.h'))
+env.Depends(swigged, depends)
 tgt = swigged
 
 # Create entry for python file, which SCons SWIG builder ignores
@@ -62,19 +61,14 @@ def markForInstall(env, pathList, extras):
 
     # install py files
     for s in env.Glob(os.path.join(srcPyDir,"*.py")):
-        #print "Installing ", s
-        if s.name == "argv.py": continue # workaround Scons missing argv.py
         extraTgts['dist'].append((pyDir, s))
         #env.Alias("install", env.Install(pyDir, s))
     for s in extras:
-        print "Installing: ", pyDir, s
         extraTgts['dist'].append((pyDir, s))
-        #env.Install(pyDir, s)
     # touch init files
     for p in range(1,len(pathList)):
         plist = pathList[:p] + ["__init__.py"]
         fname = os.path.join(*plist)
-        print "touching fname",fname
         f = env.Command(fname, None, [Touch("$TARGET")])
         
         extraTgts['dist'].append((os.path.join(*pathList[:p]), f))

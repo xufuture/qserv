@@ -1,0 +1,23 @@
+# -*- python -*-
+Import('env')
+Import('libProducts')
+Import('defaultTgts')
+Import('findLibs')
+
+import os
+import itertools
+
+
+programs = []
+# extDeps
+extDeps = "boost_signals boost_thread mysqlclient_r protobuf ssl XrdSys".split()
+
+modDeps = 'log mysql util wbase wconfig wdb'.split() # deps on other modules
+deps = itertools.chain(*map(lambda m: defaultTgts[m], modDeps))
+pDeps = itertools.chain(*map(lambda m: libProducts[m], ["proto"]))
+deps = map(lambda i:i, itertools.chain(deps, pDeps)) # un-chain
+deps.sort(key=str)
+p = env.Program(['testQuerySql.cc'] + deps, LIBS=findLibs(extDeps))
+programs.append(p)
+
+Return('programs')

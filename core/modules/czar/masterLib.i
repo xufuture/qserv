@@ -68,7 +68,6 @@ namespace std {
 
 // ------------------------------------------------------------------------
 // Copied from http://www.swig.org/Doc1.3/Python.html#Python_nn59
-%module argv
 
 // This tells SWIG to treat char ** as a special case
 %typemap(in) char ** {
@@ -116,18 +115,18 @@ namespace std {
 %apply int *OUTPUT { int *write, int *read };
 %apply int *OUTPUT { int* chunkId, int* code, time_t* timestamp };
 
-%include "control/transaction.h"
-%include "xrdc/xrdfile.h"
-%include "merger/mergeTypes.h"
 %include "control/dispatcher.h"
-%include "util/Substitution.h"
-%include "query/Constraint.h"
-%include "qdisp/ChunkMeta.h"
-%include "qproc/ChunkSpec.h"
+%include "control/transaction.h"
+%include "merger/mergeTypes.h"
 %include "merger/TableMerger.h"
 %include "meta/ifaceMeta.h"
 %include "log/queryMsg.h"
 %include "log/loggerInterface.h"
+%include "qdisp/ChunkMeta.h"
+%include "qproc/ChunkSpec.h"
+%include "query/Constraint.h"
+%include "util/Substitution.h"
+%include "xrdc/xrdfile.h"
 
 // Instantiate any templates here:
 // %template(setBool) lsst::daf::base::PropertySet::set<bool>;

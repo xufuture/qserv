@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2013 LSST Corporation.
+ * Copyright 2013-2014 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,16 +20,14 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
   /**
-  * @file QuerySql_1.cc
-  *
   * @brief Simple testing for class QuerySql
   *
   * @author Daniel L. Wang, SLAC
   */ 
 #define BOOST_TEST_MODULE QuerySql_1
 #include "boost/test/included/unit_test.hpp"
-#include "lsst/qserv/worker/QuerySql.h"
-#include "lsst/qserv/worker/QuerySql_Batch.h"
+#include "wdb/QuerySql.h"
+#include "wdb/QuerySql_Batch.h"
 
 namespace test = boost::test_tools;
 namespace qWorker = lsst::qserv::worker;
