@@ -106,6 +106,7 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
 modList = [m for m in chain(*map(lambda d: d['mods'],
                                 shProducts.values()))]
 libProducts = dict(izip(modList, repeat(None)))
+defaultTgts = dict()
 
 # libDepName = "extLibs"
 # def getLibDeps(mName):
@@ -132,8 +133,11 @@ def getTgts(mName):
     else:
         #print "No targets for %s, using glob" % mName
         # All .cc, except test files.
-        return filter(lambda f: not str(f).startswith("test"),
-                      env.Glob(os.path.join(mName, "*.cc")))
+        files = filter(lambda f: not str(f).startswith("test"),
+                       env.Glob(os.path.join(mName, "*.cc")))
+        files.sort(key=lambda n: n.str_for_display())
+        defaultTgts[mName] = files
+        return files
 
 boostChecker = detect.BoostChecker(env)
 def findLibs(libList):
@@ -144,14 +148,15 @@ def findLibs(libList):
     return map(cheapCheckLib, libList)
 
 def makeSharedObjectCC(env, ccFile):
-    if str(ccFile).endswith(".cc"): return env.SharedObject(ccFile)
+    if str(ccFile).endswith(".cc"): return env.SharedObject(ccFile)[0]
     else: return ccFile
 
 def getTests(mName):
     scriptPath = os.path.join(mName, "SConscript.test")
     if env.Glob(scriptPath):
         tests = SConscript(scriptPath, exports={'env': env,
-                                                'libProducts': libProducts})
+                                                'libProducts': libProducts,
+                                                'defaultTgts' : defaultTgts})
         return tgts
     else:
         return None
@@ -160,26 +165,33 @@ def getTests(mName):
 ########################################################################
 
 # Gather up source files
-#for mod in libProducts:
-#    objs = getTgts(mod)
-#    libProducts[mod] = objs
 for mod in allModules:
     libProducts[mod] = getTgts(mod)
 
+# Compute non-custom shared objects
+for m in defaultTgts:
+    files = defaultTgts[m]
+    objs = [makeSharedObjectCC(env, a) for a in set(files)]
+    defaultTgts[m] = objs
+    
 
 # Compute shlib targets
 for (pkg, opts) in shProducts.items():
     srcs = []
     for m in opts['mods']: # Visit modules and compose union of LIBS
-        prods = libProducts[m]
-        srcs.extend(prods)
+        if m in defaultTgts:
+            srcs.extend(defaultTgts[m])
+        else:
+            prods = libProducts[m]
+            srcs.extend(prods)
         pass
 
     # Eliminate dupes for srcs and libs, and
     # convert .cc to SharedObject to prevent warning
     # (scons: warning: Two different environments)
     srcs = [makeSharedObjectCC(env, a) for a in set(srcs)]
-
+    # Sort to prevent dependency-order rebuilding
+    srcs.sort(key=lambda n: n.str_for_display())
     #env.Append(LIBS=libs)
     #extLibFlags = ["-l"+lib for lib in findLibs(opts['libs'])]
     extLibs = [lib for lib in findLibs(opts['libs'])]
