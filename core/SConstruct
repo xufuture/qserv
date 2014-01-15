@@ -1,6 +1,12 @@
 # -*- python -*-
 # top level
+
+## Include the protoc, antlr, and swig builder tools
 env = Environment(tools=['default', 'protoc', 'antlr', 'swig'])
+
+# Setup the #include paths
 env.Append(CPPPATH="modules")
+
+# Trigger the modules build, outputting to bld/
 SConscript('modules/SConscript', variant_dir='bld', duplicate=1,
            exports=['env', 'ARGUMENTS'])

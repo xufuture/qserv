@@ -62,19 +62,15 @@ def markForInstall(env, pathList, extras):
 
     # install py files
     for s in env.Glob(os.path.join(srcPyDir,"*.py")):
-        #print "Installing ", s
         if s.name == "argv.py": continue # workaround Scons missing argv.py
         extraTgts['dist'].append((pyDir, s))
         #env.Alias("install", env.Install(pyDir, s))
     for s in extras:
-        print "Installing: ", pyDir, s
         extraTgts['dist'].append((pyDir, s))
-        #env.Install(pyDir, s)
     # touch init files
     for p in range(1,len(pathList)):
         plist = pathList[:p] + ["__init__.py"]
         fname = os.path.join(*plist)
-        print "touching fname",fname
         f = env.Command(fname, None, [Touch("$TARGET")])
         
         extraTgts['dist'].append((os.path.join(*pathList[:p]), f))
