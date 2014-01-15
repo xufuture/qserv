@@ -2,13 +2,11 @@
 #
 # Setup our environment
 #
-# Do not change these
 Import('*')
 import glob, os, re, sys
 from itertools import chain, izip, repeat
 import SCons.Util
 import detect # Qserv dep detector
-##import detect_deps
 
 
 # Describe what your package contains here.
@@ -16,8 +14,10 @@ env.Help("""
 Qserv core code
 """)
 
-# Detect protobufs
-##detect_deps.detectProtobufs()
+# TODO: 
+#  * Make the configure-check optional.
+###
+###
 extraTgts = {}
 extraTgts['dist'] = []
 canBuild = True
@@ -28,6 +28,9 @@ if geomLib:
 metaFiles = detect.findMeta(env)
 for f in metaFiles: extraTgts['dist'].append(('lsst/qserv/meta', f))
 
+hasMysql = detect.checkMySql(env)
+
+
 # Handle debug
 debug = ARGUMENTS.get('debug', 0)
 print "debug is", debug
@@ -35,19 +38,20 @@ if int(debug):
     print "Debug build requested."
     env.Append(CCFLAGS = '-g')
 
+## import via eups if directed
+if 'eups' in ARGUMENTS:
+    import eups
+    eups.importDeps(env)
+    
+
 # Environment
 # Must do all env modifiers here, otherwise SCons complains
 # about different environments used to build files in shared components.
-if not env.GetOption('clean'):
-    conf = env.Configure()
-    canBuild = canBuild and conf.CheckLibWithHeader("mysqlclient_r",
-                                                    "mysql/mysql.h",
-                                                    language="C++",
-                                                    autoadd=0)
-    conf.Finish()
+if not env.GetOption('clean'):    
+    canBuild = canBuild and detect.checkMySql(env)
     detect.addExtern(env, ARGUMENTS.get('extern', None))
     if detect.setXrootd(env):
-        canBuild = canBuild and detect.checkXrdPosix(env)
+        canBuild = canBuild and detect.checkXrootdLink(env)
     else: canBuild = False
     env.Append(CPPPATH=[os.getcwd()]) # top level
     env.Append(CPPPATH=[env['PROTOC_INC']])
@@ -138,7 +142,6 @@ def findLibs(libList):
             return boostChecker.getLibName(libName)
         else: return libName
     return map(cheapCheckLib, libList)
-hasMysql = detect.checkMySql2(env)
 
 def makeSharedObjectCC(env, ccFile):
     if str(ccFile).endswith(".cc"): return env.SharedObject(ccFile)
@@ -189,7 +192,7 @@ for (pkg, opts) in shProducts.items():
 
 #Runner wrapper
 import runner
-print extraTgts["PYTHONPATH"]
+#### print extraTgts["PYTHONPATH"]  #deleteme
 env["PYTHONPATH"] = extraTgts["PYTHONPATH"]
 f = runner.WrapperScript(env, "qsEnv.sh")
 extraTgts['dist'].append(('bin', f))
@@ -197,7 +200,7 @@ extraTgts['dist'].append(('bin', f))
 # Install targets
 distDir = 'dist'
 for (path, f) in extraTgts['dist']:
-    print "REally installing:", f
+    #print "REally installing:", f  ## deleteme
     env.Install(os.path.join(distDir, path), f)
 
 
@@ -223,19 +226,3 @@ if False:
         # FIXME
         #p = env.Program(f+"bin", [t] + libProducts[m] + )
 #
-# Build/install things
-#
-
-#####################################################################
-# Variant support
-#    VariantDir(bldDir, 'src')
-#    SConscript("src/SConscript.lib", variant_dir=bldDir,
-#               exports={'env' : expEnv, 'detect_deps' : detect_deps})
-
-# for d in Split("proto src tests doc"):
-#     if os.path.isdir(d):
-#         try:
-#             SConscript(os.path.join(d, "SConscript"),
-#                        exports={'env' : env})
-#         except Exception, e:
-#             print >> sys.stderr, "%s: %s" % (os.path.join(d, "SConscript"), e)
