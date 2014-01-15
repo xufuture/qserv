@@ -15,6 +15,7 @@ depends = ['control/transaction.h',
            'xrdc/xrdfile.h',
            'merger/mergeTypes.h',
            'control/dispatcher.h',
+           'control/transaction.h',           
            'util/Substitution.h',
            'query/Constraint.h',
            'qdisp/ChunkMeta.h',
@@ -44,7 +45,7 @@ swigged = env.SharedObject(source="masterLib.i",
 
 # print swigged # prints ['masterLib_wrap.os']
 env.Depends(swigged[0], depends)
-env.Depends(swigged[0], File('../control/transaction.h'))
+#env.Depends(swigged[0], File('../control/transaction.h'))
 tgt = swigged
 
 # Create entry for python file, which SCons SWIG builder ignores
