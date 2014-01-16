@@ -132,9 +132,10 @@ def getTgts(mName):
         return tgts
     else:
         #print "No targets for %s, using glob" % mName
-        # All .cc, except test files.
-        files = filter(lambda f: not str(f).startswith("test"),
+        # All .cc, except test files.        
+        files = filter(lambda f: not os.path.basename(str(f)).startswith("test"),
                        env.Glob(os.path.join(mName, "*.cc")))
+        #print mName, "has files:::::", map(str,files)
         files.sort(key=lambda n: n.str_for_display())
         defaultTgts[mName] = files
         return files
@@ -151,12 +152,13 @@ def makeSharedObjectCC(env, ccFile):
     if str(ccFile).endswith(".cc"): return env.SharedObject(ccFile)[0]
     else: return ccFile
 
-def getTests(mName):
+def getTests(env, mName):
     scriptPath = os.path.join(mName, "SConscript.test")
     if env.Glob(scriptPath):
-        tests = SConscript(scriptPath, exports={'env': env,
-                                                'libProducts': libProducts,
-                                                'defaultTgts' : defaultTgts})
+        tests = SConscript(scriptPath, exports={'env' : env,
+                                                'libProducts' : libProducts,
+                                                'defaultTgts' : defaultTgts,
+                                                'findLibs' : findLibs})
         return tgts
     else:
         return None
@@ -220,21 +222,6 @@ for (path, f) in extraTgts['dist']:
 
 # module tests
 for m in libProducts.keys():
-    tgts = getTests(m)
+    tgts = getTests(env, m)
     if tgts: print tgts
-if False:
-    testCc = env.Glob(m+'/test*cc')
-    for t in testCc:
-        (path,f) = os.path.split(str(t))
-        (pName, ext) = os.path.splitext(f)
-        dep = env.Glob(os.path.join(path, pName + ".depend"))
-        depList = []
-        if dep:
-            v = env.Variables(dep[0])
-            print v
-            for line in open(dep[0]).readlines():
-                print "["+line+"]"
-                #depList.append(env.Glob(os.path.join(path,
-        # FIXME
-        #p = env.Program(f+"bin", [t] + libProducts[m] + )
 #

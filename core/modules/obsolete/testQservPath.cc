@@ -21,9 +21,6 @@
  */ 
 #define BOOST_TEST_MODULE Path_1
 #include "boost/test/included/unit_test.hpp"
-// #include <cerrno>
-// #include <cstdlib>
-// #include <cstring>
 #include <iostream>
 #include "boost/scoped_ptr.hpp"
 #include "QservPath.hh"
@@ -41,7 +38,7 @@ BOOST_FIXTURE_TEST_SUITE(PathTestSuite, PathFixture)
 BOOST_AUTO_TEST_CASE(QueryPathCreate) {
     qsrv::QservPath qp;
     qp.setAsCquery("LSST", 3141);
-    std::cout << "path became:" << qp.path() << std::endl;
+    //std::cout << "path became:" << qp.path() << std::endl;
     BOOST_CHECK_EQUAL(qp.path(), "/q/LSST/3141");
 }
 
