@@ -30,6 +30,8 @@
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::FromList;
+using lsst::qserv::master::TableRefnList;
+using lsst::qserv::master::TableRefnListPtr;
 
 std::ostream&
 qMaster::operator<<(std::ostream& os, FromList const& fl) {
@@ -72,10 +74,59 @@ boost::shared_ptr<qMaster::FromList> FromList::copySyntax() {
 }
 
 boost::shared_ptr<qMaster::FromList> FromList::copyDeep() const {
-    // FIXME
+    typedef TableRefnList::const_iterator Iter;
     boost::shared_ptr<FromList> newL(new FromList(*this));
-    // Shallow copy of expr list is okay.
-    newL->_tableRefns.reset(new TableRefnList(*_tableRefns));
-    // For the other fields, default-copied versions are okay.
+
+    newL->_tableRefns.reset(new TableRefnList());
+
+    for(Iter i=_tableRefns->begin(), e=_tableRefns->end(); i != e; ++ i) {
+        newL->_tableRefns->push_back(*i);
+    }
+    // Okay to share columnRefMap: we do not own it.
     return newL;
+}
+
+typedef std::list<qMaster::TableRefnListPtr> ListList;
+void permuteHelper(ListList::iterator i, ListList::iterator e, 
+                   qMaster::TableRefnListPtr soFar, ListList& finals) {
+
+    if(i == e) {
+        //put sofar onto final
+        finals.push_back(soFar);
+    }
+    TableRefnList& slotList = **i;
+    ++i;
+    if(slotList.size() > 1) {
+        typedef TableRefnList::iterator Iter;
+        for(Iter j=slotList.begin(), e2=slotList.end(); j != e2; ++j) {
+            // FIXME: Clone the list?
+            TableRefnListPtr nSoFar(new TableRefnList(*soFar));
+            // FIXME: Clone the tableref?
+            nSoFar->push_back(*j);
+            permuteHelper(i, e, nSoFar, finals);
+        }
+    } else {
+        soFar->push_back((**i).front());
+        permuteHelper(i, e, soFar, finals);
+    }
+}
+FromList::PtrList FromList::permute(TableRefN::Pfunc& f) {
+    PtrList pList;
+    ListList combos;
+    typedef TableRefnList::const_iterator Iter;
+
+    for(Iter i=_tableRefns->begin(), e=_tableRefns->end(); 
+        i != e; ++i) {
+        combos.push_back(TableRefnListPtr(new TableRefnList((**i).permute(f)))); 
+    }
+    ListList finals;
+    permuteHelper(combos.begin(), combos.end(), TableRefnListPtr(new TableRefnList), finals);
+
+    // Now compute a new FromList for each list in finals.        
+    typedef ListList::iterator Liter;
+    for(Liter i=finals.begin(), e=finals.end(); i != e; ++i) {
+        pList.push_back(Ptr(new FromList(*i)));
+    }
+
+    return pList;
 }

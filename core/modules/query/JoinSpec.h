@@ -70,7 +70,7 @@ public:
 
     std::ostream& putStream(std::ostream& os) const;
     void putTemplate(QueryTemplate& qt) const;
-    
+    Ptr clone() const;
 private:
     boost::shared_ptr<ColumnRef> _usingColumn;
     boost::shared_ptr<BoolTerm> _onTerm;
