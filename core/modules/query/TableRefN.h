@@ -46,6 +46,7 @@ class JoinSpec;
 class TableRefN {
 public:
     typedef boost::shared_ptr<TableRefN> Ptr;
+    typedef std::list<Ptr> PtrList;
     virtual ~TableRefN() {}
     
     virtual bool isSimple() const = 0;
@@ -82,9 +83,12 @@ public:
     virtual void apply(Func& f) {} 
     virtual void apply(FuncConst& f) {} 
 
+    struct Pfunc {
+        virtual std::list<TableRefN::Ptr> operator()(SimpleTableN const& t) = 0;
+    };
+    virtual std::list<TableRefN::Ptr> permute(Pfunc& p) const;
     class render;
 protected:
-
 };
 std::ostream& operator<<(std::ostream& os, TableRefN const& refN);
 std::ostream& operator<<(std::ostream& os, TableRefN const* refN);
@@ -134,6 +138,8 @@ public:
     virtual void setTable(std::string const& table_) { table = table_; }
     virtual void apply(Func& f) { f(*this); }
     virtual void apply(FuncConst& f) const { f(*this); }
+    virtual std::list<TableRefN::Ptr> permute(Pfunc& p) const;
+
 protected:
     std::string alias;
     std::string db;
@@ -182,6 +188,7 @@ public:
     virtual void setTable(std::string const&) {} // FIXME: ignore?
     virtual void apply(Func& f);
     virtual void apply(FuncConst& f) const;
+    virtual std::list<TableRefN::Ptr> permute(Pfunc& p) const;
 
 protected:
     void _putJoinTemplate(QueryTemplate& qt) const;
