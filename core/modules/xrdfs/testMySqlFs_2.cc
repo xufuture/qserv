@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2008-2013 LSST Corporation.
+ * Copyright 2008-2014 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -35,10 +35,10 @@
 #include "boost/shared_ptr.hpp"
 #include "boost/make_shared.hpp"
 
-#include "lsst/qserv/worker/ResultTracker.h"
-#include "lsst/qserv/worker/QueryRunner.h"
-#include "lsst/qserv/worker/MySqlFsFile.h"
-#include "lsst/qserv/worker/Logger.h"
+#include "wcontrol/ResultTracker.h"
+#include "wdb/QueryRunner.h"
+#include "xrdfs/MySqlFsFile.h"
+#include "log/Logger.h"
 
 namespace test = boost::test_tools;
 namespace qWorker = lsst::qserv::worker;
