@@ -62,4 +62,14 @@ void JoinSpec::putTemplate(QueryTemplate& qt) const {
     }
 }
 
+JoinSpec::Ptr JoinSpec::clone() const {
+    if(_usingColumn) {
+        boost::shared_ptr<ColumnRef> col(new ColumnRef(*_usingColumn));
+        return Ptr(new JoinSpec(col));
+    } else {
+        return Ptr(new JoinSpec(_onTerm->copySyntax()));
+    }
+
+}
+
 }}} // lsst::qserv::master

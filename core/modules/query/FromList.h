@@ -27,6 +27,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
+#include <list>
 #include <boost/shared_ptr.hpp>
 #include "query/TableRefN.h"
 
@@ -37,6 +38,8 @@ namespace master {
 // FromList is a representation of SQL FROM.
 class FromList {
 public:
+    typedef boost::shared_ptr<FromList> Ptr;
+    typedef std::list<Ptr> PtrList;
     FromList() {}
     explicit FromList(TableRefnListPtr p) : _tableRefns(p) {}
     ~FromList() {}
@@ -56,6 +59,8 @@ public:
     boost::shared_ptr<FromList> copyDeep() const;
     /// Shallow copy this node, sharing its linked objects.
     boost::shared_ptr<FromList> copySyntax();
+    /// Permutes according to the permuting function, sharing the columnRefMap
+    PtrList permute(TableRefN::Pfunc& f);
 
 private:
     friend std::ostream& operator<<(std::ostream& os, FromList const& fl);

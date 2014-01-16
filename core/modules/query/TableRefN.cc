@@ -49,10 +49,19 @@ void TableRefN::render::operator()(TableRefN const& refN) {
     if(_count++ > 0) _qt.append(",");
     refN.putTemplate(_qt);
 }
-
+std::list<TableRefN::Ptr> TableRefN::permute(TableRefN::Pfunc& p) const {
+    throw std::logic_error("Undefined");
+}
 
 ////////////////////////////////////////////////////////////////////////
-// JoinTableN 
+// SimpleTableN 
+////////////////////////////////////////////////////////////////////////
+std::list<TableRefN::Ptr> SimpleTableN::permute(TableRefN::Pfunc& p) const {
+    return p(*this);
+}
+
+////////////////////////////////////////////////////////////////////////
+// JoinRefN 
 ////////////////////////////////////////////////////////////////////////
 void JoinRefN::putTemplate(QueryTemplate& qt) const {
     if(!left || !right) {
@@ -72,6 +81,21 @@ void JoinRefN::apply(TableRefN::FuncConst& f) const {
     if(left) { left->apply(f); }
     if(right ) { right->apply(f); }
 }
+std::list<TableRefN::Ptr> JoinRefN::permute(TableRefN::Pfunc& p) const {
+    // Apply on both sides of the join statement
+    std::list<TableRefN::Ptr> lefts = left->permute(p);
+    std::list<TableRefN::Ptr> rights = right->permute(p);
+    PtrList pList;
+    // Construct a new JoinTableN for each permutation using li and ri, 
+    // such that li is an element of lefts and ri is an element of rights.
+    for(PtrList::iterator i = lefts.begin(); i != lefts.end(); ++i) {
+        for(PtrList::iterator j = rights.begin(); j != rights.end(); ++j) {
+            Ptr jt(new JoinRefN(*i, *j, joinType, isNatural, spec->clone()));
+            pList.push_back(jt);
+        }
+    }
+    return pList;
+}
 
 void JoinRefN::_putJoinTemplate(QueryTemplate& qt) const {
     if(isNatural) { qt.append("NATURAL"); }
@@ -88,7 +112,5 @@ void JoinRefN::_putJoinTemplate(QueryTemplate& qt) const {
 
     qt.append("JOIN");
 }
-
-
 
 }}} // lsst::qserv::master
