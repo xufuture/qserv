@@ -13,8 +13,9 @@ programs = []
 extDeps = "mysqlclient_r boost_thread ssl".split()
 
 modDeps = 'mysql util'.split() # deps on other modules
-deps = itertools.chain(map(lambda m: defaultTgts[m], modDeps))
+deps = itertools.chain(*map(lambda m: defaultTgts[m], modDeps))
 deps = map(lambda i:i, deps) # un-chain
+deps.sort(key=str)  # Prevent dependency-order change rebuilding.
 p = env.Program(['testSqlConnection.cc'] + deps, 
                 LIBS=findLibs(extDeps))
 programs.append(p)

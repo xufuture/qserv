@@ -16,6 +16,7 @@ modDeps = 'log mysql obsolete util  wbase wconfig wcontrol wdb wpublish wsched x
 deps = itertools.chain(*map(lambda m: defaultTgts[m], modDeps))
 pDeps = itertools.chain(*map(lambda m: libProducts[m], ["proto"]))
 deps = map(lambda i:i, itertools.chain(deps, pDeps)) # un-chain
+deps.sort(key=str)
 
 p = env.Program('testMySqlFs_1.cc')
 programs.append(p)

@@ -23,7 +23,7 @@ for s in sources:
     if str(s) == "TaskMsgDigest.cc":
         headerDep = filter(lambda s: "worker.pb.h" in str(s), pFiles)
         #print "headerDep", headerDep
-        env.Depends(s, headerDep)
+        env.Depends(s, headerDep) 
     sourceObjs.append(s)
 extraTgts["protoPy"] = filter(lambda s: "worker_pb2.py" in str(s), pFiles)
 extraTgts["protoHdr"] = filter(lambda s: "worker.pb.h" in str(s), pFiles)
