@@ -5,6 +5,7 @@
 Import('*')
 import glob, os, re, sys
 from itertools import chain, izip, repeat
+from collections import defaultdict
 import SCons.Util
 import detect # Qserv dep detector
 
@@ -140,6 +141,26 @@ def getTgts(mName):
         defaultTgts[mName] = files
         return files
 
+objCache = defaultdict(lambda : defaultdict(lambda : None))
+def cacheObjs(env, depList, oType):
+    """ 
+    env: scons Environment
+    depList: object dependencies
+    oType: ".o" or ".os"
+    """
+    cache = objCache[id(env)]
+    result = []
+    for d in depList:
+        (name,ext) = os.path.splitext(str(d))
+        if ext == ".cc":
+            oName = name + oType 
+            if not cache[oName]: 
+                if oType == ".o": cache[oName] = env.Object(oName, d)
+                elif oType == ".os": cache[oName] = env.SharedObject(oName, d) 
+            result.append(cache[oName])
+        else: result.append(d)
+    return result
+
 boostChecker = detect.BoostChecker(env)
 def findLibs(libList):
     def cheapCheckLib(libName):
@@ -158,7 +179,8 @@ def getTests(env, mName):
         tests = SConscript(scriptPath, exports={'env' : env,
                                                 'libProducts' : libProducts,
                                                 'defaultTgts' : defaultTgts,
-                                                'findLibs' : findLibs})
+                                                'findLibs' : findLibs,
+                                                'cacheObjs' : cacheObjs})
         return tgts
     else:
         return None
