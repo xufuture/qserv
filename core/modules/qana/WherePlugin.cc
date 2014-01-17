@@ -27,12 +27,12 @@
 // No public interface (no WherePlugin.h)
 #include <string>
 #include <stdexcept>
-#include "lsst/qserv/master/common.h"
+#include "util/common.h"
 
-#include "lsst/qserv/master/BoolTerm.h"
-#include "lsst/qserv/master/QueryPlugin.h"
-#include "lsst/qserv/master/SelectStmt.h"
-#include "lsst/qserv/master/WhereClause.h"
+#include "query/BoolTerm.h"
+#include "qana/QueryPlugin.h"
+#include "query/SelectStmt.h"
+#include "query/WhereClause.h"
 
 namespace lsst {
 namespace qserv {

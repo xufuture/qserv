@@ -44,7 +44,7 @@
 #include "query/ValueExpr.h"
 #include "query/WhereClause.h"
 
-#include "SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
+#include "parser/SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 
 
 namespace { // File-scope helpers

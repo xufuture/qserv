@@ -41,8 +41,8 @@
 // package
 #include "util/SqlErrorObject.hh"
 #include "wbase/Base.h"
+#include "wcontrol/Task.h"
 #include "wcontrol/ResultTracker.h"
-#include "wdb/QueryRunnerManager.h"
 
 namespace lsst {
 namespace qserv {

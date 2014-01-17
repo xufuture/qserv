@@ -23,8 +23,8 @@
 #ifndef LSST_QSERV_WORKER_GROUPSCHEDULER_H
 #define LSST_QSERV_WORKER_GROUPSCHEDULER_H
 
-#include "lsst/qserv/worker/Foreman.h"
-#include "lsst/qserv/worker/GroupedQueue.h"
+#include "wcontrol/Foreman.h"
+#include "wsched/GroupedQueue.h"
 
 namespace lsst {
 namespace qserv {

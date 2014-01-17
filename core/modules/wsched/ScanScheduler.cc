@@ -27,15 +27,15 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/worker/ScanScheduler.h"
+#include "wsched/ScanScheduler.h"
 #include <iostream>
 #include <sstream>
 #include <boost/thread.hpp>
 #include <boost/make_shared.hpp>
 
-#include "lsst/qserv/worker/ChunkDisk.h"
-#include "lsst/qserv/worker/Foreman.h"
-#include "lsst/qserv/worker/Logger.h"
+#include "wsched/ChunkDisk.h"
+#include "wcontrol/Foreman.h"
+#include "log/Logger.h"
 
 lsst::qserv::worker::ScanScheduler* dbgScanScheduler = 0; //< A symbol for gdb
 lsst::qserv::worker::ChunkDisk* dbgChunkDisk1 = 0; //< A symbol for gdb

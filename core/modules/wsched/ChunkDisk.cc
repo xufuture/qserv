@@ -20,11 +20,11 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#include "lsst/qserv/worker/ChunkDisk.h"
+#include "wsched/ChunkDisk.h"
 
 #include <ctime>
 #include <sstream>
-#include "lsst/qserv/worker/Logger.h"
+#include "log/Logger.h"
 /// ChunkDisk is a data structure that tracks a queue of pending tasks
 /// for a disk, and the state of a chunkId-ordered scan on a disk
 /// (current chunkId, tasks in flight).

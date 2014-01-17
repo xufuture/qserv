@@ -33,7 +33,6 @@
 #include <boost/scoped_ptr.hpp>
 
 // Pkg: lsst::qserv::worker
-#include "wcontrol/TodoList.h"
 #include "wsched/FifoScheduler.h"
 #include "wdb/QueryRunner.h"
 #include "wbase/Base.h"

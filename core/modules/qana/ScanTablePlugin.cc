@@ -28,17 +28,17 @@
   */
 
 // No public interface
-#include "lsst/qserv/master/QueryPlugin.h" // Parent class
+#include "qana/QueryPlugin.h" // Parent class
 
-#include "lsst/qserv/Logger.h"
-#include "lsst/qserv/master/common.h"
-#include "lsst/qserv/master/ColumnRefMap.h"
-#include "lsst/qserv/master/FromList.h"
-#include "lsst/qserv/master/QsRestrictor.h"
-#include "lsst/qserv/master/QueryContext.h"
-#include "lsst/qserv/master/SelectList.h"
-#include "lsst/qserv/master/SelectStmt.h"
-#include "lsst/qserv/master/WhereClause.h"
+#include "log/Logger.h"
+#include "util/common.h"
+#include "parser/ColumnRefMap.h"
+#include "query/FromList.h"
+#include "query/QsRestrictor.h"
+#include "query/QueryContext.h"
+#include "query/SelectList.h"
+#include "query/SelectStmt.h"
+#include "query/WhereClause.h"
 
 namespace lsst {
 namespace qserv {

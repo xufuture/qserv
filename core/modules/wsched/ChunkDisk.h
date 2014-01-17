@@ -34,8 +34,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
-#include "lsst/qserv/worker/ChunkState.h"
-#include "lsst/qserv/worker/Task.h"
+#include "wsched/ChunkState.h"
+#include "wcontrol/Task.h"
 
 namespace lsst {
 namespace qserv {

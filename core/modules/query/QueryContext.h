@@ -33,7 +33,7 @@
 
 #include "qana/QueryMapping.h"
 #include "query/TableAlias.h"
-
+#include "util/common.h"
 namespace lsst {
 namespace qserv {
 namespace master {

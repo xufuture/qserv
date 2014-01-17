@@ -43,13 +43,12 @@
 //  but its dependencies mean that much of its work would become
 //  templated or polymorphic, with little obvious value at this point
 //  in development, aside from increased testability.  The affected
-//  classes include at least: Task, TodoList, QueryRunner. Those that
+//  classes include at least: Task, QueryRunner. Those that
 //  depend on them would need tweaks, but should be able to escape
 //  templating or polymorphism.
 #ifndef LSST_QSERV_WORKER_FOREMAN_H
 #define LSST_QSERV_WORKER_FOREMAN_H
 #include <boost/shared_ptr.hpp>
-#include "wcontrol/TodoList.h"
 #include "wcontrol/Task.h"
 
 namespace lsst {
