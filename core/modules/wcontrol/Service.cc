@@ -20,7 +20,6 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #include "wcontrol/Service.h"
-#include "wcontrol/TodoList.h"
 #include "wcontrol/Foreman.h"
 #include "wsched/FifoScheduler.h"
 #include "wsched/ScanScheduler.h"

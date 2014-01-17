@@ -23,7 +23,7 @@
 #ifndef LSST_QSERV_WORKER_BLENDSCHEDULER_H
 #define LSST_QSERV_WORKER_BLENDSCHEDULER_H
 
-#include "lsst/qserv/worker/Foreman.h"
+#include "wcontrol/Foreman.h"
 
 namespace lsst {
 namespace qserv {

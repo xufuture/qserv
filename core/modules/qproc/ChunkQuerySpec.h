@@ -31,7 +31,7 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include "lsst/qserv/master/common.h"
+#include "util/common.h"
 
 namespace lsst {
 namespace qserv {

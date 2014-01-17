@@ -20,7 +20,7 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#include "lsst/qserv/worker/ChunkState.h"
+#include "wsched/ChunkState.h"
 #include <iterator>
 
 namespace lsst {

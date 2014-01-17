@@ -27,11 +27,11 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/worker/GroupScheduler.h"
+#include "wsched/GroupScheduler.h"
 #include <iostream>
 #include <sstream>
 #include <boost/thread.hpp>
-#include "lsst/qserv/worker/Logger.h"
+#include "log/Logger.h"
 
 namespace lsst {
 namespace qserv {

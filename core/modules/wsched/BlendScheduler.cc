@@ -27,14 +27,14 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "lsst/qserv/worker/BlendScheduler.h"
+#include "wsched/BlendScheduler.h"
 #include <iostream>
 #include <sstream>
 #include <boost/thread.hpp>
-#include "lsst/qserv/worker/Foreman.h"
-#include "lsst/qserv/worker/Logger.h"
-#include "lsst/qserv/worker/GroupScheduler.h"
-#include "lsst/qserv/worker/ScanScheduler.h"
+#include "wcontrol/Foreman.h"
+#include "log/Logger.h"
+#include "wsched/GroupScheduler.h"
+#include "wsched/ScanScheduler.h"
 
 template <class Sched>
 inline Sched* other(Sched* notThis, Sched* a, Sched* b) {
