@@ -124,6 +124,8 @@ BOOST_AUTO_TEST_CASE(File) {
     boost::scoped_ptr<XrdSfsFile> file(_fs->newFile());
     BOOST_CHECK(file.get() != 0);
     file->open("/query/314159", O_RDWR, S_IRWXU | S_IRWXG | S_IRWXO);
+    // This message format is no longer supported.
+    // Should fix for protobuf format and re-think this test.
     std::string query =
         "-- 42,99\n"
         "CREATE TABLE Result AS "
