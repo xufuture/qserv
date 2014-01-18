@@ -23,6 +23,7 @@
 #include "wdb/QueryPhyResult.h"
 
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <iterator>
 
 #include "util/SqlErrorObject.hh"
@@ -108,7 +109,7 @@ void QueryPhyResult::_mkdirP(std::string const& filePath) {
         std::string dir(filePath, 0, pos);
         if (::stat(dir.c_str(), &statbuf) == -1) {
             if (errno == ENOENT) {
-                mkdir(dir.c_str(), 0777);
+                ::mkdir(dir.c_str(), 0777);
             }
         }
     }

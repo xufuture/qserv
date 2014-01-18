@@ -58,11 +58,14 @@ bool checkWritablePath(char const* path) {
     return path && (0 == ::access(path, W_OK | X_OK));
 }
 
+namespace lsst {
+namespace qserv {
+namespace worker {
 //////////////////////////////////////////////////////////////////////
 // Constants
 //////////////////////////////////////////////////////////////////////
 // Must end in a slash.
-std::string qWorker::DUMP_BASE = "/tmp/qserv/";
+std::string DUMP_BASE = "/tmp/qserv/";
 
 // Parameters:
 // %1% database (e.g., LSST)
@@ -70,7 +73,7 @@ std::string qWorker::DUMP_BASE = "/tmp/qserv/";
 // %3% subchunk column name (e.g. x_subChunkId)
 // %4% chunkId (e.g. 2523)
 // %5% subChunkId (e.g., 34)
-std::string qWorker::CREATE_SUBCHUNK_SCRIPT =
+std::string CREATE_SUBCHUNK_SCRIPT =
     "CREATE DATABASE IF NOT EXISTS Subchunks_%1%_%4%;"
     "CREATE TABLE IF NOT EXISTS Subchunks_%1%_%4%.%2%_%4%_%5% ENGINE = MEMORY "
     "AS SELECT * FROM %1%.%2%_%4% WHERE %3% = %5%;"
@@ -84,7 +87,7 @@ std::string qWorker::CREATE_SUBCHUNK_SCRIPT =
 // %2% table (e.g., Object)
 // %3% chunkId (e.g. 2523)
 // %4% subChunkId (e.g., 34)
-std::string qWorker::CLEANUP_SUBCHUNK_SCRIPT =
+std::string CLEANUP_SUBCHUNK_SCRIPT =
     "DROP TABLE IF EXISTS Subchunks_%1%_%3%.%2%_%3%_%4%;"
 //    "DROP TABLE IF EXISTS Subchunks_%1%_%3%.%2%SelfOverlap_%3%_%4%;"
     "DROP TABLE IF EXISTS Subchunks_%1%_%3%.%2%FullOverlap_%3%_%4%;"
@@ -118,11 +121,11 @@ namespace {
 }
 #endif
 
-std::string qWorker::hashQuery(char const* buffer, int bufferSize) {
+std::string hashQuery(char const* buffer, int bufferSize) {
     unsigned char hashVal[MD5_DIGEST_LENGTH];
     MD5(reinterpret_cast<unsigned char const*>(buffer), bufferSize, hashVal);
 #ifdef DO_NOT_USE_BOOST
-    return qWorker::hashFormat(hashVal, MD5_DIGEST_LENGTH);
+    return hashFormat(hashVal, MD5_DIGEST_LENGTH);
 #else
     std::string result;
     for (int i = 0; i < MD5_DIGEST_LENGTH; ++i) {
@@ -132,7 +135,7 @@ std::string qWorker::hashQuery(char const* buffer, int bufferSize) {
 #endif
 }
 
-void qWorker::updateResultPath(char const* resultPath) {
+void updateResultPath(char const* resultPath) {
     if(checkWritablePath(resultPath)) {
         DUMP_BASE.assign(resultPath);
         return;
@@ -143,7 +146,7 @@ void qWorker::updateResultPath(char const* resultPath) {
     }
 }
 
-void qWorker::clearResultPath() {
+void clearResultPath() {
     // Conceptually: rm DUMP_BASE/*
     glob_t globbuf;
     std::string globstr(DUMP_BASE);
@@ -158,12 +161,12 @@ void qWorker::clearResultPath() {
     }   
 }
 
-std::string qWorker::hashToPath(std::string const& hash) {
+std::string hashToPath(std::string const& hash) {
     return DUMP_BASE +
         hash.substr(0, 3) + "/" + hash.substr(3, 3) + "/" + hash + ".dump";
 }
 
-std::string qWorker::hashToResultPath(std::string const& hash) {
+std::string hashToResultPath(std::string const& hash) {
     // Not sure whether we want a different path later.
     // For now, drop the .dump extension.
     //    return DUMP_BASE +
@@ -176,7 +179,7 @@ std::string qWorker::hashToResultPath(std::string const& hash) {
 //////////////////////////////////////////////////////////////////////
 // ScriptMeta
 //////////////////////////////////////////////////////////////////////
-qWorker::ScriptMeta::ScriptMeta(StringBuffer const& b, int chunkId_) {
+ScriptMeta::ScriptMeta(StringBuffer const& b, int chunkId_) {
     script = b.getStr();
     hash = hashQuery(script.data(), script.length());
     dbName = "q_" + hash;
@@ -184,7 +187,7 @@ qWorker::ScriptMeta::ScriptMeta(StringBuffer const& b, int chunkId_) {
     chunkId = chunkId_;
 }
 
-qWorker::ScriptMeta::ScriptMeta(StringBuffer2 const& b, int chunkId_) {
+ScriptMeta::ScriptMeta(StringBuffer2 const& b, int chunkId_) {
     script = b.getStr();
     hash = hashQuery(script.data(), script.length());
     dbName = "q_" + hash;
@@ -195,8 +198,8 @@ qWorker::ScriptMeta::ScriptMeta(StringBuffer2 const& b, int chunkId_) {
 //////////////////////////////////////////////////////////////////////
 // StringBuffer
 //////////////////////////////////////////////////////////////////////
-void qWorker::StringBuffer::addBuffer(
-    XrdSfsFileOffset offset, char const* buffer, XrdSfsXferSize bufferSize) {
+void StringBuffer::addBuffer(
+    StringBufferOffset offset, char const* buffer, StringBufferSize bufferSize) {
 #if QSERV_USE_STUPID_STRING
 #  if DO_NOT_USE_BOOST
     UniqueLock lock(_mutex);
@@ -221,7 +224,7 @@ void qWorker::StringBuffer::addBuffer(
 #endif
 }
 
-std::string qWorker::StringBuffer::getStr() const {
+std::string StringBuffer::getStr() const {
 #if QSERV_USE_STUPID_STRING
     // Cast away const in order to lock.
 #   if DO_NOT_USE_BOOST
@@ -261,7 +264,7 @@ std::string qWorker::StringBuffer::getStr() const {
 #endif
 }
 
-std::string qWorker::StringBuffer::getDigest() const {  
+std::string StringBuffer::getDigest() const {  
 #if QSERV_USE_STUPID_STRING
     // Cast away const in order to lock.
 #if DO_NOT_USE_BOOST
@@ -291,12 +294,12 @@ std::string qWorker::StringBuffer::getDigest() const {
 #endif
 }
 
-XrdSfsFileOffset qWorker::StringBuffer::getLength() const {
+StringBufferOffset StringBuffer::getLength() const {
     return _totalSize;
     // Might be wise to do a sanity check sometime (overlapping writes!)
 #if 0
     struct accumulateSize {    
-        XrdSfsXferSize operator() (XrdSfsFileOffset x, Fragment const& p) { 
+        StringBufferSize operator() (StringBufferOffset x, Fragment const& p) { 
             return x + p.bufferSize; 
         }
     };
@@ -305,7 +308,7 @@ XrdSfsFileOffset qWorker::StringBuffer::getLength() const {
 #endif
 }
 
-void qWorker::StringBuffer::reset() {
+void StringBuffer::reset() {
     {
 #if DO_NOT_USE_BOOST
         UniqueLock lock(_mutex);
@@ -321,8 +324,8 @@ void qWorker::StringBuffer::reset() {
 // StringBuffer2 
 // A mutex-protected string buffer that uses a raw c-string.
 //////////////////////////////////////////////////////////////////////
-void qWorker::StringBuffer2::addBuffer(
-    XrdSfsFileOffset offset, char const* buffer, XrdSfsXferSize bufferSize) {
+void StringBuffer2::addBuffer(
+    StringBufferOffset offset, char const* buffer, StringBufferSize bufferSize) {
 
 #  if DO_NOT_USE_BOOST
     UniqueLock lock(_mutex);
@@ -336,7 +339,7 @@ void qWorker::StringBuffer2::addBuffer(
     _bytesWritten += bufferSize;
 }
 
-std::string qWorker::StringBuffer2::getStr() const {
+std::string StringBuffer2::getStr() const {
     // Bad idea to call this if the buffer has holes.
     // Cast away const in order to lock.
 #if DO_NOT_USE_BOOST
@@ -349,7 +352,7 @@ std::string qWorker::StringBuffer2::getStr() const {
     return std::string(_buffer, _bytesWritten);
 }
 
-char const* qWorker::StringBuffer2::getData() const {  
+char const* StringBuffer2::getData() const {  
     // Don't call this unless the buffer has no holes.
     // Cast away const in order to lock.
 #if DO_NOT_USE_BOOST
@@ -362,11 +365,11 @@ char const* qWorker::StringBuffer2::getData() const {
     return _buffer; 
 }
 
-XrdSfsFileOffset qWorker::StringBuffer2::getLength() const {
+StringBufferOffset StringBuffer2::getLength() const {
     return _bytesWritten;
 }
 
-void qWorker::StringBuffer2::reset() {
+void StringBuffer2::reset() {
 #if DO_NOT_USE_BOOST
     UniqueLock lock(_mutex);
 #else
@@ -380,7 +383,7 @@ void qWorker::StringBuffer2::reset() {
     _bytesWritten = 0;
 }
 
-void qWorker::StringBuffer2::_setSize(unsigned size) {
+void StringBuffer2::_setSize(unsigned size) {
     if(size==0) {
         if(_buffer) {
             delete[] _buffer;
@@ -397,3 +400,5 @@ void qWorker::StringBuffer2::_setSize(unsigned size) {
     _buffer = newBuffer;
     _bufferSize = size;
 }
+
+}}} // namespace lsst::qserv::worker

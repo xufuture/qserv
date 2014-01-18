@@ -26,9 +26,9 @@
   */
 #define BOOST_TEST_MODULE
 #include "boost/test/included/unit_test.hpp"
-#include "lsst/qserv/worker/GroupedQueue.h"
-#include "lsst/qserv/worker/CirclePqueue.h"
-#include "lsst/qserv/worker/ChunkState.h"
+#include "wsched/GroupedQueue.h"
+#include "wsched/CirclePqueue.h"
+#include "wsched/ChunkState.h"
 
 namespace test = boost::test_tools;
 namespace qWorker = lsst::qserv::worker;

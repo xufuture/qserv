@@ -32,15 +32,20 @@
   */ 
 #include <deque>
 #include <boost/shared_ptr.hpp>
+#include "proto/worker.pb.h"
 
-#include "wcontrol/Task.h"
-namespace lsst { namespace qserv { namespace worker {
+namespace lsst { 
+namespace qserv { 
+namespace worker {
+
 class Task;
 
 class QuerySql {
 public:
     typedef std::deque<std::string> StringList;
     QuerySql() {}
+    typedef lsst::qserv::TaskMsg_Fragment Fragment;
+
 
     StringList buildList;
     StringList executeList; // Consider using SqlFragmenter to break this up into fragments.
@@ -54,7 +59,7 @@ class QuerySql::Factory {
 public:
     boost::shared_ptr<QuerySql> newQuerySql(std::string const& db, 
                                             int chunkId,
-                                            Task::Fragment const& f,
+                                            Fragment const& f,
                                             bool needCreate,
                                             std::string const& defaultResultTable);
 };

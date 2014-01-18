@@ -109,18 +109,7 @@ modList = [m for m in chain(*map(lambda d: d['mods'],
 libProducts = dict(izip(modList, repeat(None)))
 defaultTgts = dict()
 
-# libDepName = "extLibs"
-# def getLibDeps(mName):
-#     try:
-#         libDeps = open(os.path.join(mName, libDepName)).read()
-#         return libDeps
-#     except IOError, e:
-#         #print "Warning, no %s for module %s" % (libDepName, mName)
-#         return []
-
 def getSrcs(mName):
-#    srcs = os.listdir(os.path.join(mRoot,mName))
-#    return map(lambda s: os.path.join(mRoot, mName, s), srcs)
     srcs = os.listdir(mName)
     return map(lambda s: os.path.join(mName, s), srcs)
 
@@ -143,7 +132,8 @@ def getTgts(mName):
 
 objCache = defaultdict(lambda : defaultdict(lambda : None))
 def cacheObjs(env, depList, oType):
-    """ 
+    """ caches Object() and SharedObject nodes so they can be reused, 
+        avoiding the scons warning for "two different environments"
     env: scons Environment
     depList: object dependencies
     oType: ".o" or ".os"
@@ -228,7 +218,6 @@ for (pkg, opts) in shProducts.items():
 
 #Runner wrapper
 import runner
-#### print extraTgts["PYTHONPATH"]  #deleteme
 env["PYTHONPATH"] = extraTgts["PYTHONPATH"]
 f = runner.WrapperScript(env, "qsEnv.sh")
 extraTgts['dist'].append(('bin', f))
@@ -236,7 +225,6 @@ extraTgts['dist'].append(('bin', f))
 # Install targets
 distDir = 'dist'
 for (path, f) in extraTgts['dist']:
-    #print "REally installing:", f  ## deleteme
     env.Install(os.path.join(distDir, path), f)
 
 
@@ -246,4 +234,5 @@ for (path, f) in extraTgts['dist']:
 for m in libProducts.keys():
     tgts = getTests(env, m)
     if tgts: print tgts
+    # FIXME: run tests.
 #

@@ -31,6 +31,7 @@
 #include "wdb/QueryRunner.h"
 #include <iostream>
 #include <fcntl.h>
+#include <sys/stat.h>
 
 #include "mysql/mysql.h"
 #include <boost/regex.hpp>
@@ -430,7 +431,7 @@ boost::shared_ptr<CheckFlag> QueryRunner::_makeAbort() {
 // Helpers
 ////////////////////////////////////////////////////////////////////////
 int qWorker::dumpFileOpen(std::string const& dbName) {
-    return open(dbName.c_str(), O_RDONLY);
+    return ::open(dbName.c_str(), O_RDONLY);
 }
 
 bool qWorker::dumpFileExists(std::string const& dumpFilename) {

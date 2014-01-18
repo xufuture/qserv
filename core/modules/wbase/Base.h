@@ -1,6 +1,6 @@
 /* 
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2008-2014 LSST Corporation.
  * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -28,14 +28,9 @@
 #include <string>
 #include <sstream>
 // Xrootd
-#include "XrdSfs/XrdSfsInterface.hh"
 
-#ifdef DO_NOT_USE_BOOST
-#include "XrdSys/XrdSysPthread.hh"
-#else
 #include "boost/thread.hpp"
 #include "boost/format.hpp"
-#endif
 
 class XrdSysError;
 class XrdSysLogger;
@@ -48,6 +43,9 @@ namespace worker {
 // Forward:
 class StringBuffer;
 class StringBuffer2;
+
+typedef long long StringBufferOffset;
+typedef int StringBufferSize;
 
 // Constants
 extern std::string DUMP_BASE;
@@ -78,31 +76,31 @@ public:
     virtual ~CheckFlag() {}
     virtual bool operator()() = 0;
 };
- 
+
 class StringBuffer {
 public:
     StringBuffer() : _totalSize(0) {}
     ~StringBuffer() { reset(); }
-    void addBuffer(XrdSfsFileOffset offset, char const* buffer, 
-                   XrdSfsXferSize bufferSize);
+    void addBuffer(StringBufferOffset offset, char const* buffer, 
+                   StringBufferSize bufferSize);
     std::string getStr() const;
-    XrdSfsFileOffset getLength() const;
+    StringBufferOffset getLength() const;
     std::string getDigest() const;
     void reset();
 private:
     struct Fragment {
-        Fragment(XrdSfsFileOffset offset_, char const* buffer_, 
-                 XrdSfsXferSize bufferSize_) 
+        Fragment(StringBufferOffset offset_, char const* buffer_, 
+                 StringBufferSize bufferSize_) 
             : offset(offset_), buffer(buffer_), bufferSize(bufferSize_) {}
 
-        XrdSfsFileOffset offset; 
+        StringBufferOffset offset; 
         char const* buffer;
-        XrdSfsXferSize bufferSize;
+        StringBufferSize bufferSize;
     };
 
     typedef std::deque<Fragment> FragmentDeque;
     FragmentDeque _buffers;
-    XrdSfsFileOffset _totalSize;
+    StringBufferOffset _totalSize;
 #if DO_NOT_USE_BOOST
     XrdSysMutex _mutex;
 #else
@@ -116,10 +114,10 @@ public:
     StringBuffer2() : _buffer(0), 
                       _bufferSize(0),_bytesWritten(0) {}
     ~StringBuffer2() { reset(); }
-    void addBuffer(XrdSfsFileOffset offset, char const* buffer, 
-                   XrdSfsXferSize bufferSize);
+    void addBuffer(StringBufferOffset offset, char const* buffer, 
+                   StringBufferSize bufferSize);
     std::string getStr() const;
-    XrdSfsFileOffset getLength() const;
+    StringBufferOffset getLength() const;
     char const* getData() const;
     void reset();
 private:

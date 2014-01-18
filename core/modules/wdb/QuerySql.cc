@@ -86,7 +86,7 @@ std::ostream& operator<<(std::ostream& os, QuerySql const& q) {
 boost::shared_ptr<QuerySql>
 QuerySql::Factory::newQuerySql(std::string const& db, 
                                int chunkId,
-                               Task::Fragment const& f, 
+                               QuerySql::Fragment const& f, 
                                bool needCreate,
                                std::string const& defaultResultTable) {
     boost::shared_ptr<QuerySql> qSql(new QuerySql);
@@ -100,10 +100,10 @@ QuerySql::Factory::newQuerySql(std::string const& db,
     std::stringstream ss;
     for(int i=0; i < f.query_size(); ++i) {
         if(needCreate) { 
-            ss << "CREATE TABLE " << resultTable << " ";
+            ss << "CREATE TABLE " + resultTable + " ";
             needCreate = false;
         } else {
-            ss << "INSERT INTO " << resultTable << " "; 
+            ss << "INSERT INTO " + resultTable + " "; 
         }
         ss << f.query(i);
         qSql->executeList.push_back(ss.str());
