@@ -33,18 +33,18 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#include "mysql/mysql.h"
 #include <boost/regex.hpp>
-#include "util/SqlErrorObject.hh"
-#include "util/SqlConnection.hh"
+#include "global/constants.h"
+#include "log/Logger.h"
+#include "mysql/mysql.h"
+#include "sql/SqlConnection.h"
+#include "sql/SqlErrorObject.h"
+#include "sql/SqlFragmenter.h"
+#include "wdb/QuerySql.h"
+#include "wdb/QuerySql_Batch.h"
 #include "wdb/QueryPhyResult.h"
 #include "wbase/Base.h"
 #include "wconfig/Config.h"
-#include "log/Logger.h"
-#include "util/SqlFragmenter.h"
-#include "global/constants.h"
-#include "wdb/QuerySql.h"
-#include "wdb/QuerySql_Batch.h"
 
 using lsst::qserv::SqlErrorObject;
 using lsst::qserv::SqlConfig;

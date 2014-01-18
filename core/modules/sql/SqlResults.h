@@ -32,7 +32,7 @@
 #include <vector>
 #include <mysql/mysql.h>
 #include <boost/utility.hpp>
-#include "SqlErrorObject.hh"
+#include "sql/SqlErrorObject.hh"
 
 namespace lsst { namespace qserv {
 class SqlResults : boost::noncopyable {

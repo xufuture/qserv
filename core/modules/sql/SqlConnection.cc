@@ -29,9 +29,9 @@
 #include <boost/format.hpp> 
 
 // mysql
-#include "SqlConnection.hh"
+#include "sql/SqlConnection.h"
 #include "mysql/MySqlConnection.h"
-#include "util/SqlResults.h"
+#include "sql/SqlResults.h"
 
 using namespace lsst::qserv;
 

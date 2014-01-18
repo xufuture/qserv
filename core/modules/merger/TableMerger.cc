@@ -39,7 +39,7 @@
 #include <iostream>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
-#include "util/SqlConnection.hh"
+#include "sql/SqlConnection.hh"
 #include "merger/SqlInsertIter.h"
 #include "util/MmapFile.h"
 using lsst::qserv::SqlErrorObject;

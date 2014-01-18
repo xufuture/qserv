@@ -28,7 +28,7 @@
 #include <boost/thread/once.hpp>
 
 #include "mysql/SqlConfig.hh"
-#include "util/SqlConnection.hh"
+#include "sql/SqlConnection.hh"
 
 namespace qWorker = lsst::qserv::worker;
 using lsst::qserv::worker::Config;
