@@ -66,7 +66,8 @@ if not canBuild:
 
 # all modules
 allModules = """control czar global log merger meta mysql obsolete
-                parser proto proxy qana qdisp qproc query tests util
+                parser proto proxy qana qdisp qproc query sql 
+                tests util
                 wbase wconfig wcontrol wdb wpublish wsched
                 xrdc xrdfs xrdoss""".split()
 
@@ -74,7 +75,7 @@ allModules = """control czar global log merger meta mysql obsolete
 # packetiter in util depends on xrdc, util shouldn't depend on anything
 # Products
 shProducts = { "xrdfs" : {'mods' : """proto xrdfs
-                                      mysql util
+                                      mysql sql util
                                       wbase wconfig wcontrol wdb 
                                       wpublish wsched
                                       log global""".split(),
@@ -85,14 +86,16 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                       XrdOfs XrdSfs XrdUtils""".split(),
                           'distDir' : 'lib'},
 
-               "xrdoss" : {'mods' : """log mysql obsolete util wbase wconfig
+               "xrdoss" : {'mods' : """log mysql obsolete sql util
+                                       wbase wconfig
                                        xrdoss wpublish""".split(),
                            'libs' : """boost_regex boost_signals boost_thread 
                                        mysqlclient_r ssl crypto""".split(),
                            'distDir' : 'lib'
                            },
                "_masterLib" : {'mods' : """czar control parser query
-                                           log merger meta mysql util xrdc
+                                           log merger meta mysql 
+                                           sql util xrdc
                                            obsolete proto
                                            qana qdisp qproc""".split(),
                                'libs' : """ssl crypto antlr

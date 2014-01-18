@@ -21,7 +21,7 @@
  */
  
 #include <sstream>
-#include "SqlErrorObject.hh"
+#include "sql/SqlErrorObject.h"
 
 std::string 
 lsst::qserv::SqlErrorObject::printErrMsg() const {

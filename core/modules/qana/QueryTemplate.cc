@@ -31,8 +31,7 @@
 #include "query/QueryTemplate.h"
 #include <sstream>
 #include <iostream>
-
-#include "util/sqltoken.h" // sqlShouldSeparate
+#include "sql/sqltoken.h" // sqlShouldSeparate
 #include "query/ColumnRef.h"
 #include "query/TableRefN.h"
 #include "log/Logger.h"

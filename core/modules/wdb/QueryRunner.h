@@ -40,7 +40,7 @@
 #include "mysql/mysql.h"
 
 // package
-#include "util/SqlErrorObject.hh"
+#include "sql/SqlErrorObject.h"
 #include "wbase/Base.h"
 #include "wcontrol/Task.h"
 #include "wcontrol/ResultTracker.h"
