@@ -34,9 +34,9 @@ namespace qWorker = lsst::qserv::worker;
 
 using lsst::qserv::worker::QuerySql;
 using lsst::qserv::TaskMsg_Subchunk;
+using lsst::qserv::TaskMsg_Fragment;
 
 struct Fixture {
-    typedef qWorker::Task Task;
 
     Fixture() {
         defaultDb = "Winter"; 
@@ -44,8 +44,8 @@ struct Fixture {
     }
     ~Fixture() {}
 
-    Task::Fragment makeFragment() {
-        Task::Fragment f;
+    TaskMsg_Fragment makeFragment() {
+        TaskMsg_Fragment f;
         // "Real" subchunk query text should include 
         // pre-substituted subchunk query text.
         f.add_query("SELECT o1.*, o2.* FROM Object_1001 o1, Object_1001 o2;");
@@ -72,7 +72,7 @@ BOOST_FIXTURE_TEST_SUITE(QuerySqlSuite, Fixture)
 
 BOOST_AUTO_TEST_CASE(Basic) {
     boost::shared_ptr<QuerySql>  qSql;
-    Task::Fragment frag = makeFragment();
+    TaskMsg_Fragment frag = makeFragment();
     qSql = factory.newQuerySql(defaultDb, 1001, frag, true, defaultResult);
     BOOST_CHECK(qSql.get());    
     printQsql(*qSql);
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(Basic) {
 
 BOOST_AUTO_TEST_CASE(QueryBatch) {
     boost::shared_ptr<QuerySql>  qSql;
-    Task::Fragment frag = makeFragment();
+    TaskMsg_Fragment frag = makeFragment();
     qSql = factory.newQuerySql(defaultDb, 1001, frag, true, defaultResult);
     BOOST_CHECK(qSql.get());    
 

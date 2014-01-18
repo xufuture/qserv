@@ -38,6 +38,7 @@
 #include "XrdSys/XrdSysLogger.hh"
 #include "wpublish/MySqlExportMgr.h"
 #include "xrdfs/XrdName.h"
+#include "xrdfs/XrdPrinter.h"
 
 using namespace lsst::qserv::worker;
 
@@ -244,11 +245,12 @@ int QservOss::StatVS(XrdOssVSInfo *sP, const char *sname,
 
 int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
     _xrdSysLogger = log;
+    boost::shared_ptr<XrdPrinter> printer(new XrdPrinter(log));
     if(log) { 
-        _log.reset(new Logger(log)); 
+        _log.reset(new Logger(printer)); 
         _log->setPrefix("QservOss");
     } else {
-        _log.reset(new Logger(NULL));
+        _log.reset(new Logger());
     }
     if(!cfgFn) {
         _cfgFn.assign("");

@@ -33,7 +33,6 @@
 #include "proto/worker.pb.h"
 #include "wbase/Base.h"
 
-
 namespace lsst {
 namespace qserv {
 namespace worker {

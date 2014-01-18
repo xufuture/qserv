@@ -35,6 +35,8 @@
 #include "wcontrol/Service.h"
 #include "log/Logger.h"
 #include "xrdfs/XrdName.h"
+#include "xrdfs/XrdPrinter.h"
+
 
 #include "util/SqlConnection.hh"
 #include "obsolete/QservPath.hh"
@@ -384,8 +386,9 @@ extern "C" {
 XrdSfsFileSystem* XrdSfsGetFileSystem(
     XrdSfsFileSystem* native_fs, XrdSysLogger* lp, char const* fileName) {
     static boost::shared_ptr<Logger> log;
+    boost::shared_ptr<Logger::Printer> p(new XrdPrinter(lp));
     if(!log.get()) {
-        log.reset(new Logger(lp));
+        log.reset(new Logger(p));
     }
     static MySqlFs myFS(log, lp, fileName);
 

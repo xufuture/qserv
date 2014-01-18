@@ -38,6 +38,11 @@ namespace lsst { namespace qserv { namespace worker {
 /// (b)  has selectable outputs: stdout and xrootd's system log
 class Logger : boost::noncopyable {
 public:
+    class Printer {
+    public:
+        virtual ~Printer() {}
+        virtual Printer& operator()(char const* s) = 0;
+    };
     typedef boost::shared_ptr<Logger> Ptr;
 
     enum LogLevel { LOG_FATAL=10,
@@ -50,12 +55,12 @@ public:
         : _logLevel(LOG_EVERYTHING), _prefix("") {
         _init();
     }
-    explicit Logger(XrdSysLogger* log) 
-        : _log(log), _logLevel(LOG_EVERYTHING), _prefix("") {
+    explicit Logger(boost::shared_ptr<Printer> p) 
+        : _printer(p), _logLevel(LOG_EVERYTHING), _prefix("") {
         _init();
     }
     explicit Logger(Logger::Ptr backend) 
-        : _log(0), _backend(backend), _logLevel(LOG_EVERYTHING) {        
+        : _backend(backend), _logLevel(LOG_EVERYTHING) {        
     }
 
     void setPrefix(std::string const& prefix) { _prefix = prefix; }
@@ -85,9 +90,8 @@ private:
     void _init();
 
     std::string _prefix;
-    XrdSysLogger* _log;
+    boost::shared_ptr<Printer> _printer;
     Logger::Ptr _backend;
-    boost::shared_ptr<XrdSysError> _xrdSysError;
     LogLevel _logLevel;
 };
 }}} // namespace lsst::qserv::worker
