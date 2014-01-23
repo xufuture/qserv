@@ -40,9 +40,13 @@ if int(debug):
     env.Append(CCFLAGS = '-g')
 
 ## import via eups if directed
+## eups sets LD_LIBRARY_PATH and PATH, so libs should get detected automagically and 
 if 'eups' in ARGUMENTS:
-    import eups
-    eups.importDeps(env)
+    import eupsLib
+    i = eupsLib.Importer()
+    incs = i.getIncludes()
+    if incs: env.Append(CPPPATH=incs)
+
     
 
 # Environment
