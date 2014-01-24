@@ -53,7 +53,7 @@
 #include "control/AsyncQueryManager.h"
 #include "qproc/ChunkSpec.h"
 #include "qproc/QuerySession.h"
-#include "global/QservPath.hh"
+#include "obsolete/QservPath.h"
 #include "qproc/TaskMsgFactory2.h"
 #include <sstream>
 

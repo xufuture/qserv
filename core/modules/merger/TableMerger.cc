@@ -39,7 +39,7 @@
 #include <iostream>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
-#include "sql/SqlConnection.hh"
+#include "sql/SqlConnection.h"
 #include "log/Logger.h"
 #include "merger/SqlInsertIter.h"
 #include "util/MmapFile.h"
