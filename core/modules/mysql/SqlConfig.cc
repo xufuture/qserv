@@ -25,7 +25,7 @@
 #include <sstream>
 #include <stdlib.h> // atoi
 
-#include "SqlConfig.hh"
+#include "SqlConfig.h"
 
 using lsst::qserv::SqlConfig;
 

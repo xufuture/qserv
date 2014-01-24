@@ -37,8 +37,8 @@
 #include "xrdfs/XrdName.h"
 #include "xrdfs/XrdPrinter.h"
 
-#include "sql/SqlConnection.hh"
-#include "obsolete/QservPath.hh"
+#include "sql/SqlConnection.h"
+#include "obsolete/QservPath.h"
 
 #include <cerrno>
 #include <iostream>

@@ -26,7 +26,7 @@
 #include <sys/stat.h>
 #include <iterator>
 
-#include "sql/SqlErrorObject.hh"
+#include "sql/SqlErrorObject.h"
 #include "wconfig/Config.h"
 #include "wbase/Base.h"
 #include "log/Logger.h"

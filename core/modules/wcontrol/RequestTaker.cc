@@ -32,7 +32,7 @@
   * @author Daniel L. Wang, SLAC
   */ 
 #include "wcontrol/RequestTaker.h"
-#include "obsolete/QservPath.hh"
+#include "obsolete/QservPath.h"
 #include "proto/worker.pb.h"
 
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>

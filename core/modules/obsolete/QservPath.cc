@@ -20,7 +20,7 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#include "QservPath.hh"
+#include "QservPath.h"
 #include <iostream>
 #include <sstream>
 namespace qsrv = lsst::qserv;

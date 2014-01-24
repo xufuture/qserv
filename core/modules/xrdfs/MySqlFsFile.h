@@ -37,9 +37,6 @@
 #include "xrdfs/MySqlFsCommon.h"
 #include "wcontrol/Service.h"
 
-// common
-#include "obsolete/QservPath.hh"
-
 // Forward
 class XrdSysError;
 class XrdSysLogger;
@@ -47,8 +44,10 @@ class XrdSfsAio;
 
 namespace lsst {
 namespace qserv {
+class QservPath;
+
 namespace worker {
-class RequestTaker; // Forward
+class RequestTaker;
 class Logger;
 
 /// A factory functor that exists for the MySqlFsFile to register a callback for
