@@ -73,7 +73,7 @@ class Importer:
         pass
     def getIncludes(self): 
         return self.includes
-    def getpythonPaths(self):
+    def getPythonPaths(self):
         return self.pythonPaths
 
     pass
