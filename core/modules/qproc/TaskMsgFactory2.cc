@@ -30,10 +30,7 @@
   * user query latency).
   *
   * @author Daniel L. Wang, SLAC
-<<<<<<< HEAD
   */
-#include "lsst/qserv/master/TaskMsgFactory2.h"
-
 #include "qproc/TaskMsgFactory2.h"
 #include "log/Logger.h"
 

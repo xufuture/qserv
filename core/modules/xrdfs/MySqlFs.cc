@@ -33,7 +33,7 @@
 #include "wdb/QueryRunner.h"
 #include "wconfig/Config.h"
 #include "wcontrol/Service.h"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 #include "xrdfs/XrdName.h"
 #include "xrdfs/XrdPrinter.h"
 
@@ -172,7 +172,7 @@ private:
 ////////////////////////////////////////////////////////////////////////
 // class MySqlFs
 ////////////////////////////////////////////////////////////////////////
-MySqlFs::MySqlFs(boost::shared_ptr<Logger> log, XrdSysLogger* lp,
+MySqlFs::MySqlFs(boost::shared_ptr<WLogger> log, XrdSysLogger* lp,
                  char const* cFileName)
     : XrdSfsFileSystem(), _log(log) {
     if(!getConfig().getIsValid()) {
@@ -342,7 +342,7 @@ void MySqlFs::_initExports() {
     os << "Paths exported: ";
     std::copy(_exports->begin(), _exports->end(),
               std::ostream_iterator<std::string>(os, ","));
-    //boost::shared_ptr<Logger> log2 = log;
+    //boost::shared_ptr<WLogger> log2 = log;
     _log->info(os.str());
 }
 
@@ -384,10 +384,10 @@ extern "C" {
 
 XrdSfsFileSystem* XrdSfsGetFileSystem(
     XrdSfsFileSystem* native_fs, XrdSysLogger* lp, char const* fileName) {
-    static boost::shared_ptr<Logger> log;
-    boost::shared_ptr<Logger::Printer> p(new XrdPrinter(lp));
+    static boost::shared_ptr<WLogger> log;
+    boost::shared_ptr<WLogger::Printer> p(new XrdPrinter(lp));
     if(!log.get()) {
-        log.reset(new Logger(p));
+        log.reset(new WLogger(p));
     }
     static MySqlFs myFS(log, lp, fileName);
 

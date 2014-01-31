@@ -24,7 +24,7 @@
 
 #include <ctime>
 #include <sstream>
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 /// ChunkDisk is a data structure that tracks a queue of pending tasks
 /// for a disk, and the state of a chunkId-ordered scan on a disk
 /// (current chunkId, tasks in flight).

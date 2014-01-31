@@ -24,7 +24,7 @@
 #define BOOST_TEST_MODULE SanityCheck
 #include "boost/test/included/unit_test.hpp"
 
-#include "lsst/qserv/worker/Config.h"
+#include "wconfig/Config.h"
 #include <iostream>
 #include "boost/scoped_ptr.hpp"
 

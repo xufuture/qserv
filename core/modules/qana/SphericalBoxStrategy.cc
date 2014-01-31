@@ -42,7 +42,7 @@
 #include "meta/MetadataCache.h"
 #include "parser/ParseException.h"
 
-#include "lsst/qserv/Logger.h"
+#include "log/Logger.h"
 
 #define CHUNKTAG "%CC%"
 #define SUBCHUNKTAG "%SS%"

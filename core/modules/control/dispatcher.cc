@@ -49,7 +49,7 @@
 #include "control/dispatcher.h"
 #include "control/thread.h"
 #include "util/xrootd.h"
-#include "control/SessionManager.h"
+#include "control/SessionManagerAsync.h"
 #include "control/AsyncQueryManager.h"
 #include "qproc/ChunkSpec.h"
 #include "qproc/QuerySession.h"
@@ -61,38 +61,7 @@
 
 namespace qMaster = lsst::qserv::master;
 
-using lsst::qserv::master::SessionManager;
-typedef SessionManager<qMaster::AsyncQueryManager::Ptr> SessionMgr;
-typedef boost::shared_ptr<SessionMgr> SessionMgrPtr;
-
 namespace {
-
-SessionMgr& getSessionManager() {
-    // Singleton for now.
-    static SessionMgrPtr sm;
-    if(sm.get() == NULL) {
-        sm = boost::make_shared<SessionMgr>();
-    }
-    if(!sm) {
-        throw std::logic_error("Couldn't initialize SessionManager");
-    }
-    return *sm;
-}
-
-// Deprecated
-qMaster::QueryManager& getManager(int session) {
-    // Singleton for now. //
-    static boost::shared_ptr<qMaster::QueryManager> qm;
-    if(qm.get() == NULL) {
-        qm = boost::make_shared<qMaster::QueryManager>();
-    }
-    return *qm;
-}
-
-qMaster::AsyncQueryManager& getAsyncManager(int session) {
-    return *(getSessionManager().getSession(session));
-}
-
 std::string makeSavePath(std::string const& dir,
                          int sessionId,
                          int chunkId,
@@ -353,7 +322,7 @@ qMaster::getErrorDesc(int session) {
 int qMaster::newSession(std::map<std::string,std::string> const& config) {
     AsyncQueryManager::Ptr m =
         boost::make_shared<qMaster::AsyncQueryManager>(config);
-    int id = getSessionManagerAsync().newSession(m);
+    int id = qMaster::getSessionManagerAsync().newSession(m);
     return id;
 }
 

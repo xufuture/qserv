@@ -36,7 +36,7 @@ class GroupScheduler : public Foreman::Scheduler {
 public:
     typedef boost::shared_ptr<GroupScheduler> Ptr;
 
-    GroupScheduler(boost::shared_ptr<Logger> logger);
+    GroupScheduler(boost::shared_ptr<WLogger> logger);
     virtual ~GroupScheduler() {}
 
     virtual bool removeByHash(std::string const& hash);
@@ -69,7 +69,7 @@ private:
 
     Queue _queue;
     int _maxRunning;
-    boost::shared_ptr<Logger> _logger;
+    boost::shared_ptr<WLogger> _logger;
 };
 }}} // lsst::qserv::worker
 #endif // LSST_QSERV_WORKER_GROUPSCHEDULER_H

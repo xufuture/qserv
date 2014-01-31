@@ -22,11 +22,12 @@
 // queryMsg.cc houses the implementation of
 // queryMsg.h (SWIG-exported functions for accessing QueryMessages)
 
+#include "control/queryMsg.h"
 #include <iostream>
-#include "lsst/qserv/master/SessionManagerAsync.h"
-#include "lsst/qserv/master/AsyncQueryManager.h"
-#include "lsst/qserv/master/MessageStore.h"
-#include "lsst/qserv/master/queryMsg.h"
+#include "control/AsyncQueryManager.h"
+#include "control/SessionManagerAsync.h"
+#include "qdisp/MessageStore.h"
+
 
 namespace qMaster=lsst::qserv::master;
 

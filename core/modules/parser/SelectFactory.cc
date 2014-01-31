@@ -55,7 +55,7 @@
 #include "parser/parseTreeUtil.h"
 #include "query/TableRefN.h"
 
-#include "lsst/qserv/Logger.h"
+#include "log/Logger.h"
 
 ////////////////////////////////////////////////////////////////////////
 // SelectFactory

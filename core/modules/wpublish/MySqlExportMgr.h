@@ -36,7 +36,7 @@
 
 namespace lsst { namespace qserv { namespace worker {
 
-class Logger; // Forward
+class WLogger; // Forward
 
 class MySqlExportMgr {
 public:
@@ -46,7 +46,7 @@ public:
     typedef std::map<int,StringSet> ChunkMap; 
     typedef std::map<std::string, ChunkMap> ExistMap;
 
-    MySqlExportMgr(std::string const& name, Logger& log) 
+    MySqlExportMgr(std::string const& name, WLogger& log) 
         : _name(name), _log(log) { 
         _init();
     }
@@ -67,7 +67,7 @@ private:
     void _init();
     ExistMap _existMap;
     std::string _name;
-    Logger& _log;
+    WLogger& _log;
     
 };
 }}} // namespace lsst::qserv::worker

@@ -23,13 +23,13 @@
 #include "xrdfs/MySqlFsDirectory.h"
 
 #include "XrdSys/XrdSysError.hh"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 
 #include <errno.h>
 
 using namespace lsst::qserv::worker;
 
-MySqlFsDirectory::MySqlFsDirectory(boost::shared_ptr<Logger> log, 
+MySqlFsDirectory::MySqlFsDirectory(boost::shared_ptr<WLogger> log, 
                                             char* user) :
     XrdSfsDirectory(user), _log(log) {
 }

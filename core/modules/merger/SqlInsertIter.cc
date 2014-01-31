@@ -26,7 +26,7 @@
 #include <iostream>
 #include <errno.h>
 
-#include "lsst/qserv/Logger.h"
+#include "log/Logger.h"
 
 namespace qMaster = lsst::qserv::master;
 

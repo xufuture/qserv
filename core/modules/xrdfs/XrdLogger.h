@@ -28,7 +28,7 @@ namespace lsst {
 namespace qserv {
 namespace worker {
 
-class XrdLogger : public Logger {
+class XrdLogger : public WLogger {
 public:
     explicit XrdLogger(XrdSysError& e) : _e(e) {}
     virtual void operator()(std::string const& s) {

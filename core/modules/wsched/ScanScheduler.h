@@ -30,14 +30,14 @@ namespace lsst {
 namespace qserv {
 namespace worker {
 class ChunkDisk; // Forward
-class Logger;
+class WLogger;
 
 class ScanScheduler : public Foreman::Scheduler {
 public:
     typedef boost::shared_ptr<ScanScheduler> Ptr;
     typedef std::vector<boost::shared_ptr<ChunkDisk> > ChunkDiskList;
 
-    ScanScheduler(boost::shared_ptr<Logger> logger);
+    ScanScheduler(boost::shared_ptr<WLogger> logger);
     virtual ~ScanScheduler() {}
 
     virtual bool removeByHash(std::string const& hash);
@@ -59,7 +59,7 @@ private:
     bool _integrityHelper();
 
     ChunkDiskList _disks;
-    boost::shared_ptr<Logger> _logger;
+    boost::shared_ptr<WLogger> _logger;
     boost::mutex _mutex;
     int _maxRunning;
 };

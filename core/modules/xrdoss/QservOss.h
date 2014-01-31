@@ -41,7 +41,7 @@ class XrdSysLogger;
 class XrdOucEnv;
 
 namespace lsst { namespace qserv { namespace worker {
-class Logger;
+class WLogger;
 
 /// An XrdOssDF implementation that merely pays lip-service to incoming
 /// directory operations. QservOss objects must return XrdOssDF (or children)
@@ -108,7 +108,7 @@ private:
     std::string _cfgParams;
     std::string _name;
     XrdSysLogger* _xrdSysLogger; 
-    boost::shared_ptr<Logger> _log;
+    boost::shared_ptr<WLogger> _log;
     time_t _initTime;
 };
 }}} // namespace lsst::qserv::master

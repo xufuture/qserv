@@ -1,7 +1,6 @@
-// -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2014 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,24 +19,29 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_XRDPRINTER_H
-#define LSST_QSERV_WORKER_XRDPRINTER_H
+// Logger.cc houses the implementation of class Logger. Logger is a
+// simple logging facility that abstracts log messages away from the
+// xrootd system log so that qserv worker code can be debugged outside
+// of a running xrootd instance. It also provides levels of logging
+// priority as a mechanism for reducing logging clutter. 
 #include "wlog/WLogger.h"
-#include "XrdSys/XrdSysLogger.hh"
-#include "XrdSys/XrdSysError.hh"
+#include <sstream>
+#include <iostream>
 
-namespace lsst {
-namespace qserv {
-namespace worker {
-    class XrdPrinter : public WLogger::Printer {
-    public:
-        XrdPrinter(XrdSysLogger* log) : xrdSysError(log) {}
-        virtual WLogger::Printer& operator()(char const* s) {
-            xrdSysError.Say(s);
-            return *this;
+using lsst::qserv::worker::WLogger;
+
+void WLogger::message(WLogger::LogLevel logLevel, char const* s) {
+    if(logLevel <= _logLevel) { // Lower is higher priority
+        std::string o1(_prefix + s);
+        if(_backend) {
+            _backend->message(logLevel, o1.c_str());
+        } else if(_printer) { 
+            (*_printer)(s); 
+        } else {
+            std::cerr << o1 << std::endl;
         }
-        XrdSysError xrdSysError;
-    };
-}}} // namespace lsst::qserv::worker
+    }
+}
 
-#endif // LSST_QSERV_WORKER_XRDPRINTER_H
+void WLogger::_init() {
+}

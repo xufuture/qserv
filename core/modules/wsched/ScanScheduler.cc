@@ -35,7 +35,7 @@
 
 #include "wsched/ChunkDisk.h"
 #include "wcontrol/Foreman.h"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 
 lsst::qserv::worker::ScanScheduler* dbgScanScheduler = 0; //< A symbol for gdb
 lsst::qserv::worker::ChunkDisk* dbgChunkDisk1 = 0; //< A symbol for gdb
@@ -46,7 +46,7 @@ namespace worker {
 ////////////////////////////////////////////////////////////////////////
 // class ScanScheduler
 ////////////////////////////////////////////////////////////////////////
-ScanScheduler::ScanScheduler(Logger::Ptr logger)
+ScanScheduler::ScanScheduler(WLogger::Ptr logger)
     : _maxRunning(32), // FIXME: set to some multiple of system proc count.
       _logger(logger)
 {

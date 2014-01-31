@@ -48,7 +48,7 @@ class QservPath;
 
 namespace worker {
 class RequestTaker;
-class Logger;
+class WLogger;
 
 /// A factory functor that exists for the MySqlFsFile to register a callback for
 /// a completed query operation. The callback object is constructed with a
@@ -69,7 +69,7 @@ public:
 /// in the "file".
 class MySqlFsFile : public XrdSfsFile {
 public:
-    MySqlFsFile(boost::shared_ptr<Logger> log, char const* user = 0, 
+    MySqlFsFile(boost::shared_ptr<WLogger> log, char const* user = 0, 
                 AddCallbackFunction::Ptr acf = AddCallbackFunction::Ptr(),
                 fs::FileValidator::Ptr fv = fs::FileValidator::Ptr(),
                 boost::shared_ptr<Service> service = Service::Ptr());
@@ -120,7 +120,7 @@ private:
 
     void _setDumpNameAsChunkId();
 
-    boost::shared_ptr<Logger> _log;
+    boost::shared_ptr<WLogger> _log;
     AddCallbackFunction::Ptr _addCallbackF;
     fs::FileValidator::Ptr _validator;
     int _chunkId;

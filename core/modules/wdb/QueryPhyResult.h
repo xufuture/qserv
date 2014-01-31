@@ -36,7 +36,7 @@ namespace qserv {
 namespace lsst {
 namespace qserv {
 namespace worker {
-class Logger; // Forward
+class WLogger; // Forward
 ////////////////////////////////////////////////////////////////////////
 class QueryPhyResult {
 public:
@@ -51,7 +51,7 @@ public:
 
     void reset();
     
-    bool performMysqldump(Logger& log,
+    bool performMysqldump(WLogger& log,
                           std::string const& user,
                           std::string const& dumpFile,
                           SqlErrorObject&);

@@ -25,12 +25,7 @@
 // When the WorkQueue is destructed, it poisons the queue and waits until
 // all threads have died before returning.
 //
-<<<<<<< HEAD
-#include "lsst/qserv/common/WorkQueue.h"
-#include "lsst/qserv/Logger.h"
-=======
 #include "util/WorkQueue.h"
->>>>>>> 53592b3... Update #include via auto-fix (plus header merges)
 #include <iostream>
 
 ////////////////////////////////////////////////////////////////////////
@@ -83,8 +78,8 @@ lsst::qserv::WorkQueue::~WorkQueue() {
 
     while(_runners.size() > 0) {
         _runnersEmpty.wait(lock);
-        LOGGER_INF << "signalled... " << _runners.size() 
-                  << " remain" << std::endl;
+        // std::cerr << "signalled... " << _runners.size() 
+        //           << " remain" << std::endl;
     }
 }
 
@@ -92,7 +87,7 @@ void
 lsst::qserv::WorkQueue::add(boost::shared_ptr<lsst::qserv::WorkQueue::Callable> c) {
     boost::lock_guard<boost::mutex> lock(_mutex);
     if(_isDead && !isPoison(c.get())) {
-        LOGGER_INF << "Queue refusing work: dead" << std::endl;
+        //std::cerr << "Queue refusing work: dead" << std::endl;
     } else {
         _queue.push_back(c);
         _queueNonEmpty.notify_all();
@@ -140,7 +135,7 @@ void lsst::qserv::WorkQueue::signalDeath(Runner* r) {
             return;
         }
     }
-    LOGGER_INF << "couldn't find self to remove" << std::endl;
+    //std::cerr << "couldn't find self to remove" << std::endl;
 }
 void lsst::qserv::WorkQueue::_addRunner() {
     boost::unique_lock<boost::mutex> lock(_runnersMutex); 
@@ -172,7 +167,7 @@ public:
 
         ss << "MyCallable " << _myId << " (" << _spinTime
            << ") STARTED spinning" << std::endl;
-        LOGGER_INF << ss.str();
+        std::cerr << ss.str();
         ss.str() = "";
         ts.tv_sec = (long)_spinTime;
         ts.tv_nsec = (long)((1e9)*(_spinTime - ts.tv_sec));
@@ -182,7 +177,7 @@ public:
 
         ss << "MyCallable " << _myId << " (" << _spinTime
            << ") STOPPED spinning" << std::endl;
-        LOGGER_INF << ss.str();
+        std::cerr << ss.str();
     }
     int _myId;
     float _spinTime;

@@ -27,13 +27,13 @@ namespace qserv {
 namespace worker {
 
 class Foreman; // Forward
-class Logger;
+class WLogger;
 
 class Service {
 public:
     typedef boost::shared_ptr<Service> Ptr;
 
-    explicit Service(boost::shared_ptr<Logger> log=boost::shared_ptr<Logger>());
+    explicit Service(boost::shared_ptr<WLogger> log=boost::shared_ptr<WLogger>());
     TaskAcceptor::Ptr getAcceptor();
     void squashByHash(std::string const& hash);
 

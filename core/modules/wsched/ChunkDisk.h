@@ -40,14 +40,14 @@
 namespace lsst {
 namespace qserv {
 namespace worker {
-class Logger;
+class WLogger;
 
 class ChunkDisk {
 public:
     typedef boost::shared_ptr<Task> TaskPtr;
     typedef std::set<Task const*> TaskSet;
 
-    ChunkDisk(boost::shared_ptr<Logger> logger)
+    ChunkDisk(boost::shared_ptr<WLogger> logger)
         : _logger(logger), _chunkState(2) {}
     TaskSet getInflight() const;
 
@@ -120,7 +120,7 @@ private:
     mutable boost::mutex _inflightMutex;
     TaskSet _inflight;
     bool _completed;
-    boost::shared_ptr<Logger>_logger;
+    boost::shared_ptr<WLogger>_logger;
 };
 
 

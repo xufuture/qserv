@@ -32,7 +32,7 @@
 #include <sstream>
 #include <boost/thread.hpp>
 #include "wcontrol/Foreman.h"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 #include "wsched/GroupScheduler.h"
 #include "wsched/ScanScheduler.h"
 
@@ -47,7 +47,7 @@ namespace worker {
 ////////////////////////////////////////////////////////////////////////
 // class BlendScheduler
 ////////////////////////////////////////////////////////////////////////
-BlendScheduler::BlendScheduler(boost::shared_ptr<Logger> logger,
+BlendScheduler::BlendScheduler(boost::shared_ptr<WLogger> logger,
                                boost::shared_ptr<GroupScheduler> group,
                                boost::shared_ptr<ScanScheduler> scan)
     : _group(group),

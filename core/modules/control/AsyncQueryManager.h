@@ -44,8 +44,6 @@
 
 #include "control/DynamicWorkQueue.h"
 #include "xrdc/xrdfile.h"
-#include "log/MessageStore.h"
-
 
 namespace lsst {
 namespace qserv {
@@ -54,6 +52,7 @@ namespace master {
 // Forward
 class ChunkQuery;
 class MergeFixup;
+class MessageStore;
 class PacketIter;
 class QuerySession;
 class TableMerger;

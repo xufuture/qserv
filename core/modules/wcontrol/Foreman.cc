@@ -36,7 +36,7 @@
 #include "wsched/FifoScheduler.h"
 #include "wdb/QueryRunner.h"
 #include "wbase/Base.h"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 
 using namespace lsst::qserv::worker;
 namespace qWorker = lsst::qserv::worker;
@@ -58,7 +58,7 @@ namespace {
 ////////////////////////////////////////////////////////////////////////
 class ForemanImpl : public lsst::qserv::worker::Foreman {
 public:
-    ForemanImpl(Scheduler::Ptr s, Logger::Ptr log);
+    ForemanImpl(Scheduler::Ptr s, WLogger::Ptr log);
     virtual ~ForemanImpl();
 
     bool squashByHash(std::string const& hash);
@@ -73,7 +73,7 @@ public:
     private:
         RunnerMgr& _rm;
         Task::Ptr _task;
-        Logger::Ptr _log;
+        WLogger::Ptr _log;
         bool _isPoisoned;
     };
     // For use by runners.
@@ -86,7 +86,7 @@ public:
         void reportStart(Task::Ptr t);
         void signalDeath(Runner* r);
         Task::Ptr getNextTask(Runner* r, Task::Ptr previous);
-        Logger::Ptr getLog();
+        WLogger::Ptr getLog();
         bool squashByHash(std::string const& hash);
 
     private:
@@ -108,7 +108,7 @@ private:
     Scheduler::Ptr _scheduler;
     RunnerDeque _runners;
     boost::scoped_ptr<RunnerMgr> _rManager;
-    Logger::Ptr _log;
+    WLogger::Ptr _log;
 
     TaskQueuePtr  _running;
 };
@@ -116,7 +116,7 @@ private:
 // Foreman factory function
 ////////////////////////////////////////////////////////////////////////
 Foreman::Ptr
-qWorker::newForeman(Foreman::Scheduler::Ptr sched, Logger::Ptr log) {
+qWorker::newForeman(Foreman::Scheduler::Ptr sched, WLogger::Ptr log) {
     if(!sched) {
         sched.reset(new qWorker::FifoScheduler());
     }
@@ -211,7 +211,7 @@ ForemanImpl::RunnerMgr::getNextTask(Runner* r, Task::Ptr previous) {
     return tq->front();
 }
 
-Logger::Ptr ForemanImpl::RunnerMgr::getLog() {
+WLogger::Ptr ForemanImpl::RunnerMgr::getLog() {
     return _f._log;
 }
 /// matchHash: helper functor that matches queries by hash.
@@ -281,13 +281,13 @@ void ForemanImpl::Runner::operator()() {
 // ForemanImpl
 ////////////////////////////////////////////////////////////////////////
 ForemanImpl::ForemanImpl(Scheduler::Ptr s,
-                         Logger::Ptr log)
+                         WLogger::Ptr log)
     : _scheduler(s), _running(new TaskQueue()) {
     if(!log) {
         // Make basic logger.
-        _log.reset(new Logger());
+        _log.reset(new WLogger());
     } else {
-        _log.reset(new Logger(log));
+        _log.reset(new WLogger(log));
         _log->setPrefix("Foreman:");
     }
     _rManager.reset(new RunnerMgr(*this));

@@ -188,9 +188,10 @@ def importCustom(env, extraTgts):
     pp = env.get("PYTHONPATH", [])
     pp.extend(ppDirs)
     extraTgts["PYTHONPATH"] = ppDirs
-
+    print "Looking for protoc in custom"
     # Import PROTOC
     if "PROTOC" in dir(custom): env['PROTOC'] = custom.PROTOC
+    else: print "didn't find protoc in custom."
     return custom
 
 def extractGeometry(custom):

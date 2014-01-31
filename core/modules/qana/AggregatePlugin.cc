@@ -39,7 +39,7 @@
 #include "query/SelectStmt.h"
 #include "query/AggOp.h"
 
-#include "lsst/qserv/Logger.h"
+#include "log/Logger.h"
 
 namespace lsst {
 namespace qserv {

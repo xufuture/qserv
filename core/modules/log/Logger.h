@@ -1,8 +1,7 @@
-// -*- LSST-C++ -*-
-/*
+/* 
  * LSST Data Management System
- * Copyright 2012 LSST Corporation.
- *
+ * Copyright 2008, 2009, 2010 LSST Corporation.
+ * 
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,91 +9,114 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the LSST License Statement and
- * the GNU General Public License along with this program.  If not,
+ * 
+ * You should have received a copy of the LSST License Statement and 
+ * the GNU General Public License along with this program.  If not, 
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// Logger is a logging class used right now in the qserv worker plugins.
 
-#ifndef LSST_QSERV_WORKER_LOGGER_H
-#define LSST_QSERV_WORKER_LOGGER_H
-#include <string>
-#include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
-// Forward
-class XrdSysLogger;
-class XrdSysError;
+// Logger.h: 
+// class Logger -- A class that handles application-wide logging.
+//
+ 
+#ifndef LSST_QSERV_LOGGER_H
+#define LSST_QSERV_LOGGER_H
 
-namespace lsst { namespace qserv { namespace worker {
+// These directives are for convenience.
+#define LOG_STRM(level) lsst::qserv::Logger::Instance(lsst::qserv::Logger::level)
+#define LOGGER(level) if (lsst::qserv::Logger::level >= \
+    lsst::qserv::Logger::Instance().getSeverityThreshold()) \
+    lsst::qserv::Logger::Instance(lsst::qserv::Logger::level)
+#define LOGGER_DBG LOGGER(Debug)
+#define LOGGER_INF LOGGER(Info)
+#define LOGGER_WRN LOGGER(Warning)
+#define LOGGER_ERR LOGGER(Error)
+#define LOGGER_THRESHOLD(level) lsst::qserv::Logger::Instance()\
+    .setSeverityThreshold(lsst::qserv::Logger::level);
+#define LOGGER_THRESHOLD_DBG LOGGER_THRESHOLD(Debug)
+#define LOGGER_THRESHOLD_INF LOGGER_THRESHOLD(Info)
+#define LOGGER_THRESHOLD_WRN LOGGER_THRESHOLD(Warning)
+#define LOGGER_THRESHOLD_ERR LOGGER_THRESHOLD(Error)
 
-/// A class to define a logging facility that:
-/// (a)  has logging levels
-/// (b)  has selectable outputs: stdout and xrootd's system log
-class Logger : boost::noncopyable {
+#include <stdio.h>
+#include <sys/time.h>
+#include <iostream>
+#include <boost/iostreams/concepts.hpp>
+#include <boost/iostreams/operations.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/line.hpp>
+#include <boost/thread.hpp>
+#include <boost/lexical_cast.hpp>
+
+namespace lsst {
+namespace qserv {
+
+class Logger : public boost::iostreams::filtering_ostream {
 public:
-    class Printer {
+    // Sink class responsible for synchronization.
+    class SyncSink : public boost::iostreams::sink {
     public:
-        virtual ~Printer() {}
-        virtual Printer& operator()(char const* s) = 0;
+        SyncSink(std::ostream* os);
+        std::streamsize write(const char *s, std::streamsize n);
+    private:
+        std::ostream* _os;
+        static boost::mutex _mutex;
     };
-    typedef boost::shared_ptr<Logger> Ptr;
 
-    enum LogLevel { LOG_FATAL=10,
-                    LOG_ERROR=20, 
-                    LOG_WARN=30, 
-                    LOG_INFO=40, 
-                    LOG_DEBUG=50,
-                    LOG_EVERYTHING=9999 };
-    Logger()
-        : _logLevel(LOG_EVERYTHING), _prefix("") {
-        _init();
-    }
-    explicit Logger(boost::shared_ptr<Printer> p) 
-        : _printer(p), _logLevel(LOG_EVERYTHING), _prefix("") {
-        _init();
-    }
-    explicit Logger(Logger::Ptr backend) 
-        : _backend(backend), _logLevel(LOG_EVERYTHING) {        
-    }
+    static SyncSink syncSink;
+    static boost::iostreams::stream_buffer<SyncSink> syncBuffer;
+    static std::ostream logStream;
 
-    void setPrefix(std::string const& prefix) { _prefix = prefix; }
-    std::string const& getPrefix(std::string const& prefix) const {
-        return _prefix; }
-    void setLogLevel(LogLevel logLevel) { _logLevel = logLevel; }
-    LogLevel getLogLevel(LogLevel logLevel) const { return _logLevel; }
-
-    inline void fatal(std::string const& s) { message(LOG_FATAL, s); }
-    inline void error(std::string const& s) { message(LOG_ERROR, s); }
-    inline void warn(std::string const& s) { message(LOG_WARN, s); }
-    inline void info(std::string const& s) { message(LOG_INFO, s); }
-    inline void debug(std::string const& s) { message(LOG_INFO, s); }
-
-    inline void fatal(char const* s) { message(LOG_FATAL, s); }
-    inline void error(char const* s) { message(LOG_ERROR, s); }
-    inline void warn(char const* s) { message(LOG_WARN, s); }
-    inline void info(char const* s) { message(LOG_INFO, s); }
-    inline void debug(char const* s) { message(LOG_INFO, s); }
-
-    inline void message(LogLevel logLevel, std::string const& s) {
-        message(logLevel, s.c_str());
-    }
-    void message(LogLevel logLevel, char const* s);
+    enum Severity { Debug = 0, Info, Warning, Error };
+    static Logger& Instance();
+    static Logger& Instance(Severity severity);
+    void setSeverity(Severity severity);
+    Severity getSeverity() const;
+    void setSeverityThreshold(Severity severity);
+    Severity getSeverityThreshold() const;
 
 private:
-    void _init();
+    // Filter class responsible for enforcing severity level.
+    class SeverityFilter : public boost::iostreams::multichar_output_filter {
+    public:
+        SeverityFilter(Logger* loggerPtr);
+        template<typename Sink>
+        std::streamsize write(Sink& dest, const char* s, std::streamsize n);
+    private:
+        Logger* _loggerPtr;
+    };
+            
+    // Filter class responsible for formatting Logger output.
+    class LogFilter : public boost::iostreams::line_filter {
+    public:
+        LogFilter(Logger* loggerPtr);
+    private:
+        std::string do_filter(const std::string& line);
+        std::string getTimeStamp();
+        std::string getThreadId();
+        std::string getSeverity();
+        Logger* _loggerPtr;
+    };
 
-    std::string _prefix;
-    boost::shared_ptr<Printer> _printer;
-    Logger::Ptr _backend;
-    LogLevel _logLevel;
+    // Private constructor, etc. as per singleton pattern.
+    Logger();
+    Logger(Logger const&);
+    Logger& operator=(Logger const&);
+
+    Severity _severity;
+    static Severity _severityThreshold; // Application-wide severity threshold.
+    static boost::mutex _mutex;
+
+    // Thread local storage to ensure one instance of Logger per thread.
+    static boost::thread_specific_ptr<Logger> _instancePtr;
+
 };
-}}} // namespace lsst::qserv::worker
 
+}} // lsst::qserv
 
-#endif // LSST_QSERV_WORKER_LOGGER_H
+#endif // LSST_QSERV_LOGGER_H

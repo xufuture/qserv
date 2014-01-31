@@ -32,7 +32,6 @@
 
 // Package
 #include "util/common.h"
-//#include "lsst/qserv/master/ChunkMeta.h"
 
 namespace lsst {
 namespace qserv {

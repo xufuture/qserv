@@ -54,7 +54,7 @@ namespace qserv {
 namespace lsst {
 namespace qserv {
 namespace worker {
-class Logger;
+class WLogger;
 class QuerySql;
 class QueryPhyResult; // Forward
 ////////////////////////////////////////////////////////////////////////
@@ -62,11 +62,11 @@ struct QueryRunnerArg {
 public:
     QueryRunnerArg() {}
 
-    QueryRunnerArg(boost::shared_ptr<Logger> log_,
+    QueryRunnerArg(boost::shared_ptr<WLogger> log_,
                    Task::Ptr task_,
                    std::string overrideDump_=std::string())
         : log(log_), task(task_), overrideDump(overrideDump_) { }
-    boost::shared_ptr<Logger> log;
+    boost::shared_ptr<WLogger> log;
     Task::Ptr task;
     std::string overrideDump;
 };
@@ -120,7 +120,7 @@ private:
     bool _poisonCleanup();
 
     // Fields
-    boost::shared_ptr<Logger> _log;
+    boost::shared_ptr<WLogger> _log;
     SqlErrorObject _errObj;
     std::string _user;
     boost::shared_ptr<QueryPhyResult> _pResult;

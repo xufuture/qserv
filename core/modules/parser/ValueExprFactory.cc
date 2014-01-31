@@ -34,7 +34,7 @@
 #include "parser/ParseException.h" //
 #include "SqlSQL2TokenTypes.hpp" // antlr-generated
 
-#include "lsst/qserv/Logger.h"
+#include "log/Logger.h"
 
 using antlr::RefAST;
 

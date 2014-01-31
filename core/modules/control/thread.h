@@ -58,7 +58,7 @@ template<class T> struct tryJoinBoostThread  {
     }
 };
 
-class Semaphore {  // Duplicated in lsst/qserv/worker/src/MySqlFsFile.cc
+class Semaphore {  // Duplicated in xrdfs/MySqlFsFile.cc
 public:
     explicit Semaphore(int count=1) : _count(count) {
 	assert(count > 0);

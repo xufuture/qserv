@@ -27,12 +27,6 @@
 // C++ 
 #include <list>
 #include <string>
-// #include <sstream>
-// Boost
-// #include "boost/shared_ptr.hpp"
-
-// Package
-// #include "lsst/qserv/master/common.h"
 
 namespace lsst {
 namespace qserv {

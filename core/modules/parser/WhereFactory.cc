@@ -41,7 +41,7 @@
 #include "query/WhereClause.h" 
 #include "parser/BoolTermFactory.h"
 
-#include "lsst/qserv/Logger.h"
+#include "log/Logger.h"
 
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;

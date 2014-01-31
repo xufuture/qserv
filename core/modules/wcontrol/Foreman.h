@@ -54,7 +54,7 @@
 namespace lsst {
 namespace qserv {
 namespace worker {
-class Logger; // Forward
+class WLogger; // Forward
 
 class Foreman : public TaskAcceptor {
 public:
@@ -93,7 +93,7 @@ protected:
     explicit Foreman() {}
 };
 
-Foreman::Ptr newForeman(Foreman::Scheduler::Ptr s, boost::shared_ptr<Logger> log);
+Foreman::Ptr newForeman(Foreman::Scheduler::Ptr s, boost::shared_ptr<WLogger> log);
 
 }}}  // namespace lsst::qserv::worker
 

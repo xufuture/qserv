@@ -41,7 +41,7 @@
 #include "control/AsyncQueryManager.h"
 #include "qdisp/ChunkQuery.h"
 #include "log/Logger.h"
-#include "log/MessageStore.h"
+#include "qdisp/MessageStore.h"
 #include "log/msgCode.h"
 #include "merger/TableMerger.h"
 #include "util/Timer.h"

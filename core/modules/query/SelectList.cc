@@ -46,7 +46,7 @@
 
 #include "parser/SqlSQL2TokenTypes.hpp" // For ANTLR typing.
 
-#include "lsst/qserv/Logger.h"
+#include "log/Logger.h"
 
 namespace lsst { 
 namespace qserv {

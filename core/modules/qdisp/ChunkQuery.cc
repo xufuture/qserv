@@ -43,7 +43,7 @@
 #include "xrdc/PacketIter.h"
 #include "util/xrootd.h"
 #include "control/DynamicWorkQueue.h"
-#include "log/MessageStore.h"
+#include "qdisp/MessageStore.h"
 #include "log/msgCode.h"
 #include "log/Logger.h"
 

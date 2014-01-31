@@ -31,7 +31,7 @@
 #include <iostream>
 #include <sstream>
 #include <boost/thread.hpp>
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 
 namespace lsst {
 namespace qserv {
@@ -39,7 +39,7 @@ namespace worker {
 ////////////////////////////////////////////////////////////////////////
 // class GroupScheduler
 ////////////////////////////////////////////////////////////////////////
-GroupScheduler::GroupScheduler(Logger::Ptr logger)
+GroupScheduler::GroupScheduler(WLogger::Ptr logger)
     : _maxRunning(4), // FIXME: set to some multiple of system proc count.
       _logger(logger)
 {

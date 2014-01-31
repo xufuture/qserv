@@ -35,7 +35,7 @@ namespace lsst {
 namespace qserv {
 namespace worker {
  // Forward
-class Logger;
+class WLogger;
 class Service;
 
 /// MySqlFs is an xrootd fs plugin class
@@ -43,7 +43,7 @@ class MySqlFs : public XrdSfsFileSystem {
 public:
     typedef std::set<std::string> StringSet;
 
-    MySqlFs(boost::shared_ptr<Logger> log, XrdSysLogger* lp,
+    MySqlFs(boost::shared_ptr<WLogger> log, XrdSysLogger* lp,
             char const* cFileName);
     virtual ~MySqlFs(void);
 
@@ -103,7 +103,7 @@ private:
     char const* _localroot;
     boost::shared_ptr<Service> _service;
     boost::shared_ptr<StringSet> _exports;
-    boost::shared_ptr<Logger> _log;
+    boost::shared_ptr<WLogger> _log;
 };
 
 }}} // namespace lsst::qserv::worker

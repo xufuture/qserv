@@ -38,14 +38,14 @@
 #include "wcontrol/ResultTracker.h"
 #include "wdb/QueryRunner.h"
 #include "xrdfs/MySqlFsFile.h"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 
 namespace test = boost::test_tools;
 namespace qWorker = lsst::qserv::worker;
 using namespace lsst::qserv::worker;
 using boost::make_shared;
 
-boost::shared_ptr<Logger> myLog = make_shared<Logger>();
+boost::shared_ptr<WLogger> myLog = make_shared<WLogger>();
 
 
 // For chunk 9980, subchunks 1,3 (tuson26 right now)

@@ -25,17 +25,17 @@
 #include "wsched/ScanScheduler.h"
 #include "wsched/GroupScheduler.h"
 #include "wsched/BlendScheduler.h"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 
 namespace lsst {
 namespace qserv {
 namespace worker {
 
-Service::Service(Logger::Ptr log) {
+Service::Service(WLogger::Ptr log) {
     if(!log.get()) {
-        log.reset(new Logger());
+        log.reset(new WLogger());
     }
-    Logger::Ptr schedLog(new Logger(log));    
+    WLogger::Ptr schedLog(new WLogger(log));    
 #if 0 // Shared scan only
     schedLog->setPrefix(ScanScheduler::getName() + ":");
     ScanScheduler::Ptr sch(new ScanScheduler(schedLog));    
@@ -43,11 +43,11 @@ Service::Service(Logger::Ptr log) {
     schedLog->setPrefix(GroupScheduler::getName() + ":");
     GroupScheduler::Ptr sch(new GroupScheduler(schedLog));
 #else // Blend scheduler
-    Logger::Ptr gLog(new Logger(log));
+    WLogger::Ptr gLog(new WLogger(log));
     gLog->setPrefix(GroupScheduler::getName() + ":");
     GroupScheduler::Ptr gro(new GroupScheduler(gLog));
 
-    Logger::Ptr sLog(new Logger(log));
+    WLogger::Ptr sLog(new WLogger(log));
     sLog->setPrefix(ScanScheduler::getName() + ":");
     ScanScheduler::Ptr sca(new ScanScheduler(sLog));
     

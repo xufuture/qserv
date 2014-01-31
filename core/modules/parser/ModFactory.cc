@@ -47,7 +47,7 @@
 #include "query/OrderByClause.h" // Clauses
 #include "query/GroupByClause.h" // Clauses
 
-#include "lsst/qserv/Logger.h"
+#include "log/Logger.h"
 
 namespace lsst {
 namespace qserv {

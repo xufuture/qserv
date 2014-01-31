@@ -31,8 +31,8 @@
 #if DO_NOT_USE_BOOST
 #include <regex.h>
 #  include "XrdSys/XrdSysPthread.hh"
-#  include "lsst/qserv/worker/Regex.h"
-#  include "lsst/qserv/worker/format.h"
+#  include "util/Regex.h"
+#  include "util/format.h"
 #else
 #  include "boost/regex.hpp"
 #  include "boost/thread.hpp"
@@ -43,7 +43,7 @@
 #include "xrdfs/MySqlFsCommon.h"
 #include "wbase/Base.h"
 #include "wcontrol/RequestTaker.h"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 #include "obsolete/QservPath.h"
 
 #include <algorithm>
@@ -180,7 +180,7 @@ std::ostream& operator<<(std::ostream& os, Timer const& tm) {
 //////////////////////////////////////////////////////////////////////////////
 // MySqlFsFile
 //////////////////////////////////////////////////////////////////////////////
-MySqlFsFile::MySqlFsFile(boost::shared_ptr<Logger> log, 
+MySqlFsFile::MySqlFsFile(boost::shared_ptr<WLogger> log, 
                                   char const* user, 
                                   AddCallbackFunction::Ptr acf,
                                   fs::FileValidator::Ptr fv,

@@ -22,10 +22,8 @@
 // SessionManagerAsync.cc houses the static instance of the
 // AsyncQueryManager-type of SessionManager.
 
-#include "lsst/qserv/master/SessionManagerAsync.h"
+#include "control/SessionManagerAsync.h"
 #include <boost/make_shared.hpp>
-
-#include "lsst/qserv/master/xrdfile.h"
 
 namespace qMaster=lsst::qserv::master;
 

@@ -23,8 +23,8 @@
 
 #include <iostream>
 #include <boost/format.hpp> 
-#include "lsst/qserv/master/MessageStore.h"
-#include "lsst/qserv/Logger.h"
+#include "qdisp/MessageStore.h"
+#include "log/Logger.h"
 using lsst::qserv::master::MessageStore;
 
 namespace qMaster=lsst::qserv::master;

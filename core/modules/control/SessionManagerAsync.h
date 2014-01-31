@@ -19,20 +19,26 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// loggerInterface.cc houses the implementation of
-// loggerInterface.h (SWIG-exported functions for writing to log.)
+// SessionManagerAsync is a type-specialized version of SessionManager
+// This interface provides static instance retrieval that was formerly
+// buried in dispatcher.cc
 
-#include <iostream>
-#include "lsst/qserv/Logger.h"
-#include "lsst/qserv/master/loggerInterface.h"
+#ifndef LSST_QSERV_MASTER_SESSIONMANAGERASYNC_H
+#define LSST_QSERV_MASTER_SESSIONMANAGERASYNC_H
+#include "control/SessionManager.h"
+#include <boost/shared_ptr.hpp>
 
-namespace qMaster=lsst::qserv::master;
+namespace lsst { 
+namespace qserv { 
+namespace master {
+class AsyncQueryManager;
 
-void qMaster::logger_threshold(int severity) {
-    lsst::qserv::Logger::Instance()
-        .setSeverityThreshold(static_cast<lsst::qserv::Logger::Severity>(severity));
-}
+typedef SessionManager<boost::shared_ptr<AsyncQueryManager> > SessionManagerAsync;
+typedef boost::shared_ptr<SessionManagerAsync> SessionManagerAsyncPtr;
 
-void qMaster::logger(int severity, std::string const& s) {
-    lsst::qserv::Logger::Instance(static_cast<lsst::qserv::Logger::Severity>(severity)) << "<py> " << s << std::endl;
-}
+SessionManagerAsync& getSessionManagerAsync();
+AsyncQueryManager& getAsyncManager(int session);
+
+}}} // lsst::qserv::master
+
+#endif // LSST_QSERV_MASTER_SESSIONMANAGERASYNC_H

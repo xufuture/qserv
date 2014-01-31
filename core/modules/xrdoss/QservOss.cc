@@ -26,7 +26,7 @@
 /// space abundance. 
 #include "xrdoss/QservOss.h"
 #include "obsolete/QservPath.h"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 #include <algorithm>
 #include <cstdarg>
 #include <deque>
@@ -247,10 +247,10 @@ int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
     _xrdSysLogger = log;
     boost::shared_ptr<XrdPrinter> printer(new XrdPrinter(log));
     if(log) { 
-        _log.reset(new Logger(printer)); 
+        _log.reset(new WLogger(printer)); 
         _log->setPrefix("QservOss");
     } else {
-        _log.reset(new Logger());
+        _log.reset(new WLogger());
     }
     if(!cfgFn) {
         _cfgFn.assign("");

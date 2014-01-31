@@ -32,14 +32,14 @@ class XrdSysError;
 namespace lsst {
 namespace qserv {
 namespace worker {
-class Logger; // Forward
+class WLogger; // Forward
 
 /// MySqlFsDirectory is directory object returned by MySqlFs. It
 /// rejects directory operations because they have not been assigned
 /// any meaning in qserv.
 class MySqlFsDirectory : public XrdSfsDirectory {
 public:
-    MySqlFsDirectory(boost::shared_ptr<Logger> log, char* user = 0);
+    MySqlFsDirectory(boost::shared_ptr<WLogger> log, char* user = 0);
     ~MySqlFsDirectory(void);
 
     int open(char const* dirName, XrdSecEntity const* client = 0,
@@ -49,7 +49,7 @@ public:
     char const* FName(void);
 
 private:
-    boost::shared_ptr<Logger> _log;
+    boost::shared_ptr<WLogger> _log;
 };
 
 }}} // namespace lsst::qserv::worker

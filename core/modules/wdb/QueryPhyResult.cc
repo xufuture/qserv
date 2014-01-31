@@ -29,7 +29,7 @@
 #include "sql/SqlErrorObject.h"
 #include "wconfig/Config.h"
 #include "wbase/Base.h"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
  
 using namespace lsst::qserv::worker;
 
@@ -65,7 +65,7 @@ std::string QueryPhyResult::_getSpaceResultTables() const {
 }
 
 
-bool QueryPhyResult::performMysqldump(Logger& log,
+bool QueryPhyResult::performMysqldump(WLogger& log,
                                       std::string const& user,
                                       std::string const& dumpFile,
                                       SqlErrorObject& errObj) {

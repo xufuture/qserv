@@ -41,7 +41,7 @@ class BlendScheduler : public Foreman::Scheduler {
 public:
     typedef boost::shared_ptr<BlendScheduler> Ptr;
 
-    BlendScheduler(boost::shared_ptr<Logger> logger,
+    BlendScheduler(boost::shared_ptr<WLogger> logger,
                    boost::shared_ptr<GroupScheduler> group,
                    boost::shared_ptr<ScanScheduler> scan);
     virtual ~BlendScheduler() {}
@@ -68,7 +68,7 @@ private:
 
     boost::shared_ptr<GroupScheduler> _group;
     boost::shared_ptr<ScanScheduler> _scan;
-    boost::shared_ptr<Logger> _logger;
+    boost::shared_ptr<WLogger> _logger;
     typedef std::map<Task*, Foreman::Scheduler*> Map;
     Map _map;
     boost::mutex _mapMutex;

@@ -12,7 +12,7 @@ def getDerived(m):
 programs = []
 
 # deps on other modules
-modDeps = """merger mysql sql util xrdc""".split() 
+modDeps = """log merger mysql sql util xrdc""".split() 
 
 deps = itertools.chain(*map(getDerived, modDeps))
 deps = map(lambda i:i, deps) # un-chain

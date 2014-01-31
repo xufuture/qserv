@@ -35,7 +35,7 @@
 
 #include <boost/regex.hpp>
 #include "global/constants.h"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 #include "mysql/mysql.h"
 #include "sql/SqlConnection.h"
 #include "sql/SqlErrorObject.h"
@@ -56,7 +56,7 @@ using lsst::qserv::worker::QuerySql;
 
 namespace {
 bool
-runBatch(boost::shared_ptr<qWorker::Logger> log,
+runBatch(boost::shared_ptr<qWorker::WLogger> log,
          SqlConnection& sqlConn,
          SqlErrorObject& errObj,
          std::string const& scriptId,
@@ -100,7 +100,7 @@ runBatch(boost::shared_ptr<qWorker::Logger> log,
 
 // Newer, flexibly-batched system.
 bool
-runScriptPieces(boost::shared_ptr<Logger> log,
+runScriptPieces(boost::shared_ptr<WLogger> log,
                 SqlConnection& sqlConn,
                 SqlErrorObject& errObj,
                 std::string const& scriptId,

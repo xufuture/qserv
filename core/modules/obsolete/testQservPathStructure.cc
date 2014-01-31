@@ -24,7 +24,7 @@
 
 #include <iostream>
 
-#include "lsst/qserv/worker/QservPathStructure.h"
+#include "obsolete/QservPathStructure.h"
 
 namespace test = boost::test_tools;
 namespace qWorker = lsst::qserv::worker;

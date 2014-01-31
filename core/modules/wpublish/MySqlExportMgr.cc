@@ -26,7 +26,7 @@
 #include <boost/regex.hpp>
 #include "sql/SqlConnection.h"
 #include "wconfig/Config.h"
-#include "log/Logger.h"
+#include "wlog/WLogger.h"
 
 using namespace lsst::qserv::worker;
 using namespace lsst::qserv;
@@ -38,7 +38,7 @@ inline std::string getTableNameDbListing(std::string const& instanceName) {
 }
 
 template <class C>
-void getDbs(Logger& log, 
+void getDbs(WLogger& log, 
             std::string const& instanceName, 
             SqlConnection& sc, 
             C& dbs) {
