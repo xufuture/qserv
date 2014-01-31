@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /**
@@ -24,7 +24,7 @@
   *
   * @brief Implementation of QueryTemplate, which is a object that can
   * be used to generate concrete queries from a template, given
-  * certain parameters (e.g. chunk/subchunk). 
+  * certain parameters (e.g. chunk/subchunk).
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -40,11 +40,11 @@ namespace lsst {
 namespace qserv {
 namespace master {
 struct SpacedOutput {
-    SpacedOutput(std::ostream& os_, std::string sep_=" ") 
+    SpacedOutput(std::ostream& os_, std::string sep_=" ")
         : os(os_), sep(sep_), count(0) {}
     void operator()(std::string const& s) {
         if(s.empty()) return;
-        
+
         if(!last.empty() && sqlShouldSeparate(last, *(last.end()-1), s[0]))  {
             os << sep;
         }
@@ -72,7 +72,7 @@ std::string outputString(C& c) {
     return ss.str();
 }
 struct MappingWrapper {
-    MappingWrapper(QueryTemplate::EntryMapping const& em_, QueryTemplate& qt_) 
+    MappingWrapper(QueryTemplate::EntryMapping const& em_, QueryTemplate& qt_)
         : em(em_), qt(qt_) {}
     void operator()(boost::shared_ptr<QueryTemplate::Entry> e) {
             qt.append(em.mapEntry(*e));
@@ -86,11 +86,11 @@ struct MappingWrapper {
 ////////////////////////////////////////////////////////////////////////
 class TableEntry : public QueryTemplate::Entry {
 public:
-    TableEntry(TableRefN const& tr) 
+    TableEntry(TableRefN const& tr)
         : db(tr.getDb()), table(tr.getTable()) {
     }
-    virtual std::string getValue() const { 
-        std::stringstream ss; 
+    virtual std::string getValue() const {
+        std::stringstream ss;
         if(!db.empty()) { ss << db << "."; }
         ss << table;
         return ss.str();
@@ -102,11 +102,11 @@ public:
 };
 class ColumnEntry : public QueryTemplate::Entry {
 public:
-    ColumnEntry(ColumnRef const& cr) 
-        : db(cr.db), table(cr.table), column(cr.column) {        
+    ColumnEntry(ColumnRef const& cr)
+        : db(cr.db), table(cr.table), column(cr.column) {
     }
-    virtual std::string getValue() const { 
-        std::stringstream ss; 
+    virtual std::string getValue() const {
+        std::stringstream ss;
         if(!db.empty()) { ss << db << "."; }
         if(!table.empty()) { ss << table << "."; }
         ss << column;

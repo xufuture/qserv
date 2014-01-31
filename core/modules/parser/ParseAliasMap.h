@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,14 +10,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #ifndef LSST_QSERV_MASTER_PARSEALIASMAP_H
@@ -31,8 +31,8 @@
 // Standard
 #include <map>
 
-namespace lsst { 
-namespace qserv { 
+namespace lsst {
+namespace qserv {
 namespace master {
 
 /// class ParseAliasMap - maintain mappings for aliasing in SQL statements
@@ -51,7 +51,7 @@ public:
     // The first "Object" node points only at o1, and the second
     // "Object" node points only at o2.  In the parse tree domain,
     // "Object" is not merged.
-    
+
     typedef Map::const_iterator Miter;
     ParseAliasMap() {}
 
@@ -72,7 +72,7 @@ private:
     inline antlr::RefAST _get(Map const& m, antlr::RefAST k) const {
         Miter i = m.find(k);
         if(i != m.end()) return i->second;
-        else return antlr::RefAST();        
+        else return antlr::RefAST();
     }
     Map _map;
     Map _rMap;

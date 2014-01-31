@@ -1,9 +1,9 @@
 // -*- LSST-C++ -*-
 
-/* 
+/*
  * LSST Data Management System
  * Copyright 2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -11,14 +11,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -46,7 +46,7 @@ namespace qMaster = lsst::qserv::master;
 namespace lsst {
 namespace qserv {
 namespace master {
-        
+
 using lsst::qserv::master::SessionManager;
 typedef SessionManager<qMaster::MetadataCache::Ptr> SessionMgr;
 typedef boost::shared_ptr<SessionMgr> SessionMgrPtr;
@@ -77,7 +77,7 @@ getMetadataCache(int session) {
   */
 int
 qMaster::newMetadataSession() {
-    MetadataCache::Ptr m = 
+    MetadataCache::Ptr m =
         boost::make_shared<qMaster::MetadataCache>();
     return getSessionManager().newSession(m);
 }
@@ -195,7 +195,7 @@ qMaster::printMetadataCache(int metaSessionId) {
   */
 qMaster::DbStriping
 qMaster::getDbStriping(int metaSessionId, char const* dbName) {
-    MetadataCache::DbInfo const dbInfo 
+    MetadataCache::DbInfo const dbInfo
         = getMetadataCache(metaSessionId)->getDbInfo(std::string(dbName));
     DbStriping dbs;
     dbs.stripes = dbInfo.getNStripes();

@@ -23,7 +23,7 @@
 // simple logging facility that abstracts log messages away from the
 // xrootd system log so that qserv worker code can be debugged outside
 // of a running xrootd instance. It also provides levels of logging
-// priority as a mechanism for reducing logging clutter. 
+// priority as a mechanism for reducing logging clutter.
 #include "wlog/WLogger.h"
 #include <sstream>
 #include <iostream>
@@ -35,8 +35,8 @@ void WLogger::message(WLogger::LogLevel logLevel, char const* s) {
         std::string o1(_prefix + s);
         if(_backend) {
             _backend->message(logLevel, o1.c_str());
-        } else if(_printer) { 
-            (*_printer)(s); 
+        } else if(_printer) {
+            (*_printer)(s);
         } else {
             std::cerr << o1 << std::endl;
         }

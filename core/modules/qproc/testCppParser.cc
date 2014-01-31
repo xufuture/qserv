@@ -364,21 +364,21 @@ BOOST_AUTO_TEST_CASE(RestrictorObjectIdAlias) {
     QsRestrictor& r = *context->restrictors->front();
     BOOST_CHECK_EQUAL(r._name, "sIndex");
     char const* params[] = {"LSST","Object", "objectIdObjTest", "2","3145","9999"};
-    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(), 
-                                  params, params+6); 
+    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
+                                  params, params+6);
 
 }
 BOOST_AUTO_TEST_CASE(RestrictorNeighborCount) {
     std::string stmt = "select count(*) from Object as o1, Object as o2 "
         "where qserv_areaspec_box(6,6,7,7) AND rFlux_PS<0.005;";
-    std::string expected_100_100000_core = 
+    std::string expected_100_100000_core =
         "SELECT count(*) AS QS1_COUNT FROM Subchunks_LSST_100.Object_100_100000 AS o1,Subchunks_LSST_100.ObjectFullOverlap_100_100000 AS o2 "
         "WHERE scisql_s2PtInBox(o1.ra_Test,o1.decl_Test,6,6,7,7)=1 AND scisql_s2PtInBox(o2.ra_Test,o2.decl_Test,6,6,7,7)=1 AND rFlux_PS<0.005";
-    std::string expected_100_100010_overlap = 
+    std::string expected_100_100010_overlap =
         "SELECT count(*) AS QS1_COUNT FROM Subchunks_LSST_100.Object_100_100010 AS o1,Subchunks_LSST_100.Object_100_100010 AS o2 "
         "WHERE scisql_s2PtInBox(o1.ra_Test,o1.decl_Test,6,6,7,7)=1 AND scisql_s2PtInBox(o2.ra_Test,o2.decl_Test,6,6,7,7)=1 AND rFlux_PS<0.005";
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
-    
+
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
     BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
@@ -388,8 +388,8 @@ BOOST_AUTO_TEST_CASE(RestrictorNeighborCount) {
     QsRestrictor& r = *context->restrictors->front();
     BOOST_CHECK_EQUAL(r._name, "qserv_areaspec_box");
     char const* params[] = {"6","6","7","7"};
-    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(), 
-                                  params, params+4); 
+    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
+                                  params, params+4);
 
     qs->addChunk(makeChunkSpec(100,true));
     QuerySession::Iter i = qs->cQueryBegin();
@@ -424,8 +424,8 @@ BOOST_AUTO_TEST_CASE(BadDbAccess) {
     QsRestrictor& r = *context->restrictors->front();
     BOOST_CHECK_EQUAL(r._name, "sIndex");
     char const* params[] = {"LSST","Object", "objectIdObjTest", "2","3145","9999"};
-    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(), 
-                                  params, params+6); 
+    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
+                                  params, params+6);
     std::string parallel = computeFirst(*qs);
     BOOST_CHECK_EQUAL(parallel, ""); // FIXME
 }
@@ -436,7 +436,7 @@ BOOST_AUTO_TEST_CASE(ObjectSourceJoin) {
     std::string expected = "select * from LSST.%$#Object%$# o,LSST.%$#Source%$# s WHERE (scisql_s2PtInBox(o.ra_Test,o.decl_Test,2,2,3,3) = 1) AND (scisql_s2PtInBox(s.raObjectTest,s.declObjectTest,2,2,3,3) = 1) AND o.objectId=s.objectId;";
 
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
-    
+
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
     BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
@@ -446,15 +446,15 @@ BOOST_AUTO_TEST_CASE(ObjectSourceJoin) {
     QsRestrictor& r = *context->restrictors->front();
     BOOST_CHECK_EQUAL(r._name, "qserv_areaspec_box");
     char const* params[] = {"2","2","3","3"};
-    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(), 
-                                  params, params+4); 
+    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
+                                  params, params+4);
 }
 
 BOOST_AUTO_TEST_CASE(ObjectSelfJoin) {
     std::string stmt = "select count(*) from Object as o1, Object as o2;";
     std::string expected = "select count(*) from LSST.%$#Object_sc1%$# as o1,LSST.%$#Object_sc2%$# as o2 UNION select count(*) from LSST.%$#Object_sc1%$# as o1,LSST.%$#Object_sfo%$# as o2;";
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
-    
+
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
     BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
@@ -630,7 +630,7 @@ BOOST_AUTO_TEST_CASE(CountQuery2) {
 
 
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
-    
+
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
     BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
@@ -654,7 +654,7 @@ BOOST_AUTO_TEST_CASE(SimpleScan) {
     int const num=3;
     for(int i=0; i < num; ++i) {
         boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt[i]);
-        
+
         boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
         BOOST_CHECK(context);
         BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
@@ -671,7 +671,7 @@ BOOST_AUTO_TEST_CASE(SimpleScan) {
 BOOST_AUTO_TEST_CASE(UnpartLimit) {
     std::string stmt = "SELECT * from Science_Ccd_Exposure limit 3;";
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
-    
+
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
     BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
@@ -788,7 +788,7 @@ BOOST_AUTO_TEST_CASE(Case01_0002) {
     QsRestrictor& r = *context->restrictors->front();
     BOOST_CHECK_EQUAL(r._name, "sIndex");
     char const* params[] = {"LSST","Object", "objectIdObjTest", "430213989000"};
-    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(), 
+    BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
                                   params, params+4);
 }
 
@@ -815,7 +815,7 @@ BOOST_AUTO_TEST_CASE(Case01_0012) {
 BOOST_AUTO_TEST_CASE(Case01_1012) {
     // This is unsupported by the SQL92 grammar, which rejects
     // expressions in ORDER BY because it follows SQL92. Consider
-    // patching the grammar to support this. 
+    // patching the grammar to support this.
     std::string stmt = "SELECT objectId, iE1_SG, ABS(iE1_SG) FROM Object WHERE iE1_SG between -0.1 and 0.1 ORDER BY ABS(iE1_SG);";
     testStmt3(qsTest, stmt);
 }
@@ -823,7 +823,7 @@ BOOST_AUTO_TEST_CASE(Case01_1012) {
 BOOST_AUTO_TEST_CASE(Case01_1013) {
     // This is unsupported by the SQL92 grammar, which rejects
     // expressions in ORDER BY because it follows SQL92. Consider
-    // patching the grammar to support this. 
+    // patching the grammar to support this.
     std::string stmt = "SELECT objectId, ROUND(iE1_SG, 3), ROUND(ABS(iE1_SG), 3) FROM Object WHERE iE1_SG between -0.1 and 0.1 ORDER BY ROUND(ABS(iE1_SG), 3);";
     testStmt3(qsTest, stmt);
 }

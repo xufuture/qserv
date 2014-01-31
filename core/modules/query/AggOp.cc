@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /**
@@ -35,11 +35,11 @@
 #include "query/ValueExpr.h"
 #include "query/ValueFactor.h"
 
-namespace lsst { 
+namespace lsst {
 namespace qserv {
 namespace master {
 ////////////////////////////////////////////////////////////////////////
-// AggOp specializations 
+// AggOp specializations
 // TODO: Refactor towards functions rather than functors
 ////////////////////////////////////////////////////////////////////////
 /// PassAggOp is a pass-through aggregation. Unused now.
@@ -54,7 +54,7 @@ public:
         arp->merge = orig.clone();
         // Alias handling left to caller.
         return arp;
-    } 
+    }
 };
 
 /// CountAggOp implements COUNT() (COUNT followed by SUM)
@@ -69,7 +69,7 @@ public:
         boost::shared_ptr<FuncExpr> fe;
         boost::shared_ptr<ValueFactor> vf;
         boost::shared_ptr<ValueExpr> parallelExpr;
-        
+
         parallelExpr = ValueExpr::newSimple(orig.clone());
         parallelExpr->setAlias(interName);
         arp->parallel.push_back(parallelExpr);
@@ -82,7 +82,7 @@ public:
     }
 };
 /// AccumulateOp implements simple aggregations (MIN, MAX, SUM) where
-/// the same action may be used in the parallel and merging phases.  
+/// the same action may be used in the parallel and merging phases.
 class AccumulateOp : public AggOp {
 public:
     typedef enum {MIN, MAX, SUM} Type;
@@ -90,7 +90,7 @@ public:
         switch(t) {
         case MIN: accName = "MIN"; break;
         case MAX: accName = "MAX"; break;
-        case SUM: accName = "SUM"; break;            
+        case SUM: accName = "SUM"; break;
         }
     }
 
@@ -101,7 +101,7 @@ public:
         boost::shared_ptr<FuncExpr> fe;
         boost::shared_ptr<ValueFactor> vf;
         boost::shared_ptr<ValueExpr> parallelExpr;
-        
+
         parallelExpr = ValueExpr::newSimple(orig.clone());
         parallelExpr->setAlias(interName);
         arp->parallel.push_back(parallelExpr);
@@ -121,20 +121,20 @@ public:
     explicit AvgAggOp(AggOp::Mgr& mgr) : AggOp(mgr) {}
 
     virtual AggRecord::Ptr operator()(ValueFactor const& orig) {
-        
+
         AggRecord::Ptr arp(new AggRecord());
         arp->orig = orig.clone();
         // Parallel: get each aggregation subterm.
         boost::shared_ptr<FuncExpr> fe;
         boost::shared_ptr<ValueFactor const> origVf(orig.clone());
         boost::shared_ptr<ValueExpr> ve;
-        std::string cAlias = _mgr.getAggName("COUNT"); 
+        std::string cAlias = _mgr.getAggName("COUNT");
         fe = FuncExpr::newLike(*origVf->getFuncExpr(), "COUNT");
         ve = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe));
         ve->setAlias(cAlias);
         arp->parallel.push_back(ve);
 
-        std::string sAlias = _mgr.getAggName("SUM"); 
+        std::string sAlias = _mgr.getAggName("SUM");
         fe = FuncExpr::newLike(*origVf->getFuncExpr(), "SUM");
         ve = ValueExpr::newSimple(ValueFactor::newFuncFactor(fe));
         ve->setAlias(sAlias);
@@ -173,14 +173,14 @@ AggOp::Mgr::Mgr() {
     _seq = 0; // Note: accessor return ++_seq
 }
 
-AggOp::Ptr 
+AggOp::Ptr
 AggOp::Mgr::getOp(std::string const& name) {
     OpMap::const_iterator i = _map.find(name);
     if(i != _map.end()) return i->second;
     else return AggOp::Ptr();
 }
 
-AggRecord::Ptr 
+AggRecord::Ptr
 AggOp::Mgr::applyOp(std::string const& name, ValueFactor const& orig) {
     std::string n(name);
     std::transform(name.begin(), name.end(), n.begin(), ::toupper);

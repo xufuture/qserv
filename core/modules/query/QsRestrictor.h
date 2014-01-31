@@ -47,11 +47,11 @@ class QueryTemplate;
 /// Some metadata checking is done in the process.
 /// Names are generally one of:
 /// qserv_fct_name :
-///   "qserv_areaspec_box"^ 
-///    | "qserv_areaspec_circle"^ 
-///    | "qserv_areaspec_ellipse"^ 
-///    | "qserv_areaspec_poly"^ 
-///    | "qserv_areaspec_hull"^ 
+///   "qserv_areaspec_box"^
+///    | "qserv_areaspec_circle"^
+///    | "qserv_areaspec_ellipse"^
+///    | "qserv_areaspec_poly"^
+///    | "qserv_areaspec_hull"^
 ///    | "qserv_objectId"^
 /// but may include other names. They are used to pass information back
 /// to the python layer to evaluate the geometry restriction.

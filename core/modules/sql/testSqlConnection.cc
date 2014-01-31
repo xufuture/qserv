@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,16 +9,16 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
- */ 
+ */
 #define BOOST_TEST_MODULE SqlConnection_1
 #include "boost/test/included/unit_test.hpp"
 
@@ -46,8 +46,8 @@ inline std::string makeShowTables(std::string const& dbName=std::string()) {
 }
 class createIntTable {
 public:
-    createIntTable(qsrv::SqlConnection* sqlConn_, 
-                   qsrv::SqlErrorObject& errObj_) 
+    createIntTable(qsrv::SqlConnection* sqlConn_,
+                   qsrv::SqlErrorObject& errObj_)
         : sqlConn(sqlConn_), errObj(errObj_) {}
 
 
@@ -96,11 +96,11 @@ BOOST_AUTO_TEST_CASE(CreateAndDropDb) {
     // this database should exist now
     if ( !sqlConn->dbExists(dbN, errObj) ) {
         BOOST_FAIL(errObj.printErrMsg());
-    }       
+    }
     // drop it
     if ( !sqlConn->dropDb(dbN, errObj) ) {
         BOOST_FAIL(errObj.printErrMsg());
-    }            
+    }
     // this database should not exist now
     BOOST_CHECK_EQUAL(sqlConn->dbExists(dbN, errObj), false);
 }
@@ -159,19 +159,19 @@ BOOST_AUTO_TEST_CASE(TableExists) {
 BOOST_AUTO_TEST_CASE(ListTables) {
     std::string dbN = "one_xysdfed34d";
     std::string tList[] = {
-        "object_1", "object_2", "object_3", 
+        "object_1", "object_2", "object_3",
         "source_1", "source_2" };
     int const tListLen = 5;
     qsrv::SqlErrorObject errObj;
     std::vector<std::string> v;
 
     // create db and select it as default
-    if ( !sqlConn->createDbAndSelect(dbN, errObj) ) { 
+    if ( !sqlConn->createDbAndSelect(dbN, errObj) ) {
         BOOST_FAIL(errObj.printErrMsg());
     }
 
     // create tables
-    std::for_each(tList, tList + tListLen, 
+    std::for_each(tList, tList + tListLen,
                   createIntTable(sqlConn.get(), errObj));
 
     // try creating exiting table, should fail
@@ -214,19 +214,19 @@ BOOST_AUTO_TEST_CASE(UnbufferedQuery) {
     // Setup for "list tables"
     std::string dbN = "one_xysdfed34d";
     std::string tList[] = {
-        "object_1", "object_2", "object_3", 
+        "object_1", "object_2", "object_3",
         "source_1", "source_2" };
     int const tListLen = 5;
     qsrv::SqlErrorObject errObj;
     std::vector<std::string> v;
 
     // create db and select it as default
-    if ( !sqlConn->createDbAndSelect(dbN, errObj) ) { 
+    if ( !sqlConn->createDbAndSelect(dbN, errObj) ) {
         BOOST_FAIL(errObj.printErrMsg());
     }
 
     // create tables
-    std::for_each(tList, tList + tListLen, 
+    std::for_each(tList, tList + tListLen,
                   createIntTable(sqlConn.get(), errObj));
 
     boost::shared_ptr<qsrv::SqlResultIter> ri;

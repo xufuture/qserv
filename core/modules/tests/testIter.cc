@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,17 +9,17 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 #define BOOST_TEST_MODULE testIter
 #include "boost/test/included/unit_test.hpp"
 #include <list>
@@ -87,7 +87,7 @@ struct IterFixture {
         _setupDummy();
     }
     ~IterFixture(void) {}
-    
+
     void _setupDummy() {
         dummyLen = strlen(dummyBlock);
         int fd = open(dummyFilename, O_CREAT | O_WRONLY,
@@ -110,7 +110,7 @@ struct IterFixture {
         return sCount;
     }
 
-    
+
     char const* dummyBlock;
     int dummyLen;
     char const* dummyFilename;
@@ -126,19 +126,19 @@ BOOST_AUTO_TEST_CASE(PlainIterTest) {
     bool same = true;
     for(; !p->isDone(); ++(*p)) {
         PacketIter::Value const& v = **p;
-        // std::cout << "frag: " << std::string(v.first, v.second) 
+        // std::cout << "frag: " << std::string(v.first, v.second)
         //           << std::endl;
         for(unsigned i=0; i < v.second; ++i) {
             same = same && (*c == v.first[i]);
             ++c;
         }
         BOOST_CHECK(same);
-    }    
+    }
 }
 
 BOOST_AUTO_TEST_CASE(SqlIterTest) {
     for(int fragSize=16; fragSize < 512; fragSize*=2) {
-        PacketIter::Ptr p(new PacketIter(string(dummyFilename), 
+        PacketIter::Ptr p(new PacketIter(string(dummyFilename),
                                          fragSize, true));
         SqlInsertIter sii(p, tableName, true);
         unsigned sCount = iterateInserts(sii);

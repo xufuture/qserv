@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,17 +9,17 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 #ifndef LSST_QSERV_MASTER_STRINGUTIL_H
 #define LSST_QSERV_MASTER_STRINGUTIL_H
 
@@ -32,7 +32,7 @@ namespace master {
 
 class strToDoubleFunc {
 public:
-    double operator()(std::string const& s) { 
+    double operator()(std::string const& s) {
         char const* start = s.c_str();
         char const* eptr;
         // Cast away const. strtod won't write any chars anyway.
@@ -55,12 +55,12 @@ public:
     }
 };
 
-// Tokenize a string delimited by ',' and place it into a container, 
+// Tokenize a string delimited by ',' and place it into a container,
 // transforming it if desired.
 template <class Container, class Transform>
-Container& tokenizeInto(std::string const& s, 
+Container& tokenizeInto(std::string const& s,
                         std::string const& delimiter,
-                        Container& c, 
+                        Container& c,
                         Transform transform) {
         std::string::size_type pos = 0;
         std::string::size_type lastPos = 0;
@@ -81,7 +81,7 @@ Container& tokenizeInto(std::string const& s,
 template <class Container>
 std::map<typename Container::value_type,int>& fillMapFromKeys(Container const& c,
                                                             std::map<typename Container::value_type, int>& e) {
-    
+
     typedef std::map<typename Container::value_type,int> Map;
     typename Container::const_iterator i;
     typename Container::const_iterator ie = c.end();
@@ -96,10 +96,10 @@ std::map<typename Container::value_type,int>& fillMapFromKeys(Container const& c
 template <typename Target>
 class coercePrint {
 public:
-    coercePrint(std::ostream& o_, const char* d_) 
+    coercePrint(std::ostream& o_, const char* d_)
         : o(o_), d(d_), first(true) {}
     template<typename T>
-    void operator()(T const& t) { 
+    void operator()(T const& t) {
             if(!first) { o << d; }
             else { first = false; }
             o << (Target)t;

@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,14 +10,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #ifndef LSST_QSERV_MASTER_TABLEREFN_H
@@ -36,8 +36,8 @@
 #include <boost/shared_ptr.hpp>
 #include "query/QueryTemplate.h"
 
-namespace lsst { 
-namespace qserv { 
+namespace lsst {
+namespace qserv {
 namespace master {
 class QueryTemplate; // Forward
 
@@ -72,7 +72,7 @@ public:
             if(t.get()) { t->apply(f); } }
         F& f;
     };
-        
+
     // apply f() over all all tableRefns in depth-first order (for compound
     // tablerefs)
     virtual void apply(Func& f) {}
@@ -83,13 +83,13 @@ protected:
 
     TableRefN(std::string const& alias_) : alias(alias_) {}
     inline void _putAlias(QueryTemplate& qt) const {
-        if(!alias.empty()) { 
-            qt.append("AS"); 
-            qt.append(alias); 
+        if(!alias.empty()) {
+            qt.append("AS");
+            qt.append(alias);
         }
     }
     std::string alias;
-    
+
 };
 std::ostream& operator<<(std::ostream& os, TableRefN const& refN);
 std::ostream& operator<<(std::ostream& os, TableRefN const* refN);
@@ -111,11 +111,11 @@ class SimpleTableN : public TableRefN {
 public:
     typedef boost::shared_ptr<SimpleTableN> Ptr;
     SimpleTableN(std::string const& db_, std::string const& table_,
-                 std::string const& alias_) 
+                 std::string const& alias_)
         : TableRefN(alias_), db(db_), table(table_)  {
         if(table_.empty()) { throw std::logic_error("SimpleTableN without table"); }
     }
-    
+
     virtual std::string const& getDb() const { return db; }
     virtual std::string const& getTable() const { return table; }
     virtual std::ostream& putStream(std::ostream& os) const {
@@ -139,23 +139,23 @@ protected:
 
 /// JoinRefN is a more complex TableRefN: the JOIN of two TableRefN. It is
 /// flattened to only allow db.table as its joining tables (no additional
-/// nesting is allowed). 
+/// nesting is allowed).
 /// Implementation is incomplete/broken.
 class JoinRefN : public TableRefN {
 public:
     enum JoinType {DEFAULT, INNER, LEFT, RIGHT, NATURAL, CROSS, FULL};
 
-    JoinRefN(std::string const& db1_, std::string const& table1_, 
+    JoinRefN(std::string const& db1_, std::string const& table1_,
              std::string const& db2_, std::string const& table2_,
-             JoinType jt, std::string const& condition_, 
-             std::string const& alias_) 
+             JoinType jt, std::string const& condition_,
+             std::string const& alias_)
         : TableRefN(alias_),
           db1(db1_), table1(table1_), db2(db2_), table2(table2_),
           joinType(jt), condition(condition_) {}
 
-    virtual std::string const& getTable() const { 
+    virtual std::string const& getTable() const {
         static std::string s;
-        return s; 
+        return s;
     }
     virtual std::string const& getDb() const { return getTable(); }
 

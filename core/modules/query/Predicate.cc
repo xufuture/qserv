@@ -29,7 +29,7 @@
 #include "query/Predicate.h"
 #include "query/QueryTemplate.h"
 #include "query/ValueExpr.h"
-#include "parser/SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes 
+#include "parser/SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 // FIXME: should not depend on parser/, move logic to factory.
 
 namespace qMaster=lsst::qserv::master;

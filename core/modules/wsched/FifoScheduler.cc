@@ -26,7 +26,7 @@
   * to send to the mysqld.
   *
   * @author Daniel L. Wang, SLAC
-  */ 
+  */
 #include "wsched/FifoScheduler.h"
 #include <boost/thread.hpp>
 // #include <iostream> // Enable for debugging.

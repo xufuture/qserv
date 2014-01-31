@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2009-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,19 +9,19 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 //  WorkQueue.cc - implementation of the WorkQueue class
-//  Threads block on a condition variable in the queue, and are signalled 
-//  when there is work to do.  
+//  Threads block on a condition variable in the queue, and are signalled
+//  when there is work to do.
 // When the WorkQueue is destructed, it poisons the queue and waits until
 // all threads have died before returning.
 //
@@ -33,7 +33,7 @@
 ////////////////////////////////////////////////////////////////////////
 class lsst::qserv::WorkQueue::Runner {
 public:
-    Runner(WorkQueue& w) : _w(w) { 
+    Runner(WorkQueue& w) : _w(w) {
     }
     void operator()() {
         _w.registerRunner(this);
@@ -58,11 +58,11 @@ public:
     Callable* _c;
     WorkQueue& _w;
 };
- 
+
 ////////////////////////////////////////////////////////////////////////
 // class WorkQueue
 ////////////////////////////////////////////////////////////////////////
-lsst::qserv::WorkQueue::WorkQueue(int numRunners) : _isDead(false) { 
+lsst::qserv::WorkQueue::WorkQueue(int numRunners) : _isDead(false) {
     for(int i = 0; i < numRunners; ++i) {
         _addRunner();
     }
@@ -74,16 +74,16 @@ lsst::qserv::WorkQueue::~WorkQueue() {
     for(int i = 0; i < poisonToMake; ++i) {
         add(boost::shared_ptr<Callable>()); // add poison
     }
-    boost::unique_lock<boost::mutex> lock(_runnersMutex);        
+    boost::unique_lock<boost::mutex> lock(_runnersMutex);
 
     while(_runners.size() > 0) {
         _runnersEmpty.wait(lock);
-        // std::cerr << "signalled... " << _runners.size() 
+        // std::cerr << "signalled... " << _runners.size()
         //           << " remain" << std::endl;
     }
 }
 
-void 
+void
 lsst::qserv::WorkQueue::add(boost::shared_ptr<lsst::qserv::WorkQueue::Callable> c) {
     boost::lock_guard<boost::mutex> lock(_mutex);
     if(_isDead && !isPoison(c.get())) {
@@ -106,7 +106,7 @@ void lsst::qserv::WorkQueue::cancelQueued() {
     }
 }
 
-boost::shared_ptr<lsst::qserv::WorkQueue::Callable> 
+boost::shared_ptr<lsst::qserv::WorkQueue::Callable>
 lsst::qserv::WorkQueue::getNextCallable() {
     boost::unique_lock<boost::mutex> lock(_mutex);
     while(_queue.empty()) {
@@ -118,13 +118,13 @@ lsst::qserv::WorkQueue::getNextCallable() {
 }
 
 void lsst::qserv::WorkQueue::registerRunner(Runner* r) {
-    boost::lock_guard<boost::mutex> lock(_runnersMutex); 
+    boost::lock_guard<boost::mutex> lock(_runnersMutex);
     _runners.push_back(r);
     _runnerRegistered.notify_all();
 }
 
 void lsst::qserv::WorkQueue::signalDeath(Runner* r) {
-    boost::lock_guard<boost::mutex> lock(_runnersMutex); 
+    boost::lock_guard<boost::mutex> lock(_runnersMutex);
     RunnerDeque::iterator end = _runners.end();
     //LOGGER_INF << (void*) r << " dying" << std::endl;
     for(RunnerDeque::iterator i = _runners.begin(); i != end; ++i) {
@@ -138,7 +138,7 @@ void lsst::qserv::WorkQueue::signalDeath(Runner* r) {
     //std::cerr << "couldn't find self to remove" << std::endl;
 }
 void lsst::qserv::WorkQueue::_addRunner() {
-    boost::unique_lock<boost::mutex> lock(_runnersMutex); 
+    boost::unique_lock<boost::mutex> lock(_runnersMutex);
     boost::thread(Runner(*this));
     _runnerRegistered.wait(lock);
     //_runners.back()->run();

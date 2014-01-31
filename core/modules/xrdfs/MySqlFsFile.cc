@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,19 +9,19 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /// Implements MySqlFsFile, the primary way of interfacing qserv
 /// worker functionality to an xrootd file-system interface.
- 
+
 #include "xrdfs/MySqlFsFile.h"
 
 #include "XrdSec/XrdSecEntity.hh"
@@ -66,7 +66,7 @@ using namespace lsst::qserv::worker;
 // Boost launching helper
 template <typename Callable>
 void launchThread(Callable const& c) {
-#if DO_NOT_USE_BOOST 
+#if DO_NOT_USE_BOOST
     ThreadDetail* td = newDetail<Callable>(c);
     ThreadManager::takeControl(td);
     Thread t(td);
@@ -82,8 +82,8 @@ public:
         : _fsfile(fsfile), _aioparm(aioparm), _sfsAio(aioparm->sfsAio) {}
 
     void operator()() {
-        _aioparm->Result = _fsfile.read(_sfsAio.aio_offset, 
-                                        (char*)_sfsAio.aio_buf, 
+        _aioparm->Result = _fsfile.read(_sfsAio.aio_offset,
+                                        (char*)_sfsAio.aio_buf,
                                         _sfsAio.aio_nbytes);
         _aioparm->doneRead();
     }
@@ -98,7 +98,7 @@ class WriteCallable {
 public:
     WriteCallable(MySqlFsFile& fsfile,
                   XrdSfsAio* aioparm, char* buffer)
-        : _fsfile(fsfile), _aioparm(aioparm), _sfsAio(aioparm->sfsAio), 
+        : _fsfile(fsfile), _aioparm(aioparm), _sfsAio(aioparm->sfsAio),
           _buffer(buffer)
     {}
 
@@ -106,8 +106,8 @@ public:
         // Check for mysql busy-ness.
         _sema.proberen();
         // Normal write
-        _aioparm->Result = _fsfile.write(_sfsAio.aio_offset, 
-                                         (char const*)_buffer, 
+        _aioparm->Result = _fsfile.write(_sfsAio.aio_offset,
+                                         (char const*)_buffer,
                                          _sfsAio.aio_nbytes);
         _sema.verhogen();
         delete[] _buffer;
@@ -153,14 +153,14 @@ class Timer { // duplicate of lsst::qserv:master::Timer
 public:
     void start() { ::gettimeofday(&startTime, NULL); }
     void stop() { ::gettimeofday(&stopTime, NULL); }
-    double getElapsed() const { 
+    double getElapsed() const {
         time_t seconds = stopTime.tv_sec - startTime.tv_sec;
         suseconds_t usec = stopTime.tv_usec - startTime.tv_usec;
         return seconds + (usec * 0.000001);
     }
     char const* getStartTimeStr() const {
         char* buf = const_cast<char*>(startTimeStr); // spiritually const
-        asctime_r(localtime(&stopTime.tv_sec), buf); 
+        asctime_r(localtime(&stopTime.tv_sec), buf);
         buf[strlen(startTimeStr)-1] = 0;
         return startTimeStr;
     }
@@ -180,13 +180,13 @@ std::ostream& operator<<(std::ostream& os, Timer const& tm) {
 //////////////////////////////////////////////////////////////////////////////
 // MySqlFsFile
 //////////////////////////////////////////////////////////////////////////////
-MySqlFsFile::MySqlFsFile(boost::shared_ptr<WLogger> log, 
-                                  char const* user, 
+MySqlFsFile::MySqlFsFile(boost::shared_ptr<WLogger> log,
+                                  char const* user,
                                   AddCallbackFunction::Ptr acf,
                                   fs::FileValidator::Ptr fv,
-                                  boost::shared_ptr<Service> service) 
-    : XrdSfsFile(user), 
-      _log(log), 
+                                  boost::shared_ptr<Service> service)
+    : XrdSfsFile(user),
+      _log(log),
       _addCallbackF(acf),
       _validator(fv),
       _service(service) {
@@ -228,7 +228,7 @@ int MySqlFsFile::_acceptFile(char const* fileName) {
             error.setErrInfo(ENOENT, "File does not exist");
             _log->warn((Pformat("WARNING: unowned chunk query detected: %1%(%2%)")
                          % fileName % _chunkId ).str().c_str());
-            return SFS_ERROR;        
+            return SFS_ERROR;
         }
         _requestTaker.reset(new RequestTaker(_service->getAcceptor(),
                                              *_path));
@@ -253,7 +253,7 @@ int MySqlFsFile::_acceptFile(char const* fileName) {
             error.setErrInfo(ENOENT, "File does not exist");
             _log->warn((Pformat("WARNING: unowned chunk query detected: %1%(%2%)")
                          % fileName % _chunkId ).str().c_str());
-            return SFS_ERROR;        
+            return SFS_ERROR;
         }
         return SFS_OK;
     default:
@@ -264,10 +264,10 @@ int MySqlFsFile::_acceptFile(char const* fileName) {
 
 }
 
-int MySqlFsFile::open(char const* fileName, 
-                               XrdSfsFileOpenMode openMode, 
+int MySqlFsFile::open(char const* fileName,
+                               XrdSfsFileOpenMode openMode,
                                mode_t createMode,
-                               XrdSecEntity const* client, 
+                               XrdSecEntity const* client,
                                char const* opaque) {
     if (fileName == 0) {
         error.setErrInfo(EINVAL, "Null filename");
@@ -283,7 +283,7 @@ int MySqlFsFile::close(void) {
         // Get rid of the news.
         std::string hash = fs::stripPath(_dumpName);
         QueryRunner::getTracker().clearNews(hash);
-        
+
         // Must remove dump file while we are doing the single-query workaround
         // _eDest->Say((Pformat("Not Removing dump file(%1%)")
         // 		 % _dumpName ).str().c_str());
@@ -341,9 +341,9 @@ XrdSfsXferSize MySqlFsFile::read(
     if (::stat(_dumpName.c_str(), &statbuf) == -1) {
         statbuf.st_size = -errno;
     }
-            
+
     msg = (Pformat("File read(%1%) at %2% for %3% by %4% [actual=%5% %6%]")
-           % _path->chunk() % fileOffset % bufferSize % _userName 
+           % _path->chunk() % fileOffset % bufferSize % _userName
            % _dumpName % statbuf.st_size).str();
     _log->info(msg);
     if(_dumpName.empty()) { _setDumpNameAsChunkId(); }
@@ -426,9 +426,9 @@ XrdSfsXferSize MySqlFsFile::write(
     _log->info(ss.str());
     return bufferSize;
 }
-	
+
 int MySqlFsFile::write(XrdSfsAio* aioparm) {
-    aioparm->Result = write(aioparm->sfsAio.aio_offset, 
+    aioparm->Result = write(aioparm->sfsAio.aio_offset,
                             (const char*)aioparm->sfsAio.aio_buf,
                             aioparm->sfsAio.aio_nbytes);
     _log->info("AIO write.");
@@ -466,8 +466,8 @@ int MySqlFsFile::getCXinfo(char cxtype[4], int &cxrsz) {
     return SFS_ERROR;
 }
 
-bool MySqlFsFile::_addWritePacket(XrdSfsFileOffset offset, 
-                                           char const* buffer, 
+bool MySqlFsFile::_addWritePacket(XrdSfsFileOffset offset,
+                                           char const* buffer,
                                            XrdSfsXferSize bufferSize) {
     _queryBuffer.addBuffer(offset, buffer, bufferSize);
     return true;
@@ -479,7 +479,7 @@ void MySqlFsFile::_addCallback(std::string const& filename) {
     (*_addCallbackF)(*this, filename);
 }
 
-ResultErrorPtr 
+ResultErrorPtr
 MySqlFsFile::_getResultState(std::string const& physFilename) {
     assert(_path->requestType() == QservPath::RESULT);
     // Lookup result hash.
@@ -548,7 +548,7 @@ int MySqlFsFile::_handleTwoReadOpen(char const* fileName) {
 }
 
 int MySqlFsFile::_checkForHash(std::string const& hash) {
-    _dumpName = hashToResultPath(hash); 
+    _dumpName = hashToResultPath(hash);
     _hasRead = false;
     ResultErrorPtr p = _getResultState(_dumpName);
     if(p.get()) {

@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,14 +10,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 // QservOss is an XrdOss implementation to be used as a cmsd ofs plugin to
@@ -73,21 +73,21 @@ public:
                     const char   *name);
 
     // XrdOss overrides (relevant)
-    virtual int Stat(const char* path, struct stat* buff, 
+    virtual int Stat(const char* path, struct stat* buff,
                      int opts=0, XrdOucEnv*e=NULL);
-    virtual int StatVS(XrdOssVSInfo *sP, 
-                       const char *sname=0, 
+    virtual int StatVS(XrdOssVSInfo *sP,
+                       const char *sname=0,
                        int updt=0, XrdOucEnv*e=NULL);
-    
+
     virtual int Init(XrdSysLogger* log, const char* cfgFn);
-    
+
     // XrdOss overrides (stubs)
     virtual XrdOssDF *newDir(const char *tident) { return new FakeOssDf(); }
     virtual XrdOssDF *newFile(const char *tident) { return new FakeOssDf(); }
     virtual int Chmod(const char *, mode_t mode, XrdOucEnv*) { return -ENOTSUP;}
-    virtual int Create(const char *, const char *, mode_t, 
+    virtual int Create(const char *, const char *, mode_t,
                        XrdOucEnv &, int opts=0) { return -ENOTSUP;}
-    virtual int Mkdir(const char *, mode_t mode, int, XrdOucEnv*) { 
+    virtual int Mkdir(const char *, mode_t mode, int, XrdOucEnv*) {
         return -ENOTSUP;}
     virtual int Remdir(const char *, int, XrdOucEnv*) { return -ENOTSUP;}
     virtual int Truncate(const char *, unsigned long long, XrdOucEnv*) {
@@ -107,7 +107,7 @@ private:
     std::string _cfgFn;
     std::string _cfgParams;
     std::string _name;
-    XrdSysLogger* _xrdSysLogger; 
+    XrdSysLogger* _xrdSysLogger;
     boost::shared_ptr<WLogger> _log;
     time_t _initTime;
 };

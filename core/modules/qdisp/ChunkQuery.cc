@@ -137,14 +137,14 @@ private:
 //////////////////////////////////////////////////////////////////////
 class lsst::qserv::master::ChunkQuery::ReadCallable : public DynamicWorkQueue::Callable {
 public:
-    explicit ReadCallable(ChunkQuery& cq) : 
+    explicit ReadCallable(ChunkQuery& cq) :
         _cq(cq), _isRunning(false)
     {}
     virtual ~ReadCallable() {} // Must halt current operation.
     virtual void operator()() {
         LOGGER_DBG << "EXECUTING ChunkQuery::ReadCallable::operator()()" << std::endl;
         try {
-            // Use blocking reads to prevent implicit thread creation by 
+            // Use blocking reads to prevent implicit thread creation by
             // XrdClient
             _cq._state = ChunkQuery::READ_OPEN;
             _cq._readOpenTimer.start();
@@ -168,14 +168,14 @@ public:
                     _cq._manager->getMessageStore()->addMessage(_cq._id,
                         errno != 0 ? -abs(errno) : -1,
                         "Remote I/O error during XRD open for read.");
-                    _cq._notifyManager(); 
+                    _cq._notifyManager();
                 }
                 return;
             }
             _cq.Complete(result);
         } catch (const char *msg) {
             _cq._state = ChunkQuery::ABORTED;
-            _cq._manager->getMessageStore()->addMessage(_cq._id, 
+            _cq._manager->getMessageStore()->addMessage(_cq._id,
                 errno != 0 ? -abs(errno) : -1, msg);
             _cq._notifyManager();
         }
@@ -183,7 +183,7 @@ public:
     virtual void abort() {
         if(_isRunning) {
             // This is the best we can do for squashing.
-            _cq._unlinkResult(_cq._resultUrl);             
+            _cq._unlinkResult(_cq._resultUrl);
         }
     }
 
@@ -213,7 +213,7 @@ char const* ChunkQuery::getWaitStateStr(WaitState s) {
 
 void ChunkQuery::Complete(int Result) {
     LOGGER_DBG << "EXECUTING ChunkQuery::Complete(" << Result << ")" << std::endl;
-    // Prevent multiple Complete() callbacks from stacking. 
+    // Prevent multiple Complete() callbacks from stacking.
     boost::shared_ptr<boost::mutex> m(_completeMutexP);
     boost::lock_guard<boost::mutex> lock(*m);
 
@@ -246,8 +246,8 @@ void ChunkQuery::Complete(int Result) {
 
         if(Result < 0) { // error?
             _result.read = Result;
-            LOGGER_WRN << "Problem reading result: open returned " 
-                       << _result.read << " for chunk=" << _spec.chunkId 
+            LOGGER_WRN << "Problem reading result: open returned "
+                       << _result.read << " for chunk=" << _spec.chunkId
                        << " with url=" << _resultUrl
                        << std::endl;
             isReallyComplete = true;
@@ -290,7 +290,7 @@ ChunkQuery::ChunkQuery(TransactionSpec const& t, int id,
 }
 
 ChunkQuery::~ChunkQuery() {
-    LOGGER_DBG << "ChunkQuery (" << _id << ", " << _hash 
+    LOGGER_DBG << "ChunkQuery (" << _id << ", " << _hash
                << "): Goodbye!" << std::endl;
 }
 
@@ -314,14 +314,14 @@ void ChunkQuery::run() {
     }
     if(result != -EINPROGRESS) {
         // don't continue, set result with the error.
-        LOGGER_ERR << "Not EINPROGRESS (" << result 
-                   << "), should not continue with " 
+        LOGGER_ERR << "Not EINPROGRESS (" << result
+                   << "), should not continue with "
                    << _spec.path << "\n";
         _result.open = result;
         _state = COMPLETE;
         _notifyManager(); // manager should delete me.
     } else {
-        LOGGER_INF << "Waiting for " << _spec.path << "\n";	
+        LOGGER_INF << "Waiting for " << _spec.path << "\n";
     }
 #elif 1
     _state = WRITE_QUEUE;
@@ -379,9 +379,9 @@ boost::shared_ptr<PacketIter> ChunkQuery::getResultIter() {
     return _packetIter;
 }
 
-void ChunkQuery::requestSquash() { 
+void ChunkQuery::requestSquash() {
     LOGGER_DBG << "Squash requested for (" << _id << ", " << _hash << ")" << std::endl;
-    _shouldSquash = true; 
+    _shouldSquash = true;
     switch(_state) {
     case WRITE_QUEUE: // Write is queued...
         //FIXME: Remove the job from the work queue.
@@ -411,7 +411,7 @@ void ChunkQuery::requestSquash() {
     case CORRUPT:
     default:
         // Something's screwed up.
-        LOGGER_ERR << "ChunkQuery squash failure. Bad state=" 
+        LOGGER_ERR << "ChunkQuery squash failure. Bad state="
                    << getWaitStateStr(_state) << std::endl;
         // Not sure what we can do.
         break;
@@ -487,7 +487,7 @@ bool ChunkQuery::_openForRead(std::string const& url) {
     _readOpenTimer.start();
     _result.read = xrdOpenAsync(url.c_str(), O_RDONLY, this);
     LOGGER_DBG << "Async read for " << _hash << " got " << _result.read
-               << " --> " 
+               << " --> "
                << ((_result.read == -EINPROGRESS) ? "ASYNC OK" : "fail?")
                << std::endl;
     return _result.read == -EINPROGRESS; // -EINPROGRESS is successful.
@@ -506,7 +506,7 @@ void ChunkQuery::_sendQuery(int fd) {
     _writeTimer.stop();
     ss << _hash << " WriteQuery " << _writeTimer << std::endl;
     _manager->getMessageStore()->addMessage(_id, MSG_XRD_WRITE, "Query Written.");
-    
+
     if(writeCount != len) {
         _result.queryWrite = -errno;
         isReallyComplete = true;
@@ -585,8 +585,8 @@ void ChunkQuery::_readResults(int fd) {
     if(res != 0) {
         errnoComplain("Error closing after result read", fd, errno);
     }
-    LOGGER_INF << _spec.chunkId << " " 
-               << _hash << " -- wrote " << _result.localWrite 
+    LOGGER_INF << _spec.chunkId << " "
+               << _hash << " -- wrote " << _result.localWrite
                << " read " << _result.read << std::endl;
     _state = COMPLETE;
     _notifyManager(); // This is a successful completion.
@@ -605,7 +605,7 @@ void ChunkQuery::_unlinkResult(std::string const& url) {
     // FIXME: decide how to handle error here.
     if(res == -1) {
         res = errno;
-        LOGGER_ERR << "ChunkQuery abort error: unlink gave errno = " 
+        LOGGER_ERR << "ChunkQuery abort error: unlink gave errno = "
                    << res << std::endl;
     }
 }

@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,17 +9,17 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 #include <map>
 #include "parser/parserBase.h"
 #include "parser/parseTreeUtil.h"
@@ -28,56 +28,56 @@
 namespace qMaster = lsst::qserv::master;
 
 class ColumnHandler : public VoidFourRefFunc {
-public:    
+public:
     virtual ~ColumnHandler() {}
-    virtual void operator()(antlr::RefAST a, antlr::RefAST b, 
+    virtual void operator()(antlr::RefAST a, antlr::RefAST b,
                             antlr::RefAST c, antlr::RefAST d) {
         using lsst::qserv::master::tokenText;
-        LOGGER_INF << "col _" << tokenText(a) 
-                   << "_ _" << tokenText(b) 
-                   << "_ _" << tokenText(c) 
-                   << "_ _" << tokenText(d) 
-                   << "_ "; 
+        LOGGER_INF << "col _" << tokenText(a)
+                   << "_ _" << tokenText(b)
+                   << "_ _" << tokenText(c)
+                   << "_ _" << tokenText(d)
+                   << "_ ";
         a->setText("AWESOMECOLUMN");
     }
 };
 
 class TableHandler : public VoidThreeRefFunc {
-public: 
+public:
     virtual ~TableHandler() {}
     virtual void operator()(antlr::RefAST a, antlr::RefAST b,
                             antlr::RefAST c)  {
         using lsst::qserv::master::tokenText;
-        LOGGER_INF << "qualname " << tokenText(a) 
-                   << " " << tokenText(b) << " " 
-                   << tokenText(c) << " "; 
+        LOGGER_INF << "qualname " << tokenText(a)
+                   << " " << tokenText(b) << " "
+                   << tokenText(c) << " ";
         a->setText("AwesomeTable");
     }
 };
 
 class TestAliasHandler : public VoidTwoRefFunc {
-public: 
+public:
     virtual ~TestAliasHandler() {}
     virtual void operator()(antlr::RefAST a, antlr::RefAST b)  {
         if(b.get()) {
-            LOGGER_INF << "Alias " << qMaster::tokenText(a) 
+            LOGGER_INF << "Alias " << qMaster::tokenText(a)
                        << " = " << qMaster::tokenText(b) << std::endl;
         }
     }
 };
 
 class TestSelectListHandler : public VoidOneRefFunc {
-public: 
+public:
     virtual ~TestSelectListHandler() {}
     virtual void operator()(antlr::RefAST a)  {
         antlr::RefAST bound = qMaster::getLastSibling(a);
-        LOGGER_INF << "SelectList " << qMaster::walkTreeString(a) 
+        LOGGER_INF << "SelectList " << qMaster::walkTreeString(a)
                    << "--From " << a << " to " << bound << std::endl;
     }
 };
 
 class TestSetFuncHandler : public VoidOneRefFunc {
-public: 
+public:
     typedef std::map<std::string, int> Map;
     typedef Map::const_iterator MapConstIter;
     typedef Map::iterator MapIter;
@@ -103,7 +103,7 @@ public:
         // Extract meaning and label parts.
         // meaning is function + arguments
         // label is aliased name, if available, or function+arguments text otherwise.
-        //std::string label = 
+        //std::string label =
     }
     Map _map;
 };

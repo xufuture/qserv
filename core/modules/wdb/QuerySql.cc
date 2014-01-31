@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
  /**
@@ -28,7 +28,7 @@
   * FIXME: Unfinished infrastructure for passing subchunk table name to worker.
   *
   * @author Daniel L. Wang, SLAC
-  */ 
+  */
 #include "wdb/QuerySql.h"
 #include "wbase/Base.h"
 #include "global/constants.h"
@@ -36,19 +36,19 @@
 
 namespace qWorker = lsst::qserv::worker;
 
-namespace { 
+namespace {
 template <typename T>
 class ScScriptBuilder {
 public:
     ScScriptBuilder(qWorker::QuerySql& qSql_,
-                    std::string const& db, std::string const& table, 
-                    std::string const& scColumn, 
+                    std::string const& db, std::string const& table,
+                    std::string const& scColumn,
                     int chunkId) : qSql(qSql_) {
         buildT = (boost::format(qWorker::CREATE_SUBCHUNK_SCRIPT)
                   % db % table % scColumn
-                  % chunkId % "%1%").str(); 
+                  % chunkId % "%1%").str();
         cleanT = (boost::format(qWorker::CLEANUP_SUBCHUNK_SCRIPT)
-                  % db % table 
+                  % db % table
                   % chunkId % "%1%").str();
 
     }
@@ -68,25 +68,25 @@ namespace lsst { namespace qserv { namespace worker {
 ////////////////////////////////////////////////////////////////////////
 std::ostream& operator<<(std::ostream& os, QuerySql const& q) {
     os << "QuerySql(bu=";
-    std::copy(q.buildList.begin(), q.buildList.end(), 
+    std::copy(q.buildList.begin(), q.buildList.end(),
               std::ostream_iterator<std::string>(os, ","));
     os << "; ex=";
-    std::copy(q.executeList.begin(), q.executeList.end(), 
+    std::copy(q.executeList.begin(), q.executeList.end(),
               std::ostream_iterator<std::string>(os, ","));
     os << "; cl=";
-    std::copy(q.cleanupList.begin(), q.cleanupList.end(), 
+    std::copy(q.cleanupList.begin(), q.cleanupList.end(),
               std::ostream_iterator<std::string>(os, ","));
     os << ")";
     return os;
-}  
+}
 
 ////////////////////////////////////////////////////////////////////////
 // QuerySql::Factory
 ////////////////////////////////////////////////////////////////////////
 boost::shared_ptr<QuerySql>
-QuerySql::Factory::newQuerySql(std::string const& db, 
+QuerySql::Factory::newQuerySql(std::string const& db,
                                int chunkId,
-                               QuerySql::Fragment const& f, 
+                               QuerySql::Fragment const& f,
                                bool needCreate,
                                std::string const& defaultResultTable) {
     boost::shared_ptr<QuerySql> qSql(new QuerySql);
@@ -94,16 +94,16 @@ QuerySql::Factory::newQuerySql(std::string const& db,
     if(f.has_resulttable()) { resultTable = f.resulttable(); }
     else { resultTable = defaultResultTable; }
     assert(!resultTable.empty());
-        
+
     // Create executable statement.
     // Obsolete when results marshalling is implemented
     std::stringstream ss;
     for(int i=0; i < f.query_size(); ++i) {
-        if(needCreate) { 
+        if(needCreate) {
             ss << "CREATE TABLE " + resultTable + " ";
             needCreate = false;
         } else {
-            ss << "INSERT INTO " + resultTable + " "; 
+            ss << "INSERT INTO " + resultTable + " ";
         }
         ss << f.query(i);
         qSql->executeList.push_back(ss.str());
@@ -116,13 +116,13 @@ QuerySql::Factory::newQuerySql(std::string const& db,
         for(int i=0; i < sc.table_size(); ++i) {
 //            std::cout << "Building subchunks for table=" << sc.table(i) << std::endl;
             table = sc.table(i);
-            ScScriptBuilder<int> scb(*qSql, db, table, 
+            ScScriptBuilder<int> scb(*qSql, db, table,
                                      SUB_CHUNK_COLUMN, chunkId);
             for(int i=0; i < sc.id_size(); ++i) {
                 scb(sc.id(i));
             }
         }
-    } 
+    }
     return qSql;
 }
 

@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008-2014 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,17 +9,17 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 #include "XrdSfs/XrdSfsInterface.hh"
 
 #define BOOST_TEST_MODULE MySqlFs_2
@@ -55,7 +55,7 @@ std::string queryNonMagic =
     "SELECT COUNT(*) FROM "
     "(SELECT * FROM Subchunks_9880.Object_9880_1 "
     "UNION "
-    "SELECT * FROM Subchunks_9880.Object_9880_3) AS _Obj_Subchunks;"; 
+    "SELECT * FROM Subchunks_9880.Object_9880_3) AS _Obj_Subchunks;";
 //SELECT COUNT(*) FROM (SELECT * FROM Subchunks_9880.Object_9880_1 UNION SELECT * FROM Subchunks_9880.Object_9880_3) AS _Obj_Subchunks;
 
 std::string query(queryNonMagic + std::string(4, '\0')); // Force magic EOF
@@ -81,7 +81,7 @@ struct TrackerFixture {
 	Listener(std::string const& filename) :_filename(filename) {}
 	virtual ~Listener() {}
 	virtual void operator()(ResultError const& re) {
-	    std::cout << "notification received for file " 
+	    std::cout << "notification received for file "
 		      << _filename << std::endl;
 	}
 	std::string _filename;
@@ -92,19 +92,19 @@ struct TrackerFixture {
 	AddCallbackFunc() {}
 
 	virtual ~AddCallbackFunc() {}
-	virtual void operator()(XrdSfsFile& caller, 
+	virtual void operator()(XrdSfsFile& caller,
 				std::string const& filename) {
 	    std::cout << "Will listen for " << filename << ".\n";
 	    QueryRunner::getTracker().listenOnce(filename, Listener(filename));
 	}
     };
-    
+
     QueryRunner::Tracker& getTracker() { // alias.
 	return QueryRunner::getTracker();
     }
 
-    void printNews() { // 
-	
+    void printNews() { //
+
 	typedef QueryRunner::Tracker Tracker;
 	Tracker& t = getTracker();
 	Tracker::NewsMap& nm = t.debugGetNews();
@@ -112,12 +112,12 @@ struct TrackerFixture {
 	Tracker::NewsMap::iterator end = nm.end();
 	std::cout << "dumping newsmap " << std::endl;
 	for(; i != end; ++i) {
-	    std::cout << "str=" << i->first << " code=" 
+	    std::cout << "str=" << i->first << " code="
 		      << i->second.first << std:: endl;
 	}
     }
 
-    
+
     MySqlFsFile invokeFile;
     MySqlFsFile resultFile;
     int lastResult;
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(IntKey) {
 
 #if 0 // FIXME: needs to be rewritten to use two-file-transactions.
 BOOST_AUTO_TEST_CASE(QueryAttemptCombo) {
-    // params: filename, openMode(ignored), createMode(ignored), 
+    // params: filename, openMode(ignored), createMode(ignored),
     // clientSecEntity(ignored), opaque(ignored)
 
     lastResult = invokeFile.open("/query/9880",0,0,0,0);
@@ -173,18 +173,18 @@ BOOST_AUTO_TEST_CASE(QueryAttemptCombo) {
 	if(lastResult >= 0) {
 	    pos += blocksize;
 	    contents[lastResult] = '\0';
-	    std::cout << "recv("<< lastResult 
+	    std::cout << "recv("<< lastResult
 		      << "):" << contents << std::endl;
 	} else {
-	    std::cout << "recv error("<< lastResult 
+	    std::cout << "recv error("<< lastResult
 		      << "):" << std::endl;
 	}
 	if(lastResult < blocksize)
 	    break;
     }
-    
+
     lastResult = invokeFile.close();
-    BOOST_CHECK_EQUAL(lastResult, SFS_OK);    
+    BOOST_CHECK_EQUAL(lastResult, SFS_OK);
 }
 
 BOOST_AUTO_TEST_CASE(QueryAttemptTwo) {
@@ -228,18 +228,18 @@ BOOST_AUTO_TEST_CASE(QueryAttemptTwo) {
 	if(lastResult >= 0) {
 	    pos += blocksize;
 	    contents[lastResult] = '\0';
-	    std::cout << "recv("<< lastResult 
+	    std::cout << "recv("<< lastResult
 		      << "):" << contents << std::endl;
 	} else {
-	    std::cout << "recv error("<< lastResult 
+	    std::cout << "recv error("<< lastResult
 		      << "):" << std::endl;
 	}
 	if(lastResult < blocksize)
 	    break;
     }
-    
+
     lastResult = resultFile.close();
-    BOOST_CHECK_EQUAL(lastResult, SFS_OK);    
+    BOOST_CHECK_EQUAL(lastResult, SFS_OK);
 
 }
 #endif

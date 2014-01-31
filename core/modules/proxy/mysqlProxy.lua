@@ -686,7 +686,7 @@ function read_query_result(inj)
            if (tonumber(row[2]) < 0) then -- errors have code < 0
               queryErrorCount  = queryErrorCount + 1
               return err.setAndSend(ERR_QSERV_RUNTIME,
-                                    "Error during execution:\n".. 
+                                    "Error during execution:\n"..
                                         row[2] .. " " .. row[3] .. " (" .. row[1] .. ")")
            end
         end

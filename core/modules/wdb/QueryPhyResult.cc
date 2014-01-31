@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /// QueryPhyResult instances contain and manage result table operations
@@ -30,7 +30,7 @@
 #include "wconfig/Config.h"
 #include "wbase/Base.h"
 #include "wlog/WLogger.h"
- 
+
 using namespace lsst::qserv::worker;
 
 ////////////////////////////////////////////////////////////////////////
@@ -50,7 +50,7 @@ void QueryPhyResult::reset() {
 std::string QueryPhyResult::getCommaResultTables()  {
     std::stringstream ss;
     std::string s;
-    std::copy(_resultTables.begin(), _resultTables.end(), 
+    std::copy(_resultTables.begin(), _resultTables.end(),
               std::ostream_iterator<std::string const&>(ss, ","));
     s = ss.str();
     s.erase(s.end()-1, s.end()); // drop final comma
@@ -59,7 +59,7 @@ std::string QueryPhyResult::getCommaResultTables()  {
 
 std::string QueryPhyResult::_getSpaceResultTables() const {
     std::stringstream ss;
-    std::copy(_resultTables.begin(), _resultTables.end(), 
+    std::copy(_resultTables.begin(), _resultTables.end(),
               std::ostream_iterator<std::string const&>(ss, " "));
     return ss.str();
 }
@@ -70,19 +70,19 @@ bool QueryPhyResult::performMysqldump(WLogger& log,
                                       std::string const& dumpFile,
                                       SqlErrorObject& errObj) {
     // Dump a database to a dumpfile.
-    
+
     // Make sure the path exists
     _mkdirP(dumpFile);
 
-    std::string cmd = getConfig().getString("mysqlDump") + 
+    std::string cmd = getConfig().getString("mysqlDump") +
         (Pformat(
             " --compact --add-locks --create-options --skip-lock-tables"
 	    " --socket=%1%"
             " -u %2%"
             " --result-file=%3% %4% %5%")
-         % getConfig().getString("mysqlSocket") 
+         % getConfig().getString("mysqlSocket")
          % user
-         % dumpFile % _outDb 
+         % dumpFile % _outDb
          % _getSpaceResultTables()).str();
     log.info((Pformat("dump cmdline: %1%") % cmd).str());
 

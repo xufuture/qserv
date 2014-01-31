@@ -28,8 +28,8 @@
 #include "control/SessionManager.h"
 #include <boost/shared_ptr.hpp>
 
-namespace lsst { 
-namespace qserv { 
+namespace lsst {
+namespace qserv {
 namespace master {
 class AsyncQueryManager;
 

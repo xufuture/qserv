@@ -1,9 +1,9 @@
 // -*- LSST-C++ -*-
 
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -11,17 +11,17 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 
 // Standard
 #include <fstream>
@@ -30,7 +30,7 @@
 #include <algorithm>
 // Boost
 #include <boost/make_shared.hpp>
-// LSST 
+// LSST
 #include "log/Logger.h"
 #include "xrdc/xrdfile.h"
 #include "control/thread.h"
@@ -45,7 +45,7 @@ using boost::make_shared;
 namespace qMaster = lsst::qserv::master;
 
 // Local Helpers --------------------------------------------------
-namespace { 
+namespace {
 
 // Doctors the query path to specify the async path.
 // Modifies the string in-place.
@@ -64,8 +64,8 @@ int seekMagic(int start, char* buffer, int term) {
     // Find magic sequence
     const char m[] = "####"; // MAGIC!
     for(int p = start; p < term; ++p) {
-        if(((term - p) > 4) && 
-           (buffer[p+0] == m[0]) && (buffer[p+1] == m[1]) && 
+        if(((term - p) > 4) &&
+           (buffer[p+0] == m[0]) && (buffer[p+1] == m[1]) &&
            (buffer[p+2] == m[2]) && (buffer[p+3] == m[3])) {
             return p;
         }
@@ -88,7 +88,7 @@ qMaster::TransactionSpec::Reader::Reader(std::string const& file) {
 }
 
 qMaster::TransactionSpec::Reader::~Reader() {
-    if(_rawContents != NULL) delete[] _rawContents; // cleanup 
+    if(_rawContents != NULL) delete[] _rawContents; // cleanup
     _cleanupMmap();
 }
 
@@ -96,19 +96,19 @@ void qMaster::TransactionSpec::Reader::_readWholeFile(std::string const& file) {
     // Read the file into memory.  All of it.
     std::ifstream is;
     is.open(file.c_str(), std::ios::binary);
-    
+
     // get length of file:
     is.seekg(0, std::ios::end);
     _rawLength = is.tellg();
     if(_rawLength <= 0) {
-        _rawContents = NULL; 
+        _rawContents = NULL;
         return;
     }
     is.seekg(0, std::ios::beg);
-    
+
     // allocate memory:
     _rawContents = new char[_rawLength];
-    
+
     // read data as a block:
     is.read(_rawContents, _rawLength);
     is.close();
@@ -118,7 +118,7 @@ void qMaster::TransactionSpec::Reader::_setupMmap(std::string const& file) {
     { // get length
         std::ifstream is;
         is.open(file.c_str(), std::ios::binary);
-	
+
         // get length of file:
         is.seekg(0, std::ios::end);
         _rawLength = is.tellg();
@@ -126,12 +126,12 @@ void qMaster::TransactionSpec::Reader::_setupMmap(std::string const& file) {
     }
     // 0x1000: 4K, 0x10000: 64K 0x100000:1M, 0x1000 000: 16M
     _mmapDefaultSize = 0x1000000; // 16M
-    _mmapChunkSize = _mmapDefaultSize; 
+    _mmapChunkSize = _mmapDefaultSize;
     _mmapMinimum = 0x40000; // 256K
     _mmapOffset = 0;
     _mmapFd = open(file.c_str(), O_RDONLY);
     _mmapChunk = NULL;
-    _mmapChunk = (char*)mmap(NULL, _mmapDefaultSize, PROT_READ, MAP_PRIVATE, 
+    _mmapChunk = (char*)mmap(NULL, _mmapDefaultSize, PROT_READ, MAP_PRIVATE,
                              _mmapFd, _mmapOffset);
     if(_mmapChunk == (void*)-1) {
         perror("error mmaping.");
@@ -139,7 +139,7 @@ void qMaster::TransactionSpec::Reader::_setupMmap(std::string const& file) {
     assert(_mmapChunk != (void*)-1);
 }
 
-void qMaster::TransactionSpec::Reader::_advanceMmap() { 
+void qMaster::TransactionSpec::Reader::_advanceMmap() {
     int distToEnd = _rawLength - _mmapOffset;
     if(distToEnd > _mmapDefaultSize) { // Non-last chunk?
         int posInChunk = _pos - _mmapOffset;
@@ -147,7 +147,7 @@ void qMaster::TransactionSpec::Reader::_advanceMmap() {
         if(distToBorder < _mmapMinimum) {
             munmap(_mmapChunk, _mmapDefaultSize);
             _mmapOffset += _mmapDefaultSize - _mmapMinimum;
-            _mmapChunk = (char*)mmap(NULL, _mmapDefaultSize, PROT_READ, 
+            _mmapChunk = (char*)mmap(NULL, _mmapDefaultSize, PROT_READ,
                                      MAP_PRIVATE, _mmapFd, _mmapOffset);
             assert(_mmapChunk != (void*)-1);
 
@@ -202,7 +202,7 @@ qMaster::TransactionSpec qMaster::TransactionSpec::Reader::getSpec() {
     //_pos = endQuery + magicLength; // Advance past the detected marker.
     _pos = _mmapOffset + endQuery + magicLength; // Advance past the detected marker.
     _advanceMmap();
-    return ts; 
+    return ts;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -236,7 +236,7 @@ void qMaster::Manager::_joinOne() {
 
     while(1) {
         std::remove_copy_if(
-                      _threads.begin(), _threads.end(), 
+                      _threads.begin(), _threads.end(),
                       back_inserter(newDeq),
                       tryJoinBoostThread<boost::shared_ptr<boost::thread> >());
         // newDeq now has threads that didn't join.
@@ -272,14 +272,14 @@ void qMaster::Manager::run() {
             time(&thisReap);
             reapSize = _threads.size();
             LOGGER_INF << thisReap << " Done reaping, " << reapSize
-                      << " still flying, completion rate=" 
+                      << " still flying, completion rate="
                       << (1.0+thisSize - reapSize)*1.0/(1.0+thisReap - lastReap)
                       << "\n"  ;
         }
         if(_threads.size() > 1000) break; // DEBUG early exit.
     }
     LOGGER_INF << "Joining\n";
-    std::for_each(_threads.begin(), _threads.end(), 
+    std::for_each(_threads.begin(), _threads.end(),
                   joinBoostThread<boost::shared_ptr<boost::thread> >());
 }
 
@@ -292,7 +292,7 @@ void qMaster::Manager::run() {
 /// @param id Optional, specify the id for this query
 /// Generally, the query id is selected by the query manager, but may
 /// be presented by the caller.  Caller assumes responsibility for
-/// ensuring id uniqueness when doing this. 
+/// ensuring id uniqueness when doing this.
 int qMaster::QueryManager::add(TransactionSpec const& t, int id) {
     if(id == -1) {
         id = _getNextId();
@@ -308,25 +308,25 @@ int qMaster::QueryManager::add(TransactionSpec const& t, int id) {
     return id;
 }
 
-/// Record the result of a completed query transaction, 
+/// Record the result of a completed query transaction,
 /// and retrieve another callable transaction, if one is available.
 /// The returned transaction is marked as running.
 /// @param id Id of completed transaction
 /// @param r Transaction result
 /// @return The next callable that can be executed.
-qMaster::QueryManager::ManagedCallable 
+qMaster::QueryManager::ManagedCallable
 qMaster::QueryManager::completeAndFetch(int id, XrdTransResult const& r) {
     TransactionSpec nullSpec;
     {
         boost::lock_guard<boost::mutex> rlock(_runningMutex);
         boost::lock_guard<boost::mutex> flock(_finishedMutex);
         // Pull from _running
-        _running.erase(id);        
+        _running.erase(id);
         // Insert into _finished
         _finished[id] = r;
     }
     // MUST RETURN MANAGED CALLABLE
-    boost::shared_ptr<ManagedCallable> mc; 
+    boost::shared_ptr<ManagedCallable> mc;
     mc = _getNextCallable();
     if(mc.get() != 0) {
         return *mc;
@@ -335,9 +335,9 @@ qMaster::QueryManager::completeAndFetch(int id, XrdTransResult const& r) {
     }
 }
 
-boost::shared_ptr<qMaster::QueryManager::ManagedCallable> 
+boost::shared_ptr<qMaster::QueryManager::ManagedCallable>
 qMaster::QueryManager::_getNextCallable() {
-    boost::shared_ptr<ManagedCallable> mc; 
+    boost::shared_ptr<ManagedCallable> mc;
     boost::lock_guard<boost::mutex> wlock(_waitingMutex);
     boost::lock_guard<boost::mutex> rlock(_runningMutex);
     int nextId = -1;
@@ -367,7 +367,7 @@ void qMaster::QueryManager::_addThreadIfSpace() {
         boost::lock_guard<boost::mutex> lock(_callablesMutex);
         if(_callables.size() >= (unsigned)_highWaterThreads) {
             // Don't add if there are already lots of callables in flight.
-            return; 
+            return;
         }
     }
     _tryJoinAll();
@@ -388,7 +388,7 @@ void qMaster::QueryManager::_tryJoinAll() {
     ThreadDeque newDeq;
     if(oldsize == 0) return;
     std::remove_copy_if(
-                      _threads.begin(), _threads.end(), 
+                      _threads.begin(), _threads.end(),
                       back_inserter(newDeq),
                       tryJoinBoostThread<boost::shared_ptr<boost::thread> >());
     // newDeq now has threads that didn't join.
@@ -439,17 +439,17 @@ void qMaster::QueryManager::dropCallable(ManagedCallable* c) {
 //////////////////////////////////////////////////////////////////////
 // QueryManager::ManagedCallable
 //////////////////////////////////////////////////////////////////////
-qMaster::QueryManager::ManagedCallable::ManagedCallable() 
+qMaster::QueryManager::ManagedCallable::ManagedCallable()
     : _qm(0), _id(0), _c(TransactionCallable(TransactionSpec())) {
 }
 
 qMaster::QueryManager::ManagedCallable::ManagedCallable(
-    qMaster::QueryManager& qm, int id, qMaster::TransactionSpec const& t) 
+    qMaster::QueryManager& qm, int id, qMaster::TransactionSpec const& t)
     :_qm(&qm), _id(id), _c(t) {
-    assert(_qm != 0);    
+    assert(_qm != 0);
 }
 
-qMaster::QueryManager::ManagedCallable& 
+qMaster::QueryManager::ManagedCallable&
 qMaster::QueryManager::ManagedCallable::operator=(ManagedCallable const& m) {
     _qm = m._qm;
     _id = m._id;

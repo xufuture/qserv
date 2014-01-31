@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2009-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
  /**
@@ -27,7 +27,7 @@
   * MySQL protocol limits for submitted query length.
   *
   * @author Daniel L. Wang, SLAC
-  */ 
+  */
 #include "sql/SqlFragmenter.h"
 
 namespace qWorker = lsst::qserv::worker;
@@ -35,7 +35,7 @@ namespace qWorker = lsst::qserv::worker;
 // Constants
 const std::string qWorker::SqlFragmenter::_delimiter = ";\n";
 
-qWorker::SqlFragmenter::SqlFragmenter(std::string const& query) 
+qWorker::SqlFragmenter::SqlFragmenter(std::string const& query)
     : _query(query),
       _pNext(0),
       _qEnd(query.length()),
@@ -59,7 +59,7 @@ void qWorker::SqlFragmenter::_advance() {
     searchTarget = begin + _sizeTarget;
     if(searchTarget < _qEnd) {  // Is it worth splitting?
         end = _query.rfind(_delimiter, searchTarget);
-        
+
         // Did we find a split-point?
         if((end > begin) && (end != std::string::npos)) {
             end += _delimiter.size();
@@ -67,18 +67,18 @@ void qWorker::SqlFragmenter::_advance() {
             // Look forward instead of backward.
             end = _query.find(_delimiter, begin + _sizeTarget);
             if(end != std::string::npos) { // Found?
-                end += _delimiter.size(); 
+                end += _delimiter.size();
             } else { // Not found bkwd/fwd. Use end.
-                end = _qEnd; 
+                end = _qEnd;
             }
         }
     } else { // Remaining is small. Don't split further.
-        end = _qEnd; 
+        end = _qEnd;
     }
     // Backoff whitepace or null.
     int pos = end;
     char c = _query[pos];
-    while((c == '\0') || (c == '\n') 
+    while((c == '\0') || (c == '\n')
           || (c == ' ') || (c == '\t')) { c = _query[--pos];}
     // Watch out for queries not terminated by semicolon.
     if(c!= ';') {++pos;} // A non-semicolon, non-whitespace-->valuable.
@@ -94,6 +94,6 @@ void qWorker::SqlFragmenter::_advance() {
         ++_count;
     } else {
         _advance();
-    }                
+    }
 }
 

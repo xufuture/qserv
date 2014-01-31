@@ -53,10 +53,10 @@ public:
     void insert(T const& t, bool equalOk=true) {
         Pos tPos = _getPos(t);
         if(_pos) {
-            if(tPos < *_pos) { _pending.push(t); } 
-            else { 
+            if(tPos < *_pos) { _pending.push(t); }
+            else {
                 // Can we add more to the current?
-                if((tPos == *_pos) && equalOk) { _active.push(t); } 
+                if((tPos == *_pos) && equalOk) { _active.push(t); }
                 else { _pending.push(t); }
             }
         } else {

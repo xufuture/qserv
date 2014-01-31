@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,22 +9,22 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-// SqlInsertIter.h: 
-// class SqlInsertIter -- A class that finds INSERT statements in 
+// SqlInsertIter.h:
+// class SqlInsertIter -- A class that finds INSERT statements in
 // mysqldump output and iterates over them.
 //
- 
+
 #ifndef LSST_QSERV_MASTER_SQLINSERTITER_H
 #define LSST_QSERV_MASTER_SQLINSERTITER_H
 
@@ -49,14 +49,14 @@ public:
     SqlInsertIter() {}
 
     /// Constructor.  Buffer must be valid over this object's lifetime.
-    SqlInsertIter(char const* buf, off_t bufSize, 
-                  std::string const& tableName, bool allowNull); 
+    SqlInsertIter(char const* buf, off_t bufSize,
+                  std::string const& tableName, bool allowNull);
     SqlInsertIter(PacketIter::Ptr p,
-                  std::string const& tableName, bool allowNull); 
-    
+                  std::string const& tableName, bool allowNull);
+
     // Destructor
     ~SqlInsertIter();
-    
+
     // Dereference
     const Value& operator*() const { return (*_iter)[0]; }
     const Value* operator->() const { return &(*_iter)[0]; }
@@ -87,7 +87,7 @@ private:
     bool _blockFound;
     typedef unsigned long long BufOff;
     char* _pBuffer;
-    BufOff _pBufSize; 
+    BufOff _pBufSize;
     BufOff _pBufStart; // Start of non-junk in buffer
     BufOff _pBufEnd; // End of non-junk in buffer
     boost::regex _blockExpr;

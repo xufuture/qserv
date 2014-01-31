@@ -1,9 +1,9 @@
 // -*- LSST-C++ -*-
 
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -11,14 +11,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -46,15 +46,15 @@ namespace qserv {
 namespace master {
 
 template<class T> struct joinBoostThread  {
-    joinBoostThread() {} 
+    joinBoostThread() {}
     void operator() (T x) { x->join(); }
 };
 
 template<class T> struct tryJoinBoostThread  {
-    tryJoinBoostThread() {} 
-    bool operator()(T x) { 
+    tryJoinBoostThread() {}
+    bool operator()(T x) {
 	using boost::posix_time::seconds;
-	return x->timed_join(seconds(0)); 
+	return x->timed_join(seconds(0));
     }
 };
 
@@ -84,7 +84,7 @@ public:
 	}
 	// Wake up one of the waiters.
 	_countCondition.notify_one();
-	
+
     }
 
     inline void get() { proberen(); }
@@ -116,7 +116,7 @@ private:
     int _mmapMinimum;
     int _rawLength;
     int _pos;
-};    
+};
 
 
 class TransactionCallable {
@@ -130,15 +130,15 @@ private:
     XrdTransResult _result;
     static Semaphore _sema;
 };
- 
+
 class Manager {
-public:    
+public:
     explicit Manager() : _highWaterThreads(120) {}
     void setupFile(std::string const& file);
     void run();
 
 private:
-    void _joinOne(); 
+    void _joinOne();
 
     std::string _file;
     boost::shared_ptr<TransactionSpec::Reader> _reader;
@@ -151,12 +151,12 @@ private:
 class QueryManager {
 public:
     /// A callable object that performs a (chunk-query) transaction according
-    /// to its specification, and reports its completion to a query 
+    /// to its specification, and reports its completion to a query
     /// manager.  Restarts with new transaction if available.
     class ManagedCallable {
     public:
         explicit ManagedCallable();
-	explicit ManagedCallable(QueryManager& qm, int id, 
+	explicit ManagedCallable(QueryManager& qm, int id,
 				 TransactionSpec const& t);
         ManagedCallable& operator=(ManagedCallable const& m);
 
@@ -192,7 +192,7 @@ private:
     boost::shared_ptr<boost::thread> _startThread();
     void _tryJoinAll();
 
-    
+
     typedef std::deque<boost::shared_ptr<boost::thread> > ThreadDeque;
     typedef std::deque<IdCallable> CallableDeque;
     typedef std::map<int, ManagedCallable> CallableMap;

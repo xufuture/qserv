@@ -341,7 +341,7 @@ bool WhereClause::ValueExprIter::_setupBfIter() {
         _bfIter = bf->_terms.begin();
         _bfEnd = bf->_terms.end();
         _updateValueExprIter();
-        
+
         return _vIter != _vEnd;
     } else {
         // Try recursing deeper.

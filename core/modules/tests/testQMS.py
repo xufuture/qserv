@@ -83,10 +83,10 @@ class QmsTest(unittest.TestCase):
 
     def _checkDbExists(self, theName, expectedRet):
         if expectedRet:
-            print self._p1, "checking if db %s exists " % theName, 
+            print self._p1, "checking if db %s exists " % theName,
             "(it should)", self._p2
         else:
-            print self._p1, "checking if db %s exists " % theName, 
+            print self._p1, "checking if db %s exists " % theName,
             "(it should not)", self._p2
         self.assertEqual(self._qms.checkDbExists(theName) == 1, expectedRet)
 
@@ -104,9 +104,9 @@ class QmsTest(unittest.TestCase):
         print self._p1,"creating table %s.%s" % \
             (dbName, theOptions['tableName']), self._p2
         schemaStr = open(schemaFileName, 'r').read()
-        self.assertEqual(self._qms.createTable(dbName, 
-                                               theOptions, 
-                                               schemaStr)==QmsStatus.SUCCESS, 
+        self.assertEqual(self._qms.createTable(dbName,
+                                               theOptions,
+                                               schemaStr)==QmsStatus.SUCCESS,
                          expectedRet)
         if not expectedRet: print "(this failed, as expected)"
 
@@ -145,12 +145,12 @@ class QmsTest(unittest.TestCase):
         self._installQms(True)
         self._installQms(False)
         self._printMeta()
-        self._createDb('Summer2012', 
-                       {'defaultOverlap_nearNeighbor': '0.25', 
-                        'partitioning': 'on', 
+        self._createDb('Summer2012',
+                       {'defaultOverlap_nearNeighbor': '0.25',
+                        'partitioning': 'on',
                         'defaultOverlap_fuzziness': '0.0001',
-                        'partitioningStrategy': 'sphBox', 
-                        'nStripes': '10', 
+                        'partitioningStrategy': 'sphBox',
+                        'nStripes': '10',
                         'nSubStripes': '23'}, True)
         self._createDb('NonPartA', {'partitioning': 'off'}, True)
         self._createDb('NonPartA', {'partitioning': 'off'}, False)
@@ -162,8 +162,8 @@ class QmsTest(unittest.TestCase):
         self._retrieveDbInfo('Summer2012', True)
         self._retrieveDbInfo('NonPartA', True)
         self._retrieveDbInfo('nonExistingDb', False)
-        self._createTable('Summer2012', 
-                          {'partitioning': 'on', 
+        self._createTable('Summer2012',
+                          {'partitioning': 'on',
                            'partitioningStrategy': 'sphBox',
                            'logicalPart': '2',
                            'thetaColName': 'decl_PS',
@@ -174,8 +174,8 @@ class QmsTest(unittest.TestCase):
                            'phiColName': 'ra_PS'},
                           objectSchemaFile,
                           True)
-        self._createTable('Summer2012', 
-                          {'partitioning': 'on', 
+        self._createTable('Summer2012',
+                          {'partitioning': 'on',
                            'partitioningStrategy': 'sphBox',
                            'logicalPart': '2',
                            'thetaColName': 'decl_PS',
@@ -187,8 +187,8 @@ class QmsTest(unittest.TestCase):
                           objectSchemaFile,
                           False) # this table already exists, should fail
 
-        #self._createTable('Summer2012', 
-        #                  {'partitioning': 'on', 
+        #self._createTable('Summer2012',
+        #                  {'partitioning': 'on',
         #                   'partitioningStrategy': 'sthElse',
         #                   'logicalPart': '2',
         #                   'thetaColName': 'decl_PS',
@@ -200,8 +200,8 @@ class QmsTest(unittest.TestCase):
         #                  objectSchemaFile,
         #                  False) # wrong partitioningStrategy, should fail
 
-        #self._createTable('Summer2012', 
-        #                  {'partitioning': 'on', 
+        #self._createTable('Summer2012',
+        #                  {'partitioning': 'on',
         #                   'partitioningStrategy': 'sthElse',
         #                   'logicalPart': '2',
         #                   'tableName': 'Object2',

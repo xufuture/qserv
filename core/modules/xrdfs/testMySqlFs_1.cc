@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008-2014 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,17 +9,17 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 #include "XrdSfs/XrdSfsInterface.hh"
 
 #define BOOST_TEST_MODULE MySqlFs_1
@@ -142,14 +142,14 @@ BOOST_AUTO_TEST_CASE(File) {
     }
 #if 0 // FIXME: reading requires a separate open-read-close transaction
     char result[4096];
-    sz = file->read(0, result, sizeof(result)); 
+    sz = file->read(0, result, sizeof(result));
     if (sz == -1) {
         int err;
         std::cerr << file->error.getErrText(err);
         std::cerr << ": " << strerror(err) << std::endl;
         BOOST_REQUIRE_NE(sz, -1);
-    } else if (sz < 0) { 
-        BOOST_REQUIRE_GE(sz, 0); 
+    } else if (sz < 0) {
+        BOOST_REQUIRE_GE(sz, 0);
     }
     std::cerr << std::string(result, sz) << std::endl;
 #endif

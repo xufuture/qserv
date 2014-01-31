@@ -1,7 +1,7 @@
 /*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 // MmapFile is a lightweight wrapper for a mmap'd file.
@@ -31,7 +31,7 @@ namespace qMaster = lsst::qserv::master;
 
 typedef boost::shared_ptr<qMaster::MmapFile> MmapPtr;
 
-MmapPtr qMaster::MmapFile::newMap(std::string const& filename, 
+MmapPtr qMaster::MmapFile::newMap(std::string const& filename,
                                   bool read, bool write) {
     boost::shared_ptr<MmapFile> m(new MmapFile());
     assert(m.get());
@@ -46,7 +46,7 @@ qMaster::MmapFile::~MmapFile() {
     if(_buf) {
         if(-1 == ::munmap(_buf, _fstat.st_size)) {
             // LOGGER_ERR << "Munmap failed (" << (void*)_buf
-            //            << ", " << _fstat.st_size 
+            //            << ", " << _fstat.st_size
             //            << "). Memory corruption likely." << std::endl;
         }
         _buf = 0;
@@ -68,8 +68,8 @@ void qMaster::MmapFile::_init(std::string const& filename,
 
     if(!(read_ || write_)) { return; } // refuse to init for no access
 
-    if(read_ && write_) { 
-        openFlags |= O_RDWR; 
+    if(read_ && write_) {
+        openFlags |= O_RDWR;
         mapProt |= PROT_READ | PROT_WRITE;
     } else {
         openFlags |= read_ ? O_RDONLY : 0;

@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,14 +10,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -48,7 +48,7 @@ class AggOp {
 public:
     typedef boost::shared_ptr<AggOp> Ptr;
     class Mgr;
-    /// Produce an AggRecord from a ValueFactor. 
+    /// Produce an AggRecord from a ValueFactor.
     virtual AggRecord::Ptr operator()(ValueFactor const& orig) = 0;
     virtual ~AggOp() {}
 protected:
@@ -61,7 +61,7 @@ protected:
 /// implementations are shielded from dependency. Typically, Mgr is wholly
 /// contained within an AggregatePlugin instance. Plugins are created per-query
 /// (top-level), because they may contain per-query state.
-/// 
+///
 /// Note that AggOp::Mgr is concrete and is not meant to have subclasses
 class AggOp::Mgr {
 public:

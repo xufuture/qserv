@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,14 +10,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 // MySqlConnection represents an abstracted interface to the mysql C-API.
@@ -39,16 +39,16 @@ class MySqlConnection : boost::noncopyable {
 public:
     MySqlConnection();
     MySqlConnection(SqlConfig const& sqlConfig, bool useThreadMgmt=false);
-    
+
     ~MySqlConnection();
-    
+
     bool connect();
 
     bool connected() const { return _isConnected; }
     // instance destruction invalidates this return value
-    MYSQL* getMySql() { return _mysql;} 
+    MYSQL* getMySql() { return _mysql;}
     SqlConfig const& getSqlConfig() const { return *_sqlConfig; }
-    
+
     bool queryUnbuffered(std::string const& query);
     MYSQL_RES* getResult() { return _mysql_res; }
     void freeResult() { mysql_free_result(_mysql_res); _mysql_res = NULL; }

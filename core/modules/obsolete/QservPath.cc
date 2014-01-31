@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -31,7 +31,7 @@ namespace qsrv = lsst::qserv;
 //////////////////////////////////////////////////////////////////////
 class qsrv::QservPath::Tokenizer {
 public:
-    Tokenizer(std::string s, char sep) 
+    Tokenizer(std::string s, char sep)
         : _cursor(0), _next(0), _s(s), _sep(sep) {
         _seek();
     }
@@ -39,7 +39,7 @@ public:
     int tokenAsInt() {
         int num;
         std::stringstream csm(token());
-        csm >> num;        
+        csm >> num;
         return num;
     }
     void next() { _cursor = _next + 1; _seek(); }
@@ -77,7 +77,7 @@ std::string qsrv::QservPath::var(std::string const& key) const {
     }
     return std::string();
 }
-    
+
 std::string qsrv::QservPath::prefix(RequestType const& r) {
     switch(r) {
     case CQUERY:
@@ -141,7 +141,7 @@ void qsrv::QservPath::_setFromPath(std::string const& path) {
         _chunk = t.tokenAsInt();
     } else {
         _requestType = GARBAGE;
-    }    
+    }
 }
 
 std::string qsrv::QservPath::_ingestKeys(std::string const& leafPlusKeys) {
@@ -149,7 +149,7 @@ std::string qsrv::QservPath::_ingestKeys(std::string const& leafPlusKeys) {
     start = leafPlusKeys.find_first_of(_varSep, 0);
     _vars.clear();
 
-    if(start == std::string::npos) { // No keys found        
+    if(start == std::string::npos) { // No keys found
         return leafPlusKeys;
     }
     ++start;
@@ -166,5 +166,5 @@ std::string qsrv::QservPath::_ingestKeyStr(std::string const& keyStr) {
         _vars[keyStr] = std::string(); // empty insert.
     } else {
         _vars[keyStr.substr(0,equalsPos)] = keyStr.substr(equalsPos+1);
-    }    
+    }
 }

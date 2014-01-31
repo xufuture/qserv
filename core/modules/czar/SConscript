@@ -48,7 +48,7 @@ tgt = swigged
 
 # Create entry for python file, which SCons SWIG builder ignores
 pySwig = env.File('masterLib.py')
-#env.Depends(pySwig, swigged[0]) # This causes a cycle (why?), 
+#env.Depends(pySwig, swigged[0]) # This causes a cycle (why?),
 # but "scons --tree=all" shows that a sufficient dep
 # is already there (on masterLib.i)
 extraTgts["masterLib.py"] = pySwig
@@ -70,7 +70,7 @@ def markForInstall(env, pathList, extras):
         plist = pathList[:p] + ["__init__.py"]
         fname = os.path.join(*plist)
         f = env.Command(fname, None, [Touch("$TARGET")])
-        
+
         extraTgts['dist'].append((os.path.join(*pathList[:p]), f))
 distDir = "../dist"
 distTgts = [swigged, pySwig]

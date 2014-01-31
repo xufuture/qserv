@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008-2014 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,17 +9,17 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 #ifndef LSST_QSERV_WORKER_BASE_H
 #define LSST_QSERV_WORKER_BASE_H
 
@@ -49,7 +49,7 @@ typedef int StringBufferSize;
 
 // Constants
 extern std::string DUMP_BASE;
-extern std::string CREATE_SUBCHUNK_SCRIPT; 
+extern std::string CREATE_SUBCHUNK_SCRIPT;
 extern std::string CLEANUP_SUBCHUNK_SCRIPT;
 
 // Result-writing
@@ -81,7 +81,7 @@ class StringBuffer {
 public:
     StringBuffer() : _totalSize(0) {}
     ~StringBuffer() { reset(); }
-    void addBuffer(StringBufferOffset offset, char const* buffer, 
+    void addBuffer(StringBufferOffset offset, char const* buffer,
                    StringBufferSize bufferSize);
     std::string getStr() const;
     StringBufferOffset getLength() const;
@@ -89,11 +89,11 @@ public:
     void reset();
 private:
     struct Fragment {
-        Fragment(StringBufferOffset offset_, char const* buffer_, 
-                 StringBufferSize bufferSize_) 
+        Fragment(StringBufferOffset offset_, char const* buffer_,
+                 StringBufferSize bufferSize_)
             : offset(offset_), buffer(buffer_), bufferSize(bufferSize_) {}
 
-        StringBufferOffset offset; 
+        StringBufferOffset offset;
         char const* buffer;
         StringBufferSize bufferSize;
     };
@@ -111,10 +111,10 @@ private:
 
 class StringBuffer2 {
 public:
-    StringBuffer2() : _buffer(0), 
+    StringBuffer2() : _buffer(0),
                       _bufferSize(0),_bytesWritten(0) {}
     ~StringBuffer2() { reset(); }
-    void addBuffer(StringBufferOffset offset, char const* buffer, 
+    void addBuffer(StringBufferOffset offset, char const* buffer,
                    StringBufferSize bufferSize);
     std::string getStr() const;
     StringBufferOffset getLength() const;
@@ -144,7 +144,7 @@ public:
 
 #if DO_NOT_USE_BOOST
 typedef lsst::qserv::worker::PosFormat Pformat;
-#else  
+#else
 typedef boost::format Pformat;
 #endif
 

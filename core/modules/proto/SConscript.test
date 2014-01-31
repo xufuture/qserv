@@ -10,7 +10,7 @@ programs = []
 obj = env.Object("testProtocol.cc")
 def convertObj(o):
     oStr = str(o)
-    # Avoid questionable conflict with .o for SharedLibrary 
+    # Avoid questionable conflict with .o for SharedLibrary
     # production by using an alt name.
     if oStr.endswith(".cc"): return env.Object(oStr+".staticobj", o)
     return o

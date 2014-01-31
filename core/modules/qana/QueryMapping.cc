@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /**
@@ -39,15 +39,15 @@
 #include "qproc/ChunkSpec.h"
 #include "query/QueryTemplate.h"
 
-namespace lsst { 
-namespace qserv { 
-namespace master { 
+namespace lsst {
+namespace qserv {
+namespace master {
 
 class MapTuple {
 public:
     MapTuple(std::string const& pattern,
              std::string const& target,
-             QueryMapping::Parameter p) 
+             QueryMapping::Parameter p)
         : pat(pattern), tgt(target), param(p) {}
     std::string pat;
     std::string tgt;
@@ -78,7 +78,7 @@ public:
     typedef std::deque<int> IntDeque;
     typedef std::deque<MapTuple> Map;
 
-    Mapping(QueryMapping::ParameterMap const& m, ChunkSpec const& s) 
+    Mapping(QueryMapping::ParameterMap const& m, ChunkSpec const& s)
         : _subChunks(s.subChunks.begin(), s.subChunks.end()) {
         _chunkString = boost::lexical_cast<std::string>(s.chunkId);
         if(!_subChunks.empty()) {
@@ -108,12 +108,12 @@ public:
                     // so we know to iterate over subchunks.
                     // Or... the plugins could signal that subchunks
                     // are needed somehow. FIXME.
-            }            
+            }
         }
         return newE;
-    } 
+    }
     bool valid() const {
-        return _subChunkString.empty() 
+        return _subChunkString.empty()
             || (!_subChunkString.empty() && !_subChunks.empty());
     }
 private:
@@ -143,7 +143,7 @@ private:
         if(_subChunks.empty()) return;
         _subChunkString = boost::lexical_cast<std::string>(_subChunks.front());
     }
-        
+
     std::string _chunkString;
     std::string _subChunkString;
     IntDeque _subChunks;
@@ -156,18 +156,18 @@ private:
 ////////////////////////////////////////////////////////////////////////
 QueryMapping::QueryMapping() {}
 
-std::string 
+std::string
 QueryMapping::apply(ChunkSpec const& s, QueryTemplate const& t) const {
     Mapping m(_subs, s);
     return t.generate(m);
 }
-std::string 
+std::string
 QueryMapping::apply(ChunkSpecSingle const& s, QueryTemplate const& t) const {
     Mapping m(_subs, s);
     return t.generate(m);
 }
 
-void 
+void
 QueryMapping::update(QueryMapping const& m) {
     // Update this mapping to reflect the union of the two mappings.
     // We manually merge so that we have a chance to detect conflicts.
@@ -187,7 +187,7 @@ QueryMapping::update(QueryMapping const& m) {
     _subChunkTables.insert(m._subChunkTables.begin(), m._subChunkTables.end());
 }
 
-bool 
+bool
 QueryMapping::hasParameter(Parameter p) const {
     ParameterMap::const_iterator i;
     for(i=_subs.begin(); i != _subs.end(); ++i) {

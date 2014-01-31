@@ -1,9 +1,9 @@
 // -*- LSST-C++ -*-
 
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -11,28 +11,28 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 
 // SessionManager -- tracks sessions that the frontend dispatches out.
-// A "session" maps to a user-issued query, which the frontend should 
+// A "session" maps to a user-issued query, which the frontend should
 // break apart into many chunk queries.
 
 // Implementation notes:
-// * The session manager reuses ids like a coat check system with lots 
+// * The session manager reuses ids like a coat check system with lots
 //   of tags.
 // * If you store objects, you probably want to store shared_ptrs.
 // * The session manager makes a copy of the Value that is stored.
-// 
+//
 #ifndef LSST_QSERV_MASTER_SESSIONMANAGER_H
 #define LSST_QSERV_MASTER_SESSIONMANAGER_H
 // Includes
@@ -47,10 +47,10 @@ class SessionManager {
 public:
     SessionManager() :_idLimit(200000000), _nextId(1) {}
 
-    int newSession(Value const& v) {	
+    int newSession(Value const& v) {
         boost::lock_guard<boost::mutex> g(_mutex);
         int id = _getNextId();
-        _map[id] = v;	   
+        _map[id] = v;
         return id;
     }
 
@@ -59,7 +59,7 @@ public:
         return _map[id];
     }
 
-    void discardSession(int id) {	
+    void discardSession(int id) {
         boost::lock_guard<boost::mutex> g(_mutex);
         MapIterator i = _map.find(id);
         if(i != _map.end()) {
@@ -92,6 +92,6 @@ private:
     int _nextId;
 };
 
-}}} // namespace lsst::qserv::master 
+}}} // namespace lsst::qserv::master
 
 #endif // LSST_QSERV_MASTER_SESSIONMANAGER_H

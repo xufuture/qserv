@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2009-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,14 +10,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #ifndef LSST_QSERV_MASTER_PARSETREEUTIL_H
@@ -25,8 +25,8 @@
 /**
   * @file parseTreeUtil.h
   *
-  * @brief Utility functions for examining,  processing, and 
-  * manipulating the ANTLR parse tree.   
+  * @brief Utility functions for examining,  processing, and
+  * manipulating the ANTLR parse tree.
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -98,7 +98,7 @@ public:
 	    int next = s[0];
 	    if(sqlShouldSeparate(lastToken, last,next)) {
 		result += " ";
-	    } 
+	    }
 	}
         lastToken = s;
 	result += s;
@@ -107,7 +107,7 @@ public:
     std::string result;
 };
 
-bool substituteWithMap(std::string& s, 
+bool substituteWithMap(std::string& s,
                        std::map<std::string, std::string> const& m,
                        int minMatch);
 
@@ -123,7 +123,7 @@ public:
         }
         minMatch = min;
     }
-    
+
     void operator()(AnAst a) {
 	std::string s = a->getText();
         if(substituteWithMap(s, m, minMatch)) a->setText(s);
@@ -149,7 +149,7 @@ std::string walkTree(AnAst r) {
     }
     if(!result.empty()) result = " " + result;
     return r->getText() + result;
-	
+
 }
 
 template <typename AnAst, typename Visitor, typename CheckTerm>
@@ -161,7 +161,7 @@ void walkTreeVisit(AnAst r, Visitor& v, CheckTerm& ct, int depth=0) {
         antlr::RefAST c = r->getFirstChild();
         if(c.get()) {
             walkTreeVisit(c, v, ct, depth+1);
-        } 
+        }
         r = r->getNextSibling();
     } while(r.get() && !ct(r,depth));
 }
@@ -246,7 +246,7 @@ std::string walkSiblingString(AnAst r) {
 
 
 template <typename AnAst>
-void walkTreeSubstitute(AnAst r, 
+void walkTreeSubstitute(AnAst r,
                         std::map<std::string, std::string> const& m) {
     SubstituteVisitor<AnAst> s(m);
     walkTreeVisit(r, s);
@@ -288,7 +288,7 @@ AnAst getSiblingBefore(AnAst r, AnAst b) {
 
 	last = r;
 	r = r->getNextSibling();
-        
+
     } while(r != b);
     return last;
 }
@@ -308,8 +308,8 @@ int countLength(AnAst r, AnAst b) {
 template <typename AnAst>
 AnAst collapseNodeRange(AnAst start, AnAst bound) {
     // Destroy a node's siblings stopping (but including) a bound
-    // This is useful in patching up an AST, substituting one parse 
-    // element for another. 
+    // This is useful in patching up an AST, substituting one parse
+    // element for another.
     // @return the missing fragment so the caller can save it.
 
     // Example:
@@ -317,7 +317,7 @@ AnAst collapseNodeRange(AnAst start, AnAst bound) {
     // RefAST listBound = getLastSibling(someList)
     // someList->setTokenText("Something new")
     // collapseNodeRange(someList, listBound)
-    
+
     // This is a simple linked-list ranged delete.
     assert(start.get());
     assert(bound.get());
@@ -335,15 +335,15 @@ AnAst collapseToSingle(AnAst start) {
 
 // Creates a new text node and and puts it into the tree
 // after the specified node, but before the node's next sibling.
-antlr::RefAST insertTextNodeAfter(antlr::ASTFactory* factory, 
-                                  std::string const& s, 
+antlr::RefAST insertTextNodeAfter(antlr::ASTFactory* factory,
+                                  std::string const& s,
                                   antlr::RefAST n);
 
 // Overwrites the text for the specified node, putting the old text into
 // a new text node placed after the specified node but before the
 // node's next sibling.
-antlr::RefAST insertTextNodeBefore(antlr::ASTFactory* factory, 
-                                  std::string const& s, 
+antlr::RefAST insertTextNodeBefore(antlr::ASTFactory* factory,
+                                  std::string const& s,
                                    antlr::RefAST n);
 
 void printDigraph(std::string lbl, std::ostream& o, antlr::RefAST n);

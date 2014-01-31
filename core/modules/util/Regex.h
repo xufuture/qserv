@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,17 +9,17 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 #ifndef LSST_QSERV_WORKER_REGEX_H
 #define LSST_QSERV_WORKER_REGEX_H
 
@@ -43,7 +43,7 @@ public:
         regmatch_t* regMatch() { return &_rmatch; }
         int eo() const { return _rmatch.rm_eo; }
         void updateStr(char const* buffer) {
-            _s.assign(buffer, _rmatch.rm_so, 
+            _s.assign(buffer, _rmatch.rm_so,
                       _rmatch.rm_eo - _rmatch.rm_so);
         }
     private:
@@ -53,7 +53,7 @@ public:
     class Iterator {
     public:
         Iterator() : _regex(0), _position(-1) {}
-        Iterator(regex_t* regex, std::string const& s) 
+        Iterator(regex_t* regex, std::string const& s)
             : _regex(regex), _s(s), _match(s) {
             setFirst();
         }
@@ -61,7 +61,7 @@ public:
             /* substring found between pm.rm_so and pm.rm_eo */
             /* This call to regexec() finds the next match */
             assert(_position >= 0);
-            int result = regexec(_regex, _cursor, 
+            int result = regexec(_regex, _cursor,
                                  1, _match.regMatch(), REG_NOTBOL);
             if(result != 0)
                 _position = -1;
@@ -81,7 +81,7 @@ public:
         Match const& operator*() const {
             return _match;
         }
-        inline static Iterator const& end() { 
+        inline static Iterator const& end() {
             static Iterator nullIterator;
             return nullIterator;
         }

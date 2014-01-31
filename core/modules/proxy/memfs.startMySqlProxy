@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # this script starts mysql proxy
-# --lua-path and --lua-cpath are needed because 
+# --lua-path and --lua-cpath are needed because
 # we need access to xmlrpc (socket,luaexpat) packages, and mysqlproxy
 # overwrites pre-installed lua modules
 

@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /**
@@ -28,7 +28,7 @@
   * element construct for SQL WHERE.
   *
   * @author Daniel L. Wang, SLAC
-  */ 
+  */
 #include "parser/WhereFactory.h"
 
 // Std
@@ -38,7 +38,7 @@
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
 #include "parser/parserBase.h" // Handler base classes
 #include "parser/ParseException.h"
-#include "query/WhereClause.h" 
+#include "query/WhereClause.h"
 #include "parser/BoolTermFactory.h"
 
 #include "log/Logger.h"
@@ -52,7 +52,7 @@ class ParamGenerator {
 public:
     struct Check {
         bool operator()(RefAST r) {
-            return (r->getType() == SqlSQL2TokenTypes::RIGHT_PAREN) 
+            return (r->getType() == SqlSQL2TokenTypes::RIGHT_PAREN)
                 || (r->getType() == SqlSQL2TokenTypes::COMMA);
         }
     };
@@ -76,16 +76,16 @@ public:
         Iter& operator++() {
             //LOGGER_INF << "advancing..: " << current->getText() << std::endl;
             Check c;
-            if(nextCache.get()) { 
-                current = nextCache; 
+            if(nextCache.get()) {
+                current = nextCache;
             } else {
                 current = qMaster::findSibling(current, c);
                 if(current.get()) {
                     // Move to next value
-                    current = current->getNextSibling(); 
+                    current = current->getNextSibling();
                 }
             }
-            return *this; 
+            return *this;
         }
 
         std::string operator*() {
@@ -94,9 +94,9 @@ public:
                 throw std::logic_error("Corrupted ParamGenerator::Iter");
             }
             qMaster::CompactPrintVisitor<antlr::RefAST> p;
-            for(;current.get() && !c(current); 
+            for(;current.get() && !c(current);
                 current = current->getNextSibling()) {
-                p(current);                
+                p(current);
             }
             return p.result;
         }
@@ -161,7 +161,7 @@ using qMaster::WhereClause;
 using qMaster::WhereFactory;
 using qMaster::ValueExprFactory;
 
-WhereFactory::WhereFactory(boost::shared_ptr<ValueExprFactory> vf) 
+WhereFactory::WhereFactory(boost::shared_ptr<ValueExprFactory> vf)
     : _vf(vf) {
 }
 
@@ -173,18 +173,18 @@ boost::shared_ptr<WhereClause> WhereFactory::newEmpty() {
     return boost::shared_ptr<WhereClause>(new WhereClause());
 }
 
-void 
+void
 WhereFactory::attachTo(SqlSQL2Parser& p) {
     boost::shared_ptr<WhereCondH> wch(new WhereCondH(*this));
     p._whereCondHandler = wch;
 }
 
-void 
+void
 WhereFactory::_import(antlr::RefAST a) {
     _clause.reset(new WhereClause());
     _clause->_restrs.reset(new QsRestrictor::List);
-    // LOGGER_INF << "WHERE starts with: " << a->getText() 
-    //           << " (" << a->getType() << ")" << std::endl;    
+    // LOGGER_INF << "WHERE starts with: " << a->getText()
+    //           << " (" << a->getType() << ")" << std::endl;
 
     // LOGGER_INF << "WHERE indented: " << walkIndentedString(a) << std::endl;
     if(a->getType() != SqlSQL2TokenTypes::SQL2RW_where) {
@@ -194,7 +194,7 @@ WhereFactory::_import(antlr::RefAST a) {
     if(!first.get()) {
         throw ParseException("Missing subtree from WHERE node", a);
     }
-    while(first.get() 
+    while(first.get()
           && (first->getType() == SqlSQL2TokenTypes::QSERV_FCT_SPEC)) {
         _addQservRestrictor(first->getFirstChild());
         first = first->getNextSibling();
@@ -202,12 +202,12 @@ WhereFactory::_import(antlr::RefAST a) {
             first = first->getNextSibling();
         }
     }
-    if(first.get() 
+    if(first.get()
        && (first->getType() == SqlSQL2TokenTypes::OR_OP)) {
         _addOrSibs(first->getFirstChild());
     }
 }
-void 
+void
 WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     std::string r(a->getText()); // e.g. qserv_areaspec_box
     LOGGER_INF << "Adding from " << r << " : ";
@@ -256,11 +256,11 @@ struct MetaCheck {
         return false;
     }
 };
-void 
+void
 WhereFactory::_addOrSibs(antlr::RefAST a) {
     MetaCheck mc;
     PrintExcept<MetaCheck> p(mc);
-    
+
     if(!_clause.get()) {
         throw std::logic_error("Expected valid WhereClause");
     }

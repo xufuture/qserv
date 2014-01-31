@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,33 +9,33 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 /// TableMerger.h declares:
-/// 
-/// struct TableMergerError 
-/// class TableMergerConfig 
-/// class TableMerger 
+///
+/// struct TableMergerError
+/// class TableMergerConfig
+/// class TableMerger
 
 /// The TableMerger classes are responsible for properly feeding in
 /// chunkquery results into a mysql instance. When all results are
 /// collected, a fixup step may be needed, as specified when
-/// configuring the TableMerger. 
+/// configuring the TableMerger.
 
 #ifndef LSST_QSERV_MASTER_TABLE_MERGER_H
 #define LSST_QSERV_MASTER_TABLE_MERGER_H
 #include <string>
-#include <boost/thread.hpp> // for mutex. 
-#include <boost/shared_ptr.hpp> // for mutex. 
+#include <boost/thread.hpp> // for mutex.
+#include <boost/shared_ptr.hpp> // for mutex.
 
 #include "merger/mergeTypes.h"
 
@@ -56,7 +56,7 @@ class PacketIter;
 /// struct TableMergerError - value class for TableMerger error code.
 struct TableMergerError {
 public:
-    enum {NONE, IMPORT, MYSQLOPEN, MERGEWRITE, TERMINATE, 
+    enum {NONE, IMPORT, MYSQLOPEN, MERGEWRITE, TERMINATE,
           MYSQLCONNECT, MYSQLEXEC} status;
     int errorCode;
     std::string description;
@@ -69,7 +69,7 @@ public:
     TableMergerConfig(std::string targetDb_, std::string targetTable_,
                       MergeFixup const& mFixup_,
                       std::string user_, std::string socket_,
-                      std::string mySqlCmd_, std::string dropMem_) 
+                      std::string mySqlCmd_, std::string dropMem_)
         :  targetDb(targetDb_),  targetTable(targetTable_),
            mFixup(mFixup_), user(user_),  socket(socket_), mySqlCmd(mySqlCmd_),
            dropMem()
@@ -99,10 +99,10 @@ public:
 
     bool merge(std::string const& dumpFile, std::string const& tableName);
     bool merge2(std::string const& dumpFile, std::string const& tableName);
-    
+
     // Fragmented merger
     bool merge(PacketIterPtr pacIter, std::string const& tableName);
-    
+
     TableMergerError const& getError() const { return _error; }
     std::string getTargetTable() const {return _config.targetTable; }
 
@@ -114,17 +114,17 @@ private:
     std::string _buildOrderByLimit();
     void _fixupTargetName();
     bool _importResult(std::string const& dumpFile);
-    bool _slowImport(std::string const& dumpFile, 
+    bool _slowImport(std::string const& dumpFile,
                      std::string const& tableName);
-    bool _importFromBuffer(char const* buf, std::size_t size, 
+    bool _importFromBuffer(char const* buf, std::size_t size,
                            std::string const& tableName);
-    bool _importBufferCreate(char const* buf, std::size_t size, 
+    bool _importBufferCreate(char const* buf, std::size_t size,
                              std::string const& tableName);
     bool _importBufferInsert(char const* buf, std::size_t size,
                              std::string const& tableName, bool allowNull);
-    bool _importBufferCreate(PacketIterPtr pacIter, 
+    bool _importBufferCreate(PacketIterPtr pacIter,
                              std::string const& tableName);
-    std::string _makeCreateStmt(PacketIterPtr pacIterP, 
+    std::string _makeCreateStmt(PacketIterPtr pacIterP,
                                 std::string const& tableName);
     bool _dropAndCreate(std::string const& tableName, std::string& createSql);
     bool _importIter(SqlInsertIter& sii, std::string const& tableName);
@@ -151,9 +151,9 @@ private:
 };
 
 }}} // namespace lsst::qserv::master
-// Local Variables: 
+// Local Variables:
 // mode:c++
-// comment-column:0 
-// End:             
+// comment-column:0
+// End:
 
 #endif // LSST_QSERV_MASTER_TABLE_MERGER_H

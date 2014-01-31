@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,17 +9,17 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 #ifndef LSST_QSERV_WORKER_THREAD_H
 #define LSST_QSERV_WORKER_THREAD_H
 
@@ -49,7 +49,7 @@ private:
 };
 
 /// An xrootd-dependent semaphore wrapper
-class Semaphore { 
+class Semaphore {
 public:
     explicit Semaphore(int count=0) : _sema(count) {}
     inline void proberen() { _sema.Wait(); }
@@ -87,7 +87,7 @@ public:
             ++_count;
         }
         // Wake up one of the waiters.
-        _countCondition.notify_one();	
+        _countCondition.notify_one();
     }
 
     inline void get() { proberen(); }
@@ -100,7 +100,7 @@ private:
 
 #endif
 
-/// An xrootd-dependent thread library that 
+/// An xrootd-dependent thread library that
 /// roughly follows boost::thread semantics.
 class ThreadDetail {
 public:
@@ -134,7 +134,7 @@ public:
         _details.insert(td);
         _detailMutex.UnLock();
     }
-    
+
     static void forgetDetail(ThreadDetail* td) {
         _detailMutex.Lock();
         _details.erase(td);
@@ -145,7 +145,7 @@ private:
     static XrdSysMutex _detailMutex;
     static DetailSet _details;
 };
-template <typename Callable> 
+template <typename Callable>
 void* invokeCallableDetail(void* threadDetail) {
     ThreadDetail* td = reinterpret_cast<ThreadDetail*>(threadDetail);
     td->run();
@@ -153,7 +153,7 @@ void* invokeCallableDetail(void* threadDetail) {
     return 0; // Placeholder--callables return null.
 }
 
-template <typename Callable> 
+template <typename Callable>
 class ThreadDetailSpecific : public ThreadDetail {
 public:
     ThreadDetailSpecific(Callable const& c) : _c(new Callable(c)) {}
@@ -175,7 +175,7 @@ ThreadDetail* newDetail(Callable const& c) {
 }
 
 
-class Thread { 
+class Thread {
 public:
     explicit Thread(ThreadDetail* td) {
         _detail = td; //ThreadManager::newTrackedDetail<Callable>(c);

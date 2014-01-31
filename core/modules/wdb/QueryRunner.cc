@@ -27,7 +27,7 @@
   * instances.
   *
   * @author Daniel L. Wang, SLAC
-  */ 
+  */
 #include "wdb/QueryRunner.h"
 #include <iostream>
 #include <fcntl.h>

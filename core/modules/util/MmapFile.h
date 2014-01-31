@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,22 +9,22 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-// MmapFile.h: 
-// class MmapFile -- A light C++ wrapper for mmap'ed files.  
+// MmapFile.h:
+// class MmapFile -- A light C++ wrapper for mmap'ed files.
 // Initially used with TableMerger.
 //
- 
+
 #ifndef LSST_QSERV_MASTER_MMAPFILE_H
 #define LSST_QSERV_MASTER_MMAPFILE_H
 
@@ -43,7 +43,7 @@ namespace master {
 
 class MmapFile {
 public:
-    static boost::shared_ptr<MmapFile> newMap(std::string const& filename, 
+    static boost::shared_ptr<MmapFile> newMap(std::string const& filename,
                                               bool read, bool write);
     ~MmapFile();
     bool isValid() const { return (_filename.length() > 0) && _fd && _buf; }

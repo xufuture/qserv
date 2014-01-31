@@ -42,7 +42,7 @@ public:
     ParseException(char const* msg, antlr::RefAST subTree);
     ParseException(std::string const& msg, antlr::RefAST subTree);
 protected:
-    explicit ParseException(std::string const& msg) 
+    explicit ParseException(std::string const& msg)
         : std::runtime_error(msg) {}
 };
 

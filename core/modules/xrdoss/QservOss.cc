@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012, 2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,21 +9,21 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /// QservOss implementation. Only Stat() and StatVS() are
 /// implemented. Stat() performs path lookup and uses a fixed positive
 /// response if a match is found (error if no match). StatVS() always
 /// provides a particular arbitrary response indicating a free disk
-/// space abundance. 
+/// space abundance.
 #include "xrdoss/QservOss.h"
 #include "obsolete/QservPath.h"
 #include "wlog/WLogger.h"
@@ -45,7 +45,7 @@ using namespace lsst::qserv::worker;
 namespace {
 /*
  * sP - ptr to XrdOssVSInfo to be filled
- * sname - C-string of name of fs mount. When sname is NULL, 
+ * sname - C-string of name of fs mount. When sname is NULL,
  *         we must set sP->Quota to 0.
  */
 inline void fillVSInfo(XrdOssVSInfo *sP, char const* sname) {
@@ -62,8 +62,8 @@ inline void fillVSInfo(XrdOssVSInfo *sP, char const* sname) {
         sP->Quota = giga*100; // 100G quota bytes
     } else {
         sP->Quota = 0; // 100G quota bytes
-    }        
-    
+    }
+
 }
 inline std::ostream& print(std::ostream& os, QservOss::StringSet const& h) {
     QservOss::StringSet::const_iterator i;
@@ -74,7 +74,7 @@ inline std::ostream& print(std::ostream& os, QservOss::StringSet const& h) {
         else first = false;
     }
     return os;
-    
+
 }
 
 } // anonymous namespace
@@ -86,7 +86,7 @@ inline std::ostream& print(std::ostream& os, QservOss::StringSet const& h) {
 ////////////////////////////////////////////////////////////////////////
 QservOss* QservOss::getInstance() {
     static boost::shared_ptr<QservOss> instance;
-    if(!instance.get()) { 
+    if(!instance.get()) {
         instance.reset(new QservOss());
     }
     return instance.get();
@@ -101,7 +101,7 @@ QservOss* QservOss::reset(XrdOss *native_oss,
                           const char   *name) {
     if(cfgParams) { _cfgParams = cfgParams; }
     else { _cfgParams.assign(""); }
-    
+
     if(name) { _name = name; }
     else { _name.assign("unknown"); }
     // Not sure what to do with native_oss, so we will throw it
@@ -118,7 +118,7 @@ QservOss::QservOss() {
     struct timeval now;
     const size_t tvsize = sizeof(now.tv_sec);
     void* res;
-    ::gettimeofday(&now, NULL); // 
+    ::gettimeofday(&now, NULL); //
     res = memcpy(&_initTime, &(now.tv_sec), tvsize);
     assert(res == &_initTime);
     Init(NULL, NULL);
@@ -133,7 +133,7 @@ void QservOss::_fillQueryFileStat(struct stat &buf) {
     //Access: 2012-12-06 10:53:05.000000000 -0800
     //Modify: 2012-06-20 15:52:32.000000000 -0700
     //Change: 2012-06-20 15:52:32.000000000 -0700
-   
+
     // Because we are not deferring any responsibility to a local
     // stat() call, we need to synthesize all fields.
     //st_dev; // synthesize/ignore
@@ -146,7 +146,7 @@ void QservOss::_fillQueryFileStat(struct stat &buf) {
     buf.st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
     buf.st_nlink = 1; // Hardcode or save for future use
     buf.st_uid = 1234; // set to magic qserv uid (dbid from meta?)
-    buf.st_gid = 1234; // set to magic qserv gid? 
+    buf.st_gid = 1234; // set to magic qserv gid?
     //st_rdev; // synthesize/ignore
     buf.st_size = 0; // 0 is fine. Consider row count of arbitrary table
     buf.st_blksize = 64*1024; //  blksize 64K? -- size for writing queries
@@ -179,12 +179,12 @@ bool QservOss::_checkExist(std::string const& db, int chunk) {
 */
 int QservOss::Stat(const char *path, struct stat *buff, int opts, XrdOucEnv*) {
     // Idea: Avoid the need to worry about the export dir.
-    // 
-    // Ignore opts, since we don't know what to do with 
+    //
+    // Ignore opts, since we don't know what to do with
     // XRDOSS_resonly 0x01 and  XRDOSS_updtatm 0x02
 
     // Lookup db/chunk in hash set.
-    
+
     // Extract db and chunk from path
     std::string db;
     int chunk;
@@ -206,7 +206,7 @@ int QservOss::Stat(const char *path, struct stat *buff, int opts, XrdOucEnv*) {
 /******************************************************************************/
 /*                                S t a t V S                                 */
 /******************************************************************************/
-  
+
 /*
   Function: Return space information for space name "sname".
 
@@ -217,7 +217,7 @@ int QservOss::Stat(const char *path, struct stat *buff, int opts, XrdOucEnv*) {
             Note that quota is zero when sname is null.
 */
 
-int QservOss::StatVS(XrdOssVSInfo *sP, const char *sname, 
+int QservOss::StatVS(XrdOssVSInfo *sP, const char *sname,
                      int updt, XrdOucEnv*) {
     // Idea: Always return some large amount of space, so that
     // the amount never prevents the manager xrootd/cmsd from
@@ -246,8 +246,8 @@ int QservOss::StatVS(XrdOssVSInfo *sP, const char *sname,
 int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
     _xrdSysLogger = log;
     boost::shared_ptr<XrdPrinter> printer(new XrdPrinter(log));
-    if(log) { 
-        _log.reset(new WLogger(printer)); 
+    if(log) {
+        _log.reset(new WLogger(printer));
         _log->setPrefix("QservOss");
     } else {
         _log.reset(new WLogger());
@@ -273,7 +273,7 @@ int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
 /******************************************************************************/
 /*                XrdOssGetSS (a.k.a. XrdOssGetStorageSystem)                 */
 /******************************************************************************/
-  
+
 // This function is called by:
 // * default xrootd ofs layer to perform lower-level file-ops
 // * cmsd instance to provide Stat() and StatVS() file-ops
@@ -300,4 +300,4 @@ XrdOss *XrdOssGetStorageSystem(XrdOss       *native_oss,
     return oss;
 }
 } // extern C
- 
+

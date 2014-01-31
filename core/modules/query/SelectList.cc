@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /**
@@ -48,13 +48,13 @@
 
 #include "log/Logger.h"
 
-namespace lsst { 
+namespace lsst {
 namespace qserv {
 namespace master {
 
 template <typename T>
 struct renderWithSep {
-    renderWithSep(QueryTemplate& qt_, std::string const& sep_) 
+    renderWithSep(QueryTemplate& qt_, std::string const& sep_)
         : qt(qt_),sep(sep_),count(0) {}
     void operator()(T const& t) {
         if(++count > 1) qt.append(sep);
@@ -88,10 +88,10 @@ SelectList::dbgPrint() const {
     LOGGER_INF << "Parsed value expression for select list." << std::endl;
     std::copy(_valueExprList->begin(),
               _valueExprList->end(),
-              std::ostream_iterator<ValueExprPtr>(LOG_STRM(Info), "\n"));    
+              std::ostream_iterator<ValueExprPtr>(LOG_STRM(Info), "\n"));
 }
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, SelectList const& sl) {
     os << "SELECT ";
     std::copy(sl._valueExprList->begin(), sl._valueExprList->end(),
@@ -122,7 +122,7 @@ boost::shared_ptr<SelectList> SelectList::copyDeep() {
     boost::shared_ptr<SelectList> newS(new SelectList(*this));
     newS->_valueExprList.reset(new ValueExprList());
     ValueExprList& src = *_valueExprList;
-    std::transform(src.begin(), src.end(), 
+    std::transform(src.begin(), src.end(),
                    std::back_inserter(*newS->_valueExprList),
                    // std::mem_fun(&ValueExpr::clone));
                    copyValueExpr());

@@ -80,7 +80,7 @@ std::string validateMysql(qWorker::Config const& c) {
     sc.dbName = c.getString("scratchDb");
     sc.port = 0;
     sc.socket = c.getString("mysqlSocket");
-    if(!sc.isValid()) return "Invalid MySQL config:" + sc.asString(); 
+    if(!sc.isValid()) return "Invalid MySQL config:" + sc.asString();
 
     { // Check connection
         SqlConnection scn(sc);

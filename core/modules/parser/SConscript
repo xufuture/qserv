@@ -9,7 +9,7 @@ myDeps = filter(lambda i: not str(i).startswith("test"), env.Glob("*.cc"))
 # Construct proto env (add ANTLR Builder)
 glib=File('DmlSQL2.g')
 
-antlrTgts = env.Antlr(['SqlSQL2.g'],                                
+antlrTgts = env.Antlr(['SqlSQL2.g'],
     ANTLR_GLIB=env.File('DmlSQL2.g'),
     ANTLR_OUT='.',
     )

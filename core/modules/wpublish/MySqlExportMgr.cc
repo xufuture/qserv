@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 // MySqlExportMgr implementation.
@@ -38,9 +38,9 @@ inline std::string getTableNameDbListing(std::string const& instanceName) {
 }
 
 template <class C>
-void getDbs(WLogger& log, 
-            std::string const& instanceName, 
-            SqlConnection& sc, 
+void getDbs(WLogger& log,
+            std::string const& instanceName,
+            SqlConnection& sc,
             C& dbs) {
     // get list of tables
     // Assume table has schema that includes char column named "db"
@@ -61,12 +61,12 @@ void getDbs(WLogger& log,
 /// Functor to be called per-table name
 class doTable {
 public:
-    doTable(boost::regex& regex, MySqlExportMgr::ChunkMap& chunkMap) 
+    doTable(boost::regex& regex, MySqlExportMgr::ChunkMap& chunkMap)
         : _regex(regex), _chunkMap(chunkMap) {}
     void operator()(std::string const& tableName) {
         boost::smatch what;
         if(boost::regex_match(tableName, what, _regex)) {
-            //std::cout << "Found chunk table: " << what[1] 
+            //std::cout << "Found chunk table: " << what[1]
             //<< "(" << what[2] << ")" << std::endl;
             // Get chunk# slot. Append/set table name.
             std::string chunkStr = what[2];
@@ -88,7 +88,7 @@ struct printChunk {
         int chunkId = tuple.first;
         MySqlExportMgr::StringSet const& s = tuple.second;
         ss << chunkId << "(";
-        std::copy(s.begin(), s.end(), 
+        std::copy(s.begin(), s.end(),
                   std::ostream_iterator<std::string>(ss, ","));
         ss << ")";
         _os << ss.str() << "\n";
@@ -98,7 +98,7 @@ struct printChunk {
 
 /// Functor for iterating over a ChunkMap and updating a StringSet.
 struct addDbItem {
-    addDbItem(std::string const& dbName, MySqlExportMgr::StringSet& stringSet) 
+    addDbItem(std::string const& dbName, MySqlExportMgr::StringSet& stringSet)
         : _dbName(dbName), _stringSet(stringSet) {}
     void operator()(MySqlExportMgr::ChunkMap::value_type const& tuple) {
         // Ignore tuple.second (list of tables for this chunk)
@@ -111,11 +111,11 @@ struct addDbItem {
 /// Functor to load db
 class doDb {
 public:
-    doDb(SqlConnection& conn, 
-         boost::regex& regex, 
-         MySqlExportMgr::ExistMap& existMap) 
-        : _conn(conn), 
-          _regex(regex), 
+    doDb(SqlConnection& conn,
+         boost::regex& regex,
+         MySqlExportMgr::ExistMap& existMap)
+        : _conn(conn),
+          _regex(regex),
           _existMap(existMap)
         {}
 
@@ -130,9 +130,9 @@ public:
         }
         MySqlExportMgr::ChunkMap& chunkMap = _existMap[dbName];
         chunkMap.clear(); // Clear out stale entries to avoid mixing.
-        std::for_each(tables.begin(), tables.end(), 
+        std::for_each(tables.begin(), tables.end(),
                       doTable(_regex, chunkMap));
-        
+
         //std::for_each(chunkMap.begin(), chunkMap.end(), printChunk(std::cout));
         // TODO: Sanity check: do all tables have the same chunks represented?
     }
@@ -149,7 +149,7 @@ void MySqlExportMgr::_init() {
     std::string chunkedForm("(\\w+)_(\\d+)");
     boost::regex regex(chunkedForm);
     // Check metadata for databases to track
-    
+
     SqlConnection sc(getConfig().getSqlConfig(), true);
 
     std::deque<std::string> dbs;
@@ -158,12 +158,12 @@ void MySqlExportMgr::_init() {
     // If we want to merge in the fs-level files/dirs, we will need the
     // export path (from getenv(XRDLCLROOT))
     // std::string exportRoot("/tmp/testExport");
-        
+
     // get chunkList
     // SHOW TABLES IN db;
     std::deque<std::string> chunks;
     std::for_each(dbs.begin(), dbs.end(), doDb(sc, regex, _existMap));
-    //         
+    //
 }
 void MySqlExportMgr::fillDbChunks(MySqlExportMgr::StringSet& s) {
     s.clear();

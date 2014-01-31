@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2013-2014 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,21 +9,21 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
   /**
   * @brief Simple testing for class QuerySql
   *
   * @author Daniel L. Wang, SLAC
-  */ 
+  */
 #define BOOST_TEST_MODULE QuerySql_1
 #include "boost/test/included/unit_test.hpp"
 #include "wdb/QuerySql.h"
@@ -39,14 +39,14 @@ using lsst::qserv::TaskMsg_Fragment;
 struct Fixture {
 
     Fixture() {
-        defaultDb = "Winter"; 
+        defaultDb = "Winter";
         defaultResult = "myResult";
     }
     ~Fixture() {}
 
     TaskMsg_Fragment makeFragment() {
         TaskMsg_Fragment f;
-        // "Real" subchunk query text should include 
+        // "Real" subchunk query text should include
         // pre-substituted subchunk query text.
         f.add_query("SELECT o1.*, o2.* FROM Object_1001 o1, Object_1001 o2;");
         f.set_resulttable("fragResult");
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(Basic) {
     boost::shared_ptr<QuerySql>  qSql;
     TaskMsg_Fragment frag = makeFragment();
     qSql = factory.newQuerySql(defaultDb, 1001, frag, true, defaultResult);
-    BOOST_CHECK(qSql.get());    
+    BOOST_CHECK(qSql.get());
     printQsql(*qSql);
 }
 
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(QueryBatch) {
     boost::shared_ptr<QuerySql>  qSql;
     TaskMsg_Fragment frag = makeFragment();
     qSql = factory.newQuerySql(defaultDb, 1001, frag, true, defaultResult);
-    BOOST_CHECK(qSql.get());    
+    BOOST_CHECK(qSql.get());
 
     QuerySql::Batch build("QueryBuildSub", qSql->buildList);
     QuerySql::Batch& batch=build;

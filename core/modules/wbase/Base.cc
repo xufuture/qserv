@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,21 +9,21 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 // Basic convention/API-related things that might be shared.
 //
 // TODO:
-//  Should parameterize things to stop hardcoding table names 
+//  Should parameterize things to stop hardcoding table names
 // and column names.
 
 // Std
@@ -94,8 +94,8 @@ std::string CLEANUP_SUBCHUNK_SCRIPT =
     ;
 
 // Note:
-// Not all Object partitions will have overlap tables created by the 
-// partitioner.  Thus we need to create empty overlap tables to prevent 
+// Not all Object partitions will have overlap tables created by the
+// partitioner.  Thus we need to create empty overlap tables to prevent
 // run-time errors.  The following command might be useful:
 //
 // echo "show tables in LSST;" | mysql --socket=/u1/local/mysql.sock  \
@@ -139,7 +139,7 @@ void updateResultPath(char const* resultPath) {
     if(checkWritablePath(resultPath)) {
         DUMP_BASE.assign(resultPath);
         return;
-    } 
+    }
     char* path =::getenv("QSW_RESULTPATH");
     if(checkWritablePath(path)) {
         DUMP_BASE.assign(path);
@@ -158,7 +158,7 @@ void clearResultPath() {
             unlink(*s++); // delete file, ignore errors.
         }
         globfree(&globbuf);
-    }   
+    }
 }
 
 std::string hashToPath(std::string const& hash) {
@@ -244,10 +244,10 @@ std::string StringBuffer::getStr() const {
         FragmentDeque& nonConst = const_cast<FragmentDeque&>(_buffers);
         std::sort(nonConst.begin(), nonConst.end(), offsetLess<Fragment>());
     }
-    FragmentDeque::const_iterator bi; 
-    FragmentDeque::const_iterator bend = _buffers.end(); 
+    FragmentDeque::const_iterator bi;
+    FragmentDeque::const_iterator bend = _buffers.end();
 
-    //    accumulated.assign(getLength(), '\0'); // 
+    //    accumulated.assign(getLength(), '\0'); //
     for(bi = _buffers.begin(); bi != bend; ++bi) {
         Fragment const& p = *bi;
         //accumulated += std::string(p.buffer, p.bufferSize);
@@ -264,7 +264,7 @@ std::string StringBuffer::getStr() const {
 #endif
 }
 
-std::string StringBuffer::getDigest() const {  
+std::string StringBuffer::getDigest() const {
 #if QSERV_USE_STUPID_STRING
     // Cast away const in order to lock.
 #if DO_NOT_USE_BOOST
@@ -274,13 +274,13 @@ std::string StringBuffer::getDigest() const {
     boost::unique_lock<boost::mutex> lock(mutex);
 #endif
     int length = 200;
-    if(length > _totalSize) 
+    if(length > _totalSize)
         length = _totalSize;
-    
-    return std::string(_ss.str().data(), length); 
+
+    return std::string(_ss.str().data(), length);
 #else
-    FragmentDeque::const_iterator bi; 
-    FragmentDeque::const_iterator bend = _buffers.end(); 
+    FragmentDeque::const_iterator bi;
+    FragmentDeque::const_iterator bend = _buffers.end();
 
     std::stringstream ss;
     for(bi = _buffers.begin(); bi != bend; ++bi) {
@@ -298,12 +298,12 @@ StringBufferOffset StringBuffer::getLength() const {
     return _totalSize;
     // Might be wise to do a sanity check sometime (overlapping writes!)
 #if 0
-    struct accumulateSize {    
-        StringBufferSize operator() (StringBufferOffset x, Fragment const& p) { 
-            return x + p.bufferSize; 
+    struct accumulateSize {
+        StringBufferSize operator() (StringBufferOffset x, Fragment const& p) {
+            return x + p.bufferSize;
         }
     };
-    return std::accumulate(_buffers.begin(), _buffers.end(), 
+    return std::accumulate(_buffers.begin(), _buffers.end(),
                            0, accumulateSize());
 #endif
 }
@@ -321,7 +321,7 @@ void StringBuffer::reset() {
 }
 
 //////////////////////////////////////////////////////////////////////
-// StringBuffer2 
+// StringBuffer2
 // A mutex-protected string buffer that uses a raw c-string.
 //////////////////////////////////////////////////////////////////////
 void StringBuffer2::addBuffer(
@@ -352,7 +352,7 @@ std::string StringBuffer2::getStr() const {
     return std::string(_buffer, _bytesWritten);
 }
 
-char const* StringBuffer2::getData() const {  
+char const* StringBuffer2::getData() const {
     // Don't call this unless the buffer has no holes.
     // Cast away const in order to lock.
 #if DO_NOT_USE_BOOST
@@ -361,8 +361,8 @@ char const* StringBuffer2::getData() const {
     boost::mutex& mutex = const_cast<boost::mutex&>(_mutex);
     boost::unique_lock<boost::mutex> lock(mutex);
 #endif
-    assert(_bytesWritten == _bufferSize); //no holes.    
-    return _buffer; 
+    assert(_bytesWritten == _bufferSize); //no holes.
+    return _buffer;
 }
 
 StringBufferOffset StringBuffer2::getLength() const {

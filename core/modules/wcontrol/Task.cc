@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2012-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
  /**
@@ -25,7 +25,7 @@
   * @brief Task is a bundle of query task fields
   *
   * @author Daniel L. Wang, SLAC
-  */ 
+  */
 #include "wcontrol/Task.h"
 #include "wbase/Base.h"
 #include "proto/TaskMsgDigest.h"
@@ -34,8 +34,8 @@
 namespace qWorker = lsst::qserv::worker;
 
 namespace {
-    void updateSubchunks(std::string const& s, 
-                         qWorker::Task::Fragment& f) {       
+    void updateSubchunks(std::string const& s,
+                         qWorker::Task::Fragment& f) {
         // deprecated though...
         f.mutable_subchunks()->clear_id();
         std::stringstream ss;
@@ -47,12 +47,12 @@ namespace {
         for(i = boost::make_regex_iterator(firstLine, re);
              i != boost::sregex_iterator(); ++i) {
             ss.str((*i).str(0));
-            ss >> sc;            
+            ss >> sc;
             f.mutable_subchunks()->add_id(sc);
         }
     }
-    
-    void updateResultTables(std::string const& script, 
+
+    void updateResultTables(std::string const& script,
                             qWorker::Task::Fragment& f) {
         f.clear_resulttable();
         // Find resultTable prefix
@@ -63,20 +63,20 @@ namespace {
             return;
         }
         prefixOffset += prefixLen - 1; // prefixLen includes null-termination.
-        std::string tables = script.substr(prefixOffset, 
+        std::string tables = script.substr(prefixOffset,
                                            script.find('\n', prefixOffset)
                                        - prefixOffset);
         // actually, tables should only contain one table name.
         // FIXME: consider verifying this.
-        f.set_resulttable(tables); 
+        f.set_resulttable(tables);
     }
 
-    std::ostream& dump(std::ostream& os, 
+    std::ostream& dump(std::ostream& os,
                        lsst::qserv::TaskMsg_Fragment const& f) {
-        os << "frag: " 
+        os << "frag: "
            << "q=";
         for(int i=0; i < f.query_size(); ++i) {
-            os << f.query(i) << ",";        
+            os << f.query(i) << ",";
         }
         if(f.has_subchunks()) {
             os << " sc=";
@@ -126,10 +126,10 @@ namespace qserv {
 namespace worker {
 std::ostream& operator<<(std::ostream& os, qWorker::Task const& t) {
     lsst::qserv::TaskMsg& m = *t.msg;
-    os << "Task: " 
-       << "msg: session=" << m.session() 
+    os << "Task: "
+       << "msg: session=" << m.session()
        << " chunk=" << m.chunkid()
-       << " db=" << m.db() 
+       << " db=" << m.db()
        << " entry time=" << t.timestr
        << " ";
     for(int i=0; i < m.fragment_size(); ++i) {

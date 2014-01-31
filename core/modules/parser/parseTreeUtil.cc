@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2009-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,24 +9,24 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /**
   * @file parseTreeUtil.cc
   *
   * @brief  non-templated implementation bits for working with ANTLR
-  * parse trees.  
+  * parse trees.
   *
   * @author Daniel L. Wang, SLAC
-  */ 
+  */
 #include "parser/parseTreeUtil.h"
 #include <stdexcept>
 #include <antlr/ASTFactory.hpp>
@@ -42,7 +42,7 @@ public:
     DigraphVisitor() : i(0) {}
     void operator()(AnAst a, C& p) {
         std::string parent = stringify(p.back());
-        s << "\"" << parent << "\"" << " -> " 
+        s << "\"" << parent << "\"" << " -> "
           << "\"" << stringify(a) << "\"" << "\n";
     }
     std::string stringify(AnAst a) {
@@ -68,11 +68,11 @@ public:
 
 // Creates a new text node and and puts it into the tree
 // after the specified node, but before the node's next sibling.
-antlr::RefAST qMaster::insertTextNodeAfter(antlr::ASTFactory* factory, 
-                                           std::string const& s, 
+antlr::RefAST qMaster::insertTextNodeAfter(antlr::ASTFactory* factory,
+                                           std::string const& s,
                                            antlr::RefAST n) {
     antlr::RefAST newChild = factory->create();
-    newChild->setText(s); 
+    newChild->setText(s);
     newChild->setNextSibling(n->getNextSibling());
     n->setNextSibling(newChild);
     return n;
@@ -81,8 +81,8 @@ antlr::RefAST qMaster::insertTextNodeAfter(antlr::ASTFactory* factory,
 // Overwrites the text for the specified node, putting the old text into
 // a new text node placed after the specified node but before the
 // node's next sibling.
-antlr::RefAST qMaster::insertTextNodeBefore(antlr::ASTFactory* factory, 
-                                            std::string const& s, 
+antlr::RefAST qMaster::insertTextNodeBefore(antlr::ASTFactory* factory,
+                                            std::string const& s,
                                             antlr::RefAST n) {
    antlr::RefAST newChild = factory->create();
    newChild->setText(n->getText());
@@ -101,7 +101,7 @@ void qMaster::printDigraph(std::string lbl, std::ostream& o, antlr::RefAST n) {
 }
 
 bool
-qMaster::substituteWithMap(std::string& s, 
+qMaster::substituteWithMap(std::string& s,
                            std::map<std::string, std::string>  const& m,
                            int minMatch) {
     if(s.empty()) return false;
@@ -113,7 +113,7 @@ qMaster::substituteWithMap(std::string& s,
     if(i != m.end()) {
         s = i->second;
         did = true;
-    } else if(s.size() >= static_cast<unsigned>(minMatch)) { 
+    } else if(s.size() >= static_cast<unsigned>(minMatch)) {
         // more aggressively for larger tokens.
         for(i=m.begin(); i != m.end(); ++i) {
             std::string orig = i->first;

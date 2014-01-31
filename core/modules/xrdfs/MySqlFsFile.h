@@ -1,8 +1,8 @@
 // -*- LSST-C++ -*-
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008-2013 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -10,22 +10,22 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 #ifndef LSST_LSPEED_MYSQLFSFILE_H
 #define LSST_LSPEED_MYSQLFSFILE_H
 
 #include <sys/types.h>
-    
+
 #include <string>
 #include <sstream>
 #include "XrdSfs/XrdSfsInterface.hh"
@@ -56,7 +56,7 @@ class WLogger;
 /// ResultTracker receives the event (identified by filename), it fires the
 /// callback, which triggers the calling File object. The functor abstraction
 /// allows the MySqlFsFile object to avoid another direct dependence on xrootd
-/// logic, enhancing testability outside of an xrootd running process. 
+/// logic, enhancing testability outside of an xrootd running process.
 class AddCallbackFunction {
 public:
     typedef boost::shared_ptr<AddCallbackFunction> Ptr;
@@ -64,12 +64,12 @@ public:
     virtual void operator()(XrdSfsFile& caller, std::string const& filename) = 0;
 };
 
-/// A file object used by xrootd to represent a single (open-)file context. 
+/// A file object used by xrootd to represent a single (open-)file context.
 /// Xrootd expects the object to support read/write and track its own position
 /// in the "file".
 class MySqlFsFile : public XrdSfsFile {
 public:
-    MySqlFsFile(boost::shared_ptr<WLogger> log, char const* user = 0, 
+    MySqlFsFile(boost::shared_ptr<WLogger> log, char const* user = 0,
                 AddCallbackFunction::Ptr acf = AddCallbackFunction::Ptr(),
                 fs::FileValidator::Ptr fv = fs::FileValidator::Ptr(),
                 boost::shared_ptr<Service> service = Service::Ptr());
@@ -105,7 +105,7 @@ public:
 
 private:
     int _acceptFile(char const* fileName); // New path handling code
-    bool _addWritePacket(XrdSfsFileOffset offset, char const* buffer, 
+    bool _addWritePacket(XrdSfsFileOffset offset, char const* buffer,
                          XrdSfsXferSize bufferSize);
     void _addCallback(std::string const& filename);
     bool _flushWrite();

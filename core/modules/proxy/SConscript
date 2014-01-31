@@ -6,4 +6,4 @@ proxyFiles = [env.File("mysqlProxy.lua"),
               env.File("startMySQLProxy")]
 for p in proxyFiles:
     extraTgts["dist"].append(("proxy", p))
-              
+

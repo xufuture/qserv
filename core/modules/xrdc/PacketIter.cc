@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 // PacketIter: a fragment-iterated interface to a local file or an
@@ -24,7 +24,7 @@
 // from the xrootd realm to a fragment consumer (probably the table
 // merger). Allowing both types input sources makes it easier to
 // reduce buffering and disk usage, theoretically improving overall
-// latency. 
+// latency.
 
 #include "xrdc/PacketIter.h"
 #include "xrdc/xrdfile.h"
@@ -36,24 +36,24 @@
 
 namespace qMaster = lsst::qserv::master;
 
-qMaster::PacketIter::PacketIter() 
-  : _xrdFd(-1), _current(0,0), _stop(false) 
+qMaster::PacketIter::PacketIter()
+  : _xrdFd(-1), _current(0,0), _stop(false)
 {}
 
-qMaster::PacketIter::PacketIter(int xrdFd, int fragmentSize) 
-    : _xrdFd(xrdFd), 
+qMaster::PacketIter::PacketIter(int xrdFd, int fragmentSize)
+    : _xrdFd(xrdFd),
       _fragSize(fragmentSize),
-      _current(0,0), 
+      _current(0,0),
       _stop(false) {
     _setup(false);
 }
 
-qMaster::PacketIter::PacketIter(std::string const& fileName, int fragmentSize, 
-                                bool debug) 
-    : _xrdFd(0), 
+qMaster::PacketIter::PacketIter(std::string const& fileName, int fragmentSize,
+                                bool debug)
+    : _xrdFd(0),
       _fileName(fileName),
       _fragSize(fragmentSize),
-      _current(0,0), 
+      _current(0,0),
       _stop(false) {
     _setup(debug);
 }
@@ -74,7 +74,7 @@ bool qMaster::PacketIter::incrementExtend() {
     if(!ptr) {
         errno = ENOMEM;
         throw "Failed to realloc for PacketIter.";
-    }    
+    }
     _buffer = ptr;
     _current.first = static_cast<char*>(ptr);
     Value secondHalf(_current.first + _current.second, _fragSize);
@@ -83,7 +83,7 @@ bool qMaster::PacketIter::incrementExtend() {
     if(secondHalf.second == 0) {
         return false;
     }
-    return true;    
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -100,7 +100,7 @@ void qMaster::PacketIter::_setup(bool debug) {
     assert(_fragSize > 0);
     // malloc() is used here rather than the "new" operator because a low-level
     // bucket of bytes is desired.
-    _buffer = malloc(_fragSize); 
+    _buffer = malloc(_fragSize);
     if(_buffer == NULL) {
         errno = ENOMEM;
         throw "Failed to malloc for PacketIter.";
@@ -120,7 +120,7 @@ void qMaster::PacketIter::_setup(bool debug) {
 
 void qMaster::PacketIter::_increment() {
     _pos += _current.second;
-    _fill(_current); 
+    _fill(_current);
 }
 
 void qMaster::PacketIter::_fill(Value& v) {

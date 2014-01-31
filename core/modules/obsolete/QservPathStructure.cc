@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,14 +9,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
@@ -73,7 +73,7 @@ qWorker::QservPathStructure::persist() {
     return true;
 }
 
-bool 
+bool
 qWorker::QservPathStructure::destroy(const std::string& thePath) {
     std::cout << "Destroying: " << thePath << std::endl;
     vector<string> files;
@@ -122,7 +122,7 @@ qWorker::QservPathStructure::createDirectories() const {
             std::cout << "mkdir: " << theDir << std::endl;
             int n = mkdir(theDir, 0755);
             if ( n != 0 ) {
-                std::cerr << "Failed to mkdir(" << *dItr << "), err: " 
+                std::cerr << "Failed to mkdir(" << *dItr << "), err: "
                           << n << std::endl;
                 return false;
             }
@@ -193,7 +193,7 @@ qWorker::QservPathStructure::printUniqueDbDirs() const {
 }
 
 bool
-qWorker::QservPathStructure::processOneDir(const string& s, 
+qWorker::QservPathStructure::processOneDir(const string& s,
                                            bool isDbDir)
 {
     int pos = s.find_last_of('/');
@@ -211,7 +211,7 @@ qWorker::QservPathStructure::processOneDir(const string& s,
     }
     if ( isDbDir && !uniqueDbDirsContains(s) ) {
         _uniqueDbDirs.push_back(s);
-    }        
+    }
     return true;
 }
 
@@ -249,7 +249,7 @@ qWorker::QservPathStructure::uniqueDbDirsContains(const std::string& s) const {
 }
 
 bool
-qWorker::QservPathStructure::listDir(const std::string& dir, 
+qWorker::QservPathStructure::listDir(const std::string& dir,
                                      std::vector<std::string>& files) {
     DIR *dp;
     struct dirent *dirp;

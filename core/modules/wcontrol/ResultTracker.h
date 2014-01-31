@@ -1,7 +1,7 @@
-/* 
+/*
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
- * 
+ *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
  *
@@ -9,17 +9,17 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the LSST License Statement and 
- * the GNU General Public License along with this program.  If not, 
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
- 
+
 #ifndef LSST_QSERV_WORKER_RESULT_TRACKER_H
 #define LSST_QSERV_WORKER_RESULT_TRACKER_H
 #include <deque>
@@ -87,7 +87,7 @@ public:
         }
         {
             boost::unique_lock<boost::mutex> slock(s->mutex);
-            //std::cerr << "Callback (tracker) signalling " 
+            //std::cerr << "Callback (tracker) signalling "
             //	      << k << " ---- " << std::endl;
             s->signal(i); // Notify listeners
             s->clearListeners();
@@ -126,14 +126,14 @@ public:
             // Check again, in case there was a notification.
             boost::unique_lock<boost::mutex> nlock(_newsMutex);
             typename NewsMap::iterator i = _news.find(k);
-            if(i != _news.end()) { 
+            if(i != _news.end()) {
                 boost::shared_ptr<ResultCallable<Callable> > rc;
                 rc.reset(new ResultCallable<Callable>(c,i->second));
                 _workQueue.add(rc);
                 return;
             } else {
                 // No news, so subscribe.
-                s->connections.push_back(s->signal.connect(c)); 
+                s->connections.push_back(s->signal.connect(c));
             }
         }
     }
@@ -141,7 +141,7 @@ public:
         ItemPtr p;
         boost::unique_lock<boost::mutex> lock(_newsMutex);
         typename NewsMap::iterator i = _news.find(k);
-        if(i != _news.end()) { 
+        if(i != _news.end()) {
             p = boost::make_shared<Item>(i->second);
         }
         return p;
@@ -149,7 +149,7 @@ public:
 
     int getNewsCount() {
         boost::unique_lock<boost::mutex> lock(_newsMutex);
-        return _news.size(); // 
+        return _news.size(); //
     }
     int getSignalCount() {
         boost::unique_lock<boost::mutex> lock(_signalsMutex);
@@ -176,7 +176,7 @@ private:
     boost::mutex _newsMutex;
     WorkQueue _workQueue;
 };
-    
+
 }}} // namespace lsst::qserv::worker
 
 #endif // LSST_QSERV_WORKER_RESULT_TRACKER_H
