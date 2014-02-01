@@ -1,6 +1,6 @@
 #
 # LSST Data Management System
-# Copyright 2008-2013 LSST Corporation.
+# Copyright 2008-2014 LSST Corporation.
 #
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -325,6 +325,13 @@ class ParseError(Exception):
         self.reason = reason
     def __str__(self):
         return repr(self.reason)
+class DataError(Exception):
+    """An error with Qserv data. The data underlying qserv is not consistent."""
+    def __init__(self, reason):
+        self.reason = reason
+    def __str__(self):
+        return repr(self.reason)
+
 ########################################################################
 def setupResultScratch():
     """Prepare the configured scratch directory for use, creating if
@@ -537,6 +544,8 @@ class InbandQueryAction:
             pass
         self._evaluateHints(dominantDb, self.hintList, self.pmap)
         self._emptyChunks = metadata.getEmptyChunks(dominantDb)
+        if not self._emptyChunks:
+            raise DataError("No empty chunks for db")
         count = 0
         chunkLimit = self.chunkLimit
         for chunkId, subIter in self._intersectIter:

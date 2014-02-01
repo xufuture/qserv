@@ -1,6 +1,6 @@
 #
 # LSST Data Management System
-# Copyright 2012-2013 LSST Corporation.
+# Copyright 2012-2014 LSST Corporation.
 #
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -20,13 +20,13 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 # eupsLib.py : adapter for importing dependency paths from EUPS
-# 
-# (formerly eups.py, but renamed to prevent clashes with importing 
+#
+# (formerly eups.py, but renamed to prevent clashes with importing
 # real ExtUPS by "import eups")
 #
 
 eupsManaged = [
-    "PROTOBUF", 
+    "PROTOBUF",
     "MYSQL",
     "BOOST",
     "XROOTD",
@@ -36,7 +36,8 @@ eupsManaged = [
     "LUAEXPAT",
     "LUAXMLRPC",
     "MYSQLPROXY",
-    "ZOPEINTERFACE", # for twisted 
+    "ZOPEINTERFACE", # for twisted
+    # need GEOMETRY lib as well.
 ]
 
 class Importer:
@@ -44,7 +45,7 @@ class Importer:
         self.includes = []
         self.pythonPaths = []
         pass
-    
+
     def _addIncDir(self, incDir):
         self.includes = []
         pass
@@ -53,7 +54,7 @@ class Importer:
         pass
 
     def importDeps(self, env):
-        # protobuf, crypto, ssl, mysqlclient_r, 
+        # protobuf, crypto, ssl, mysqlclient_r,
         # boost_regex, boost_thread, boost_signals, xrootd
         paths = { "include" : self._addIncDir,
                   "lib/python/site-packages" : self._addPyPath }
@@ -69,9 +70,9 @@ class Importer:
                         if os.listdir(subDir): action(subDir)
                     except: # Leave alone, can't access for whatever reason.
                         pass
-        
+
         pass
-    def getIncludes(self): 
+    def getIncludes(self):
         return self.includes
     def getPythonPaths(self):
         return self.pythonPaths

@@ -1,6 +1,6 @@
 #
 # LSST Data Management System
-# Copyright 2012-2013 LSST Corporation.
+# Copyright 2012-2014 LSST Corporation.
 #
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -57,11 +57,11 @@ class BoostChecker:
     def getLibName(self, libName):
         if libName in self.cache:
             return self.cache[libName]
-    
+
         r = self._getLibName(libName)
         self.cache[libName] = r
         return r
-        
+
     def _getLibName(self, libName):
         if self.suffix == None:
             conf = self.env.Configure()
@@ -107,11 +107,13 @@ def findXrootdInclude(env):
         conf.Finish()
         return (True, None)
 
-    # Extract CPPPATHs and look for xrootd/ within them.        
+    # Extract CPPPATHs and look for xrootd/ within them.
     pList = env.Dump("CPPPATH") # Dump returns a stringified list
-    # Convert to list if necessary
-    if pList and type(pList) == type("") : pList = eval(pList)
 
+    # Convert to list if necessary
+    if pList and type(pList) == type("") and str(pList)[0] == "[":
+        pList = eval(pList)
+    elif type(pList) != type(list): pList = [pList] # Listify
     pList.append("/usr/include")
     #pList.append("/usr/local/include")
     for p in pList:
@@ -170,8 +172,8 @@ def addExtern(env, externPaths):
 def importCustom(env, extraTgts):
     try:
         import custom
-    except:
-        return
+    except ImportError, e:
+        return # Couldn't find module to import
 
     print "using custom.py"
     def getExt(ext):
@@ -202,6 +204,15 @@ def extractGeometry(custom):
         else:
             print "Invalid GEOMETRY entry in custom.py"
             Abort(1)
+    pass
+
+def checkTwisted():
+    try:
+        import twisted.internet
+        print "twisted ok!"
+        return True
+    except ImportError, e:
+        return None
     pass
 
 ########################################################################
