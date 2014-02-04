@@ -151,7 +151,7 @@ class SimpleOptionParser:
     """
 
     def __init__(self):
-        self._verbosityT = 40 # default is ERROR
+        self._verbosity = 40 # default is ERROR
         self._logFN = None
         self._connI = '127.0.0.1:2181' # default for kazoo (single node, local)
         self._credF = '~/.lsst.my.cnf'
@@ -179,20 +179,20 @@ OPTIONS
         ~/.lsst.my.cnf
 """
 
-    def getVerbosityT(self):
-        """Return verbosity threshold."""
-        return self._verbosityT
+    @property
+    def verbosity(self):
+        return self._verbosity
 
-    def getLogFileName(self):
-        """Return the name of the output log file."""
+    @property
+    def logFileName(self):
         return self._logFN
 
-    def getConnInfo(self):
-        """Return connection information."""
+    @property
+    def connInfo(self):
         return self._connI
 
-    def getCredFile(self):
-        """Return location of credential file."""
+    @property
+    def credFile(self):
         return self._credF
 
     def parse(self):
@@ -207,9 +207,9 @@ OPTIONS
 
         (options, args) = parser.parse_args()
         if options.verbT: 
-            self._verbosityT = int(options.verbT)
-            if   self._verbosityT > 50: self._verbosityT = 50
-            elif self._verbosityT <  0: self._verbosityT = 0
+            self._verbosity = int(options.verbT)
+            if   self._verbosity > 50: self._verbosity = 50
+            elif self._verbosity <  0: self._verbosity = 0
         if options.logFN: self._logFN = options.logFN
         if options.connI: self._connI = options.connI
         if options.credF: self._credF = options.credF
@@ -221,27 +221,27 @@ def main():
     p.parse()
 
     # configure logging
-    if p.getLogFileName():
+    if p.logFileName:
         logging.basicConfig(
-            filename=p.getLogFileName(),
+            filename=p.logFileName,
             format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
             datefmt='%m/%d/%Y %I:%M:%S', 
-            level=p.getVerbosityT())
+            level=p.verbosity)
     else:
         logging.basicConfig(
             format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
             datefmt='%m/%d/%Y %I:%M:%S', 
-            level=p.getVerbosityT())
+            level=p.verbosity)
 
     # disable kazoo logging if requested
     kL = os.getenv('KAZOO_LOGGING')
     if kL: logging.getLogger("kazoo.client").setLevel(int(kL))
 
     # initialize CSS
-    cssI = CssInterface(p.getConnInfo())
+    cssI = CssInterface(p.connInfo)
 
     # initialize database connection, and connect (to catch issues early)
-    db = Db(read_default_file=p.getCredFile())
+    db = Db(read_default_file=p.credFile)
     try:
         db.connect()
     except DbException as e:
