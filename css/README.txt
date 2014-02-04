@@ -50,6 +50,8 @@ socket   = /var/run/mysqld/mysqld.sock
 
 #### in one window, start the watcher
   ./css/watcher.py                          # example without logging
+
+  export KAZOO_LOGGING=40                   # kazoo can be too verbose
   ./css/watcher.py  -v 10 -f watcher.log    # example with logging
 
 
