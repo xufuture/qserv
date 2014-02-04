@@ -77,17 +77,13 @@ class OneDbWatcher(threading.Thread):
             if newData is None and stat is None:
                 self._logger.info(
                     "Path %s deleted. (was %s)" % (self._path, self._data))
-                if self._db.checkDbExists(self._dbName):
-                    self._logger.info("Dropping my database")
-                    self._db.dropDb(self._dbName)
+                self._logger.info("Dropping my database")
+                self._db.dropDb(self._dbName)
             elif newData == 'PENDING':
                     self._logger.info("Meta not initialized yet for my database.")
             elif newData == 'READY':
-                if self._db.checkDbExists(self._dbName):
-                    self._logger.info("My database already exists.")
-                else:
-                    self._logger.info("Creating my database")
-                    self._db.createDb(self._dbName)
+                self._logger.info("Creating my database")
+                self._db.createDb(self._dbName, mayExist=True)
             else:
                 self._logger.error("Unsupported status '%s' for my db." % newData)
             self._data = newData
