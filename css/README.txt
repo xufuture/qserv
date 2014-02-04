@@ -18,10 +18,9 @@
 #  3) export PYTHONPATH=<YourBasePath>/localPython/lib/python<version>/site-packages
 #  4) easy_install --prefix=<YourBasePath>/localPython kazoo
 
-# dbserv
 # Needed: db.py. Hacky way to do it for now:
-# 1) git clone git@git.lsstcorp.org:LSST/DMS/dbserv.git dbserv
-# 2) export PYTHONPATH=<kazooPath>:<YourBasePath>/dbserv/python/lsst/dbserv/
+# 1) git clone git@git.lsstcorp.org:LSST/DMS/db.git db
+# 2) export PYTHONPATH=<kazooPath>:<YourBasePath>/db/python/lsst/db/
 
 
 #### T E S T I N G #################################################################
@@ -39,16 +38,23 @@ export KAZOO_LOGGING=50
 echo "drop everything;" | ./client/qserv_admin.py
 
 
+#### create ~/.lsst.my.cnf with connection and credential parameters, eg
+[client]
+user     = <your mysql user name>
+password = <the password>
+   # host/port and/or socket
+host     = localhost
+port     = 3306
+socket   = /var/run/mysqld/mysqld.sock
+
+
 #### in one window, start the watcher
-  ## this is without logging:
-  ./css/watcher.py -u becla --host localhost --port 3306 
-  ./css/watcher.py -u becla -s /var/run/mysqld/mysqld.sock
-  ## this is with logging:
-  ./css/watcher.py --host localhost --port 3306 -u becla -v 10 -f watcher.log
+  ./css/watcher.py                          # example without logging
+  ./css/watcher.py  -v 10 -f watcher.log    # example with logging
 
 
 #### in second window, run the test:
   ## this is without logging:
   ./client/qserv_admin.py  < ./client/tests/test_qserv_admin
   ## this is with logging:
-  ./client/qserv_admin.py 0v 10 -f qadm.log < ./client/tests/test_qserv_admin
+  ./client/qserv_admin.py -v 10 -f qadm.log < ./client/tests/test_qserv_admin

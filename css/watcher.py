@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # LSST Data Management System
-# Copyright 2013 LSST Corporation.
+# Copyright 2013-2014 LSST Corporation.
 # 
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -45,7 +45,7 @@ import time
 import threading
 
 from cssInterface import CssInterface
-from db import Db, DbException
+from lsst.db.db import Db, DbException
 
 
 class OneDbWatcher(threading.Thread):
@@ -154,11 +154,7 @@ class SimpleOptionParser:
         self._verbosityT = 40 # default is ERROR
         self._logFN = None
         self._connI = '127.0.0.1:2181' # default for kazoo (single node, local)
-        self._mSock = None
-        self._mHost = None
-        self._mPort = 0
-        self._mUser = None
-        self._mPass = ''
+        self._credF = '~/.lsst.my.cnf'
 
         self._usage = \
 """
@@ -178,16 +174,9 @@ OPTIONS
         Name of the output log file. If not specified, the output goes to stderr.
    -c, --connection=name
         Connection information for the metadata server.
-   -s, --socket=name
-        MySQL Socket
-   -H, --host=name
-        MySQL Host name.
-   -P, --port=#
-        MySql port number.
-   -u, --user=name
-        MySQL user name.
-   -p, --password[=name]
-        MySQL Password
+   -a, --credFile=name
+        Credential file containing MySQL connection information. Default location:
+        ~/.lsst.my.cnf
 """
 
     def getVerbosityT(self):
@@ -202,25 +191,9 @@ OPTIONS
         """Return connection information."""
         return self._connI
 
-    def getMySqlSock(self):
-        """Return MySql socket."""
-        return self._mSock
-
-    def getMySqlHost(self):
-        """Return MySql host."""
-        return self._mHost
-
-    def getMySqlPort(self):
-        """Return MySql port."""
-        return self._mPort
-
-    def getMySqlUser(self):
-        """Return MySql user."""
-        return self._mUser
-
-    def getMySqlPass(self):
-        """Return MySql password."""
-        return self._mPass
+    def getCredFile(self):
+        """Return location of credential file."""
+        return self._credF
 
     def parse(self):
         """
@@ -230,11 +203,7 @@ OPTIONS
         parser.add_option("-v", "--verbose",    dest="verbT")
         parser.add_option("-f", "--logFile",    dest="logFN")
         parser.add_option("-c", "--connection", dest="connI")
-        parser.add_option("-s", "--socket",     dest="mSock")
-        parser.add_option("-H", "--host",       dest="mHost")
-        parser.add_option("-P", "--port",       dest="mPort")
-        parser.add_option("-u", "--user",       dest="mUser")        
-        parser.add_option("-p", "--pwd",        dest="mPass")
+        parser.add_option("-a", "--credFile",   dest="credF")
 
         (options, args) = parser.parse_args()
         if options.verbT: 
@@ -243,11 +212,7 @@ OPTIONS
             elif self._verbosityT <  0: self._verbosityT = 0
         if options.logFN: self._logFN = options.logFN
         if options.connI: self._connI = options.connI
-        if options.mSock: self._mSock = options.mSock
-        if options.mHost: self._mHost = options.mHost
-        if options.mPort: self._mPort = int(options.mPort)
-        if options.mUser: self._mUser = options.mUser
-        if options.mPass: self._mPass = options.mPass
+        if options.credF: self._credF = options.credF
 
 ####################################################################################
 def main():
@@ -276,13 +241,9 @@ def main():
     cssI = CssInterface(p.getConnInfo())
 
     # initialize database connection, and connect (to catch issues early)
-    db = Db(socket=p.getMySqlSock(),
-            host  =p.getMySqlHost(), 
-            port  =p.getMySqlPort(),
-            user  =p.getMySqlUser(),
-            passwd=p.getMySqlPass())
+    db = Db(read_default_file=p.getCredFile())
     try:
-        db.connectToMySQLServer()
+        db.connect()
     except DbException as e:
         print e.getErrMgs()
         return
