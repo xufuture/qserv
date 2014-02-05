@@ -160,29 +160,46 @@ class CommandParser(object):
             try:
                 self._impl.createDb(dbName, options)
             except CssException as e:
+<<<<<<< HEAD
                 raise QAdmException(QAdmException.CSSERR, 
+=======
+                raise QAdmException(QAdmException.CUSTOM, 
+>>>>>>> removed code duplication, using produceExceptionClass from db
                                     "Failed to create database '" + dbName + \
                                     "', error was: " +  e.__str__())
         elif l == 3:
             if tokens[1].upper() != 'LIKE':
                 raise QAdmException(QAdmException.BAD_CMD, 
+<<<<<<< HEAD
                                     "Expected 'LIKE', found: '%s'." % tokens[1])
+=======
+                                    "expected 'LIKE', found: '%s'." % tokens[1])
+>>>>>>> removed code duplication, using produceExceptionClass from db
             dbName = tokens[0]
             dbName2 = tokens[2]
             try:
                 self._impl.createDbLike(dbName, dbName2)
             except CssException as e:
+<<<<<<< HEAD
                 raise QAdmException(QAdmException.CSSERR, 
+=======
+                raise QAdmException(QAdmException.CUSTOM, 
+>>>>>>> removed code duplication, using produceExceptionClass from db
                              "Failed to create database '" + dbName + "' like '" + \
                              dbName2 + "', error was: ", e.__str__())
         else:
             raise QAdmException(QAdmException.BAD_CMD, 
+<<<<<<< HEAD
                                 "Unexpected number of arguments.")
+=======
+                                "unexpected number of arguments.")
+>>>>>>> removed code duplication, using produceExceptionClass from db
 
     def _parseCreateTable(self, tokens):
         """
         Subparser - handles all CREATE TABLE requests.
         """
+<<<<<<< HEAD
         l = len(tokens)
         if l == 2:
             (dbTbName, configFile) = tokens
@@ -223,6 +240,9 @@ class CommandParser(object):
         else:
             raise QAdmException(QAdmException.BAD_CMD, 
                                 "Unexpected number of arguments.")
+=======
+        raise QAdmException(QAdmException.NOT_IMPLEMENTED, "CREATE TABLE")
+>>>>>>> removed code duplication, using produceExceptionClass from db
 
     def _parseDrop(self, tokens):
         """
@@ -237,7 +257,11 @@ class CommandParser(object):
             try:
                 self._impl.dropDb(tokens[1])
             except CssException as e:
+<<<<<<< HEAD
                 raise QAdmException(QAdmException.CSSERR, 
+=======
+                raise QAdmException(QAdmException.CUSTOM, 
+>>>>>>> removed code duplication, using produceExceptionClass from db
                                     "Failed to drop database '" + tokens[1] + 
                                     ", error was: ", e.__str__())
         elif t == 'TABLE':
@@ -247,6 +271,7 @@ class CommandParser(object):
             try:
                 self._impl.dropEverything()
             except CssException as e:
+<<<<<<< HEAD
                 raise QAdmException(QAdmException.CSSERR, 
                              "Failed to drop everything, error was: ", e.__str__())
         else:
@@ -265,6 +290,12 @@ class CommandParser(object):
 
     def _justExit(self, tokens):
         raise SystemExit()
+=======
+                raise QAdmException(QAdmException.CUSTOM, 
+                             "Failed to drop everything, error was: ", e.__str__())
+        else:
+            raise QAdmException(QAdmException.BAD_CMD)
+>>>>>>> removed code duplication, using produceExceptionClass from db
 
     def _printHelp(self, tokens):
         """
@@ -305,7 +336,11 @@ class CommandParser(object):
         if not os.path.exists(fName):
             raise QAdmException(QAdmException.CONFIG_NOT_FOUND, fName)
         if not os.access(fName, os.R_OK):
+<<<<<<< HEAD
             raise QAdmException(QAdmException.AUTH_PROBLEM, fName)
+=======
+            raise QAdmException(QAdmException.CONFIG_NOT_FOUND, fName)
+>>>>>>> removed code duplication, using produceExceptionClass from db
         config = ConfigParser.ConfigParser()
         config.optionxform = str # case sensitive
         config.read(fName)
@@ -369,6 +404,58 @@ class CommandParser(object):
                       "latColName")}
         return opts
 
+<<<<<<< HEAD
+=======
+    def _validateKVOptions(self, x, xxOpts, psOpts, whichInfo):
+        if not x.has_key("partitioning"):
+            raise QAdmException(QAdmException.MISSING_PARAM, "partitioning")
+
+        partOff = x["partitioning"] == "off" 
+        for (theName, theOpts) in xxOpts.items():
+            for o in theOpts:
+                # skip optional parameters
+                if o == "partitioning":
+                    continue
+                # if partitioning is "off", partitioningStrategy does not 
+                # need to be specified 
+                if not (o == "partitiongStrategy" and partOff):
+                    continue
+                if not x.has_key(o):
+                    raise QAdmException(QAdmException.MISSING_PARAM, o)
+        if partOff:
+            return
+        if x["partitioning"] != "on":
+            raise QAdmException(QAdmException.WRONG_PARAM_VAL, "partitioning",
+                                "got: '%s'" % x["partitioning"],
+                                "expecting: on/off")
+
+        if not x.has_key("partitioningStrategy"):
+            raise QAdmException(QAdmException.MISSING_PARAM, "partitioningStrategy",
+                                "(required if partitioning is on)")
+
+        psFound = False
+        for (psName, theOpts) in psOpts.items():
+            if x["partitioningStrategy"] == psName:
+                psFound = True
+                # check if all required options are specified
+                for o in theOpts:
+                    if not x.has_key(o):
+                        raise QAdmException(QAdmException.MISSING_PARAM, o)
+
+                # check if there are any unrecognized options
+                for o in x:
+                    if not ((o in xxOpts[whichInfo]) or (o in theOpts)):
+                        # skip non required, these are not in xxOpts/theOpts
+                        if whichInfo=="db_info" and o=="clusteredIndex":
+                            continue
+                        if whichInfo=="db_info" and o=="objectIdIndex":
+                            continue
+                        if whichInfo=="table_info" and o=="partitioningStrategy":
+                            continue
+                        raise QAdmException(QAdmException.WRONG_PARAM, o)
+        if not psFound:
+            raise QAdmException(QAdmException.WRONG_PARAM,x["partitioningStrategy"])
+>>>>>>> removed code duplication, using produceExceptionClass from db
 
     def _initLogging(self):
         self._logger = logging.getLogger("QADM")
