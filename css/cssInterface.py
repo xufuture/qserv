@@ -46,7 +46,6 @@ from kazoo.exceptions import NodeExistsError, NoNodeError
 from lsst.db.exception import produceExceptionClass
 
 ####################################################################################
-
 CssException = produceExceptionClass('CssException', [
         (2001, "DB_EXISTS",          "Database already exists."),
         (2005, "DB_DOES_NOT_EXIST",  "Database does not exist."),
