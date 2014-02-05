@@ -1,3 +1,6 @@
+See Random Zookeer notes at:
+https://dev.lsstcorp.org/trac/wiki/db/Qserv/ZookeeperNotes
+
 #### S E T U P #####################################################################
 
 # Zookeeper

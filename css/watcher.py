@@ -62,7 +62,7 @@ class OneDbWatcher(threading.Thread):
         self._cssI = cssI
         self._db = db
         self._path = pathToWatch
-        self._dbName = pathToWatch[11:]
+        self._dbName = pathToWatch[11:] # skip '/DATABASES/'
         self._data = None
         self._logger = logging.getLogger("WATCHER.DB_%s" % self._dbName)
         threading.Thread.__init__(self)
