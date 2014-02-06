@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2013 LSST Corporation.
+ * Copyright 2013-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -23,18 +23,18 @@
 #ifndef LSST_QSERV_CONSTANTS_H
 #define LSST_QSERV_CONSTANTS_H
  /**
-  * @file testCppParser.cc
+  * @brief  Global constants. 
   *
-  * @brief  Constants. Consider moving to qserv/common in a future ticket.
-  *
-  * @author Daniel L. Wang, SLAC
   */
 
 namespace lsst {
 namespace qserv {
-// FIXME: should be constant somewhere else. See #2405
 const char CHUNK_COLUMN[] = "chunkId";
 const char SUB_CHUNK_COLUMN[] = "subChunkId";
 
+const char USER_DEFAULT[] = "qsmaster";
+
+const char ENV_WRESULTPATH[] = "QSW_RESULTPATH";
+const char ENV_XRDID[] = "XRDNAME";
 }}
 #endif // LSST_QSERV_CONSTANTS_H
