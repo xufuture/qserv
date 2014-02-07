@@ -1,6 +1,7 @@
+// -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2012-2013 LSST Corporation.
+ * Copyright 2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -19,29 +20,19 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_SERVICE_H
-#define LSST_QSERV_WORKER_SERVICE_H
-#include <boost/shared_ptr.hpp>
+
+#ifndef LSST_QSERV_STRINGHASH_H
+#define LSST_QSERV_STRINGHASH_H
+#include <string>
+
 namespace lsst {
 namespace qserv {
-namespace worker {
-
-class Foreman; // Forward
-class TaskAcceptor;
-class WLogger;
-
-class Service {
+/// Small wrappers for computing hashes
+class StringHash {
 public:
-    typedef boost::shared_ptr<Service> Ptr;
-
-    explicit Service(boost::shared_ptr<WLogger> log=boost::shared_ptr<WLogger>());
-    boost::shared_ptr<TaskAcceptor> getAcceptor();
-    void squashByHash(std::string const& hash);
-
-private:
-    boost::shared_ptr<Foreman> _foreman;
+    static std::string getMd5Hex(char const* buffer, int bufferSize);
+    static std::string getSha1Hex(char const* buffer, int bufferSize);
+    static std::string getSha256Hex(char const* buffer, int bufferSize);
 };
-
-}}} // lsst::qserv:worker
-#endif // LSST_QSERV_WORKER_SERVICE_H
-
+}} // lsst::qserv
+#endif // LSST_QSERV_STRINGHASH_H
