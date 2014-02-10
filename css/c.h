@@ -15,10 +15,10 @@ public:
     ~CssInterface();
 
     void create(std::string const& key, std::string const& value);
-    std::string exists(std::string const& key);
+    bool exists(std::string const& key);
     std::string get(std::string const& key);
     std::vector<std::string> getChildren(std::string const& key);
-    void deleteNode(std::string const& key, bool recurvive);
+    void deleteNode(std::string const& key /*, bool recurvive*/);
 
 private:
     zhandle_t *_zh; // zookeeper handle
