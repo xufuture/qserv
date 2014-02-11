@@ -55,8 +55,9 @@ using std::ostringstream;
 using std::string;
 using std::vector;
 
+namespace qCss = lsst::qserv::css;
 
-CssInterface::CssInterface(string const& connInfo) {
+qCss::CssInterface::CssInterface(string const& connInfo) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_DEBUG);
     _zh = zookeeper_init(connInfo.c_str(), 0, 10000, 0, 0, 0);
     if ( !_zh ) {
@@ -64,12 +65,12 @@ CssInterface::CssInterface(string const& connInfo) {
     }
 }
 
-CssInterface::~CssInterface() {
+qCss::CssInterface::~CssInterface() {
     zookeeper_close(_zh);
 }
 
 void
-CssInterface::create(string const& key, string const& value) {
+qCss::CssInterface::create(string const& key, string const& value) {
     cout << "*** CssInterface::create(), " << key << " --> " << value << endl;
     char buffer[512];
     int rc = zoo_create(_zh, key.c_str(), value.c_str(), value.length(), 
@@ -83,7 +84,7 @@ CssInterface::create(string const& key, string const& value) {
 }
 
 bool
-CssInterface::exists(string const& key) {
+qCss::CssInterface::exists(string const& key) {
     cout << "*** CssInterface::exist(), key: " << key << endl;
     struct Stat stat;
     int rc = zoo_exists(_zh, key.c_str(), 0,  &stat);
@@ -91,7 +92,7 @@ CssInterface::exists(string const& key) {
 }
 
 string
-CssInterface::get(string const& key) {
+qCss::CssInterface::get(string const& key) {
     cout << "*** CssInterface::get(), key: " << key << endl;
     char buffer[512];
     memset(buffer, 0, 512);
@@ -108,7 +109,7 @@ CssInterface::get(string const& key) {
 }
 
 std::vector<string> 
-CssInterface::getChildren(string const& key) {
+qCss::CssInterface::getChildren(string const& key) {
     cout << "*** CssInterface::getChildren, key: " << key << endl;
     struct String_vector strings;
     int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
@@ -126,7 +127,6 @@ CssInterface::getChildren(string const& key) {
 }
 
 void
-CssInterface::deleteNode(string const& key) {
+qCss::CssInterface::deleteNode(string const& key) {
     int rc = zoo_delete(_zh, key.c_str(), -1);
 }
-
