@@ -1,13 +1,19 @@
 
-// Quick and dirty test, based on:
-// http://zookeeper.apache.org/doc/r3.3.4/zookeeperProgrammers.html#ZooKeeper+C+client+API
+// First implementation of the CssInterface, based on:
+//  http://zookeeper.apache.org/doc/r3.3.4/zookeeperProgrammers.html#ZooKeeper+C+client+API
 //
 // To build:
-//   gcc css/c.cc -I <distDir>/include/zookeeper -L <distDir>/lib -l zookeeper_mt -o testZooC
+//   gcc css/c.cc -c -I <distDir>/include/zookeeper
 //   export LD_LIBRARY_PATH=<distDir>/lib
+//
+// To do:
+//  * logging
+//  * perhaps switch to async (seems to be recommended by zookeeper)
 
 // standard library imports
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <string.h> // for memset
 
 // local imports
@@ -16,6 +22,8 @@
 
 using std::cout;
 using std::endl;
+using std::exception;
+using std::ostringstream;
 using std::string;
 using std::vector;
 
@@ -24,7 +32,7 @@ CssInterface::CssInterface(string const& connInfo) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_DEBUG);
     _zh = zookeeper_init(connInfo.c_str(), 0, 10000, 0, 0, 0);
     if ( !_zh ) {
-        throw("Failed to connect");
+        throw std::runtime_error("Failed to connect");
     }
 }
 
@@ -40,9 +48,9 @@ CssInterface::create(string const& key, string const& value) {
                         &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL,
                         buffer, sizeof(buffer)-1);
     if ( rc ) {
-        string s("zoo_create failed, error: ");
-        s += rc;
-        throw(s.c_str());
+        ostringstream s;
+        s << "zoo_create failed, error: " << rc;
+        throw std::runtime_error(s.str());
     }
 }
 
@@ -63,9 +71,9 @@ CssInterface::get(string const& key) {
     struct Stat stat;
     int rc = zoo_get(_zh, key.c_str(), 0, buffer, &buflen, &stat);
     if ( rc ) {
-        string s("zoo_get failed, error: ");
-        s += rc;
-        throw(s.c_str());
+        ostringstream s;
+        s << "zoo_get failed, error: " << rc;
+        throw std::runtime_error(s.str());
     }
     cout << "*** got " << buffer << endl;
     return string(buffer);
@@ -77,7 +85,7 @@ CssInterface::getChildren(string const& key) {
     struct String_vector strings;
     int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
     if ( rc ) {
-        throw("Key not found");
+        throw std::runtime_error("Key not found");
     }
     cout << "got " << strings.count << " children" << endl;
     vector<string> v;
@@ -94,47 +102,3 @@ CssInterface::deleteNode(string const& key) {
     int rc = zoo_delete(_zh, key.c_str(), -1);
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-
-void x(CssInterface& cssI, string k) {
-}
-
-int main(int argc, char* argv[]) {
-    CssInterface cssI = CssInterface("localhost:2181");
-
-    string k1 = "/xyzA";
-    string k2 = "/xyzB";
-    string v1 = "firstOne";
-    string v2 = "secondOne";
-
-    cssI.create(k1, v1);
-    cssI.create(k2, v2);
-
-    string s = cssI.get(k1);
-    cout << "got " << s << " for key " << k1 << endl;
-
-    cout << "checking exist for " << "/xyzA" << endl;
-    cout << "got: " << cssI.exists("/xyzA") << endl;
-
-    cout << "checking exist for " << "/xyzC" << endl;
-    cout << "got: " << cssI.exists("/xyzC") << endl;
-
-    std::vector<string> v = cssI.getChildren("/");
-    cout << "children of '/': ";
-    for (std::vector<string>::iterator it = v.begin() ; it != v.end(); ++it) {
-        cout << *it << " ";
-    }
-    cout << endl;
-
-    cssI.deleteNode(k1);
-    cssI.deleteNode(k2);
-
-    v = cssI.getChildren("/");
-    cout << "children of '/': ";
-    for (std::vector<string>::iterator it = v.begin() ; it != v.end(); ++it) {
-        cout << *it << " ";
-    }
-    cout << endl;
-
-    return 0;
-}
