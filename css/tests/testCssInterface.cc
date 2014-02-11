@@ -32,19 +32,24 @@
 
 
 // standard library imports
+#include <algorithm> // sort
+#include <cstdlib>   // rand
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
-#include <string.h> // for memset
+#include <string.h>  // memset
 
 // boost
 #define BOOST_TEST_MODULE MyTest
 #include <boost/test/unit_test.hpp>
+#include <boost/lexical_cast.hpp>
 
 // local imports
 #include "cssInterface.h"
 
 using std::cout;
 using std::endl;
+using std::ostringstream;
 using std::string;
 using std::vector;
 
@@ -53,54 +58,45 @@ namespace qCss = lsst::qserv::css;
 
 struct CssInterfaceFixture {
     CssInterfaceFixture(void) {
+        prefix = "/unittest_" + boost::lexical_cast<std::string>(rand());
+        k1 = prefix + "/xyzA";
+        k2 = prefix + "/xyzB";
+        k3 = prefix + "/xyzC";
+        v1 = "firstOne";
+        v2 = "secondOne";
     };
     ~CssInterfaceFixture(void) {
     };
+    string prefix, k1, k2, k3, v1, v2;
 };
 
 BOOST_FIXTURE_TEST_SUITE(CssInterfaceTest, CssInterfaceFixture)
 
-BOOST_AUTO_TEST_CASE(my_test) {
-    try {
-        string k1 = "/xyzA";
-        string k2 = "/xyzB";
-        string k3 = "/xyzC";
-        string v1 = "firstOne";
-        string v2 = "secondOne";
+BOOST_AUTO_TEST_CASE(createGetCheck) {
+    qCss::CssInterface cssI = qCss::CssInterface("localhost:2181");
 
-        qCss::CssInterface cssI = qCss::CssInterface("localhost:2181");
+    cssI.create(prefix, v1);
+    cssI.create(k1, v1);
+    cssI.create(k2, v2);
 
-        cssI.create(k1, v1);
-        cssI.create(k2, v2);
+    string s = cssI.get(k1);
+    BOOST_CHECK(s == v1);
+    BOOST_CHECK(cssI.exists(k1));
+    BOOST_CHECK(!cssI.exists(k3));
 
-        string s = cssI.get(k1);
-        cout << "got " << s << " for key " << k1 << endl;
+    vector<string> v = cssI.getChildren(prefix);
+    BOOST_CHECK(2 == v.size());
+    std::sort (v.begin(), v.end());
+    BOOST_CHECK(v[0]=="xyzA");
+    BOOST_CHECK(v[1]=="xyzB");
 
-        cout << "checking exist for " << k1 << endl;
-        cout << "got: " << cssI.exists(k1) << endl;
+    cssI.deleteNode(k1);
 
-        cout << "checking exist for " << k3 << endl;
-        cout << "got: " << cssI.exists(k3) << endl;
+    v = cssI.getChildren(prefix);
+    BOOST_CHECK(1 == v.size());
 
-        std::vector<string> v = cssI.getChildren("/");
-        cout << "children of '/': ";
-        for (std::vector<string>::iterator it = v.begin() ; it != v.end(); ++it) {
-            cout << *it << " ";
-        }
-        cout << endl;
-
-        cssI.deleteNode(k1);
-        cssI.deleteNode(k2);
-
-        v = cssI.getChildren("/");
-        cout << "children of '/': ";
-        for (std::vector<string>::iterator it = v.begin() ; it != v.end(); ++it) {
-            cout << *it << " ";
-        }
-        cout << endl;
-    } catch (std::runtime_error &ex) {
-        cout << "Cought exception: " << ex.what() << endl;
-    } 
+    cssI.deleteNode(k2);
+    cssI.deleteNode(prefix);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
