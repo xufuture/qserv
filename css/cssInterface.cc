@@ -76,8 +76,7 @@ qCss::CssInterface::create(string const& key, string const& value) {
     cout << "*** CssInterface::create(), " << key << " --> " << value << endl;
     char buffer[512];
     int rc = zoo_create(_zh, key.c_str(), value.c_str(), value.length(), 
-                        &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL,
-                        buffer, sizeof(buffer)-1);
+                        &ZOO_OPEN_ACL_UNSAFE, 0, buffer, sizeof(buffer)-1);
     if ( rc ) {
         ostringstream s;
         s << "zoo_create failed, error: " << rc;
@@ -130,5 +129,6 @@ qCss::CssInterface::getChildren(string const& key) {
 
 void
 qCss::CssInterface::deleteNode(string const& key) {
+    cout << "*** CssInterface::deleteNode, key: " << key << endl;
     int rc = zoo_delete(_zh, key.c_str(), -1);
 }
