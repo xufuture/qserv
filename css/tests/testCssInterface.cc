@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <string.h> // for memset
 
-#include "c.h"
+#include "cssInterface.h"
 
 using std::cout;
 using std::endl;
