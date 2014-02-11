@@ -11,12 +11,17 @@
 #include <stdexcept>
 #include <string.h> // for memset
 
+// local imports
 #include "cssInterface.h"
+
 
 using std::cout;
 using std::endl;
 using std::string;
 using std::vector;
+
+namespace qCss = lsst::qserv::css;
+
 
 int main(int argc, char* argv[]) {
     try {    
@@ -26,7 +31,7 @@ int main(int argc, char* argv[]) {
         string v1 = "firstOne";
         string v2 = "secondOne";
 
-        CssInterface cssI = CssInterface("localhost:2181");
+        qCss::CssInterface cssI = qCss::CssInterface("localhost:2181");
 
         cssI.create(k1, v1);
         cssI.create(k2, v2);
