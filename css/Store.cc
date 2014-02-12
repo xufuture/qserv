@@ -44,12 +44,11 @@ using std::vector;
 namespace qCss = lsst::qserv::css;
 
 /**
- * Initialize the Store.
- *
- * @param connInfo connection information
- * @param prefix optional prefix, used for testing to avoid polluting production
-                 setup
- */
+  * Initialize the Store.
+  *
+  * @param connInfo connection information
+  * @param prefix optional prefix, for testing, to avoid polluting production setup
+  */
 qCss::Store::Store(string const& connInfo, string const& prefix) :
     _prefix(prefix) {
     _cssI = new qCss::CssInterface(connInfo);
@@ -119,7 +118,7 @@ qCss::Store::checkIfTableIsSubChunked(string const&dbName, string const&tableNam
   */
 vector<string>
 qCss::Store::getAllowedDbs() {
-    string p = _prefix + "/DATABASES/";
+    string p = _prefix + "/DATABASES";
     return _cssI->getChildren(p);
 }
 

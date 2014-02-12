@@ -63,6 +63,7 @@ struct StoreFixture {
         cout << "My prefix is: " << prefix << endl;
         kv.push_back(make_pair(prefix, ""));
         kv.push_back(make_pair(prefix + "/DATABASES", ""));
+
         kv.push_back(make_pair(prefix + "/DATABASES/dbA", ""));
         kv.push_back(make_pair(prefix + "/DATABASES/dbB", ""));
         string p = prefix + "/DATABASES/dbA/TABLES";
@@ -102,18 +103,22 @@ struct StoreFixture {
 
 BOOST_FIXTURE_TEST_SUITE(StoreTest, StoreFixture)
 
-BOOST_AUTO_TEST_CASE(checkIfContainsDb) {
+BOOST_AUTO_TEST_CASE(testDbs) {
     BOOST_CHECK( store->checkIfContainsDb("dbA"));
     BOOST_CHECK( store->checkIfContainsDb("dbB"));
     BOOST_CHECK(!store->checkIfContainsDb("Dummy"));
+
+    vector<string> v = store->getAllowedDbs();
+    BOOST_CHECK(2 == v.size());
+    std::sort (v.begin(), v.end());
+    BOOST_CHECK(v[0]=="dbA");
+    BOOST_CHECK(v[1]=="dbB");
 }
 
-BOOST_AUTO_TEST_CASE(checkIfContainsTable) {
+BOOST_AUTO_TEST_CASE(checkTables) {
     BOOST_CHECK( store->checkIfContainsTable("dbA", "Object"));
     BOOST_CHECK(!store->checkIfContainsTable("dbA", "NotHere"));
-}
 
-BOOST_AUTO_TEST_CASE(checkIfTableIsChunked) {
     BOOST_CHECK( store->checkIfTableIsChunked("dbA", "Object"));
     BOOST_CHECK( store->checkIfTableIsChunked("dbA", "Source"));
     BOOST_CHECK(!store->checkIfTableIsChunked("dbA", "Exposure"));
