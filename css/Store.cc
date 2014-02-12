@@ -38,6 +38,8 @@
 // Local imports
 #include "Store.h"
 
+using std::cout;
+using std::endl;
 using std::string;
 using std::vector;
 
@@ -67,7 +69,7 @@ qCss::Store::~Store() {
 bool
 qCss::Store::checkIfContainsDb(string const& dbName) {
     string p = _prefix + "/DATABASES/" + dbName;
-    std::cout << "*** checkIfContainsDb() " << p << std::endl;
+    cout << "*** checkIfContainsDb() " << p << endl;
     return _cssI->exists(p);
 }
 
@@ -130,7 +132,7 @@ qCss::Store::getAllowedDbs() {
   */
 vector<string>
 qCss::Store::getChunkedTables(string const& dbName) {
-    string p = _prefix + "/DATABASES/" + dbName;
+    string p = _prefix + "/DATABASES/" + dbName + "/TABLES";
     vector<string> ret, v = _cssI->getChildren(p);
 
     vector<string>::const_iterator itr;
@@ -209,5 +211,8 @@ string
 qCss::Store::getKeyColumn(string const& dbName, string const& tableName) {
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + tableName +
                "/partitioning/keyColName";
-    return _cssI->get(p);
+    string ret = _cssI->get(p);
+    cout << "*** getKeyColumn(" << dbName << ", " << tableName << ") = " 
+         << ret << endl;
+    return ret;
 }
