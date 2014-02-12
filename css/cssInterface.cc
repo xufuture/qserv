@@ -120,7 +120,8 @@ qCss::CssInterface::getChildren(string const& key) {
     struct String_vector strings;
     int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
     if ( rc ) {
-        throw std::runtime_error("Key not found");
+        string s = "Key '" + key + "' not found";
+        throw std::runtime_error(s);
     }
     cout << "got " << strings.count << " children" << endl;
     vector<string> v;
