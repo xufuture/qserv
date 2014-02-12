@@ -59,8 +59,13 @@ using std::vector;
 
 namespace qCss = lsst::qserv::css;
 
+/**
+ * Initialize the interface.
+ *
+ * @param connInfo connection information
+ */
 qCss::CssInterface::CssInterface(string const& connInfo) {
-    zoo_set_debug_level(ZOO_LOG_LEVEL_DEBUG);
+    zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
     _zh = zookeeper_init(connInfo.c_str(), 0, 10000, 0, 0, 0);
     if ( !_zh ) {
         throw std::runtime_error("Failed to connect");
