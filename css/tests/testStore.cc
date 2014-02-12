@@ -1,0 +1,123 @@
+// -*- LSST-C++ -*-
+
+/*
+ * LSST Data Management System
+ * Copyright 2014 LSST Corporation.
+ *
+ * This product includes software developed by the
+ * LSST Project (http://www.lsst.org/).
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the LSST License Statement and
+ * the GNU General Public License along with this program.  If not,
+ * see <http://www.lsstcorp.org/LegalNotices/>.
+ */
+
+/**
+  * @file testStore.cc
+  *
+  * @brief Unit test for the Store.
+  *
+  * @Author Jacek Becla, SLAC
+  */
+
+
+// standard library imports
+#include <algorithm> // sort
+#include <cstdlib>   // rand
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string.h>  // memset
+
+// boost
+#define BOOST_TEST_MODULE MyTest
+#include <boost/test/unit_test.hpp>
+#include <boost/lexical_cast.hpp>
+
+// local imports
+#include "Store.h"
+
+using std::cout;
+using std::endl;
+using std::make_pair;
+using std::ostringstream;
+using std::string;
+using std::vector;
+
+namespace qCss = lsst::qserv::css;
+
+
+struct StoreFixture {
+    StoreFixture(void) {
+        string prefix = "/unittest_" + boost::lexical_cast<string>(rand());
+        cout << "My prefix is: " << prefix << endl;
+        kv.push_back(make_pair(prefix, ""));
+        kv.push_back(make_pair(prefix + "/DATABASES", ""));
+        kv.push_back(make_pair(prefix + "/DATABASES/dbA", ""));
+        kv.push_back(make_pair(prefix + "/DATABASES/dbB", ""));
+        string p = prefix + "/DATABASES/dbA/TABLES";
+        kv.push_back(make_pair(p, ""));
+        kv.push_back(make_pair(p + "/Object", ""));
+        kv.push_back(make_pair(p + "/Object/partitioning", ""));
+        kv.push_back(make_pair(p + "/Object/partitioning/lonColName", "ra_PS"));
+        kv.push_back(make_pair(p + "/Object/partitioning/latColName", "decl_PS"));
+        kv.push_back(make_pair(p + "/Object/partitioning/keyColName", "objId"));
+        kv.push_back(make_pair(p + "/Source", ""));
+        kv.push_back(make_pair(p + "/Source/partitioning", ""));
+        kv.push_back(make_pair(p + "/Source/partitioning/lonColName", "ra"));
+        kv.push_back(make_pair(p + "/Source/partitioning/latColName", "decl"));
+        kv.push_back(make_pair(p + "/Source/partitioning/subChunks", "1"));
+        kv.push_back(make_pair(p + "/Exposure", ""));
+
+        qCss::CssInterface cssI = qCss::CssInterface("localhost:2181");
+        vector<std::pair<string, string> >::const_iterator itr;
+        for (itr=kv.begin() ; itr!=kv.end() ; ++itr) {
+            cssI.create(itr->first, itr->second);
+        }
+        store = new qCss::Store("localhost:2181", prefix);
+    };
+
+    ~StoreFixture(void) {
+        qCss::CssInterface cssI = qCss::CssInterface("localhost:2181");
+        vector<std::pair<string, string> >::const_reverse_iterator itr;
+        for (itr=kv.rbegin() ; itr!=kv.rend() ; ++itr) {
+            cssI.deleteNode(itr->first);
+        }
+        delete store;
+    };
+
+    vector<std::pair<string, string> > kv;
+    qCss::Store *store;
+};
+
+BOOST_FIXTURE_TEST_SUITE(StoreTest, StoreFixture)
+
+BOOST_AUTO_TEST_CASE(checkIfContainsDb) {
+    BOOST_CHECK( store->checkIfContainsDb("dbA"));
+    BOOST_CHECK( store->checkIfContainsDb("dbB"));
+    BOOST_CHECK(!store->checkIfContainsDb("Dummy"));
+}
+
+BOOST_AUTO_TEST_CASE(checkIfContainsTable) {
+    BOOST_CHECK( store->checkIfContainsTable("dbA", "Object"));
+    BOOST_CHECK(!store->checkIfContainsTable("dbA", "NotHere"));
+}
+
+BOOST_AUTO_TEST_CASE(checkIfTableIsChunked) {
+    BOOST_CHECK( store->checkIfTableIsChunked("dbA", "Object"));
+    BOOST_CHECK( store->checkIfTableIsChunked("dbA", "Source"));
+    BOOST_CHECK(!store->checkIfTableIsChunked("dbA", "Exposure"));
+    BOOST_CHECK(!store->checkIfTableIsChunked("dbA", "NotHere"));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
