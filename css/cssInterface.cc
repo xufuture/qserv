@@ -107,7 +107,7 @@ qCss::CssInterface::get(string const& key) {
     int rc = zoo_get(_zh, key.c_str(), 0, buffer, &buflen, &stat);
     if ( rc ) {
         ostringstream s;
-        s << "zoo_get failed, error: " << rc;
+        s << "zoo_get failed for key '" << key << "', error: " << rc;
         throw std::runtime_error(s.str());
     }
     cout << "*** got " << buffer << endl;
