@@ -66,6 +66,7 @@ struct StoreFixture {
 
         kv.push_back(make_pair(prefix + "/DATABASES/dbA", ""));
         kv.push_back(make_pair(prefix + "/DATABASES/dbB", ""));
+        kv.push_back(make_pair(prefix + "/DATABASES/dbC", ""));
         string p = prefix + "/DATABASES/dbA/TABLES";
         kv.push_back(make_pair(p, ""));
         kv.push_back(make_pair(p + "/Object", ""));
@@ -78,6 +79,15 @@ struct StoreFixture {
         kv.push_back(make_pair(p + "/Source/partitioning/lonColName", "ra"));
         kv.push_back(make_pair(p + "/Source/partitioning/latColName", "decl"));
         kv.push_back(make_pair(p + "/Source/partitioning/subChunks", "1"));
+        kv.push_back(make_pair(p + "/FSource", ""));
+        kv.push_back(make_pair(p + "/FSource/partitioning", ""));
+        kv.push_back(make_pair(p + "/FSource/partitioning/lonColName", "ra"));
+        kv.push_back(make_pair(p + "/FSource/partitioning/latColName", "decl"));
+        kv.push_back(make_pair(p + "/FSource/partitioning/subChunks", "1"));
+        kv.push_back(make_pair(p + "/Exposure", ""));
+
+        p = prefix + "/DATABASES/dbB/TABLES";
+        kv.push_back(make_pair(p, ""));
         kv.push_back(make_pair(p + "/Exposure", ""));
 
         qCss::CssInterface cssI = qCss::CssInterface("localhost:2181");
@@ -104,25 +114,40 @@ struct StoreFixture {
 BOOST_FIXTURE_TEST_SUITE(StoreTest, StoreFixture)
 
 BOOST_AUTO_TEST_CASE(testDbs) {
-    BOOST_CHECK( store->checkIfContainsDb("dbA"));
-    BOOST_CHECK( store->checkIfContainsDb("dbB"));
-    BOOST_CHECK(!store->checkIfContainsDb("Dummy"));
+    BOOST_REQUIRE( store->checkIfContainsDb("dbA"));
+    BOOST_REQUIRE( store->checkIfContainsDb("dbB"));
+    BOOST_REQUIRE(!store->checkIfContainsDb("Dummy"));
 
     vector<string> v = store->getAllowedDbs();
-    BOOST_CHECK(2 == v.size());
+    BOOST_REQUIRE(3 == v.size());
     std::sort (v.begin(), v.end());
-    BOOST_CHECK(v[0]=="dbA");
-    BOOST_CHECK(v[1]=="dbB");
+    BOOST_REQUIRE(v[0]=="dbA");
+    BOOST_REQUIRE(v[1]=="dbB");
+    BOOST_REQUIRE(v[2]=="dbC");
 }
 
 BOOST_AUTO_TEST_CASE(checkTables) {
-    BOOST_CHECK( store->checkIfContainsTable("dbA", "Object"));
-    BOOST_CHECK(!store->checkIfContainsTable("dbA", "NotHere"));
+    BOOST_REQUIRE( store->checkIfContainsTable("dbA", "Object"));
+    BOOST_REQUIRE(!store->checkIfContainsTable("dbA", "NotHere"));
 
-    BOOST_CHECK( store->checkIfTableIsChunked("dbA", "Object"));
-    BOOST_CHECK( store->checkIfTableIsChunked("dbA", "Source"));
-    BOOST_CHECK(!store->checkIfTableIsChunked("dbA", "Exposure"));
-    BOOST_CHECK(!store->checkIfTableIsChunked("dbA", "NotHere"));
+    BOOST_REQUIRE( store->checkIfTableIsChunked("dbA", "Object"));
+    BOOST_REQUIRE( store->checkIfTableIsChunked("dbA", "Source"));
+    BOOST_REQUIRE(!store->checkIfTableIsChunked("dbA", "Exposure"));
+    BOOST_REQUIRE(!store->checkIfTableIsChunked("dbA", "NotHere"));
+
+    vector<string> v = store->getChunkedTables("dbA");
+    BOOST_REQUIRE(3 == v.size());
+    std::sort (v.begin(), v.end());
+    BOOST_REQUIRE(v[0]=="FSource");
+    BOOST_REQUIRE(v[1]=="Object");
+    BOOST_REQUIRE(v[2]=="Source");
+
+    v = store->getChunkedTables("dbB");
+    BOOST_REQUIRE(0 == v.size());
+
+    store->getKeyColumn("dbA", "Object");
+    store->getKeyColumn("dbA", "Source");
+    store->getKeyColumn("dbB", "Exposure");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
