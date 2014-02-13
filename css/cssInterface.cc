@@ -165,29 +165,27 @@ qCss::CssInterface::deleteNode(string const& key) {
   */
 void
 qCss::CssInterface::zooFailure(int rc, string const& fName, string const& extraMsg){
+    string ffName = "*** CssInterface::" + fName + "(). ";
     if (rc==ZNONODE) {
         if (_verbose) {
-            cout << "*** CssInterface::" << fName << "(), key: " << extraMsg 
-                 << " does not exist." << endl;
+            cout << ffName << "Key '" << extraMsg << "' does not exist." << endl;
         }
         throw qCss::CssException(qCss::CssException::KEY_DOES_NOT_EXIST, extraMsg);
     }
     if (rc==ZCONNECTIONLOSS) {
         if (_verbose) {
-            cout << "*** CssInterface::" << fName 
-                 << "(). Can't connect to zookeeper" << endl;
+            cout << ffName << "Can't connect to zookeeper." << endl;
         }
         throw qCss::CssException(qCss::CssException::CONN_FAILURE);
     }
     if (rc==ZNOAUTH) {
         if (_verbose) {
-            cout << "*** CssInterface::" << fName << "(). "
-                 << "Zookeeper authorization failure." << endl;
+            cout << ffName << "Zookeeper authorization failure." << endl;
         }
         throw qCss::CssException(qCss::CssException::AUTH_FAILURE);
     }
     ostringstream s;
-    s << "*** CssInterface::" << fName << "(), zookeeper error #" << rc;
+    s << ffName << "Zookeeper error #" << rc << ".";
     if (extraMsg != "") {
         s << " (" << extraMsg << ")";
     }
