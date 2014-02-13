@@ -154,8 +154,10 @@ void forEachSubChunk(std::string const& script, F& func) {
 // lsst::qserv::worker::QueryRunner
 ////////////////////////////////////////////////////////////////////////
 QueryRunner::QueryRunner(QueryRunnerArg const& a)
-    : _log(a.log), _pResult(new QueryPhyResult()),
-      _user(a.task->user), _task(a.task),
+    : _log(a.log),
+      _user(a.task->user),
+      _pResult(new QueryPhyResult()),
+      _task(a.task),
       _poisonedMutex(new boost::mutex()) {
     int rc = mysql_thread_init();
     assert(rc == 0);
