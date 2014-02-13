@@ -46,6 +46,8 @@ public:
         DB_DOES_NOT_EXIST,
         KEY_DOES_NOT_EXIST,
         TB_DOES_NOT_EXIST,
+        AUTH_FAILURE,
+        CONN_FAILURE,
         INTERNAL_ERROR
     };     
     //CssException(errCodeT errCode);
