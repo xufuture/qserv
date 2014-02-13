@@ -5,6 +5,8 @@ a) Zookeeper and Kazoo, for details how to install them, see:
    https://dev.lsstcorp.org/trac/wiki/db/Qserv/ZookeeperNotes
 b) db package. Hacky way to get it for now:
     1) git clone git@git.lsstcorp.org:LSST/DMS/db.git db
+    2) cd db
+    3) git checkout u/jbecla/ticket3133
 
 
 ##### Building core/modules/css #####
