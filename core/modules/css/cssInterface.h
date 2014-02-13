@@ -23,17 +23,20 @@
 /**
   * @file CssInterface.h
   *
-  * @brief Abstract Interface to the Common State System.
+  * @brief Interface to the Common State System.
   *
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_CSS_INTERFACE_HH
-#define LSST_QSERV_CSS_INTERFACE_HH
+#ifndef LSST_QSERV_CSS_C_HH
+#define LSST_QSERV_CSS_C_HH
 
 // standard library imports
 #include <vector>
 #include <string>
+
+// third-party imports
+#include "zookeeper.h"
 
 namespace lsst {
 namespace qserv {
@@ -41,21 +44,23 @@ namespace css {
 
 class CssInterface {
 public:
-    virtual ~CssInterface() {};
+    CssInterface(std::string const& connInfo, bool verbose=true);
+    ~CssInterface();
 
-    virtual void create(std::string const& key, std::string const& value) = 0;
-    virtual bool exists(std::string const& key) = 0;
-    virtual std::string get(std::string const& key) = 0;
-    virtual std::vector<std::string> getChildren(std::string const& key) = 0;
-    virtual void deleteNode(std::string const& key /*, bool recurvive*/) = 0;
+    void create(std::string const& key, std::string const& value);
+    bool exists(std::string const& key);
+    std::string get(std::string const& key);
+    std::vector<std::string> getChildren(std::string const& key);
+    void deleteNode(std::string const& key /*, bool recurvive*/);
 
-protected:
-    CssInterface(bool verbose=true) : _verbose(verbose) {}
-
-protected:
-    bool _verbose; // FIXME: this will go away when we switch to proper logging.
+private:
+    void zooFailure(int, std::string const&, std::string const& extraMsg="");
+    
+private:
+    zhandle_t *_zh; // zookeeper handle
+    bool _verbose;
 };
 
 }}} // namespace lsst::qserv::css
 
-#endif // LSST_QSERV_CSS_INTERFACE_HH
+#endif // LSST_QSERV_CSS_C_HH

@@ -40,7 +40,7 @@ namespace lsst {
 namespace qserv {
 namespace css {
 
-class CssException : public std::runtime_error {
+class CssException: public std::runtime_error {
 public:
     enum errCodeT { 
         DB_DOES_NOT_EXIST,
