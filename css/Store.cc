@@ -37,6 +37,7 @@
 
 // Local imports
 #include "Store.h"
+#include "cssException.h"
 
 using std::cout;
 using std::endl;
@@ -82,6 +83,9 @@ qCss::Store::checkIfContainsDb(string const& dbName) {
   */
 bool
 qCss::Store::checkIfContainsTable(string const& dbName, string const& tableName) {
+    if (!checkIfContainsDb(dbName)) {
+        throw CssException(CssException::DB_DOES_NOT_EXIST, dbName);
+    }       
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + tableName;
     return _cssI->exists(p);
 }
@@ -95,6 +99,12 @@ qCss::Store::checkIfContainsTable(string const& dbName, string const& tableName)
   */
 bool
 qCss::Store::checkIfTableIsChunked(string const& dbName, string const& tableName) {
+    if (!checkIfContainsDb(dbName)) {
+        throw CssException(CssException::DB_DOES_NOT_EXIST, dbName);
+    }
+    if (!checkIfContainsTable(dbName, tableName)) {
+        throw CssException(CssException::TB_DOES_NOT_EXIST, dbName+"."+tableName);
+    }
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + 
                tableName + "/partitioning";
     return _cssI->exists(p);
@@ -109,6 +119,12 @@ qCss::Store::checkIfTableIsChunked(string const& dbName, string const& tableName
   */
 bool
 qCss::Store::checkIfTableIsSubChunked(string const&dbName, string const&tableName) {
+    if (!checkIfContainsDb(dbName)) {
+        throw CssException(CssException::DB_DOES_NOT_EXIST, dbName);
+    }
+    if (!checkIfContainsTable(dbName, tableName)) {
+        throw CssException(CssException::TB_DOES_NOT_EXIST, dbName+"."+tableName);
+    }
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + 
                tableName + "/partitioning/" + "subChunks";
     return _cssI->exists(p);
@@ -132,6 +148,9 @@ qCss::Store::getAllowedDbs() {
   */
 vector<string>
 qCss::Store::getChunkedTables(string const& dbName) {
+    if (!checkIfContainsDb(dbName)) {
+        throw CssException(CssException::DB_DOES_NOT_EXIST, dbName);
+    }
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES";
     vector<string> ret, v = _cssI->getChildren(p);
 
@@ -152,7 +171,10 @@ qCss::Store::getChunkedTables(string const& dbName) {
   */
 vector<string>
 qCss::Store::getSubChunkedTables(string const& dbName) {
-    string p = _prefix + "/DATABASES/" + dbName;
+    if (!checkIfContainsDb(dbName)) {
+        throw CssException(CssException::DB_DOES_NOT_EXIST, dbName);
+    }
+    string p = _prefix + "/DATABASES/" + dbName + "/TABLES";
     vector<string> ret, v = _cssI->getChildren(p);
 
     vector<string>::const_iterator itr;
@@ -173,6 +195,12 @@ qCss::Store::getSubChunkedTables(string const& dbName) {
   */
 vector<string>
 qCss::Store::getPartitionCols(string const& dbName, string const& tableName) {
+    if (!checkIfContainsDb(dbName)) {
+        throw CssException(CssException::DB_DOES_NOT_EXIST, dbName);
+    }
+    if (!checkIfContainsTable(dbName, tableName)) {
+        throw CssException(CssException::TB_DOES_NOT_EXIST, dbName+"."+tableName);
+    }
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + 
                tableName + "/partitioning/";
     vector<string> v, ret;
@@ -197,6 +225,13 @@ qCss::Store::getPartitionCols(string const& dbName, string const& tableName) {
   */
 int
 qCss::Store::getChunkLevel(string const& dbName, string const& tableName) {
+    if (!checkIfContainsDb(dbName)) {
+        throw CssException(CssException::DB_DOES_NOT_EXIST, dbName);
+    }
+    if (!checkIfContainsTable(dbName, tableName)) {
+        throw CssException(CssException::TB_DOES_NOT_EXIST, dbName+"."+tableName);
+    }
+
     return 0; // fixme
 }
 
@@ -209,10 +244,21 @@ qCss::Store::getChunkLevel(string const& dbName, string const& tableName) {
   */
 string
 qCss::Store::getKeyColumn(string const& dbName, string const& tableName) {
-    string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + tableName +
-               "/partitioning/keyColName";
-    string ret = _cssI->get(p);
-    cout << "*** getKeyColumn(" << dbName << ", " << tableName << ") = " 
-         << ret << endl;
+    if (!checkIfContainsDb(dbName)) {
+        throw CssException(CssException::DB_DOES_NOT_EXIST, dbName);
+    }
+    if (!checkIfContainsTable(dbName, tableName)) {
+        throw CssException(CssException::TB_DOES_NOT_EXIST, dbName+"."+tableName);
+    }
+    string ret, p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + tableName +
+                    "/partitioning/secIndexColName";
+    try {
+        ret = _cssI->get(p);
+    } catch (CssException& e) {
+        if (e.errCode()==CssException::KEY_DOES_NOT_EXIST) {
+            ret = "";
+        }
+        throw;
+    }
     return ret;
 }
