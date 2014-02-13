@@ -35,12 +35,10 @@
 #include <algorithm> // sort
 #include <cstdlib>   // rand
 #include <iostream>
-#include <sstream>
 #include <stdexcept>
-#include <string.h>  // memset
 
 // boost
-#define BOOST_TEST_MODULE MyTest
+#define BOOST_TEST_MODULE TestStore
 #include <boost/test/unit_test.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -51,12 +49,10 @@
 using std::cout;
 using std::endl;
 using std::make_pair;
-using std::ostringstream;
 using std::string;
 using std::vector;
 
 namespace qCss = lsst::qserv::css;
-
 
 struct StoreFixture {
     StoreFixture(void) {

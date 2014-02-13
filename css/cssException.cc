@@ -52,7 +52,7 @@ qCss::CssException::_errMap = boost::assign::map_list_of
     (CONN_FAILURE,       "Failed to connect to persistent store.")
     (INTERNAL_ERROR,     "Internal error.");
 
-qCss::CssException::CssException(errCodeT errCode, std::string const& extraMsg) :
+qCss::CssException::CssException(errCodeT errCode, string const& extraMsg) :
     std::runtime_error(""),
     _errCode(errCode) {
     string s = "CssException: " + _errMap.find(_errCode)->second;
