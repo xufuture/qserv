@@ -127,7 +127,7 @@ qCss::CssInterface::get(string const& key) {
     return string(buffer);
 }
 
-std::vector<string> 
+vector<string> 
 qCss::CssInterface::getChildren(string const& key) {
     if (_verbose) {
         cout << "*** CssInterface::getChildren(), key: " << key << endl;
@@ -164,9 +164,7 @@ qCss::CssInterface::deleteNode(string const& key) {
   * @param extraMsg optional extra message to include in the error message
   */
 void
-qCss::CssInterface::zooFailure(int rc, 
-                               std::string const& fName, 
-                               std::string const& extraMsg) {
+qCss::CssInterface::zooFailure(int rc, string const& fName, string const& extraMsg){
     if (rc==ZNONODE) {
         if (_verbose) {
             cout << "*** CssInterface::" << fName << "(), key: " << extraMsg 
