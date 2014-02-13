@@ -46,8 +46,9 @@ namespace qCss = lsst::qserv::css;
 map<qCss::CssException::errCodeT, string> 
 qCss::CssException::_errMap = boost::assign::map_list_of 
     (DB_DOES_NOT_EXIST,  "Database does not exist")
-    (KEY_DOES_NOT_EXIST, "Key does not exist" )
-    (TB_DOES_NOT_EXIST, "Table does not exist");
+    (KEY_DOES_NOT_EXIST, "Key does not exist")
+    (TB_DOES_NOT_EXIST, "Table does not exist")
+    (INTERNAL_ERROR, "Internal error");
 
 qCss::CssException::CssException(errCodeT errCode, std::string const& extraMsg) :
     std::runtime_error(""),

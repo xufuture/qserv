@@ -46,6 +46,7 @@
 
 // local imports
 #include "Store.h"
+#include "cssException.h"
 
 using std::cout;
 using std::endl;
@@ -146,8 +147,11 @@ BOOST_AUTO_TEST_CASE(checkTables) {
     BOOST_REQUIRE(0 == v.size());
 
     store->getKeyColumn("dbA", "Object");
-    store->getKeyColumn("dbA", "Source");
-    store->getKeyColumn("dbB", "Exposure");
+    try {
+        store->getKeyColumn("dbA", "Source");
+    } catch (qCss::CssException& e) {
+        BOOST_REQUIRE(e.errCode()==qCss::CssException::KEY_DOES_NOT_EXIST);
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
