@@ -1,0 +1,53 @@
+
+# to build, cd to qserv/core/modules/css, set TMP_MY_DIST
+# to wherever zookeeper was installed to, and source this
+
+export TMP_MY_DIST=../../../../dist
+
+mkdir dist
+
+gcc -c -g \
+    ./cssInterface.cc \
+    -I $TMP_MY_DIST/include/zookeeper \
+    -o dist/cssInterface.o
+
+gcc -c -g \
+    ./Store.cc \
+    -I $TMP_MY_DIST/include/zookeeper \
+    -o dist/Store.o
+
+gcc -c -g \
+     ./cssException.cc \
+     -o dist/cssException.o
+
+g++ -g \
+    -I. -I $TMP_MY_DIST/include/zookeeper \
+    testCssInterface.cc \
+    -L $TMP_MY_DIST/lib \
+    dist/cssInterface.o \
+    dist/cssException.o \
+    -l zookeeper_mt \
+    -l boost_unit_test_framework \
+    -D BOOST_TEST_DYN_LINK \
+    -o dist/testCssInterface
+
+g++ -g \
+    -I. -I $TMP_MY_DIST/include/zookeeper \
+    testStore.cc \
+    -L $TMP_MY_DIST/lib \
+    dist/cssInterface.o \
+    dist/cssException.o \
+    dist/Store.o \
+    -l zookeeper_mt \
+    -l boost_unit_test_framework \
+    -D BOOST_TEST_DYN_LINK \
+    -o dist/testStore
+
+g++ -g -I. \
+    testCssException.cc \
+    dist/cssException.o \
+    -o dist/testCssException \
+    -l boost_unit_test_framework \
+    -D BOOST_TEST_DYN_LINK
+
+export LD_LIBRARY_PATH=$TMP_MY_DIST/lib
