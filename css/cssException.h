@@ -45,7 +45,8 @@ public:
     enum errCodeT { 
         DB_DOES_NOT_EXIST,
         KEY_DOES_NOT_EXIST,
-        TB_DOES_NOT_EXIST 
+        TB_DOES_NOT_EXIST,
+        INTERNAL_ERROR
     };     
     //CssException(errCodeT errCode);
     CssException(errCodeT errCode, std::string const& extraMsg="");
