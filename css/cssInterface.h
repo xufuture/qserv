@@ -44,7 +44,7 @@ namespace css {
 
 class CssInterface {
 public:
-    CssInterface(std::string const& connInfo);
+    CssInterface(std::string const& connInfo, bool verbose=true);
     ~CssInterface();
 
     void create(std::string const& key, std::string const& value);
@@ -54,7 +54,11 @@ public:
     void deleteNode(std::string const& key /*, bool recurvive*/);
 
 private:
+    void zooFailure(int, std::string const&, std::string const& extraMsg="");
+    
+private:
     zhandle_t *_zh; // zookeeper handle
+    bool _verbose;
 };
 
 }}} // namespace lsst::qserv::css

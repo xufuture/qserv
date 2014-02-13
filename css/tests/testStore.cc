@@ -74,7 +74,7 @@ struct StoreFixture {
         kv.push_back(make_pair(p + "/Object/partitioning", ""));
         kv.push_back(make_pair(p + "/Object/partitioning/lonColName", "ra_PS"));
         kv.push_back(make_pair(p + "/Object/partitioning/latColName", "decl_PS"));
-        kv.push_back(make_pair(p + "/Object/partitioning/keyColName", "objId"));
+        kv.push_back(make_pair(p + "/Object/partitioning/secIndexColName","objId"));
         kv.push_back(make_pair(p + "/Source", ""));
         kv.push_back(make_pair(p + "/Source/partitioning", ""));
         kv.push_back(make_pair(p + "/Source/partitioning/lonColName", "ra"));
@@ -91,7 +91,7 @@ struct StoreFixture {
         kv.push_back(make_pair(p, ""));
         kv.push_back(make_pair(p + "/Exposure", ""));
 
-        qCss::CssInterface cssI = qCss::CssInterface("localhost:2181");
+        qCss::CssInterface cssI = qCss::CssInterface("localhost:2181", false);
         vector<std::pair<string, string> >::const_iterator itr;
         for (itr=kv.begin() ; itr!=kv.end() ; ++itr) {
             cssI.create(itr->first, itr->second);
@@ -100,7 +100,7 @@ struct StoreFixture {
     };
 
     ~StoreFixture(void) {
-        qCss::CssInterface cssI = qCss::CssInterface("localhost:2181");
+        qCss::CssInterface cssI = qCss::CssInterface("localhost:2181", false);
         vector<std::pair<string, string> >::const_reverse_iterator itr;
         for (itr=kv.rbegin() ; itr!=kv.rend() ; ++itr) {
             cssI.deleteNode(itr->first);
@@ -114,11 +114,70 @@ struct StoreFixture {
 
 BOOST_FIXTURE_TEST_SUITE(StoreTest, StoreFixture)
 
-BOOST_AUTO_TEST_CASE(testDbs) {
+BOOST_AUTO_TEST_CASE(checkIfContainsDb) {
     BOOST_REQUIRE( store->checkIfContainsDb("dbA"));
     BOOST_REQUIRE( store->checkIfContainsDb("dbB"));
     BOOST_REQUIRE(!store->checkIfContainsDb("Dummy"));
+}
 
+BOOST_AUTO_TEST_CASE(checkIfContainsTable) {
+    // it does
+    BOOST_REQUIRE(store->checkIfContainsTable("dbA", "Object"));
+
+    // it does not
+    BOOST_REQUIRE(!store->checkIfContainsTable("dbA", "NotHere"));
+
+    // for non-existing db
+    try {
+        store->checkIfContainsTable("Dummy", "NotHere");
+    } catch (qCss::CssException& e) {
+        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(checkIfTableIsChunked) {
+    // normal, table exists
+    BOOST_REQUIRE( store->checkIfTableIsChunked("dbA", "Object"));
+    BOOST_REQUIRE( store->checkIfTableIsChunked("dbA", "Source"));
+    BOOST_REQUIRE(!store->checkIfTableIsChunked("dbA", "Exposure"));
+
+    // normal, table does not exist
+    try {
+        store->checkIfTableIsChunked("dbA", "NotHere");
+    } catch (qCss::CssException& e) {
+        BOOST_REQUIRE(e.errCode()==qCss::CssException::TB_DOES_NOT_EXIST);
+    }
+
+    // for non-existing db
+    try {
+        store->checkIfTableIsChunked("Dummy", "NotHere");
+    } catch (qCss::CssException& e) {
+        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(checkIfTableIsSubChunked) {
+    // normal, table exists
+    BOOST_REQUIRE(!store->checkIfTableIsSubChunked("dbA", "Object"));
+    BOOST_REQUIRE( store->checkIfTableIsSubChunked("dbA", "Source"));
+    BOOST_REQUIRE(!store->checkIfTableIsSubChunked("dbA", "Exposure"));
+
+    // normal, table does not exist
+    try {
+        store->checkIfTableIsSubChunked("dbA", "NotHere");
+    } catch (qCss::CssException& e) {
+        BOOST_REQUIRE(e.errCode()==qCss::CssException::TB_DOES_NOT_EXIST);
+    }
+
+    // for non-existing db
+    try {
+        store->checkIfTableIsSubChunked("Dummy", "NotHere");
+    } catch (qCss::CssException& e) {
+        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(getAllowedDbs) {
     vector<string> v = store->getAllowedDbs();
     BOOST_REQUIRE(3 == v.size());
     std::sort (v.begin(), v.end());
@@ -127,15 +186,8 @@ BOOST_AUTO_TEST_CASE(testDbs) {
     BOOST_REQUIRE(v[2]=="dbC");
 }
 
-BOOST_AUTO_TEST_CASE(checkTables) {
-    BOOST_REQUIRE( store->checkIfContainsTable("dbA", "Object"));
-    BOOST_REQUIRE(!store->checkIfContainsTable("dbA", "NotHere"));
-
-    BOOST_REQUIRE( store->checkIfTableIsChunked("dbA", "Object"));
-    BOOST_REQUIRE( store->checkIfTableIsChunked("dbA", "Source"));
-    BOOST_REQUIRE(!store->checkIfTableIsChunked("dbA", "Exposure"));
-    BOOST_REQUIRE(!store->checkIfTableIsChunked("dbA", "NotHere"));
-
+BOOST_AUTO_TEST_CASE(getChunkedTables) {
+    // normal, 3 values
     vector<string> v = store->getChunkedTables("dbA");
     BOOST_REQUIRE(3 == v.size());
     std::sort (v.begin(), v.end());
@@ -143,14 +195,77 @@ BOOST_AUTO_TEST_CASE(checkTables) {
     BOOST_REQUIRE(v[1]=="Object");
     BOOST_REQUIRE(v[2]=="Source");
 
+    // normal, no values
     v = store->getChunkedTables("dbB");
     BOOST_REQUIRE(0 == v.size());
 
-    store->getKeyColumn("dbA", "Object");
+    // for non-existing db
     try {
-        store->getKeyColumn("dbA", "Source");
+        store->getChunkedTables("Dummy");
     } catch (qCss::CssException& e) {
-        BOOST_REQUIRE(e.errCode()==qCss::CssException::KEY_DOES_NOT_EXIST);
+        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(getSubChunkedTables) {
+    // normal, 2 values
+    vector<string> v = store->getSubChunkedTables("dbA");
+    BOOST_REQUIRE(2 == v.size());
+    std::sort (v.begin(), v.end());
+    BOOST_REQUIRE(v[0]=="FSource");
+    BOOST_REQUIRE(v[1]=="Source");
+
+    // normal, no values
+    v = store->getSubChunkedTables("dbB");
+    BOOST_REQUIRE(0 == v.size());
+
+    // for non-existing db
+    try {
+        store->getSubChunkedTables("Dummy");
+    } catch (qCss::CssException& e) {
+        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(getPartitionCols) {
+    // normal, has value
+    vector<string> v = store->getPartitionCols("dbA", "Object");
+    cout << "XXX " << v[0] << ", " << v[1] << ", " << v[2] << endl;
+    BOOST_REQUIRE(v.size() == 3);
+    BOOST_REQUIRE(v[0] == "ra_PS");
+    BOOST_REQUIRE(v[1] == "decl_PS");
+    BOOST_REQUIRE(v[2] == "objId");
+
+    v = store->getPartitionCols("dbA", "Source");
+    BOOST_REQUIRE(v.size() == 3);
+    BOOST_REQUIRE(v[0] == "ra");
+    BOOST_REQUIRE(v[1] == "decl");
+    BOOST_REQUIRE(v[2] == "");
+
+    // for non-existing db
+    try {
+        store->getPartitionCols("Dummy", "x");
+    } catch (qCss::CssException& e) {
+        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(getChunkLevel) {
+    // FIXME
+}
+
+BOOST_AUTO_TEST_CASE(getKeyColumn) {
+    // normal, has value
+    BOOST_REQUIRE(store->getKeyColumn("dbA", "Object") == "objId");
+
+    // normal, does not have value
+    BOOST_REQUIRE(store->getKeyColumn("dbA", "Source") == "");
+
+    // for non-existing db
+    try {
+        store->getKeyColumn("Dummy", "x");
+    } catch (qCss::CssException& e) {
+        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
     }
 }
 
