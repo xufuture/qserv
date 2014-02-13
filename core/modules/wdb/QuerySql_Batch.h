@@ -52,14 +52,14 @@ struct QuerySql::Batch {
         }
     }
     bool isDone() const {
-        return sequence.empty() || (pos >= sequence.size());
+        return sequence.empty() || (static_cast<size_t>(pos) >= sequence.size());
     }
     std::string current() const {
         std::ostringstream os;
         QuerySql::StringList::const_iterator begin;
-        assert(pos < sequence.size()); // caller should have checked isDone()
+        assert((unsigned)pos < sequence.size()); // caller should have checked isDone()
         begin = sequence.begin() + pos;
-        if(sequence.size() < (pos + batchSize)) {
+        if(sequence.size() < static_cast<size_t>(pos + batchSize)) {
             std::copy(begin, sequence.end(),
                       std::ostream_iterator<std::string>(os, ";\n"));
         } else {

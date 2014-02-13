@@ -451,6 +451,7 @@ private:
     }
 
     JoinRefN::JoinType  _processJoinType(RefAST joinSequence) const {
+        // TODO: rename: _convertToJoinType
         while(1) {
             if(!joinSequence.get()) {
                 throw ParseException("Null token for join type", joinSequence);
