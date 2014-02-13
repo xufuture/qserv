@@ -1,47 +1,47 @@
-See Random Zookeer notes at:
-https://dev.lsstcorp.org/trac/wiki/db/Qserv/ZookeeperNotes
+#### Dependencies #####
 
-#### S E T U P #####################################################################
-
-# Zookeeper
-# For details, see http://zookeeper.apache.org/doc/r3.1.2/zookeeperStarted.html
-# Quick recipe:
-#  1) wget http://www.picotopia.org/apache/zookeeper/stable/zookeeper-3.4.5.tar.gz
-#  2) tar xfz zookeeper-3.4.5.tar.gz
-#  3) mkdir dataDir
-#  4) create zookeeper-3.4.5/conf/zoo.cfg with:
-        tickTime=2000
-        dataDir=<YourBasePath>/dataDir
-        clientPort=2181
-#  5) bin/zkServer.sh start
-
-# Kazoo:
-#  1) python -V
-#  2) mkdir -p localPython/lib/python<version>/site-packages
-#  3) export PYTHONPATH=<YourBasePath>/localPython/lib/python<version>/site-packages
-#  4) easy_install --prefix=<YourBasePath>/localPython kazoo
-
-# Needed: db.py. Hacky way to do it for now:
-# 1) git clone git@git.lsstcorp.org:LSST/DMS/db.git db
-# 2) export PYTHONPATH=<kazooPath>:<YourBasePath>/db/python/lsst/db/
+CSS depends on:
+a) Zookeeper and Kazoo, for details how to install them, see:
+   https://dev.lsstcorp.org/trac/wiki/db/Qserv/ZookeeperNotes
+b) db package. Hacky way to get it for now:
+    1) git clone git@git.lsstcorp.org:LSST/DMS/db.git db
 
 
-#### T E S T I N G #################################################################
+##### Building core/modules/css #####
 
-#### set path to the cssInterface
-export PYTHONPATH=<kazooPath>:<YourBasePath>/dbserv/python/lsst/dbserv/:<YourBasePath>/qserv/css/:<YourBasePath>/qserv/client/
+see core/modules/css/buildIt
+
+##### Starting zookeeper #####
+
+zookeeper-3.4.5/bin/zkServer.sh start
 
 
-#### change kazoo logging level (if you find that it clatters css output)
-#### 50- critical, 40-error, 30-warning, 20-info, 10-debug
+##### Testing C bindings #####
+
+cd core/modules/css
+./dist/testCssException
+./dist/testCssInterface
+./dist/testStore
+
+
+##### Testing python bindings and qserv_admin_client #####
+
+
+### set PYTHONPATH
+export PYTHONPATH=<basePath>/localPython/lib/python<version>/site-packages:<basePath>/db/python/:<basePath>/qserv/css:<basePath>/qserv/client
+
+
+### set verbosity of kazoo
+# You might want to change kazoo logging level by setting:
 export KAZOO_LOGGING=50
+# 50-critical, 40-error, 30-warning, 20-info, 10-debug
 
 
-#### clean up everything
+### clean up everything
 echo "drop everything;" | ./client/qserv_admin.py
 
 
-#### create ~/.lsst.my.cnf with connection and credential parameters, eg
+### create ~/.my.cnf with connection and credential parameters, eg
 [client]
 user     = <your mysql user name>
 password = <the password>
@@ -51,15 +51,15 @@ port     = 3306
 socket   = /var/run/mysqld/mysqld.sock
 
 
-#### in one window, start the watcher
-  ./css/watcher.py                          # example without logging
+### in one window, start the watcher
+  # this is without logging
+  ./css/watcher.py
+  # this is with logging going to a file
+  ./css/watcher.py  -v 10 -f watcher.log
 
-  export KAZOO_LOGGING=40                   # kazoo can be too verbose
-  ./css/watcher.py  -v 10 -f watcher.log    # example with logging
 
-
-#### in second window, run the test:
-  ## this is without logging:
+### in second window, run the test:
+  # this is without logging:
   ./client/qserv_admin.py  < ./client/tests/test_qserv_admin
-  ## this is with logging:
+  # this is with logging:
   ./client/qserv_admin.py -v 10 -f qadm.log < ./client/tests/test_qserv_admin
