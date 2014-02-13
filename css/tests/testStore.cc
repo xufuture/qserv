@@ -226,7 +226,6 @@ BOOST_AUTO_TEST_CASE(getSubChunkedTables) {
 BOOST_AUTO_TEST_CASE(getPartitionCols) {
     // normal, has value
     vector<string> v = store->getPartitionCols("dbA", "Object");
-    cout << "XXX " << v[0] << ", " << v[1] << ", " << v[2] << endl;
     BOOST_REQUIRE(v.size() == 3);
     BOOST_REQUIRE(v[0] == "ra_PS");
     BOOST_REQUIRE(v[1] == "decl_PS");
