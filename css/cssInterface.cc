@@ -48,6 +48,7 @@
 
 // local imports
 #include "cssInterface.h"
+#include "cssException.h"
 
 
 using std::cout;
@@ -83,6 +84,7 @@ qCss::CssInterface::create(string const& key, string const& value) {
     int rc = zoo_create(_zh, key.c_str(), value.c_str(), value.length(), 
                         &ZOO_OPEN_ACL_UNSAFE, 0, buffer, sizeof(buffer)-1);
     if ( rc ) {
+        //ZCONNECTIONLOSS
         ostringstream s;
         s << "zoo_create failed, error: " << rc;
         throw std::runtime_error(s.str());
@@ -106,9 +108,17 @@ qCss::CssInterface::get(string const& key) {
     struct Stat stat;
     int rc = zoo_get(_zh, key.c_str(), 0, buffer, &buflen, &stat);
     if ( rc ) {
+        if (rc == ZNONODE) {
+            cout << "*** CssInterface::get(), key " 
+                 << key << " does not exist." << endl;
+            throw qCss::CssException(qCss::CssException::KEY_DOES_NOT_EXIST, key);
+        }
+        cout << "*** CssInterface::get(), zookeeper error " << rc
+             << ", key " << key << endl;
         ostringstream s;
         s << "zoo_get failed for key '" << key << "', error: " << rc;
-        throw std::runtime_error(s.str());
+        cout << s << endl;
+        throw qCss::CssException(CssException::INTERNAL_ERROR, s.str());
     }
     cout << "*** got " << buffer << endl;
     return string(buffer);
