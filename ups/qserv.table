@@ -1,0 +1,6 @@
+setupRequired(xrootd)
+setupRequired(protobuf)
+setupRequired(luaxmlrpc)
+setupRequired(mysqlproxy)
+setupRequired(mysqlpython)
+setupRequired(twisted)
