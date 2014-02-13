@@ -150,7 +150,7 @@ class SimpleOptionParser:
         self._verbosity = 40 # default is ERROR
         self._logFN = None
         self._connI = '127.0.0.1:2181' # default for kazoo (single node, local)
-        self._credF = '~/.lsst.my.cnf'
+        self._credF = '~/.my.cnf'
 
         self._usage = \
 """
@@ -172,7 +172,7 @@ OPTIONS
         Connection information for the metadata server.
    -a, --credFile=name
         Credential file containing MySQL connection information. Default location:
-        ~/.lsst.my.cnf
+        ~/.my.cnf
 """
 
     @property
