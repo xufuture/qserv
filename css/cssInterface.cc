@@ -65,7 +65,8 @@ namespace qCss = lsst::qserv::css;
  *
  * @param connInfo connection information
  */
-qCss::CssInterface::CssInterface(string const& connInfo) {
+qCss::CssInterface::CssInterface(string const& connInfo, bool verbose) :
+    _verbose(verbose) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
     _zh = zookeeper_init(connInfo.c_str(), 0, 10000, 0, 0, 0);
     if ( !_zh ) {
@@ -79,59 +80,62 @@ qCss::CssInterface::~CssInterface() {
 
 void
 qCss::CssInterface::create(string const& key, string const& value) {
-    cout << "*** CssInterface::create(), " << key << " --> " << value << endl;
+    if (_verbose) {
+        cout << "*** CssInterface::create(), " << key << " --> " << value << endl;
+    }
     char buffer[512];
     int rc = zoo_create(_zh, key.c_str(), value.c_str(), value.length(), 
                         &ZOO_OPEN_ACL_UNSAFE, 0, buffer, sizeof(buffer)-1);
-    if ( rc ) {
-        //ZCONNECTIONLOSS
-        ostringstream s;
-        s << "zoo_create failed, error: " << rc;
-        throw std::runtime_error(s.str());
+    if (rc!=ZOK) {
+        zooFailure(rc, "create");
     }
 }
 
 bool
 qCss::CssInterface::exists(string const& key) {
-    cout << "*** CssInterface::exist(), key: " << key << endl;
+    if (_verbose) {
+        cout << "*** CssInterface::exist(), key: " << key << endl;
+    }
     struct Stat stat;
     int rc = zoo_exists(_zh, key.c_str(), 0,  &stat);
-    return rc == 0;
+    if (rc==ZOK) {
+        return 1;
+    }
+    if (rc==ZNONODE) {
+        return 0;
+    }
+    zooFailure(rc, "exists", key);
+    return false;
 }
 
 string
 qCss::CssInterface::get(string const& key) {
-    cout << "*** CssInterface::get(), key: " << key << endl;
+    if (_verbose) {
+        cout << "*** CssInterface::get(), key: " << key << endl;
+    }
     char buffer[512];
     memset(buffer, 0, 512);
     int buflen = sizeof(buffer);
     struct Stat stat;
     int rc = zoo_get(_zh, key.c_str(), 0, buffer, &buflen, &stat);
-    if ( rc ) {
-        if (rc == ZNONODE) {
-            cout << "*** CssInterface::get(), key " 
-                 << key << " does not exist." << endl;
-            throw qCss::CssException(qCss::CssException::KEY_DOES_NOT_EXIST, key);
-        }
-        cout << "*** CssInterface::get(), zookeeper error " << rc
-             << ", key " << key << endl;
-        ostringstream s;
-        s << "zoo_get failed for key '" << key << "', error: " << rc;
-        cout << s << endl;
-        throw qCss::CssException(CssException::INTERNAL_ERROR, s.str());
+    if (rc=ZOK) {
+        zooFailure(rc, "get", key);
     }
-    cout << "*** got " << buffer << endl;
+    if (_verbose) {
+        cout << "*** got: '" << buffer << "'" << endl;
+    }
     return string(buffer);
 }
 
 std::vector<string> 
 qCss::CssInterface::getChildren(string const& key) {
-    cout << "*** CssInterface::getChildren, key: " << key << endl;
+    if (_verbose) {
+        cout << "*** CssInterface::getChildren(), key: " << key << endl;
+    }
     struct String_vector strings;
     int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
-    if ( rc ) {
-        string s = "Key '" + key + "' not found";
-        throw std::runtime_error(s);
+    if (rc!=ZOK) {
+        zooFailure(rc, "getChildren", key);
     }
     cout << "got " << strings.count << " children" << endl;
     vector<string> v;
@@ -145,6 +149,52 @@ qCss::CssInterface::getChildren(string const& key) {
 
 void
 qCss::CssInterface::deleteNode(string const& key) {
-    cout << "*** CssInterface::deleteNode, key: " << key << endl;
+    if (_verbose) {
+        cout << "*** CssInterface::deleteNode, key: " << key << endl;
+    }
     int rc = zoo_delete(_zh, key.c_str(), -1);
+    if (rc!=ZOK) {
+        zooFailure(rc, "deleteNode", key);
+    }   
+}
+
+/**
+  * @param rc       return code returned by zookeeper
+  * @param fName    function name where the error happened
+  * @param extraMsg optional extra message to include in the error message
+  */
+void
+qCss::CssInterface::zooFailure(int rc, 
+                               std::string const& fName, 
+                               std::string const& extraMsg) {
+    if (rc==ZNONODE) {
+        if (_verbose) {
+            cout << "*** CssInterface::" << fName << "(), key: " << extraMsg 
+                 << " does not exist." << endl;
+        }
+        throw qCss::CssException(qCss::CssException::KEY_DOES_NOT_EXIST, extraMsg);
+    }
+    if (rc==ZCONNECTIONLOSS) {
+        if (_verbose) {
+            cout << "*** CssInterface::" << fName 
+                 << "(). Can't connect to zookeeper" << endl;
+        }
+        throw qCss::CssException(qCss::CssException::CONN_FAILURE);
+    }
+    if (rc==ZNOAUTH) {
+        if (_verbose) {
+            cout << "*** CssInterface::" << fName << "(). "
+                 << "Zookeeper authorization failure." << endl;
+        }
+        throw qCss::CssException(qCss::CssException::AUTH_FAILURE);
+    }
+    ostringstream s;
+    s << "*** CssInterface::" << fName << "(), zookeeper error #" << rc;
+    if (extraMsg != "") {
+        s << " (" << extraMsg << ")";
+    }
+    if (_verbose) {
+        cout << s.str() << endl;
+    }
+    throw qCss::CssException(CssException::INTERNAL_ERROR, s.str());
 }
