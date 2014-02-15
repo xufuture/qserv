@@ -40,7 +40,7 @@ namespace lsst {
 namespace qserv {
 namespace master {
 class QueryTemplate; // Forward
-class JoinSpec; 
+class JoinSpec;
 
 /// TableRefN is a parsed table reference node
 class TableRefN {
@@ -48,7 +48,7 @@ public:
     typedef boost::shared_ptr<TableRefN> Ptr;
     typedef std::list<Ptr> PtrList;
     virtual ~TableRefN() {}
-    
+
     virtual bool isSimple() const = 0;
 
     virtual std::ostream& putStream(std::ostream& os) const = 0;
@@ -80,8 +80,8 @@ public:
 
     // apply f() over all all tableRefns in depth-first order (for compound
     // tablerefs). Always applies non-const version.
-    virtual void apply(Func& f) {} 
-    virtual void apply(FuncConst& f) {} 
+    virtual void apply(Func& f) {}
+    virtual void apply(FuncConst& f) {}
 
     struct Pfunc {
         virtual std::list<TableRefN::Ptr> operator()(SimpleTableN const& t) = 0;
@@ -110,11 +110,11 @@ class SimpleTableN : public TableRefN {
 public:
     typedef boost::shared_ptr<SimpleTableN> Ptr;
     SimpleTableN(std::string const& db_, std::string const& table_,
-                 std::string const& alias_) 
+                 std::string const& alias_)
         : alias(alias_), db(db_), table(table_)  {
         if(table_.empty()) { throw std::logic_error("SimpleTableN without table"); }
     }
-    
+
     virtual bool isSimple() const { return true; }
     virtual std::string const& getDb() const { return db; }
     virtual std::string const& getTable() const { return table; }
@@ -139,6 +139,9 @@ public:
     virtual void apply(Func& f) { f(*this); }
     virtual void apply(FuncConst& f) const { f(*this); }
     virtual std::list<TableRefN::Ptr> permute(Pfunc& p) const;
+    virtual SimpleTableN::Ptr clone() const {
+        return Ptr(new SimpleTableN(*this));
+    }
 
 protected:
     std::string alias;
@@ -152,38 +155,34 @@ protected:
 /// Implementation is incomplete/broken.
 class JoinRefN : public TableRefN {
 public:
+    typedef boost::shared_ptr<JoinRefN> Ptr;
     enum JoinType {DEFAULT, INNER, LEFT, RIGHT, FULL, CROSS, UNION};
-    
+
     JoinRefN(TableRefN::Ptr left_, TableRefN::Ptr right_,
-             JoinType jt, bool isNatural_, 
-             boost::shared_ptr<JoinSpec> spec_) 
+             JoinType jt, bool isNatural_,
+             boost::shared_ptr<JoinSpec> spec_)
         : left(left_), right(right_),
-          joinType(jt), 
-          isNatural(isNatural),
+          joinType(jt),
+          isNatural(isNatural_),
           spec(spec_) {}
 
     virtual bool isSimple() const { return false; }
-
+    bool getIsNatural() const { return isNatural; }
     JoinType getJoinType() const { return joinType; }
-    TableRefN const* getLeft() const { return left.get(); }
-    TableRefN const* getRight() const { return right.get(); }
+    TableRefN const* getLeftRO() const { return left.get(); }
+    TableRefN const* getRightRO() const { return right.get(); }
+    TableRefN::Ptr getLeft() { return left; }
+    TableRefN::Ptr getRight() { return right; }
+
     JoinSpec const* getSpec() const { return spec.get(); }
 
-    virtual std::ostream& putStream(std::ostream& os) const {
-        os << "Join(";
-        if(left) { left->putStream(os); }
-        else { os << "<BROKEN_JOIN>";}
-        os << ",";
-        if(right) {right->putStream(os); }
-        else { os << "<BROKEN_JOIN>";}
-        return os;
-    }
+    virtual std::ostream& putStream(std::ostream& os) const;
     virtual void putTemplate(QueryTemplate& qt) const;
     // Modifiers
-    void setLeft(TableRefN::Ptr t) { left = t; } 
-    void setRight(TableRefN::Ptr t) { right = t; } 
-    void setJoinType(JoinType jt, bool isNatural_) { 
-        joinType = jt; isNatural = isNatural_; } 
+    void setLeft(TableRefN::Ptr t) { left = t; }
+    void setRight(TableRefN::Ptr t) { right = t; }
+    void setJoinType(JoinType jt, bool isNatural_) {
+        joinType = jt; isNatural = isNatural_; }
     virtual void setDb(std::string const&) {} // FIXME: ignore?
     virtual void setTable(std::string const&) {} // FIXME: ignore?
     virtual void apply(Func& f);
