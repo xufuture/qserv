@@ -40,6 +40,7 @@
 #include "query/WhereClause.h"
 #include "query/FuncExpr.h"
 #include "qana/SphericalBoxStrategy.h"
+#include "qana/TableStrategy.h"
 #include "qana/QueryMapping.h"
 #include "query/QueryContext.h"
 #include "query/TableAlias.h"
@@ -378,11 +379,38 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
     // The QueryMapping abstraction provides a symbolic mapping so
     // that a later query generation stage can generate queries from
     // templatable queries a list of partition tuples.
+
+    // In order for this to work while preserving join syntax, we
+    // probably need to change the model. Previously, we did: 
+    // 1. Ingest a flattened sequence of tables.
+    // 2. Look them up.
+    // 3. (decide on subchunking)
+    // 4. Create the new FromList entirely from the sequence.
+    // We can ingest in a way that allows step 4 to create not from
+    // scratch, but by doing a filter-copy of the original FromList,
+    // and replacing each table ref one at a time.  This preserves the
+    // structure. It might be desirable to alter the structure as an
+    // optimization, but this can come later.
+#if 1
+    TableStrategy ts(fList, context);
+    int permutationCount = ts.getPermutationCount();
+    if(permutationCount > 1)
+        for(int i=0; i < permutationCount; ++i) {
+            boost::shared_ptr<SelectStmt> stmt = in.copyDeep();
+            FromList::Ptr f(new FromList(ts.getPermutation(i, fList.getTableRefnList())));
+            stmt->setFromList(f);
+            outList.push_back(stmt);
+            ++added;
+    } else {
+        // Compute old.
+    }
+    QueryMapping::Ptr qm = ts.getMapping();
+#else
     SphericalBoxStrategy s(fList, context);
     QueryMapping::Ptr qm = s.getMapping();
     // Compute the new fromLists, and if there are more than one, then
     // clone the selectstmt for each copy.
-    if(s.needsMultiple()) {
+    if(ts.needsMultiple()) {
         typedef std::list<boost::shared_ptr<FromList> > FromListList;
         typedef FromListList::iterator Iter;
         FromListList newFroms = s.computeNewFromLists();
@@ -396,6 +424,7 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
         s.patchFromList(fList);
         // LOGGER_INF << "post-patched fromlist " << fList.getGenerated() << std::endl;
     }
+#endif
     // Now add/merge the mapping to the Plan
     if(!mapping.get()) {
         mapping = qm;
@@ -417,6 +446,5 @@ bool testIfSecondary(BoolTerm& t) {
     t.putStream(LOG_STRM(Info)) << std::endl;
     return false;
 }
-
 
 }}} // namespace lsst::qserv::master

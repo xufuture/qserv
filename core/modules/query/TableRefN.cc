@@ -32,8 +32,8 @@
 
 namespace qMaster=lsst::qserv::master;
 
-namespace lsst { 
-namespace qserv { 
+namespace lsst {
+namespace qserv {
 namespace master {
 ////////////////////////////////////////////////////////////////////////
 // TableRefN
@@ -54,15 +54,28 @@ std::list<TableRefN::Ptr> TableRefN::permute(TableRefN::Pfunc& p) const {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// SimpleTableN 
+// SimpleTableN
 ////////////////////////////////////////////////////////////////////////
 std::list<TableRefN::Ptr> SimpleTableN::permute(TableRefN::Pfunc& p) const {
     return p(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////
-// JoinRefN 
+// JoinRefN
 ////////////////////////////////////////////////////////////////////////
+std::ostream&
+JoinRefN::putStream(std::ostream& os) const {
+    QueryTemplate jt;
+    _putJoinTemplate(jt);
+
+    os << "Join(";
+    if(left) { left->putStream(os); }
+    else { os << "<BROKEN_JOIN>";}
+    os << jt.generate();
+    if(right) {right->putStream(os); }
+    else { os << "<BROKEN_JOIN>";}
+    return os;
+}
 void JoinRefN::putTemplate(QueryTemplate& qt) const {
     if(!left || !right) {
         throw std::logic_error("Invalid JoinTableN for templating");
@@ -86,7 +99,7 @@ std::list<TableRefN::Ptr> JoinRefN::permute(TableRefN::Pfunc& p) const {
     std::list<TableRefN::Ptr> lefts = left->permute(p);
     std::list<TableRefN::Ptr> rights = right->permute(p);
     PtrList pList;
-    // Construct a new JoinTableN for each permutation using li and ri, 
+    // Construct a new JoinTableN for each permutation using li and ri,
     // such that li is an element of lefts and ri is an element of rights.
     for(PtrList::iterator i = lefts.begin(); i != lefts.end(); ++i) {
         for(PtrList::iterator j = rights.begin(); j != rights.end(); ++j) {
@@ -102,7 +115,7 @@ void JoinRefN::_putJoinTemplate(QueryTemplate& qt) const {
 
     switch(joinType) {
     case DEFAULT: break;
-    case INNER: qt.append("INNER"); break;        
+    case INNER: qt.append("INNER"); break;
     case LEFT: qt.append("LEFT"); qt.append("OUTER"); break;
     case RIGHT: qt.append("RIGHT"); qt.append("OUTER"); break;
     case FULL: qt.append("FULL"); qt.append("OUTER"); break;
