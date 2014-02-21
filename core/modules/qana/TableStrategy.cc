@@ -102,21 +102,15 @@ public:
     }
 
     static std::string makeOverlapTableTemplate(std::string const& table) {
-        std::stringstream ss;
-        ss << table << FULLOVERLAPSUFFIX "_" CHUNKTAG "_" SUBCHUNKTAG;
-        return ss.str();
+        return table + FULLOVERLAPSUFFIX "_" CHUNKTAG "_" SUBCHUNKTAG;
     }
-    
+
     static std::string makeChunkTableTemplate(std::string const& table) {
-        std::stringstream ss;
-        ss << table << "_" CHUNKTAG;
-        return ss.str();
+        return table + "_" CHUNKTAG;
     }
-    
+
     static std::string makeSubChunkTableTemplate(std::string const& table) {
-        std::stringstream ss;
-        ss << table << "_" CHUNKTAG "_" SUBCHUNKTAG;
-        return ss.str();
+        return table + "_" CHUNKTAG "_" SUBCHUNKTAG;
     }
     /// @return count of chunked tables.
     static int patchTuples(Tuples& tuples) {
@@ -161,62 +155,22 @@ public:
     }
 };
 
-#if 0 ////////////////////////////////////////////////////////////////////////
-class TableStrategy::Impl {
-public:
-    friend class SphericalBoxStrategy;
-    Impl(QueryContext& context_) : context(context_) {}
-    template <class C>
-    inline void getSubChunkTables(C& tables) {
-        for(Tuples::const_iterator i=tuples.begin();
-            i != tuples.end(); ++i) {
-            if(i->chunkLevel == 2) {
-                tables.push_back(i->prePatchTable);
-            }
-        }
-    }
-    inline void updateMapping(QueryMapping& m) {
-        // Look for subChunked tables
-        for(Tuples::const_iterator i=tuples.begin();
-            i != tuples.end(); ++i) {
-            if(i->chunkLevel == 2) {
-                std::string const& table = i->prePatchTable;
-                if(table.empty()) {
-                    throw std::logic_error("Unknown prePatchTable in QueryMapping");
-                }
-                // Add them to the list of subchunk table dependencies
-                m.insertSubChunkTable(table);
-            }
-        }
-    }
-    QueryContext& context;
-    FromList const* fromListPtr;
-    Tuples tuples;
-    int chunkLevel;
-};
-
-//template <typename G, typename A>
-class addTable : public TableRefN::Func {
-public:
-    addTable(Tuples& tuples) : _tuples(tuples) {
-    }
-    virtual void operator()(TableRefN& t) {
-        SimpleTableN* p = dynamic_cast<SimpleTableN*>(&t);
-        if(p) {
-            std::string table = p->getTable();
-
+inline void updateMappingFromTuples(QueryMapping& m, Tuples const& tuples) {
+    // Look for subChunked tables
+    for(Tuples::const_iterator i=tuples.begin();
+        i != tuples.end(); ++i) {
+        if(i->chunkLevel == 2) {
+            std::string const& table = i->prePatchTable;
             if(table.empty()) {
-                throw std::logic_error("Missing table in SimpleTableN");
+                throw std::logic_error("Unknown prePatchTable in QueryMapping");
             }
-            _tuples.push_back(Tuple(p->getDb(), table, p->getAlias()));
-        } else {
-            t.apply(*this);
+            // Add them to the list of subchunk table dependencies
+            m.insertSubChunkTable(table);
         }
     }
-private:
-    Tuples& _tuples;
-};
+}
 
+#if 0 ////////////////////////////////////////////////////////////////////////
 class patchTable : public TableRefN::Func {
 public:
     typedef Tuples::const_iterator TupleCiter;
@@ -305,26 +259,31 @@ public:
     int chunkLevel;
 };
 
-class addTable : public TableRefN::Func {
+class addTable { //: public TableRefN::Func {
 public:
     addTable(Tuples& tuples) : _tuples(tuples) {
+        std::cout << "addTable construct\n";
     }
-    virtual void operator()(TableRefN& t) {
-        std::cout << "asdfasdf" << std::endl;
-        SimpleTableN* p = dynamic_cast<SimpleTableN*>(&t);
-        if(p) {
-            std::string table = p->getTable();
+    void operator()(TableRefN::Ptr t) {
+        SimpleTableN::Ptr st(boost::dynamic_pointer_cast<SimpleTableN>(t));
+        if(st) {
+            std::string table = st->getTable();
 
             if(table.empty()) {
                 throw std::logic_error("Missing table in SimpleTableN");
             }
-            std::cout << "Pushback simple table." << std::endl;
-            _tuples.push_back(Tuple(p->getDb(), table, p->getAlias(), &t));
+            _tuples.push_back(Tuple(st->getDb(), table,
+                                    st->getAlias(), st.get()));
         } else {
-            std::cout << "pushback Tuple!" << std::endl;
-            _tuples.push_back(Tuple(&t));
-            t.apply(*this);
+            JoinRefN::Ptr jr = boost::dynamic_pointer_cast<JoinRefN>(t);
+            if(jr) {
+                (*this)(jr->getLeft());
+                (*this)(jr->getRight());
+            } else {
+                // Not Simple and not Join... shouldn't happen.
+            }
         }
+
     }
 private:
     Tuples& _tuples;
@@ -375,7 +334,7 @@ public:
             (*this)(jr->getRight());
         }
     }
-    Tuples& _tuples;    
+    Tuples& _tuples;
 };
 class computeTable : public TableRefN::Func {
 public:
@@ -401,25 +360,28 @@ public:
         else if(t->isSimple()) {
             // else, if simple, return copy
             SimpleTableN::Ptr st(boost::dynamic_pointer_cast<SimpleTableN>(t));
+            std::cout << "passthrough table: " << st->getTable() << std::endl;
             return st->clone();
         }
         JoinRefN::Ptr jr = boost::dynamic_pointer_cast<JoinRefN>(t);
         if(!jr) {
             throw std::logic_error("TableRefN not SimpleTableN or JoinRefN");
         }
+        boost::shared_ptr<JoinSpec> spec = jr->getSpec();
+        if(spec) { spec = boost::shared_ptr<JoinSpec>(spec->clone()); }
         JoinRefN::Ptr njr(new JoinRefN(
                               visit(jr->getLeft()),
                               visit(jr->getRight()),
                               jr->getJoinType(),
                               jr->getIsNatural(),
-                              jr->getSpec()->clone()));
+                              spec));
         return njr;
     }
     Tuple& getTuple(SimpleTableN::Ptr t) {
         // FIXME: Switch to map and rethink the system
         typedef Tuples::iterator Iter;
         for(Iter i=_tuples.begin(),e=_tuples.end(); i != e; ++i) {
-            if(i->prePatchTable == t->getTable()) { return *i; }
+            if(i->node == t.get()) { return *i; }
         }
         throw std::logic_error("Not found in tuples");
     }
@@ -478,11 +440,34 @@ TableStrategy::TableStrategy(FromList const& f,
     _import(f);
 }
 
-boost::shared_ptr<QueryMapping> TableStrategy::getMapping() {
-    return boost::shared_ptr<QueryMapping>(); // FIXME
+boost::shared_ptr<QueryMapping> TableStrategy::exportMapping() {
+    boost::shared_ptr<QueryMapping> qm(new QueryMapping());
+
+    LOGGER_DBG << __FILE__ ": _impl->chunkLevel : "
+               << _impl->chunkLevel << std::endl;
+    switch(_impl->chunkLevel) {
+    case 0:
+        break;
+    case 1:
+        LOGGER_DBG << __FILE__ ": calling  addChunkMap()"
+                   << std::endl;
+        qm->insertChunkEntry(CHUNKTAG);
+        break;
+    case 2:
+        LOGGER_DBG << __FILE__": calling  addSubChunkMap()"
+                   << std::endl;
+        qm->insertChunkEntry(CHUNKTAG);
+        qm->insertSubChunkEntry(SUBCHUNKTAG);
+        updateMappingFromTuples(*qm, _impl->tuples);
+        break;
+    default:
+        break;
+    }
+    return qm;
+
 }
 /// @return permuation count: 1 :singleton count (no subchunking)
-/// 
+///
 int TableStrategy::getPermutationCount() const {
     return 1;
 }
@@ -494,10 +479,10 @@ TableRefnListPtr TableStrategy::getPermutation(int permutation, TableRefnList co
     return oList;
 }
 
-void TableStrategy::setToPermutation(int permutation, TableRefnListPtr p) {
+void TableStrategy::setToPermutation(int permutation, TableRefnList& p) {
     // ignore permutation for now.
     inplaceComputeTable ict(_impl->tuples);
-    std::for_each(p->begin(), p->end(), ict);
+    std::for_each(p.begin(), p.end(), ict);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -512,9 +497,9 @@ void TableStrategy::_import(FromList const& f) {
     // Iterate over FromList elements
     TableRefnList const& tList = f.getTableRefnList();
     addTable a(_impl->tuples);
-    std::cout << "tablestrategy import" << std::endl;
-    std::for_each(tList.begin(), tList.end(),
-                  TableRefN::Fwrapper<addTable>(a));
+    std::for_each(tList.begin(), tList.end(), a);
+    updateChunkLevel ucl(*_impl->context.metadata);
+    std::for_each(_impl->tuples.begin(), _impl->tuples.end(), ucl);
 
     int chunkedTablesNumber = TableNamer::patchTuples(_impl->tuples);
     if(chunkedTablesNumber > 1) { _impl->chunkLevel = 2; }
@@ -526,44 +511,15 @@ void TableStrategy::_import(FromList const& f) {
     if(!_impl->context.metadata) {
         throw std::logic_error("Missing context.metadata");
     }
-    updateChunkLevel ucl(*_impl->context.metadata);
-    std::for_each(_impl->tuples.begin(), _impl->tuples.end(), ucl);
-
     _updateContext();
-
-    //computeTable c(_impl->tuples,0);
-    TableRefnList oList0(tList.size());
-    TableRefnList oList1(tList.size());
-    std::transform(tList.begin(), tList.end(),
-                   oList0.begin(), computeTable(_impl->tuples, 0));
-    std::transform(tList.begin(), tList.end(),
-                   oList1.begin(), computeTable(_impl->tuples, 1));
-
-#if 0 ////////////////////////////////////////////////////////////////////////
-    // construct mapping of TableName to a mappable table name
-    // Put essential info into QueryMapping so that a query can be
-    // substituted properly using a chunk spec without knowing the
-    // strategy.
-
-
-    // What we need to know:
-    // Are there partitioned tables? If yes, then make chunked queries
-    // (and include mappings). For each tableref that is chunked,
-    //
-    LOGGER_DBG << "Imported:::::";
-
-    std::copy(_impl->tuples.begin(), _impl->tuples.end(),
-              std::ostream_iterator<Tuple>(LOG_STRM(Debug), ","));
-    LOGGER_DBG << std::endl;
-
-#endif ////////////////////////////////////////////////////////////////////////
 }
+
 void TableStrategy::_updateContext() {
     // Patch context with mapping.
     if(_impl->context.queryMapping.get()) {
-        _impl->context.queryMapping->update(*getMapping());
+        _impl->context.queryMapping->update(*exportMapping());
     } else {
-        _impl->context.queryMapping = getMapping();
+        _impl->context.queryMapping = exportMapping();
     }
 }
 }}} // lsst::qserv::master

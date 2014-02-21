@@ -628,7 +628,6 @@ BOOST_AUTO_TEST_CASE(CountQuery2) {
     std::string stmt = "SELECT count(*) from LSST.Source;";
     std::string expected_100 = "SELECT count(*) AS QS1_COUNT FROM LSST.Source_100 AS QST_1_";
 
-
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
 
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
@@ -794,7 +793,16 @@ BOOST_AUTO_TEST_CASE(NoSpec) {
     std::string stmt = "SELECT s1.foo, s2.foo "
         "FROM Source s1 NATURAL LEFT JOIN Source s2 "
         "WHERE s1.bar = s2.bar;";
-    testStmt3(qsTest, stmt);
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    std::cout << "orig:" << stmt << std::endl;
+    qs->addChunk(makeChunkSpec(100,true));
+    QuerySession::Iter i = qs->cQueryBegin();
+    QuerySession::Iter e = qs->cQueryEnd();
+    BOOST_REQUIRE(i != e);
+    ChunkQuerySpec& first = *i;
+    std::cout << "out:" << first.queries[0] << std::endl;
+    //    BOOST_CHECK_EQUAL(first.queries.size(), 1);
+    //    BOOST_CHECK_EQUAL(first.queries[0], expected_100);
 }
 
 BOOST_AUTO_TEST_CASE(Union) {

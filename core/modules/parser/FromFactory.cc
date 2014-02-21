@@ -547,9 +547,7 @@ FromFactory::_import(antlr::RefAST a) {
         !refGen.isDone(); 
         refGen.next()) {
         TableRefN::Ptr p = refGen.get();
-        ss << "Found ref:" ;
-        TableRefN& tn = *p;
-        ss << tn;
+        ss << "Found ref:" << *p << std::endl;
         _list->_tableRefns->push_back(p);
     }
     std::string s(ss.str());
