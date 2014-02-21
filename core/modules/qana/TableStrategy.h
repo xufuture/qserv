@@ -41,11 +41,11 @@ class TableStrategy {
 public:
     TableStrategy(FromList const& f,
                   QueryContext& context);
-    boost::shared_ptr<QueryMapping> getMapping();
+    boost::shared_ptr<QueryMapping> exportMapping();
     //void scan(FromList const& f);
     int getPermutationCount() const;
     boost::shared_ptr<TableRefnList> getPermutation(int permutation, TableRefnList const& tList);
-    void setToPermutation(int permutation, boost::shared_ptr<TableRefnList> p);
+    void setToPermutation(int permutation, TableRefnList& p);
 
 private:
     class Impl;

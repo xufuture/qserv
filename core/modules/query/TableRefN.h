@@ -174,7 +174,8 @@ public:
     TableRefN::Ptr getLeft() { return left; }
     TableRefN::Ptr getRight() { return right; }
 
-    JoinSpec const* getSpec() const { return spec.get(); }
+    JoinSpec const* getSpecRO() const { return spec.get(); }
+    boost::shared_ptr<JoinSpec> getSpec() { return spec; }
 
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void putTemplate(QueryTemplate& qt) const;
