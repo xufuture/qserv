@@ -93,7 +93,7 @@ public:
         SimpleTableN* p = dynamic_cast<SimpleTableN*>(&t);
         if(p) {
             std::string table = p->getTable();
-            if(table.empty()) { 
+            if(table.empty()) {
                 throw std::logic_error("No table in SimpleTableN"); }
         if(p->getDb().empty()) { p->setDb(context.defaultDb); }
         if(firstDb.empty()) { firstDb = p->getDb(); }
@@ -282,7 +282,7 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     //           << fList.getGenerated()
     //           << (fList.isJoin() ? " is join" : "")
     //           << std::endl;
-    
+
     TableRefnList& tList = fList.getTableRefnList();
 
     // For each tableref, modify to add alias.
@@ -381,7 +381,7 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
     // templatable queries a list of partition tuples.
 
     // In order for this to work while preserving join syntax, we
-    // probably need to change the model. Previously, we did: 
+    // probably need to change the model. Previously, we did:
     // 1. Ingest a flattened sequence of tables.
     // 2. Look them up.
     // 3. (decide on subchunking)
@@ -402,9 +402,9 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
             outList.push_back(stmt);
             ++added;
     } else {
-        // Compute old.
+        ts.setToPermutation(0, fList.getTableRefnList());
     }
-    QueryMapping::Ptr qm = ts.getMapping();
+    QueryMapping::Ptr qm = ts.exportMapping();
 #else
     SphericalBoxStrategy s(fList, context);
     QueryMapping::Ptr qm = s.getMapping();
