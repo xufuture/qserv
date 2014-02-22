@@ -777,10 +777,17 @@ BOOST_AUTO_TEST_CASE(FreeIndex) {
     testStmt3(qsTest, stmt);
 }
 
-BOOST_AUTO_TEST_CASE(SpecIndex) {
+BOOST_AUTO_TEST_CASE(SpecIndexUsing) {
     // Equi-join syntax, not supported yet.
     std::string stmt = "SELECT s.ra, s.decl, o.foo "
         "FROM Object o JOIN Source s USING (objectIdObjTest) JOIN Source s2 USING (objectIdObjTest) "
+        "WHERE o.objectId = 430209694171136;";
+    testStmt3(qsTest, stmt);
+}
+
+BOOST_AUTO_TEST_CASE(SpecIndexOn) {
+    std::string stmt = "SELECT s.ra, s.decl, o.foo "
+        "FROM Object o JOIN Source s ON s.objectIdObjTest = o.objectIdObjTest JOIN Source s2 ON s.objectIdObjTest = s2.objectIdObjTest "
         "WHERE o.objectId = 430209694171136;";
     testStmt3(qsTest, stmt);
 }

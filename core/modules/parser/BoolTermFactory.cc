@@ -1,6 +1,6 @@
 /*
  * LSST Data Management System
- * Copyright 2013 LSST Corporation.
+ * Copyright 2013-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -32,6 +32,7 @@
 #include "query/Predicate.h"
 #include "parser/PredicateFactory.h"
 #include "parser/parseTreeUtil.h"
+#include "parser/ParseException.h"
 #include "parser/SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 
 #include "log/Logger.h"
@@ -134,13 +135,16 @@ BoolTerm::Ptr
 BoolTermFactory::newBoolTerm(antlr::RefAST a) {
     BoolTerm::Ptr b;
     antlr::RefAST child = a->getFirstChild();
+    //std::cout << "New bool term token: " << a->getType() << std::endl;
     switch(a->getType()) {
     case SqlSQL2TokenTypes::OR_OP: b = newOrTerm(child); break;
     case SqlSQL2TokenTypes::AND_OP: b = newAndTerm(child); break;
     case SqlSQL2TokenTypes::BOOLEAN_FACTOR: b = newBoolFactor(child); break;
     case SqlSQL2TokenTypes::VALUE_EXP:
+        throw ParseException("Unexpected VALUE_EXP, expected BOOLTERM", a);
         b = newUnknown(a); break; // Value expr not expected here.
     default:
+        throw ParseException("Expected BOOLTERM, got unknown token", a);
         b = newUnknown(a); break;
     }
     return b;

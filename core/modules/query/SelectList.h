@@ -57,7 +57,8 @@ public:
         {}
     ~SelectList() {}
     void addStar(std::string const& table);
-    void dbgPrint() const;
+    void dbgPrint(std::ostream& os) const;
+
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
     boost::shared_ptr<SelectList> copyDeep();

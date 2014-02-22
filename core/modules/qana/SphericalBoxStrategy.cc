@@ -210,7 +210,6 @@ public:
     int chunkLevel;
 };
 
-
 //template <typename G, typename A>
 class addTable : public TableRefN::Func {
 public:
