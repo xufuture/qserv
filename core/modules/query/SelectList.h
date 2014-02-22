@@ -61,7 +61,7 @@ public:
         return _columnRefMap;
     }
     void addStar(antlr::RefAST table);
-    void dbgPrint() const;
+    void dbgPrint(std::ostream& os) const;
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
     boost::shared_ptr<SelectList> copyDeep();

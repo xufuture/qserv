@@ -108,10 +108,10 @@ SelectParser::SelectParser(std::string const& statement)
 void
 SelectParser::setup() {
     _selectStmt.reset(new SelectStmt());
-    _aParser.reset(new AntlrParser(_statement));
+    _aParser.reset(new AntlrParser(_statement)); 
     // model 3: parse tree construction to build intermediate expr.
     SelectFactory sf;
-    sf.attachTo(_aParser->parser);
+    sf.attachTo(_aParser->parser); 
     _aParser->run();
     _selectStmt = sf.getStatement();
     _selectStmt->diagnose();

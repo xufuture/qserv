@@ -102,7 +102,7 @@ qMaster::SelectStmt::SelectStmt() {
 
 void qMaster::SelectStmt::diagnose() {
     //_selectList->getColumnRefList()->printRefs();
-    _selectList->dbgPrint();
+    //_selectList->dbgPrint(std::cout);
     _generate();
 
 }

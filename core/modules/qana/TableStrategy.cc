@@ -261,9 +261,7 @@ public:
 
 class addTable { //: public TableRefN::Func {
 public:
-    addTable(Tuples& tuples) : _tuples(tuples) {
-        std::cout << "addTable construct\n";
-    }
+    addTable(Tuples& tuples) : _tuples(tuples) { }
     void operator()(TableRefN::Ptr t) {
         SimpleTableN::Ptr st(boost::dynamic_pointer_cast<SimpleTableN>(t));
         if(st) {

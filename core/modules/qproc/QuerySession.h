@@ -101,7 +101,7 @@ private:
     void _applyLogicPlugins();
     void _generateConcrete();
     void _applyConcretePlugins();
-    void _showFinal(); // Debug
+    void _showFinal(std::ostream& os); // Debug
 
     // Iterator help
     std::vector<std::string> _buildChunkQueries(ChunkSpec const& s);
