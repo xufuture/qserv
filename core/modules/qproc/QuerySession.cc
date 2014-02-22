@@ -75,6 +75,7 @@ void QuerySession::setQuery(std::string const& inputQuery) {
 
     SelectParser::Ptr p;
     try {
+
         p = SelectParser::newInstance(inputQuery);
         p->setup();
         _stmt = p->getSelectStmt();
@@ -82,7 +83,7 @@ void QuerySession::setQuery(std::string const& inputQuery) {
         _applyLogicPlugins();
         _generateConcrete();
         _applyConcretePlugins();
-        _showFinal(); // DEBUG
+        //_showFinal(std::cout); // DEBUG
     } catch(ParseException& e) {
         _error = std::string("ParseException:") + e.what();
     } catch(antlr::NoViableAltException& e) {
@@ -249,18 +250,18 @@ void QuerySession::_applyConcretePlugins() {
 
 
 /// Some code useful for debugging.
-void QuerySession::_showFinal() {
+void QuerySession::_showFinal(std::ostream& os) {
     // Print out the end result.
     QueryTemplate par = _stmtParallel.front()->getTemplate();
     QueryTemplate mer = _stmtMerge->getTemplate();
 
-    LOGGER_INF << "QuerySession::_showFinal() : parallel: " << par.dbgStr() << std::endl;
-    LOGGER_INF << "QuerySession::_showFinal() : merge: " << mer.dbgStr() << std::endl;
+    os << "QuerySession::_showFinal() : parallel: " << par.dbgStr() << std::endl;
+    os << "QuerySession::_showFinal() : merge: " << mer.dbgStr() << std::endl;
     if(!_context->scanTables.empty()) {
         StringPairList::const_iterator i,e;
         for(i=_context->scanTables.begin(), e=_context->scanTables.end();
             i != e; ++i) {
-            LOGGER_INF << "ScanTable: " << i->first << "." << i->second
+            os << "ScanTable: " << i->first << "." << i->second
                        << std::endl;
         }
     }
@@ -343,9 +344,9 @@ ChunkQuerySpec& QuerySession::Iter::dereference() const {
 void QuerySession::Iter::_buildCache() const {
     assert(_qs != NULL);
     _cache.db = _qs->_context->defaultDb;
-    LOGGER_INF << "scantables "
-               << (_qs->_context->scanTables.empty() ? "is " : "is not ")
-               << " empty" << std::endl;
+    // LOGGER_INF << "scantables "
+    //            << (_qs->_context->scanTables.empty() ? "is " : "is not ")
+    //            << " empty" << std::endl;
 
     _cache.scanTables = _qs->_context->scanTables;
     _cache.queries = _qs->_buildChunkQueries(*_pos);

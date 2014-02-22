@@ -71,7 +71,7 @@ JoinRefN::putStream(std::ostream& os) const {
     os << "Join(";
     if(left) { left->putStream(os); }
     else { os << "<BROKEN_JOIN>";}
-    os << jt.generate();
+    os << " " + jt.generate() + " ";
     if(right) {right->putStream(os); }
     else { os << "<BROKEN_JOIN>";}
     return os;
@@ -120,7 +120,7 @@ void JoinRefN::_putJoinTemplate(QueryTemplate& qt) const {
     case RIGHT: qt.append("RIGHT"); qt.append("OUTER"); break;
     case FULL: qt.append("FULL"); qt.append("OUTER"); break;
     case CROSS: qt.append("CROSS"); break;
-    case UNION: qt.append("INNER"); break;
+    case UNION: qt.append("UNION"); break;
     }
 
     qt.append("JOIN");
