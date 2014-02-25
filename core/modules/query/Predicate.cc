@@ -22,7 +22,7 @@
 /**
   * @file Predicate.cc
   *
-  * @brief Predicate, CompPredicate, InPredicate, BetweenPredicate implementations.
+  * @brief Predicate, CompPredicate, InPredicate, BetweenPredicate, LikePredicate, and NullPredicate implementations.
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -62,6 +62,10 @@ void LikePredicate::findColumnRefs(ColumnRef::List& list) {
     if(charValue) { charValue->findColumnRefs(list); }
 }
 
+void NullPredicate::findColumnRefs(ColumnRefMap::List& list) {
+    if(value) { value->findColumnRefs(list); }
+}
+
 std::ostream& qMaster::CompPredicate::putStream(std::ostream& os) const {
     // FIXME
     return os;
@@ -77,6 +81,9 @@ std::ostream& qMaster::BetweenPredicate::putStream(std::ostream& os) const {
 std::ostream& qMaster::LikePredicate::putStream(std::ostream& os) const {
     // FIXME
     return os;
+}
+std::ostream& qMaster::NullPredicate::putStream(std::ostream& os) const { 
+    return os; 
 }
 
 void qMaster::CompPredicate::renderTo(QueryTemplate& qt) const {
@@ -120,6 +127,14 @@ void qMaster::LikePredicate::renderTo(QueryTemplate& qt) const {
     r(charValue);
 }
 
+void qMaster::NullPredicate::renderTo(QueryTemplate& qt) const {
+    ValueExpr::render r(qt, false);
+    r(value);
+    qt.append("IS");
+    if(hasNot) { qt.append("NOT"); }
+    qt.append("NULL");
+}
+
 void CompPredicate::cacheValueExprList() {
     _cache.reset(new ValueExprList());
     _cache->push_back(left);
@@ -141,6 +156,10 @@ void LikePredicate::cacheValueExprList() {
     _cache.reset(new ValueExprList());
     _cache->push_back(value);
     _cache->push_back(charValue);
+}
+void NullPredicate::cacheValueExprList() {
+    _cache.reset(new ValueExprList());
+    _cache->push_back(value);
 }
 
 
@@ -200,6 +219,13 @@ BfTerm::Ptr LikePredicate::copySyntax() const {
     LikePredicate* p = new LikePredicate;
     if(value) p->value = value->clone();
     if(charValue) p->charValue = charValue->clone();
+    return BfTerm::Ptr(p);
+}
+
+BfTerm::Ptr NullPredicate::copySyntax() const {
+    NullPredicate* p = new NullPredicate();
+    if(value) p->value = value->clone();
+    p->hasNot = hasNot;
     return BfTerm::Ptr(p);
 }
 

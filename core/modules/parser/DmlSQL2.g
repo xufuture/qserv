@@ -787,10 +787,10 @@ row_predicate :
             | in_predicate {#row_predicate = #([IN_PREDICATE, "IN_PREDICATE"], row_predicate);}
             | like_predicate {#row_predicate = #([LIKE_PREDICATE, "LIKE_PREDICATE"], row_predicate);}
             )
-        | null_predicate 
-	    | quantified_comp_predicate 
-	    | match_predicate 
-	    | overlaps_predicate 
+        | null_predicate {#row_predicate = #([NULL_PREDICATE, "NULL_PREDICATE"], row_predicate);}
+	    | quantified_comp_predicate {#row_predicate = #([QUANTIFIED_COMP_PREDICATE, "QUANTIFIED_COMP_PREDICATE"], row_predicate);}
+	    | match_predicate {#row_predicate = #([MATCH_PREDICATE, "MATCH_PREDICATE"], row_predicate);}
+	    | overlaps_predicate {#row_predicate = #([OVERLAPS_PREDICATE, "OVERLAPS_PREDICATE"], row_predicate);}
 	    )
     ;
 //}
