@@ -200,13 +200,36 @@ public:
 
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
-    /// Deep copy this term.
+    virtual BfTerm::Ptr copySyntax() const;
+
+    boost::shared_ptr<ValueExpr> value;
+    boost::shared_ptr<ValueExpr> charValue;
+private:
+    boost::shared_ptr<Predicate::ValueExprList> _cache;
+};
+
+/// NullPredicate is a Predicate involving a row value compared to NULL
+class NullPredicate : public Predicate {
+public:
+    typedef boost::shared_ptr<NullPredicate> Ptr;
+    typedef std::list<Ptr> PtrList;
+
+    virtual ~NullPredicate() {}
+    virtual char const* getName() const { return "NullPredicate"; }
+
+    virtual void cacheValueExprList();
+    virtual ValueExprList::iterator valueExprCacheBegin() { return _cache->begin(); }
+    virtual ValueExprList::iterator valueExprCacheEnd() { return _cache->end(); }
+    virtual void findColumnRefs(ColumnRefMap::List& list);
+
+    virtual std::ostream& putStream(std::ostream& os) const;
+    virtual void renderTo(QueryTemplate& qt) const;
     virtual BfTerm::Ptr copySyntax() const;
 
     static int reverseOp(int op); // Reverses operator token
 
     boost::shared_ptr<ValueExpr> value;
-    boost::shared_ptr<ValueExpr> charValue;
+    bool hasNot;
 private:
     boost::shared_ptr<Predicate::ValueExprList> _cache;
 };

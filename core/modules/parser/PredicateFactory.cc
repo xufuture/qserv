@@ -29,6 +29,7 @@
   */
 
 #include "query/Predicate.h"
+#include <boost/algorithm/string.hpp>
 #include "parser/PredicateFactory.h"
 #include "parser/ValueExprFactory.h"
 #include "SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
@@ -93,6 +94,28 @@ boost::shared_ptr<LikePredicate> PredicateFactory::newLikePredicate(antlr::RefAS
     p->value = _vf.newExpr(value->getFirstChild());
     p->charValue = _vf.newExpr(pattern->getFirstChild());
     LikePredicate& lp = *p;
+    return p;
+}
+
+boost::shared_ptr<NullPredicate> PredicateFactory::newNullPredicate(antlr::RefAST a) {
+    boost::shared_ptr<NullPredicate> p(new NullPredicate());
+    std::cout << walkIndentedString(a);
+
+    if(a->getType() == SqlSQL2TokenTypes::NULL_PREDICATE) { a = a->getFirstChild(); }
+    RefAST value = a;
+    RefAST isToken = value->getNextSibling();
+    RefAST nullToken = isToken->getNextSibling();
+    std::string notCand = tokenText(nullToken);
+    boost::to_upper(notCand);
+    if(notCand == "NOT") {
+        p->hasNot = true;
+        nullToken = nullToken->getNextSibling();
+    } else {
+        p->hasNot = false;
+    }
+
+    p->value = _vf.newExpr(value->getFirstChild());
+    NullPredicate& np = *p; // for debugging
     return p;
 }
 
