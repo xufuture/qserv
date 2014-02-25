@@ -113,6 +113,19 @@ void BoolTermFactory::bfImport::operator()(antlr::RefAST a) {
     case SqlSQL2TokenTypes::LIKE_PREDICATE:
         _bfr._terms.push_back(_pf.newLikePredicate(a));
         break;
+    case SqlSQL2TokenTypes::NULL_PREDICATE:
+        _bfr._terms.push_back(_pf.newNullPredicate(a));
+        break;
+    case SqlSQL2TokenTypes::QUANTIFIED_COMP_PREDICATE:
+        throw std::logic_error("QUANTIFIED_COMP_PREDICATE unsupported.");
+        break;
+    case SqlSQL2TokenTypes::MATCH_PREDICATE:
+        throw std::logic_error("MATCH_PREDICATE unsupported.");
+        break;
+    case SqlSQL2TokenTypes::OVERLAPS_PREDICATE:
+        throw std::logic_error("OVERLAPS_PREDICATE unsupported.");
+        break;
+
     case SqlSQL2TokenTypes::AND_OP:
     case SqlSQL2TokenTypes::OR_OP:
         _bfr._terms.push_back(_bf.newBoolTermFactor(a));

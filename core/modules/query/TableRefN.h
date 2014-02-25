@@ -200,6 +200,57 @@ protected:
     boost::shared_ptr<JoinSpec> spec;
 };
 
+
+class JoinRef;
+typedef std::list<boost::shared_ptr<JoinRef> > JoinRefList;
+/// TableRefN2 is a parsed table reference node
+// table_ref :
+//   table_ref_aux (options{greedy=true;}:qualified_join | cross_join)*
+// table_ref_aux :
+//   (n:table_name | /*derived_table*/q:table_subquery) ((as:"as")? c:correlation_name (LEFT_PAREN derived_column_list RIGHT_PAREN)?)?
+class TableRefN2 {
+public:
+    typedef boost::shared_ptr<TableRefN2> Ptr;
+    typedef std::list<Ptr> PtrList;
+    virtual ~TableRefN2() {}
+
+    virtual std::ostream& putStream(std::ostream& os) const;
+    virtual void putTemplate(QueryTemplate& qt) const;
+
+    bool isSimple() const { return joinRefList.empty(); }
+    virtual std::string const& getDb() const { return db; }
+    virtual std::string const& getTable() const { return table; }
+    virtual std::string const& getAlias() const { return alias; }
+
+    virtual JoinRef const* getJoinRef(int i=0) const;
+    virtual JoinRefList const& getJoins() const {
+        return joinRefList; }
+
+    // Modifiers
+    virtual void setAlias(std::string const& a) { alias=a; }
+    virtual void setDb(std::string const& db_) { db = db_; }
+    virtual void setTable(std::string const& table_) { table = table_; }
+    virtual JoinRefList& getJoins() {
+        return joinRefList; }
+
+    struct Pfunc {
+        virtual std::list<TableRefN::Ptr> operator()(SimpleTableN const& t) = 0;
+    };
+    virtual std::list<TableRefN::Ptr> permute(Pfunc& p) const;
+    virtual TableRefN2::Ptr clone() const {
+        // FIXME do deep copy.
+        return Ptr(new TableRefN2(*this));
+    }
+
+    class render;
+private:
+    std::string alias;
+    std::string db;
+    std::string table;
+    JoinRefList joinRefList;
+    
+};
+
 // Containers
 typedef std::list<TableRefN::Ptr> TableRefnList;
 typedef boost::shared_ptr<TableRefnList> TableRefnListPtr;

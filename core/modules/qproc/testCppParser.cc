@@ -1,6 +1,6 @@
 /*
  * LSST Data Management System
- * Copyright 2009-2013 LSST Corporation.
+ * Copyright 2009-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -153,6 +153,12 @@ struct ParserFixture {
                                        1,         // 1-level chunking
                                        0x0011);   // 1-level persisted
 
+        mc->addTbInfoPartitionedSphBox("LSST", "RefObjMatch", // FIXME (bogus)
+                                       0.025,     // actual overlap
+                                       "ra", "decl", "objectId",  // warning: unsure if the objectId col is right
+                                       1, 2, 0,   // positions of the above columns, unsure if 0 is correct
+                                       2,         // 2-level chunking
+                                       0x0011);   // 1-level persisted
 
         mc->addDbInfoPartitionedSphBox("rplante_PT1_2_u_pt12prod_im3000_qserv",
                                        60,        // number of stripes
@@ -891,7 +897,7 @@ BOOST_AUTO_TEST_CASE(Case01_1013) {
     testStmt3(qsTest, stmt);
 }
 
-#if 0
+
 // ASC and maybe USING(...) syntax not supported currently.
 // Bug applying spatial restrictor to Filter (non-partitioned) is #2052
 BOOST_AUTO_TEST_CASE(Case01_1030) {
@@ -901,15 +907,15 @@ BOOST_AUTO_TEST_CASE(Case01_1030) {
         "WHERE qserv_areaspec_box(355, 0, 360, 20) AND filterName = 'g' "
         "ORDER BY objectId, taiMidPoint ASC;";
     std::string expected = "SELECT objectId,taiMidPoint,scisql_fluxToAbMag(psfFlux) FROM LSST.%$#Source%$# JOIN LSST.%$#Object%$# USING(objectId) JOIN LSST.Filter USING(filterId) WHERE (scisql_s2PtInBox(LSST.%$#Source%$#.raObjectTest,LSST.%$#Source%$#.declObjectTest,355,0,360,20) = 1) AND (scisql_s2PtInBox(LSST.%$#Object%$#.ra_Test,LSST.%$#Object%$#.decl_Test,355,0,360,20) = 1) AND filterName='g' ORDER BY objectId,taiMidPoint ASC;";
-
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
+    testStmt3(qsTest, stmt);
+#if 0    // FIXME
     BOOST_CHECK(spr->getHasChunks());
     BOOST_CHECK(!spr->getHasSubChunks());
     // Aggregation for qserv means a different chunk query
     // and some form of post-fixup query.
     BOOST_CHECK(spr->getHasAggregate());
     BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
+#endif
     // std::cout << "Parse output:" << spr->getParseResult() << std::endl;
     // But should have a check for ordering-type fixups.
     // "JOIN" syntax, "ORDER BY" with "ASC"
@@ -918,13 +924,15 @@ BOOST_AUTO_TEST_CASE(Case01_1030) {
 BOOST_AUTO_TEST_CASE(Case01_1052) {
     std::string stmt = "SELECT DISTINCT rFlux_PS FROM Object;";
     std::string expected = "SELECT DISTINCT rFlux_PS FROM LSST.%$#Object%$#;";
-
+    testStmt3(qsTest, stmt);
+#if 0 // FIXME
     SqlParseRunner::Ptr spr = getRunner(stmt);
     testStmt2(spr);
     BOOST_CHECK(spr->getHasChunks());
     BOOST_CHECK(!spr->getHasSubChunks());
     BOOST_CHECK(spr->getHasAggregate());
     BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
+#endif
     // FIXME: this is a different kind of aggregation syntax than
     // sum() or count(). Maybe another check separate from
     // HasAggregate().
@@ -938,12 +946,15 @@ BOOST_AUTO_TEST_CASE(Case01_1081) {
         "INNER JOIN RefObjMatch o2t ON (o.objectId = o2t.objectId) "
         "LEFT  JOIN SimRefObject t ON (o2t.refObjectId = t.refObjectId) "
         "WHERE  closestToObj = 1 OR closestToObj is NULL;";
+    testStmt3(qsTest, stmt);
+#if 0 // FIXME
     SqlParseRunner::Ptr spr = getRunner(stmt);
     testStmt2(spr);
     BOOST_CHECK(spr->getHasChunks());
     BOOST_CHECK(!spr->getHasSubChunks()); // Are RefObjMatch and
                                           // SimRefObject chunked/subchunked?
     BOOST_CHECK(spr->getHasAggregate());
+#endif
     // JOIN syntax, "is NULL" syntax
 }
 
@@ -951,7 +962,8 @@ BOOST_AUTO_TEST_CASE(Case01_1083) {
     std::string stmt = "select objectId, sro.*, (sro.refObjectId-1)/2%pow(2,10) typeId "
         "from Source s join RefObjMatch rom using (objectId) "
         "join SimRefObject sro using (refObjectId) where isStar =1 limit 10;";
-
+    testStmt3(qsTest, stmt);
+#if 0 // FIXME
     SqlParseRunner::Ptr spr = getRunner(stmt);
     testStmt2(spr);
     BOOST_CHECK(spr->getHasChunks());
@@ -959,6 +971,7 @@ BOOST_AUTO_TEST_CASE(Case01_1083) {
                                           // SimRefObject chunked/subchunked?
     BOOST_CHECK(!spr->getHasAggregate());
     // arith expr in column spec, JOIN ..USING() syntax
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(Case01_2001) {
@@ -973,12 +986,15 @@ BOOST_AUTO_TEST_CASE(Case01_2001) {
 "< (0.08 + 0.42 * (scisql_fluxToAbMag(gFlux_PS)-scisql_fluxToAbMag(rFlux_PS) - 0.96)) "
         " OR scisql_fluxToAbMag(gFlux_PS)-scisql_fluxToAbMag(rFlux_PS) > 1.26 ) "
         "AND    scisql_fluxToAbMag(iFlux_PS)-scisql_fluxToAbMag(zFlux_PS) < 0.8;";
+    testStmt3(qsTest, stmt);
+#if 0 // FIXME
     SqlParseRunner::Ptr spr = getRunner(stmt);
     testStmt2(spr);
     BOOST_CHECK(spr->getHasChunks());
     BOOST_CHECK(!spr->getHasSubChunks());
     BOOST_CHECK(!spr->getHasAggregate());
     // complex.
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(Case01_2004) {
@@ -990,26 +1006,32 @@ BOOST_AUTO_TEST_CASE(Case01_2004) {
         "FROM Object WHERE rFlux_PS > 10;";
     std::string expected = "SELECT COUNT(*) AS totalCount,SUM(CASE WHEN(typeId=3) THEN 1 ELSE 0 END) AS galaxyCount FROM LSST.%$#Object%$# WHERE rFlux_PS>10;";
 
+    testStmt3(qsTest, stmt);
+#if 0 // FIXME
     SqlParseRunner::Ptr spr = getRunner(stmt);
     testStmt2(spr);
     BOOST_CHECK(spr->getHasChunks());
     BOOST_CHECK(!spr->getHasSubChunks());
     BOOST_CHECK(spr->getHasAggregate());
     BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(Case01_2006) {
     std::string stmt = "SELECT scisql_fluxToAbMag(uFlux_PS) "
         "FROM   Object WHERE  (objectId % 100 ) = 40;";
+    testStmt3(qsTest, stmt);
+#if 0 // FIXME
     SqlParseRunner::Ptr spr = getRunner(stmt);
     testStmt2(spr);
     BOOST_CHECK(spr->getHasChunks());
     BOOST_CHECK(!spr->getHasSubChunks());
     BOOST_CHECK(!spr->getHasAggregate());
+#endif
     //std::cout << "--SAMPLING--" << spr->getParseResult() << std::endl;
     // % op in WHERE clause
 }
-#endif // End: To be migrated to new parser interface in later ticket.
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // SELECT o1.id as o1id,o2.id as o2id,
