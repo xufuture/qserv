@@ -27,36 +27,20 @@
 #include "log/Logger.h"
 #include "meta/MetadataCache.h"
 #include "query/FromList.h"
-#include "query/TableRefN.h"
+#include "query/TableRef.h"
+#include "query/JoinRef.h"
 #include "query/JoinSpec.h"
 #include "query/QueryContext.h"
-
 
 #define CHUNKTAG "%CC%"
 #define SUBCHUNKTAG "%SS%"
 #define FULLOVERLAPSUFFIX "FullOverlap"
 
-
 #define DEBUG 1
 
 namespace { // File-scope helpers
-
 }
 
-#if 0 ////////////////////////////////////////////////////////////////////////
-std::ostream& operator<<(std::ostream& os, Tuple const& t) {
-
-    os << t.db << ".";
-    os << "(" << t.prePatchTable << ")";
-    std::copy(t.tables.begin(), t.tables.end(),
-              std::ostream_iterator<std::string>(os, ","));
-    os << "_c" << t.chunkLevel << "_";
-    if(!t.allowed) { os << "ILLEGAL"; }
-    return os;
-}
-
-inline void addChunkMap(lsst::qserv::master::QueryMapping& m) {
-#endif ////////////////////////////////////////////////////////////////////////
 namespace lsst {
 namespace qserv {
 namespace master {
@@ -70,30 +54,38 @@ public:
         {}
 };
 
-
 struct Tuple {
     Tuple(std::string const& db_,
           std::string const& prePatchTable_,
           std::string const& alias_,
-          TableRefN const* node_)
+          TableRef const* node_)
         : db(db_),
           prePatchTable(prePatchTable_),
           alias(alias_),
           chunkLevel(-1),
-          node(node_) { node = 0;
-    }
-    Tuple(TableRefN const* node_) :
-        db(""), prePatchTable(""), alias(""),
-        node(node_) { node = 0;}
+          node(node_) {}
     std::string db;
     std::list<std::string> tables;
     std::string prePatchTable;
     std::string alias;
     int allowed;
     int chunkLevel;
-    TableRefN const* node;
+    TableRef const* node;
 };
 typedef std::deque<Tuple> Tuples;
+#if 0 ////////////////////////////////////////////////////////////////////////
+std::ostream& operator<<(std::ostream& os, Tuple const& t) {
+
+    os << t.db << ".";
+    os << "(" << t.prePatchTable << ")";
+    std::copy(t.tables.begin(), t.tables.end(),
+              std::ostream_iterator<std::string>(os, ","));
+    os << "_c" << t.chunkLevel << "_";
+    if(!t.allowed) { os << "ILLEGAL"; }
+    return os;
+}
+
+#endif ////////////////////////////////////////////////////////////////////////
 
 class TableNamer {
 public:
@@ -170,85 +162,6 @@ inline void updateMappingFromTuples(QueryMapping& m, Tuples const& tuples) {
     }
 }
 
-#if 0 ////////////////////////////////////////////////////////////////////////
-class patchTable : public TableRefN::Func {
-public:
-    typedef Tuples::const_iterator TupleCiter;
-    patchTable(Tuples& tuples)
-        : _tuples(tuples),
-          _i(tuples.begin()),
-          _end(tuples.end()) {
-    }
-    virtual void operator()(TableRefN& t) {
-        SimpleTableN* p = dynamic_cast<SimpleTableN*>(&t);
-        if(p) {
-            std::string table = p->getTable();
-            if(table.empty()) {
-                throw std::logic_error("SimpleTableN: missing table"); }
-            if(_i == _end) {
-                throw std::invalid_argument("TableRefN missing table.");
-            }
-            // std::cout << "Patching tablerefn:" << t << std::endl;
-            p->setDb(_i->db);
-            // Always use the first table. A different function will be
-            // used when multiple tables are involved.
-            if(_i->tables.empty()) {
-                throw std::logic_error("Missing patched table");
-            } else {
-                p->setTable(_i->tables.front());
-            }
-            ++_i;
-        } else {
-            t.apply(*this);
-        }
-    }
-private:
-    Tuples& _tuples;
-    TupleCiter _i;
-    TupleCiter _end;
-
-    // G _generate; // Functor that creates a new alias name
-    // A _addMap; // Functor that adds a new alias mapping for matchin
-    //            // later clauses.
-};
-class composeOverlap {
-public:
-    composeOverlap()
-        : listCore(new TableRefnList()),
-          listOverlap(new TableRefnList()),
-          _firstSubChunkTable(true) {
-    }
-    virtual void operator()(Tuple const& t) {
-        // Idea: Make a TableRefN from each and add it to each list
-        typedef std::list<std::string>::const_iterator Iter;
-        Iter i=t.tables.begin();
-        Iter e=t.tables.end();
-        boost::shared_ptr<SimpleTableN> rn1;
-        boost::shared_ptr<SimpleTableN> rn2;
-        rn1.reset(new SimpleTableN(t.db, *i, t.alias));
-        ++i;
-        if(_firstSubChunkTable || (i==e))  {
-            rn2.reset(new SimpleTableN(*rn1));
-        } else {
-            rn2.reset(new SimpleTableN(t.db, *i, t.alias));
-            ++i;
-            if(i != e) {
-                throw std::logic_error("Unexpected third table entry");
-            }
-        }
-        if(t.chunkLevel == 2) {
-            _firstSubChunkTable = false;
-        }
-        listCore->push_back(rn1);
-        listOverlap->push_back(rn2);
-    }
-    boost::shared_ptr<TableRefnList> listCore;
-    boost::shared_ptr<TableRefnList> listOverlap;
-private:
-    bool _firstSubChunkTable;
-};
-#endif ////////////////////////////////////////////////////////////////////////
-
 class TableStrategy::Impl {
 public:
     Impl(QueryContext& context_) : context(context_) {}
@@ -259,30 +172,21 @@ public:
     int chunkLevel;
 };
 
-class addTable { //: public TableRefN::Func {
+class addTable : public TableRef::Func {
 public:
     addTable(Tuples& tuples) : _tuples(tuples) { }
-    void operator()(TableRefN::Ptr t) {
-        SimpleTableN::Ptr st(boost::dynamic_pointer_cast<SimpleTableN>(t));
-        if(st) {
-            std::string table = st->getTable();
-
-            if(table.empty()) {
-                throw std::logic_error("Missing table in SimpleTableN");
-            }
-            _tuples.push_back(Tuple(st->getDb(), table,
-                                    st->getAlias(), st.get()));
-        } else {
-            JoinRefN::Ptr jr = boost::dynamic_pointer_cast<JoinRefN>(t);
-            if(jr) {
-                (*this)(jr->getLeft());
-                (*this)(jr->getRight());
-            } else {
-                // Not Simple and not Join... shouldn't happen.
-            }
-        }
-
+    void operator()(TableRef::Ptr t) {
+        if(t.get()) { t->applySimple(*this); }
     }
+    virtual void operator()(TableRef& t) {
+        std::string table = t.getTable();
+        if(table.empty()) {
+            throw std::logic_error("Missing table in TableRef");
+        }
+        _tuples.push_back(Tuple(t.getDb(), table,
+                                t.getAlias(), &t));
+    }
+
 private:
     Tuples& _tuples;
 };
@@ -304,127 +208,90 @@ public:
     }
     MetadataCache& metadata;
 };
-class inplaceComputeTable {
+class inplaceComputeTable : public TableRef::Func {
 public:
     // FIXME: How can we consolidate with computeTable?
     inplaceComputeTable(Tuples& tuples) :_tuples(tuples) {
     }
-    Tuple& getTuple(SimpleTableN::Ptr t) {
+    Tuple& getTuple(TableRef& t) {
         // FIXME: Switch to map and rethink the system
         typedef Tuples::iterator Iter;
         for(Iter i=_tuples.begin(),e=_tuples.end(); i != e; ++i) {
-            if(i->prePatchTable == t->getTable()) { return *i; }
+            if(i->node == &t) { return *i; }
         }
-        throw std::logic_error("Not found in tuples");
+        throw std::logic_error("Not found in tuples (inplace)");
     }
-    virtual void operator()(TableRefN::Ptr t) {
-        SimpleTableN::Ptr st(boost::dynamic_pointer_cast<SimpleTableN>(t));
-        if(st) {
-            Tuple& tuple = getTuple(st);
-            st->setDb(tuple.db);
-            st->setTable(tuple.tables.front());
-        } else {
-            JoinRefN::Ptr jr = boost::dynamic_pointer_cast<JoinRefN>(t);
-            if(!jr) {
-                throw std::logic_error("TableRefN not SimpleTableN or JoinRefN");
-            }
-            (*this)(jr->getLeft());
-            (*this)(jr->getRight());
-        }
+    virtual void operator()(TableRef::Ptr t) {
+        t->applySimple(*this);
+    }
+    virtual void operator()(TableRef& t) {
+        Tuple& tuple = getTuple(t);
+        t.setDb(tuple.db);
+        t.setTable(tuple.tables.front());
     }
     Tuples& _tuples;
 };
-class computeTable : public TableRefN::Func {
+class computeTable : public TableRef::Func {
 public:
     computeTable(Tuples& tuples, int permutation)
         : _tuples(tuples), _permutation(permutation) {
         // Should already know how many permutations. 0 - (n-1)
     }
-    virtual TableRefN::Ptr operator()(TableRefN::Ptr t) {
-        return visit(t);
+    virtual TableRef::Ptr operator()(TableRef::Ptr t) {
+        return visit(*t);
         // See if tuple matches table.
         // if t in tuples,
         // else, if simple, return copy
         // if not simple, visit both sides.
 
-
         // if match, replace. otherwise, it's compound. For now, just
         // visit both sides of the join.
     }
-    inline TableRefN::Ptr visit(TableRefN::Ptr t) {
-        int perm = 0;
-        TableRefN::Ptr newT = lookup(t, perm);
-        if(newT) { return newT; }
-        else if(t->isSimple()) {
-            // else, if simple, return copy
-            SimpleTableN::Ptr st(boost::dynamic_pointer_cast<SimpleTableN>(t));
-            std::cout << "passthrough table: " << st->getTable() << std::endl;
-            return st->clone();
+    inline TableRef::Ptr visit(TableRef const& t) {
+        TableRef::Ptr newT = lookup(t, _permutation);
+        if(!newT) {
+            newT.reset(new TableRef(t.getDb(), t.getTable(), t.getAlias()));
+            std::cout << "passthrough table: " << t.getTable() << std::endl;
         }
-        JoinRefN::Ptr jr = boost::dynamic_pointer_cast<JoinRefN>(t);
-        if(!jr) {
-            throw std::logic_error("TableRefN not SimpleTableN or JoinRefN");
+        JoinRefList const& jList = t.getJoins();
+        typedef JoinRefList::const_iterator Iter;
+        for(Iter i=jList.begin(), e=jList.end(); i != e; ++i) {
+            JoinRef const& j = **i;
+            TableRef::Ptr right = visit(*j.getRightRO());
+            JoinRef::Ptr r(new JoinRef(right, j.getJoinType(),
+                                       j.isNatural(),
+                                       j.getSpecRO()->clone()));
+            newT->addJoin(r);
         }
-        boost::shared_ptr<JoinSpec> spec = jr->getSpec();
-        if(spec) { spec = boost::shared_ptr<JoinSpec>(spec->clone()); }
-        JoinRefN::Ptr njr(new JoinRefN(
-                              visit(jr->getLeft()),
-                              visit(jr->getRight()),
-                              jr->getJoinType(),
-                              jr->getIsNatural(),
-                              spec));
-        return njr;
+        return newT;
     }
-    Tuple& getTuple(SimpleTableN::Ptr t) {
+    Tuple& getTuple(TableRef const& t) {
         // FIXME: Switch to map and rethink the system
         typedef Tuples::iterator Iter;
         for(Iter i=_tuples.begin(),e=_tuples.end(); i != e; ++i) {
-            if(i->node == t.get()) { return *i; }
+            if(i->node == &t) { return *i; }
         }
-        throw std::logic_error("Not found in tuples");
+        throw std::logic_error("Not found in tuples (compute)");
     }
-    TableRefN::Ptr lookup(TableRefN::Ptr t, int permutation) {
-        // Don't handle non-simple right now.
-        if(!t->isSimple()) { return TableRefN::Ptr(); }
-        SimpleTableN::Ptr st(boost::dynamic_pointer_cast<SimpleTableN>(t));
-        Tuple& tuple = getTuple(st);
+    TableRef::Ptr lookup(TableRef const& t, int permutation) {
+        Tuple& tuple = getTuple(t);
         // Probably select one bit out of permutation, based on which
         // which subchunked table this is in the query.
-        int i = _permutation & 1;
+        int i = _permutation & 1; // adjust bitshift depending on num
+                                  // subchunked tables.
+        std::string table;
         if(i == 0) {
-            return SimpleTableN::Ptr(new SimpleTableN(st->getDb(),
-                                                      tuple.tables.front(),
-                                                      st->getAlias()));
+            table = tuple.tables.front();
         } else {
-            return SimpleTableN::Ptr(new SimpleTableN(st->getDb(),
-                                                      tuple.tables.back(),
-                                                      st->getAlias()));
+            table = tuple.tables.back();
         }
+        TableRef::Ptr newT(new TableRef(t.getDb(),
+                                        tuple.tables.front(),
+                                        t.getAlias()));
+        return newT;
     }
-#if 0
-        // Idea: Make a TableRefN from each and add it to each list
-        typedef std::list<std::string>::const_iterator Iter;
-        Iter i=t.tables.begin();
-        Iter e=t.tables.end();
-        boost::shared_ptr<SimpleTableN> rn1;
-        boost::shared_ptr<SimpleTableN> rn2;
-        rn1.reset(new SimpleTableN(t.db, *i, t.alias));
-        ++i;
-        if(_firstSubChunkTable || (i==e))  {
-            rn2.reset(new SimpleTableN(*rn1));
-        } else {
-            rn2.reset(new SimpleTableN(t.db, *i, t.alias));
-            ++i;
-            if(i != e) {
-                throw std::logic_error("Unexpected third table entry");
-            }
-        }
-        if(t.chunkLevel == 2) {
-            _firstSubChunkTable = false;
-        }
-#endif
 
-    TableRefnListPtr _tableRefnList;
+    TableRefListPtr _tableRefnList;
     Tuples& _tuples;
     int _permutation;
 };
@@ -470,14 +337,14 @@ int TableStrategy::getPermutationCount() const {
     return 1;
 }
 
-TableRefnListPtr TableStrategy::getPermutation(int permutation, TableRefnList const& tList) {
-    TableRefnListPtr oList(new TableRefnList(tList.size()));
+TableRefListPtr TableStrategy::getPermutation(int permutation, TableRefList const& tList) {
+    TableRefListPtr oList(new TableRefList(tList.size()));
     std::transform(tList.begin(), tList.end(),
                    oList->begin(), computeTable(_impl->tuples, permutation));
     return oList;
 }
 
-void TableStrategy::setToPermutation(int permutation, TableRefnList& p) {
+void TableStrategy::setToPermutation(int permutation, TableRefList& p) {
     // ignore permutation for now.
     inplaceComputeTable ict(_impl->tuples);
     std::for_each(p.begin(), p.end(), ict);
@@ -493,7 +360,7 @@ void TableStrategy::_import(FromList const& f) {
     // populate a data structure of annotations.
 
     // Iterate over FromList elements
-    TableRefnList const& tList = f.getTableRefnList();
+    TableRefList const& tList = f.getTableRefList();
     addTable a(_impl->tuples);
     std::for_each(tList.begin(), tList.end(), a);
     updateChunkLevel ucl(*_impl->context.metadata);

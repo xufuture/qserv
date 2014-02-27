@@ -24,7 +24,7 @@
 #define LSST_QSERV_MASTER_TABLESTRATEGY_H
 #include <list>
 #include <boost/shared_ptr.hpp>
-#include "query/TableRefN.h"
+#include "query/TableRef.h"
 
 namespace lsst {
 namespace qserv {
@@ -36,7 +36,7 @@ class QueryMapping;
 
 /// TableStrategy provides a structure for processing the FromList in
 /// a way that facilitates the retention of the original structure
-/// after processing. 
+/// after processing.
 class TableStrategy {
 public:
     TableStrategy(FromList const& f,
@@ -44,8 +44,8 @@ public:
     boost::shared_ptr<QueryMapping> exportMapping();
     //void scan(FromList const& f);
     int getPermutationCount() const;
-    boost::shared_ptr<TableRefnList> getPermutation(int permutation, TableRefnList const& tList);
-    void setToPermutation(int permutation, TableRefnList& p);
+    boost::shared_ptr<TableRefList> getPermutation(int permutation, TableRefList const& tList);
+    void setToPermutation(int permutation, TableRefList& p);
 
 private:
     class Impl;

@@ -24,7 +24,7 @@
 #define LSST_QSERV_MASTER_FROMLIST_H
 #include <list>
 #include <boost/shared_ptr.hpp>
-#include "query/TableRefN.h"
+#include "query/TableRef.h"
 
 namespace lsst {
 namespace qserv {
@@ -35,14 +35,12 @@ class FromList {
 public:
     typedef boost::shared_ptr<FromList> Ptr;
     typedef std::list<Ptr> PtrList;
-    FromList() {}
-    explicit FromList(TableRefnListPtr p) : _tableRefns(p) {}
+    explicit FromList(TableRefListPtr p) : _tableRefs(p) {}
     ~FromList() {}
-
-    /// @return a list of TableRefN that occur
-    TableRefnList& getTableRefnList() { return *_tableRefns; }
-    /// @return a list of TableRefN that occur
-    TableRefnList const& getTableRefnList() const { return *_tableRefns; }
+    /// @return a list of TableRef that occur
+    TableRefList& getTableRefList() { return *_tableRefs; }
+    /// @return a list of TableRef that occur
+    TableRefList const& getTableRefList() const { return *_tableRefs; }
 
     bool isJoin() const;
 
@@ -55,13 +53,13 @@ public:
     /// Shallow copy this node, sharing its linked objects.
     boost::shared_ptr<FromList> copySyntax();
     /// Permutes according to the permuting function, sharing the columnRefMap
-    PtrList permute(TableRefN::Pfunc& f);
+    PtrList permute(TableRef::Pfunc& f);
 
 private:
     friend std::ostream& operator<<(std::ostream& os, FromList const& fl);
     friend class FromFactory;
 
-    TableRefnListPtr _tableRefns;
+    TableRefListPtr _tableRefs;
 };
 }}} // namespace lsst::qserv::master
 #endif // LSST_QSERV_MASTER_FROMLIST_H

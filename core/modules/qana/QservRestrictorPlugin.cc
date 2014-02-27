@@ -34,17 +34,17 @@
 
 #include "qana/QueryPlugin.h" // Parent class
 #include "qana/AnalysisError.h"
+#include "meta/MetadataCache.h"
 #include "query/ColumnRef.h"
 #include "query/FromList.h"
 #include "query/FuncExpr.h"
 #include "query/QueryContext.h"
-#include "meta/MetadataCache.h"
+#include "query/JoinRef.h"
 #include "query/Predicate.h"
 #include "query/SelectStmt.h"
 #include "query/ValueFactor.h"
 #include "query/ValueExpr.h"
 #include "query/WhereClause.h"
-
 #include "parser/SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 
 
@@ -154,48 +154,43 @@ struct RestrictorEntry {
     std::string keyColumn;
 };
 typedef std::deque<RestrictorEntry> RestrictorEntries;
-class getTable : public TableRefN::Func {
+class getTable : public TableRef::Func {
 public:
 
     getTable(MetadataCache& metadata, RestrictorEntries& entries)
         : _metadata(metadata),
           _entries(entries) {}
-    void operator()(TableRefN::Ptr t) {
+    void operator()(TableRef::Ptr t) {
         if(!t) {
             throw qana::AnalysisBug("NULL TableRefN::Ptr");
         }
-        SimpleTableN::Ptr p = boost::dynamic_pointer_cast<SimpleTableN>(t);
-        if(p) {
-            std::string const& db = p->getDb();
-            std::string const& table = p->getTable();
+        std::string const& db = t->getDb();
+        std::string const& table = t->getTable();
 
-            if(!_metadata.checkIfContainsDb(db)
-               || !_metadata.checkIfContainsTable(db, table)) {
-                throw qana::AnalysisError("Invalid db/table:" + db + "." + table);
-            }
-            // Is table chunked?
-            if(!_metadata.checkIfTableIsChunked(db, table)) {
-                return; // Do nothing for non-chunked tables
-            }
-            // Now save an entry for WHERE clause processing.
-            if(!t->isSimple()) {
-                // For now, only accept aliased tablerefs (should have
-                // been done earlier)
-                throw std::logic_error("Unexpected unaliased table reference");
-            }
-            std::string alias = p->getAlias();
-            if(alias.empty()) {
-                // For now, only accept aliased tablerefs (should have
-                // been done earlier)
-                throw qana::AnalysisBug("Unexpected unaliased table reference");
-            }
-            std::vector<std::string> pCols = _metadata.getPartitionCols(db, table);
-            RestrictorEntry se(alias,
-                               StringPair(pCols[0], pCols[1]),
-                               pCols[2]);
-            _entries.push_back(se);
-        } else {
-            t->apply(*this);
+        if(!_metadata.checkIfContainsDb(db)
+           || !_metadata.checkIfContainsTable(db, table)) {
+            throw qana::AnalysisError("Invalid db/table:" + db + "." + table);
+        }
+        // Is table chunked?
+        if(!_metadata.checkIfTableIsChunked(db, table)) {
+            return; // Do nothing for non-chunked tables
+        }
+        // Now save an entry for WHERE clause processing.
+        std::string alias = t->getAlias();
+        if(alias.empty()) {
+            // For now, only accept aliased tablerefs (should have
+            // been done earlier)
+            throw qana::AnalysisBug("Unexpected unaliased table reference");
+        }
+        std::vector<std::string> pCols = _metadata.getPartitionCols(db, table);
+        RestrictorEntry se(alias,
+                           StringPair(pCols[0], pCols[1]),
+                           pCols[2]);
+        _entries.push_back(se);
+        JoinRefList& jList = t->getJoins();
+        typedef JoinRefList::iterator Iter;
+        for(Iter i=jList.begin(), e=jList.end(); i != e; ++i) {
+            (*this)((**i).getRight());
         }
     }
     MetadataCache& _metadata;
@@ -382,7 +377,7 @@ QservRestrictorPlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
 
     // First, get a list of the chunked tables.
     FromList& fList = stmt.getFromList();
-    TableRefnList& tList = fList.getTableRefnList();
+    TableRefList& tList = fList.getTableRefList();
     RestrictorEntries entries;
     if(!context.metadata) {
         throw qana::AnalysisBug("Missing metadata in context");
