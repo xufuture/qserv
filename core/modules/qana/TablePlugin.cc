@@ -1,6 +1,6 @@
 /*
  * LSST Data Management System
- * Copyright 2013 LSST Corporation.
+ * Copyright 2013-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -79,28 +79,22 @@ public:
     }
     int& _seqN;
 };
-class addDbContext : public TableRefN::Func {
+class addDbContext : public TableRef::Func {
 public:
     addDbContext(QueryContext const& c,
                  std::string& firstDb_,
                  std::string& firstTable_)
         : context(c), firstDb(firstDb_), firstTable(firstTable_)
         {}
-    void operator()(TableRefN::Ptr t) {
-        if(t.get()) { t->apply(*this); }
+    void operator()(TableRef::Ptr t) {
+        if(t.get()) { t->applySimple(*this); }
     }
-    void operator()(TableRefN& t) {
-        SimpleTableN* p = dynamic_cast<SimpleTableN*>(&t);
-        if(p) {
-            std::string table = p->getTable();
-            if(table.empty()) {
-                throw std::logic_error("No table in SimpleTableN"); }
-        if(p->getDb().empty()) { p->setDb(context.defaultDb); }
-        if(firstDb.empty()) { firstDb = p->getDb(); }
+    void operator()(TableRef& t) {
+        std::string table = t.getTable();
+        if(table.empty()) { throw std::logic_error("No table in TableRef"); }
+        if(t.getDb().empty()) { t.setDb(context.defaultDb); }
+        if(firstDb.empty()) { firstDb = t.getDb(); }
         if(firstTable.empty()) { firstTable = table; }
-        } else {
-            t.apply(*this);
-        }
     }
     QueryContext const& context;
     std::string& firstDb;
@@ -108,26 +102,24 @@ public:
 };
 
 template <typename G, typename A>
-class addAlias : public TableRefN::Func {
+class addAlias : public TableRef::Func {
 public:
     addAlias(G g, A a) : _generate(g), _addMap(a) {}
-    void operator()(TableRefN::Ptr t) {
+    void operator()(TableRef::Ptr t) {
+        if(t.get()) { t->applySimple(*this); }
+    }
+    void operator()(TableRef& t) {
         // LOGGER_INF << "tableref:";
         // t->putStream(LOG_STRM(Info));
         // LOGGER_INF << std::endl;
         // If no alias, then add one.
-        if(t->isSimple()) {
-            SimpleTableN::Ptr st = boost::static_pointer_cast<SimpleTableN>(t);
-            std::string alias = st->getAlias();
-            if(alias.empty()) {
-                alias = _generate();
-                st->setAlias(alias);
-            }
-            // Save ref
-            _addMap(alias, st->getDb(), st->getTable());
-        } else { // complex: JoinRefN
-            t->apply(*this);
+        std::string alias = t.getAlias();
+        if(alias.empty()) {
+            alias = _generate();
+            t.setAlias(alias);
         }
+        // Save ref
+        _addMap(alias, t.getDb(), t.getTable());
     }
 private:
     G _generate; // Functor that creates a new alias name
@@ -283,7 +275,7 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     //           << (fList.isJoin() ? " is join" : "")
     //           << std::endl;
 
-    TableRefnList& tList = fList.getTableRefnList();
+    TableRefList& tList = fList.getTableRefList();
 
     // For each tableref, modify to add alias.
     int seq=0;
@@ -397,12 +389,12 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
     if(permutationCount > 1)
         for(int i=0; i < permutationCount; ++i) {
             boost::shared_ptr<SelectStmt> stmt = in.copyDeep();
-            FromList::Ptr f(new FromList(ts.getPermutation(i, fList.getTableRefnList())));
+            FromList::Ptr f(new FromList(ts.getPermutation(i, fList.getTableRefList())));
             stmt->replaceFromList(f);
             outList.push_back(stmt);
             ++added;
     } else {
-        ts.setToPermutation(0, fList.getTableRefnList());
+        ts.setToPermutation(0, fList.getTableRefList());
     }
     QueryMapping::Ptr qm = ts.exportMapping();
 #else

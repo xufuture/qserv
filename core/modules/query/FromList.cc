@@ -1,6 +1,6 @@
 /*
  * LSST Data Management System
- * Copyright 2013 LSST Corporation.
+ * Copyright 2013-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -30,24 +30,24 @@
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::FromList;
-using lsst::qserv::master::TableRefnList;
-using lsst::qserv::master::TableRefnListPtr;
+using lsst::qserv::master::TableRefList;
+using lsst::qserv::master::TableRefListPtr;
 
 std::ostream&
 qMaster::operator<<(std::ostream& os, FromList const& fl) {
     os << "FROM ";
-    if(fl._tableRefns.get() && fl._tableRefns->size() > 0) {
-        TableRefnList const& refList = *(fl._tableRefns);
+    if(fl._tableRefs.get() && fl._tableRefs->size() > 0) {
+        TableRefList const& refList = *(fl._tableRefs);
         std::copy(refList.begin(), refList.end(),
-                  std::ostream_iterator<TableRefN::Ptr>(os,", "));
+                  std::ostream_iterator<TableRef::Ptr>(os,", "));
     } else {
         os << "(empty)";
     }
     return os;
 }
 
-bool FromList::isJoin() const {    
-    return (_tableRefns.get() && _tableRefns->size() > 1);
+bool FromList::isJoin() const {
+    return (_tableRefs.get() && _tableRefs->size() > 1);
 }
 
 std::string
@@ -59,48 +59,48 @@ FromList::getGenerated() {
 
 void
 FromList::renderTo(qMaster::QueryTemplate& qt) const {
-    if(_tableRefns.get() && _tableRefns->size() > 0) {
-        TableRefnList const& refList = *_tableRefns;
-        std::for_each(refList.begin(), refList.end(), TableRefN::render(qt));
+    if(_tableRefs.get() && _tableRefs->size() > 0) {
+        TableRefList const& refList = *_tableRefs;
+        std::for_each(refList.begin(), refList.end(), TableRef::render(qt));
     }
 }
 
 boost::shared_ptr<qMaster::FromList> FromList::copySyntax() {
     boost::shared_ptr<FromList> newL(new FromList(*this));
     // Shallow copy of expr list is okay.
-    newL->_tableRefns.reset(new TableRefnList(*_tableRefns));
+    newL->_tableRefs.reset(new TableRefList(*_tableRefs));
     // For the other fields, default-copied versions are okay.
     return newL;
 }
 
 boost::shared_ptr<qMaster::FromList> FromList::copyDeep() const {
-    typedef TableRefnList::const_iterator Iter;
+    typedef TableRefList::const_iterator Iter;
     boost::shared_ptr<FromList> newL(new FromList(*this));
 
-    newL->_tableRefns.reset(new TableRefnList());
+    newL->_tableRefs.reset(new TableRefList());
 
-    for(Iter i=_tableRefns->begin(), e=_tableRefns->end(); i != e; ++ i) {
-        newL->_tableRefns->push_back(*i);
+    for(Iter i=_tableRefs->begin(), e=_tableRefs->end(); i != e; ++ i) {
+        newL->_tableRefs->push_back(*i);
     }
     // Okay to share columnRefMap: we do not own it.
     return newL;
 }
 
-typedef std::list<qMaster::TableRefnListPtr> ListList;
-void permuteHelper(ListList::iterator i, ListList::iterator e, 
-                   qMaster::TableRefnListPtr soFar, ListList& finals) {
+typedef std::list<qMaster::TableRefListPtr> ListList;
+void permuteHelper(ListList::iterator i, ListList::iterator e,
+                   qMaster::TableRefListPtr soFar, ListList& finals) {
 
     if(i == e) {
         //put sofar onto final
         finals.push_back(soFar);
     }
-    TableRefnList& slotList = **i;
+    TableRefList& slotList = **i;
     ++i;
     if(slotList.size() > 1) {
-        typedef TableRefnList::iterator Iter;
+        typedef TableRefList::iterator Iter;
         for(Iter j=slotList.begin(), e2=slotList.end(); j != e2; ++j) {
             // FIXME: Clone the list?
-            TableRefnListPtr nSoFar(new TableRefnList(*soFar));
+            TableRefListPtr nSoFar(new TableRefList(*soFar));
             // FIXME: Clone the tableref?
             nSoFar->push_back(*j);
             permuteHelper(i, e, nSoFar, finals);
@@ -110,19 +110,19 @@ void permuteHelper(ListList::iterator i, ListList::iterator e,
         permuteHelper(i, e, soFar, finals);
     }
 }
-FromList::PtrList FromList::permute(TableRefN::Pfunc& f) {
+FromList::PtrList FromList::permute(TableRef::Pfunc& f) {
     PtrList pList;
     ListList combos;
-    typedef TableRefnList::const_iterator Iter;
+    typedef TableRefList::const_iterator Iter;
 
-    for(Iter i=_tableRefns->begin(), e=_tableRefns->end(); 
+    for(Iter i=_tableRefs->begin(), e=_tableRefs->end();
         i != e; ++i) {
-        combos.push_back(TableRefnListPtr(new TableRefnList((**i).permute(f)))); 
+        combos.push_back(TableRefListPtr(new TableRefList((**i).permute(f))));
     }
     ListList finals;
-    permuteHelper(combos.begin(), combos.end(), TableRefnListPtr(new TableRefnList), finals);
+    permuteHelper(combos.begin(), combos.end(), TableRefListPtr(new TableRefList), finals);
 
-    // Now compute a new FromList for each list in finals.        
+    // Now compute a new FromList for each list in finals.
     typedef ListList::iterator Liter;
     for(Liter i=finals.begin(), e=finals.end(); i != e; ++i) {
         pList.push_back(Ptr(new FromList(*i)));

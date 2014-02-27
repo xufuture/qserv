@@ -157,7 +157,14 @@ struct ParserFixture {
                                        0.025,     // actual overlap
                                        "ra", "decl", "objectId",  // warning: unsure if the objectId col is right
                                        1, 2, 0,   // positions of the above columns, unsure if 0 is correct
-                                       2,         // 2-level chunking
+                                       1,         // 1-level chunking
+                                       0x0011);   // 1-level persisted
+
+        mc->addTbInfoPartitionedSphBox("LSST", "SimRefObject", // FIXME (bogus)
+                                       0.025,     // actual overlap
+                                       "ra", "decl", "objectId",  // warning: unsure if the objectId col is right
+                                       1, 2, 0,   // positions of the above columns, unsure if 0 is correct
+                                       1,         // 1-level chunking
                                        0x0011);   // 1-level persisted
 
         mc->addDbInfoPartitionedSphBox("rplante_PT1_2_u_pt12prod_im3000_qserv",
@@ -946,15 +953,25 @@ BOOST_AUTO_TEST_CASE(Case01_1081) {
         "INNER JOIN RefObjMatch o2t ON (o.objectId = o2t.objectId) "
         "LEFT  JOIN SimRefObject t ON (o2t.refObjectId = t.refObjectId) "
         "WHERE  closestToObj = 1 OR closestToObj is NULL;";
-    testStmt3(qsTest, stmt);
-#if 0 // FIXME
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(!spr->getHasSubChunks()); // Are RefObjMatch and
-                                          // SimRefObject chunked/subchunked?
-    BOOST_CHECK(spr->getHasAggregate());
-#endif
+    std::string expected_100 = "SELECT count(*) AS QS1_COUNT "
+        "FROM Subchunks_LSST_100.Object_100_100000 AS o "
+        "INNER JOIN LSST.RefObjMatch_100 AS o2t ON o.objectId=o2t.objectId "
+        "LEFT OUTER JOIN LSST.SimRefObject_100 AS t ON o2t.refObjectId=t.refObjectId "
+        "WHERE closestToObj=1 OR closestToObj IS NULL";
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+
+    qs->addChunk(makeChunkSpec(100,true));
+    QuerySession::Iter i = qs->cQueryBegin();
+    QuerySession::Iter e = qs->cQueryEnd();
+    BOOST_REQUIRE(i != e);
+    ChunkQuerySpec& first = *i;
+    //    BOOST_CHECK_EQUAL(first.queries.size(), 1); ???
+    BOOST_CHECK_EQUAL(first.queries[0], expected_100);
     // JOIN syntax, "is NULL" syntax
 }
 
