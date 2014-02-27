@@ -7,9 +7,9 @@ export TMP_MY_DIST=../../../../dist
 mkdir dist
 
 gcc -c -g \
-    ./cssInterface.cc \
+    ./cssInterfaceImplZoo.cc \
     -I $TMP_MY_DIST/include/zookeeper \
-    -o dist/cssInterface.o
+    -o dist/cssInterfaceImplZoo.o
 
 gcc -c -g \
     ./Store.cc \
@@ -22,20 +22,20 @@ gcc -c -g \
 
 g++ -g \
     -I. -I $TMP_MY_DIST/include/zookeeper \
-    testCssInterface.cc \
+    testCssInterfaceImplZoo.cc \
     -L $TMP_MY_DIST/lib \
-    dist/cssInterface.o \
+    dist/cssInterfaceImplZoo.o \
     dist/cssException.o \
     -l zookeeper_mt \
     -l boost_unit_test_framework \
     -D BOOST_TEST_DYN_LINK \
-    -o dist/testCssInterface
+    -o dist/testCssInterfaceImplZoo
 
 g++ -g \
     -I. -I $TMP_MY_DIST/include/zookeeper \
     testStore.cc \
     -L $TMP_MY_DIST/lib \
-    dist/cssInterface.o \
+    dist/cssInterfaceImplZoo.o \
     dist/cssException.o \
     dist/Store.o \
     -l zookeeper_mt \

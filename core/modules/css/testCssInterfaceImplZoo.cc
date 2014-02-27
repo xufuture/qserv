@@ -41,7 +41,7 @@
 
 // boost
 #define BOOST_TEST_MODULE MyTest
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 #include <boost/lexical_cast.hpp>
 
 // local imports
@@ -52,6 +52,8 @@ using std::endl;
 using std::ostringstream;
 using std::string;
 using std::vector;
+
+namespace qCss = lsst::qserv::master;
 
 
 struct CssInterfaceFixture {
@@ -71,8 +73,7 @@ struct CssInterfaceFixture {
 BOOST_FIXTURE_TEST_SUITE(CssInterfaceTest, CssInterfaceFixture)
 
 BOOST_AUTO_TEST_CASE(createGetCheck) {
-    lsst::qserv::css::CssInterfaceImplZoo cssI =
-        lsst::qserv::css::CssInterfaceImplZoo("localhost:2181");
+    qCss::CssInterfaceImplZoo cssI = qCss::CssInterfaceImplZoo("localhost:2181");
 
     cssI.create(prefix, v1);
     cssI.create(k1, v1);

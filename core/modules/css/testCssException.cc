@@ -45,7 +45,7 @@
 using std::cout;
 using std::endl;
 
-namespace qCss = lsst::qserv::css;
+namespace qCss = lsst::qserv::master;
 
 struct CssExFixture {
     CssExFixture(void) {
