@@ -1,6 +1,6 @@
 /*
  * LSST Data Management System
- * Copyright 2013 LSST Corporation.
+ * Copyright 2013-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -99,7 +99,6 @@ boost::shared_ptr<LikePredicate> PredicateFactory::newLikePredicate(antlr::RefAS
 
 boost::shared_ptr<NullPredicate> PredicateFactory::newNullPredicate(antlr::RefAST a) {
     boost::shared_ptr<NullPredicate> p(new NullPredicate());
-    std::cout << walkIndentedString(a);
 
     if(a->getType() == SqlSQL2TokenTypes::NULL_PREDICATE) { a = a->getFirstChild(); }
     RefAST value = a;
