@@ -43,6 +43,7 @@ print "debug is", debug
 if int(debug):
     print "Debug build requested."
     env.Append(CCFLAGS = '-g')
+env.Append(CCFLAGS=['-pedantic', '-Wall', '-Wno-long-long'])
 
 ## import via eups if directed
 ## eups sets LD_LIBRARY_PATH and PATH, so libs should get detected automagically and
