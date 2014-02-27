@@ -12,6 +12,11 @@ gcc -c -g \
     -o dist/cssInterfaceImplZoo.o
 
 gcc -c -g \
+    ./cssInterfaceImplDummy.cc \
+    -I $TMP_MY_DIST/include/zookeeper \
+    -o dist/cssInterfaceImplDummy.o
+
+gcc -c -g \
     ./Store.cc \
     -I $TMP_MY_DIST/include/zookeeper \
     -o dist/Store.o
@@ -30,6 +35,17 @@ g++ -g \
     -l boost_unit_test_framework \
     -D BOOST_TEST_DYN_LINK \
     -o dist/testCssInterfaceImplZoo
+
+g++ -g \
+    -I. -I $TMP_MY_DIST/include/zookeeper \
+    testCssInterfaceImplDummy.cc \
+    -L $TMP_MY_DIST/lib \
+    dist/cssInterfaceImplDummy.o \
+    dist/cssException.o \
+    -l zookeeper_mt \
+    -l boost_unit_test_framework \
+    -D BOOST_TEST_DYN_LINK \
+    -o dist/testCssInterfaceImplDummy
 
 g++ -g \
     -I. -I $TMP_MY_DIST/include/zookeeper \
