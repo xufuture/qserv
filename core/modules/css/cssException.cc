@@ -41,7 +41,7 @@
 using std::map;
 using std::string;
 
-namespace qCss = lsst::qserv::css;
+namespace qCss = lsst::qserv::master;
 
 map<qCss::CssException::errCodeT, string> 
 qCss::CssException::_errMap = boost::assign::map_list_of 

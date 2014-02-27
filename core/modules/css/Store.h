@@ -46,7 +46,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace css {
+namespace master {
 
 class CssInterface; // forward declaration
     
@@ -55,7 +55,9 @@ class CssInterface; // forward declaration
  */
 class Store {
 public:
+    Store(std::string const&);
     Store(std::string const&, std::string const&);
+    Store(std::vector<std::string, std::string>);
     ~Store();
 
     // accessors
@@ -72,10 +74,10 @@ public:
     std::string getKeyColumn(std::string const& db, std::string const& table);
 
 private:
-    lsst::qserv::css::CssInterface* _cssI;
+    CssInterface* _cssI;
     std::string _prefix; // optional prefix, for isolating tests from production
 };
 
-}}} // namespace lsst::qserv::css
+}}} // namespace lsst::qserv::master
 
 #endif // LSST_QSERV_CSS_STORE_H
