@@ -44,6 +44,7 @@
 
 // local imports
 #include "Store.h"
+#include "cssInterfaceImplZoo.h"
 #include "cssException.h"
 
 using std::cout;
@@ -52,7 +53,7 @@ using std::make_pair;
 using std::string;
 using std::vector;
 
-namespace qCss = lsst::qserv::css;
+namespace qCss = lsst::qserv::master;
 
 struct StoreFixture {
     StoreFixture(void) {
@@ -87,7 +88,8 @@ struct StoreFixture {
         kv.push_back(make_pair(p, ""));
         kv.push_back(make_pair(p + "/Exposure", ""));
 
-        qCss::CssInterface cssI = qCss::CssInterface("localhost:2181", false);
+        qCss::CssInterfaceImplZoo cssI = 
+            qCss::CssInterfaceImplZoo("localhost:2181", false);
         vector<std::pair<string, string> >::const_iterator itr;
         for (itr=kv.begin() ; itr!=kv.end() ; ++itr) {
             cssI.create(itr->first, itr->second);
@@ -96,7 +98,8 @@ struct StoreFixture {
     };
 
     ~StoreFixture(void) {
-        qCss::CssInterface cssI = qCss::CssInterface("localhost:2181", false);
+        qCss::CssInterfaceImplZoo cssI = 
+            qCss::CssInterfaceImplZoo("localhost:2181", false);
         vector<std::pair<string, string> >::const_reverse_iterator itr;
         for (itr=kv.rbegin() ; itr!=kv.rend() ; ++itr) {
             cssI.deleteNode(itr->first);

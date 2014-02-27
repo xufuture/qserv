@@ -23,9 +23,9 @@
  */
 
 /**
-  * @file CssInterface.cc
+  * @file CssInterfaceImplZoo.cc
   *
-  * @brief Interface to the Common State System.
+  * @brief Interface to the Common State System - zookeeper-based implementation.
   *
   * @Author Jacek Becla, SLAC
   */
@@ -47,7 +47,7 @@
 #include <string.h> // for memset
 
 // local imports
-#include "cssInterface.h"
+#include "cssInterfaceImplZoo.h"
 #include "cssException.h"
 
 
@@ -58,15 +58,16 @@ using std::ostringstream;
 using std::string;
 using std::vector;
 
-namespace qCss = lsst::qserv::css;
+namespace qCss = lsst::qserv::master;
 
 /**
  * Initialize the interface.
  *
  * @param connInfo connection information
  */
-qCss::CssInterface::CssInterface(string const& connInfo, bool verbose) :
-    _verbose(verbose) {
+qCss::CssInterfaceImplZoo::CssInterfaceImplZoo(string const& connInfo, 
+                                               bool verbose) :
+    qCss::CssInterface(verbose) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
     _zh = zookeeper_init(connInfo.c_str(), 0, 10000, 0, 0, 0);
     if ( !_zh ) {
@@ -74,14 +75,15 @@ qCss::CssInterface::CssInterface(string const& connInfo, bool verbose) :
     }
 }
 
-qCss::CssInterface::~CssInterface() {
+qCss::CssInterfaceImplZoo::~CssInterfaceImplZoo() {
     zookeeper_close(_zh);
 }
 
 void
-qCss::CssInterface::create(string const& key, string const& value) {
+qCss::CssInterfaceImplZoo::create(string const& key, string const& value) {
     if (_verbose) {
-        cout << "*** CssInterface::create(), " << key << " --> " << value << endl;
+        cout << "*** CssInterfaceImplZoo::create(), " << key << " --> " 
+             << value << endl;
     }
     char buffer[512];
     int rc = zoo_create(_zh, key.c_str(), value.c_str(), value.length(), 
@@ -92,9 +94,9 @@ qCss::CssInterface::create(string const& key, string const& value) {
 }
 
 bool
-qCss::CssInterface::exists(string const& key) {
+qCss::CssInterfaceImplZoo::exists(string const& key) {
     if (_verbose) {
-        cout << "*** CssInterface::exist(), key: " << key << endl;
+        cout << "*** CssInterfaceImplZoo::exist(), key: " << key << endl;
     }
     struct Stat stat;
     int rc = zoo_exists(_zh, key.c_str(), 0,  &stat);
@@ -109,9 +111,9 @@ qCss::CssInterface::exists(string const& key) {
 }
 
 string
-qCss::CssInterface::get(string const& key) {
+qCss::CssInterfaceImplZoo::get(string const& key) {
     if (_verbose) {
-        cout << "*** CssInterface::get(), key: " << key << endl;
+        cout << "*** CssInterfaceImplZoo::get(), key: " << key << endl;
     }
     char buffer[512];
     memset(buffer, 0, 512);
@@ -128,9 +130,9 @@ qCss::CssInterface::get(string const& key) {
 }
 
 vector<string> 
-qCss::CssInterface::getChildren(string const& key) {
+qCss::CssInterfaceImplZoo::getChildren(string const& key) {
     if (_verbose) {
-        cout << "*** CssInterface::getChildren(), key: " << key << endl;
+        cout << "*** CssInterfaceImplZoo::getChildren(), key: " << key << endl;
     }
     struct String_vector strings;
     int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
@@ -148,9 +150,9 @@ qCss::CssInterface::getChildren(string const& key) {
 }
 
 void
-qCss::CssInterface::deleteNode(string const& key) {
+qCss::CssInterfaceImplZoo::deleteNode(string const& key) {
     if (_verbose) {
-        cout << "*** CssInterface::deleteNode, key: " << key << endl;
+        cout << "*** CssInterfaceImplZoo::deleteNode, key: " << key << endl;
     }
     int rc = zoo_delete(_zh, key.c_str(), -1);
     if (rc!=ZOK) {
@@ -164,8 +166,8 @@ qCss::CssInterface::deleteNode(string const& key) {
   * @param extraMsg optional extra message to include in the error message
   */
 void
-qCss::CssInterface::zooFailure(int rc, string const& fName, string const& extraMsg){
-    string ffName = "*** CssInterface::" + fName + "(). ";
+qCss::CssInterfaceImplZoo::zooFailure(int rc, string const& fName, string const& extraMsg){
+    string ffName = "*** CssInterfaceImplZoo::" + fName + "(). ";
     if (rc==ZNONODE) {
         if (_verbose) {
             cout << ffName << "Key '" << extraMsg << "' does not exist." << endl;

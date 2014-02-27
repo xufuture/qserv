@@ -38,9 +38,9 @@
 
 namespace lsst {
 namespace qserv {
-namespace css {
+namespace master {
 
-class CssException: public std::runtime_error {
+class CssException : public std::runtime_error {
 public:
     enum errCodeT { 
         DB_DOES_NOT_EXIST,
@@ -71,6 +71,6 @@ private:
     static std::map<errCodeT, std::string> _errMap;
 };
 
-}}} // namespace lsst::qserv::css
+}}} // namespace lsst::qserv::master
 
 #endif // LSST_QSERV_CSS_EXCEPTION_HH

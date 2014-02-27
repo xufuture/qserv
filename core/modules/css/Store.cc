@@ -38,23 +38,33 @@
 // Local imports
 #include "Store.h"
 #include "cssException.h"
+#include "cssInterfaceImplZoo.h"
 
 using std::cout;
 using std::endl;
 using std::string;
 using std::vector;
 
-namespace qCss = lsst::qserv::css;
+namespace qCss = lsst::qserv::master;
 
 /**
   * Initialize the Store.
   *
   * @param connInfo connection information
-  * @param prefix optional prefix, for testing, to avoid polluting production setup
+  */
+qCss::Store::Store(string const& connInfo) {
+    _cssI = new qCss::CssInterfaceImplZoo(connInfo);
+}
+
+/**
+  * Initialize the Store.
+  *
+  * @param connInfo connection information
+  * @param prefix, for testing, to avoid polluting production setup
   */
 qCss::Store::Store(string const& connInfo, string const& prefix) :
     _prefix(prefix) {
-    _cssI = new qCss::CssInterface(connInfo);
+    _cssI = new qCss::CssInterfaceImplZoo(connInfo);
 }
 
 qCss::Store::~Store() {
