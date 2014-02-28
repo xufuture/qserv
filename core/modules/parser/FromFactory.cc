@@ -37,12 +37,13 @@
 #include "parser/SqlSQL2Parser.hpp" // applies several "using antlr::***".
 #include "parser/ColumnRefH.h"
 #include "parser/BoolTermFactory.h"
-#include "query/ColumnRef.h"
-#include "query/JoinRef.h"
-#include "query/JoinSpec.h"
 #include "parser/ParseAliasMap.h"
 #include "parser/ParseException.h"
 #include "parser/parseTreeUtil.h"
+#include "query/BoolTerm.h"
+#include "query/ColumnRef.h"
+#include "query/JoinRef.h"
+#include "query/JoinSpec.h"
 #include "query/TableRef.h"
 #include "query/QueryTemplate.h"
 #include "log/Logger.h"
@@ -549,8 +550,8 @@ FromFactory::attachTo(SqlSQL2Parser& p) {
 
 void
 FromFactory::_import(antlr::RefAST a) {
-    _list.reset(new FromList());
-    _list->_tableRefs.reset(new TableRefList());
+    boost::shared_ptr<TableRefList> r(new TableRefList());
+    _list.reset(new FromList(r));
 
     // LOGGER_INF << "FROM starts with: " << a->getText()
     //           << " (" << a->getType() << ")" << std::endl;

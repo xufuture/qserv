@@ -62,7 +62,7 @@ void LikePredicate::findColumnRefs(ColumnRef::List& list) {
     if(charValue) { charValue->findColumnRefs(list); }
 }
 
-void NullPredicate::findColumnRefs(ColumnRefMap::List& list) {
+void NullPredicate::findColumnRefs(ColumnRef::List& list) {
     if(value) { value->findColumnRefs(list); }
 }
 

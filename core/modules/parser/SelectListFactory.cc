@@ -35,8 +35,9 @@
 
 #include "parser/ParseAliasMap.h"
 #include "parser/ParseException.h"
-#include "query/SelectList.h"
 #include "parser/ValueExprFactory.h"
+#include "parser/parseTreeUtil.h"
+#include "query/SelectList.h"
 #include "query/ValueFactor.h"
 
 
