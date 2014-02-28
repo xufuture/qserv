@@ -70,8 +70,16 @@ public:
     std::vector<std::string> getSubChunkedTables(std::string const&);
     std::vector<std::string> getPartitionCols(std::string const&, 
                                               std::string const&);
-    int getChunkLevel(std::string const& db, std::string const& table);
-    std::string getKeyColumn(std::string const& db, std::string const& table);
+    int getChunkLevel(std::string const&, std::string const&);
+    std::string getKeyColumn(std::string const&, std::string const&);
+
+private:
+    void _validateDbExists(std::string const&);
+    void _validateTbExists(std::string const&, std::string const&);
+    void _validateDbTbExists(std::string const&, std::string const&);
+    bool _checkIfContainsTable(std::string const&, std::string const&);
+    bool _checkIfTableIsChunked(std::string const&, std::string const&);
+    bool _checkIfTableIsSubChunked(std::string const&, std::string const&);
 
 private:
     CssInterface* _cssI;
