@@ -32,6 +32,7 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include "css/Store.h"
 #include "query/Constraint.h"
 #include "qproc/ChunkQuerySpec.h"
 #include "qproc/ChunkSpec.h"
@@ -54,6 +55,8 @@ public:
     class Iter;
     friend class Iter;
     friend class AsyncQueryManager; // factory for QuerySession.
+
+    explicit QuerySession(boost::shared_ptr<Store>);
 
     std::string const& getOriginal() const { return _original; }
     void setQuery(std::string const& q);
@@ -85,15 +88,10 @@ public:
     Iter cQueryEnd();
 
     // For test harnesses.
-    struct Test { int cfgNum; int metaSession; };
-    explicit QuerySession(Test& t)
-        : _metaCacheSession(t.metaSession) { _initContext(); }
     boost::shared_ptr<QueryContext> dbgGetContext() { return _context; }
 
 private:
     typedef std::list<QueryPlugin::Ptr> PluginList;
-
-    explicit QuerySession(int metaCacheSession);
 
     // Pipeline helpers
     void _initContext();
@@ -107,7 +105,7 @@ private:
     std::vector<std::string> _buildChunkQueries(ChunkSpec const& s);
 
     // Fields
-    int _metaCacheSession;
+    boost::shared_ptr<Store> _cssStore;
     std::string _original;
     boost::shared_ptr<QueryContext> _context;
     boost::shared_ptr<SelectStmt> _stmt;

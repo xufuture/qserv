@@ -39,6 +39,7 @@
 #include "boost/date_time/posix_time/posix_time_types.hpp"
 
 #include "control/AsyncQueryManager.h"
+#include "css/Store.h"
 #include "qdisp/ChunkQuery.h"
 #include "log/Logger.h"
 #include "qdisp/MessageStore.h"
@@ -380,13 +381,10 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
         cfg, "resultdb.db",
         "Error, resultdb.db not found. Using qservResult.",
         "qservResult");
-    std::string metaStr =  getConfigElement(
-        cfg, "runtime.metaCacheSession",
-        "No runtime.metaCacheSession. using default.",
-        "");
-    int metaCacheSession = coerceInt(metaStr, -1);
     // Setup session
-    _qSession.reset(new QuerySession(metaCacheSession));
+    // FIXME, connection should be configurable!!!
+    boost::shared_ptr<Store> cssStorePtr(new Store("localhost:2181"));
+    _qSession.reset(new QuerySession(cssStorePtr));
 }
 
 void AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,

@@ -33,11 +33,11 @@
 #include <boost/pointer_cast.hpp>
 
 #include "qana/QueryPlugin.h" // Parent class
+#include "css/Store.h"
 #include "query/ColumnRef.h"
 #include "query/FromList.h"
 #include "query/FuncExpr.h"
 #include "query/QueryContext.h"
-#include "meta/MetadataCache.h"
 #include "query/Predicate.h"
 #include "query/SelectStmt.h"
 #include "query/ValueFactor.h"
@@ -73,8 +73,8 @@ bool
 lookupKey(QueryContext& context, boost::shared_ptr<ColumnRef> cr) {
     // Match cr as a column ref against the key column for a database's
     // partitioning strategy.
-    if((!cr) || !context.metadata) { return false; }
-    std::string keyColumn = context.metadata->getKeyColumn(cr->db, cr->table);
+    if((!cr) || !context.cssStore) { return false; }
+    std::string keyColumn = context.cssStore->getKeyColumn(cr->db, cr->table);
     return (!cr->column.empty()) && (keyColumn == cr->column);
 }
 
@@ -150,8 +150,8 @@ typedef std::deque<RestrictorEntry> RestrictorEntries;
 class getTable {
 public:
 
-    explicit getTable(MetadataCache& metadata, RestrictorEntries& entries)
-        : _metadata(metadata),
+    explicit getTable(Store& cssStore, RestrictorEntries& entries)
+        : _cssStore(cssStore),
           _entries(entries) {}
     void operator()(TableRefN::Ptr t) {
         if(!t) {
@@ -161,7 +161,7 @@ public:
         std::string const& table = t->getTable();
 
         // Is table chunked?
-        if(!_metadata.checkIfTableIsChunked(db, table)) {
+        if(!_cssStore.checkIfTableIsChunked(db, table)) {
             return; // Do nothing for non-chunked tables
         }
         // Now save an entry for WHERE clause processing.
@@ -171,13 +171,13 @@ public:
             // been done earlier)
             throw std::logic_error("Unexpected unaliased table reference");
         }
-        std::vector<std::string> pCols = _metadata.getPartitionCols(db, table);
+        std::vector<std::string> pCols = _cssStore.getPartitionCols(db, table);
         RestrictorEntry se(alias,
                         StringPair(pCols[0], pCols[1]),
                         pCols[2]);
         _entries.push_back(se);
     }
-    MetadataCache& _metadata;
+    Store& _cssStore;
     RestrictorEntries& _entries;
 };
 ////////////////////////////////////////////////////////////////////////
@@ -363,10 +363,10 @@ QservRestrictorPlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     FromList& fList = stmt.getFromList();
     TableRefnList& tList = fList.getTableRefnList();
     RestrictorEntries entries;
-    if(!context.metadata) {
-        throw std::logic_error("Missing metadata in context");
+    if(!context.cssStore) {
+        throw std::logic_error("Missing CSS Store in context");
     }
-    getTable gt(*context.metadata, entries);
+    getTable gt(*context.cssStore, entries);
     std::for_each(tList.begin(), tList.end(), gt);
 
     if(!stmt.hasWhereClause()) { return; }
@@ -563,7 +563,7 @@ QservRestrictorPlugin::_convertObjectId(QueryContext& context,
     // db, table, column, val1, val2, ...
     p->_params.push_back(context.dominantDb);
     p->_params.push_back(context.anonymousTable);
-    std::string keyColumn = context.metadata->getKeyColumn(context.dominantDb,
+    std::string keyColumn = context.cssStore->getKeyColumn(context.dominantDb,
                                                            context.anonymousTable);
     p->_params.push_back(keyColumn);
     std::copy(original._params.begin(), original._params.end(),

@@ -41,7 +41,6 @@ Access to the classes from the qserv_master library
 #include "qproc/ChunkSpec.h"
 #include "merger/TableMerger.h"
 #include "util/common.h"
-#include "meta/ifaceMeta.h"
 
 #include "log/loggerInterface.h"
 %}
@@ -121,7 +120,6 @@ namespace std {
 %include "control/queryMsg.h"
 %include "merger/mergeTypes.h"
 %include "merger/TableMerger.h"
-%include "meta/ifaceMeta.h"
 %include "log/loggerInterface.h"
 %include "qdisp/ChunkMeta.h"
 %include "qproc/ChunkSpec.h"

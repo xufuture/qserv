@@ -36,6 +36,7 @@
 
 #include <antlr/NoViableAltException.hpp>
 
+#include "css/Store.h"
 #include "query/Constraint.h"
 #include "parser/SelectParser.h"
 #include "query/SelectStmt.h"
@@ -45,7 +46,6 @@
 #include "qana/QueryMapping.h"
 #include "qana/QueryPlugin.h"
 #include "parser/ParseException.h"
-#include "meta/ifaceMeta.h" // Retrieve metadata object
 #include "log/Logger.h"
 
 #define DEBUG 0
@@ -63,8 +63,8 @@ void printConstraints(ConstraintVector const& cv) {
 ////////////////////////////////////////////////////////////////////////
 // class QuerySession
 ////////////////////////////////////////////////////////////////////////
-QuerySession::QuerySession(int metaCacheSession)
-    : _metaCacheSession(metaCacheSession) {
+QuerySession::QuerySession(boost::shared_ptr<Store> cssStore) : 
+    _cssStore(cssStore) {
 }
 
 void QuerySession::setQuery(std::string const& inputQuery) {
@@ -185,11 +185,7 @@ void QuerySession::_initContext() {
     _context->username = "default";
     _context->needsMerge = false;
     _context->chunkCount = 0;
-    MetadataCache* metadata = getMetadataCache(_metaCacheSession).get();
-    _context->metadata = metadata;
-    if(!metadata) {
-        throw std::logic_error("Couldn't retrieve MetadataCache");
-    }
+    _context->cssStore = _cssStore;
 }
 void QuerySession::_preparePlugins() {
     _plugins.reset(new PluginList);
