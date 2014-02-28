@@ -220,7 +220,7 @@ public:
     virtual void cacheValueExprList();
     virtual ValueExprList::iterator valueExprCacheBegin() { return _cache->begin(); }
     virtual ValueExprList::iterator valueExprCacheEnd() { return _cache->end(); }
-    virtual void findColumnRefs(ColumnRefMap::List& list);
+    virtual void findColumnRefs(ColumnRef::List& list);
 
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;

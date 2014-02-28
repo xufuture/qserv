@@ -32,6 +32,7 @@
 #include <boost/algorithm/string.hpp>
 #include "parser/PredicateFactory.h"
 #include "parser/ValueExprFactory.h"
+#include "parser/parseTreeUtil.h"
 #include "SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 
 #include "log/Logger.h"
