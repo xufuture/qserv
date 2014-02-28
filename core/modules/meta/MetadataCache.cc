@@ -103,6 +103,7 @@ bool
 qMaster::MetadataCache::DbInfo::checkIfTableIsChunked(std::string const& tableName) const {
     std::map<std::string, TableInfo>::const_iterator itr = _tables.find(tableName);
     if (itr == _tables.end()) {
+        throw "FIXME";
         return false;
     }
     return itr->second.getIsPartitioned();
@@ -118,6 +119,7 @@ bool
 qMaster::MetadataCache::DbInfo::checkIfTableIsSubChunked(std::string const& tableName) const {
     std::map<std::string, TableInfo>::const_iterator itr = _tables.find(tableName);
     if (itr == _tables.end()) {
+        throw "FIXME";
         return false;
     }
     // why 2? See meta/python/lsst/qserv/meta/metaImpl.py,
@@ -136,6 +138,7 @@ qMaster::MetadataCache::DbInfo::getChunkLevel(std::string const& tableName) cons
     std::map<std::string, TableInfo>::const_iterator itr = _tables.find(tableName);
     int chunklevel=0;
     if (itr == _tables.end()) {
+        throw "FIXME";
         chunklevel=-1;
     }
     else {
@@ -214,6 +217,7 @@ std::string
 qMaster::MetadataCache::DbInfo::getKeyColumn(std::string const& table) const {
     std::map<std::string, TableInfo>::const_iterator itr = _tables.find(table);
     if (itr == _tables.end()) {
+        throw "FIXME";
         return std::string();
     }
     return itr->second.getObjIdCol();
