@@ -104,7 +104,7 @@ private:
     void _showFinal(std::ostream& os); // Debug
 
     // Iterator help
-    std::vector<std::string> _buildChunkQueries(ChunkSpec const& s);
+    std::vector<std::string> _buildChunkQueries(ChunkSpec const& s) const;
 
     // Fields
     int _metaCacheSession;

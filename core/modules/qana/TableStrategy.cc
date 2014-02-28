@@ -104,7 +104,7 @@ public:
     static std::string makeSubChunkTableTemplate(std::string const& table) {
         return table + "_" CHUNKTAG "_" SUBCHUNKTAG;
     }
-    /// @return count of chunked tables.
+    /// @return overall chunk level.
     static int patchTuples(Tuples& tuples) {
         // Are multiple subchunked tables involved? Then do
         // overlap... which requires creating a query sequence.
@@ -116,9 +116,12 @@ public:
         Tuples::iterator i = tuples.begin();
         Tuples::iterator e = tuples.end();
         int chunkedCount = 0;
+        int finalChunkLevel = 0;
         for(; i != e; ++i) {
             if(i->chunkLevel > 0) ++chunkedCount;
         }
+        // If we found any chunked tables, turn on chunking.
+        finalChunkLevel = chunkedCount ? 1 : 0; 
         for(i = tuples.begin(); i != e; ++i) {
             std::string const& prePatch = i->prePatchTable;
             switch(i->chunkLevel) {
@@ -133,6 +136,8 @@ public:
                     i->db = makeSubChunkDbTemplate(i->db);
                     i->tables.push_back(makeSubChunkTableTemplate(prePatch));
                     i->tables.push_back(makeOverlapTableTemplate(prePatch));
+                    // Turn on subchunking
+                    finalChunkLevel = 2;
                 } else {
                     i->tables.push_back(makeChunkTableTemplate(prePatch));
                 }
@@ -143,7 +148,7 @@ public:
                 break;
             }
         }
-        return chunkedCount;
+        return finalChunkLevel;
     }
 };
 
@@ -366,12 +371,8 @@ void TableStrategy::_import(FromList const& f) {
     updateChunkLevel ucl(*_impl->context.metadata);
     std::for_each(_impl->tuples.begin(), _impl->tuples.end(), ucl);
 
-    int chunkedTablesNumber = TableNamer::patchTuples(_impl->tuples);
-    if(chunkedTablesNumber > 1) { _impl->chunkLevel = 2; }
-    else if(chunkedTablesNumber == 1) { _impl->chunkLevel = 1; }
-    else { _impl->chunkLevel = 0; }
-
-    LOGGER_DBG << "SphericalBoxStrategy::_import() : _impl->chunkLevel : "
+    _impl->chunkLevel = TableNamer::patchTuples(_impl->tuples);
+    LOGGER_DBG << "TableStrategy::_import() : _impl->chunkLevel : "
                << _impl->chunkLevel << std::endl;
     if(!_impl->context.metadata) {
         throw std::logic_error("Missing context.metadata");
