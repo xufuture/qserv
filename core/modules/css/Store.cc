@@ -38,17 +38,20 @@
 // Local imports
 #include "Store.h"
 #include "cssException.h"
+#include "cssInterfaceImplDummy.h"
 #include "cssInterfaceImplZoo.h"
 
 using std::cout;
 using std::endl;
+using std::map;
 using std::string;
 using std::vector;
 
 namespace qCss = lsst::qserv::master;
 
 /**
-  * Initialize the Store.
+  * Initialize the Store, the Store will use Zookeeper-based interface, this is
+  * for production use.
   *
   * @param connInfo connection information
   */
@@ -57,7 +60,8 @@ qCss::Store::Store(string const& connInfo) {
 }
 
 /**
-  * Initialize the Store.
+  * Initialize the Store, the Store will use Zookeeper-based interface, but will
+  * place all data in some non-standard location, use this constructor for testing.
   *
   * @param connInfo connection information
   * @param prefix, for testing, to avoid polluting production setup
@@ -65,6 +69,15 @@ qCss::Store::Store(string const& connInfo) {
 qCss::Store::Store(string const& connInfo, string const& prefix) :
     _prefix(prefix) {
     _cssI = new qCss::CssInterfaceImplZoo(connInfo);
+}
+
+/**
+  * Initialize the Store with dummy interface, use this constructor for testing.
+  *
+  * @param connInfo connection information
+  */
+qCss::Store::Store(map<string, string>& kw) {
+    _cssI = new qCss::CssInterfaceImplDummy(kw);
 }
 
 qCss::Store::~Store() {
