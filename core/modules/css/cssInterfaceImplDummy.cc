@@ -89,10 +89,12 @@ qCss::CssInterfaceImplDummy::create(string const& key, string const& value) {
 
 bool
 qCss::CssInterfaceImplDummy::exists(string const& key) {
+    bool ret = _kwMap.find(key) != _kwMap.end();
     if (_verbose) {
-        cout << "*** CssInterfaceImplDummy::exist(), key: " << key << endl;
+        cout << "*** CssInterfaceImplDummy::exists(), key: " << key 
+             << ": " << ret << endl;
     }
-    return _kwMap.find(key) != _kwMap.end();
+    return ret;
 }
 
 string

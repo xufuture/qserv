@@ -135,6 +135,7 @@ struct ParserFixture {
 
         std::string s = "/DATABASES/LSST/TABLES/Object";
         kwMap[s] = "";
+        kwMap[s + "/partitioning"] = "";
         kwMap[s + "/partitioning/subChunks"] = "0";
         kwMap[s + "/partitioning/secIndexColName"] = "objectIdObjTest";
         kwMap[s + "/partitioning/drivingTable"] = "";
@@ -143,6 +144,7 @@ struct ParserFixture {
 
         s = "/DATABASES/LSST/TABLES/Source";
         kwMap[s] = "";
+        kwMap[s + "/partitioning"] = "";
         kwMap[s + "/partitioning/subChunks"] = "1";
         kwMap[s + "/partitioning/secIndexColName"] = "objectIdSourceTest";
         kwMap[s + "/partitioning/drivingTable"] = "";
@@ -150,7 +152,9 @@ struct ParserFixture {
         kwMap[s + "/partitioning/drivingTable/lonColName"] = "raObjectTest";
 
         s = "/DATABASES/LSST/TABLES/Filter";
+        kwMap[s] = "";
         s = "/DATABASES/LSST/TABLES/Science_Ccd_Exposure";
+        kwMap[s] = "";
 
         s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv";
         kwMap[s] = "";
@@ -159,6 +163,7 @@ struct ParserFixture {
 
         s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv/TABLES/Object";
         kwMap[s] = "";
+        kwMap[s + "/partitioning"] = "";
         kwMap[s + "/partitioning/subChunks"] = "1";
         kwMap[s + "/partitioning/secIndexColName"] = "objectIdSourceTest";
         kwMap[s + "/partitioning/drivingTable"] = "";
@@ -167,6 +172,7 @@ struct ParserFixture {
 
         s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv/TABLES/Object";
         kwMap[s] = "";
+        kwMap[s + "/partitioning"] = "";
         kwMap[s + "/partitioning/subChunks"] = "1";
         kwMap[s + "/partitioning/secIndexColName"] = "objectIdSourceTest";
         kwMap[s + "/partitioning/drivingTable"] = "";
