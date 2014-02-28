@@ -46,7 +46,7 @@ namespace master {
 
 class CssInterfaceImplDummy : public CssInterface {
 public:
-    CssInterfaceImplDummy(std::map<std::string, std::string>, bool);
+    CssInterfaceImplDummy(std::map<std::string, std::string>&, bool verbose=true);
     virtual ~CssInterfaceImplDummy();
 
     virtual void create(std::string const& key, std::string const& value);

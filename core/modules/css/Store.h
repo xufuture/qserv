@@ -57,7 +57,7 @@ class Store {
 public:
     Store(std::string const&);
     Store(std::string const&, std::string const&);
-    Store(std::vector<std::string, std::string>);
+    Store(std::map<std::string, std::string>&);
     ~Store();
 
     // accessors
