@@ -114,6 +114,6 @@ SelectParser::setup() {
     sf.attachTo(_aParser->parser); 
     _aParser->run();
     _selectStmt = sf.getStatement();
-    _selectStmt->diagnose();
+    // _selectStmt->diagnose(); // helpful for debugging.
 }
 }}}

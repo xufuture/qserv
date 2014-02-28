@@ -218,7 +218,7 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
         throw std::invalid_argument("No select list in original SelectStmt");
     }
 
-    printList(LOG_STRM(Info), "aggr origlist", *vlist) << std::endl;
+    //printList(LOG_STRM(Info), "aggr origlist", *vlist) << std::endl;
     // Clear out select lists, since we are rewriting them.
     pList.getValueExprList()->clear();
     mList.getValueExprList()->clear();
@@ -229,10 +229,10 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
     std::for_each(vlist->begin(), vlist->end(), ca);
     QueryTemplate qt;
     pList.renderTo(qt);
-    LOGGER_INF << "pass: " << qt.dbgStr() << std::endl;
+    //LOGGER_INF << "pass: " << qt.dbgStr() << std::endl;
     qt.clear();
     mList.renderTo(qt);
-    LOGGER_INF << "fixup: " << qt.dbgStr() << std::endl;
+    //LOGGER_INF << "fixup: " << qt.dbgStr() << std::endl;
 
     // Also need to operate on GROUP BY.
     // update context.
