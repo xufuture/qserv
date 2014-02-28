@@ -77,9 +77,14 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                        mysqlclient_r ssl crypto""".split(),
                            'distDir' : 'lib'
                            },
+<<<<<<< HEAD
                "_masterLib" : {'mods' : """css czar control global
                                            log merger mysql
                                            parser query
+=======
+               "_masterLib" : {'mods' : """css czar control parser query
+                                           log merger mysql
+>>>>>>> integrated css into qserv (major surgery). builds, still debugging runtime issues
                                            sql util xrdc
                                            obsolete proto
                                            qana qdisp qproc""".split(),

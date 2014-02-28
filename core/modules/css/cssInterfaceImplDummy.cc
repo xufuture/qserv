@@ -69,7 +69,7 @@ namespace qCss = lsst::qserv::master;
  *
  * @param connInfo connection information
  */
-qCss::CssInterfaceImplDummy::CssInterfaceImplDummy(map<string, string> kwMap,
+qCss::CssInterfaceImplDummy::CssInterfaceImplDummy(map<string, string>& kwMap,
                                                    bool verbose) :
     qCss::CssInterface(verbose) {
     _kwMap = kwMap;
