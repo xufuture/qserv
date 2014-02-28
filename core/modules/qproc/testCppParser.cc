@@ -34,6 +34,8 @@
 #include <list>
 #include <map>
 #include <string>
+#include <iterator>
+#include <algorithm>
 #include <antlr/NoViableAltException.hpp>
 
 #include "qdisp/ChunkMeta.h"
@@ -91,6 +93,7 @@ ChunkSpec makeChunkSpec(int chunkNum, bool withSubChunks=false) {
     return cs;
 }
 void testParse(SelectParser::Ptr p) {
+    p->setup();
 }
 
 boost::shared_ptr<QuerySession> testStmt3(QuerySession::Test& t,
@@ -107,6 +110,25 @@ boost::shared_ptr<QuerySession> testStmt3(QuerySession::Test& t,
             std::cout << *i << ",";
         }
     }
+    return qs;
+}
+
+std::string computeFirst(QuerySession& qs) {
+    qs.addChunk(makeChunkSpec(100,true));
+    QuerySession::Iter i = qs.cQueryBegin();
+    QuerySession::Iter e = qs.cQueryEnd();
+    BOOST_REQUIRE(i != e);
+    ChunkQuerySpec& first = *i;
+    return first.queries[0];
+}
+
+boost::shared_ptr<QuerySession> testAndCompare(QuerySession::Test& t,
+                                               std::string const& stmt,
+                                               std::string const& expected) {
+
+    boost::shared_ptr<QuerySession> qs = testStmt3(t, stmt);
+    std::string actual = computeFirst(*qs);
+    BOOST_CHECK_EQUAL(actual, expected);
     return qs;
 }
 
@@ -223,14 +245,6 @@ struct ParserFixture {
 
 //BOOST_AUTO_TEST_CASE(SqlSubstitution) {
 
-std::string computeFirst(QuerySession& qs) {
-    qs.addChunk(makeChunkSpec(100,true));
-    QuerySession::Iter i = qs.cQueryBegin();
-    QuerySession::Iter e = qs.cQueryEnd();
-    BOOST_REQUIRE(i != e);
-    ChunkQuerySpec& first = *i;
-    return first.queries[0];
-}
 ////////////////////////////////////////////////////////////////////////
 // CppParser basic tests
 ////////////////////////////////////////////////////////////////////////
@@ -446,7 +460,11 @@ BOOST_AUTO_TEST_CASE(BadDbAccess) {
 BOOST_AUTO_TEST_CASE(ObjectSourceJoin) {
     std::string stmt = "select * from LSST.Object o, Source s WHERE "
         "qserv_areaspec_box(2,2,3,3) AND o.objectId = s.objectId;";
-    std::string expected = "select * from LSST.%$#Object%$# o,LSST.%$#Source%$# s WHERE (scisql_s2PtInBox(o.ra_Test,o.decl_Test,2,2,3,3) = 1) AND (scisql_s2PtInBox(s.raObjectTest,s.declObjectTest,2,2,3,3) = 1) AND o.objectId=s.objectId;";
+    std::string expected = "SELECT * "
+        "FROM Subchunks_LSST_100.Object_100_100000 AS o,LSST.Source_100 AS s "
+        "WHERE scisql_s2PtInBox(o.ra_Test,o.decl_Test,2,2,3,3)=1 "
+        "AND scisql_s2PtInBox(s.raObjectTest,s.declObjectTest,2,2,3,3)=1 "
+        "AND o.objectId=s.objectId";
 
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
 
@@ -461,6 +479,8 @@ BOOST_AUTO_TEST_CASE(ObjectSourceJoin) {
     char const* params[] = {"2","2","3","3"};
     BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
                                   params, params+4);
+    std::string actual = computeFirst(*qs);
+    BOOST_CHECK_EQUAL(actual, expected);
 }
 
 BOOST_AUTO_TEST_CASE(ObjectSelfJoin) {
@@ -787,7 +807,10 @@ BOOST_AUTO_TEST_CASE(FreeIndex) {
     // Equi-join using index and free-form syntax
     std::string stmt = "SELECT s.ra, s.decl, o.foo FROM Source s, Object o "
         "WHERE s.objectId=o.objectId and o.objectIdObjTest = 430209694171136;";
-    testStmt3(qsTest, stmt);
+    std::string expected = "SELECT s.ra AS QS1_PASS,s.decl AS QS2_PASS,o.foo AS QS3_PASS "
+        "FROM LSST.Source_100 AS s,Subchunks_LSST_100.Object_100_100000 AS o "
+        "WHERE s.objectId=o.objectId AND o.objectIdObjTest=430209694171136";
+    testAndCompare(qsTest, stmt, expected);
 }
 
 BOOST_AUTO_TEST_CASE(SpecIndexUsing) {
@@ -795,14 +818,24 @@ BOOST_AUTO_TEST_CASE(SpecIndexUsing) {
     std::string stmt = "SELECT s.ra, s.decl, o.foo "
         "FROM Object o JOIN Source s USING (objectIdObjTest) JOIN Source s2 USING (objectIdObjTest) "
         "WHERE o.objectId = 430209694171136;";
-    testStmt3(qsTest, stmt);
+    std::string expected = "SELECT s.ra AS QS1_PASS,s.decl AS QS2_PASS,o.foo AS QS3_PASS "
+        "FROM Subchunks_LSST_100.Object_100_100000 AS o "
+        "JOIN LSST.Source_100 AS s USING(objectIdObjTest) "
+        "JOIN LSST.Source_100 AS s2 USING(objectIdObjTest) "
+        "WHERE o.objectId=430209694171136";
+    testAndCompare(qsTest, stmt, expected);
 }
 
 BOOST_AUTO_TEST_CASE(SpecIndexOn) {
     std::string stmt = "SELECT s.ra, s.decl, o.foo "
         "FROM Object o JOIN Source s ON s.objectIdObjTest = o.objectIdObjTest JOIN Source s2 ON s.objectIdObjTest = s2.objectIdObjTest "
         "WHERE o.objectId = 430209694171136;";
-    testStmt3(qsTest, stmt);
+    std::string expected = "SELECT s.ra AS QS1_PASS,s.decl AS QS2_PASS,o.foo AS QS3_PASS "
+        "FROM Subchunks_LSST_100.Object_100_100000 AS o "
+        "JOIN LSST.Source_100 AS s ON s.objectIdObjTest=o.objectIdObjTest "
+        "JOIN LSST.Source_100 AS s2 ON s.objectIdObjTest=s2.objectIdObjTest "
+        "WHERE o.objectId=430209694171136";
+    testAndCompare(qsTest, stmt, expected);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -813,16 +846,23 @@ BOOST_AUTO_TEST_CASE(NoSpec) {
     std::string stmt = "SELECT s1.foo, s2.foo "
         "FROM Source s1 NATURAL LEFT JOIN Source s2 "
         "WHERE s1.bar = s2.bar;";
+    std::string expected = "SELECT s1.foo AS QS1_PASS,s2.foo AS QS2_PASS "
+        "FROM LSST.Source_100 AS s1 "
+        "NATURAL LEFT OUTER JOIN LSST.Source_100 AS s2 "
+        "WHERE s1.bar=s2.bar";
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
-    std::cout << "orig:" << stmt << std::endl;
     qs->addChunk(makeChunkSpec(100,true));
     QuerySession::Iter i = qs->cQueryBegin();
     QuerySession::Iter e = qs->cQueryEnd();
     BOOST_REQUIRE(i != e);
     ChunkQuerySpec& first = *i;
-    std::cout << "out:" << first.queries[0] << std::endl;
-    //    BOOST_CHECK_EQUAL(first.queries.size(), 1);
-    //    BOOST_CHECK_EQUAL(first.queries[0], expected_100);
+    BOOST_CHECK_EQUAL(first.queries.size(), 1);
+    BOOST_CHECK_EQUAL(first.queries[0], expected);
+    BOOST_CHECK_EQUAL(first.subChunkTables.size(), 0);
+    BOOST_CHECK_EQUAL(first.db, "LSST");
+    BOOST_CHECK_EQUAL(first.chunkId, 100);
+    ++i;
+    BOOST_CHECK(i == e);
 }
 
 BOOST_AUTO_TEST_CASE(Union) {
@@ -965,13 +1005,8 @@ BOOST_AUTO_TEST_CASE(Case01_1081) {
     BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
     BOOST_CHECK(!context->restrictors);
 
-    qs->addChunk(makeChunkSpec(100,true));
-    QuerySession::Iter i = qs->cQueryBegin();
-    QuerySession::Iter e = qs->cQueryEnd();
-    BOOST_REQUIRE(i != e);
-    ChunkQuerySpec& first = *i;
-    //    BOOST_CHECK_EQUAL(first.queries.size(), 1); ???
-    BOOST_CHECK_EQUAL(first.queries[0], expected_100);
+    std::string actual = computeFirst(*qs);
+    BOOST_CHECK_EQUAL(actual, expected_100);
     // JOIN syntax, "is NULL" syntax
 }
 
