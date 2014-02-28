@@ -39,7 +39,7 @@ std::ostream& JoinRef::putStream(std::ostream& os) const {
 void JoinRef::putTemplate(QueryTemplate& qt) const {
     _putJoinTemplate(qt);
     _right->putTemplate(qt);
-    _spec->putTemplate(qt);
+    if(_spec) { _spec->putTemplate(qt); }
 }
 
 void JoinRef::_putJoinTemplate(QueryTemplate& qt) const {

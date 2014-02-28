@@ -75,7 +75,6 @@ void QuerySession::setQuery(std::string const& inputQuery) {
 
     SelectParser::Ptr p;
     try {
-
         p = SelectParser::newInstance(inputQuery);
         p->setup();
         _stmt = p->getSelectStmt();
@@ -267,7 +266,7 @@ void QuerySession::_showFinal(std::ostream& os) {
     }
 }
 
-std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) {
+std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) const {
     std::vector<std::string> q;
     // This logic may be pushed over to the qserv worker in the future.
     if(_stmtParallel.empty() || !_stmtParallel.front()) {
@@ -283,6 +282,7 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) {
     typedef std::list<QueryTemplate> Tlist;
     typedef Tlist::const_iterator TlistIter;
     Tlist tlist;
+
     for(Iter i=_stmtParallel.begin(), e=_stmtParallel.end();
         i != e; ++i) {
         tlist.push_back((**i).getTemplate());
@@ -349,15 +349,18 @@ void QuerySession::Iter::_buildCache() const {
     //            << " empty" << std::endl;
 
     _cache.scanTables = _qs->_context->scanTables;
-    _cache.queries = _qs->_buildChunkQueries(*_pos);
     _cache.chunkId = _pos->chunkId;
     _cache.nextFragment.reset();
+    // Reset subChunkTables
     _cache.subChunkTables.clear();
     QueryMapping const& queryMapping = *(_qs->_context->queryMapping);
     QueryMapping::StringSet const& sTables = queryMapping.getSubChunkTables();
     _cache.subChunkTables.insert(_cache.subChunkTables.begin(),
                                  sTables.begin(), sTables.end());
-    if(_hasSubChunks) {
+    // Build queries.
+    if(!_hasSubChunks) {
+        _cache.queries = _qs->_buildChunkQueries(*_pos);
+    } else {
         if(_pos->shouldSplit()) {
             ChunkSpecFragmenter frag(*_pos);
             ChunkSpec s = frag.get();

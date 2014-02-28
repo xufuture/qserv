@@ -98,7 +98,7 @@ public:
 
     // Helpers
     void _print();
-    void _generate();
+    std::string _generateDbg();
 
     // Fields
     boost::shared_ptr<FromList> _fromList; // Data sources

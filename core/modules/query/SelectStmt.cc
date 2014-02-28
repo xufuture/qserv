@@ -48,8 +48,6 @@
 #include "query/WhereClause.h"
 #include "log/Logger.h"
 
-// myself
-
 
 // namespace modifiers
 namespace qMaster = lsst::qserv::master;
@@ -95,7 +93,7 @@ qMaster::SelectStmt::SelectStmt() {
 void qMaster::SelectStmt::diagnose() {
     //_selectList->getColumnRefList()->printRefs();
     //_selectList->dbgPrint(std::cout);
-    _generate();
+    LOGGER_INF << _generateDbg() << std::endl;
 
 }
 
@@ -217,6 +215,6 @@ void qMaster::SelectStmt::_print() {
     if(_limit != -1) { LOGGER_INF << " LIMIT " << _limit; }
 }
 
-void qMaster::SelectStmt::_generate() {
-    LOGGER_INF << getTemplate().dbgStr() << std::endl;
+std::string qMaster::SelectStmt::_generateDbg() {
+    return getTemplate().dbgStr();
 }
