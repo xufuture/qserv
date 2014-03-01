@@ -347,12 +347,11 @@ bool
 qCss::Store::_checkIfTableIsChunked(string const& dbName, string const& tableName) {
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + 
                tableName + "/partitioning";
-    string retS = _cssI->get(p);
-    bool retV = (retS != "-1");
+    bool ret = _cssI->exists(p);
     cout << "*** " << dbName << "." << tableName << " is ";
-    if (!retV) cout << "NOT ";
-    cout << "chunked" << endl;
-    return retV;
+    if (!ret) cout << "NOT ";
+    cout << "chunked." << endl;
+    return ret;
 }
 
 /** Checks if a given table is subchunked. Does not check if database and/or table
@@ -372,6 +371,6 @@ qCss::Store::_checkIfTableIsSubChunked(string const& dbName,
     bool retV = (retS == "1");
     cout << "*** " << dbName << "." << tableName << " is ";
     if (!retV) cout << "NOT ";
-    cout << "subchunked" << endl;
+    cout << "subchunked." << endl;
     return retV;
 }
