@@ -194,7 +194,11 @@ struct ParserFixture {
 
         std::map<std::string, std::string>::const_iterator itrM;
         for (itrM=kwMap.begin() ; itrM!=kwMap.end() ; itrM++) {
-            std::cout << itrM->first << " --> " << itrM->second << std::endl;
+            std::string val = "\\N";
+            if (itrM->second != "") {
+                val = itrM->second;
+            }
+            std::cout << itrM->first << "\t" << val << std::endl;
         }
 
         cssStore = boost::shared_ptr<qMaster::Store>(new qMaster::Store(kwMap));
