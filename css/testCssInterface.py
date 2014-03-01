@@ -80,7 +80,7 @@ class TestCssInterface(unittest.TestCase):
         # try to delete invalid key
         self.assertRaises(CssException, self._cssI.delete, "/whatever")
         # print everything
-        self._cssI.printAll()
+        self._cssI.dumpAll()
 
     #def testPerformance(self):
     #    n = 10 # set it to something larger for real test...
