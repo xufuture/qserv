@@ -64,7 +64,7 @@ class QservAdminImpl(object):
                                (dbName, str(options)))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
-            raise CssException(CssException.DB_EXISTS, [dbName])
+            raise CssException(CssException.DB_EXISTS, dbName)
         dbP = "/DATABASES/%s" % dbName
         ptP = None
         try:
@@ -98,10 +98,10 @@ class QservAdminImpl(object):
         self._logger.info("Creating db '%s' like '%s'" % (dbName, dbName2))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
-            raise CssException(CssException.DB_EXISTS, [dbName])
+            raise CssException(CssException.DB_EXISTS, dbName)
         if not self._dbExists(dbName2):
             self._logger.error("Database '%s' does not exist." % dbName2)
-            raise CssException(CssException.DB_DOES_NOT_EXIST, [dbName2])
+            raise CssException(CssException.DB_DOES_NOT_EXIST, dbName2)
         dbP = "/DATABASES/%s" % dbName
         try:
             self._cssI.create(dbP, "PENDING")
@@ -125,7 +125,7 @@ class QservAdminImpl(object):
         self._logger.info("Drop database '%s'" % dbName)
         if not self._dbExists(dbName):
             self._logger.error("Database '%s' does not exist." % dbName)
-            raise CssException(CssException.DB_DOES_NOT_EXIST, [dbName])
+            raise CssException(CssException.DB_DOES_NOT_EXIST, dbName)
         self._cssI.delete("/DATABASES/%s" % dbName, recursive=True)
 
     def showDatabases(self):
@@ -163,11 +163,10 @@ class QservAdminImpl(object):
                                (dbName, tableName, str(options)))
         if not self._dbExists(dbName):
             self._logger.error("Database '%s' does not exist." % dbName)
-            raise CssException(CssException.DB_DOES_NOT_EXIST, [dbName])
+            raise CssException(CssException.DB_DOES_NOT_EXIST, dbName)
         if self._tableExists(dbName, tableName):
             self._logger.error("Table '%s.%s' exists." % (dbName, tableName))
-            raise CssException(CssException.TB_EXISTS, 
-                               ["%s.%s" % (dbName, tableName)])
+            raise CssException(CssException.TB_EXISTS, "%s.%s" % (dbName,tableName))
         tbP = "/DATABASES/%s/TABLES/%s" % (dbName, tableName)
         try:
             self._cssI.create(tbP, "PENDING")
