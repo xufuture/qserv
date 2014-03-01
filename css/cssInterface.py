@@ -36,6 +36,7 @@ Known issues and todos:
 
 # standard library imports
 import logging
+import sys
 import time
 
 # third-party software imports
@@ -186,13 +187,16 @@ class CssInterface(object):
         if self._zk.exists(p):
             self._deleteOne(p)
 
-    def printAll(self):
+    def dumpAll(self, dest=None):
         """
-        Print entire contents to stdout. This is handy for debugging.
+        Returns entire contents.
         """
-        self._printOne("/")
+        fileH = sys.stdout
+        if dest is not None:
+            fileH = open(dest, "w")
+        self._printOne("/", fileH)
 
-    def _printOne(self, p):
+    def _printOne(self, p, fileH=None):
         """
         Print content of one key/value to stdout. Note, this function is recursive.
 
@@ -204,13 +208,19 @@ class CssInterface(object):
         try:
             children = self._zk.get_children(p)
             data, stat = self._zk.get(p)
-            print p, "=", data
+            if fileH is not None:
+                fileH.write(p)
+                fileH.write('\t')
+                fileH.write((data if data else '\N'))
+                fileH.write('\n')
+            else:
+                print p, '\t', (data if data else '\N')
             for child in children:
                 if p == "/":
                     if child != "zookeeper":
-                        self._printOne("%s%s" % (p, child))
+                        self._printOne("%s%s" % (p, child), fileH)
                 else:
-                    self._printOne("%s/%s" % (p, child))
+                    self._printOne("%s/%s" % (p, child), fileH)
         except NoNodeError:
             self._logger.warning("Caught NoNodeError, someone deleted node just now")
             None

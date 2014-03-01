@@ -79,6 +79,7 @@ class CommandParser(object):
         self._funcMap = {
             'CREATE':  self._parseCreate,
             'DROP':    self._parseDrop,
+            'DUMP':    self._parseDump,
             'HELP':    self._printHelp,
             'RELEASE': self._parseRelease,
             'SHOW':    self._parseShow
@@ -90,8 +91,8 @@ class CommandParser(object):
     CREATE DATABASE <dbName> LIKE <dbName2>;
     DROP DATABASE <dbName>;
     DROP EVERYTHING;
+    DUMP EVERYTHING [<outFile>];
     SHOW DATABASES;
-    SHOW EVERYTHING;
     QUIT;
     EXIT;
     ...more coming soon
@@ -212,6 +213,17 @@ class CommandParser(object):
         else:
             raise QAdmException(QAdmException.BAD_CMD)
 
+    def _parseDump(self, tokens):
+        """
+        Subparser, handle all DUMP requests.
+        """
+        t = tokens[0].upper()
+        dest = tokens[1] if len(tokens) > 1 else None
+        if t == 'EVERYTHING':
+            self._impl.dumpEverything(dest)
+        else:
+            raise QAdmException(QAdmException.BAD_CMD)
+
     def _printHelp(self, tokens):
         """
         Print available commands.
@@ -231,8 +243,6 @@ class CommandParser(object):
         t = tokens[0].upper()
         if t == 'DATABASES':
             self._impl.showDatabases()
-        elif t == 'EVERYTHING':
-            self._impl.showEverything()
         else:
             raise QAdmException(QAdmException.BAD_CMD)
 
@@ -365,6 +375,7 @@ words = ['CONFIG',
          'DATABASE',
          'DATABASES',
          'DROP',
+         'DUMP',
          'INTO',
          'LIKE',
          'LOAD',

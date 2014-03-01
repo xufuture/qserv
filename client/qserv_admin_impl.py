@@ -187,11 +187,12 @@ class QservAdminImpl(object):
         self._logger.debug("Create table '%s.%s' succeeded." % (dbName, tableName))
 
     ################################################################################
-    def showEverything(self):
+    def dumpEverything(self, dest=None):
         """
-        Dumps entire metadata in CSS to stdout. Very useful for debugging.
+        Dumps entire metadata in CSS. Output goes to file (if provided through
+        "dest"), otherwise to stdout.
         """
-        self._cssI.printAll()
+        self._cssI.dumpAll(dest)
 
     def dropEverything(self):
         """
