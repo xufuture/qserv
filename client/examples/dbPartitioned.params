@@ -1,7 +1,7 @@
 [db_info]
 
-# Supported levels: L1, L2, L3
-level: L2
+# For LSST, this represents L1, L2, L3
+dbGroup: L2
 
 # To turn on/off database partitioning, use:
 # partitioning: on|off

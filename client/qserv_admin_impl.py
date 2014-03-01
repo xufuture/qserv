@@ -64,7 +64,7 @@ class QservAdminImpl(object):
                                (dbName, str(options)))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
-            raise CssException(CssException.ERR_DB_EXISTS, [dbName])
+            raise CssException(CssException.DB_EXISTS, [dbName])
         dbP = "/DATABASES/%s" % dbName
         ptP = None
         try:
@@ -73,7 +73,7 @@ class QservAdminImpl(object):
             self._cssI.create("%s/nStripes"    % ptP, options["nStripes"   ])
             self._cssI.create("%s/nSubStripes" % ptP, options["nSubStripes"])
             self._cssI.create("%s/overlap"     % ptP, options["overlap"    ])
-            self._cssI.create("%s/dbGroup" % dbP, options["level"])
+            self._cssI.create("%s/dbGroup" % dbP, options["dbGroup"])
             pId = ptP[-10:] # the partitioning id is always 10 digit, 0 padded
             self._cssI.create("%s/partitioningId" % dbP, str(pId))
             self._cssI.create("%s/releaseStatus" % dbP,"UNRELEASED")
@@ -98,10 +98,10 @@ class QservAdminImpl(object):
         self._logger.info("Creating db '%s' like '%s'" % (dbName, dbName2))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
-            raise CssException(CssException.ERR_DB_EXISTS, [dbName])
+            raise CssException(CssException.DB_EXISTS, [dbName])
         if not self._dbExists(dbName2):
             self._logger.error("Database '%s' does not exist." % dbName2)
-            raise CssException(CssException.ERR_DB_DOES_NOT_EXIST, [dbName2])
+            raise CssException(CssException.DB_DOES_NOT_EXIST, [dbName2])
         dbP = "/DATABASES/%s" % dbName
         try:
             self._cssI.create(dbP, "PENDING")
@@ -125,7 +125,7 @@ class QservAdminImpl(object):
         self._logger.info("Drop database '%s'" % dbName)
         if not self._dbExists(dbName):
             self._logger.error("Database '%s' does not exist." % dbName)
-            raise CssException(CssException.ERR_DB_DOES_NOT_EXIST, [dbName])
+            raise CssException(CssException.DB_DOES_NOT_EXIST, [dbName])
         self._cssI.delete("/DATABASES/%s" % dbName, recursive=True)
 
     def showDatabases(self):
@@ -163,10 +163,10 @@ class QservAdminImpl(object):
                                (dbName, tableName, str(options)))
         if not self._dbExists(dbName):
             self._logger.error("Database '%s' does not exist." % dbName)
-            raise CssException(CssException.ERR_DB_DOES_NOT_EXIST, [dbName])
+            raise CssException(CssException.DB_DOES_NOT_EXIST, [dbName])
         if self._tableExists(dbName, tableName):
             self._logger.error("Table '%s.%s' exists." % (dbName, tableName))
-            raise CssException(CssException.ERR_TB_EXISTS, 
+            raise CssException(CssException.TB_EXISTS, 
                                ["%s.%s" % (dbName, tableName)])
         tbP = "/DATABASES/%s/TABLES/%s" % (dbName, tableName)
         try:
