@@ -89,6 +89,8 @@ class CommandParser(object):
   Supported commands:
     CREATE DATABASE <dbName> <configFile>;
     CREATE DATABASE <dbName> LIKE <dbName2>;
+    CREATE TABLE <dbName> <tableName> <configFile>;
+    CREATE TABLE <dbName> <tableName> LIKE <dbName2> <tableName2>;
     DROP DATABASE <dbName>;
     DROP EVERYTHING;
     DUMP EVERYTHING [<outFile>];
@@ -166,7 +168,7 @@ class CommandParser(object):
         elif l == 3:
             if tokens[1].upper() != 'LIKE':
                 raise QAdmException(QAdmException.BAD_CMD, 
-                                    "expected 'LIKE', found: '%s'." % tokens[1])
+                                    "Expected 'LIKE', found: '%s'." % tokens[1])
             dbName = tokens[0]
             dbName2 = tokens[2]
             try:
@@ -177,13 +179,40 @@ class CommandParser(object):
                              dbName2 + "', error was: ", e.__str__())
         else:
             raise QAdmException(QAdmException.BAD_CMD, 
-                                "unexpected number of arguments.")
+                                "Unexpected number of arguments.")
 
     def _parseCreateTable(self, tokens):
         """
         Subparser - handles all CREATE TABLE requests.
         """
-        raise QAdmException(QAdmException.NOT_IMPLEMENTED, "CREATE TABLE")
+        l = len(tokens)
+        if l == 3:
+            (dbName, tbName, configFile) = tokens
+            options = self._fetchOptionsFromConfigFile(configFile)
+            options = self._processTbOptions(options)
+            try:
+                self._impl.createTable(dbName, tbName, options)
+            except CssException as e:
+                raise QAdmException(QAdmException.CUSTOM, 
+                          "Failed to create table '" + dbName + "." + tbName + \
+                          "', error was: " +  e.__str__())
+        elif l == 5:
+            (dbName, tbName, likeToken, dbName2, tbName2) = tokens
+            if likeToken.upper() != 'LIKE':
+                raise QAdmException(QAdmException.BAD_CMD, 
+                                    "Expected 'LIKE', found: '%s'." % tokens[2])
+            try:
+                # FIXME, createTableLike is not implemented!
+                self._impl.createTableLike(dbName, tableName, dbName2, tableName2,
+                                           options)
+            except CssException as e:
+                raise QAdmException(QAdmException.CUSTOM, 
+                         "Failed to create table '" + dbName + "." + tbName + \
+                         "' LIKE '" + dbName2 + "." + tbName2 + "', " + \
+                         "'error was: ", e.__str__())
+        else:
+            raise QAdmException(QAdmException.BAD_CMD, 
+                                "Unexpected number of arguments.")
 
     def _parseDrop(self, tokens):
         """
@@ -294,12 +323,42 @@ class CommandParser(object):
                         "partitioning", 
                         "partitioningStrategy")}
         _crDbPSOpts = {
-            "sphBox":("nStripes", 
-                      "nSubStripes", 
-                      "overlap")}
+            "sphBox": ("nStripes", 
+                       "nSubStripes", 
+                       "overlap")}
         # validate the options
-        self._validateKVOptions(opts, _crDbOpts, _crDbPSOpts, "db_info")
+        #self._validateKVOptions(opts, _crDbOpts, _crDbPSOpts, "db_info")
         return opts
+
+    def _processTbOptions(self, opts):
+        """
+        Validate options used by createTable, add default values for missing
+        parameters.
+        """
+        if not opts.has_key("clusteredIndex"):
+            self._logger.info(
+                "param 'clusteredIndex' not found, will use default: ''")
+            opts["clusteredIndex"] = "NULL"
+        if not opts.has_key("isRefMatch"):
+            self._logger.info("param 'isRefMatch' not found, will use default: No")
+            opts["isRefMatch"] = "No"
+        # these are required options for createTable
+        _crTbOpts = {
+            "table_info":("tableName",
+                          "partitioning",
+                          "schemaFile",
+                          "clusteredIndex",
+                          "isRefMatch",
+                          "isView")}
+        _crTbPSOpts = {
+            "sphBox":("overlap",
+                      "phiColName", 
+                      "lonColName", 
+                      "latColName")}
+        # validate the options
+        #self._validateKVOptions(opts,_crTbOpts,_crTbPSOpts,"table_info")
+        return opts
+
 
     def _validateKVOptions(self, x, xxOpts, psOpts, whichInfo):
         if not x.has_key("partitioning"):

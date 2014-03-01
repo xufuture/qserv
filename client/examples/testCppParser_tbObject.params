@@ -25,12 +25,15 @@ isRefMatch: 0
 # keyColInTable2: <colName>
 
 
+# this whole section makes sense only for partitioned tables
+[partitioning]
+
 # is this table subchunked?
 # Allowed values: 0, 1
 subChunks: 1
 
 # name of column used as secondary index (if any)
-secIndexColName: objectId
+secIndexColName: objectIdObjTest
 
 
 # name of the table that is a driving table.
@@ -42,10 +45,9 @@ drivingTable: Object
 # it might be set for non-driving tables.
 # For non driving tables, it will be used if keyColName
 # does not make sense (eg, for sources that don't match objects).
-latColName: decl_PS
-lonColName: ra_PS
+latColName: decl_Test
+lonColName: ra_Test
 
 # name of the column used to join with the driving table.
 # uncomment and set for non-driving tables.
 #keyColName: <columnName>
-

@@ -31,6 +31,9 @@
 
 #define BOOST_TEST_MODULE testCppParser
 #include "boost/test/included/unit_test.hpp"
+#include <boost/algorithm/string.hpp>
+#include <fstream>
+#include <iostream>
 #include <list>
 #include <map>
 #include <string>
@@ -122,92 +125,36 @@ struct ParserFixture {
         config["table.partitioncols"] = "Object:ra_Test,decl_Test,objectIdObjTest;"
             "Source:raObjectTest,declObjectTest,objectIdSourceTest";
 
-        std::string s;
-
-        // planning to generate this map automatically, to do that, 
-        // run qserv_admin.py
-        // and run:
-        // create database LSST examples/testCppParser_db.params;
-        // create table Object;
-        // [create tables here, not implemented yet]
-        // dump everything;
         std::map<std::string, std::string> kwMap;
-        kwMap["/DATABASE_PARTITONING"] = "";
-        kwMap["/DATABASES"] = "";
 
-        // create partitioning scheme
-        kwMap["/DATABASE_PARTITONING/00000001"] = "";
-        kwMap["/DATABASE_PARTITONING/00000001/nStripes"] = "60";
-        kwMap["/DATABASE_PARTITONING/00000001/nSubStripes"] = "18";
-        kwMap["/DATABASE_PARTITONING/00000001/overlap"] = "0.025";
-        kwMap["/DATABASE_PARTITONING/00000001/dbGroup"] = "L2";
-
-        // create database LSST
-        s = "/DATABASES/LSST";
-        kwMap[s] = "";
-        kwMap[s+"/TABLES"] = "";
-        kwMap[s+"/partitioningId"] = "00000001";
-
-        // create table LSST.Object
-        s = "/DATABASES/LSST/TABLES/Object";
-        kwMap[s] = "";
-        kwMap[s+"/partitioning"] = "00000001";
-        kwMap[s+"/partitioning/subChunks"] = "1";
-        kwMap[s+"/partitioning/secIndexColName"] = "objectIdObjTest";
-        kwMap[s+"/partitioning/secIndexStatus"] = "INVALID";
-        kwMap[s+"/partitioning/latColName"] = "decl_Test";
-        kwMap[s+"/partitioning/lonColName"] = "ra_Test";
-
-        // create table LSST.Source
-        s = "/DATABASES/LSST/TABLES/Source";
-        kwMap[s] = "";
-        kwMap[s+"/partitioning"] = "00000001";
-        kwMap[s+"/partitioning/subChunks"] = "0";
-        kwMap[s+"/partitioning/secIndexColName"] = "objectIdSourceTest";
-        kwMap[s+"/partitioning/latColName"] = "declObjectTest";
-        kwMap[s+"/partitioning/lonColName"] = "raObjectTest";
-
-        // create table LSST.Filter
-        s = "/DATABASES/LSST/TABLES/Filter";
-        kwMap[s] = "";
-        kwMap[s + "/partitioning"] = "-1";
-
-        // create table LSST.Science_Ccd_Exposure
-        s = "/DATABASES/LSST/TABLES/Science_Ccd_Exposure";
-        kwMap[s] = "";
-        kwMap[s + "/partitioning"] = "-1";
-
-        // create database rplante...
-        s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv";
-        kwMap[s] = "";
-        kwMap[s+"/TABLES"] = "";
-        kwMap[s+"/partitioningId"] = "00000001";
-
-        // create table rplante...Object
-        s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv/TABLES/Object";
-        kwMap[s + "/partitioning"] = "";
-        kwMap[s + "/partitioning/subChunks"] = "1";
-        kwMap[s + "/partitioning/secIndexColName"] = "objectIdSourceTest";
-        kwMap[s + "/partitioning/latColName"] = "declObjectTest";
-        kwMap[s + "/partitioning/lonColName"] = "raObjectTest";
-
-        s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv/TABLES/Source";
-        kwMap[s] = "";
-        kwMap[s + "/partitioning"] = "";
-        kwMap[s + "/partitioning/subChunks"] = "0";
-        kwMap[s + "/partitioning/secIndexColName"] = "objectIdSourceTest";
-        kwMap[s + "/partitioning/latColName"] = "decl";
-        kwMap[s + "/partitioning/lonColName"] = "ra";
-
-        std::map<std::string, std::string>::const_iterator itrM;
-        for (itrM=kwMap.begin() ; itrM!=kwMap.end() ; itrM++) {
-            std::string val = "\\N";
-            if (itrM->second != "") {
-                val = itrM->second;
+        // To generate the key/value map, follow this recipe:
+        // 1) cleanup everything in zookeeper. careful, this will wipe out 
+        //    everyting in zookeeper!
+        //    echo "drop everything;" | ./client/qserv_admin.py
+        // 2) generate the clean set
+        //    ./client/qserv_admin.py < client/examples/testCppParser_generateMap
+        // 3) then copy the generate file to final destination
+        //    mv /tmp/testCppParser.kwmap core/modules/qproc/
+        std::ifstream f("./modules/qproc/testCppParser.kwmap"); // FIXME
+        std::string line;
+        std::vector<std::string> strs;
+        while ( std::getline(f, line) ) {
+            boost::split(strs, line, boost::is_any_of("\t"));
+            std::string theKey = strs[0];
+            std::string theVal = strs[1];
+            if (theVal == "\\N") {
+                theVal = "";
             }
-            std::cout << itrM->first << "\t" << val << std::endl;
+            kwMap[theKey] = theVal;
         }
-
+        //std::map<std::string, std::string>::const_iterator itrM;
+        //for (itrM=kwMap.begin() ; itrM!=kwMap.end() ; itrM++) {
+        //    std::string val = "\\N";
+        //    if (itrM->second != "") {
+        //        val = itrM->second;
+        //    }
+        //    std::cout << itrM->first << "\t" << val << std::endl;
+        //}
         cssStore = boost::shared_ptr<qMaster::Store>(new qMaster::Store(kwMap));
     };
     ~ParserFixture(void) { };
