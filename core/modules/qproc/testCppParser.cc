@@ -122,62 +122,80 @@ struct ParserFixture {
         config["table.partitioncols"] = "Object:ra_Test,decl_Test,objectIdObjTest;"
             "Source:raObjectTest,declObjectTest,objectIdSourceTest";
 
+        std::string s;
+
         std::map<std::string, std::string> kwMap;
         kwMap["/DATABASE_PARTITONING"] = "";
+        kwMap["/DATABASES"] = "";
+
+        // create partitioning scheme
         kwMap["/DATABASE_PARTITONING/00000001"] = "";
         kwMap["/DATABASE_PARTITONING/00000001/nStripes"] = "60";
         kwMap["/DATABASE_PARTITONING/00000001/nSubStripes"] = "18";
         kwMap["/DATABASE_PARTITONING/00000001/overlap"] = "0.025";
-        kwMap["/DATABASES"] = "";
-        kwMap["/DATABASES/LSST"] = "";
-        kwMap["/DATABASES/LSST/TABLES"] = "";
-        kwMap["/DATABASES/LSST/partitioningId"] = "00000001";
+        kwMap["/DATABASE_PARTITONING/00000001/dbGroup"] = "L2";
 
-        std::string s = "/DATABASES/LSST/TABLES/Object";
+        // create database LSST
+        s = "/DATABASES/LSST";
+        kwMap[s] = "";
+        kwMap[s+"/TABLES"] = "";
+        kwMap[s+"/partitioningId"] = "00000001";
+
+        // create table LSST.Object
+        s = "/DATABASES/LSST/TABLES/Object";
+        kwMap[s] = "";
+        kwMap[s+"/partitioning"] = "00000001";
+        kwMap[s+"/partitioning/subChunks"] = "1";
+        kwMap[s+"/partitioning/secIndexColName"] = "objectIdObjTest";
+        kwMap[s+"/partitioning/secIndexStatus"] = "INVALID";
+        kwMap[s+"/partitioning/latColName"] = "decl_Test";
+        kwMap[s+"/partitioning/lonColName"] = "ra_Test";
+
+        // create table LSST.Source
+        s = "/DATABASES/LSST/TABLES/Source";
+        kwMap[s] = "";
+        kwMap[s+"/partitioning"] = "00000001";
+        kwMap[s+"/partitioning/subChunks"] = "0";
+        kwMap[s+"/partitioning/secIndexColName"] = "objectIdSourceTest";
+        kwMap[s+"/partitioning/latColName"] = "declObjectTest";
+        kwMap[s+"/partitioning/lonColName"] = "raObjectTest";
+
+        // create table LSST.Filter
+        s = "/DATABASES/LSST/TABLES/Filter";
+        kwMap[s] = "";
+        kwMap[s + "/partitioning"] = "-1";
+
+        // create table LSST.Science_Ccd_Exposure
+        s = "/DATABASES/LSST/TABLES/Science_Ccd_Exposure";
+        kwMap[s] = "";
+        kwMap[s + "/partitioning"] = "-1";
+
+        // create database rplante...
+        s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv";
+        kwMap[s] = "";
+        kwMap[s+"/TABLES"] = "";
+        kwMap[s+"/partitioningId"] = "00000001";
+
+        // create table rplante...Object
+        s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv/TABLES/Object";
+        kwMap[s + "/partitioning"] = "";
+        kwMap[s + "/partitioning/subChunks"] = "1";
+        kwMap[s + "/partitioning/secIndexColName"] = "objectIdSourceTest";
+        kwMap[s + "/partitioning/latColName"] = "declObjectTest";
+        kwMap[s + "/partitioning/lonColName"] = "raObjectTest";
+
+        s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv/TABLES/Source";
         kwMap[s] = "";
         kwMap[s + "/partitioning"] = "";
         kwMap[s + "/partitioning/subChunks"] = "0";
-        kwMap[s + "/partitioning/secIndexColName"] = "objectIdObjTest";
-        kwMap[s + "/partitioning/drivingTable"] = "";
-        kwMap[s + "/partitioning/drivingTable/latColName"] = "decl_Test";
-        kwMap[s + "/partitioning/drivingTable/lonColName"] = "ra_Test";
-
-        s = "/DATABASES/LSST/TABLES/Source";
-        kwMap[s] = "";
-        kwMap[s + "/partitioning"] = "";
-        kwMap[s + "/partitioning/subChunks"] = "1";
         kwMap[s + "/partitioning/secIndexColName"] = "objectIdSourceTest";
-        kwMap[s + "/partitioning/drivingTable"] = "";
-        kwMap[s + "/partitioning/drivingTable/latColName"] = "declObjectTest";
-        kwMap[s + "/partitioning/drivingTable/lonColName"] = "raObjectTest";
+        kwMap[s + "/partitioning/latColName"] = "decl";
+        kwMap[s + "/partitioning/lonColName"] = "ra";
 
-        s = "/DATABASES/LSST/TABLES/Filter";
-        kwMap[s] = "";
-        s = "/DATABASES/LSST/TABLES/Science_Ccd_Exposure";
-        kwMap[s] = "";
-
-        s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv";
-        kwMap[s] = "";
-        kwMap[s + "/TABLES"] = "";
-        kwMap[s + "/partitioningId"] = "00000001";
-
-        s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv/TABLES/Object";
-        kwMap[s] = "";
-        kwMap[s + "/partitioning"] = "";
-        kwMap[s + "/partitioning/subChunks"] = "1";
-        kwMap[s + "/partitioning/secIndexColName"] = "objectIdSourceTest";
-        kwMap[s + "/partitioning/drivingTable"] = "";
-        kwMap[s + "/partitioning/drivingTable/latColName"] = "declObjectTest";
-        kwMap[s + "/partitioning/drivingTable/lonColName"] = "raObjectTest";
-
-        s = "/DATABASES/rplante_PT1_2_u_pt12prod_im3000_qserv/TABLES/Object";
-        kwMap[s] = "";
-        kwMap[s + "/partitioning"] = "";
-        kwMap[s + "/partitioning/subChunks"] = "1";
-        kwMap[s + "/partitioning/secIndexColName"] = "objectIdSourceTest";
-        kwMap[s + "/partitioning/drivingTable"] = "";
-        kwMap[s + "/partitioning/drivingTable/latColName"] = "decl";
-        kwMap[s + "/partitioning/drivingTable/lonColName"] = "ra";
+        std::map<std::string, std::string>::const_iterator itrM;
+        for (itrM=kwMap.begin() ; itrM!=kwMap.end() ; itrM++) {
+            std::cout << itrM->first << " --> " << itrM->second << std::endl;
+        }
 
         cssStore = boost::shared_ptr<qMaster::Store>(new qMaster::Store(kwMap));
     };
