@@ -124,6 +124,13 @@ struct ParserFixture {
 
         std::string s;
 
+        // planning to generate this map automatically, to do that, 
+        // run qserv_admin.py
+        // and run:
+        // create database LSST examples/testCppParser_db.params;
+        // create table Object;
+        // [create tables here, not implemented yet]
+        // dump everything;
         std::map<std::string, std::string> kwMap;
         kwMap["/DATABASE_PARTITONING"] = "";
         kwMap["/DATABASES"] = "";
