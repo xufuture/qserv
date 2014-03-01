@@ -124,7 +124,13 @@ qCss::Store::checkIfContainsTable(string const& dbName, string const& tableName)
 bool
 qCss::Store::checkIfTableIsChunked(string const& dbName, string const& tableName) {
     cout << "checkIfTableIsChunked " << dbName << " " << tableName << endl;
-    _validateDbTbExists(dbName, tableName);
+    try { // FIXME: remove it, it SHOULD throw an exception
+        _validateDbTbExists(dbName, tableName);
+    } catch (qCss::CssException& e) {
+        if (e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST) {
+            return false;
+        }
+    }
     return _checkIfTableIsChunked(dbName, tableName);
 }
 
@@ -234,19 +240,29 @@ qCss::Store::getPartitionCols(string const& dbName, string const& tableName) {
 int
 qCss::Store::getChunkLevel(string const& dbName, string const& tableName) {
     cout << "getChunkLevel(" << dbName << ", " << tableName << ")" << endl;
-    _validateDbTbExists(dbName, tableName);
+    try { // FIXME: remove it, it SHOULD throw an exception
+        _validateDbTbExists(dbName, tableName);
+    } catch (qCss::CssException& e) {
+        if (e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST) {
+            return -1;
+        }
+    }
     bool isChunked = _checkIfTableIsChunked(dbName, tableName);
     bool isSubChunked = _checkIfTableIsSubChunked(dbName, tableName);
     if (isSubChunked) {
+        cout << "getChunkLevel returns 2" << endl;
         return 2;
     }
     if (isChunked) {
+        cout << "getChunkLevel returns 1" << endl;
         return 1;
     }
+        cout << "getChunkLevel returns 0" << endl;
     return 0;
 }
 
-/** Retrieve the key column for a database
+/** Retrieve the key column for a database. Throws exception if the database
+  * or table does not exist.
   *
   * @param db database name
   * @param table table name
@@ -256,7 +272,13 @@ qCss::Store::getChunkLevel(string const& dbName, string const& tableName) {
 string
 qCss::Store::getKeyColumn(string const& dbName, string const& tableName) {
     cout << "*** Store::getKeyColumn(" << dbName << ", " << tableName << ")"<<endl;
-    _validateDbTbExists(dbName, tableName);
+    try { // FIXME: remove it, it SHOULD throw an exception
+        _validateDbTbExists(dbName, tableName);
+    } catch (qCss::CssException& e) {
+        if (e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST) {
+            return "";
+        }
+    }
     string ret, p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + tableName +
                     "/partitioning/secIndexColName";
     try {
@@ -325,11 +347,12 @@ bool
 qCss::Store::_checkIfTableIsChunked(string const& dbName, string const& tableName) {
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + 
                tableName + "/partitioning";
-    bool ret = _cssI->exists(p);
+    string retS = _cssI->get(p);
+    bool retV = (retS != "-1");
     cout << "*** " << dbName << "." << tableName << " is ";
-    if (!ret) cout << "NOT ";
+    if (!retV) cout << "NOT ";
     cout << "chunked" << endl;
-    return ret;
+    return retV;
 }
 
 /** Checks if a given table is subchunked. Does not check if database and/or table
@@ -345,9 +368,10 @@ qCss::Store::_checkIfTableIsSubChunked(string const& dbName,
                                        string const& tableName) {
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + 
                tableName + "/partitioning/" + "subChunks";
-    bool ret = _cssI->exists(p);
+    string retS = _cssI->get(p);
+    bool retV = (retS == "1");
     cout << "*** " << dbName << "." << tableName << " is ";
-    if (!ret) cout << "NOT ";
+    if (!retV) cout << "NOT ";
     cout << "subchunked" << endl;
-    return ret;
+    return retV;
 }
