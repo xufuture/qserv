@@ -109,7 +109,7 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                       mysqlclient_r protobuf
                                       XrdPosix XrdPosixPreload XrdUtils
                                       boost_regex boost_thread
-                                      boost_signals""".split(),
+                                      boost_signals zookeeper_mt""".split(),
                                'SHLIBPREFIX' : '',
                                'distDir' : 'lsst/qserv/master'}
                }
