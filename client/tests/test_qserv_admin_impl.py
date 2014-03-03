@@ -82,7 +82,7 @@ class TestQservAdminImpl(unittest.TestCase):
                "schema":       "(objectId BIGINT, ra_PS DOUBLE, decl_PS DOUBLE)",
                "subChunks":    "0" }
         self._impl.createTable("dbA", "Summer2012", dd)
-        self._impl.showEverything()
+        self._impl.dumpEverything()
         self._impl.dropDb("dbA")
 
 
