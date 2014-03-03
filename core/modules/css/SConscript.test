@@ -16,16 +16,16 @@ deps = map(lambda i:i, deps) # un-chain
 myDeps = filter(lambda i: not str(i).startswith("test"), env.Glob("*.cc"))
 extDeps = "antlr boost_regex boost_thread-mt protobuf ssl crypto XrdPosix XrdClient XrdPosixPreload XrdUtils mysqlclient_r zookeeper_mt".split()
 
-p = env.Program(["testCssException.cc"] + myDeps + deps, LIBS=extDeps)
+p = env.Program(["testCssException.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
 programs.append(p)
 
-p = env.Program(["testCssInterfaceImplDummy.cc"] + myDeps + deps, LIBS=extDeps)
+p = env.Program(["testCssInterfaceImplDummy.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
 programs.append(p)
 
-p = env.Program(["testCssInterfaceImplZoo.cc"] + myDeps + deps, LIBS=extDeps)
+p = env.Program(["testCssInterfaceImplZoo.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
 programs.append(p)
 
-p = env.Program(["testStore.cc"] + myDeps + deps, LIBS=extDeps)
+p = env.Program(["testStore.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
 programs.append(p)
 
 Return('programs')
