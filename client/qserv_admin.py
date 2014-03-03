@@ -59,7 +59,7 @@ QAdmException = produceExceptionClass('QAdmException', [
     (3003, "MISSING_PARAM",    "Missing parameter."),
     (3004, "WRONG_PARAM",      "Unrecognized parameter."),
     (3005, "WRONG_PARAM_VAL",  "Unrecognized value for parameter."),
-    (9997, "CUSTOM",           ""),
+    (9997, "CSSERR",           "CSS error."),
     (9998, "NOT_IMPLEMENTED",  "Feature not implemented yet."),
     (9999, "INTERNAL",         "Internal error.")])
 
@@ -162,7 +162,7 @@ class CommandParser(object):
             try:
                 self._impl.createDb(dbName, options)
             except CssException as e:
-                raise QAdmException(QAdmException.CUSTOM, 
+                raise QAdmException(QAdmException.CSSERR, 
                                     "Failed to create database '" + dbName + \
                                     "', error was: " +  e.__str__())
         elif l == 3:
@@ -174,7 +174,7 @@ class CommandParser(object):
             try:
                 self._impl.createDbLike(dbName, dbName2)
             except CssException as e:
-                raise QAdmException(QAdmException.CUSTOM, 
+                raise QAdmException(QAdmException.CSSERR, 
                              "Failed to create database '" + dbName + "' like '" + \
                              dbName2 + "', error was: ", e.__str__())
         else:
@@ -193,7 +193,7 @@ class CommandParser(object):
             try:
                 self._impl.createTable(dbName, tbName, options)
             except CssException as e:
-                raise QAdmException(QAdmException.CUSTOM, 
+                raise QAdmException(QAdmException.CSSERR, 
                           "Failed to create table '" + dbName + "." + tbName + \
                           "', error was: " +  e.__str__())
         elif l == 5:
@@ -206,7 +206,7 @@ class CommandParser(object):
                 self._impl.createTableLike(dbName, tableName, dbName2, tableName2,
                                            options)
             except CssException as e:
-                raise QAdmException(QAdmException.CUSTOM, 
+                raise QAdmException(QAdmException.CSSERR, 
                          "Failed to create table '" + dbName + "." + tbName + \
                          "' LIKE '" + dbName2 + "." + tbName2 + "', " + \
                          "'error was: ", e.__str__())
@@ -227,7 +227,7 @@ class CommandParser(object):
             try:
                 self._impl.dropDb(tokens[1])
             except CssException as e:
-                raise QAdmException(QAdmException.CUSTOM, 
+                raise QAdmException(QAdmException.CSSERR, 
                                     "Failed to drop database '" + tokens[1] + 
                                     ", error was: ", e.__str__())
         elif t == 'TABLE':
@@ -237,7 +237,7 @@ class CommandParser(object):
             try:
                 self._impl.dropEverything()
             except CssException as e:
-                raise QAdmException(QAdmException.CUSTOM, 
+                raise QAdmException(QAdmException.CSSERR, 
                              "Failed to drop everything, error was: ", e.__str__())
         else:
             raise QAdmException(QAdmException.BAD_CMD)

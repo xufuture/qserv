@@ -1,9 +1,9 @@
 create database db1a client/examples/dbPartitioned.params;
 create database db1b like db1a;
 create database db2 client/examples/dbPartitioned.params;
-show everything;
+dump everything;
 drop database db1a;
-show everything;
+dump everything;
 drop database db1b;
 drop database db2;
 create database dbA client/examples/dbPartitioned.params;

@@ -20,10 +20,11 @@ zookeeper-3.4.5/bin/zkServer.sh start
 
 ##### Testing C bindings #####
 
-cd core/modules/css
-./dist/testCssException
-./dist/testCssInterface
-./dist/testStore
+export LD_LIBRARY_PATH=<path>/lib:<path>/lib/mysql
+core/bld/css/testCssException
+core/bld/css/dist/testCssInterfaceImplDummy
+core/bld/css/dist/testCssInterfaceImplZoo
+core/bld/css/dist/testStore
 
 
 ##### Testing python bindings and qserv_admin_client #####
