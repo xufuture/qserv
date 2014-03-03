@@ -40,13 +40,13 @@ class TestQservAdminImpl(unittest.TestCase):
         self._baseDir = "client/examples"
 
     def testCreateDb(self):
-        dd = {"level": "L2",
+        dd = {"dbGroup": "L2",
               "partitioning": "on",
               "partitioningStrategy": "sphBox",
               "nStripes": "10",
               "nSubStripes": "23",
               "overlap": "0.0001",
-              "objectIdIndex": "0.25"}
+              "objIdIndex": "0.25"}
         self._impl.createDb("db1a", dd)
         self.assertRaises(CssException, self._impl.createDb, "db1a", dd)
         self._impl.createDbLike("db1b", "db1a")
@@ -59,7 +59,7 @@ class TestQservAdminImpl(unittest.TestCase):
         self.assertRaises(CssException, self._impl.createDbLike, "xxxx", "xxxx")
 
         self._impl.createDb("db2", dd)
-        self._impl.showEverything()
+        self._impl.dumpEverything()
         self._impl.dropDb("db1a")
         self._impl.dropDb("db1b")
         self._impl.dropDb("db2")
@@ -80,7 +80,7 @@ class TestQservAdminImpl(unittest.TestCase):
                "schema":       "(objectId BIGINT, ra_PS DOUBLE, decl_PS DOUBLE)",
                "subChunks":    "0" }
         self._impl.createTable("dbA", "Summer2012", dd)
-        self._impl.showEverything()
+        self._impl.dumpEverything()
         self._impl.dropDb("dbA")
 
 

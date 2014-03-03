@@ -65,19 +65,23 @@ class QservAdminImpl(object):
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
             raise CssException(CssException.DB_EXISTS, dbName)
+        # double check if all required options are specified
+        for x in ["nStripes", "nSubStripes", "overlap", "dbGroup", "objIdIndex"]:
+            if x not in options:
+                self._logger.error("Required option '%s' missing" % x)
+                raise CssException(CssException.MISSING_PARAM, x)
         dbP = "/DATABASES/%s" % dbName
         ptP = None
         try:
             self._cssI.create(dbP, "PENDING")
             ptP = self._cssI.create("/DATABASE_PARTITIONING/_", sequence=True)
-            self._cssI.create("%s/nStripes"    % ptP, options["nStripes"   ])
-            self._cssI.create("%s/nSubStripes" % ptP, options["nSubStripes"])
-            self._cssI.create("%s/overlap"     % ptP, options["overlap"    ])
-            self._cssI.create("%s/dbGroup" % dbP, options["dbGroup"])
+            for x in ["nStripes", "nSubStripes", "overlap"]:
+                self._cssI.create("%s/%s" % (ptP, x), options[x])
             pId = ptP[-10:] # the partitioning id is always 10 digit, 0 padded
             self._cssI.create("%s/partitioningId" % dbP, str(pId))
             self._cssI.create("%s/releaseStatus" % dbP,"UNRELEASED")
-            self._cssI.create("%s/objIdIndex" % dbP, options["objectIdIndex"])
+            for x in ["dbGroup", "objIdIndex"]:
+                self._cssI.create("%s/%s" % (dbP, x), options[x])
             self._createDbLockSection(dbP)
             self._cssI.set(dbP, "READY")
         except CssException as e:

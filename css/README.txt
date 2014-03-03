@@ -66,3 +66,6 @@ socket   = /var/run/mysqld/mysqld.sock
   ./client/qserv_admin.py  < ./client/tests/test_qserv_admin
   # this is with logging:
   ./client/qserv_admin.py -v 10 -f qadm.log < ./client/tests/test_qserv_admin
+
+
+  ./client/tests/test_qserv_admin_impl.py

@@ -313,10 +313,10 @@ class CommandParser(object):
             self._logger.info(
                 "param 'partitioning' not found, will use default: off")
             opts["partitioning"] = "off"
-        if not opts.has_key("objectIdIndex"):
+        if not opts.has_key("objIdIndex"):
             self._logger.info(
-                "param 'objectIdIndex' not found, will use default: ''")
-            opts["objectIdIndex"] = ''
+                "param 'objIdIndex' not found, will use default: ''")
+            opts["objIdIndex"] = ''
         # these are required options for createDb
         _crDbOpts = { 
             "db_info": ("dbGroup", 
@@ -327,7 +327,7 @@ class CommandParser(object):
                        "nSubStripes", 
                        "overlap")}
         # validate the options
-        #self._validateKVOptions(opts, _crDbOpts, _crDbPSOpts, "db_info")
+        self._validateKVOptions(opts, _crDbOpts, _crDbPSOpts, "db_info")
         return opts
 
     def _processTbOptions(self, opts):
@@ -402,7 +402,7 @@ class CommandParser(object):
                         # skip non required, these are not in xxOpts/theOpts
                         if whichInfo=="db_info" and o=="clusteredIndex":
                             continue
-                        if whichInfo=="db_info" and o=="objectIdIndex":
+                        if whichInfo=="db_info" and o=="objIdIndex":
                             continue
                         if whichInfo=="table_info" and o=="partitioningStrategy":
                             continue
