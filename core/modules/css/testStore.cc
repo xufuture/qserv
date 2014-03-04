@@ -60,28 +60,38 @@ struct StoreFixture {
         string prefix = "/unittest_" + boost::lexical_cast<string>(rand());
         cout << "My prefix is: " << prefix << endl;
         kv.push_back(make_pair(prefix, ""));
-        kv.push_back(make_pair(prefix + "/DATABASES", ""));
 
+        kv.push_back(make_pair(prefix + "/DATABASE_PARTITIONING", ""));
+        string p = prefix + "/DATABASE_PARTITIONING/_0000000001";
+        kv.push_back(make_pair(p, ""));
+        kv.push_back(make_pair(p+"/nStripes", "18"));
+        kv.push_back(make_pair(p+"/nSubStripes", "40"));
+        kv.push_back(make_pair(p+"/overlap", "0.025"));
+
+        kv.push_back(make_pair(prefix + "/DATABASES", ""));
         kv.push_back(make_pair(prefix + "/DATABASES/dbA", ""));
+        kv.push_back(make_pair(prefix + "/DATABASES/dbA/partitioningId",
+                               "0000000001"));
         kv.push_back(make_pair(prefix + "/DATABASES/dbB", ""));
         kv.push_back(make_pair(prefix + "/DATABASES/dbC", ""));
-        string p = prefix + "/DATABASES/dbA/TABLES";
+        p = prefix + "/DATABASES/dbA/TABLES";
         kv.push_back(make_pair(p, ""));
         kv.push_back(make_pair(p + "/Object", ""));
         kv.push_back(make_pair(p + "/Object/partitioning", ""));
         kv.push_back(make_pair(p + "/Object/partitioning/lonColName", "ra_PS"));
         kv.push_back(make_pair(p + "/Object/partitioning/latColName", "decl_PS"));
+        kv.push_back(make_pair(p + "/Object/partitioning/subChunks", "1"));
         kv.push_back(make_pair(p + "/Object/partitioning/secIndexColName","objId"));
         kv.push_back(make_pair(p + "/Source", ""));
         kv.push_back(make_pair(p + "/Source/partitioning", ""));
         kv.push_back(make_pair(p + "/Source/partitioning/lonColName", "ra"));
         kv.push_back(make_pair(p + "/Source/partitioning/latColName", "decl"));
-        kv.push_back(make_pair(p + "/Source/partitioning/subChunks", "1"));
+        kv.push_back(make_pair(p + "/Source/partitioning/subChunks", "0"));
         kv.push_back(make_pair(p + "/FSource", ""));
         kv.push_back(make_pair(p + "/FSource/partitioning", ""));
         kv.push_back(make_pair(p + "/FSource/partitioning/lonColName", "ra"));
         kv.push_back(make_pair(p + "/FSource/partitioning/latColName", "decl"));
-        kv.push_back(make_pair(p + "/FSource/partitioning/subChunks", "1"));
+        kv.push_back(make_pair(p + "/FSource/partitioning/subChunks", "0"));
         kv.push_back(make_pair(p + "/Exposure", ""));
 
         p = prefix + "/DATABASES/dbB/TABLES";
@@ -91,9 +101,12 @@ struct StoreFixture {
         qCss::CssInterfaceImplZoo cssI = 
             qCss::CssInterfaceImplZoo("localhost:2181", false);
         vector<std::pair<string, string> >::const_iterator itr;
+        cout << "--------------" << endl;
         for (itr=kv.begin() ; itr!=kv.end() ; ++itr) {
+            cout << itr->first << " --> " << itr->second << endl;
             cssI.create(itr->first, itr->second);
         }
+        cout << "--------------" << endl;
         store = new qCss::Store("localhost:2181", prefix);
     };
 
@@ -157,8 +170,8 @@ BOOST_AUTO_TEST_CASE(checkIfTableIsChunked) {
 
 BOOST_AUTO_TEST_CASE(checkIfTableIsSubChunked) {
     // normal, table exists
-    BOOST_REQUIRE(!store->checkIfTableIsSubChunked("dbA", "Object"));
-    BOOST_REQUIRE( store->checkIfTableIsSubChunked("dbA", "Source"));
+    BOOST_REQUIRE(store->checkIfTableIsSubChunked("dbA", "Object"));
+    BOOST_REQUIRE(!store->checkIfTableIsSubChunked("dbA", "Source"));
     BOOST_REQUIRE(!store->checkIfTableIsSubChunked("dbA", "Exposure"));
 
     // normal, table does not exist
@@ -209,10 +222,9 @@ BOOST_AUTO_TEST_CASE(getChunkedTables) {
 BOOST_AUTO_TEST_CASE(getSubChunkedTables) {
     // normal, 2 values
     vector<string> v = store->getSubChunkedTables("dbA");
-    BOOST_REQUIRE(2 == v.size());
-    std::sort (v.begin(), v.end());
-    BOOST_REQUIRE(v[0]=="FSource");
-    BOOST_REQUIRE(v[1]=="Source");
+    BOOST_REQUIRE(1 == v.size());
+    //std::sort (v.begin(), v.end());
+    BOOST_REQUIRE(v[0]=="Object");
 
     // normal, no values
     v = store->getSubChunkedTables("dbB");
@@ -249,7 +261,9 @@ BOOST_AUTO_TEST_CASE(getPartitionCols) {
 }
 
 BOOST_AUTO_TEST_CASE(getChunkLevel) {
-    // FIXME
+    BOOST_REQUIRE(store->getChunkLevel("dbA", "Object") == 2);
+    BOOST_REQUIRE(store->getChunkLevel("dbA", "Source") == 1);
+    BOOST_REQUIRE(store->getChunkLevel("dbA", "Exposure") == 0);
 }
 
 BOOST_AUTO_TEST_CASE(getKeyColumn) {
@@ -266,5 +280,12 @@ BOOST_AUTO_TEST_CASE(getKeyColumn) {
         BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
     }
 }
+
+BOOST_AUTO_TEST_CASE(getDbStriping) {
+    qCss::DbStriping s = store->getDbStriping("dbA");
+    BOOST_REQUIRE(s.stripes() == 18);
+    BOOST_REQUIRE(s.subStripes() == 40);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

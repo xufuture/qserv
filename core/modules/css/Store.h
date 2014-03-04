@@ -53,6 +53,18 @@ class CssInterface; // forward declaration
 /** The class stores Qserv-specific metadata and state information from the
     Central State System.
  */
+
+class DbStriping {
+public:
+    DbStriping(int stripes, int subStripes) : 
+        _stripes(stripes), _subStripes(subStripes) {}
+    int stripes() const    { return _stripes; }
+    int subStripes() const { return _subStripes; }
+private:
+    int _stripes;
+    int _subStripes;
+};
+      
 class Store {
 public:
     Store(std::string const&);
@@ -72,6 +84,7 @@ public:
                                               std::string const&);
     int getChunkLevel(std::string const&, std::string const&);
     std::string getKeyColumn(std::string const&, std::string const&);
+    DbStriping getDbStriping(std::string const&);
 
 private:
     void _validateDbExists(std::string const&);
@@ -80,6 +93,7 @@ private:
     bool _checkIfContainsTable(std::string const&, std::string const&);
     bool _checkIfTableIsChunked(std::string const&, std::string const&);
     bool _checkIfTableIsSubChunked(std::string const&, std::string const&);
+    int _getIntValue(std::string const&);
 
 private:
     CssInterface* _cssI;
