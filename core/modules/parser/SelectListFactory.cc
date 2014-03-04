@@ -119,9 +119,6 @@ boost::shared_ptr<SelectList> SelectListFactory::getProduct() {
 
 void
 SelectListFactory::_import(RefAST selectRoot) {
-    //    std::cout << "Type of selectRoot is "
-    //              << selectRoot->getType() << std::endl;
-
     for(; selectRoot.get();
         selectRoot = selectRoot->getNextSibling()) {
         RefAST child = selectRoot->getFirstChild();
@@ -192,7 +189,6 @@ SelectListFactory::_addSelectStar(RefAST child) {
             throw ParseException("Missing name node.", child);
         }
         tableName = tokenText(table);
-        std::cout << "table ref'd for *: " << tableName << std::endl;
     }
     vt = ValueFactor::newStarFactor(tableName);
     _valueExprList->push_back(ValueExpr::newSimple(vt));
