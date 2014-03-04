@@ -73,10 +73,22 @@ private:
 class TableAliasReverse {
 public:
     std::string const& get(std::string db, std::string table) {
-        return _map[DbTablePair(db, table)];
+        return get(DbTablePair(db, table));
     }
-    std::string const& get(DbTablePair const& p) {
-        return _map[p];
+    inline std::string const& get(DbTablePair const& p) {
+        std::string const& val = _map[p]; // Empty entries inserted here.
+        // Try slow lookup for inexact search
+        if(val.empty() && p.db.empty()) {
+            // FIXME: no precedence handling for entries.
+            typedef Map::const_iterator Iter;
+            for(Iter i=_map.begin(), e=_map.end(); i != e; ++i) {
+                if((i->first.table == p.table)
+                   && !i->second.empty()) {
+                    return i->second;
+                }
+            }
+        }
+        return val;
     }
     void set(std::string const& db, std::string const& table,
              std::string const& alias) {

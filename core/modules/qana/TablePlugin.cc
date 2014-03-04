@@ -150,8 +150,6 @@ public:
             }
             ValueFactor& t = *i->factor;
             //LOGGER_INF << "fixing factor: " << *vep << std::endl;
-            std::string newAlias;
-
             switch(t.getType()) {
             case ValueFactor::COLUMNREF:
                 // check columnref.
@@ -166,7 +164,11 @@ public:
                 // Patch db/table name if applicable
                 _patchStar(t);
                 break;
-            default: break;
+            case ValueFactor::CONST:
+                break; // Constants don't need patching.
+            default:
+                LOGGER_WRN << "Unhandled ValueFactor:" << t << std::endl;
+                break;
             }
         }
     }
@@ -175,6 +177,7 @@ private:
         std::string newAlias = _getAlias(ref.db, ref.table);
         if(newAlias.empty()) { return; } //  Ignore if no replacement
                                          //  exists.
+
         // Eliminate db. Replace table with aliased table.
         ref.db.assign("");
         ref.table.assign(newAlias);

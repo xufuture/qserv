@@ -103,7 +103,7 @@ boost::shared_ptr<QuerySession> testStmt3(QuerySession::Test& t,
     BOOST_CHECK_EQUAL(qs->getError(), "");
     ConstraintVec cv(qs->getConstraints());
     boost::shared_ptr<ConstraintVector> cvRaw = cv.getVector();
-    if(cvRaw) {
+    if(false && cvRaw) { // DEBUG
         std::copy(cvRaw->begin(), cvRaw->end(), std::ostream_iterator<Constraint>(std::cout, ","));
         typedef ConstraintVector::iterator Iter;
         for(Iter i=cvRaw->begin(), e=cvRaw->end(); i != e; ++i) {
@@ -745,7 +745,7 @@ BOOST_AUTO_TEST_CASE(NewParser) {
     };
     for(int i=0; i < 8; ++i) {
         std::string stmt = stmts[i];
-        std::cout << "----" << stmt << "----" << std::endl;
+        //std::cout << "----" << stmt << "----" << std::endl;
         SelectParser::Ptr p = getParser(stmt);
         testParse(p);
     }
