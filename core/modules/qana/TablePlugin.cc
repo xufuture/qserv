@@ -389,7 +389,8 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
     if(permutationCount > 1)
         for(int i=0; i < permutationCount; ++i) {
             boost::shared_ptr<SelectStmt> stmt = in.copyDeep();
-            FromList::Ptr f(new FromList(ts.getPermutation(i, fList.getTableRefnList())));
+            TableRefListPtr trl = ts.getPermutation(i, fList.getTableRefList());
+            FromList::Ptr f(new FromList(trl));
             stmt->setFromList(f);
             outList.push_back(stmt);
             ++added;

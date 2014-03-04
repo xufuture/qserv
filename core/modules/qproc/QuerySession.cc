@@ -289,11 +289,6 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
     for(Iter i=_stmtParallel.begin(), e=_stmtParallel.end();
         i != e; ++i) {
         tlist.push_back((**i).getTemplate());
-
-	LOGGER_DBG << "QuerySession::_buildChunkQueries() : adding _stmtParallel diagnose()"
-                   << std::endl;
-
-	(**i).diagnose();
     }
     if(!queryMapping.hasSubChunks()) { // Non-subchunked?
         LOGGER_INF << "QuerySession::_buildChunkQueries() : Non-subchunked" << std::endl;
@@ -372,6 +367,7 @@ void QuerySession::Iter::_buildCache() const {
             frag.next();
             _cache.nextFragment = _buildFragment(frag);
         } else {
+            _cache.queries = _qs->_buildChunkQueries(*_pos);
             _cache.subChunkIds.assign(_pos->subChunks.begin(),
                                       _pos->subChunks.end());
         }

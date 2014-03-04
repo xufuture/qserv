@@ -62,7 +62,7 @@ public:
 
     SelectStmt();
 
-    void diagnose(); // for debugging
+    std::string diagnose(); // for debugging
 
     boost::shared_ptr<WhereClause const> getWhere() const;
     QueryTemplate getTemplate() const;

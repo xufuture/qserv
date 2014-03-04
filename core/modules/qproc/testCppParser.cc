@@ -423,8 +423,13 @@ BOOST_AUTO_TEST_CASE(RestrictorNeighborCount) {
     QuerySession::Iter e = qs->cQueryEnd();
     BOOST_REQUIRE(i != e);
     ChunkQuerySpec& first = *i;
-    BOOST_CHECK(first.queries.size() == 6);
+    int numQueries = first.queries.size();
+    BOOST_CHECK_EQUAL(numQueries, 6);
+    BOOST_REQUIRE(numQueries > 1);
+    // DEBUG
+    //std::copy(first.queries.begin(), first.queries.end(), std::ostream_iterator<std::string>(std::cout, "\n\n"));
     BOOST_CHECK_EQUAL(first.queries[1], expected_100_100000_core);
+    BOOST_REQUIRE(numQueries > 2);
     BOOST_CHECK_EQUAL(first.queries[2], expected_100_100010_overlap);
 }
 

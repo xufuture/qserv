@@ -65,28 +65,57 @@ struct Tuple {
           chunkLevel(-1),
           node(node_) {}
     std::string db;
-    std::list<std::string> tables;
+    std::list<std::string> tables; // permutation relies on len(tables)=1 or 2
     std::string prePatchTable;
     std::string alias;
     int allowed;
     int chunkLevel;
     TableRef const* node;
 };
-typedef std::deque<Tuple> Tuples;
-#if 0 ////////////////////////////////////////////////////////////////////////
-std::ostream& operator<<(std::ostream& os, Tuple const& t) {
-
-    os << t.db << ".";
-    os << "(" << t.prePatchTable << ")";
+std::ostream& operator<<(std::ostream& s, Tuple const& t) {
+    s << "Tuple("
+      << "db=" + t.db + ","
+      << "tables=[";
     std::copy(t.tables.begin(), t.tables.end(),
-              std::ostream_iterator<std::string>(os, ","));
-    os << "_c" << t.chunkLevel << "_";
-    if(!t.allowed) { os << "ILLEGAL"; }
-    return os;
+              std::ostream_iterator<std::string>(s, ","));
+    s << "],"
+      << "prePatchTable=" + t.prePatchTable + ","
+      << "alias=" + t.alias + ","
+      << "allowed=" << t.allowed << ","
+      << "chunkLevel=" << t.chunkLevel << ","
+      << "node=" << (void*)t.node
+      << ")";
+    return s;
 }
-
-#endif ////////////////////////////////////////////////////////////////////////
-
+typedef std::deque<Tuple> Tuples;
+Tuple const&  tuplesFindByRefRO(Tuples const& tuples, TableRef const& t) {
+    // FIXME: Switch to map and rethink the system
+    typedef Tuples::const_iterator Iter;
+    for(Iter i=tuples.begin(),e=tuples.end(); i != e; ++i) {
+        if(i->node == &t) { return *i; }
+    }
+    throw std::logic_error("Not found in tuples (inplace)");
+}
+Tuple&  tuplesFindByRef(Tuples& tuples, TableRef const& t) {
+    // FIXME: Switch to map and rethink the system
+    typedef Tuples::iterator Iter;
+    for(Iter i=tuples.begin(),e=tuples.end(); i != e; ++i) {
+        if(i->node == &t) { return *i; }
+    }
+    throw std::logic_error("Not found in tuples (inplace)");
+}
+void printTuples(Tuples const& tuples, std::ostream& os) {
+    typedef Tuples::const_iterator Iter;
+    int n=0;
+    for(Iter i=tuples.begin(), e=tuples.end(); i!=e; ++i) {
+        if(n) { os << ","; }
+        os << "[" << n << "]" << *i;
+        ++n;
+    }
+}
+////////////////////////////////////////////////////////////////////////
+// Helper classes
+////////////////////////////////////////////////////////////////////////
 class TableNamer {
 public:
     static std::string makeSubChunkDbTemplate(std::string const& db) {
@@ -116,12 +145,14 @@ public:
         Tuples::iterator i = tuples.begin();
         Tuples::iterator e = tuples.end();
         int chunkedCount = 0;
-        int finalChunkLevel = 0;
         for(; i != e; ++i) {
-            if(i->chunkLevel > 0) ++chunkedCount;
+            if(i->chunkLevel > 0) {
+                ++chunkedCount;
+            }
         }
-        // If we found any chunked tables, turn on chunking.
-        finalChunkLevel = chunkedCount ? 1 : 0; 
+        // Turn on chunking with any chunk table
+        int finalChunkLevel = chunkedCount ? 1 : 0;
+        bool firstSubChunk = true;
         for(i = tuples.begin(); i != e; ++i) {
             std::string const& prePatch = i->prePatchTable;
             switch(i->chunkLevel) {
@@ -135,9 +166,13 @@ public:
                 if(chunkedCount > 1) {
                     i->db = makeSubChunkDbTemplate(i->db);
                     i->tables.push_back(makeSubChunkTableTemplate(prePatch));
-                    i->tables.push_back(makeOverlapTableTemplate(prePatch));
-                    // Turn on subchunking
-                    finalChunkLevel = 2;
+                    if(firstSubChunk) {
+                        firstSubChunk = false;
+                        // Turn on subchunking
+                        finalChunkLevel = 2;
+                    } else {
+                        i->tables.push_back(makeOverlapTableTemplate(prePatch));
+                    }
                 } else {
                     i->tables.push_back(makeChunkTableTemplate(prePatch));
                 }
@@ -218,19 +253,11 @@ public:
     // FIXME: How can we consolidate with computeTable?
     inplaceComputeTable(Tuples& tuples) :_tuples(tuples) {
     }
-    Tuple& getTuple(TableRef& t) {
-        // FIXME: Switch to map and rethink the system
-        typedef Tuples::iterator Iter;
-        for(Iter i=_tuples.begin(),e=_tuples.end(); i != e; ++i) {
-            if(i->node == &t) { return *i; }
-        }
-        throw std::logic_error("Not found in tuples (inplace)");
-    }
     virtual void operator()(TableRef::Ptr t) {
         t->applySimple(*this);
     }
     virtual void operator()(TableRef& t) {
-        Tuple& tuple = getTuple(t);
+        Tuple const& tuple = tuplesFindByRefRO(_tuples, t);
         t.setDb(tuple.db);
         t.setTable(tuple.tables.front());
     }
@@ -270,16 +297,8 @@ public:
         }
         return newT;
     }
-    Tuple& getTuple(TableRef const& t) {
-        // FIXME: Switch to map and rethink the system
-        typedef Tuples::iterator Iter;
-        for(Iter i=_tuples.begin(),e=_tuples.end(); i != e; ++i) {
-            if(i->node == &t) { return *i; }
-        }
-        throw std::logic_error("Not found in tuples (compute)");
-    }
     TableRef::Ptr lookup(TableRef const& t, int permutation) {
-        Tuple& tuple = getTuple(t);
+        Tuple const& tuple = tuplesFindByRefRO(_tuples, t);
         // Probably select one bit out of permutation, based on which
         // which subchunked table this is in the query.
         int i = _permutation & 1; // adjust bitshift depending on num
@@ -290,9 +309,10 @@ public:
         } else {
             table = tuple.tables.back();
         }
-        TableRef::Ptr newT(new TableRef(t.getDb(),
-                                        tuple.tables.front(),
+        TableRef::Ptr newT(new TableRef(tuple.db,
+                                        table,
                                         t.getAlias()));
+
         return newT;
     }
 
@@ -339,13 +359,27 @@ boost::shared_ptr<QueryMapping> TableStrategy::exportMapping() {
 /// @return permuation count: 1 :singleton count (no subchunking)
 ///
 int TableStrategy::getPermutationCount() const {
-    return 1;
+    // Count permutations by iterating over all tuples and counting the
+    // combinations.
+    int permutations = 1;
+    typedef Tuples::const_iterator Iter;
+    // Easier to count via tuples (flat) rather than table ref list (non-flat)
+    for(Iter i=_impl->tuples.begin(), e=_impl->tuples.end(); i != e; ++i) {
+        permutations *= i->tables.size();
+    }
+    if(permutations > 2) {
+        LOGGER_ERR << "ERROR! permutations > 2 (=" << permutations
+<< ")" << std::endl;
+        throw std::logic_error("Support for permuations > 2 is unimplemented");
+    }
+    return permutations;
+
 }
 
 TableRefListPtr TableStrategy::getPermutation(int permutation, TableRefList const& tList) {
-    TableRefListPtr oList(new TableRefList(tList.size()));
+    TableRefListPtr oList(new TableRefList()); //tList.size()));
     std::transform(tList.begin(), tList.end(),
-                   oList->begin(), computeTable(_impl->tuples, permutation));
+                   std::back_inserter(*oList), computeTable(_impl->tuples, permutation));
     return oList;
 }
 

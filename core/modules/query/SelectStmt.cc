@@ -90,11 +90,10 @@ copySyntaxIf(boost::shared_ptr<T>& dest, boost::shared_ptr<T> source) {
 qMaster::SelectStmt::SelectStmt() {
 }
 
-void qMaster::SelectStmt::diagnose() {
+std::string qMaster::SelectStmt::diagnose() {
     //_selectList->getColumnRefList()->printRefs();
     //_selectList->dbgPrint(std::cout);
-    LOGGER_INF << _generateDbg() << std::endl;
-
+    return _generateDbg();
 }
 
 qMaster::QueryTemplate
