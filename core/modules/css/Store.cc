@@ -293,9 +293,29 @@ qCss::Store::getKeyColumn(string const& dbName, string const& tableName) {
     return ret;
 }
 
+/** Retrieve dbStriping values for a database. Throws exception if the database
+  * does not exist.
+  *
+  * @param db database name
+  */
+qCss::DbStriping
+qCss::Store::getDbStriping(string const& dbName) {
+    cout << "*** getDbStriping(" << dbName << ")" << endl;
+    _validateDbExists(dbName);
+    string v = _cssI->get(_prefix + "/DATABASES/" + dbName + "/partitioningId");
+    string p = _prefix + "/DATABASE_PARTITIONING/_" + v + "/";
+    return qCss::DbStriping(_getIntValue(p+"nStripes"),
+                            _getIntValue(p+"nSubStripes"));
+}
+
+int
+qCss::Store::_getIntValue(string const& key) {
+    std::string s = _cssI->get(key);
+    return atoi(s.c_str());
+}
 
 /** Validates if database exists. Throw exception if it does not.
- */
+  */
 void
 qCss::Store::_validateDbExists(string const& dbName) {
     if (!checkIfContainsDb(dbName)) {
@@ -306,7 +326,7 @@ qCss::Store::_validateDbExists(string const& dbName) {
 
 /** Validates if table exists. Throw exception if it does not.
     Does not check if the database exists.
- */
+  */
 void
 qCss::Store::_validateTbExists(string const& dbName, string const& tableName) {
     if (!checkIfContainsTable(dbName, tableName)) {
@@ -317,7 +337,7 @@ qCss::Store::_validateTbExists(string const& dbName, string const& tableName) {
 
 /** Validate if database and table exist. Throw exception if either of them 
     does not.
- */
+  */
 void
 qCss::Store::_validateDbTbExists(string const& dbName, string const& tableName) {
     _validateDbExists(dbName);
@@ -326,7 +346,7 @@ qCss::Store::_validateDbTbExists(string const& dbName, string const& tableName) 
 
 /** Checks if a given database contains a given table. Does not check if the
     database exists.
-*/
+  */
 bool
 qCss::Store::_checkIfContainsTable(string const& dbName, string const& tableName) {
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + tableName;
