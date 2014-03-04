@@ -178,8 +178,10 @@ public:
                 }
                 break;
             default:
-                throw std::logic_error("Unexpected chunkLevel=" +
-                                       boost::lexical_cast<std::string>(i->chunkLevel));
+                if(i->allowed) {
+                    throw std::logic_error("Unexpected chunkLevel=" +
+                                           boost::lexical_cast<std::string>(i->chunkLevel));
+                }
                 break;
             }
         }
@@ -237,13 +239,18 @@ public:
         {}
 
     void operator()(Tuple& t) {
-        t.allowed = metadata.checkIfContainsDb(t.db);
+        t.allowed = metadata.checkIfContainsDb(t.db); // Db exists?
+        if(t.allowed) { // Check table as well.
+            t.allowed = metadata.checkIfContainsTable(t.db, t.prePatchTable);
+        }
         if(t.allowed) {
             t.chunkLevel = metadata.getChunkLevel(t.db, t.prePatchTable);
             if(t.chunkLevel == -1) {
                 t.allowed = false; // No chunk level found: missing/illegal.
                 throw InvalidTableException(t.db, t.prePatchTable);
             }
+        } else {
+            throw InvalidTableException(t.db, t.prePatchTable);
         }
     }
     MetadataCache& metadata;
