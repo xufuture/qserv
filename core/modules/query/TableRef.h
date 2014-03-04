@@ -86,7 +86,13 @@ public:
         virtual ~Func() {}
         virtual void operator()(TableRef& t) {}
     };
+    class FuncC {
+    public:
+        virtual ~FuncC() {}
+        virtual void operator()(TableRef const& t) {}
+    };
     void applySimple(Func& f);
+    void applySimpleRO(FuncC& f) const;
 
     struct Pfunc {
         virtual std::list<TableRef::Ptr> operator()(TableRef const& t) = 0;
