@@ -21,16 +21,6 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-<<<<<<< HEAD
-=======
-// Todo
-// - in validateMysql() consider connecting to mysql without specifying 
-//   database name, and then check if the database exists separately.
-//   At the moment if the database does it exist but connection information
-//   is otherwise fine, validateMysql will fail without giving any details why.
-
-
->>>>>>> major surgery: qserv now uses zookeeper and all QMS was removed. Work in progress, not finished
 /// Includes Config class implementation and declarations of key
 /// environment variables for qserv worker instances.
 #include "wconfig/Config.h"
