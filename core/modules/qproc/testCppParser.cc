@@ -498,18 +498,23 @@ BOOST_AUTO_TEST_CASE(ObjectSelfJoin) {
     BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
     BOOST_CHECK(!context->restrictors);
 }
-#if 0
 
 BOOST_AUTO_TEST_CASE(ObjectSelfJoinQualified) {
-    std::string stmt = "select count(*) from LSST.Object as o1, LSST.Object as o2;";
-    std::string expected = "select count(*) from LSST.%$#Object_sc1%$# as o1,LSST.%$#Object_sc2%$# as o2 UNION select count(*) from LSST.%$#Object_sc1%$# as o1,LSST.%$#Object_sfo%$# as o2;";
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    //std::cout << "Parse result: " << spr->getParseResult() << std::endl;
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(spr->getHasSubChunks());
-    BOOST_CHECK(spr->getHasAggregate());
-    BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
+    std::string stmt = "select count(*) from LSST.Object as o1, LSST.Object as o2 WHERE o1.objectId <> o2.objectId and o1.iFlux > 0.4 and o2.gFlux > 0.4;";
+    std::string expected = "SELECT count(*) AS QS1_COUNT "
+        "FROM Subchunks_LSST_100.Object_100_100000 AS o1,Subchunks_LSST_100.Object_100_100000 AS o2 "
+        "WHERE o1.objectId<>o2.objectId AND o1.iFlux>0.4 AND o2.gFlux>0.4";
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(context->hasSubChunks());
+    BOOST_CHECK(context->needsMerge);
+    std::string actual = computeFirst(*qs);
+    BOOST_CHECK_EQUAL(actual, expected);
 }
 
 BOOST_AUTO_TEST_CASE(ObjectSelfJoinWithAs) {
@@ -517,15 +522,24 @@ BOOST_AUTO_TEST_CASE(ObjectSelfJoinWithAs) {
     std::string stmt = "select o1.objectId, o2.objectI2, scisql_angSep(o1.ra_PS,o1.decl_PS,o2.ra_PS,o2.decl_PS) AS distance "
         "from LSST.Object as o1, LSST.Object as o2 "
         "where o1.objectId <> o2.objectId;";
-    std::string expected = "select o1.objectId,o2.objectI2,scisql_angSep(o1.ra_PS,o1.decl_PS,o2.ra_PS,o2.decl_PS) AS distance from LSST.%$#Object_sc1%$# as o1,LSST.%$#Object_sc2%$# as o2 where o1.objectId<>o2.objectId UNION select o1.objectId,o2.objectI2,scisql_angSep(o1.ra_PS,o1.decl_PS,o2.ra_PS,o2.decl_PS) AS distance from LSST.%$#Object_sc1%$# as o1,LSST.%$#Object_sfo%$# as o2 where o1.objectId<>o2.objectId;";
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(spr->getHasSubChunks());
-    BOOST_CHECK(!spr->getHasAggregate());
-    BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
+    std::string expected = "SELECT o1.objectId AS QS1_PASS,"
+        "o2.objectI2 AS QS2_PASS,"
+        "scisql_angSep(o1.ra_PS,o1.decl_PS,o2.ra_PS,o2.decl_PS) AS distance "
+        "FROM Subchunks_LSST_100.Object_100_100000 AS o1,"
+        "Subchunks_LSST_100.Object_100_100000 AS o2 "
+        "WHERE o1.objectId<>o2.objectId";
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(context->hasSubChunks());
+    BOOST_CHECK(!context->needsMerge);
+    std::string actual = computeFirst(*qs);
+    BOOST_CHECK_EQUAL(actual, expected);
 }
-
+#if 0
 BOOST_AUTO_TEST_CASE(ObjectSelfJoinOutBand) {
     std::string stmt = "select count(*) from LSST.Object as o1, LSST.Object as o2;";
     std::string expected ="select count(*) from LSST.%$#Object_sc1%$# as o1,LSST.%$#Object_sc2%$# as o2 WHERE (scisql_s2PtInCircle(o1.ra_Test,o1.decl_Test,1,1,1.3) = 1) AND (scisql_s2PtInCircle(o2.ra_Test,o2.decl_Test,1,1,1.3) = 1) AND (scisql_s2PtInBox(o1.ra_Test,o1.decl_Test,5,2,6,3) = 1) AND (scisql_s2PtInBox(o2.ra_Test,o2.decl_Test,5,2,6,3) = 1) UNION select count(*) from LSST.%$#Object_sc1%$# as o1,LSST.%$#Object_sfo%$# as o2 WHERE (scisql_s2PtInCircle(o1.ra_Test,o1.decl_Test,1,1,1.3) = 1) AND (scisql_s2PtInCircle(o2.ra_Test,o2.decl_Test,1,1,1.3) = 1) AND (scisql_s2PtInBox(o1.ra_Test,o1.decl_Test,5,2,6,3) = 1) AND (scisql_s2PtInBox(o2.ra_Test,o2.decl_Test,5,2,6,3) = 1);";
@@ -540,20 +554,27 @@ BOOST_AUTO_TEST_CASE(ObjectSelfJoinOutBand) {
     BOOST_CHECK(spr->getHasAggregate());
     BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(ObjectSelfJoinDistance) {
-    std::string stmt = "select count(*) from LSST.Object o1,LSST.Object o2 WHERE scisql_angSep(o1.ra_PS,o1.decl_PS,o2.ra_PS,o2.decl_PS) < 0.2";
-    std::string expected = "select count(*) from LSST.%$#Object_sc1%$# o1,LSST.%$#Object_sc2%$# o2 WHERE (scisql_s2PtInBox(o1.ra_Test,o1.decl_Test,5.5,5.5,6.1,6.1) = 1) AND (scisql_s2PtInBox(o2.ra_Test,o2.decl_Test,5.5,5.5,6.1,6.1) = 1) AND scisql_angSep(o1.ra_PS,o1.decl_PS,o2.ra_PS,o2.decl_PS)<0.2 UNION select count(*) from LSST.%$#Object_sc1%$# o1,LSST.%$#Object_sfo%$# o2 WHERE (scisql_s2PtInBox(o1.ra_Test,o1.decl_Test,5.5,5.5,6.1,6.1) = 1) AND (scisql_s2PtInBox(o2.ra_Test,o2.decl_Test,5.5,5.5,6.1,6.1) = 1) AND scisql_angSep(o1.ra_PS,o1.decl_PS,o2.ra_PS,o2.decl_PS)<0.2;";
+    std::string stmt = "select count(*) from LSST.Object o1,LSST.Object o2 WHERE qserv_areaspec_box(5.5, 5.5, 6.1, 6.1) AND scisql_angSep(o1.ra_PS,o1.decl_PS,o2.ra_PS,o2.decl_PS) < 0.2";
+    std::string expected = "SELECT count(*) AS QS1_COUNT "
+        "FROM Subchunks_LSST_100.Object_100_100000 AS o1,"
+        "Subchunks_LSST_100.Object_100_100000 AS o2 "
+        "WHERE scisql_s2PtInBox(o1.ra_Test,o1.decl_Test,5.5,5.5,6.1,6.1)=1 "
+        "AND scisql_s2PtInBox(o2.ra_Test,o2.decl_Test,5.5,5.5,6.1,6.1)=1 "
+        "AND scisql_angSep(o1.ra_PS,o1.decl_PS,o2.ra_PS,o2.decl_PS)<0.2";
 
-    std::map<std::string, std::string> hintedCfg(config);
-    hintedCfg["query.hints"] = "box,5.5,5.5,6.1,6.1";
-    SqlParseRunner::Ptr spr = getRunner(stmt, hintedCfg);
-    testStmt2(spr);
-
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(spr->getHasSubChunks());
-    BOOST_CHECK(spr->getHasAggregate());
-    BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(context->hasSubChunks());
+    BOOST_CHECK(context->needsMerge);
+    std::string actual = computeFirst(*qs);
+    BOOST_CHECK_EQUAL(actual, expected);
 }
 
 BOOST_AUTO_TEST_CASE(SelfJoinAliased) {
@@ -562,75 +583,117 @@ BOOST_AUTO_TEST_CASE(SelfJoinAliased) {
     // It's also a non-distance-bound spatially-unlimited query. Qserv should
     // reject this. But the parser should still handle it.
     std::string stmt = "select o1.ra_PS, o1.ra_PS_Sigma, o2.ra_PS, o2.ra_PS_Sigma from Object o1, Object o2 where o1.ra_PS_Sigma < 4e-7 and o2.ra_PS_Sigma < 4e-7;";
-    std::string expected = "select o1.ra_PS,o1.ra_PS_Sigma,o2.ra_PS,o2.ra_PS_Sigma from LSST.%$#Object_sc1%$# o1,LSST.%$#Object_sc2%$# o2 where o1.ra_PS_Sigma<4e-7 and o2.ra_PS_Sigma<4e-7 UNION select o1.ra_PS,o1.ra_PS_Sigma,o2.ra_PS,o2.ra_PS_Sigma from LSST.%$#Object_sc1%$# o1,LSST.%$#Object_sfo%$# o2 where o1.ra_PS_Sigma<4e-7 and o2.ra_PS_Sigma<4e-7;";
+    std::string expected = "SELECT o1.ra_PS AS QS1_PASS,"
+        "o1.ra_PS_Sigma AS QS2_PASS,o2.ra_PS AS QS3_PASS,"
+        "o2.ra_PS_Sigma AS QS4_PASS "
+        "FROM Subchunks_LSST_100.Object_100_100000 AS o1,"
+        "Subchunks_LSST_100.Object_100_100000 AS o2 "
+        "WHERE o1.ra_PS_Sigma<4e-7 AND o2.ra_PS_Sigma<4e-7"; 
 
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    //std::cout << "Parse result: " << spr->getParseResult() << std::endl;
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(spr->getHasSubChunks());
-    BOOST_CHECK(!spr->getHasAggregate());
-    BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(context->hasSubChunks());
+    BOOST_CHECK(!context->needsMerge);
+    std::string actual = computeFirst(*qs);
+    BOOST_CHECK_EQUAL(actual, expected);
 }
 
 BOOST_AUTO_TEST_CASE(AliasHandling) {
     std::string stmt = "select o1.ra_PS, o1.ra_PS_Sigma, s.dummy, Exposure.exposureTime from LSST.Object o1,  Source s, Exposure WHERE o1.id = s.objectId AND Exposure.id = o1.exposureId;";
     std::string expected = "select o1.ra_PS,o1.ra_PS_Sigma,s.dummy,Exposure.exposureTime from LSST.%$#Object%$# o1,LSST.%$#Source%$# s,LSST.Exposure WHERE o1.id=s.objectId AND Exposure.id=o1.exposureId;";
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    //std::cout << "Parse result: " << spr->getParseResult() << std::endl;
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(!spr->getHasSubChunks());
-    BOOST_CHECK(!spr->getHasAggregate());
-    BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_CHECK(!context->needsMerge);
+    std::string actual = computeFirst(*qs);
+    BOOST_CHECK_EQUAL(actual, expected);
 }
 
 BOOST_AUTO_TEST_CASE(SpatialRestr) {
     std::string stmt = "select count(*) from Object where qserv_areaspec_box(359.1, 3.16, 359.2,3.17);";
-    std::string expected = "select count(*) from LSST.%$#Object%$# where (scisql_s2PtInBox(LSST.%$#Object%$#.ra_Test,LSST.%$#Object%$#.decl_Test,359.1,3.16,359.2,3.17) = 1);";
+    std::string expected = "SELECT count(*) AS QS1_COUNT "
+        "FROM LSST.Object_100 AS QST_1_ "
+        "WHERE scisql_s2PtInBox(QST_1_.ra_Test,QST_1_.decl_Test,359.1,3.16,359.2,3.17)=1"; 
 
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    //std::cout << "Parse result: " << spr->getParseResult() << std::endl;
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(!spr->getHasSubChunks());
-    BOOST_CHECK(spr->getHasAggregate());
-    BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_CHECK(context->needsMerge);
+    std::string actual = computeFirst(*qs);
+    BOOST_CHECK_EQUAL(actual, expected);
 }
 
-BOOST_AUTO_TEST_CASE(SpatialRestr2) {
+BOOST_AUTO_TEST_CASE(SpatialRestr2) { // Redundant?
     std::string stmt = "select count(*) from LSST.Object where qserv_areaspec_box(359.1, 3.16, 359.2,3.17);";
-    std::string expected = "select count(*) from LSST.%$#Object%$# where (scisql_s2PtInBox(LSST.%$#Object%$#.ra_Test,LSST.%$#Object%$#.decl_Test,359.1,3.16,359.2,3.17) = 1);";
-
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    //std::cout << "Parse result: " << spr->getParseResult() << std::endl;
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(!spr->getHasSubChunks());
-    BOOST_CHECK(spr->getHasAggregate());
-    BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
+    std::string expected = "SELECT count(*) AS QS1_COUNT "
+        "FROM LSST.Object_100 AS QST_1_ "
+        "WHERE scisql_s2PtInBox(QST_1_.ra_Test,QST_1_.decl_Test,359.1,3.16,359.2,3.17)=1";
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_CHECK(context->needsMerge);
+    std::string actual = computeFirst(*qs);
+    BOOST_CHECK_EQUAL(actual, expected);
 }
-
 
 BOOST_AUTO_TEST_CASE(ChunkDensityFail) {
+    // Should fail since leading _ is disallowed.
     std::string stmt = " SELECT count(*) AS n, AVG(ra_PS), AVG(decl_PS), _chunkId FROM Object GROUP BY _chunkId;";
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr, true); // Should fail since leading _ is disallowed.
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_CHECK(!context->needsMerge);
 }
 
 BOOST_AUTO_TEST_CASE(ChunkDensity) {
     std::string stmt = " SELECT count(*) AS n, AVG(ra_PS), AVG(decl_PS), x_chunkId FROM Object GROUP BY x_chunkId;";
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(!spr->getHasSubChunks());
-    BOOST_CHECK(spr->getHasAggregate());
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_CHECK(context->needsMerge);
 }
 
 BOOST_AUTO_TEST_CASE(AltDbName) {
     std::string stmt = "select count(*) from Object where qserv_areaspec_box(359.1, 3.16, 359.2, 3.17);";
-    std::string expected = "select count(*) from rplante_PT1_2_u_pt12prod_im3000_qserv.%$#Object%$# where (scisql_s2PtInBox(rplante_PT1_2_u_pt12prod_im3000_qserv.%$#Object%$#.ra_Test,rplante_PT1_2_u_pt12prod_im3000_qserv.%$#Object%$#.decl_Test,359.1,3.16,359.2,3.17) = 1);";
+    std::string expected = "SELECT count(*) AS QS1_COUNT "
+        "FROM LSST.Object_100 AS QST_1_ "
+        "WHERE scisql_s2PtInBox(QST_1_.ra_Test,QST_1_.decl_Test,359.1,3.16,359.2,3.17)=1";
 
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_CHECK(context->needsMerge);
+    std::string actual = computeFirst(*qs);
+    BOOST_CHECK_EQUAL(actual, expected);
+#if 0
     config["table.defaultdb"] ="rplante_PT1_2_u_pt12prod_im3000_qserv";
     config["table.alloweddbs"] = "LSST,rplante_PT1_2_u_pt12prod_im3000_qserv";
     SqlParseRunner::Ptr spr = getRunner(stmt);
@@ -639,28 +702,33 @@ BOOST_AUTO_TEST_CASE(AltDbName) {
     BOOST_CHECK(!spr->getHasSubChunks());
     BOOST_CHECK(spr->getHasAggregate());
     BOOST_CHECK_EQUAL(spr->getParseResult(), expected);
+#endif
 }
 
 // Ticket 2048
 BOOST_AUTO_TEST_CASE(NonpartitionedTable) {
     std::string stmt = "SELECT offset, mjdRef, drift FROM LeapSeconds where offset = 10";
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    //std::cout << "Parse output:" << spr->getParseResult() << std::endl;
-    BOOST_CHECK(!spr->getHasChunks());
-    BOOST_CHECK(!spr->getHasSubChunks());
-    BOOST_CHECK(!spr->getHasAggregate());
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(!context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_CHECK(!context->needsMerge);
 }
 
 BOOST_AUTO_TEST_CASE(CountQuery) {
     std::string stmt = "SELECT count(*) from Object;";
-    SqlParseRunner::Ptr spr = getRunner(stmt);
-    testStmt2(spr);
-    BOOST_CHECK(spr->getHasChunks());
-    BOOST_CHECK(!spr->getHasSubChunks());
-    BOOST_CHECK(spr->getHasAggregate());
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_CHECK(context->needsMerge);
 }
-#endif // End: Tests to migrate to new parser framework (needs work in parser too)
 
 BOOST_AUTO_TEST_CASE(CountQuery2) {
     std::string stmt = "SELECT count(*) from LSST.Source;";
