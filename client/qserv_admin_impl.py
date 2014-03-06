@@ -35,6 +35,7 @@ Known issues and todos:
 """
 
 import logging
+import uuid
 
 from cssInterface import CssInterface, CssException
 
@@ -75,8 +76,10 @@ class QservAdminImpl(object):
         try:
             self._cssI.create(dbP, "PENDING")
             ptP = self._cssI.create("/DATABASE_PARTITIONING/_", sequence=True)
-            for x in ["nStripes", "nSubStripes", "overlap"]:
+            options["uuid"] = str(uuid.uuid4())
+            for x in ["nStripes", "nSubStripes", "overlap", "uuid"]:
                 self._cssI.create("%s/%s" % (ptP, x), options[x])
+            self._cssI.create("%s/uuid" % dbP, str(uuid.uuid4()))
             pId = ptP[-10:] # the partitioning id is always 10 digit, 0 padded
             self._cssI.create("%s/partitioningId" % dbP, str(pId))
             self._cssI.create("%s/releaseStatus" % dbP,"UNRELEASED")
@@ -109,6 +112,7 @@ class QservAdminImpl(object):
         dbP = "/DATABASES/%s" % dbName
         try:
             self._cssI.create(dbP, "PENDING")
+            self._cssI.create("%s/uuid" % dbP, str(uuid.uuid4()))
             self._copyKeyValue(dbName, dbName2, 
                                ("dbGroup", "partitioningId", 
                                 "releaseStatus", "objIdIndex"))
@@ -154,6 +158,7 @@ class QservAdminImpl(object):
             [""             , "schema"         ],
             [""             , "compression"    ],
             [""             , "isRefMatch"     ],
+            [""             , "uuid"           ],
             ["/isRefMatch"  , "keyColInTable1" ],
             ["/isRefMatch"  , "keyColInTable2" ],
             ["/partitioning", "subChunks"      ],
@@ -172,6 +177,7 @@ class QservAdminImpl(object):
             self._logger.error("Table '%s.%s' exists." % (dbName, tableName))
             raise CssException(CssException.TB_EXISTS, "%s.%s" % (dbName,tableName))
         tbP = "/DATABASES/%s/TABLES/%s" % (dbName, tableName)
+        options["uuid"] = str(uuid.uuid4())
         try:
             self._cssI.create(tbP, "PENDING")
             for o in possibleOptions:
