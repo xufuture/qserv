@@ -54,17 +54,11 @@ class CssInterface; // forward declaration
     Central State System.
  */
 
-class DbStriping {
-public:
-    DbStriping(int stripes, int subStripes) : 
-        _stripes(stripes), _subStripes(subStripes) {}
-    int stripes() const    { return _stripes; }
-    int subStripes() const { return _subStripes; }
-private:
-    int _stripes;
-    int _subStripes;
+struct DbStriping {
+    int stripes;
+    int subStripes;
 };
-      
+
 class Store {
 public:
     Store(std::string const&);

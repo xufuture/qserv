@@ -304,8 +304,10 @@ qCss::Store::getDbStriping(string const& dbName) {
     _validateDbExists(dbName);
     string v = _cssI->get(_prefix + "/DATABASES/" + dbName + "/partitioningId");
     string p = _prefix + "/DATABASE_PARTITIONING/_" + v + "/";
-    return qCss::DbStriping(_getIntValue(p+"nStripes"),
-                            _getIntValue(p+"nSubStripes"));
+    qCss::DbStriping striping;
+    striping.stripes = _getIntValue(p+"nStripes");
+    striping.subStripes = _getIntValue(p+"nSubStripes");
+    return striping;
 }
 
 int

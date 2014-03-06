@@ -283,8 +283,8 @@ BOOST_AUTO_TEST_CASE(getKeyColumn) {
 
 BOOST_AUTO_TEST_CASE(getDbStriping) {
     qCss::DbStriping s = store->getDbStriping("dbA");
-    BOOST_REQUIRE(s.stripes() == 18);
-    BOOST_REQUIRE(s.subStripes() == 40);
+    BOOST_REQUIRE(s.stripes == 18);
+    BOOST_REQUIRE(s.subStripes == 40);
 }
 
 
