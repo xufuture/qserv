@@ -43,6 +43,7 @@
 
 // Local imports
 #include "cssInterface.h"
+#include "IntPair.h"
 
 namespace lsst {
 namespace qserv {
@@ -53,11 +54,6 @@ class CssInterface; // forward declaration
 /** The class stores Qserv-specific metadata and state information from the
     Central State System.
  */
-
-struct DbStriping {
-    int stripes;
-    int subStripes;
-};
 
 class Store {
 public:
@@ -78,7 +74,7 @@ public:
                                               std::string const&);
     int getChunkLevel(std::string const&, std::string const&);
     std::string getKeyColumn(std::string const&, std::string const&);
-    DbStriping getDbStriping(std::string const&);
+    IntPair getDbStriping(std::string const&);
 
 private:
     void _validateDbExists(std::string const&);
