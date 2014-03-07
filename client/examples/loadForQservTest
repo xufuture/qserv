@@ -1,3 +1,0 @@
-drop database LSST;
-create database LSST client/examples/dbPartitioned.params;
-create table LSST Object client/examples/tb_Object.params;
