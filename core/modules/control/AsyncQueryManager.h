@@ -43,6 +43,7 @@
 #include <boost/thread.hpp>
 
 #include "control/DynamicWorkQueue.h"
+#include "css/IntPair.h"
 #include "xrdc/xrdfile.h"
 
 namespace lsst {

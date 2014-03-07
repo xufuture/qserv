@@ -138,7 +138,6 @@ void QuerySession::addChunk(ChunkSpec const& cs) {
     _chunks.push_back(cs);
 }
 
-
 void QuerySession::setResultTable(std::string const& resultTable) {
     _resultTable = resultTable;
 }
