@@ -92,6 +92,7 @@ from lsst.qserv.master import newSession, discardSession
 from lsst.qserv.master import setupQuery, getSessionError
 from lsst.qserv.master import getConstraints, addChunk, ChunkSpec
 from lsst.qserv.master import getDominantDb
+from lsst.qserv.master import getDbStriping
 from lsst.qserv.master import configureSessionMerger3, submitQuery3
 
 
@@ -413,9 +414,15 @@ class InbandQueryAction:
         call evaluateHints, and add the chunkIds into the query(C++) """
         # Retrieve constraints as (name, [param1,param2,param3,...])
         self.constraints = getConstraints(self.sessionId)
-        logger.dbg("Getting constraints", self.constraints, "size=",self.constraints.size())
+        logger.dbg("Getting constraints", self.constraints, "size=",
+                   self.constraints.size())
         dominantDb = getDominantDb(self.sessionId)
-        self.pmap = spatial.makePmap(dominantDb)
+        dbStriping = getDbStriping(self.sessionId)
+        if (dbStriping.a < 1) or (dbStriping.b < 1):
+            msg = "Partitioner's stripes and substripes must be natural numbers."
+            raise lsst.qserv.master.config.ConfigError(msg)
+        print "*****!!!***** ns=", dbStriping.a, "nss=", dbStriping.b
+        self.pmap = spatial.makePmap(dominantDb, dbStriping.a, dbStriping.b)
 
         def iterateConstraints(constraintVec):
             for i in range(constraintVec.size()):

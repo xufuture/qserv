@@ -33,6 +33,7 @@ Access to the classes from the qserv_master library
 %{
 #define SWIG_FILE_WITH_INIT
 #include "xrdc/xrdfile.h"
+#include "css/IntPair.h"
 #include "control/dispatcher.h"
 #include "control/queryMsg.h"
 #include "merger/mergeTypes.h"
@@ -118,6 +119,7 @@ namespace std {
 %include "control/dispatcher.h"
 %include "control/transaction.h"
 %include "control/queryMsg.h"
+%include "css/IntPair.h"
 %include "merger/mergeTypes.h"
 %include "merger/TableMerger.h"
 %include "log/loggerInterface.h"

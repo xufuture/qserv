@@ -5,3 +5,5 @@ directory.
 
 If you run into problems with antlr, try using runantlr:
 cd /usr/bin; sudo ln -s runantlr antlr
+(version 2.7.7 is required)
+also, install libantlr-dev

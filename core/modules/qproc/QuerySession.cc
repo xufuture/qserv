@@ -144,6 +144,11 @@ std::string const& QuerySession::getDominantDb() const {
     return _context->dominantDb; // parsed query's dominant db (via TablePlugin)
 }
 
+IntPair
+QuerySession::getDbStriping() {
+    return _context->getDbStriping();
+}
+
 MergeFixup QuerySession::makeMergeFixup() const {
     // Make MergeFixup to adapt new query parser/generation framework
     // to older merging code.
@@ -187,6 +192,7 @@ void QuerySession::_initContext() {
     _context->chunkCount = 0;
     _context->cssStore = _cssStore;
 }
+
 void QuerySession::_preparePlugins() {
     _plugins.reset(new PluginList);
 

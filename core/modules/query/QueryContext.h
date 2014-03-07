@@ -76,6 +76,8 @@ public:
 
     bool needsMerge; ///< Does this query require a merge/post-processing step?
 
+    lsst::qserv::master::IntPair getDbStriping() {
+        return cssStore->getDbStriping(dominantDb); }
     bool hasChunks() const {
         return queryMapping.get() && queryMapping->hasChunks(); }
     bool hasSubChunks() const {

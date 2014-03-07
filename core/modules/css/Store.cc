@@ -293,20 +293,20 @@ qCss::Store::getKeyColumn(string const& dbName, string const& tableName) {
     return ret;
 }
 
-/** Retrieve dbStriping values for a database. Throws exception if the database
-  * does not exist.
+/** Retrieve # stripes and subStripes for a database. Throws exception if 
+  * the database does not exist.
   *
   * @param db database name
   */
-qCss::DbStriping
+qCss::IntPair
 qCss::Store::getDbStriping(string const& dbName) {
     cout << "*** getDbStriping(" << dbName << ")" << endl;
     _validateDbExists(dbName);
     string v = _cssI->get(_prefix + "/DATABASES/" + dbName + "/partitioningId");
     string p = _prefix + "/DATABASE_PARTITIONING/_" + v + "/";
-    qCss::DbStriping striping;
-    striping.stripes = _getIntValue(p+"nStripes");
-    striping.subStripes = _getIntValue(p+"nSubStripes");
+    qCss::IntPair striping;
+    striping.a = _getIntValue(p+"nStripes");
+    striping.b = _getIntValue(p+"nSubStripes");
     return striping;
 }
 
