@@ -1,6 +1,12 @@
 This is a feature branch created by Bill Chickering on 3/13/14 that contains an
 implementation of a prototype logging mechanism for qserv built using log4cxx.
 
+This version of qserv requires installation of the following software in
+addition to everything normally required by qserv:
+apr-1.5.0
+apr-util-1.5.3
+apache-log4cxx-0.10.0
+
 To deploy an instance of qserv from this source code, in addition to any/all
 procedures "normally" required, one must create a log4cxx XML configuration file
 in the $QSERV_BASE/etc directory and change the hardcoded path within
