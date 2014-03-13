@@ -49,6 +49,8 @@
 #include "util/WorkQueue.h"
 #include "xrdc/PacketIter.h"
 
+#include "protolog/ProtoLog.h"
+
 // Namespace modifiers
 using boost::make_shared;
 
@@ -137,6 +139,17 @@ int AsyncQueryManager::add(TransactionSpec const& t,
                            std::string const& resultName) {
     LOGGER_DBG << "EXECUTING AsyncQueryManager::add(TransactionSpec, "
                << resultName << ")" << std::endl;
+
+
+
+    //lsst::qserv::ProtoLog::initLog();
+    LOG("qserv", ProtoLog::LOG_DEBUG, "Hello from qserv logger!")
+    LOG_INFO("Info from %s()", __FUNCTION__)
+    LOG("myLogger", ProtoLog::LOG_DEBUG, "Hello my logger (debug)")
+    LOG("myLogger", ProtoLog::LOG_INFO, "Hello my logger (info)")
+
+
+
     int id = t.chunkId;
     // Use chunkId as id, and assume that it will be unique for the
     // AsyncQueryManager instance.

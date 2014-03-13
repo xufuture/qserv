@@ -44,6 +44,7 @@ Access to the classes from the qserv_master library
 #include "meta/ifaceMeta.h"
 
 #include "log/loggerInterface.h"
+#include "protolog/protologInterface.h"
 %}
 
 // %include "lsst/p_lsstSwig.i"
@@ -123,6 +124,7 @@ namespace std {
 %include "merger/TableMerger.h"
 %include "meta/ifaceMeta.h"
 %include "log/loggerInterface.h"
+%include "protolog/protologInterface.h"
 %include "qdisp/ChunkMeta.h"
 %include "qproc/ChunkSpec.h"
 %include "query/Constraint.h"

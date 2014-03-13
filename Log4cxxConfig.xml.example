@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+ <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+  <!-- Output the log message to system console.
+    -->
+  <appender name="appxConsoleAppender" class="org.apache.log4j.ConsoleAppender">    
+    <param name="Target" value="System.out"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{yyyyMMdd HH:mm:ss,SSS} %t %-5p %m%n"/>
+        </layout>
+  </appender>
+
+  <!-- Output the log message to log file
+    -->
+  <appender name="appxNormalAppender" class="org.apache.log4j.FileAppender">
+    <param name="file" value="/u1/bchick/sandbox2/modules/var/log/qserv-master.proto.log" />
+    <param name="append" value="true" />
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%d %-5p %c{2} - %m%n" />
+    </layout>
+  </appender>
+
+  <!-- My logger log file
+    -->
+  <appender name="myLoggerAppender" class="org.apache.log4j.FileAppender">
+    <param name="file" value="/u1/bchick/sandbox2/modules/var/log/mylogger.proto.log" />
+    <param name="append" value="true" />
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%d [%t] %-5p %c{2} %M (%F:%L) - %m%n" />
+    </layout>
+  </appender>
+
+  <root>
+        <priority value="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </root>
+
+  <!-- Specify the level and appender for my logger -->
+  <category name="myLogger" >
+        <priority value ="debug" />
+        <appender-ref ref="myLoggerAppender"/>
+  </category>
+
+ </log4j:configuration>

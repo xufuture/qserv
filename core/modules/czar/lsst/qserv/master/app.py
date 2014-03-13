@@ -80,6 +80,11 @@ from lsst.qserv.meta.client import Client
 
 # SWIG'd functions
 
+# protolog
+#from lsst.qserv.master import initLog
+#from lsst.qserv.master import log
+import protolog
+
 # xrdfile - raw xrootd access
 from lsst.qserv.master import xrdOpen, xrdClose, xrdRead, xrdWrite
 from lsst.qserv.master import xrdLseekSet, xrdReadStr
@@ -405,6 +410,14 @@ class InbandQueryAction:
 
         # Set logging severity threshold.
         logger.threshold_inf()
+
+        # Test protolog.
+        protolog.initLog()
+        protolog.log("qserv", protolog.INFO, "Hello from Python (via wrapper)!")
+        name = "Bill"
+        protolog.warn("This is a warning by %s!" % name)
+        protolog.log("myLogger", protolog.INFO, "Hello myLogger from Python.")
+        
 
         ## Fields with leading underscores are internal-only
         ## Those without leading underscores may be read by clients
