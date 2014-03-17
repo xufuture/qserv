@@ -64,9 +64,7 @@ using std::ostringstream;
 using std::string;
 using std::vector;
 
-namespace lsst {
-namespace qserv {
-namespace css {
+namespace qCss = lsst::qserv::master;
 
 /**
   * Initialize the interface.
@@ -83,9 +81,9 @@ namespace css {
   * 3) then copy the generate file to final destination:
   *    mv /tmp/testCppParser.kwmap <destination>
   */
-CssInterfaceImplMem::CssInterfaceImplMem(string const& mapPath,
-                                         bool verbose) :
-    CssInterface(verbose) {
+qCss::CssInterfaceImplMem::CssInterfaceImplMem(string const& mapPath,
+                                               bool verbose) :
+    qCss::CssInterface(verbose) {
     std::ifstream f("./modules/qproc/testCppParser.kwmap"); // FIXME
     std::string line;
     std::vector<std::string> strs;
@@ -108,11 +106,11 @@ CssInterfaceImplMem::CssInterfaceImplMem(string const& mapPath,
     //}
 }
 
-CssInterfaceImplMem::~CssInterfaceImplMem() {
+qCss::CssInterfaceImplMem::~CssInterfaceImplMem() {
 }
 
 void
-CssInterfaceImplMem::create(string const& key, string const& value) {
+qCss::CssInterfaceImplMem::create(string const& key, string const& value) {
     if (_verbose) {
         cout << "*** CssInterfaceImplMem::create(), " << key << " --> " 
              << value << endl;
@@ -121,7 +119,7 @@ CssInterfaceImplMem::create(string const& key, string const& value) {
 }
 
 bool
-CssInterfaceImplMem::exists(string const& key) {
+qCss::CssInterfaceImplMem::exists(string const& key) {
     bool ret = _kwMap.find(key) != _kwMap.end();
     if (_verbose) {
         cout << "*** CssInterfaceImplMem::exists(), key: " << key 
@@ -131,7 +129,7 @@ CssInterfaceImplMem::exists(string const& key) {
 }
 
 string
-CssInterfaceImplMem::get(string const& key) {
+qCss::CssInterfaceImplMem::get(string const& key) {
     if (_verbose) {
         cout << "*** CssInterfaceImplMem::get(), key: " << key << endl;
     }
@@ -143,7 +141,7 @@ CssInterfaceImplMem::get(string const& key) {
 }
 
 vector<string> 
-CssInterfaceImplMem::getChildren(string const& key) {
+qCss::CssInterfaceImplMem::getChildren(string const& key) {
     if (_verbose) {
         cout << "*** CssInterfaceImplMem::getChildren(), key: " << key << endl;
     }
@@ -172,11 +170,9 @@ CssInterfaceImplMem::getChildren(string const& key) {
 }
 
 void
-CssInterfaceImplMem::deleteNode(string const& key) {
+qCss::CssInterfaceImplMem::deleteNode(string const& key) {
     if (_verbose) {
         cout << "*** CssInterfaceImplMem::deleteNode, key: " << key << endl;
     }
     _kwMap.erase(key);
 }
-
-}}} // namespace lsst::qserv::css
