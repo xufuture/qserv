@@ -46,7 +46,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace css {
 
 class CssInterface; // forward declaration
     
@@ -89,6 +89,6 @@ private:
     std::string _prefix; // optional prefix, for isolating tests from production
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::css
 
 #endif // LSST_QSERV_CSS_STORE_H

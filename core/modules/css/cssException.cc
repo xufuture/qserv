@@ -41,10 +41,12 @@
 using std::map;
 using std::string;
 
-namespace qCss = lsst::qserv::master;
+namespace lsst {
+namespace qserv {
+namespace css {
 
-map<qCss::CssException::errCodeT, string> 
-qCss::CssException::_errMap = boost::assign::map_list_of 
+map<CssException::errCodeT, string> 
+CssException::_errMap = boost::assign::map_list_of 
     (DB_DOES_NOT_EXIST,  "Database does not exist.")
     (KEY_DOES_NOT_EXIST, "Key does not exist.")
     (TB_DOES_NOT_EXIST,  "Table does not exist.")
@@ -52,7 +54,7 @@ qCss::CssException::_errMap = boost::assign::map_list_of
     (CONN_FAILURE,       "Failed to connect to persistent store.")
     (INTERNAL_ERROR,     "Internal error.");
 
-qCss::CssException::CssException(errCodeT errCode, string const& extraMsg) :
+CssException::CssException(errCodeT errCode, string const& extraMsg) :
     std::runtime_error(""),
     _errCode(errCode) {
     string s = "CssException: " + _errMap.find(_errCode)->second;
@@ -64,6 +66,8 @@ qCss::CssException::CssException(errCodeT errCode, string const& extraMsg) :
 }
 
 const char*
-qCss::CssException::what() const throw () {
+CssException::what() const throw () {
     return _errMsg;
 }
+
+}}} // namespace lsst::qserv::css

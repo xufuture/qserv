@@ -58,16 +58,19 @@ using std::ostringstream;
 using std::string;
 using std::vector;
 
-namespace qCss = lsst::qserv::master;
+namespace lsst {
+namespace qserv {
+namespace css {
+
 
 /**
  * Initialize the interface.
  *
  * @param connInfo connection information
  */
-qCss::CssInterfaceImplZoo::CssInterfaceImplZoo(string const& connInfo, 
-                                               bool verbose) :
-    qCss::CssInterface(verbose) {
+CssInterfaceImplZoo::CssInterfaceImplZoo(string const& connInfo, 
+                                         bool verbose) :
+    CssInterface(verbose) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
     _zh = zookeeper_init(connInfo.c_str(), 0, 10000, 0, 0, 0);
     if ( !_zh ) {
@@ -75,12 +78,12 @@ qCss::CssInterfaceImplZoo::CssInterfaceImplZoo(string const& connInfo,
     }
 }
 
-qCss::CssInterfaceImplZoo::~CssInterfaceImplZoo() {
+CssInterfaceImplZoo::~CssInterfaceImplZoo() {
     zookeeper_close(_zh);
 }
 
 void
-qCss::CssInterfaceImplZoo::create(string const& key, string const& value) {
+CssInterfaceImplZoo::create(string const& key, string const& value) {
     if (_verbose) {
         cout << "*** CssInterfaceImplZoo::create(), " << key << " --> " 
              << value << endl;
@@ -94,7 +97,7 @@ qCss::CssInterfaceImplZoo::create(string const& key, string const& value) {
 }
 
 bool
-qCss::CssInterfaceImplZoo::exists(string const& key) {
+CssInterfaceImplZoo::exists(string const& key) {
     if (_verbose) {
         cout << "*** CssInterfaceImplZoo::exist(), key: " << key << endl;
     }
@@ -111,7 +114,7 @@ qCss::CssInterfaceImplZoo::exists(string const& key) {
 }
 
 string
-qCss::CssInterfaceImplZoo::get(string const& key) {
+CssInterfaceImplZoo::get(string const& key) {
     if (_verbose) {
         cout << "*** CssInterfaceImplZoo::get(), key: " << key << endl;
     }
@@ -130,7 +133,7 @@ qCss::CssInterfaceImplZoo::get(string const& key) {
 }
 
 vector<string> 
-qCss::CssInterfaceImplZoo::getChildren(string const& key) {
+CssInterfaceImplZoo::getChildren(string const& key) {
     if (_verbose) {
         cout << "*** CssInterfaceImplZoo::getChildren(), key: " << key << endl;
     }
@@ -150,7 +153,7 @@ qCss::CssInterfaceImplZoo::getChildren(string const& key) {
 }
 
 void
-qCss::CssInterfaceImplZoo::deleteNode(string const& key) {
+CssInterfaceImplZoo::deleteNode(string const& key) {
     if (_verbose) {
         cout << "*** CssInterfaceImplZoo::deleteNode, key: " << key << endl;
     }
@@ -166,25 +169,25 @@ qCss::CssInterfaceImplZoo::deleteNode(string const& key) {
   * @param extraMsg optional extra message to include in the error message
   */
 void
-qCss::CssInterfaceImplZoo::zooFailure(int rc, string const& fName, string const& extraMsg){
+CssInterfaceImplZoo::zooFailure(int rc, string const& fName, string const& extraMsg){
     string ffName = "*** CssInterfaceImplZoo::" + fName + "(). ";
     if (rc==ZNONODE) {
         if (_verbose) {
             cout << ffName << "Key '" << extraMsg << "' does not exist." << endl;
         }
-        throw qCss::CssException(qCss::CssException::KEY_DOES_NOT_EXIST, extraMsg);
+        throw CssException(CssException::KEY_DOES_NOT_EXIST, extraMsg);
     }
     if (rc==ZCONNECTIONLOSS) {
         if (_verbose) {
             cout << ffName << "Can't connect to zookeeper." << endl;
         }
-        throw qCss::CssException(qCss::CssException::CONN_FAILURE);
+        throw CssException(CssException::CONN_FAILURE);
     }
     if (rc==ZNOAUTH) {
         if (_verbose) {
             cout << ffName << "Zookeeper authorization failure." << endl;
         }
-        throw qCss::CssException(qCss::CssException::AUTH_FAILURE);
+        throw CssException(CssException::AUTH_FAILURE);
     }
     ostringstream s;
     s << ffName << "Zookeeper error #" << rc << ".";
@@ -194,5 +197,7 @@ qCss::CssInterfaceImplZoo::zooFailure(int rc, string const& fName, string const&
     if (_verbose) {
         cout << s.str() << endl;
     }
-    throw qCss::CssException(CssException::INTERNAL_ERROR, s.str());
+    throw CssException(CssException::INTERNAL_ERROR, s.str());
 }
+
+}}} // namespace lsst::qserv::css

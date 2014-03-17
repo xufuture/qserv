@@ -38,7 +38,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace css {
 
 class CssException : public std::runtime_error {
 public:
@@ -71,6 +71,6 @@ private:
     static std::map<errCodeT, std::string> _errMap;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::css
 
 #endif // LSST_QSERV_CSS_EXCEPTION_HH

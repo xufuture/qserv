@@ -53,8 +53,6 @@ using std::ostringstream;
 using std::string;
 using std::vector;
 
-namespace qCss = lsst::qserv::master;
-
 
 struct CssInterfaceFixture {
     CssInterfaceFixture(void) {
@@ -73,7 +71,8 @@ struct CssInterfaceFixture {
 BOOST_FIXTURE_TEST_SUITE(CssInterfaceTest, CssInterfaceFixture)
 
 BOOST_AUTO_TEST_CASE(createGetCheck) {
-    qCss::CssInterfaceImplZoo cssI = qCss::CssInterfaceImplZoo("localhost:2181");
+    lsst::qserv::css::CssInterfaceImplZoo cssI =
+        lsst::qserv::css::CssInterfaceImplZoo("localhost:2181");
 
     cssI.create(prefix, v1);
     cssI.create(k1, v1);
