@@ -124,7 +124,7 @@ struct ParserFixture {
         config["table.partitioncols"] = "Object:ra_Test,decl_Test,objectIdObjTest;"
             "Source:raObjectTest,declObjectTest,objectIdSourceTest";
 
-        // To learn how to dump the map, see qserv/core/css/CssInterfaceImplDummy.cc
+        // To learn how to dump the map, see qserv/core/css/CssInterfaceImplMem.cc
         // Use client/examples/testCppParser_generateMap
         std::string kwMapPath = "./modules/qproc/testCppParser.kwmap"; // FIXME
         cssStore = boost::shared_ptr<qMaster::Store>(
