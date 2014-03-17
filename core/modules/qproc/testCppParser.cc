@@ -1,6 +1,6 @@
 /*
  * LSST Data Management System
- * Copyright 2009-2013 LSST Corporation.
+ * Copyright 2009-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -32,7 +32,6 @@
 #define BOOST_TEST_MODULE testCppParser
 #include "boost/test/included/unit_test.hpp"
 #include <boost/algorithm/string.hpp>
-#include <fstream>
 #include <iostream>
 #include <list>
 #include <map>
@@ -125,37 +124,11 @@ struct ParserFixture {
         config["table.partitioncols"] = "Object:ra_Test,decl_Test,objectIdObjTest;"
             "Source:raObjectTest,declObjectTest,objectIdSourceTest";
 
-        std::map<std::string, std::string> kwMap;
-
-        // To generate the key/value map, follow this recipe:
-        // 1) cleanup everything in zookeeper. careful, this will wipe out 
-        //    everyting in zookeeper!
-        //    echo "drop everything;" | ./client/qserv_admin.py
-        // 2) generate the clean set
-        //    ./client/qserv_admin.py < client/examples/testCppParser_generateMap
-        // 3) then copy the generate file to final destination
-        //    mv /tmp/testCppParser.kwmap core/modules/qproc/
-        std::ifstream f("./modules/qproc/testCppParser.kwmap"); // FIXME
-        std::string line;
-        std::vector<std::string> strs;
-        while ( std::getline(f, line) ) {
-            boost::split(strs, line, boost::is_any_of("\t"));
-            std::string theKey = strs[0];
-            std::string theVal = strs[1];
-            if (theVal == "\\N") {
-                theVal = "";
-            }
-            kwMap[theKey] = theVal;
-        }
-        //std::map<std::string, std::string>::const_iterator itrM;
-        //for (itrM=kwMap.begin() ; itrM!=kwMap.end() ; itrM++) {
-        //    std::string val = "\\N";
-        //    if (itrM->second != "") {
-        //        val = itrM->second;
-        //    }
-        //    std::cout << itrM->first << "\t" << val << std::endl;
-        //}
-        cssStore = boost::shared_ptr<qMaster::Store>(new qMaster::Store(kwMap));
+        // To learn how to dump the map, see qserv/core/css/CssInterfaceImplDummy.cc
+        // Use client/examples/testCppParser_generateMap
+        std::string kwMapPath = "./modules/qproc/testCppParser.kwmap"; // FIXME
+        cssStore = boost::shared_ptr<qMaster::Store>(
+                                       new qMaster::Store(kwMapPath, true));
     };
     ~ParserFixture(void) { };
 
