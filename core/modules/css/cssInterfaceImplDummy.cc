@@ -41,6 +41,7 @@
 
 
 // standard library imports
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -48,6 +49,7 @@
 
 // boost
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string.hpp>
 
 // local imports
 #include "cssInterfaceImplDummy.h"
@@ -65,14 +67,43 @@ using std::vector;
 namespace qCss = lsst::qserv::master;
 
 /**
- * Initialize the interface.
- *
- * @param connInfo connection information
- */
-qCss::CssInterfaceImplDummy::CssInterfaceImplDummy(map<string, string>& kwMap,
+  * Initialize the interface.
+  *
+  * @param mapPath path to the map dumped using ./client/qserv_admin.py
+  *
+  * To generate the key/value map, follow this recipe:
+  * 1) cleanup everything in zookeeper. careful, this will wipe out 
+  *    everyting in zookeeper!
+  *    echo "drop everything;" | ./client/qserv_admin.py
+  * 2) generate the clean set:
+  *    ./client/qserv_admin.py <  <commands>
+  *    (example commands can be found in client/examples/testCppParser_generateMap)
+  * 3) then copy the generate file to final destination:
+  *    mv /tmp/testCppParser.kwmap <destination>
+  */
+qCss::CssInterfaceImplDummy::CssInterfaceImplDummy(string const& mapPath,
                                                    bool verbose) :
     qCss::CssInterface(verbose) {
-    _kwMap = kwMap;
+    std::ifstream f("./modules/qproc/testCppParser.kwmap"); // FIXME
+    std::string line;
+    std::vector<std::string> strs;
+    while ( std::getline(f, line) ) {
+        boost::split(strs, line, boost::is_any_of("\t"));
+        std::string theKey = strs[0];
+        std::string theVal = strs[1];
+        if (theVal == "\\N") {
+            theVal = "";
+        }
+        _kwMap[theKey] = theVal;
+    }
+    //std::map<std::string, std::string>::const_iterator itrM;
+    //for (itrM=_kwMap.begin() ; itrM!=_kwMap.end() ; itrM++) {
+    //    std::string val = "\\N";
+    //    if (itrM->second != "") {
+    //        val = itrM->second;
+    //    }
+    //    std::cout << itrM->first << "\t" << val << std::endl;
+    //}
 }
 
 qCss::CssInterfaceImplDummy::~CssInterfaceImplDummy() {

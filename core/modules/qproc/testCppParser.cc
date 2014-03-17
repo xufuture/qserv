@@ -32,7 +32,6 @@
 #define BOOST_TEST_MODULE testCppParser
 #include "boost/test/included/unit_test.hpp"
 #include <boost/algorithm/string.hpp>
-createTable
 #include <iostream>
 #include <list>
 #include <map>
