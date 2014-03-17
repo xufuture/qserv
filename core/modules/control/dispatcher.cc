@@ -171,7 +171,7 @@ qMaster::getDominantDb(int session) {
     return qs.getDominantDb();
 }
 
-qMaster::IntPair
+lsst::qserv::css::IntPair
 qMaster::getDbStriping(int session) {
     return getAsyncManager(session).getQuerySession().getDbStriping();
 }

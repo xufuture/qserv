@@ -86,8 +86,9 @@ ChunkSpec makeChunkSpec(int chunkNum, bool withSubChunks=false) {
 void testParse(SelectParser::Ptr p) {
 }
 
-boost::shared_ptr<QuerySession> testStmt3(boost::shared_ptr<qMaster::Store> cssStore, 
-                                          std::string const& stmt) {
+    boost::shared_ptr<QuerySession> testStmt3(
+                        boost::shared_ptr<lsst::qserv::css::Store> cssStore, 
+                        std::string const& stmt) {
     boost::shared_ptr<QuerySession> qs(new QuerySession(cssStore));
     qs->setQuery(stmt);
     BOOST_CHECK_EQUAL(qs->getError(), "");
@@ -127,8 +128,8 @@ struct ParserFixture {
         // To learn how to dump the map, see qserv/core/css/CssInterfaceImplMem.cc
         // Use client/examples/testCppParser_generateMap
         std::string kwMapPath = "./modules/qproc/testCppParser.kwmap"; // FIXME
-        cssStore = boost::shared_ptr<qMaster::Store>(
-                                       new qMaster::Store(kwMapPath, true));
+        cssStore = boost::shared_ptr<lsst::qserv::css::Store>(
+                                     new lsst::qserv::css::Store(kwMapPath, true));
     };
     ~ParserFixture(void) { };
 
@@ -149,7 +150,7 @@ struct ParserFixture {
     std::map<std::string, std::string> config;
     std::map<std::string, int> whiteList;
     std::string defaultDb;
-    boost::shared_ptr<qMaster::Store> cssStore;
+    boost::shared_ptr<lsst::qserv::css::Store> cssStore;
 };
 
 

@@ -108,7 +108,7 @@ public:
     void addToWriteQueue(DynamicWorkQueue::Callable * callable);
 
     QuerySession& getQuerySession() { return *_qSession; }
-    IntPair getDbStriping();
+    css::IntPair getDbStriping();
         
 private:
     // QuerySpec: ChunkQuery object + result name

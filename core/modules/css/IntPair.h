@@ -33,13 +33,13 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace css {
 
 struct IntPair {
     int a;
     int b;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::css
 
 #endif // LSST_QSERV_CSS_INTPAIR_H

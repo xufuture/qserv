@@ -150,7 +150,7 @@ public:
 
 class lookupTuple {
 public:
-    lookupTuple(Store& cssStore_)
+    lookupTuple(css::Store& cssStore_)
         : cssStore(cssStore_)
         {}
 
@@ -164,7 +164,7 @@ public:
             }
         }
     }
-    Store& cssStore;
+    css::Store& cssStore;
 };
 
 class SphericalBoxStrategy::Impl {

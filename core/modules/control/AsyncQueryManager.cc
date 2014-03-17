@@ -383,7 +383,7 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
         "qservResult");
     // Setup session
     // FIXME, connection should be configurable!!!
-    boost::shared_ptr<Store> cssStorePtr(new Store("localhost:2181"));
+    boost::shared_ptr<css::Store> cssStorePtr(new css::Store("localhost:2181"));
     _qSession.reset(new QuerySession(cssStorePtr));
 }
 

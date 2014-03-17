@@ -43,7 +43,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace css {
 
 class CssInterfaceImplZoo : public CssInterface {
 public:
@@ -63,6 +63,6 @@ private:
     zhandle_t *_zh; // zookeeper handle
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::css
 
 #endif // LSST_QSERV_CSS_INTERFACE_IMPL_ZOO_HH

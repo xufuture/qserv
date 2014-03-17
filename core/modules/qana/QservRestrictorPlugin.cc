@@ -150,7 +150,7 @@ typedef std::deque<RestrictorEntry> RestrictorEntries;
 class getTable {
 public:
 
-    explicit getTable(Store& cssStore, RestrictorEntries& entries)
+    explicit getTable(css::Store& cssStore, RestrictorEntries& entries)
         : _cssStore(cssStore),
           _entries(entries) {}
     void operator()(TableRefN::Ptr t) {
@@ -177,7 +177,7 @@ public:
                         pCols[2]);
         _entries.push_back(se);
     }
-    Store& _cssStore;
+    css::Store& _cssStore;
     RestrictorEntries& _entries;
 };
 ////////////////////////////////////////////////////////////////////////

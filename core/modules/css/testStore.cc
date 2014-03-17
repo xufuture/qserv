@@ -53,7 +53,10 @@ using std::make_pair;
 using std::string;
 using std::vector;
 
-namespace qCss = lsst::qserv::master;
+namespace lsst {
+namespace qserv {
+namespace css {
+            
 
 struct StoreFixture {
     StoreFixture(void) {
@@ -98,8 +101,7 @@ struct StoreFixture {
         kv.push_back(make_pair(p, ""));
         kv.push_back(make_pair(p + "/Exposure", ""));
 
-        qCss::CssInterfaceImplZoo cssI = 
-            qCss::CssInterfaceImplZoo("localhost:2181", false);
+        CssInterfaceImplZoo cssI = CssInterfaceImplZoo("localhost:2181", false);
         vector<std::pair<string, string> >::const_iterator itr;
         cout << "--------------" << endl;
         for (itr=kv.begin() ; itr!=kv.end() ; ++itr) {
@@ -107,12 +109,11 @@ struct StoreFixture {
             cssI.create(itr->first, itr->second);
         }
         cout << "--------------" << endl;
-        store = new qCss::Store("localhost:2181", prefix);
+        store = new Store("localhost:2181", prefix);
     };
 
     ~StoreFixture(void) {
-        qCss::CssInterfaceImplZoo cssI = 
-            qCss::CssInterfaceImplZoo("localhost:2181", false);
+        CssInterfaceImplZoo cssI = CssInterfaceImplZoo("localhost:2181", false);
         vector<std::pair<string, string> >::const_reverse_iterator itr;
         for (itr=kv.rbegin() ; itr!=kv.rend() ; ++itr) {
             cssI.deleteNode(itr->first);
@@ -121,7 +122,7 @@ struct StoreFixture {
     };
 
     vector<std::pair<string, string> > kv;
-    qCss::Store *store;
+    Store *store;
 };
 
 BOOST_FIXTURE_TEST_SUITE(StoreTest, StoreFixture)
@@ -142,8 +143,8 @@ BOOST_AUTO_TEST_CASE(checkIfContainsTable) {
     // for non-existing db
     try {
         store->checkIfContainsTable("Dummy", "NotHere");
-    } catch (qCss::CssException& e) {
-        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    } catch (CssException& e) {
+        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
     }
 }
 
@@ -156,15 +157,15 @@ BOOST_AUTO_TEST_CASE(checkIfTableIsChunked) {
     // normal, table does not exist
     try {
         store->checkIfTableIsChunked("dbA", "NotHere");
-    } catch (qCss::CssException& e) {
-        BOOST_REQUIRE(e.errCode()==qCss::CssException::TB_DOES_NOT_EXIST);
+    } catch (CssException& e) {
+        BOOST_REQUIRE(e.errCode()==CssException::TB_DOES_NOT_EXIST);
     }
 
     // for non-existing db
     try {
         store->checkIfTableIsChunked("Dummy", "NotHere");
-    } catch (qCss::CssException& e) {
-        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    } catch (CssException& e) {
+        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
     }
 }
 
@@ -177,15 +178,15 @@ BOOST_AUTO_TEST_CASE(checkIfTableIsSubChunked) {
     // normal, table does not exist
     try {
         store->checkIfTableIsSubChunked("dbA", "NotHere");
-    } catch (qCss::CssException& e) {
-        BOOST_REQUIRE(e.errCode()==qCss::CssException::TB_DOES_NOT_EXIST);
+    } catch (CssException& e) {
+        BOOST_REQUIRE(e.errCode()==CssException::TB_DOES_NOT_EXIST);
     }
 
     // for non-existing db
     try {
         store->checkIfTableIsSubChunked("Dummy", "NotHere");
-    } catch (qCss::CssException& e) {
-        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    } catch (CssException& e) {
+        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
     }
 }
 
@@ -214,8 +215,8 @@ BOOST_AUTO_TEST_CASE(getChunkedTables) {
     // for non-existing db
     try {
         store->getChunkedTables("Dummy");
-    } catch (qCss::CssException& e) {
-        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    } catch (CssException& e) {
+        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
     }
 }
 
@@ -233,8 +234,8 @@ BOOST_AUTO_TEST_CASE(getSubChunkedTables) {
     // for non-existing db
     try {
         store->getSubChunkedTables("Dummy");
-    } catch (qCss::CssException& e) {
-        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    } catch (CssException& e) {
+        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
     }
 }
 
@@ -255,8 +256,8 @@ BOOST_AUTO_TEST_CASE(getPartitionCols) {
     // for non-existing db
     try {
         store->getPartitionCols("Dummy", "x");
-    } catch (qCss::CssException& e) {
-        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    } catch (CssException& e) {
+        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
     }
 }
 
@@ -276,16 +277,18 @@ BOOST_AUTO_TEST_CASE(getKeyColumn) {
     // for non-existing db
     try {
         store->getKeyColumn("Dummy", "x");
-    } catch (qCss::CssException& e) {
-        BOOST_REQUIRE(e.errCode()==qCss::CssException::DB_DOES_NOT_EXIST);
+    } catch (CssException& e) {
+        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
     }
 }
 
 BOOST_AUTO_TEST_CASE(getDbStriping) {
-    qCss::IntPair s = store->getDbStriping("dbA");
+    IntPair s = store->getDbStriping("dbA");
     BOOST_REQUIRE(s.a == 18);
     BOOST_REQUIRE(s.b == 40);
 }
 
 
 BOOST_AUTO_TEST_SUITE_END()
+
+}}} // namespace lsst::qserv::css

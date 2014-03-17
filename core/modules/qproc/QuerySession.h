@@ -56,7 +56,7 @@ public:
     friend class Iter;
     friend class AsyncQueryManager; // factory for QuerySession.
 
-    explicit QuerySession(boost::shared_ptr<Store>);
+    explicit QuerySession(boost::shared_ptr<css::Store>);
 
     std::string const& getOriginal() const { return _original; }
     void setQuery(std::string const& q);
@@ -77,7 +77,7 @@ public:
     /// dispatch. This is distinct from the default database, which is what is
     /// used for unqualified table and column references
     std::string const& getDominantDb() const;
-    IntPair getDbStriping();
+    css::IntPair getDbStriping();
     std::string const& getError() const { return _error; }
 
     MergeFixup makeMergeFixup() const;
@@ -106,7 +106,7 @@ private:
     std::vector<std::string> _buildChunkQueries(ChunkSpec const& s);
 
     // Fields
-    boost::shared_ptr<Store> _cssStore;
+    boost::shared_ptr<css::Store> _cssStore;
     std::string _original;
     boost::shared_ptr<QueryContext> _context;
     boost::shared_ptr<SelectStmt> _stmt;

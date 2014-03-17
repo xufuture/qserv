@@ -63,7 +63,7 @@ void printConstraints(ConstraintVector const& cv) {
 ////////////////////////////////////////////////////////////////////////
 // class QuerySession
 ////////////////////////////////////////////////////////////////////////
-QuerySession::QuerySession(boost::shared_ptr<Store> cssStore) : 
+QuerySession::QuerySession(boost::shared_ptr<css::Store> cssStore) : 
     _cssStore(cssStore) {
 }
 
@@ -144,7 +144,7 @@ std::string const& QuerySession::getDominantDb() const {
     return _context->dominantDb; // parsed query's dominant db (via TablePlugin)
 }
 
-IntPair
+css::IntPair
 QuerySession::getDbStriping() {
     return _context->getDbStriping();
 }

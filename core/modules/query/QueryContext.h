@@ -56,7 +56,8 @@ public:
     QueryContext() {}
     typedef std::list<boost::shared_ptr<QsRestrictor> > RestrList;
 
-    boost::shared_ptr<Store> cssStore; ///< Unowned, assumed to be alive for this lifetime.
+    boost::shared_ptr<css::Store> cssStore; ///< Unowned, assumed to be alive 
+                                            ///  for this lifetime.
     std::string defaultDb; ///< Implicit db context
     std::string dominantDb; ///< "dominant" database for this query
     std::string anonymousTable; ///< Implicit table context
@@ -76,7 +77,7 @@ public:
 
     bool needsMerge; ///< Does this query require a merge/post-processing step?
 
-    lsst::qserv::master::IntPair getDbStriping() {
+    lsst::qserv::css::IntPair getDbStriping() {
         return cssStore->getDbStriping(dominantDb); }
     bool hasChunks() const {
         return queryMapping.get() && queryMapping->hasChunks(); }

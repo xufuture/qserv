@@ -61,7 +61,7 @@ lsst::qserv::master::ConstraintVec getConstraints(int session);
 /// @return the dominant db for the query
 std::string const& getDominantDb(int session);
 /// @return number of stripes and substripes
-lsst::qserv::master::IntPair getDbStriping(int session);
+lsst::qserv::css::IntPair getDbStriping(int session);
 /// Add a chunk spec for execution
 void addChunk(int session, lsst::qserv::master::ChunkSpec const& cs );
 /// Dispatch all chunk queries for this query

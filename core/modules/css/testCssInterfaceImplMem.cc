@@ -53,9 +53,6 @@ using std::ostringstream;
 using std::string;
 using std::vector;
 
-namespace qCss = lsst::qserv::master;
-
-
 struct CssInterfaceFixture {
     CssInterfaceFixture(void) {
         prefix = "/unittest_" + boost::lexical_cast<std::string>(rand());
@@ -73,7 +70,8 @@ struct CssInterfaceFixture {
 BOOST_FIXTURE_TEST_SUITE(CssInterfaceTest, CssInterfaceFixture)
 
 BOOST_AUTO_TEST_CASE(createGetCheck) {
-    qCss::CssInterfaceImplMem cssI = qCss::CssInterfaceImplMem(true);
+    lsst::qserv::css::CssInterfaceImplMem cssI =
+        lsst::qserv::css::CssInterfaceImplMem(true);
 
     cssI.create(prefix, v1);
     cssI.create(k1, v1);
