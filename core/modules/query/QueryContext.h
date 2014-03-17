@@ -32,7 +32,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include "css/Facade.h"
-issues
 #include "qana/QueryMapping.h"
 #include "query/TableAlias.h"
 #include "util/common.h"
