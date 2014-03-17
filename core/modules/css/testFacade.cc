@@ -23,9 +23,9 @@
  */
 
 /**
-  * @file testStore.cc
+  * @file testFacade.cc
   *
-  * @brief Unit test for the Store.
+  * @brief Unit test for the Facade class.
   *
   * @Author Jacek Becla, SLAC
   */
@@ -38,12 +38,12 @@
 #include <stdexcept>
 
 // boost
-#define BOOST_TEST_MODULE TestStore
+#define BOOST_TEST_MODULE TestFacade
 #include <boost/test/included/unit_test.hpp>
 #include <boost/lexical_cast.hpp>
 
 // local imports
-#include "Store.h"
+#include "Facade.h"
 #include "cssInterfaceImplZoo.h"
 #include "cssException.h"
 
@@ -58,8 +58,8 @@ namespace qserv {
 namespace css {
             
 
-struct StoreFixture {
-    StoreFixture(void) {
+struct FacadeFixture {
+    FacadeFixture(void) {
         string prefix = "/unittest_" + boost::lexical_cast<string>(rand());
         cout << "My prefix is: " << prefix << endl;
         kv.push_back(make_pair(prefix, ""));
@@ -109,10 +109,10 @@ struct StoreFixture {
             cssI.create(itr->first, itr->second);
         }
         cout << "--------------" << endl;
-        store = new Store("localhost:2181", prefix);
+        store = new Facade("localhost:2181", prefix);
     };
 
-    ~StoreFixture(void) {
+    ~FacadeFixture(void) {
         CssInterfaceImplZoo cssI = CssInterfaceImplZoo("localhost:2181", false);
         vector<std::pair<string, string> >::const_reverse_iterator itr;
         for (itr=kv.rbegin() ; itr!=kv.rend() ; ++itr) {
@@ -122,10 +122,10 @@ struct StoreFixture {
     };
 
     vector<std::pair<string, string> > kv;
-    Store *store;
+    Facade *store;
 };
 
-BOOST_FIXTURE_TEST_SUITE(StoreTest, StoreFixture)
+BOOST_FIXTURE_TEST_SUITE(FacadeTest, FacadeFixture)
 
 BOOST_AUTO_TEST_CASE(checkIfContainsDb) {
     BOOST_REQUIRE( store->checkIfContainsDb("dbA"));

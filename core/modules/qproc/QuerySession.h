@@ -32,7 +32,7 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "css/Store.h"
+#include "css/Facade.h"
 #include "query/Constraint.h"
 #include "qproc/ChunkQuerySpec.h"
 #include "qproc/ChunkSpec.h"
@@ -56,7 +56,7 @@ public:
     friend class Iter;
     friend class AsyncQueryManager; // factory for QuerySession.
 
-    explicit QuerySession(boost::shared_ptr<css::Store>);
+    explicit QuerySession(boost::shared_ptr<css::Facade>);
 
     std::string const& getOriginal() const { return _original; }
     void setQuery(std::string const& q);
@@ -106,7 +106,7 @@ private:
     std::vector<std::string> _buildChunkQueries(ChunkSpec const& s);
 
     // Fields
-    boost::shared_ptr<css::Store> _cssStore;
+    boost::shared_ptr<css::Facade> _cssFacade;
     std::string _original;
     boost::shared_ptr<QueryContext> _context;
     boost::shared_ptr<SelectStmt> _stmt;

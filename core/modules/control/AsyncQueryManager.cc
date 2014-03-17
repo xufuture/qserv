@@ -39,7 +39,7 @@
 #include "boost/date_time/posix_time/posix_time_types.hpp"
 
 #include "control/AsyncQueryManager.h"
-#include "css/Store.h"
+#include "css/Facade.h"
 #include "qdisp/ChunkQuery.h"
 #include "log/Logger.h"
 #include "qdisp/MessageStore.h"
@@ -383,8 +383,8 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
         "qservResult");
     // Setup session
     // FIXME, connection should be configurable!!!
-    boost::shared_ptr<css::Store> cssStorePtr(new css::Store("localhost:2181"));
-    _qSession.reset(new QuerySession(cssStorePtr));
+    boost::shared_ptr<css::Facade> cssFacadePtr(new css::Facade("localhost:2181"));
+    _qSession.reset(new QuerySession(cssFacadePtr));
 }
 
 void AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,

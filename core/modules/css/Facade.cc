@@ -23,9 +23,9 @@
  */
 
 /**
-  * @file Store.cc
+  * @file Facade.cc
   *
-  * @brief A store that manage information from Central State System for Qserv.
+  * @brief A facade to the Central State System used by all Qserv core modules.
   *
   * @Author Jacek Becla, SLAC
   *
@@ -36,7 +36,7 @@
 #include <iostream>
 
 // Local imports
-#include "Store.h"
+#include "Facade.h"
 #include "cssException.h"
 #include "cssInterfaceImplMem.h"
 #include "cssInterfaceImplZoo.h"
@@ -53,38 +53,38 @@ namespace css {
 
 
 /**
-  * Initialize the Store, the Store will use Zookeeper-based interface, this is
+  * Initialize the Facade, the Facade will use Zookeeper-based interface, this is
   * for production use.
   *
   * @param connInfo connection information
   */
-Store::Store(string const& connInfo) {
+Facade::Facade(string const& connInfo) {
     _cssI = new CssInterfaceImplZoo(connInfo);
 }
 
 /**
-  * Initialize the Store, the Store will use Zookeeper-based interface, but will
+  * Initialize the Facade, the Facade will use Zookeeper-based interface, but will
   * place all data in some non-standard location, use this constructor for testing.
   *
   * @param connInfo connection information
   * @param prefix, for testing, to avoid polluting production setup
   */
-Store::Store(string const& connInfo, string const& prefix) :
+Facade::Facade(string const& connInfo, string const& prefix) :
     _prefix(prefix) {
     _cssI = new CssInterfaceImplZoo(connInfo);
 }
 
 /**
-  * Initialize the Store with dummy interface, use this constructor for testing.
+  * Initialize the Facade with dummy interface, use this constructor for testing.
   *
   * @param mapPath path to the map dumped using ./client/qserv_admin.py
   * @param isMap   unusued argument to differentiate between different c'tors
   */
-Store::Store(string const& mapPath, bool isMap) {
+Facade::Facade(string const& mapPath, bool isMap) {
     _cssI = new CssInterfaceImplMem(mapPath);
 }
 
-Store::~Store() {
+Facade::~Facade() {
     delete _cssI;
 }
 
@@ -95,7 +95,7 @@ Store::~Store() {
   * @return returns if given database is registered.
   */
 bool
-Store::checkIfContainsDb(string const& dbName) {
+Facade::checkIfContainsDb(string const& dbName) {
     string p = _prefix + "/DATABASES/" + dbName;
     bool ret =  _cssI->exists(p);
     cout << "*** checkIfContainsDb(" << dbName << "): " << ret << endl;
@@ -111,7 +111,7 @@ Store::checkIfContainsDb(string const& dbName) {
   * @return returns if the database contains the table.
   */
 bool
-Store::checkIfContainsTable(string const& dbName, string const& tableName) {
+Facade::checkIfContainsTable(string const& dbName, string const& tableName) {
     cout << "*** checkIfContainsTable(" << dbName << ", " << tableName << ")"<<endl;
     _validateDbExists(dbName);
     return _checkIfContainsTable(dbName, tableName);
@@ -126,7 +126,7 @@ Store::checkIfContainsTable(string const& dbName, string const& tableName) {
   * @return returns true if the table is chunked.
   */
 bool
-Store::checkIfTableIsChunked(string const& dbName, string const& tableName) {
+Facade::checkIfTableIsChunked(string const& dbName, string const& tableName) {
     cout << "checkIfTableIsChunked " << dbName << " " << tableName << endl;
     try { // FIXME: remove it, it SHOULD throw an exception
         _validateDbTbExists(dbName, tableName);
@@ -146,7 +146,7 @@ Store::checkIfTableIsChunked(string const& dbName, string const& tableName) {
   * @return returns true if the table is subchunked.
   */
 bool
-Store::checkIfTableIsSubChunked(string const&dbName, string const&tableName) {
+Facade::checkIfTableIsSubChunked(string const&dbName, string const&tableName) {
     cout << "checkIfTableIsSubChunked(" << dbName << ", " << tableName << ")"<<endl;
     _validateDbTbExists(dbName, tableName);
     return _checkIfTableIsSubChunked(dbName, tableName);
@@ -157,7 +157,7 @@ Store::checkIfTableIsSubChunked(string const&dbName, string const&tableName) {
   * @return returns a vector of database names that are configured for qserv
   */
 vector<string>
-Store::getAllowedDbs() {
+Facade::getAllowedDbs() {
     string p = _prefix + "/DATABASES";
     return _cssI->getChildren(p);
 }
@@ -169,7 +169,7 @@ Store::getAllowedDbs() {
   * @return Returns a vector of table names that are chunked.
   */
 vector<string>
-Store::getChunkedTables(string const& dbName) {
+Facade::getChunkedTables(string const& dbName) {
     cout << "*** getChunkedTables(" << dbName << ")" << endl;
     _validateDbExists(dbName);
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES";
@@ -191,7 +191,7 @@ Store::getChunkedTables(string const& dbName) {
   * @return Returns a vector of table names that are subchunked.
   */
 vector<string>
-Store::getSubChunkedTables(string const& dbName) {
+Facade::getSubChunkedTables(string const& dbName) {
     cout << "*** getSubChunkedTables(" << dbName << ")" << endl;
     _validateDbExists(dbName);
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES";
@@ -214,7 +214,7 @@ Store::getSubChunkedTables(string const& dbName) {
   * @return Returns a 3-element vector with column names: ra, decl, objectId.
   */
 vector<string>
-Store::getPartitionCols(string const& dbName, string const& tableName) {
+Facade::getPartitionCols(string const& dbName, string const& tableName) {
     cout << "*** getPartitionCols(" << dbName << ", " << tableName << ")" << endl;
     _validateDbTbExists(dbName, tableName);
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + 
@@ -242,7 +242,7 @@ Store::getPartitionCols(string const& dbName, string const& tableName) {
   * @return Returns 0 if not partitioned, 1 if chunked, 2 if subchunked.
   */
 int
-Store::getChunkLevel(string const& dbName, string const& tableName) {
+Facade::getChunkLevel(string const& dbName, string const& tableName) {
     cout << "getChunkLevel(" << dbName << ", " << tableName << ")" << endl;
     try { // FIXME: remove it, it SHOULD throw an exception
         _validateDbTbExists(dbName, tableName);
@@ -274,8 +274,8 @@ Store::getChunkLevel(string const& dbName, string const& tableName) {
   * @return the name of the partitioning key column
   */
 string
-Store::getKeyColumn(string const& dbName, string const& tableName) {
-    cout << "*** Store::getKeyColumn(" << dbName << ", " << tableName << ")"<<endl;
+Facade::getKeyColumn(string const& dbName, string const& tableName) {
+    cout << "*** Facade::getKeyColumn(" << dbName << ", " << tableName << ")"<<endl;
     try { // FIXME: remove it, it SHOULD throw an exception
         _validateDbTbExists(dbName, tableName);
     } catch (CssException& e) {
@@ -293,7 +293,7 @@ Store::getKeyColumn(string const& dbName, string const& tableName) {
         }
         throw;
     }
-    cout << "Store::getKeyColumn, returning: " << ret << endl;
+    cout << "Facade::getKeyColumn, returning: " << ret << endl;
     return ret;
 }
 
@@ -303,7 +303,7 @@ Store::getKeyColumn(string const& dbName, string const& tableName) {
   * @param db database name
   */
 IntPair
-Store::getDbStriping(string const& dbName) {
+Facade::getDbStriping(string const& dbName) {
     cout << "*** getDbStriping(" << dbName << ")" << endl;
     _validateDbExists(dbName);
     string v = _cssI->get(_prefix + "/DATABASES/" + dbName + "/partitioningId");
@@ -315,7 +315,7 @@ Store::getDbStriping(string const& dbName) {
 }
 
 int
-Store::_getIntValue(string const& key) {
+Facade::_getIntValue(string const& key) {
     string s = _cssI->get(key);
     return atoi(s.c_str());
 }
@@ -323,7 +323,7 @@ Store::_getIntValue(string const& key) {
 /** Validates if database exists. Throw exception if it does not.
   */
 void
-Store::_validateDbExists(string const& dbName) {
+Facade::_validateDbExists(string const& dbName) {
     if (!checkIfContainsDb(dbName)) {
         cout << "db " << dbName << " not found" << endl;
         throw CssException(CssException::DB_DOES_NOT_EXIST, dbName);
@@ -334,7 +334,7 @@ Store::_validateDbExists(string const& dbName) {
     Does not check if the database exists.
   */
 void
-Store::_validateTbExists(string const& dbName, string const& tableName) {
+Facade::_validateTbExists(string const& dbName, string const& tableName) {
     if (!checkIfContainsTable(dbName, tableName)) {
         cout << "table " << dbName << "." << tableName << " not found" << endl;
         throw CssException(CssException::TB_DOES_NOT_EXIST, dbName+"."+tableName);
@@ -345,7 +345,7 @@ Store::_validateTbExists(string const& dbName, string const& tableName) {
     does not.
   */
 void
-Store::_validateDbTbExists(string const& dbName, string const& tableName) {
+Facade::_validateDbTbExists(string const& dbName, string const& tableName) {
     _validateDbExists(dbName);
     _validateTbExists(dbName, tableName);
 }
@@ -354,7 +354,7 @@ Store::_validateDbTbExists(string const& dbName, string const& tableName) {
     database exists.
   */
 bool
-Store::_checkIfContainsTable(string const& dbName, string const& tableName) {
+Facade::_checkIfContainsTable(string const& dbName, string const& tableName) {
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + tableName;
     bool ret = _cssI->exists(p);
     cout << "*** checkIfContainsTable returns: " << ret << endl;
@@ -370,7 +370,7 @@ Store::_checkIfContainsTable(string const& dbName, string const& tableName) {
   * @return returns true if the table is chunked, false otherwise.
   */
 bool
-Store::_checkIfTableIsChunked(string const& dbName, string const& tableName) {
+Facade::_checkIfTableIsChunked(string const& dbName, string const& tableName) {
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + 
                tableName + "/partitioning";
     bool ret = _cssI->exists(p);
@@ -389,7 +389,7 @@ Store::_checkIfTableIsChunked(string const& dbName, string const& tableName) {
   * @return returns true if the table is subchunked, false otherwise.
   */
 bool
-Store::_checkIfTableIsSubChunked(string const& dbName, 
+Facade::_checkIfTableIsSubChunked(string const& dbName, 
                                  string const& tableName) {
     string p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + 
                tableName + "/partitioning/" + "subChunks";

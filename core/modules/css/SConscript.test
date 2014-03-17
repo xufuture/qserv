@@ -25,7 +25,7 @@ programs.append(p)
 p = env.Program(["testCssInterfaceImplZoo.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
 programs.append(p)
 
-p = env.Program(["testStore.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
+p = env.Program(["testFacade.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
 programs.append(p)
 
 Return('programs')

@@ -36,7 +36,7 @@
 #include <deque>
 #include <boost/lexical_cast.hpp>
 
-#include "css/Store.h"
+#include "css/Facade.h"
 #include "query/FromList.h"
 #include "qana/QueryMapping.h"
 #include "query/QueryContext.h"
@@ -150,21 +150,21 @@ public:
 
 class lookupTuple {
 public:
-    lookupTuple(css::Store& cssStore_)
-        : cssStore(cssStore_)
+    lookupTuple(css::Facade& cssFacade_)
+        : cssFacade(cssFacade_)
         {}
 
     void operator()(Tuple& t) {
-        t.allowed = cssStore.checkIfContainsDb(t.db);
+        t.allowed = cssFacade.checkIfContainsDb(t.db);
         if(t.allowed) {
-            t.chunkLevel = cssStore.getChunkLevel(t.db, t.prePatchTable);
+            t.chunkLevel = cssFacade.getChunkLevel(t.db, t.prePatchTable);
             if(t.chunkLevel == -1) {
                 t.allowed = false; // No chunk level found: missing/illegal.
                 throw InvalidTableException(t.db, t.prePatchTable);
             }
         }
     }
-    css::Store& cssStore;
+    css::Facade& cssFacade;
 };
 
 class SphericalBoxStrategy::Impl {
@@ -430,10 +430,10 @@ void SphericalBoxStrategy::_import(FromList const& f) {
     std::for_each(tList.begin(), tList.end(),
                   TableRefN::Fwrapper<addTable>(a));
 
-    if(!_impl->context.cssStore) {
-        throw std::logic_error("Missing context.cssStore");
+    if(!_impl->context.cssFacade) {
+        throw std::logic_error("Missing context.cssFacade");
     }
-    lookupTuple lookup(*_impl->context.cssStore);
+    lookupTuple lookup(*_impl->context.cssFacade);
     std::for_each(_impl->tuples.begin(), _impl->tuples.end(), lookup);
     LOGGER_DBG << "Imported:::::";
 

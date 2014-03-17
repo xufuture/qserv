@@ -36,7 +36,7 @@
 
 #include <antlr/NoViableAltException.hpp>
 
-#include "css/Store.h"
+#include "css/Facade.h"
 #include "query/Constraint.h"
 #include "parser/SelectParser.h"
 #include "query/SelectStmt.h"
@@ -63,8 +63,8 @@ void printConstraints(ConstraintVector const& cv) {
 ////////////////////////////////////////////////////////////////////////
 // class QuerySession
 ////////////////////////////////////////////////////////////////////////
-QuerySession::QuerySession(boost::shared_ptr<css::Store> cssStore) : 
-    _cssStore(cssStore) {
+QuerySession::QuerySession(boost::shared_ptr<css::Facade> cssFacade) : 
+    _cssFacade(cssFacade) {
 }
 
 void QuerySession::setQuery(std::string const& inputQuery) {
@@ -190,7 +190,7 @@ void QuerySession::_initContext() {
     _context->username = "default";
     _context->needsMerge = false;
     _context->chunkCount = 0;
-    _context->cssStore = _cssStore;
+    _context->cssFacade = _cssFacade;
 }
 
 void QuerySession::_preparePlugins() {

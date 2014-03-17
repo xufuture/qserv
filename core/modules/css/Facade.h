@@ -21,9 +21,9 @@
  */
 
 /**
-  * @file Store.h
+  * @file Facade.h
   *
-  * @brief A store that manage information from Central State System for Qserv.
+  * @brief A facade to the Central State System used by all Qserv core modules.
   *
   * @Author Jacek Becla, SLAC
   */
@@ -54,12 +54,12 @@ class CssInterface; // forward declaration
     Central State System.
  */
 
-class Store {
+class Facade {
 public:
-    Store(std::string const&);
-    Store(std::string const&, std::string const&);
-    Store(std::string const&, bool);
-    ~Store();
+    Facade(std::string const&);
+    Facade(std::string const&, std::string const&);
+    Facade(std::string const&, bool);
+    ~Facade();
 
     // accessors
     bool checkIfContainsDb(std::string const&);
