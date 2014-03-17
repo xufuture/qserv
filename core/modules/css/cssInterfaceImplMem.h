@@ -42,7 +42,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace css {
+namespace master {
 
 class CssInterfaceImplMem : public CssInterface {
 public:
@@ -60,6 +60,6 @@ private:
     std::map<std::string, std::string> _kwMap;
 };
 
-}}} // namespace lsst::qserv::css
+}}} // namespace lsst::qserv::master
 
 #endif // LSST_QSERV_CSS_INTERFACE_IMPL_MEM_HH
