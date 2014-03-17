@@ -23,7 +23,7 @@
  */
 
 /**
-  * @file CssInterfaceImplDummy.cc
+  * @file CssInterfaceImplMem.cc
   *
   * @brief Interface to the Common State System - zookeeper-based implementation.
   *
@@ -52,7 +52,7 @@
 #include <boost/algorithm/string.hpp>
 
 // local imports
-#include "cssInterfaceImplDummy.h"
+#include "cssInterfaceImplMem.h"
 #include "cssException.h"
 
 
@@ -81,8 +81,8 @@ namespace qCss = lsst::qserv::master;
   * 3) then copy the generate file to final destination:
   *    mv /tmp/testCppParser.kwmap <destination>
   */
-qCss::CssInterfaceImplDummy::CssInterfaceImplDummy(string const& mapPath,
-                                                   bool verbose) :
+qCss::CssInterfaceImplMem::CssInterfaceImplMem(string const& mapPath,
+                                               bool verbose) :
     qCss::CssInterface(verbose) {
     std::ifstream f("./modules/qproc/testCppParser.kwmap"); // FIXME
     std::string line;
@@ -106,32 +106,32 @@ qCss::CssInterfaceImplDummy::CssInterfaceImplDummy(string const& mapPath,
     //}
 }
 
-qCss::CssInterfaceImplDummy::~CssInterfaceImplDummy() {
+qCss::CssInterfaceImplMem::~CssInterfaceImplMem() {
 }
 
 void
-qCss::CssInterfaceImplDummy::create(string const& key, string const& value) {
+qCss::CssInterfaceImplMem::create(string const& key, string const& value) {
     if (_verbose) {
-        cout << "*** CssInterfaceImplDummy::create(), " << key << " --> " 
+        cout << "*** CssInterfaceImplMem::create(), " << key << " --> " 
              << value << endl;
     }
     _kwMap[key] = value;
 }
 
 bool
-qCss::CssInterfaceImplDummy::exists(string const& key) {
+qCss::CssInterfaceImplMem::exists(string const& key) {
     bool ret = _kwMap.find(key) != _kwMap.end();
     if (_verbose) {
-        cout << "*** CssInterfaceImplDummy::exists(), key: " << key 
+        cout << "*** CssInterfaceImplMem::exists(), key: " << key 
              << ": " << ret << endl;
     }
     return ret;
 }
 
 string
-qCss::CssInterfaceImplDummy::get(string const& key) {
+qCss::CssInterfaceImplMem::get(string const& key) {
     if (_verbose) {
-        cout << "*** CssInterfaceImplDummy::get(), key: " << key << endl;
+        cout << "*** CssInterfaceImplMem::get(), key: " << key << endl;
     }
     string s = _kwMap[key];
     if (_verbose) {
@@ -141,9 +141,9 @@ qCss::CssInterfaceImplDummy::get(string const& key) {
 }
 
 vector<string> 
-qCss::CssInterfaceImplDummy::getChildren(string const& key) {
+qCss::CssInterfaceImplMem::getChildren(string const& key) {
     if (_verbose) {
-        cout << "*** CssInterfaceImplDummy::getChildren(), key: " << key << endl;
+        cout << "*** CssInterfaceImplMem::getChildren(), key: " << key << endl;
     }
     vector<string> retV;
     map<string, string>::const_iterator itrM;
@@ -170,9 +170,9 @@ qCss::CssInterfaceImplDummy::getChildren(string const& key) {
 }
 
 void
-qCss::CssInterfaceImplDummy::deleteNode(string const& key) {
+qCss::CssInterfaceImplMem::deleteNode(string const& key) {
     if (_verbose) {
-        cout << "*** CssInterfaceImplDummy::deleteNode, key: " << key << endl;
+        cout << "*** CssInterfaceImplMem::deleteNode, key: " << key << endl;
     }
     _kwMap.erase(key);
 }
