@@ -39,7 +39,6 @@
 #include <antlr/NoViableAltException.hpp>
 
 #include "css/Facade.h"
-issues
 #include "qdisp/ChunkMeta.h"
 #include "query/QsRestrictor.h"
 #include "query/QueryContext.h"

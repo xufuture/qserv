@@ -41,14 +41,14 @@
 #include <boost/thread.hpp>     // for mutex
 
 // Local imports
-#include "KvInterface.h"
-#include "StripingParams.h"
+#include "cssInterface.h"
+#include "IntPair.h"
 
 namespace lsst {
 namespace qserv {
 namespace css {
 
-class KvInterface; // forward declaration
+class CssInterface; // forward declaration
     
 /** The class stores Qserv-specific metadata and state information from the
     Central State System.
@@ -56,59 +56,37 @@ class KvInterface; // forward declaration
 
 class Facade {
 public:
+    Facade(std::string const&);
+    Facade(std::string const&, std::string const&);
+    Facade(std::string const&, bool);
     ~Facade();
 
     // accessors
-    bool containsDb(std::string const& dbName) const;
-    bool containsTable(std::string const& dbName, 
-                       std::string const& tableName) const;
-    bool tableIsChunked(std::string const& dbName, 
-                        std::string const& tableName) const;
-    bool tableIsSubChunked(std::string const& dbName, 
-                           std::string const& tableName) const;
-    std::vector<std::string> getAllowedDbs() const;
-    std::vector<std::string> getChunkedTables(std::string const& dbName) const;
-    std::vector<std::string> getSubChunkedTables(std::string const& dbName) const;
-    std::vector<std::string> getPartitionCols(std::string const& dbName, 
-                                              std::string const& tableName) const;
-    int getChunkLevel(std::string const& dbName, 
-                      std::string const& tableName) const;
-    std::string getKeyColumn(std::string const& dbName, 
-                             std::string const& tableName) const;
-    StripingParams getDbStriping(std::string const& dbName) const;
+    bool checkIfContainsDb(std::string const&);
+    bool checkIfContainsTable(std::string const&, std::string const&);
+    bool checkIfTableIsChunked(std::string const&, std::string const&);
+    bool checkIfTableIsSubChunked(std::string const&, std::string const&);
+    std::vector<std::string> getAllowedDbs();
+    std::vector<std::string> getChunkedTables(std::string const&);
+    std::vector<std::string> getSubChunkedTables(std::string const&);
+    std::vector<std::string> getPartitionCols(std::string const&, 
+                                              std::string const&);
+    int getChunkLevel(std::string const&, std::string const&);
+    std::string getKeyColumn(std::string const&, std::string const&);
+    IntPair getDbStriping(std::string const&);
 
 private:
-    Facade(std::string const& connInfo);
-    Facade(std::string const& connInfo, std::string const& prefix);
-    Facade(std::string const& mapPath, bool isMap);
+    void _validateDbExists(std::string const&);
+    void _validateTbExists(std::string const&, std::string const&);
+    void _validateDbTbExists(std::string const&, std::string const&);
+    bool _checkIfContainsTable(std::string const&, std::string const&);
+    bool _checkIfTableIsChunked(std::string const&, std::string const&);
+    bool _checkIfTableIsSubChunked(std::string const&, std::string const&);
+    int _getIntValue(std::string const&);
 
-    void _throwIfNotDbExists(std::string const& dbName) const;
-    void _throwIfNotTbExists(std::string const& dbName, 
-                             std::string const& tableName) const;
-    void _throwIfNotDbTbExists(std::string const& dbName, 
-                               std::string const& tableName) const;
-    bool _containsTable(std::string const& dbName, 
-                        std::string const& tableName) const;
-    bool _tableIsChunked(std::string const& dbName, 
-                         std::string const& tableName) const;
-    bool _tableIsSubChunked(std::string const& dbName, 
-                            std::string const& tableName) const;
-    int _getIntValue(std::string const& key) const;
-
-    friend class FacadeFactory;
-    
 private:
-    KvInterface* _kvI;
+    CssInterface* _cssI;
     std::string _prefix; // optional prefix, for isolating tests from production
-};
-
-class FacadeFactory {
-public:
-    static boost::shared_ptr<Facade> createZooFacade(std::string const& connInfo);
-    static boost::shared_ptr<Facade> createMemFacade(std::string const& connInfo);
-    static boost::shared_ptr<Facade> createZooTestFacade(
-                                                     std::string const& connInfo,
-                                                     std::string const& prefix);
 };
 
 }}} // namespace lsst::qserv::css
