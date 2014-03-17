@@ -74,10 +74,11 @@ qCss::Store::Store(string const& connInfo, string const& prefix) :
 /**
   * Initialize the Store with dummy interface, use this constructor for testing.
   *
-  * @param connInfo connection information
+  * @param mapPath path to the map dumped using ./client/qserv_admin.py
+  * @param isMap   unusued argument to differentiate between different c'tors
   */
-qCss::Store::Store(map<string, string>& kw) {
-    _cssI = new qCss::CssInterfaceImplDummy(kw);
+qCss::Store::Store(string const& mapPath, bool isMap) {
+    _cssI = new qCss::CssInterfaceImplDummy(mapPath);
 }
 
 qCss::Store::~Store() {
@@ -312,7 +313,7 @@ qCss::Store::getDbStriping(string const& dbName) {
 
 int
 qCss::Store::_getIntValue(string const& key) {
-    std::string s = _cssI->get(key);
+    string s = _cssI->get(key);
     return atoi(s.c_str());
 }
 
