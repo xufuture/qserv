@@ -33,7 +33,6 @@
 
 // Standard
 #include <iostream>
-#include <map>
 #include <string>
 #include <vector>
 
@@ -59,7 +58,7 @@ class Store {
 public:
     Store(std::string const&);
     Store(std::string const&, std::string const&);
-    Store(std::map<std::string, std::string>&);
+    Store(std::string const&, bool);
     ~Store();
 
     // accessors

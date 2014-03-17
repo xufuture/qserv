@@ -73,8 +73,7 @@ struct CssInterfaceFixture {
 BOOST_FIXTURE_TEST_SUITE(CssInterfaceTest, CssInterfaceFixture)
 
 BOOST_AUTO_TEST_CASE(createGetCheck) {
-    std::map<std::string, std::string> kw;
-    qCss::CssInterfaceImplDummy cssI = qCss::CssInterfaceImplDummy(kw, true);
+    qCss::CssInterfaceImplDummy cssI = qCss::CssInterfaceImplDummy(true);
 
     cssI.create(prefix, v1);
     cssI.create(k1, v1);
