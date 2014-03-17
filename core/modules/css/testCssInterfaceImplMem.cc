@@ -45,7 +45,7 @@
 #include <boost/lexical_cast.hpp>
 
 // local imports
-#include "cssInterfaceImplDummy.h"
+#include "cssInterfaceImplMem.h"
 
 using std::cout;
 using std::endl;
@@ -73,7 +73,7 @@ struct CssInterfaceFixture {
 BOOST_FIXTURE_TEST_SUITE(CssInterfaceTest, CssInterfaceFixture)
 
 BOOST_AUTO_TEST_CASE(createGetCheck) {
-    qCss::CssInterfaceImplDummy cssI = qCss::CssInterfaceImplDummy(true);
+    qCss::CssInterfaceImplMem cssI = qCss::CssInterfaceImplMem(true);
 
     cssI.create(prefix, v1);
     cssI.create(k1, v1);

@@ -23,14 +23,14 @@
 /**
   * @file CssInterface.h
   *
-  * @brief Interface to the Common State System - dummy (in memory key-value
-    based implementation).
+  * @brief Interface to the Common State System - in memory key-value based
+  * implementation.
   *
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_CSS_INTERFACE_IMPL_DUMMY_HH
-#define LSST_QSERV_CSS_INTERFACE_IMPL_DUMMY_HH
+#ifndef LSST_QSERV_CSS_INTERFACE_IMPL_MEM_HH
+#define LSST_QSERV_CSS_INTERFACE_IMPL_MEM_HH
 
 // standard library imports
 #include <map>
@@ -44,11 +44,11 @@ namespace lsst {
 namespace qserv {
 namespace master {
 
-class CssInterfaceImplDummy : public CssInterface {
+class CssInterfaceImplMem : public CssInterface {
 public:
-    CssInterfaceImplDummy(bool verbose=true) {}
-    CssInterfaceImplDummy(std::string const&, bool verbose=true);
-    virtual ~CssInterfaceImplDummy();
+    CssInterfaceImplMem(bool verbose=true) {}
+    CssInterfaceImplMem(std::string const&, bool verbose=true);
+    virtual ~CssInterfaceImplMem();
 
     virtual void create(std::string const& key, std::string const& value);
     virtual bool exists(std::string const& key);
@@ -62,4 +62,4 @@ private:
 
 }}} // namespace lsst::qserv::master
 
-#endif // LSST_QSERV_CSS_INTERFACE_IMPL_ZOO_HH
+#endif // LSST_QSERV_CSS_INTERFACE_IMPL_MEM_HH

@@ -38,7 +38,7 @@
 // Local imports
 #include "Store.h"
 #include "cssException.h"
-#include "cssInterfaceImplDummy.h"
+#include "cssInterfaceImplMem.h"
 #include "cssInterfaceImplZoo.h"
 
 using std::cout;
@@ -78,7 +78,7 @@ qCss::Store::Store(string const& connInfo, string const& prefix) :
   * @param isMap   unusued argument to differentiate between different c'tors
   */
 qCss::Store::Store(string const& mapPath, bool isMap) {
-    _cssI = new qCss::CssInterfaceImplDummy(mapPath);
+    _cssI = new qCss::CssInterfaceImplMem(mapPath);
 }
 
 qCss::Store::~Store() {
