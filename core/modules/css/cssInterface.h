@@ -37,7 +37,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace css {
 
 class CssInterface {
 public:
@@ -56,6 +56,6 @@ protected:
     bool _verbose; // FIXME: this will go away when we switch to proper logging.
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::css
 
 #endif // LSST_QSERV_CSS_INTERFACE_HH
