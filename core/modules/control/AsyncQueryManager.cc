@@ -381,10 +381,30 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
         cfg, "resultdb.db",
         "Error, resultdb.db not found. Using qservResult.",
         "qservResult");
-    // Setup session
-    // FIXME, connection should be configurable!!!
-    boost::shared_ptr<css::Facade> cssFacadePtr(new css::Facade("localhost:2181"));
-    _qSession.reset(new QuerySession(cssFacadePtr));
+
+    std::string cssConn = getConfigElement(
+        cfg, "css.connection",
+        "Error, css.connection not found.",
+        "");
+    std::string cssTechnology = getConfigElement(
+        cfg, "css.technology",
+        "Error, css.technology not found.",
+        "invalid");
+    if (cssTechnology == "zoo") {
+        std::cout << "Initializing zookeeper-based css, with " 
+                  << cssConn << std::endl;
+        boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(cssConn));
+        _qSession.reset(new QuerySession(cssFPtr));
+    } else if (cssTechnology == "mem") {
+        std::cout << "Initializing memory-based css, with " 
+                  << cssConn << std::endl;
+        boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(cssConn, true));
+        _qSession.reset(new QuerySession(cssFPtr));
+    } else {
+        LOGGER_ERR << "Unable to determine css technology, check config file." 
+                   << std::endl;
+        // FIXME, throw exception here. See DM-278 in Jira
+    }
 }
 
 void AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,
