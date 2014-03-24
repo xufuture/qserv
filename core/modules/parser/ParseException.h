@@ -30,9 +30,10 @@
 #include <map>
 #include <antlr/AST.hpp>
 #include <stdexcept>
+
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 /// ParseException is a trivial exception for Qserv parse problems.
 /// ParseExceptions automatically retrieves basic information from the ANTLR
@@ -46,6 +47,6 @@ protected:
         : std::runtime_error(msg) {}
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::parser
 
 #endif // LSST_QSERV_MASTER_PARSEEXCEPTION_H

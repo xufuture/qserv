@@ -30,7 +30,10 @@
   * @author Daniel L. Wang, SLAC
   */
 #include "wdb/QuerySql.h"
-namespace lsst { namespace qserv { namespace worker {
+
+namespace lsst {
+namespace qserv {
+namespace wdb {
 
 struct QuerySql::Batch {
     // Default to 10 SQL statements at a time.
@@ -76,6 +79,7 @@ struct QuerySql::Batch {
     int pos;
 };
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wdb
+
 #endif // LSST_QSERV_WORKER_QUERYSQL_BATCH_H
 

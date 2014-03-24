@@ -40,7 +40,9 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
+
+// Forward
 class WLogger;
 
 class ChunkDisk {
@@ -125,6 +127,6 @@ private:
     boost::shared_ptr<WLogger>_logger;
 };
 
+}}} // namespace lsst::qserv::wsched
 
-}}} // lsst::qserv::worker
 #endif // LSST_QSERV_WORKER_CHUNKDISK_H

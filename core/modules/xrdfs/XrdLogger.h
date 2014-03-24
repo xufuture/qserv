@@ -26,7 +26,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace xrdfs {
 
 class XrdLogger : public WLogger {
 public:
@@ -42,6 +42,7 @@ private:
     XrdSysError& _e;
 };
 
-}}} // lsst::qserv:worker
+}}} // namespace lsst::qserv:xrdfs
+
 #endif // LSST_QSERV_WORKER_XRDLOGGER_H
 

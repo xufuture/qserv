@@ -61,7 +61,6 @@
 
 #define QSERV_USE_STUPID_STRING 1
 
-using namespace lsst::qserv::worker;
 
 // Boost launching helper
 template <typename Callable>
@@ -149,7 +148,7 @@ static int findChunkNumber(char const* path) {
     return result;
 }
 
-class Timer { // duplicate of lsst::qserv:master::Timer
+class Timer { // duplicate of lsst::qserv:util::Timer
 public:
     void start() { ::gettimeofday(&startTime, NULL); }
     void stop() { ::gettimeofday(&stopTime, NULL); }

@@ -27,6 +27,8 @@
 
 namespace lsst {
 namespace qserv {
+namespace util {
+
 /// Small wrappers for computing hashes
 class StringHash {
 public:
@@ -34,5 +36,7 @@ public:
     static std::string getSha1Hex(char const* buffer, int bufferSize);
     static std::string getSha256Hex(char const* buffer, int bufferSize);
 };
-}} // lsst::qserv
+
+}}} // namespace lsst::qserv::util
+
 #endif // LSST_QSERV_STRINGHASH_H

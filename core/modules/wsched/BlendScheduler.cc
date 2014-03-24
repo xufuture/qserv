@@ -41,10 +41,12 @@ template <class Sched>
 inline Sched* other(Sched* notThis, Sched* a, Sched* b) {
     return (notThis == a) ? b : a;
 }
-lsst::qserv::worker::BlendScheduler* dbgBlendScheduler=0; //< A symbol for gdb
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
+
+BlendScheduler* dbgBlendScheduler=0; //< A symbol for gdb
+
 ////////////////////////////////////////////////////////////////////////
 // class BlendScheduler
 ////////////////////////////////////////////////////////////////////////
@@ -197,4 +199,4 @@ TaskQueuePtr BlendScheduler::_getNextIfAvail(TaskQueuePtr running) {
     }
 }
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wsched

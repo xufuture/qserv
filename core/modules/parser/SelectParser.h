@@ -38,9 +38,10 @@
 #include <boost/shared_ptr.hpp>
 // package
 #include "util/common.h"
+
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 // Forward
 class AntlrParser; // Internally-defined in SelectParser.cc
@@ -75,5 +76,7 @@ private:
     boost::shared_ptr<SelectStmt> _selectStmt;
     boost::shared_ptr<AntlrParser> _aParser;
 };
-}}} // namespace lsst::qserv::master
+
+}}} // namespace lsst::qserv::parser
+
 #endif // LSST_QSERV_MASTER_SELECTPARSER_H

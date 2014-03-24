@@ -35,7 +35,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
+
 class ChunkMeta; // forward
 
 // class ChunkMapping is a helper class that generates mappings from
@@ -78,6 +79,6 @@ private:
     std::string _subPrefix;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::query
 
 #endif // LSST_QSERV_MASTER_CHUNKMAPPING_H

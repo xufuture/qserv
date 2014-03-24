@@ -27,7 +27,9 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
+
+// Forward
 class GroupScheduler;
 class ScanScheduler;
 
@@ -73,6 +75,8 @@ private:
     Map _map;
     boost::mutex _mapMutex;
 };
-}}} // lsst::qserv::worker
+
+}}} // namespace lsst::qserv::wsched
+
 extern lsst::qserv::worker::BlendScheduler* dbgBlendScheduler; //< A symbol for gdb
 #endif // LSST_QSERV_WORKER_BLENDSCHEDULER_H

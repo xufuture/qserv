@@ -37,10 +37,10 @@ class XrdSfsAio;
 
 namespace lsst {
 namespace qserv {
-class TaskMsg;
+namespace wbase {
 
-namespace worker {
 // Forward:
+class TaskMsg;
 class StringBuffer;
 class StringBuffer2;
 
@@ -139,7 +139,7 @@ public:
     virtual bool accept(boost::shared_ptr<TaskMsg> msg) = 0;
 };
 
-}}}
+}}} // namespace lsst::qserv::wbase
 
 #if DO_NOT_USE_BOOST
 typedef lsst::qserv::worker::PosFormat Pformat;

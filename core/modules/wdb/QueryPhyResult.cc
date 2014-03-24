@@ -31,7 +31,9 @@
 #include "wbase/Base.h"
 #include "wlog/WLogger.h"
 
-using namespace lsst::qserv::worker;
+namespace lsst {
+namespace qserv {
+namespace wdb {            
 
 ////////////////////////////////////////////////////////////////////////
 void QueryPhyResult::addResultTable(std::string const& t) {
@@ -63,7 +65,6 @@ std::string QueryPhyResult::_getSpaceResultTables() const {
               std::ostream_iterator<std::string const&>(ss, " "));
     return ss.str();
 }
-
 
 bool QueryPhyResult::performMysqldump(WLogger& log,
                                       std::string const& user,
@@ -115,4 +116,4 @@ void QueryPhyResult::_mkdirP(std::string const& filePath) {
     }
 }
 
-
+}}} // namespace lsst::qserv::wdb

@@ -33,7 +33,8 @@ class XrdSysLogger;
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace xrdfs {
+
  // Forward
 class WLogger;
 class Service;
@@ -106,7 +107,7 @@ private:
     boost::shared_ptr<WLogger> _log;
 };
 
-}}} // namespace lsst::qserv::worker
+}}} // namespace lsst::qserv::xrdfs
 
 extern "C" {
 // Forward

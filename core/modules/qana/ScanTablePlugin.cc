@@ -42,7 +42,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qana {
+
 ////////////////////////////////////////////////////////////////////////
 // ScanTablePlugin declaration
 ////////////////////////////////////////////////////////////////////////
@@ -53,7 +54,7 @@ namespace master {
 /// scan table annotation is removed--the query is no longer
 /// considered a "scanning" query because it involves a small piece of
 /// the data set.
-class ScanTablePlugin : public lsst::qserv::master::QueryPlugin {
+class ScanTablePlugin : public QueryPlugin {
 public:
     // Types
     typedef boost::shared_ptr<ScanTablePlugin> Ptr;
@@ -73,7 +74,7 @@ private:
 ////////////////////////////////////////////////////////////////////////
 // ScanTablePluginFactory declaration+implementation
 ////////////////////////////////////////////////////////////////////////
-class ScanTablePluginFactory : public lsst::qserv::master::QueryPlugin::Factory {
+class ScanTablePluginFactory : public QueryPlugin::Factory {
 public:
     // Types
     typedef boost::shared_ptr<ScanTablePluginFactory> Ptr;
@@ -81,8 +82,8 @@ public:
     virtual ~ScanTablePluginFactory() {}
 
     virtual std::string getName() const { return "ScanTable"; }
-    virtual lsst::qserv::master::QueryPlugin::Ptr newInstance() {
-        return lsst::qserv::master::QueryPlugin::Ptr(new ScanTablePlugin());
+    virtual QueryPlugin::Ptr newInstance() {
+        return QueryPlugin::Ptr(new ScanTablePlugin());
     }
 };
 
@@ -98,7 +99,7 @@ struct registerPlugin {
 };
 // Static registration
 registerPlugin registerScanTablePlugin;
-}
+} // annonymous namespace
 
 ////////////////////////////////////////////////////////////////////////
 // ScanTablePlugin implementation
@@ -258,4 +259,4 @@ ScanTablePlugin::_findScanTables(SelectStmt& stmt, QueryContext& context) {
     return scanTables;
 }
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::qana

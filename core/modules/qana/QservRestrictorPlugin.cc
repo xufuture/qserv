@@ -53,7 +53,8 @@ std::string const UDF_PREFIX = "scisql_";
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qana {
+
 typedef std::pair<std::string,std::string> StringPair;
 
 boost::shared_ptr<ColumnRef>
@@ -187,7 +188,7 @@ public:
 /// that can be executed on a qserv mysqld. This plugin should be
 /// execute after aliases for tables have been generates, so that the
 /// new restrictor function clauses/phrases can use the aliases.
-class QservRestrictorPlugin : public lsst::qserv::master::QueryPlugin {
+class QservRestrictorPlugin : public QueryPlugin {
 public:
     // Types
     typedef boost::shared_ptr<QservRestrictorPlugin> Ptr;
@@ -323,7 +324,7 @@ private:
 ////////////////////////////////////////////////////////////////////////
 // QservRestrictorPluginFactory declaration+implementation
 ////////////////////////////////////////////////////////////////////////
-class QservRestrictorPluginFactory : public lsst::qserv::master::QueryPlugin::Factory {
+class QservRestrictorPluginFactory : public QueryPlugin::Factory {
 public:
     // Types
     typedef boost::shared_ptr<QservRestrictorPluginFactory> Ptr;
@@ -331,8 +332,8 @@ public:
     virtual ~QservRestrictorPluginFactory() {}
 
     virtual std::string getName() const { return "QservRestrictor"; }
-    virtual lsst::qserv::master::QueryPlugin::Ptr newInstance() {
-        return lsst::qserv::master::QueryPlugin::Ptr(new QservRestrictorPlugin());
+    virtual QueryPlugin::Ptr newInstance() {
+        return QueryPlugin::Ptr(new QservRestrictorPlugin());
     }
 };
 
@@ -571,4 +572,4 @@ QservRestrictorPlugin::_convertObjectId(QueryContext& context,
     return p;
 }
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::qana

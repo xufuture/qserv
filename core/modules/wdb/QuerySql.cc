@@ -35,20 +35,19 @@
 #include "proto/worker.pb.h"
 #include <iostream>
 
-namespace qWorker = lsst::qserv::worker;
 
 namespace {
 template <typename T>
 class ScScriptBuilder {
 public:
-    ScScriptBuilder(qWorker::QuerySql& qSql_,
+    ScScriptBuilder(QuerySql& qSql_,
                     std::string const& db, std::string const& table,
                     std::string const& scColumn,
                     int chunkId) : qSql(qSql_) {
-        buildT = (boost::format(qWorker::CREATE_SUBCHUNK_SCRIPT)
+        buildT = (boost::format(CREATE_SUBCHUNK_SCRIPT)
                   % db % table % scColumn
                   % chunkId % "%1%").str();
-        cleanT = (boost::format(qWorker::CLEANUP_SUBCHUNK_SCRIPT)
+        cleanT = (boost::format(CLEANUP_SUBCHUNK_SCRIPT)
                   % db % table
                   % chunkId % "%1%").str();
 
@@ -59,11 +58,14 @@ public:
     }
     std::string buildT;
     std::string cleanT;
-    qWorker::QuerySql& qSql;
+    QuerySql& qSql;
 };
 } // anonymous namespace
 
-namespace lsst { namespace qserv { namespace worker {
+namespace lsst {
+namespace qserv {
+namespace wdb {
+
 ////////////////////////////////////////////////////////////////////////
 // QuerySql ostream friend
 ////////////////////////////////////////////////////////////////////////
@@ -127,6 +129,4 @@ QuerySql::Factory::newQuerySql(std::string const& db,
     return qSql;
 }
 
-}}} // lsst::qserv::worker
-
-
+}}} // namespace lsst::qserv::wdb

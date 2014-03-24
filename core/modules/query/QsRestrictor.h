@@ -33,7 +33,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
+
 class QueryTemplate;
 
 /// QsRestrictor is a Qserv spatial restrictor element that is used to
@@ -72,5 +73,7 @@ public:
     StringList _params;
 };
 std::ostream& operator<<(std::ostream& os, QsRestrictor const& q);
-}}} // namespace lsst::qserv::master
+
+}}} // namespace lsst::qserv::query
+
 #endif // LSST_QSERV_MASTER_QSRESTRICTOR_H

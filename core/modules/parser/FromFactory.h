@@ -44,7 +44,8 @@ class SqlSQL2Parser;
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
+
 // Forward
 class ParseAliasMap;
 class FromList;
@@ -67,7 +68,7 @@ private:
     boost::shared_ptr<FromList> _list;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::parser
 
 #endif // LSST_QSERV_MASTER_FROMFACTORY_H
 

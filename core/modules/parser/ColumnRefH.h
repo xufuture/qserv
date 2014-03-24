@@ -44,7 +44,7 @@ class SqlSQL2Parser;
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 /// ColumnRefH is a parse action for column_ref tokens in the grammar
 class ColumnRefH : public VoidFourRefFunc {
@@ -122,8 +122,6 @@ ColumnRefH::_process(antlr::RefAST d, antlr::RefAST t, antlr::RefAST c) {
     if(_listener.get()) { _listener->acceptColumnRef(d, t, c); }
 }
 
-
-}}} // namespace lsst::qserv::master
-
+}}} // namespace lsst::qserv::parser
 
 #endif // LSST_QSERV_MASTER_COLUMNREFH_H

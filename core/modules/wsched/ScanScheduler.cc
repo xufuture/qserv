@@ -37,12 +37,14 @@
 #include "wcontrol/Foreman.h"
 #include "wlog/WLogger.h"
 
-lsst::qserv::worker::ScanScheduler* dbgScanScheduler = 0; //< A symbol for gdb
-lsst::qserv::worker::ChunkDisk* dbgChunkDisk1 = 0; //< A symbol for gdb
-
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
+
+ScanScheduler* dbgScanScheduler = 0; //< A symbol for gdb
+ChunkDisk* dbgChunkDisk1 = 0; //< A symbol for gdb
+
+
 ////////////////////////////////////////////////////////////////////////
 // class ScanScheduler
 ////////////////////////////////////////////////////////////////////////
@@ -201,4 +203,4 @@ void ScanScheduler::_enqueueTask(Task::Ptr incoming) {
     _logger->debug(os.str());
 }
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wsched

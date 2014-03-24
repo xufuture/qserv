@@ -34,12 +34,12 @@
 
 namespace lsst {
 namespace qserv {
+namespace wcontrol {
+
+// forward
 class TaskMsg;
 class TaskMsg_Fragment;
-
-namespace worker {
 class ScriptMeta;
-
 
 struct Task {
 public:
@@ -76,6 +76,6 @@ public:
 typedef std::deque<Task::Ptr> TaskQueue;
 typedef boost::shared_ptr<TaskQueue> TaskQueuePtr;
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wcontrol
 
 #endif // LSST_QSERV_WORKER_TASK_H

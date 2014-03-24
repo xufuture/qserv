@@ -30,7 +30,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
+
 /// GroupedQueue is a queue of elements grouped by a key
 /// value. New elements are inserted by finding the right-most element
 /// that shares its key with the new element and inserting the new
@@ -121,5 +122,6 @@ private:
     int _maxClique;
 };
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wsched
+
 #endif // LSST_QSERV_WORKER_GROUPEDQUEUE_H

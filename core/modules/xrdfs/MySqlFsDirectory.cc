@@ -27,10 +27,9 @@
 
 #include <errno.h>
 
-using namespace lsst::qserv::worker;
 
 MySqlFsDirectory::MySqlFsDirectory(boost::shared_ptr<WLogger> log,
-                                            char* user) :
+                                   char* user) :
     XrdSfsDirectory(user), _log(log) {
 }
 

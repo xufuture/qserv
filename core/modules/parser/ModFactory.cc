@@ -51,7 +51,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 ////////////////////////////////////////////////////////////////////////
 // ModFactory::LimitH
@@ -246,5 +246,6 @@ void ModFactory::_importHaving(antlr::RefAST a) {
 
     // FIXME: Log this at the WARNING level
     LOGGER_WRN << "Parse warning: HAVING clause unhandled." << std::endl;
-}
-}}} // lsst::qserv::master
+}k-
+
+}}} // namespace lsst::qserv::parser

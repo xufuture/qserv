@@ -45,7 +45,9 @@ namespace antlr {
 class ASTFactory;
 }
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace parser {
 
 template <typename AnAst>
 std::string tokenText(AnAst r) {
@@ -348,6 +350,6 @@ antlr::RefAST insertTextNodeBefore(antlr::ASTFactory* factory,
 
 void printDigraph(std::string lbl, std::ostream& o, antlr::RefAST n);
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::parser
 
 #endif // LSST_QSERV_MASTER_PARSETREEUTIL_H

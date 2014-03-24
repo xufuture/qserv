@@ -43,7 +43,8 @@ class SqlSQL2Parser;
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
+
 // Forward
 class ParseAliasMap;
 class ColumnRefNodeMap;
@@ -88,6 +89,6 @@ private:
     boost::shared_ptr<ValueExprFactory> _vFactory;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::parser
 
 #endif // LSST_QSERV_MASTER_SELECTFACTORY_H

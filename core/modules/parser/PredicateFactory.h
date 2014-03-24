@@ -36,7 +36,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
+
 // Forward
 class CompPredicate;
 class BetweenPredicate;
@@ -55,5 +56,5 @@ public:
 private:
     ValueExprFactory& _vf;
 };
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::parser
 #endif // LSST_QSERV_MASTER_PREDICATEFACTORY_H

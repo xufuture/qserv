@@ -62,7 +62,7 @@
 ////////////////////////////////////////////////////////////////////////
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 SelectFactory::SelectFactory()
     : _columnAliases(new ParseAliasMap()),
@@ -260,4 +260,4 @@ SelectListFactory::_addSelectStar(RefAST child) {
     _valueExprList->push_back(ValueExpr::newSimple(vt));
 }
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::parser

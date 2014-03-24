@@ -31,7 +31,7 @@
 #include "proto/worker.pb.h"
 
 namespace test = boost::test_tools;
-using namespace lsst::qserv::worker;
+
 
 Task::Ptr makeTask(boost::shared_ptr<lsst::qserv::TaskMsg> tm) {
     return Task::Ptr(new Task(tm));

@@ -27,6 +27,7 @@
 
 namespace lsst {
 namespace qserv {
+namespace obsolete {
 
 class QservPath {
 public:
@@ -77,5 +78,6 @@ private:
 
 };
 
-}} // namespace lsst::qserv
+}}} // namespace lsst::qserv::obsolete
+
 #endif // LSST_QSERV_QSERVPATH_H

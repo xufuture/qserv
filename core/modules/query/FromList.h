@@ -32,7 +32,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
 
 // FromList is a representation of SQL FROM.
 class FromList {
@@ -60,5 +60,7 @@ private:
 
     TableRefnListPtr _tableRefns;
 };
-}}} // namespace lsst::qserv::master
+
+}}} // namespace lsst::qserv::query
+
 #endif // LSST_QSERV_MASTER_FROMLIST_H

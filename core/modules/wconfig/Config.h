@@ -29,9 +29,11 @@
 
 namespace lsst {
 namespace qserv {
+namespace wconfig {
+
+// Forward
 class SqlConfig;
 
-namespace worker {
 
 // The Config object provides a thin abstraction layer to shield code from
 // the details of how the qserv worker is configured.  It currently
@@ -60,5 +62,6 @@ private:
 
 Config& getConfig();
 
-}}}
+}}} // namespace qserv::core::wconfig
+
 #endif // LSST_QSERV_WORKER_CONFIG_H

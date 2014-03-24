@@ -59,7 +59,7 @@ inline RefAST walkToSiblingBefore(RefAST node, int typeId) {
 }
 
 inline std::string getSiblingStringBounded(RefAST left, RefAST right) {
-    lsst::qserv::master::CompactPrintVisitor<RefAST> p;
+    lsst::qserv::parser::CompactPrintVisitor<RefAST> p;
     for(; left.get(); left = left->getNextSibling()) {
         p(left);
         if(left == right) break;
@@ -70,7 +70,7 @@ inline std::string getSiblingStringBounded(RefAST left, RefAST right) {
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 boost::shared_ptr<ValueFactor>
 newConstFactor(RefAST t) {
@@ -238,4 +238,5 @@ ValueFactorFactory::_newSetFctSpec(antlr::RefAST expr) {
     fe->params.push_back(ValueExpr::newSimple(pvt));
     return ValueFactor::newAggFactor(fe);
 }
-}}} // lsst::qserv::master
+
+}}} // namespace lsst::qserv::parser

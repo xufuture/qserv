@@ -47,7 +47,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
+
 class BoolTerm; // Forward
 
 /// WhereClause is a SQL WHERE containing QsRestrictors and a BoolTerm tree.
@@ -128,5 +129,6 @@ private:
     ValueExprListIter _vEnd;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::query
+
 #endif // LSST_QSERV_MASTER_WHERECLAUSE_H

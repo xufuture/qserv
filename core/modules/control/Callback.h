@@ -27,7 +27,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace control {
 
 class Callback {
 public:
@@ -36,5 +36,6 @@ public:
     void operator()() {}
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::control
+
 #endif // LSST_QSERV_MASTER_CALLBACK_H
