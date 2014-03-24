@@ -43,12 +43,14 @@
 #include "log/Logger.h"
 #include "merger/SqlInsertIter.h"
 #include "util/MmapFile.h"
-using lsst::qserv::SqlErrorObject;
-using lsst::qserv::SqlConfig;
-using lsst::qserv::SqlConnection;
-using lsst::qserv::master::TableMerger;
-using lsst::qserv::master::TableMergerError;
-using lsst::qserv::master::TableMergerConfig;
+
+using lsst::qserv::merger::TableMerger;
+using lsst::qserv::merger::TableMergerError;
+using lsst::qserv::merger::TableMergerConfig;
+using lsst::qserv::mysql::SqlConfig;
+using lsst::qserv::mysql::SqlConnection;
+using lsst::qserv::mysql::SqlErrorObject;
+
 
 namespace { // File-scope helpers
 
@@ -97,6 +99,7 @@ void inplaceReplace(std::string& s, std::string const& old,
     //LOGGER_DBG << "newnew: " << s.substr(pos-5, rplcSize+10) << std::endl;
     return;
 }
+
 std::string extractReplacedCreateStmt(char const* s, ::off_t size,
                                       std::string const& oldTable,
                                       std::string const& newTable,
@@ -131,6 +134,11 @@ std::string dropDbContext(std::string const& tableName,
 }
 
 } // anonymous namespace
+
+
+namespace lsst {
+namespace qserv {
+namespace merger {
 
 std::string const TableMerger::_dropSql("DROP TABLE IF EXISTS %s;");
 std::string const TableMerger::_createSql("CREATE TABLE IF NOT EXISTS %s SELECT * FROM %s;");
@@ -352,7 +360,7 @@ bool TableMerger::merge2(std::string const& dumpFile,
 }
 
 bool TableMerger::_importBufferCreate(PacketIterPtr pacIter,
-                                     std::string const& tableName) {
+                                      std::string const& tableName) {
     // Make create statement
     std::string createStmt = _makeCreateStmt(pacIter, tableName);
     return _dropAndCreate(tableName, createStmt);
@@ -472,3 +480,5 @@ bool TableMerger::_slowImport(std::string const& dumpFile,
     sql = _buildMergeSql(tableName, false);
     return _applySql(sql);
 }
+
+}}} // namespace lsst::qserv::merger

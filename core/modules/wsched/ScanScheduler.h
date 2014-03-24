@@ -28,7 +28,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
+
 class ChunkDisk; // Forward
 class WLogger;
 
@@ -63,7 +64,9 @@ private:
     boost::mutex _mutex;
     int _maxRunning;
 };
-}}} // lsst::qserv::worker
+
+}}} // namespace lsst::qserv::wsched
+
 extern lsst::qserv::worker::ScanScheduler* dbgScanScheduler; //< A symbol for gdb
 extern lsst::qserv::worker::ChunkDisk* dbgChunkDisk1; //< A symbol for gdb
 #endif // LSST_QSERV_WORKER_SCANSCHEDULER_H

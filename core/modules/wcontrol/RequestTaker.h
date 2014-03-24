@@ -28,10 +28,13 @@
 #ifndef LSST_QSERV_WORKER_ORDERTAKER_H
 #define LSST_QSERV_WORKER_ORDERTAKER_H
 #include "wbase/Base.h" // StringBuffer2
+
 namespace lsst {
 namespace qserv {
-class QservPath; // Forward
-namespace worker {
+namespace wcontrol {
+
+// Forward declarations
+class QservPath;
 
 class RequestTaker {
 public:
@@ -47,5 +50,6 @@ private:
     int _chunk;
 };
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wcontrol
+
 #endif // LSST_QSERV_WORKER_ORDERTAKER_H

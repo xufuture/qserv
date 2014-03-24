@@ -30,7 +30,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qdisp {
 
 struct ChunkMetaEntry {
     ChunkMetaEntry(std::string const& db_,
@@ -65,5 +65,6 @@ private:
     EntryList _entries;
 };
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::qdisp
+
 #endif // LSST_QSERV_MASTER_CHUNKMETA_H

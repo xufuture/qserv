@@ -36,7 +36,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
+
 // Forward
 class ParseAliasMap;
 class ValueExpr;
@@ -83,7 +84,7 @@ private:
 
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::parser
 
 #endif // LSST_QSERV_MASTER_SELECTLISTFACTORY_H
 

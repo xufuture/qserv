@@ -44,11 +44,13 @@ class XrdSfsAio;
 
 namespace lsst {
 namespace qserv {
-class QservPath;
+namespace xrdfs {
 
-namespace worker {
+// Forward        
+class QservPath;
 class RequestTaker;
 class WLogger;
+
 
 /// A factory functor that exists for the MySqlFsFile to register a callback for
 /// a completed query operation. The callback object is constructed with a
@@ -134,6 +136,6 @@ private:
 
 };
 
-}}} // namespace lsst::qserv::worker
+}}} // namespace lsst::qserv::xrdfs
 
 #endif

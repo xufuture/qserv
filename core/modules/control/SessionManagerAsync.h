@@ -30,7 +30,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace control {
+
 class AsyncQueryManager;
 
 typedef SessionManager<boost::shared_ptr<AsyncQueryManager> > SessionManagerAsync;
@@ -39,6 +40,6 @@ typedef boost::shared_ptr<SessionManagerAsync> SessionManagerAsyncPtr;
 SessionManagerAsync& getSessionManagerAsync();
 AsyncQueryManager& getAsyncManager(int session);
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::control
 
 #endif // LSST_QSERV_MASTER_SESSIONMANAGERASYNC_H

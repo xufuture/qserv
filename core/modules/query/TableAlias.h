@@ -33,7 +33,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
 
 struct DbTablePair {
     DbTablePair(std::string const& db_, std::string const& table_)
@@ -92,6 +92,6 @@ private:
     Map _map;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::query
 
 #endif // LSST_QSERV_MASTER_TABLEALIAS_H

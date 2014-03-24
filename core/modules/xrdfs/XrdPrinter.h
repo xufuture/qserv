@@ -28,16 +28,18 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
-    class XrdPrinter : public WLogger::Printer {
-    public:
-        XrdPrinter(XrdSysLogger* log) : xrdSysError(log) {}
-        virtual WLogger::Printer& operator()(char const* s) {
-            xrdSysError.Say(s);
-            return *this;
-        }
-        XrdSysError xrdSysError;
-    };
-}}} // namespace lsst::qserv::worker
+namespace xrdfs {
+
+class XrdPrinter : public WLogger::Printer {
+public:
+    XrdPrinter(XrdSysLogger* log) : xrdSysError(log) {}
+    virtual WLogger::Printer& operator()(char const* s) {
+        xrdSysError.Say(s);
+        return *this;
+    }
+    XrdSysError xrdSysError;
+};
+
+}}} // namespace lsst::qserv::xrdfs
 
 #endif // LSST_QSERV_WORKER_XRDPRINTER_H

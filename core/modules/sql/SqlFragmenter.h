@@ -25,7 +25,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace qsl {
+
 // SqlFragmenter: Simple iteration over pieces of a longer batch
 // of sql statements.
 class SqlFragmenter {
@@ -51,7 +52,7 @@ private:
     unsigned _count;
     Piece _current;
 };
-}}} // lsst::qserv::worker
 
+}}} // namespace lsst::qserv::sql
 
 #endif // LSST_QSERV_WORKER_SQLFRAGMENTER_H

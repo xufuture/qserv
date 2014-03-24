@@ -36,7 +36,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
 ////////////////////////////////////////////////////////////////////////
 // class GroupScheduler
 ////////////////////////////////////////////////////////////////////////
@@ -159,4 +159,4 @@ void GroupScheduler::_enqueueTask(Task::Ptr incoming) {
     _logger->debug(os.str());
 }
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wsched

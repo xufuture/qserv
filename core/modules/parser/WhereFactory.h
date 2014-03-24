@@ -39,7 +39,8 @@ class SqlSQL2Parser;
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
+
 // Forward
 class SelectFactory;
 class WhereClause;
@@ -67,6 +68,7 @@ private:
     boost::shared_ptr<ValueExprFactory> _vf;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::parser
+
 #endif // LSST_QSERV_MASTER_WHEREFACTORY_H
 

@@ -53,12 +53,11 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qproc {
 
-void printConstraints(ConstraintVector const& cv) {
+void printConstraints(query::ConstraintVector const& cv) {
     std::copy(cv.begin(), cv.end(),
               std::ostream_iterator<Constraint>(LOG_STRM(Info), ","));
-
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -105,12 +104,12 @@ bool QuerySession::hasAggregate() const {
     return false;
 }
 
-boost::shared_ptr<ConstraintVector> QuerySession::getConstraints() const {
-    boost::shared_ptr<ConstraintVector> cv;
+boost::shared_ptr<query::ConstraintVector> QuerySession::getConstraints() const {
+    boost::shared_ptr<query::ConstraintVector> cv;
     boost::shared_ptr<QsRestrictor::List const> p = _context->restrictors;
 
     if(p.get()) {
-        cv.reset(new ConstraintVector(p->size()));
+        cv.reset(new query::ConstraintVector(p->size()));
         int i=0;
         QsRestrictor::List::const_iterator li;
         for(li = p->begin(); li != p->end(); ++li) {
@@ -255,7 +254,6 @@ void QuerySession::_applyConcretePlugins() {
     }
 }
 
-
 /// Some code useful for debugging.
 void QuerySession::_showFinal() {
     // Print out the end result.
@@ -398,4 +396,4 @@ QuerySession::Iter::_buildFragment(ChunkSpecFragmenter& f) const {
     return first;
 }
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::qproc

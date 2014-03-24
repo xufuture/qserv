@@ -28,8 +28,6 @@
 #include "wconfig/Config.h"
 #include "wlog/WLogger.h"
 
-using namespace lsst::qserv::worker;
-using namespace lsst::qserv;
 
 namespace { // File-scope helpers
 
@@ -144,7 +142,10 @@ private:
 
 } // anonymous namespace
 
-
+namespace lsst {
+namespace qserv {
+namespace wpublish {
+        
 void MySqlExportMgr::_init() {
     std::string chunkedForm("(\\w+)_(\\d+)");
     boost::regex regex(chunkedForm);
@@ -176,4 +177,4 @@ void MySqlExportMgr::fillDbChunks(MySqlExportMgr::StringSet& s) {
     }
 }
 
-
+}}} // namespace lsst::qserv::wpublish

@@ -33,7 +33,7 @@ class XrdSysError;
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wlog {
 
 /// A class to define a logging facility that:
 /// (a)  has logging levels
@@ -96,7 +96,7 @@ private:
     WLogger::Ptr _backend;
     LogLevel _logLevel;
 };
-}}} // namespace lsst::qserv::worker
 
+}}} // namespace lsst::qserv::wlog
 
 #endif // LSST_QSERV_WORKER_LOGGER_H

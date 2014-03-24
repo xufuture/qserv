@@ -37,7 +37,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 boost::shared_ptr<CompPredicate>
 PredicateFactory::newCompPredicate(antlr::RefAST a) {
@@ -96,4 +96,4 @@ boost::shared_ptr<LikePredicate> PredicateFactory::newLikePredicate(antlr::RefAS
     return p;
 }
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::parser

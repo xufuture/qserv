@@ -50,8 +50,6 @@
 
 #define DEBUG 1
 
-namespace qMaster=lsst::qserv::master;
-
 namespace { // File-scope helpers
 struct Tuple {
     Tuple(std::string const& db_,
@@ -83,15 +81,15 @@ std::ostream& operator<<(std::ostream& os, Tuple const& t) {
     return os;
 }
 
-inline void addChunkMap(lsst::qserv::master::QueryMapping& m) {
-    m.insertEntry(CHUNKTAG, lsst::qserv::master::QueryMapping::CHUNK);
+inline void addChunkMap(lsst::qserv::qana::QueryMapping& m) {
+    m.insertEntry(CHUNKTAG, lsst::qserv::qana::QueryMapping::CHUNK);
 }
-inline void addSubChunkMap(lsst::qserv::master::QueryMapping& m) {
-    m.insertEntry(SUBCHUNKTAG, lsst::qserv::master::QueryMapping::SUBCHUNK);
+inline void addSubChunkMap(lsst::qserv::qana::QueryMapping& m) {
+    m.insertEntry(SUBCHUNKTAG, lsst::qserv::qana::QueryMapping::SUBCHUNK);
 }
 /// @return count of chunked tables.
 int patchTuples(Tuples& tuples) {
-    using lsst::qserv::master::SphericalBoxStrategy;
+    using lsst::qserv::qana::SphericalBoxStrategy;
     // Are multiple subchunked tables involved? Then do
     // overlap... which requires creating a query sequence.
     // For now, skip the sequence part.
@@ -136,7 +134,7 @@ int patchTuples(Tuples& tuples) {
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qana {
 
 class InvalidTableException : public ParseException {
 public:
@@ -469,4 +467,4 @@ void SphericalBoxStrategy::_import(FromList const& f) {
     }
 }
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::qana

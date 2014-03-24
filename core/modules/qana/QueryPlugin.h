@@ -31,7 +31,10 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace qana {
+
 // Forward
 class QueryContext;
 class QueryMapping;
@@ -103,5 +106,6 @@ public:
     bool const hasMerge;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::qana
+
 #endif // LSST_QSERV_MASTER_QUERYPLUGIN_H

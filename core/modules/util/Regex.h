@@ -29,7 +29,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace util {
 
 class Regex {
 public:
@@ -110,6 +110,6 @@ private:
     regex_t _regex;
 };
 
-}}} // namespace lsst::qserv::worker
+}}} // namespace lsst::qserv::util
 
 #endif // LSST_QSERV_WORKER_REGEX_H

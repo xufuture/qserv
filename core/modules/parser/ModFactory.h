@@ -37,7 +37,10 @@
 // Forward
 class SqlSQL2Parser;
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace parser {
+
 // Forward
 class SelectFactory;
 class ValueExprFactory;
@@ -79,6 +82,8 @@ private:
     boost::shared_ptr<GroupByClause> _groupBy;
     boost::shared_ptr<HavingClause> _having;
 };
-}}} // namespace lsst::qserv::master
+
+}}} // namespace lsst::qserv::parser
+
 #endif // LSST_QSERV_MASTER_MODFACTORY_H
 

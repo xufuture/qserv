@@ -32,7 +32,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 // Forward
 class ColumnRefNodeMap;
@@ -51,5 +51,6 @@ private:
     boost::shared_ptr<ColumnRefNodeMap> _columnRefNodeMap;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::parser
+
 #endif // LSST_QSERV_MASTER_VALUETERMFACTORY_H

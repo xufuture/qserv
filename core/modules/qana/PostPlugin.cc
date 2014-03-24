@@ -38,7 +38,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qana {
+
 ////////////////////////////////////////////////////////////////////////
 // PostPlugin declaration
 ////////////////////////////////////////////////////////////////////////
@@ -65,7 +66,7 @@ public:
 ////////////////////////////////////////////////////////////////////////
 // PostPluginFactory declaration+implementation
 ////////////////////////////////////////////////////////////////////////
-class PostPluginFactory : public lsst::qserv::master::QueryPlugin::Factory {
+class PostPluginFactory : public QueryPlugin::Factory {
 public:
     // Types
     typedef boost::shared_ptr<PostPluginFactory> Ptr;
@@ -73,8 +74,8 @@ public:
     virtual ~PostPluginFactory() {}
 
     virtual std::string getName() const { return "Post"; }
-    virtual lsst::qserv::master::QueryPlugin::Ptr newInstance() {
-        return lsst::qserv::master::QueryPlugin::Ptr(new PostPlugin());
+    virtual QueryPlugin::Ptr newInstance() {
+        return QueryPlugin::Ptr(new PostPlugin());
     }
 };
 
@@ -90,7 +91,8 @@ struct registerPlugin {
 };
 // Static registration
 registerPlugin registerPostPlugin;
-}
+
+} // annonymous namespace
 
 ////////////////////////////////////////////////////////////////////////
 // PostPlugin implementation
@@ -121,4 +123,4 @@ PostPlugin::applyPhysical(QueryPlugin::Plan& p, QueryContext& context) {
     } // if limit != -1
 }
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::qana

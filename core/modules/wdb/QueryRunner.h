@@ -47,16 +47,14 @@
 
 namespace lsst {
 namespace qserv {
-    // Forward
-    class SqlConnection;
-}}
+namespace wdb {        
 
-namespace lsst {
-namespace qserv {
-namespace worker {
+// Forward
+class SqlConnection;
 class WLogger;
 class QuerySql;
-class QueryPhyResult; // Forward
+class QueryPhyResult;
+
 ////////////////////////////////////////////////////////////////////////
 struct QueryRunnerArg {
 public:
@@ -137,5 +135,6 @@ private:
 int dumpFileOpen(std::string const& dbName);
 bool dumpFileExists(std::string const& dumpFilename);
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wdb
+
 #endif // LSST_QSERV_WORKER_QUERYRUNNER_H

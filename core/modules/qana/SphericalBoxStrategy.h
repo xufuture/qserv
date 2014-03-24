@@ -32,7 +32,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qana {
 
 class FromList;
 class QueryContext;
@@ -71,6 +71,7 @@ private:
     boost::shared_ptr<Impl> _impl;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::qana
+
 #endif // LSST_QSERV_MASTER_SPHERICALBOXSTRATEGY_H
 

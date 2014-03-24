@@ -31,7 +31,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
+
 /// CirclePqueue is a circular queue that provides key-ordered
 /// removal. Elements are removed in monotonically-increasing key
 /// order, until there are no more elements with "higher-valued" keys,
@@ -87,5 +88,6 @@ private:
     boost::scoped_ptr<Pos> _pos;
 };
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wsched
+
 #endif // LSST_QSERV_WORKER_CIRCLEPQUEUE_H

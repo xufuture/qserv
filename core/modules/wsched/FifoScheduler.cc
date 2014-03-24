@@ -33,7 +33,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
 
 FifoScheduler::FifoScheduler(int maxRunning)
     : _maxRunning(maxRunning) {
@@ -100,4 +100,4 @@ TaskQueuePtr FifoScheduler::_fetchTask() {
     return tq;
 }
 
-}}} // namespace lsst::qserv::worker
+}}} // namespace lsst::qserv::wsched

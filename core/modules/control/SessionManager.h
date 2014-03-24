@@ -40,7 +40,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace control {
 
 template <typename Value>
 class SessionManager {
@@ -92,6 +92,6 @@ private:
     int _nextId;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::control
 
 #endif // LSST_QSERV_MASTER_SESSIONMANAGER_H

@@ -41,17 +41,18 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace xrdc {
+    // Forward
+    class PacketIter;
+} // namespace xrdc
+
+namespace merger {
+        
 // Forward
 class SqlConfig;
 class SqlConnection;
-}}
-
-namespace lsst {
-namespace qserv {
-namespace master {
-// Forward
 class SqlInsertIter;
-class PacketIter;
 
 /// struct TableMergerError - value class for TableMerger error code.
 struct TableMergerError {
@@ -93,7 +94,7 @@ public:
 /// be called after each result is read back from the worker.
 class TableMerger {
 public:
-    typedef boost::shared_ptr<PacketIter> PacketIterPtr;
+    typedef boost::shared_ptr<xrdc::PacketIter> PacketIterPtr;
 
     explicit TableMerger(TableMergerConfig const& c);
 
@@ -150,7 +151,8 @@ private:
     boost::mutex _sqlMutex;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::merger
+
 // Local Variables:
 // mode:c++
 // comment-column:0

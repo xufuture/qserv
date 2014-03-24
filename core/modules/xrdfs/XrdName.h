@@ -28,7 +28,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace xrdfs {
 
 /// XrdName is a small class that helps extract the name of a running xrootd (or
 /// cmsd) instance. It does this by checking an environment variable that is
@@ -54,6 +54,6 @@ private:
     std::string _name;
 };
 
-}}} // namespace lsst::qserv::worker
+}}} // namespace lsst::qserv::xrdfs
 
 #endif // LSST_QSERV_WORKER_XRDNAME_H

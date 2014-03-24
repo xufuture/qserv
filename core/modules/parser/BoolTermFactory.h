@@ -34,7 +34,8 @@
 
 namespace lsst { 
 namespace qserv { 
-namespace master {
+namespace parser {
+
 class ValueExprFactory; // Forward
 class BoolFactor;
 class BoolTerm;
@@ -95,8 +96,7 @@ public:
     boost::shared_ptr<ValueExprFactory> _vFactory;
 };
 
-}}} // namespace lsst::qserv::master
-
+}}} // namespace lsst::qserv::parser
 
 #endif // LSST_QSERV_MASTER_BOOLTERMFACTORY_H
 

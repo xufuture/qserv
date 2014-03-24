@@ -29,14 +29,12 @@
 
 namespace lsst {
 namespace qserv {
-    // Forward
-    class SqlErrorObject;
-}}
+namespace wdb {
+        
+// Forward
+class SqlErrorObject;
+class WLogger;
 
-namespace lsst {
-namespace qserv {
-namespace worker {
-class WLogger; // Forward
 ////////////////////////////////////////////////////////////////////////
 class QueryPhyResult {
 public:
@@ -65,5 +63,6 @@ private:
     std::string _outDb;
 };
 
-}}}
+}}} // namespace lsst::qserv::wdb
+
 #endif // LSST_QSERV_WORKER_QUERYPHYRESULT _H

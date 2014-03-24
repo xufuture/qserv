@@ -28,7 +28,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace util {
 
 class strToDoubleFunc {
 public:
@@ -109,5 +109,5 @@ public:
     bool first;
 };
 
-}}} // namesapce lsst::qserv::master
+}}} // namesapce lsst::qserv::util
 #endif // LSST_QSERV_MASTER_STRINGUTIL_H

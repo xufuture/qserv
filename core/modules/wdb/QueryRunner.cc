@@ -47,22 +47,19 @@
 #include "wbase/Base.h"
 #include "wconfig/Config.h"
 
-using lsst::qserv::SqlErrorObject;
-using lsst::qserv::SqlConfig;
-using lsst::qserv::SqlConnection;
-
-using namespace lsst::qserv::worker;
-namespace qWorker = lsst::qserv::worker;
-using lsst::qserv::worker::QuerySql;
+using lsst::qserv::sql::SqlConfig;
+using lsst::qserv::sql::SqlConnection;
+using lsst::qserv::sql::SqlErrorObject;
+using lsst::qserv::wdb::QuerySql;
 
 namespace {
 bool
-runBatch(boost::shared_ptr<qWorker::WLogger> log,
+runBatch(boost::shared_ptr<WLogger> log,
          SqlConnection& sqlConn,
          SqlErrorObject& errObj,
          std::string const& scriptId,
          QuerySql::Batch& batch,
-         qWorker::CheckFlag* checkAbort) {
+         CheckFlag* checkAbort) {
     log->info((Pformat("TIMING,%1%%2%Start,%3%")
                  % scriptId % batch.name % ::time(NULL)).str().c_str());
     bool batchAborted = false;
@@ -106,7 +103,7 @@ runScriptPieces(boost::shared_ptr<WLogger> log,
                 SqlErrorObject& errObj,
                 std::string const& scriptId,
                 QuerySql const& qSql,
-                qWorker::CheckFlag* checkAbort) {
+                CheckFlag* checkAbort) {
     QuerySql::Batch build("QueryBuildSub", qSql.buildList);
     QuerySql::Batch exec("QueryExec", qSql.executeList);
     QuerySql::Batch clean("QueryDestroySub", qSql.cleanupList);
@@ -151,6 +148,10 @@ void forEachSubChunk(std::string const& script, F& func) {
 
 } // anonymous namespace
 
+namespace lsst {
+namespace qserv {
+namespace wdb {
+            
 ////////////////////////////////////////////////////////////////////////
 // lsst::qserv::worker::QueryRunner
 ////////////////////////////////////////////////////////////////////////
@@ -325,8 +326,8 @@ bool QueryRunner::_runTask(Task::Ptr t) {
     return true;
 }
 
-bool qWorker::QueryRunner::_runFragment(SqlConnection& sqlConn,
-                                        QuerySql const& qSql) {
+bool QueryRunner::_runFragment(SqlConnection& sqlConn,
+                               QuerySql const& qSql) {
     boost::shared_ptr<CheckFlag> check(_makeAbort());
 
     if(!_prepareAndSelectResultDb(sqlConn)) {
@@ -431,12 +432,14 @@ boost::shared_ptr<CheckFlag> QueryRunner::_makeAbort() {
 ////////////////////////////////////////////////////////////////////////
 // Helpers
 ////////////////////////////////////////////////////////////////////////
-int qWorker::dumpFileOpen(std::string const& dbName) {
+int dumpFileOpen(std::string const& dbName) {
     return ::open(dbName.c_str(), O_RDONLY);
 }
 
-bool qWorker::dumpFileExists(std::string const& dumpFilename) {
+bool dumpFileExists(std::string const& dumpFilename) {
     struct stat statbuf;
     return ::stat(dumpFilename.c_str(), &statbuf) == 0 &&
         S_ISREG(statbuf.st_mode) && (statbuf.st_mode & S_IRUSR) == S_IRUSR;
 }
+
+}}} // namespace lsst::qserv::wdb

@@ -33,7 +33,9 @@
 #include <deque>
 #include <string>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace query {
 
 // Forward
 class QueryTemplate;
@@ -78,6 +80,8 @@ private:
     void _addTerm(GroupByTerm const& t) { _terms->push_back(t); }
     boost::shared_ptr<List> _terms;
 };
-}}} // namespace lsst::qserv::master
+
+}}} // namespace lsst::qserv::query
+
 #endif // LSST_QSERV_MASTER_GROUPBYCLAUSE_H
 

@@ -43,7 +43,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qana {
 inline ValueExprPtr newExprFromAlias(std::string const& alias) {
     boost::shared_ptr<ColumnRef> cr(new ColumnRef("", "", alias));
     boost::shared_ptr<ValueFactor> vf;
@@ -176,8 +176,8 @@ public:
     virtual ~AggregatePluginFactory() {}
 
     virtual std::string getName() const { return "Aggregate"; }
-    virtual lsst::qserv::master::QueryPlugin::Ptr newInstance() {
-        return lsst::qserv::master::QueryPlugin::Ptr(new AggregatePlugin());
+    virtual QueryPlugin::Ptr newInstance() {
+        return QueryPlugin::Ptr(new AggregatePlugin());
     }
 };
 
@@ -188,12 +188,13 @@ namespace {
 struct registerPlugin {
     registerPlugin() {
         AggregatePluginFactory::Ptr f(new AggregatePluginFactory());
-        lsst::qserv::master::QueryPlugin::registerClass(f);
+        QueryPlugin::registerClass(f);
     }
 };
 // Static registration
 registerPlugin registerAggregatePlugin;
-}
+} // annonymous namespace
+
 ////////////////////////////////////////////////////////////////////////
 // AggregatePlugin implementation
 ////////////////////////////////////////////////////////////////////////
@@ -260,4 +261,5 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
         }
     }
 }
-}}} // lsst::qserv::master
+
+}}} // namespace lsst::qserv::qana

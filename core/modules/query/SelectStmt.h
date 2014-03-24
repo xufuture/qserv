@@ -40,7 +40,7 @@ class SqlSQL2Parser;
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
 
 // Forward
 class SelectList;
@@ -118,5 +118,6 @@ public:
                            // sort, limit
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::query
+
 #endif // LSST_QSERV_MASTER_SELECTSTMT_H

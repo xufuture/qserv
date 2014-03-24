@@ -31,7 +31,10 @@
 #include <set>
 #include <map>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace qana {
+
 class ChunkSpec;
 class ChunkSpecSingle;
 class QueryTemplate;
@@ -84,7 +87,8 @@ private:
     ParameterMap _subs;
     StringSet _subChunkTables;
 };
-}}} // namespace lsst::qserv::master
+
+}}} // namespace lsst::qserv::qana
 
 #endif // LSST_QSERV_MASTER_QUERYMAPPING_H
 

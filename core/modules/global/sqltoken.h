@@ -33,11 +33,11 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace sql {
+
 /// @return true if a string should be space-separated,
 ///         given the preceding and following characters.
 bool sqlShouldSeparate(std::string const& s, int last, int next);
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::sql
 #endif // LSST_QSERV_GLOBAL_SQLTOKEN_H
-

@@ -36,7 +36,9 @@
 #include <boost/thread.hpp> // for mutex.
 #include <boost/shared_ptr.hpp> // for mutex.
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace qdisp {
 
 struct QueryMessage {
     QueryMessage(int chunkId_,
@@ -68,6 +70,6 @@ private:
     std::vector<QueryMessage> _queryMessages;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::qdisp
 
 #endif // LSST_QSERV_MASTER_MESSAGE_STORE_H

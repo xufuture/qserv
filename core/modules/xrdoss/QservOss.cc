@@ -41,7 +41,6 @@
 #include "xrdfs/XrdName.h"
 #include "xrdfs/XrdPrinter.h"
 
-using namespace lsst::qserv::worker;
 
 namespace {
 /*
@@ -80,7 +79,9 @@ inline std::ostream& print(std::ostream& os, QservOss::StringSet const& h) {
 
 } // anonymous namespace
 
-
+namespace lsst {
+namespace qserv {
+namespace xrdoss {
 
 ////////////////////////////////////////////////////////////////////////
 // QservOss static
@@ -281,6 +282,9 @@ int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
     // TODO: update self with new config?
     return 0;
 }
+
+}}} // namespace lsst::qserv::xrdoss
+
 
 /******************************************************************************/
 /*                XrdOssGetSS (a.k.a. XrdOssGetStorageSystem)                 */

@@ -61,9 +61,7 @@ XrdSfsGetDefaultFileSystem(XrdSfsFileSystem* nativeFS,
 }
 #endif
 
-namespace qWorker = lsst::qserv::worker;
-using namespace lsst::qserv::worker;
-using lsst::qserv::QservPath;
+using lsst::qserv::obsolete::QservPath;
 
 namespace {
 

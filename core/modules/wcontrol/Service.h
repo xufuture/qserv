@@ -22,11 +22,13 @@
 #ifndef LSST_QSERV_WORKER_SERVICE_H
 #define LSST_QSERV_WORKER_SERVICE_H
 #include <boost/shared_ptr.hpp>
+
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wcontrol {
 
-class Foreman; // Forward
+// Forward
+class Foreman;
 class TaskAcceptor;
 class WLogger;
 
@@ -42,6 +44,7 @@ private:
     boost::shared_ptr<Foreman> _foreman;
 };
 
-}}} // lsst::qserv:worker
+}}} // namespace lsst::qserv:wcontrol
+
 #endif // LSST_QSERV_WORKER_SERVICE_H
 

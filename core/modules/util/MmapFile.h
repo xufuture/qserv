@@ -39,7 +39,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace util {
 
 class MmapFile {
 public:
@@ -62,6 +62,6 @@ private:
     std::string _filename;
 };
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::util
 
 #endif // LSST_QSERV_MASTER_MMAPFILE_H

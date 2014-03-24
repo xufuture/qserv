@@ -36,7 +36,7 @@ class XrdPosixCallBack; // Forward.
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace xrdc {
 
 struct XrdTransResult {
     int open;
@@ -80,7 +80,6 @@ XrdTransResult xrdOpenWriteReadSave(const char *path,
                                     int fragmentSize,
                                     const char* outfile);
 
-
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::xrdc
 
 #endif // #ifndef LSST_QSERV_MASTER_XRDFILE_H

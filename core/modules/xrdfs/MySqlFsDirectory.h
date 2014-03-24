@@ -31,8 +31,10 @@ class XrdSysError;
 
 namespace lsst {
 namespace qserv {
-namespace worker {
-class WLogger; // Forward
+namespace xrdfs {
+
+// Forward
+class WLogger;
 
 /// MySqlFsDirectory is directory object returned by MySqlFs. It
 /// rejects directory operations because they have not been assigned
@@ -52,6 +54,6 @@ private:
     boost::shared_ptr<WLogger> _log;
 };
 
-}}} // namespace lsst::qserv::worker
+}}} // namespace lsst::qserv::xrdfs
 
 #endif

@@ -27,7 +27,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
 
 class FifoScheduler : public Foreman::Scheduler {
 public:
@@ -50,5 +50,7 @@ private:
     TaskQueue _queue;
     int _maxRunning;
 };
-}}} // lsst::qserv::worker
+
+}}} // namespace lsst::qserv::wsched
+
 #endif // LSST_QSERV_WORKER_FIFOSCHEDULER_H
