@@ -38,8 +38,6 @@
 #include "wbase/Base.h"
 #include "wlog/WLogger.h"
 
-using namespace lsst::qserv::worker;
-namespace qWorker = lsst::qserv::worker;
 ////////////////////////////////////////////////////////////////////////
 // anonymous helpers
 ////////////////////////////////////////////////////////////////////////
@@ -53,10 +51,14 @@ namespace {
     }
 }
 
+namespace lsst {
+namespase qserv {
+namespace control {
+    
 ////////////////////////////////////////////////////////////////////////
 // ForemanImpl declaration
 ////////////////////////////////////////////////////////////////////////
-class ForemanImpl : public lsst::qserv::worker::Foreman {
+class ForemanImpl : public Foreman {
 public:
     ForemanImpl(Scheduler::Ptr s, WLogger::Ptr log);
     virtual ~ForemanImpl();
@@ -116,9 +118,9 @@ private:
 // Foreman factory function
 ////////////////////////////////////////////////////////////////////////
 Foreman::Ptr
-qWorker::newForeman(Foreman::Scheduler::Ptr sched, WLogger::Ptr log) {
+newForeman(Foreman::Scheduler::Ptr sched, WLogger::Ptr log) {
     if(!sched) {
-        sched.reset(new qWorker::FifoScheduler());
+        sched.reset(new FifoScheduler());
     }
     ForemanImpl::Ptr fmi(new ForemanImpl(sched, log));
     return fmi;;
@@ -329,6 +331,7 @@ bool ForemanImpl::accept(boost::shared_ptr<lsst::qserv::TaskMsg> msg) {
             _startRunner(*i);
         }
     }
-
-    return false; // FIXME:::
+    return false; // FIXME
 }
+
+}}} // namespace lsst::qserv::wcontrol

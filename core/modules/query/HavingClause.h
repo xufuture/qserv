@@ -31,7 +31,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
 
 class QueryTemplate;
 class BoolTerm;
@@ -54,6 +54,7 @@ private:
     boost::shared_ptr<BoolTerm> _tree;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::query
+
 #endif // LSST_QSERV_MASTER_HAVINGCLAUSE_H
 

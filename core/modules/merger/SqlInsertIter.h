@@ -37,7 +37,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace merger {
 
 class SqlInsertIter {
 public:
@@ -98,6 +98,6 @@ private:
     static Iter _nullIter;
 };
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::merger
 
 #endif // LSST_QSERV_MASTER_SQLINSERTITER_H

@@ -48,7 +48,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qana {
+
 typedef std::list<std::string> StringList;
 
 
@@ -204,7 +205,7 @@ private:
 ////////////////////////////////////////////////////////////////////////
 /// TablePlugin is a query plugin that inserts placeholders for table
 /// name substitution.
-class TablePlugin : public lsst::qserv::master::QueryPlugin {
+class TablePlugin : public QueryPlugin {
 public:
     // Types
     typedef boost::shared_ptr<TablePlugin> Ptr;
@@ -227,7 +228,7 @@ private:
 ////////////////////////////////////////////////////////////////////////
 // TablePluginFactory declaration+implementation
 ////////////////////////////////////////////////////////////////////////
-class TablePluginFactory : public lsst::qserv::master::QueryPlugin::Factory {
+class TablePluginFactory : public QueryPlugin::Factory {
 public:
     // Types
     typedef boost::shared_ptr<TablePluginFactory> Ptr;
@@ -235,8 +236,8 @@ public:
     virtual ~TablePluginFactory() {}
 
     virtual std::string getName() const { return "Table"; }
-    virtual lsst::qserv::master::QueryPlugin::Ptr newInstance() {
-        return lsst::qserv::master::QueryPlugin::Ptr(new TablePlugin());
+    virtual QueryPlugin::Ptr newInstance() {
+        return QueryPlugin::Ptr(new TablePlugin());
     }
 };
 
@@ -252,7 +253,7 @@ struct registerPlugin {
 };
 // Static registration
 registerPlugin registerTablePlugin;
-}
+} // annonymous namespace
 
 ////////////////////////////////////////////////////////////////////////
 // TablePlugin implementation
@@ -404,5 +405,4 @@ bool testIfSecondary(BoolTerm& t) {
     return false;
 }
 
-
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::qana

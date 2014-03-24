@@ -27,24 +27,29 @@
   *
   * @author Daniel L. Wang, SLAC
   */
+
+// Standard library imports
 #include <list>
 #include <string>
+
+// Boost
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/shared_ptr.hpp>
 
+// Local imports
 #include "css/Facade.h"
-#include "query/Constraint.h"
+#include "merger/mergeTypes.h"
 #include "qproc/ChunkQuerySpec.h"
 #include "qproc/ChunkSpec.h"
-
 #include "qana/QueryPlugin.h"
-#include "merger/mergeTypes.h"
+#include "query/Constraint.h"
+
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qproc {
+
 class SelectStmt; // forward
-class QueryPlugin; // forward
 
 ///  QuerySession contains state and behavior for operating on user queries. It
 ///  contains much of the query analysis-side of AsyncQueryManager's
@@ -62,7 +67,7 @@ public:
     void setQuery(std::string const& q);
     bool hasAggregate() const;
 
-    boost::shared_ptr<ConstraintVector> getConstraints() const;
+    boost::shared_ptr<query::ConstraintVector> getConstraints() const;
     void addChunk(ChunkSpec const& cs);
 
     SelectStmt const& getStmt() const { return *_stmt; }
@@ -80,7 +85,7 @@ public:
     css::IntPair getDbStriping();
     std::string const& getError() const { return _error; }
 
-    MergeFixup makeMergeFixup() const;
+    merger::MergeFixup makeMergeFixup() const;
 
     /// Finalize a query after chunk coverage has been updated
     void finalize();
@@ -89,10 +94,10 @@ public:
     Iter cQueryEnd();
 
     // For test harnesses.
-    boost::shared_ptr<QueryContext> dbgGetContext() { return _context; }
+    boost::shared_ptr<qana::QueryContext> dbgGetContext() { return _context; }
 
 private:
-    typedef std::list<QueryPlugin::Ptr> PluginList;
+    typedef std::list<qana::QueryPlugin::Ptr> PluginList;
 
     // Pipeline helpers
     void _initContext();
@@ -108,7 +113,7 @@ private:
     // Fields
     boost::shared_ptr<css::Facade> _cssFacade;
     std::string _original;
-    boost::shared_ptr<QueryContext> _context;
+    boost::shared_ptr<qana::QueryContext> _context;
     boost::shared_ptr<SelectStmt> _stmt;
     /// Group of parallel statements (not a sequence)
     std::list<boost::shared_ptr<SelectStmt> > _stmtParallel;
@@ -159,7 +164,6 @@ private:
     mutable bool _dirty;
 };
 
-}}} // namespace lsst::qserv::master
-
+}}} // namespace lsst::qserv::qproc
 
 #endif // LSST_QSERV_MASTER_QUERYSESSION_H

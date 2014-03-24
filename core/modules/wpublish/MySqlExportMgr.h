@@ -34,9 +34,13 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 
-namespace lsst { namespace qserv { namespace worker {
+namespace lsst {
+namespace qserv {
+namespace wpublish {
 
-class WLogger; // Forward
+// Forward
+class WLogger;
+
 
 class MySqlExportMgr {
 public:
@@ -70,7 +74,7 @@ private:
     WLogger& _log;
 
 };
-}}} // namespace lsst::qserv::worker
 
+}}} // namespace lsst::qserv::wpublish
 
 #endif // LSST_QSERV_WORKER_MYSQLEXPORTMGR_H

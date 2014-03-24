@@ -40,7 +40,7 @@ using antlr::RefAST;
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 ////////////////////////////////////////////////////////////////////////
 // ValueExprFactory implementation
 ////////////////////////////////////////////////////////////////////////
@@ -95,4 +95,4 @@ ValueExprFactory::newExpr(antlr::RefAST a) {
 #endif
     return expr;
 }
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::parser

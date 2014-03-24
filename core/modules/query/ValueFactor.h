@@ -35,7 +35,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
+
 // Forward
 class QueryTemplate;
 class FuncExpr;
@@ -102,5 +103,6 @@ public:
     QueryTemplate& _qt;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::query
+
 #endif // LSST_QSERV_MASTER_VALUEFACTOR_H

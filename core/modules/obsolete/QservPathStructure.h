@@ -28,7 +28,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace obsolete {
 
 class QservPathStructure {
 
@@ -69,5 +69,6 @@ private:
     std::vector<std::string> _uniqueDbDirs;
 };
 
-}}} // namespace lsst::qserv::worker
+}}} // namespace lsst::qserv::obsolete
+
 #endif // LSST_QSERV_QSERVPATHEXPORT_H

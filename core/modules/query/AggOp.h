@@ -36,7 +36,9 @@
 #include "query/AggRecord.h"
 #include "query/ValueExpr.h"
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace query {
 
 /// class AggOp is a function object that creates AggRecords from
 /// aggregation parameters. It is used to contain the differences in how
@@ -78,8 +80,6 @@ private:
     int _seq;
 };
 
-}}} // namespace lsst::qserv::master
-
+}}} // namespace lsst::qserv::query
 
 #endif // LSST_QSERV_MASTER_AGGOP_H
-

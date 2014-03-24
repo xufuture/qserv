@@ -30,10 +30,10 @@ class XrdSysError;
 
 namespace lsst {
 namespace qserv {
-class QservPath; // Forward
+namespace xrdfs {
 
-namespace worker {
-namespace fs {
+// Forward
+class QservPath;
 
 enum FileClass {COMBO, TWO_WRITE, TWO_READ, UNKNOWN};
 
@@ -55,5 +55,6 @@ public:
     virtual bool operator()(QservPath const& qp) = 0;
 };
 
-}}}} // lsst::qserv:worker::fs
+}}}} // namespace lsst::qserv:xrdfs
+
 #endif

@@ -58,7 +58,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 ////////////////////////////////////////////////////////////////////////
 // AntlrParser -- Antlr parsing complex
@@ -116,4 +116,5 @@ SelectParser::setup() {
     _selectStmt = sf.getStatement();
     _selectStmt->diagnose();
 }
-}}}
+
+}}} // namespace lsst::qserv::parser

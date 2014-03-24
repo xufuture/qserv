@@ -38,7 +38,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
 
 class QueryTemplate; // Forward
 class ValueExpr;
@@ -211,7 +211,6 @@ private:
     boost::shared_ptr<Predicate::ValueExprList> _cache;
 };
 
-}}} // namespace lsst::qserv::master
-
+}}} // namespace lsst::qserv::query
 
 #endif // LSST_QSERV_MASTER_PREDICATE_H

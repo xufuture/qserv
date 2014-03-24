@@ -38,7 +38,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 ////////////////////////////////////////////////////////////////////////
 // BoolTermFactory helper
 ////////////////////////////////////////////////////////////////////////
@@ -202,4 +202,4 @@ BoolTermFactory::newBoolTermFactor(antlr::RefAST a) {
     return p;
 }
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::parser

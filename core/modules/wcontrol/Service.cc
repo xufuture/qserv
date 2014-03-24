@@ -29,7 +29,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wcontrol {
 
 Service::Service(WLogger::Ptr log) {
     if(!log.get()) {
@@ -65,4 +65,4 @@ void Service::squashByHash(std::string const& hash) {
     _foreman->squashByHash(hash);
 }
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wcontrol

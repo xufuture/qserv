@@ -33,7 +33,9 @@
   */
 #include <string>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace merger {
 
 /// class MergeFixup - A value class that specifies the SQL predicates
 /// to use when merging subqueries into final results.
@@ -57,5 +59,6 @@ public:
     bool needsFixup;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::merger
+
 #endif // LSST_QSERV_MASTER_MERGETYPES_H

@@ -35,7 +35,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace util {
 
 typedef std::map<std::string, std::string> StringMap;
 typedef std::map<std::string, StringMap> StringMapMap;
@@ -99,5 +99,5 @@ std::ostream& printList(std::ostream &os, char const* label, C const& c) {
 }
 
 
-}}} // namesapce lsst::qserv::master
+}}} // namesapce lsst::qserv::util
 #endif // LSST_QSERV_MASTER_COMMON_H

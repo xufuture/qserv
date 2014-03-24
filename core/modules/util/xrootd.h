@@ -31,14 +31,14 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace util {
 
 std::string makeUrl(char const* hostport, char const* typeStr, int chunk);
 std::string makeUrl(char const* hostport, char const* typeStr,
                     std::string const& s, char mode=0);
 std::string makeUrl(char const* hostport, std::string const& path);
 
-}}}
+}}} // namespace lsst::qserv::util
 
 #endif // LSST_QSERV_MASTER_XROOTD_H
 

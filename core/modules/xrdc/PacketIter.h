@@ -36,7 +36,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace xrdc {
 
 class PacketIter {
 public:
@@ -100,6 +100,6 @@ private:
     int _realFd;
 };
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::xrdc
 
 #endif // LSST_QSERV_MASTER_PACKETITER_H

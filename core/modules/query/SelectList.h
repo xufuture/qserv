@@ -38,7 +38,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
+
 // Forward
 class ColumnRefNodeMap;
 class ColumnAliasMap;
@@ -73,5 +74,6 @@ private:
     boost::shared_ptr<ColumnRefNodeMap const> _aliasMap;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::query
+
 #endif // LSST_QSERV_MASTER_SELECTLIST_H

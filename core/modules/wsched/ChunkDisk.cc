@@ -54,7 +54,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
 ////////////////////////////////////////////////////////////////////////
 // Helpers
 ////////////////////////////////////////////////////////////////////////
@@ -265,4 +265,4 @@ bool ChunkDisk::checkIntegrity() {
     return checkQueueOk(_activeTasks) && checkQueueOk(_pendingTasks);
 }
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wsched

@@ -36,7 +36,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qana {
 
 ////////////////////////////////////////////////////////////////////////
 // WherePlugin declaration
@@ -67,8 +67,8 @@ public:
     virtual ~WherePluginFactory() {}
 
     virtual std::string getName() const { return "Where"; }
-    virtual lsst::qserv::master::QueryPlugin::Ptr newInstance() {
-        return lsst::qserv::master::QueryPlugin::Ptr(new WherePlugin());
+    virtual QueryPlugin::Ptr newInstance() {
+        return QueryPlugin::Ptr(new WherePlugin());
     }
 };
 
@@ -79,12 +79,12 @@ namespace {
 struct registerPlugin {
     registerPlugin() {
         WherePluginFactory::Ptr f(new WherePluginFactory());
-        lsst::qserv::master::QueryPlugin::registerClass(f);
+        QueryPlugin::registerClass(f);
     }
 };
 // Static registration
 registerPlugin registerWherePlugin;
-}
+} // annonymous namespace
 
 void WherePlugin::applyLogical(SelectStmt& stmt, QueryContext&) {
     // Go to the WhereClause and remove extraneous OR_OP and AND_OP,
@@ -104,4 +104,4 @@ void WherePlugin::applyLogical(SelectStmt& stmt, QueryContext&) {
 
 }
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::qana

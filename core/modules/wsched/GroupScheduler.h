@@ -28,7 +28,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
+
 /// GroupScheduler -- A scheduler that is a cross between FIFO and shared scan.
 /// Tasks are ordered as they come in, except that queries for the
 /// same chunks are grouped together.
@@ -63,5 +64,7 @@ private:
     int _maxRunning;
     boost::shared_ptr<WLogger> _logger;
 };
-}}} // lsst::qserv::worker
+
+}}} // namespace lsst::qserv::wsched
+
 #endif // LSST_QSERV_WORKER_GROUPSCHEDULER_H

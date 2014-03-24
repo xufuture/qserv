@@ -27,12 +27,14 @@
 #define LSST_QSERV_MASTER_LOGGERINTERFACE_H
 #include <string>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace log {
 
 void logger_threshold(int severity);
 void logger(int severity, std::string const& s);
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::log
 
 #endif // LSST_QSERV_MASTER_LOGGERINTERFACE_H
 

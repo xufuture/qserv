@@ -36,7 +36,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace control {
+
 /// class TransactionSpec - A value class for the minimum
 /// specification of a subquery, as far as the xrootd layer is
 /// concerned.
@@ -53,6 +54,7 @@ public:
 
     class Reader;  // defined in thread.h
 };
-}}} // namespace lsst::qserv::master
+
+}}} // namespace lsst::qserv::control
 
 #endif // LSST_QSERV_MASTER_TRANSACTION_H

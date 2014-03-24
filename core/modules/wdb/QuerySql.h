@@ -37,10 +37,10 @@
 
 namespace lsst {
 namespace qserv {
+namespace wdb {
+
+// Forward        
 class TaskMsg_Fragment;
-
-namespace worker {
-
 class Task;
 
 class QuerySql {
@@ -67,6 +67,7 @@ public:
                                             std::string const& defaultResultTable);
 };
 
-}}} // lsst::qserv::worker
+}}} // namespace lsst::qserv::wdb
+
 #endif // LSST_QSERV_WORKER_QUERYSQL_H
 

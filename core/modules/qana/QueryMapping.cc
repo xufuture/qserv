@@ -41,7 +41,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qana {
 
 class MapTuple {
 public:
@@ -196,4 +196,4 @@ QueryMapping::hasParameter(Parameter p) const {
     return false;
 }
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::qana

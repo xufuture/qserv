@@ -35,8 +35,9 @@
 
 #include "qana/PluginNotFoundError.h"
 
-namespace qMaster=lsst::qserv::master;
-using lsst::qserv::master::QueryPlugin;
+namespace qserv {
+namespace lsst {
+namespace qana {
 
 namespace { // File-scope helpers
 typedef std::map<std::string, QueryPlugin::FactoryPtr> FactoryMap;
@@ -70,3 +71,5 @@ QueryPlugin::registerClass(QueryPlugin::FactoryPtr f) {
     if(!f.get()) return;
     factoryMap()[f->getName()] = f;
 }
+
+}}} // namespace lsst::qserv::qana

@@ -32,7 +32,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 class UnsupportedSyntaxError : public std::exception {
 public:
@@ -44,8 +44,10 @@ public:
     std::string desc;
 };
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::parser
+
 #endif // LSST_QSERV_MASTER_PARSEEXCEPTIONS_H
+
 // Local Variables:
 // mode:c++
 // comment-column:0

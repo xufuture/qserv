@@ -32,7 +32,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wcontrol {
 
 typedef std::pair<int,char const*> ResultItem;
 typedef std::pair<int, std::string> ResultError;
@@ -177,6 +177,6 @@ private:
     WorkQueue _workQueue;
 };
 
-}}} // namespace lsst::qserv::worker
+}}} // namespace lsst::qserv::wcontrol
 
 #endif // LSST_QSERV_WORKER_RESULT_TRACKER_H

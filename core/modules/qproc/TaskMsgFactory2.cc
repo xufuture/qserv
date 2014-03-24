@@ -40,14 +40,10 @@
 #include "qproc/ChunkQuerySpec.h"
 #include "proto/worker.pb.h"
 
-namespace qMaster=lsst::qserv::master;
-
-namespace { // File-scope helpers
-}
-
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qproc {
+
 void flattenScanTables(StringList& outputList,
                        StringPairList const& scanTables) {
     std::string db;
@@ -168,4 +164,5 @@ void TaskMsgFactory2::serializeMsg(ChunkQuerySpec const& s,
     boost::shared_ptr<TaskMsg> m = _impl->makeMsg(s, chunkResultName);
     m->SerializeToOstream(&os);
 }
-}}} // namespace lsst::qserv::master
+
+}}} // namespace lsst::qserv::qproc

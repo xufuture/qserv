@@ -36,7 +36,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
+
 // Forward
 class ColumnRefNodeMap;
 class ValueExpr;
@@ -51,5 +52,6 @@ private:
     boost::shared_ptr<ValueFactorFactory> _valueFactorFactory;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::parser
+
 #endif // LSST_QSERV_MASTER_VALUEEXPRFACTORY_H

@@ -40,7 +40,10 @@ class XrdOss;
 class XrdSysLogger;
 class XrdOucEnv;
 
-namespace lsst { namespace qserv { namespace worker {
+namespace lsst {
+namespace qserv {
+namespace xrdoss {
+
 class WLogger;
 
 /// An XrdOssDF implementation that merely pays lip-service to incoming
@@ -111,8 +114,8 @@ private:
     boost::shared_ptr<WLogger> _log;
     time_t _initTime;
 };
-}}} // namespace lsst::qserv::master
 
+}}} // namespace lsst::qserv::xrdoss
 
 #endif //  LSST_QSERV_WORKER_QSERVOSS_H
 

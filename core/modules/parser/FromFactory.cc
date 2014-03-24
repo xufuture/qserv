@@ -43,8 +43,6 @@
 #include "query/QueryTemplate.h"
 #include "log/Logger.h"
 
-// namespace modifiers
-namespace qMaster = lsst::qserv::master;
 
 ////////////////////////////////////////////////////////////////////////
 // Anonymous helpers
@@ -59,8 +57,9 @@ inline RefAST walkToSiblingBefore(RefAST node, int typeId) {
     return RefAST();
 }
 
-inline std::string getSiblingStringBounded(RefAST left, RefAST right) {
-    qMaster::CompactPrintVisitor<RefAST> p;
+inline std::string 
+getSiblingStringBounded(RefAST left, RefAST right) {
+    CompactPrintVisitor<RefAST> p;
     for(; left.get(); left = left->getNextSibling()) {
         p(left);
         if(left == right) break;
@@ -99,7 +98,7 @@ public:
             if(nextCache.get()) {
                 current = nextCache;
             } else {
-                current = qMaster::findSibling(current, c);
+                current = findSibling(current, c);
                 if(current.get()) {
                     // Move to next value
                     current = current->getNextSibling();
@@ -113,7 +112,7 @@ public:
             if(!current) {
                 throw std::invalid_argument("Invalid _current in iteration");
             }
-            qMaster::CompactPrintVisitor<antlr::RefAST> p;
+            CompactPrintVisitor<antlr::RefAST> p;
             for(;current.get() && !c(current);
                 current = current->getNextSibling()) {
                 p(current);
@@ -151,12 +150,19 @@ private:
     Iter _endIter;
 };
 } // anonymous
+
+
+namespace lsst {
+namespace qserv {
+namespace parser {
+
+
 ////////////////////////////////////////////////////////////////////////
 // ParseAliasMap misc impl. (to be placed in ParseAliasMap.cc later)
 ////////////////////////////////////////////////////////////////////////
-std::ostream& qMaster::operator<<(std::ostream& os,
-                                  qMaster::ParseAliasMap const& m) {
-    using qMaster::ParseAliasMap;
+std::ostream& 
+operator<<(std::ostream& os, ParseAliasMap const& m) {
+    using ParseAliasMap;
     typedef ParseAliasMap::Miter Miter;
     os << "AliasMap fwd(";
     for(Miter it=m._map.begin(); it != m._map.end(); ++it) {
@@ -175,8 +181,7 @@ std::ostream& qMaster::operator<<(std::ostream& os,
 ////////////////////////////////////////////////////////////////////////
 // FromFactory
 ////////////////////////////////////////////////////////////////////////
-using qMaster::FromList;
-using qMaster::FromFactory;
+
 ////////////////////////////////////////////////////////////////////////
 // FromFactory::FromClauseH
 ////////////////////////////////////////////////////////////////////////
@@ -195,13 +200,11 @@ private:
 ////////////////////////////////////////////////////////////////////////
 class FromFactory::TableRefAuxH : public VoidFourRefFunc {
 public:
-    TableRefAuxH(boost::shared_ptr<qMaster::ParseAliasMap> map)
+    TableRefAuxH(boost::shared_ptr<ParseAliasMap> map)
         : _map(map) {}
     virtual ~TableRefAuxH() {}
     virtual void operator()(antlr::RefAST name, antlr::RefAST sub,
                             antlr::RefAST as, antlr::RefAST alias)  {
-        using lsst::qserv::master::getSiblingBefore;
-        using qMaster::tokenText;
         if(alias.get()) {
             _map->addAlias(alias, name);
         }
@@ -209,7 +212,7 @@ public:
         // regardless of alias.
     }
 private:
-    boost::shared_ptr<qMaster::ParseAliasMap> _map;
+    boost::shared_ptr<ParseAliasMap> _map;
 };
 class QualifiedName {
 public:
@@ -349,3 +352,6 @@ FromFactory::_import(antlr::RefAST a) {
     std::string s(ss.str());
     if(s.size() > 0) { LOGGER_INF << s << std::endl; }
 }
+
+
+}}} // namespace lsst::qserv::parser

@@ -42,8 +42,6 @@
 #include "wlog/WLogger.h"
 
 namespace test = boost::test_tools;
-namespace qWorker = lsst::qserv::worker;
-using namespace lsst::qserv::worker;
 using boost::make_shared;
 
 boost::shared_ptr<WLogger> myLog = make_shared<WLogger>();

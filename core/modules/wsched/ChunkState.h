@@ -37,7 +37,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace worker {
+namespace wsched {
+
 class ChunkState {
 public:
     typedef std::set<int> IntSet;
@@ -97,7 +98,7 @@ private:
     int _last;
 };
 
+}}} // namespace lsst::qserv::wsched
 
-}}} // lsst::qserv::worker
 #endif // LSST_QSERV_WORKER_CHUNKSTATE_H
 

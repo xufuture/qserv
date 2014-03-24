@@ -38,7 +38,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
 
 class ColumnRef;
 class QsRestrictor;
@@ -63,7 +63,7 @@ public:
     std::string anonymousTable; ///< Implicit table context
     std::string username; ///< unused, but reserved.
 
-    StringPairList scanTables; // Tables scanned (for shared scans)
+    util::StringPairList scanTables; // Tables scanned (for shared scans)
 
     // Table aliasing
     TableAlias tableAliases;
@@ -86,5 +86,6 @@ public:
     DbTablePair resolve(boost::shared_ptr<ColumnRef> cr);
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::query
+
 #endif // LSST_QSERV_MASTER_QUERYCONTEXT_H

@@ -50,7 +50,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace qdisp {
 
 #define DEBUG 2
 
@@ -136,7 +136,7 @@ private:
 //////////////////////////////////////////////////////////////////////
 // class ChunkQuery::ReadCallable
 //////////////////////////////////////////////////////////////////////
-class lsst::qserv::master::ChunkQuery::ReadCallable : public DynamicWorkQueue::Callable {
+class ChunkQuery::ReadCallable : public DynamicWorkQueue::Callable {
 public:
     explicit ReadCallable(ChunkQuery& cq) :
         _cq(cq), _isRunning(false)
@@ -271,7 +271,7 @@ void ChunkQuery::Complete(int Result) {
 }
 
 ChunkQuery::ChunkQuery(TransactionSpec const& t, int id,
-                       AsyncQueryManager* mgr)
+                       control::AsyncQueryManager* mgr)
     : XrdPosixCallBack(),
       _id(id), _spec(t),
       _manager(mgr),
@@ -612,5 +612,5 @@ void ChunkQuery::_unlinkResult(std::string const& url) {
     }
 }
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::qdisp
 
