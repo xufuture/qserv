@@ -48,7 +48,7 @@ public:
         typename AstMap::const_iterator e(ids.end());
         if(ids.find(a) == e) {
             std::stringstream t;
-            t << tokenText(a) << "[" << ++i << "]";
+            t << lsst::qserv::parser::tokenText(a) << "[" << ++i << "]";
             ids[a] = t.str();
         }
         return ids[a];

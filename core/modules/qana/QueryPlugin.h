@@ -33,14 +33,19 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace query {
+    // Forward 
+    class SelectStmt;
+}
+   
 namespace qana {
 
 // Forward
 class QueryContext;
 class QueryMapping;
-class SelectStmt;
 
-typedef std::list<boost::shared_ptr<SelectStmt> > SelectStmtList;
+typedef std::list<boost::shared_ptr<query::SelectStmt> > SelectStmtList;
 
 /// QueryPlugin is an interface for classes which implement rewrite/optimization
 /// rules for incoming SQL queries by operating on query representations.
@@ -60,7 +65,7 @@ public:
     virtual void prepare() {}
 
     /// Apply the plugin's actions to the parsed, but not planned query
-    virtual void applyLogical(SelectStmt& stmt, QueryContext&) {}
+    virtual void applyLogical(query::SelectStmt& stmt, QueryContext&) {}
 
     /// Apply the plugins's actions to the concrete query plan.
     virtual void applyPhysical(Plan& phy, QueryContext& context) {}
@@ -90,17 +95,17 @@ public:
 /// A bundle of references to a components that form a "plan"
 class QueryPlugin::Plan {
 public:
-    Plan(SelectStmt& stmtOriginal_, SelectStmtList& stmtParallel_,
-         SelectStmt& stmtMerge_, bool hasMerge_)
+    Plan(query::SelectStmt& stmtOriginal_, SelectStmtList& stmtParallel_,
+         query::SelectStmt& stmtMerge_, bool hasMerge_)
         :  stmtOriginal(stmtOriginal_),
            stmtParallel(stmtParallel_),
           stmtMerge(stmtMerge_),
           hasMerge(hasMerge_) {}
 
     // Each of these should become a sequence for two-step queries.
-    SelectStmt& stmtOriginal;
+    query::SelectStmt& stmtOriginal;
     SelectStmtList& stmtParallel; //< Group of parallel statements (not a sequence)
-    SelectStmt& stmtMerge;
+    query::SelectStmt& stmtMerge;
     std::string dominantDb;
     boost::shared_ptr<QueryMapping> queryMapping;
     bool const hasMerge;

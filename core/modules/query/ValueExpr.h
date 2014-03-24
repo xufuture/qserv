@@ -36,6 +36,12 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace parser {
+    // Forward
+    class ValueExprFactory;
+}
+    
 namespace query {
 
 // Forward
@@ -87,7 +93,7 @@ public:
 
     static ValueExprPtr newSimple(boost::shared_ptr<ValueFactor> vt);
 
-    friend class ValueExprFactory;
+    friend class parser::ValueExprFactory;
     class render;
     friend class render;
 private:

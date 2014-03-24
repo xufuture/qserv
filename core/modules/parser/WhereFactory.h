@@ -39,11 +39,16 @@ class SqlSQL2Parser;
 
 namespace lsst {
 namespace qserv {
+
+namespace query {
+    // Forward
+    class WhereClause;
+}
+    
 namespace parser {
 
 // Forward
 class SelectFactory;
-class WhereClause;
 class ValueExprFactory;
 
 /// WhereFactory is a factory for WhereClause parsed elements.
@@ -55,8 +60,8 @@ public:
 
     WhereFactory(boost::shared_ptr<ValueExprFactory> vf);
 
-    boost::shared_ptr<WhereClause> getProduct();
-    static boost::shared_ptr<WhereClause> newEmpty();
+    boost::shared_ptr<query::WhereClause> getProduct();
+    static boost::shared_ptr<query::WhereClause> newEmpty();
 private:
     void attachTo(SqlSQL2Parser& p);
     void _import(antlr::RefAST a);
@@ -64,7 +69,7 @@ private:
     void _addOrSibs(antlr::RefAST a);
 
     // Fields
-    boost::shared_ptr<WhereClause> _clause;
+    boost::shared_ptr<query::WhereClause> _clause;
     boost::shared_ptr<ValueExprFactory> _vf;
 };
 

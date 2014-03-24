@@ -40,7 +40,8 @@ namespace lsst {
 namespace qserv {
 namespace query {
 
-class QueryTemplate; // Forward
+// Forward
+class QueryTemplate;
 class ValueExpr;
 
 ///  Predicate is a representation of a SQL predicate.

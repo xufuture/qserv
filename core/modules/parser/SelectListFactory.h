@@ -36,22 +36,28 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace query {
+    // Forward
+    class SelectList;
+    class ValueExpr;
+}
+    
 namespace parser {
 
 // Forward
 class ParseAliasMap;
-class ValueExpr;
-typedef boost::shared_ptr<ValueExpr> ValueExprPtr;
+class ValueExprFactory;
+
+typedef boost::shared_ptr<query::ValueExpr> ValueExprPtr;
 typedef std::list<ValueExprPtr> ValueExprList;
 
-class SelectList;
-class ValueExprFactory;
 
 /// SelectListFactory maintains parse state so that a SelectList can be built
 /// from a ANTLR parse tree nodes. It populates some state for SelectFactory.
 class SelectListFactory {
 public:
-    boost::shared_ptr<SelectList> getProduct();
+    boost::shared_ptr<query::SelectList> getProduct();
 private:
     friend class SelectFactory;
 

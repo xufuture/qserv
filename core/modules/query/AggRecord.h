@@ -43,14 +43,14 @@ struct AggRecord {
 public:
     typedef boost::shared_ptr<AggRecord> Ptr;
     /// Original ValueFactor representing the call (e.g., COUNT(ra_PS))
-    lsst::qserv::master::ValueFactorPtr orig;
+    query::ValueFactorPtr orig;
     /// List of expressions to pass for parallel execution.
     /// Some aggregations need more than one aggregation to be computed (per
     /// chunk) in order to compute the final aggregation value (e.g., AVG)
-    lsst::qserv::master::ValueExprList parallel;
+    query::ValueExprList parallel;
     /// ValueFactor representing merge step. Not a list, because the original
     /// wasn't a list and we want the final result to correspond.
-    lsst::qserv::master::ValueFactorPtr merge;
+    query::ValueFactorPtr merge;
     std::ostream& printTo(std::ostream& os);
 };
 
