@@ -28,11 +28,10 @@
 #ifndef LSST_QSERV_MASTER_SQLINSERTITER_H
 #define LSST_QSERV_MASTER_SQLINSERTITER_H
 
-
 // Boost
 #include <boost/regex.hpp>
 
-// Pkg
+// Local includes
 #include "xrdc/PacketIter.h"
 
 namespace lsst {
@@ -51,7 +50,7 @@ public:
     /// Constructor.  Buffer must be valid over this object's lifetime.
     SqlInsertIter(char const* buf, off_t bufSize,
                   std::string const& tableName, bool allowNull);
-    SqlInsertIter(PacketIter::Ptr p,
+    SqlInsertIter(xrdc::PacketIter::Ptr p,
                   std::string const& tableName, bool allowNull);
 
     // Destructor
@@ -93,7 +92,7 @@ private:
     boost::regex _blockExpr;
     boost::regex _insExpr;
     boost::regex _nullExpr;
-    PacketIter::Ptr _pacIterP;
+    xrdc::PacketIter::Ptr _pacIterP;
 
     static Iter _nullIter;
 };

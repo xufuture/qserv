@@ -33,26 +33,29 @@
   *
   * @author Daniel L. Wang, SLAC
   */
-#include "merger/TableMerger.h"
+
+// Standard library includes
 #include <sys/time.h>
 #include <sstream>
 #include <iostream>
+
+// Boost
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
-#include "sql/SqlConnection.h"
+
+
+// Local includes
 #include "log/Logger.h"
 #include "merger/SqlInsertIter.h"
+#include "merger/TableMerger.h"
+#include "sql/SqlConnection.h"
 #include "util/MmapFile.h"
-
-using lsst::qserv::merger::TableMerger;
-using lsst::qserv::merger::TableMergerError;
-using lsst::qserv::merger::TableMergerConfig;
-using lsst::qserv::mysql::SqlConfig;
-using lsst::qserv::mysql::SqlConnection;
-using lsst::qserv::mysql::SqlErrorObject;
 
 
 namespace { // File-scope helpers
+
+using lsst::qserv::mysql::SqlConfig;
+using lsst::qserv::merger::TableMergerConfig;
 
 std::string getTimeStampId() {
     struct timeval now;
@@ -256,9 +259,9 @@ bool TableMerger::_applySql(std::string const& sql) {
 
 bool TableMerger::_applySqlLocal(std::string const& sql) {
     boost::lock_guard<boost::mutex> m(_sqlMutex);
-    SqlErrorObject errObj;
+    sql::SqlErrorObject errObj;
     if(!_sqlConn.get()) {
-        _sqlConn.reset(new SqlConnection(*_sqlConfig, true));
+        _sqlConn.reset(new sql::SqlConnection(*_sqlConfig, true));
         if(!_sqlConn->connectToDb(errObj)) {
             _error.status = TableMergerError::MYSQLCONNECT;
             _error.errorCode = errObj.errNo();
@@ -333,7 +336,8 @@ bool TableMerger::_importResult(std::string const& dumpFile) {
 
 bool TableMerger::merge2(std::string const& dumpFile,
                         std::string const& tableName) {
-    boost::shared_ptr<MmapFile> m = MmapFile::newMap(dumpFile, true, false);
+    boost::shared_ptr<util::MmapFile> m = 
+        util::MmapFile::newMap(dumpFile, true, false);
     if(!m.get()) {
         // Fallback to non-mmap version.
         return _slowImport(dumpFile, tableName);

@@ -56,7 +56,7 @@ public:
 
 private:
     friend std::ostream& operator<<(std::ostream& os, FromList const& fl);
-    friend class FromFactory;
+    friend class parser::FromFactory;
 
     TableRefnListPtr _tableRefns;
 };

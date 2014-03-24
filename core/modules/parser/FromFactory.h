@@ -44,11 +44,16 @@ class SqlSQL2Parser;
 
 namespace lsst {
 namespace qserv {
+
+namespace query {
+    // Forward
+    class FromList;
+}
+    
 namespace parser {
 
 // Forward
 class ParseAliasMap;
-class FromList;
 
 class FromFactory {
 public:
@@ -59,13 +64,13 @@ public:
     class RefGenerator;
 
     FromFactory(boost::shared_ptr<ParseAliasMap> aliases);
-    boost::shared_ptr<FromList> getProduct();
+    boost::shared_ptr<query::FromList> getProduct();
 private:
     void attachTo(SqlSQL2Parser& p);
     void _import(antlr::RefAST a);
 
     boost::shared_ptr<ParseAliasMap> _aliases;
-    boost::shared_ptr<FromList> _list;
+    boost::shared_ptr<query::FromList> _list;
 };
 
 }}} // namespace lsst::qserv::parser

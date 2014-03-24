@@ -115,7 +115,6 @@ public:
 /// Redirect a normalized ref to a listener, if available
 inline void
 ColumnRefH::_process(antlr::RefAST d, antlr::RefAST t, antlr::RefAST c) {
-    using lsst::qserv::master::tokenText;
     // std::cout << "columnref: db:" << tokenText(d)
     //           << " table:" << tokenText(t)
     //           << " column:" << tokenText(c) << std::endl;

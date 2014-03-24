@@ -81,11 +81,11 @@ template <typename AnAst>
 struct PrintVisitor {
 public:
     void operator()(AnAst a) {
-	if(!result.empty()) {
-	    result += " " + a->getText();
-	} else {
-	    result = a->getText();
-	}
+        if(!result.empty()) {
+            result += " " + a->getText();
+        } else {
+            result = a->getText();
+        }
     }
     std::string result;
 };
@@ -98,7 +98,7 @@ public:
 	if(!s.empty() && !result.empty()) {
 	    int last = result[result.size()-1];
 	    int next = s[0];
-	    if(sqlShouldSeparate(lastToken, last,next)) {
+	    if(sql::sqlShouldSeparate(lastToken, last,next)) {
 		result += " ";
 	    }
 	}
