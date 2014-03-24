@@ -43,6 +43,14 @@ class SqlSQL2Parser;
 
 namespace lsst {
 namespace qserv {
+
+namespace query {
+    // Forward
+    class FromList;
+    class SelectStmt;
+    class WhereClause;
+}
+        
 namespace parser {
 
 // Forward
@@ -53,9 +61,6 @@ class FromFactory;
 class WhereFactory;
 class ModFactory;
 class ValueExprFactory;
-class SelectStmt;
-class FromList;
-class WhereClause;
 
 /// SelectFactory is responsible for constructing a SelectStmt (including
 /// SelectList, FromClause, WhereClause, etc.) from ANTLR parse actions
@@ -64,7 +69,7 @@ public:
     SelectFactory();
     void attachTo(SqlSQL2Parser& p);
 
-    boost::shared_ptr<SelectStmt> getStatement();
+    boost::shared_ptr<query::SelectStmt> getStatement();
 
     boost::shared_ptr<SelectListFactory> getSelectListFactory() {
         return _slFactory; }

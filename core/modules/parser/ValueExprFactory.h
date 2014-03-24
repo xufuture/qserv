@@ -47,6 +47,7 @@ namespace parser {
 // Forward
 class ColumnRefNodeMap;
 class ValueFactorFactory;
+
 /// ValueExprFactory is a factory for making ValueExpr objects
 class ValueExprFactory {
 public:
