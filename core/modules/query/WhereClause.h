@@ -80,7 +80,7 @@ public:
 
 private:
     friend std::ostream& operator<<(std::ostream& os, WhereClause const& wc);
-    friend class WhereFactory;
+    friend class parser::WhereFactory;
 
     std::string _original;
     boost::shared_ptr<BoolTerm> _tree;

@@ -91,7 +91,7 @@ public:
             if(!current) {
                 throw std::logic_error("Corrupted ParamGenerator::Iter");
             }
-            CompactPrintVisitor<antlr::RefAST> p;
+            lsst::qserv::parser::CompactPrintVisitor<antlr::RefAST> p;
             for(;current.get() && !c(current);
                 current = current->getNextSibling()) {
                 p(current);
@@ -166,12 +166,14 @@ WhereFactory::WhereFactory(boost::shared_ptr<ValueExprFactory> vf)
     : _vf(vf) {
 }
 
-boost::shared_ptr<WhereClause> WhereFactory::getProduct() {
+boost::shared_ptr<query::WhereClause>
+WhereFactory::getProduct() {
     return _clause;
 }
 
-boost::shared_ptr<WhereClause> WhereFactory::newEmpty() {
-    return boost::shared_ptr<WhereClause>(new WhereClause());
+boost::shared_ptr<query::WhereClause>
+WhereFactory::newEmpty() {
+    return boost::shared_ptr<query::WhereClause>(new query::WhereClause());
 }
 
 void
@@ -182,8 +184,8 @@ WhereFactory::attachTo(SqlSQL2Parser& p) {
 
 void
 WhereFactory::_import(antlr::RefAST a) {
-    _clause.reset(new WhereClause());
-    _clause->_restrs.reset(new QsRestrictor::List);
+    _clause.reset(new query::WhereClause());
+    _clause->_restrs.reset(new query::QsRestrictor::List);
     // LOGGER_INF << "WHERE starts with: " << a->getText()
     //           << " (" << a->getType() << ")" << std::endl;
 
@@ -214,8 +216,8 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     LOGGER_INF << "Adding from " << r << " : ";
     ParamGenerator pg(a->getNextSibling());
 
-    QsRestrictor::Ptr restr(new QsRestrictor());
-    QsRestrictor::StringList& params = restr->_params;
+    query::QsRestrictor::Ptr restr(new query::QsRestrictor());
+    query::QsRestrictor::StringList& params = restr->_params;
 
     // for(ParamGenerator::Iter it = pg.begin();
     //     it != pg.end();

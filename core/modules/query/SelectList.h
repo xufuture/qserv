@@ -38,6 +38,12 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace parser {
+    // Forward
+    class SelectListFactory;
+}
+
 namespace query {
 
 // Forward
@@ -67,7 +73,7 @@ public:
     boost::shared_ptr<ValueExprList> getValueExprList()
         { return _valueExprList; }
 
-    friend class SelectListFactory;
+    friend class parser::SelectListFactory;
 private:
     friend std::ostream& operator<<(std::ostream& os, SelectList const& sl);
     boost::shared_ptr<ValueExprList> _valueExprList;

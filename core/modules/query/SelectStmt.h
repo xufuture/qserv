@@ -40,6 +40,12 @@ class SqlSQL2Parser;
 
 namespace lsst {
 namespace qserv {
+
+namespace parser {
+    // Forward
+    class SelectFactory;
+}
+
 namespace query {
 
 // Forward
@@ -94,7 +100,7 @@ public:
 
  private:
     // Declarations
-    friend class SelectFactory;
+    friend class parser::SelectFactory;
 
     // Helpers
     void _print();

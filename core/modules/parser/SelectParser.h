@@ -41,11 +41,16 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace query {
+    // Forward
+    class SelectStmt;
+}
+
 namespace parser {
 
 // Forward
 class AntlrParser; // Internally-defined in SelectParser.cc
-class SelectStmt;
 
 /// class SelectParser - drives the ANTLR-generated SQL parser for a
 /// SELECT statement. Attaches some simple handlers that populate a
@@ -67,13 +72,13 @@ public:
     // @return Original select statement
     std::string const& getStatement() const { return _statement; }
 
-    boost::shared_ptr<SelectStmt> getSelectStmt() { return _selectStmt; }
+    boost::shared_ptr<query::SelectStmt> getSelectStmt() { return _selectStmt; }
 
 private:
     SelectParser(std::string const& statement);
 
     std::string const _statement;
-    boost::shared_ptr<SelectStmt> _selectStmt;
+    boost::shared_ptr<query::SelectStmt> _selectStmt;
     boost::shared_ptr<AntlrParser> _aParser;
 };
 

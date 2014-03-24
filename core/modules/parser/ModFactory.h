@@ -57,7 +57,7 @@ class ValueExprFactory;
 class ModFactory {
 public:
     // ANTLR handlers
-    friend class query::SelectFactory;
+    friend class SelectFactory;
     class GroupByH;
     friend class GroupByH;
     class OrderByH;
@@ -92,4 +92,3 @@ private:
 }}} // namespace lsst::qserv::parser
 
 #endif // LSST_QSERV_MASTER_MODFACTORY_H
-

@@ -66,11 +66,11 @@ public:
     util::StringPairList scanTables; // Tables scanned (for shared scans)
 
     // Table aliasing
-    TableAlias tableAliases;
-    TableAliasReverse tableAliasReverses;
+    query::TableAlias tableAliases;
+    query::TableAliasReverse tableAliasReverses;
 
     // Owned QueryMapping and query restrictors
-    boost::shared_ptr<QueryMapping> queryMapping;
+    boost::shared_ptr<qana::QueryMapping> queryMapping;
     boost::shared_ptr<RestrList> restrictors;
 
     int chunkCount; //< -1: all, 0: none, N: #chunks

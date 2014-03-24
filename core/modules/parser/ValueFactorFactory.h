@@ -32,21 +32,26 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace query {
+    // Forward
+    class ValueFactor;
+}
+
 namespace parser {
 
 // Forward
 class ColumnRefNodeMap;
-class ValueFactor;
 
 /// ValueFactorFactory constructs ValueFactor instances from antlr nodes.
 class ValueFactorFactory {
 public:
     ValueFactorFactory(boost::shared_ptr<ColumnRefNodeMap> cMap);
-    boost::shared_ptr<ValueFactor> newFactor(antlr::RefAST a);
+    boost::shared_ptr<query::ValueFactor> newFactor(antlr::RefAST a);
 
 private:
-    boost::shared_ptr<ValueFactor> _newColumnFactor(antlr::RefAST t);
-    boost::shared_ptr<ValueFactor> _newSetFctSpec(antlr::RefAST expr);
+    boost::shared_ptr<query::ValueFactor> _newColumnFactor(antlr::RefAST t);
+    boost::shared_ptr<query::ValueFactor> _newSetFctSpec(antlr::RefAST expr);
 
     boost::shared_ptr<ColumnRefNodeMap> _columnRefNodeMap;
 };
