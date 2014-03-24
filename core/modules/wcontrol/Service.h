@@ -34,8 +34,7 @@ namespace wcontrol {
 }
 namespace wlog {
     class WLogger;
-}}}
-// End of forward declarations
+}}} // End of forward declarations
 
 
 namespace lsst {

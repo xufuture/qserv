@@ -32,6 +32,7 @@
 
 namespace lsst {
 namespace qserv {
+namespace qana {
 
 namespace query {
     // Forward

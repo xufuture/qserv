@@ -98,6 +98,6 @@ std::ostream& printList(std::ostream &os, char const* label, C const& c) {
     return os;
 }
 
-
 }}} // namesapce lsst::qserv::util
+
 #endif // LSST_QSERV_UTIL_COMMON_H

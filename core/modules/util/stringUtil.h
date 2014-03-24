@@ -110,4 +110,5 @@ public:
 };
 
 }}} // namesapce lsst::qserv::util
+
 #endif // LSST_QSERV_UTIL_STRINGUTIL_H

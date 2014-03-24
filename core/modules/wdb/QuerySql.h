@@ -44,8 +44,7 @@ namespace proto {
 }
 namespace wdb {
     class Task;
-}}}
-// End of forward declarations
+}}} // End of forward declarations
 
 
 namespace lsst {

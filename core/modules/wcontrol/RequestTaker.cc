@@ -56,7 +56,11 @@ RequestTaker::receive(Size offset, char const* buffer, Size bufferSize) {
 
 bool
 RequestTaker::complete() {
+<<<<<<< HEAD
     boost::shared_ptr<proto::TaskMsg> tm(new proto::TaskMsg());
+=======
+    boost::shared_ptr<TaskMsg> tm(new TaskMsg());
+>>>>>>> migrated to module-specific name spaces
     gio::ArrayInputStream input(_queryBuffer.getData(),
                                 _queryBuffer.getLength());
     gio::CodedInputStream coded(&input);

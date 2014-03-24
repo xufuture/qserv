@@ -34,8 +34,7 @@ namespace wlog {
 }
 namespace wsched {
     class ChunkDisk;
-}}}
-// End of forward declarations
+}}} // End of forward declarations
 
 
 namespace lsst {

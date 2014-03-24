@@ -38,7 +38,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace query {
+namespace qana {
 
 struct SpacedOutput {
     SpacedOutput(std::ostream& os_, std::string sep_=" ")
@@ -221,4 +221,4 @@ QueryTemplate::optimize() {
     //LOGGER_DBG << "now: " << outputString(em._entries) << std::endl;
 }
 
-}}} // namespace lsst::qserv::query
+}}} // namespace lsst::qserv::qana

@@ -67,5 +67,6 @@ private:
 };
 
 }}} // namespace lsst::qserv::util
+
 #endif // LSST_QSERV_UTIL_SUBSTITUTION_H
 

@@ -24,12 +24,11 @@
 
 #include <string>
 
-
 namespace lsst {
 namespace qserv {
 namespace xrdfs {
-namespace fs {
-        
+
+namespace fs {        
 
 FileClass
 computeFileClass(std::string const& filename) {

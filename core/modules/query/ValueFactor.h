@@ -106,3 +106,4 @@ public:
 }}} // namespace lsst::qserv::query
 
 #endif // LSST_QSERV_QUERY_VALUEFACTOR_H
+
