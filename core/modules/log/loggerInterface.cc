@@ -32,13 +32,13 @@ namespace log {
 
 void
 logger_threshold(int severity) {
-    lsst::qserv::Logger::Instance()
-        .setSeverityThreshold(static_cast<lsst::qserv::Logger::Severity>(severity));
+    Logger::Instance().setSeverityThreshold(
+                   static_cast<Logger::Severity>(severity));
 }
 
 void
 logger(int severity, std::string const& s) {
-    Logger::Instance(static_cast<lsst::qserv::Logger::Severity>(severity)) 
+    Logger::Instance(static_cast<Logger::Severity>(severity)) 
         << "<py> " << s << std::endl;
 }
 

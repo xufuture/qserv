@@ -42,16 +42,24 @@
 namespace lsst {
 namespace qserv {
 
+namespace mysql {
+    // Forward
+    class SqlConfig;
+}
+    
+namespace sql {
+    // Forward
+    class SqlConnection;
+}
+
 namespace xrdc {
     // Forward
     class PacketIter;
 } // namespace xrdc
 
-namespace merger {
-        
+namespace merger {        
+
 // Forward
-class SqlConfig;
-class SqlConnection;
 class SqlInsertIter;
 
 /// struct TableMergerError - value class for TableMerger error code.
@@ -139,8 +147,8 @@ private:
 
     TableMergerConfig _config;
     std::string _loadCmd;
-    boost::shared_ptr<SqlConfig> _sqlConfig;
-    boost::shared_ptr<SqlConnection> _sqlConn;
+    boost::shared_ptr<mysql::SqlConfig> _sqlConfig;
+    boost::shared_ptr<sql::SqlConnection> _sqlConn;
 
     std::string _mergeTable;
     TableMergerError _error;

@@ -26,6 +26,7 @@
 #include <string>
 namespace lsst {
 namespace qserv {
+namespace mysql {
 
 /// class SqlConfig : Value class for configuring the MySQL connection
 class SqlConfig {
@@ -46,6 +47,7 @@ public:
                       std::string const&, bool);
     std::string asString() const;
 };
-}} // namespace lsst::qserv
+
+}}} // namespace lsst::qserv::mysql
 
 #endif // LSST_QSERV_SQL_CONFIG_H

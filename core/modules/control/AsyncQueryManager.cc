@@ -57,6 +57,7 @@ namespace lsst {
 namespace qserv {
 namespace control {
 
+    
 // Local Helpers --------------------------------------------------
 namespace {
 

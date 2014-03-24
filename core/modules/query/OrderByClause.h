@@ -59,7 +59,7 @@ public:
 
 private:
     friend std::ostream& operator<<(std::ostream& os, OrderByTerm const& ob);
-    friend class ModFactory;
+    friend class parser::ModFactory;
 
     boost::shared_ptr<ValueExpr> _expr;
     Order _order;
@@ -89,7 +89,7 @@ public:
 
 private:
     friend std::ostream& operator<<(std::ostream& os, OrderByClause const& oc);
-    friend class ModFactory;
+    friend class parser::ModFactory;
 
     void _addTerm(OrderByTerm const& t) {_terms->push_back(t); }
     boost::shared_ptr<List> _terms;

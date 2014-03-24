@@ -42,7 +42,9 @@
 
 namespace lsst {
 namespace qserv {
-// forward
+namespace sql {
+
+// Forward
 class MySqlConnection;
 class SqlResults;
 
@@ -50,7 +52,7 @@ class SqlResultIter {
 public:
     typedef std::vector<std::string> List;
     SqlResultIter() {}
-    SqlResultIter(SqlConfig const& sc, std::string const& query);
+    SqlResultIter(mysql::SqlConfig const& sc, std::string const& query);
     SqlErrorObject& getErrorObject() { return _errObj; }
 
     List const& operator*() const { return _current; }
@@ -58,7 +60,7 @@ public:
     bool done() const; // Would like to relax LSST standard 3-4 for iterator classes
 
 private:
-    bool _setup(SqlConfig const& sqlConfig, std::string const& query);
+    bool _setup(mysql::SqlConfig const& sqlConfig, std::string const& query);
 
     boost::shared_ptr<MySqlConnection> _connection;
     List _current;
@@ -70,9 +72,9 @@ private:
 class SqlConnection {
 public:
     SqlConnection();
-    SqlConnection(SqlConfig const& sc, bool useThreadMgmt=false);
+    SqlConnection(mysql::SqlConfig const& sc, bool useThreadMgmt=false);
     ~SqlConnection();
-    void reset(SqlConfig const& sc, bool useThreadMgmt=false);
+    void reset(mysql::SqlConfig const& sc, bool useThreadMgmt=false);
     bool connectToDb(SqlErrorObject&);
     bool selectDb(std::string const& dbName, SqlErrorObject&);
     bool runQuery(char const* query, int qSize,
@@ -117,8 +119,8 @@ private:
     boost::shared_ptr<MySqlConnection> _connection;
 }; // class SqlConnection
 
+}}} // namespace lsst::qserv::sql
 
-}} // namespace lsst::qserv
 // Local Variables:
 // mode:c++
 // comment-column:0

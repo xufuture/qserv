@@ -31,7 +31,10 @@
 #include <boost/thread.hpp>
 #include <boost/utility.hpp>
 
-namespace lsst { namespace qserv {
+namespace lsst {
+namespace qserv {
+namespace mysql {
+
 // Forward
 class SqlConfig;
 
@@ -72,8 +75,7 @@ private:
     bool _useThreadMgmt;
 };
 
-}} // namespace lsst::qserv
-
+}}} // namespace lsst::qserv::mysql
 
 #endif // LSST_QSERV_MYSQLCONNECTION_H
 
