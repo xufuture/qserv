@@ -350,6 +350,7 @@ void
 configureSessionMerger(int session, merger::TableMergerConfig const& c) {
     getAsyncManager(session).configureMerger(c);
 }
+
 void 
 configureSessionMerger3(int session) {
     AsyncQueryManager& qm = getAsyncManager(session);
