@@ -28,6 +28,7 @@
 
 namespace lsst {
 namespace qserv {
+namespace sql {
 
 class SqlErrorObject {
 public:
@@ -52,7 +53,8 @@ private:
     std::string _errMsg;  // error message
 };
 
-}} // namespace lsst::qserv
+}}} // namespace lsst::qserv::sql
+
 // Local Variables:
 // mode:c++
 // comment-column:0

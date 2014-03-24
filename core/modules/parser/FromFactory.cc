@@ -59,7 +59,7 @@ inline RefAST walkToSiblingBefore(RefAST node, int typeId) {
 
 inline std::string 
 getSiblingStringBounded(RefAST left, RefAST right) {
-    CompactPrintVisitor<RefAST> p;
+    lsst::qserv::parser::CompactPrintVisitor<RefAST> p;
     for(; left.get(); left = left->getNextSibling()) {
         p(left);
         if(left == right) break;
@@ -98,7 +98,7 @@ public:
             if(nextCache.get()) {
                 current = nextCache;
             } else {
-                current = findSibling(current, c);
+                current = lsst::qserv::parser::findSibling(current, c);
                 if(current.get()) {
                     // Move to next value
                     current = current->getNextSibling();
@@ -112,7 +112,7 @@ public:
             if(!current) {
                 throw std::invalid_argument("Invalid _current in iteration");
             }
-            CompactPrintVisitor<antlr::RefAST> p;
+            lsst::qserv::parser::CompactPrintVisitor<antlr::RefAST> p;
             for(;current.get() && !c(current);
                 current = current->getNextSibling()) {
                 p(current);
@@ -162,7 +162,6 @@ namespace parser {
 ////////////////////////////////////////////////////////////////////////
 std::ostream& 
 operator<<(std::ostream& os, ParseAliasMap const& m) {
-    using ParseAliasMap;
     typedef ParseAliasMap::Miter Miter;
     os << "AliasMap fwd(";
     for(Miter it=m._map.begin(); it != m._map.end(); ++it) {
@@ -239,14 +238,14 @@ public:
         LOGGER_INF << *_aliases << std::endl;
 
     }
-    TableRefN::Ptr get() const {
+    query::TableRefN::Ptr get() const {
         if(_cursor->getType() != SqlSQL2TokenTypes::TABLE_REF) {
             throw std::logic_error("_cursor is not a TABLE_REF");
         }
         RefAST node = _cursor->getFirstChild();
         RefAST child;
 
-        TableRefN::Ptr tn;
+        query::TableRefN::Ptr tn;
         switch(node->getType()) {
         case SqlSQL2TokenTypes::TABLE_REF_AUX:
             child = node->getFirstChild();
@@ -292,19 +291,20 @@ private:
             _cursor = RefAST(); // Clear out cursor so that isDone == true
         }
     }
-    SimpleTableN* _processQualifiedName(RefAST n) const {
+    query::SimpleTableN* 
+    _processQualifiedName(RefAST n) const {
         RefAST qnStub = n;
         RefAST aliasN = _aliases->getAlias(qnStub);
         std::string alias;
         if(aliasN.get()) alias = aliasN->getText();
         QualifiedName qn(n->getFirstChild());
         if(qn.names.size() > 1) {
-            return new SimpleTableN(qn.getQual(1), qn.getName(), alias);
+            return new query::SimpleTableN(qn.getQual(1), qn.getName(), alias);
         } else {
-            return new SimpleTableN("", qn.getName(), alias);
+            return new query::SimpleTableN("", qn.getName(), alias);
         }
     }
-    TableRefN* _processSubquery(RefAST n) const {
+    query::TableRefN* _processSubquery(RefAST n) const {
         throw ParseException("Subqueries unsupported", n->getFirstChild());
     }
 
@@ -320,7 +320,7 @@ FromFactory::FromFactory(boost::shared_ptr<ParseAliasMap> aliases) :
         _aliases(aliases) {
 }
 
-boost::shared_ptr<FromList>
+boost::shared_ptr<query::FromList>
 FromFactory::getProduct() {
     return _list;
 }
@@ -335,23 +335,22 @@ FromFactory::attachTo(SqlSQL2Parser& p) {
 
 void
 FromFactory::_import(antlr::RefAST a) {
-    _list.reset(new FromList());
-    _list->_tableRefns.reset(new TableRefnList());
+    _list.reset(new query::FromList());
+    _list->_tableRefns.reset(new query::TableRefnList());
 
     // LOGGER_INF << "FROM starts with: " << a->getText()
     //           << " (" << a->getType() << ")" << std::endl;
     std::stringstream ss;
     //LOGGER_INF << "FROM indented: " << walkIndentedString(a) << std::endl;
     for(RefGenerator refGen(a, _aliases); !refGen.isDone(); refGen.next()) {
-        TableRefN::Ptr p = refGen.get();
+        query::TableRefN::Ptr p = refGen.get();
         ss << "Found ref:" ;
-        TableRefN& tn = *p;
+        query::TableRefN& tn = *p;
         ss << tn;
         _list->_tableRefns->push_back(p);
     }
     std::string s(ss.str());
     if(s.size() > 0) { LOGGER_INF << s << std::endl; }
 }
-
 
 }}} // namespace lsst::qserv::parser

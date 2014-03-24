@@ -48,7 +48,8 @@ namespace lsst {
 namespace qserv {
 namespace css {
 
-class CssInterface; // forward declaration
+// Forward
+class CssInterface;
     
 /** The class stores Qserv-specific metadata and state information from the
     Central State System.

@@ -50,7 +50,7 @@ public:
 
 private:
     friend std::ostream& operator<<(std::ostream& os, HavingClause const& h);
-    friend class ModFactory;
+    friend class parser::ModFactory;
     boost::shared_ptr<BoolTerm> _tree;
 };
 

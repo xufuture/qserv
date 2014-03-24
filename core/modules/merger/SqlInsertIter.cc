@@ -61,7 +61,8 @@ boost::regex makeNullInsertRegex(std::string const& tableName) {
 // Helpful debugging
 void printInserts(char const* buf, off_t bufSize,
                   std::string const& tableName)  {
-    for(SqlInsertIter i(buf, bufSize, tableName, true); !i.isDone();
+    for(lsst::qserv::merger::SqlInsertIter i(buf, bufSize, tableName, true);
+        !i.isDone();
         ++i) {
         std::cout << "Sql[" << tableName << "]: "
                    << (void*)i->first << "  --->  "
@@ -95,7 +96,7 @@ SqlInsertIter::SqlInsertIter(char const* buf, off_t bufSize,
     _init(buf, bufSize, tableName);
 }
 
-SqlInsertIter::SqlInsertIter(PacketIter::Ptr p,
+SqlInsertIter::SqlInsertIter(xrdc::PacketIter::Ptr p,
                              std::string const& tableName,
                              bool allowNull)
     : _allowNull(allowNull), _pacIterP(p) {
@@ -170,7 +171,7 @@ bool SqlInsertIter::_incrementFragment() {
     // Advance iterator.
     ++(*_pacIterP);
     if(_pacIterP->isDone()) return false; // Any more?
-    PacketIter::Value v = **_pacIterP;
+    xrdc::PacketIter::Value v = **_pacIterP;
     // Make sure there is room in the buffer
     BufOff keepSize = _pBufEnd - _pBufStart;
     BufOff needSize = v.second + keepSize;

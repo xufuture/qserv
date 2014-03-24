@@ -55,7 +55,7 @@ public:
 
 private:
     friend std::ostream& operator<<(std::ostream& os, GroupByTerm const& gb);
-    friend class ModFactory;
+    friend class parser::ModFactory;
 
     boost::shared_ptr<ValueExpr> _expr;
     std::string _collate;
@@ -75,7 +75,7 @@ public:
 
 private:
     friend std::ostream& operator<<(std::ostream& os, GroupByClause const& gc);
-    friend class ModFactory;
+    friend class parser::ModFactory;
 
     void _addTerm(GroupByTerm const& t) { _terms->push_back(t); }
     boost::shared_ptr<List> _terms;
