@@ -57,7 +57,7 @@ class ValueExprFactory;
 class ModFactory {
 public:
     // ANTLR handlers
-    friend class SelectFactory;
+    friend class query::SelectFactory;
     class GroupByH;
     friend class GroupByH;
     class OrderByH;
