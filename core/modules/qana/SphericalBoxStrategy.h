@@ -32,10 +32,16 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace query {
+    // Forward
+    class FromList;
+    class QueryContext;
+}
+    
 namespace qana {
 
-class FromList;
-class QueryContext;
+// Forward
 class QueryMapping;
 
 /// SphericalBoxStrategy is a class designed to abstract the
@@ -51,12 +57,12 @@ class QueryMapping;
 /// to a physical table name.
 class SphericalBoxStrategy {
 public:
-    SphericalBoxStrategy(FromList const& f,
-                         QueryContext& context);
+    SphericalBoxStrategy(query::FromList const& f,
+                         query::QueryContext& context);
     boost::shared_ptr<QueryMapping> getMapping();
-    void patchFromList(FromList& f);
+    void patchFromList(query::FromList& f);
     bool needsMultiple();
-    std::list<boost::shared_ptr<FromList> > computeNewFromLists();
+    std::list<boost::shared_ptr<query::FromList> > computeNewFromLists();
 
     static std::string makeSubChunkDbTemplate(std::string const& db);
     // Make full overlap for now.
@@ -66,7 +72,7 @@ public:
 
 private:
     class Impl;
-    void _import(FromList const& f);
+    void _import(query::FromList const& f);
 
     boost::shared_ptr<Impl> _impl;
 };

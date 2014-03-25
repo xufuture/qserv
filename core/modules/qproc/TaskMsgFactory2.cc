@@ -44,13 +44,13 @@ namespace lsst {
 namespace qserv {
 namespace qproc {
 
-void flattenScanTables(StringList& outputList,
-                       StringPairList const& scanTables) {
+void
+flattenScanTables(util::StringList& outputList,
+                  util::StringPairList const& scanTables) {
     std::string db;
     outputList.clear();
-    for(StringPairList::const_iterator i=scanTables.begin(),
-            e=scanTables.end();
-        i != e; ++i) {
+    for(util::StringPairList::const_iterator i=scanTables.begin(),
+        e=scanTables.end() ; i != e; ++i) {
         if(db.empty()) {
             db = i->first;
         } else if(db != i->first) {
@@ -109,9 +109,9 @@ TaskMsgFactory2::Impl::makeMsg(ChunkQuerySpec const& s,
     _taskMsg->set_session(_session);
     _taskMsg->set_db(s.db);
     // scanTables (for shared scans)
-    StringList sTables;
+    util::StringList sTables;
     flattenScanTables(sTables, s.scanTables);
-    for(StringList::const_iterator i=sTables.begin(), e=sTables.end();
+    for(util::StringList::const_iterator i=sTables.begin(), e=sTables.end();
         i != e; ++i) {
         _taskMsg->add_scantables(*i);
     }

@@ -32,6 +32,12 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace parser {
+    // Forward
+    class FromFactory;
+}
+
 namespace query {
 
 // FromList is a representation of SQL FROM.

@@ -35,12 +35,12 @@
 
 #include "qana/PluginNotFoundError.h"
 
-namespace qserv {
 namespace lsst {
+namespace qserv {
 namespace qana {
 
 namespace { // File-scope helpers
-typedef std::map<std::string, QueryPlugin::FactoryPtr> FactoryMap;
+    typedef std::map<std::string, lsst::qserv::qana::QueryPlugin::FactoryPtr> FactoryMap;
 
 //boost::once_flag factoryMapFlag = BOOST_ONCE_INIT;
 static boost::mutex factoryMapMutex;
