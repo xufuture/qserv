@@ -79,9 +79,9 @@ Container& tokenizeInto(std::string const& s,
 }
 
 template <class Container>
-std::map<typename Container::value_type,int>& fillMapFromKeys(Container const& c,
-                                                            std::map<typename Container::value_type, int>& e) {
-
+std::map<typename Container::value_type,int>& 
+fillMapFromKeys(Container const& c,
+                std::map<typename Container::value_type, int>& e) {
     typedef std::map<typename Container::value_type,int> Map;
     typename Container::const_iterator i;
     typename Container::const_iterator ie = c.end();

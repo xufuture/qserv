@@ -47,6 +47,12 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace parser {
+    // Forward
+    class WhereFactory;
+}   
+
 namespace query {
 
 class BoolTerm; // Forward
