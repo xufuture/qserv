@@ -33,8 +33,8 @@
 namespace test = boost::test_tools;
 
 using lsst::qserv::wdb::QuerySql;
-using lsst::qserv::qproc::TaskMsg_Subchunk;
-using lsst::qserv::qproc::TaskMsg_Fragment;
+using lsst::qserv::proto::TaskMsg_Subchunk;
+using lsst::qserv::proto::TaskMsg_Fragment;
 
 struct Fixture {
 
