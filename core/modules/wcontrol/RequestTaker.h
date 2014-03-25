@@ -31,21 +31,26 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace obsolete {
+    // Forward
+    class QservPath;
+}
+    
 namespace wcontrol {
 
-// Forward declarations
-class QservPath;
 
 class RequestTaker {
 public:
     typedef int64_t Size;
 
-    explicit RequestTaker(TaskAcceptor::Ptr acceptor, QservPath const& path);
+    explicit RequestTaker(wbase::TaskAcceptor::Ptr acceptor, 
+                          obsolete::QservPath const& path);
     bool receive(Size offset, char const* buffer, Size bufferSize);
     bool complete();
 private:
-    TaskAcceptor::Ptr _acceptor;
-    StringBuffer2 _queryBuffer;
+    wbase::TaskAcceptor::Ptr _acceptor;
+    wbase::StringBuffer2 _queryBuffer;
     std::string _db;
     int _chunk;
 };

@@ -27,15 +27,22 @@
 #include <string>
 #include <set>
 
+
+// Forward declarations
+namespace lsst {
+namespace qserv {
+namespace sql {
+    class SqlErrorObject;
+}
+namespace wlog {
+    class WLogger;
+}}}
+// End of forward declarations
+
 namespace lsst {
 namespace qserv {
 namespace wdb {
         
-// Forward
-class SqlErrorObject;
-class WLogger;
-
-////////////////////////////////////////////////////////////////////////
 class QueryPhyResult {
 public:
     typedef std::set<std::string> StringSet;
@@ -49,10 +56,10 @@ public:
 
     void reset();
 
-    bool performMysqldump(WLogger& log,
+    bool performMysqldump(wlog::WLogger& log,
                           std::string const& user,
                           std::string const& dumpFile,
-                          SqlErrorObject&);
+                          sql::SqlErrorObject&);
 
 private:
     void _mkdirP(std::string const& filePath);

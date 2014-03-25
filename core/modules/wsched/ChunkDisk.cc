@@ -60,7 +60,7 @@ namespace wsched {
 ////////////////////////////////////////////////////////////////////////
 
 /// @return chunkId of task
-inline int taskChunkId(Task const& e) {
+inline int taskChunkId(wcontrol::Task const& e) {
     assert(e.msg);
     assert(e.msg->has_chunkid());
     return e.msg->chunkid();

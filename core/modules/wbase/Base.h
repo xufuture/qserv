@@ -37,10 +37,15 @@ class XrdSfsAio;
 
 namespace lsst {
 namespace qserv {
+
+namespace proto {
+    // Forward
+    class TaskMsg;
+}
+    
 namespace wbase {
 
 // Forward:
-class TaskMsg;
 class StringBuffer;
 class StringBuffer2;
 
@@ -136,7 +141,7 @@ public:
     typedef boost::shared_ptr<TaskAcceptor> Ptr;
 
     TaskAcceptor() {}
-    virtual bool accept(boost::shared_ptr<TaskMsg> msg) = 0;
+    virtual bool accept(boost::shared_ptr<proto::TaskMsg> msg) = 0;
 };
 
 }}} // namespace lsst::qserv::wbase
