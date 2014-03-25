@@ -50,7 +50,7 @@ newExprFromAlias(std::string const& alias) {
     boost::shared_ptr<query::ColumnRef> cr(new query::ColumnRef("", "", alias));
     boost::shared_ptr<query::ValueFactor> vf;
     vf = query::ValueFactor::newColumnRefFactor(cr);
-    return ValueExpr::newSimple(vf);
+    return query::ValueExpr::newSimple(vf);
 }
 /// convertAgg build records for merge expressions from parallel expressions
 template <class C>
@@ -161,8 +161,10 @@ public:
 
     virtual void prepare() {}
 
-    virtual void applyLogical(query::SelectStmt& stmt, QueryContext&) {}
-    virtual void applyPhysical(QueryPlugin::Plan& p, QueryContext&);
+    virtual void applyLogical(query::SelectStmt& stmt, 
+                              query::QueryContext&) {}
+    virtual void applyPhysical(QueryPlugin::Plan& p, 
+                               query::QueryContext&);
 private:
     query::AggOp::Mgr _aMgr;
 };
@@ -202,7 +204,7 @@ registerPlugin registerAggregatePlugin;
 ////////////////////////////////////////////////////////////////////////
 void
 AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
-                               QueryContext&  context) {
+                               query::QueryContext&  context) {
     // For each entry in original's SelectList, modify the SelectList
     // for the parallel and merge versions.
     // Set hasMerge to true if aggregation is detected.
@@ -230,7 +232,7 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
                                         *mList.getValueExprList(),
                                         m);
     std::for_each(vlist->begin(), vlist->end(), ca);
-    QueryTemplate qt;
+    query::QueryTemplate qt;
     pList.renderTo(qt);
     LOGGER_INF << "pass: " << qt.dbgStr() << std::endl;
     qt.clear();

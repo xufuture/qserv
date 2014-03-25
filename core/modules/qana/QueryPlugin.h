@@ -37,12 +37,12 @@ namespace qserv {
 namespace query {
     // Forward 
     class SelectStmt;
+    class QueryContext;
 }
    
 namespace qana {
 
 // Forward
-class QueryContext;
 class QueryMapping;
 
 typedef std::list<boost::shared_ptr<query::SelectStmt> > SelectStmtList;
@@ -65,13 +65,13 @@ public:
     virtual void prepare() {}
 
     /// Apply the plugin's actions to the parsed, but not planned query
-    virtual void applyLogical(query::SelectStmt& stmt, QueryContext&) {}
+    virtual void applyLogical(query::SelectStmt& stmt, query::QueryContext&) {}
 
     /// Apply the plugins's actions to the concrete query plan.
-    virtual void applyPhysical(Plan& phy, QueryContext& context) {}
+    virtual void applyPhysical(Plan& phy, query::QueryContext& context) {}
 
     /// Apply the plugins's actions when coverage is known
-    virtual void applyFinal(QueryContext& context) {}
+    virtual void applyFinal(query::QueryContext& context) {}
 
     /// Lookup a factory for the named type of plugin and construct an instance
     static Ptr newInstance(std::string const& name);

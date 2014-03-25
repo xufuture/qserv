@@ -47,9 +47,14 @@
 
 namespace lsst {
 namespace qserv {
-namespace qproc {
 
-class SelectStmt; // forward
+namespace query {
+    // Forward
+    class SelectStmt;
+    class QueryContext;
+}
+
+namespace qproc {
 
 ///  QuerySession contains state and behavior for operating on user queries. It
 ///  contains much of the query analysis-side of AsyncQueryManager's
@@ -70,7 +75,7 @@ public:
     boost::shared_ptr<query::ConstraintVector> getConstraints() const;
     void addChunk(ChunkSpec const& cs);
 
-    SelectStmt const& getStmt() const { return *_stmt; }
+    query::SelectStmt const& getStmt() const { return *_stmt; }
 
     // Resulttable concept will be obsolete after we implement query result
     // marshalling/transfer (at which point, table dump and restore will also be
@@ -94,7 +99,7 @@ public:
     Iter cQueryEnd();
 
     // For test harnesses.
-    boost::shared_ptr<qana::QueryContext> dbgGetContext() { return _context; }
+    boost::shared_ptr<query::QueryContext> dbgGetContext() { return _context; }
 
 private:
     typedef std::list<qana::QueryPlugin::Ptr> PluginList;
@@ -113,11 +118,11 @@ private:
     // Fields
     boost::shared_ptr<css::Facade> _cssFacade;
     std::string _original;
-    boost::shared_ptr<qana::QueryContext> _context;
-    boost::shared_ptr<SelectStmt> _stmt;
+    boost::shared_ptr<query::QueryContext> _context;
+    boost::shared_ptr<query::SelectStmt> _stmt;
     /// Group of parallel statements (not a sequence)
-    std::list<boost::shared_ptr<SelectStmt> > _stmtParallel;
-    boost::shared_ptr<SelectStmt> _stmtMerge;
+    std::list<boost::shared_ptr<query::SelectStmt> > _stmtParallel;
+    boost::shared_ptr<query::SelectStmt> _stmtMerge;
     bool _hasMerge;
     std::string _tmpTable;
     std::string _resultTable;

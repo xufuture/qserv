@@ -33,11 +33,19 @@
 
 namespace lsst {
 namespace qserv {
-namespace qana {
 
-class ChunkSpec;
-class ChunkSpecSingle;
-class QueryTemplate;
+namespace query {
+    // Forward
+    class QueryTemplate;
+}
+
+namespace qproc {
+    // Forward
+    class ChunkSpec;
+    class ChunkSpecSingle;
+}
+
+namespace qana {
 
 /// QueryMapping is a value class that stores a mapping that can be
 /// consulted for a partitioning-strategy-agnostic query generation
@@ -68,8 +76,10 @@ public:
 
     QueryMapping();
 
-    std::string apply(ChunkSpec const& s, QueryTemplate const& t) const;
-    std::string apply(ChunkSpecSingle const& s, QueryTemplate const& t) const;
+    std::string apply(qproc::ChunkSpec const& s, 
+                      query::QueryTemplate const& t) const;
+    std::string apply(qproc::ChunkSpecSingle const& s, 
+                      query::QueryTemplate const& t) const;
 
     // Modifiers
     void insertSubChunkTable(std::string const& table) {
