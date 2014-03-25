@@ -82,8 +82,8 @@ std::string validateMysql(Config const& c) {
     if(!sc.isValid()) return "Invalid MySQL config:" + sc.asString();
 
     { // Check connection
-        SqlConnection scn(sc);
-        SqlErrorObject eo;
+        lsst::qserv::sql::SqlConnection scn(sc);
+        lsst::qserv::sql::SqlErrorObject eo;
         if(!scn.connectToDb(eo)) {
             return "Unable to connect to MySQL with config:" + sc.asString();
         }

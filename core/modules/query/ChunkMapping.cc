@@ -81,9 +81,9 @@ ChunkMapping::getMapReference(int chunk, int subChunk) {
 }
 
 void
-ChunkMapping::setFromMeta(ChunkMeta const& m) {
-    ChunkMeta::EntryList const& elist = m.getEntries();
-    typedef ChunkMeta::EntryList::const_iterator Citer;
+ChunkMapping::setFromMeta(qdisp::ChunkMeta const& m) {
+    qdisp::ChunkMeta::EntryList const& elist = m.getEntries();
+    typedef qdisp::ChunkMeta::EntryList::const_iterator Citer;
     Citer begin = elist.begin();
     Citer end = elist.end();
     for(Citer i = begin; i != end; ++i) {

@@ -42,10 +42,15 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace mysql {
+    // Forward
+    class MySqlConnection;
+}
+    
 namespace sql {
 
 // Forward
-class MySqlConnection;
 class SqlResults;
 
 class SqlResultIter {
@@ -62,7 +67,7 @@ public:
 private:
     bool _setup(mysql::SqlConfig const& sqlConfig, std::string const& query);
 
-    boost::shared_ptr<MySqlConnection> _connection;
+    boost::shared_ptr<mysql::MySqlConnection> _connection;
     List _current;
     SqlErrorObject _errObj;
     int _columnCount;
@@ -107,7 +112,7 @@ public:
     std::string getActiveDbName() const;
 
     // Static helpers
-    static void populateErrorObject(MySqlConnection& m, SqlErrorObject& o);
+    static void populateErrorObject(mysql::MySqlConnection& m, SqlErrorObject& o);
 
 private:
     friend class SqlResultIter;
@@ -116,7 +121,7 @@ private:
     bool _setErrorObject(SqlErrorObject&,
                          std::string const& details=std::string(""));
 
-    boost::shared_ptr<MySqlConnection> _connection;
+    boost::shared_ptr<mysql::MySqlConnection> _connection;
 }; // class SqlConnection
 
 }}} // namespace lsst::qserv::sql

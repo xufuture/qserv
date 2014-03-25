@@ -69,4 +69,4 @@ std::string StringHash::getSha256Hex(char const* buffer, int bufferSize) {
     return wrapHash<SHA256, SHA256_DIGEST_LENGTH>(buffer, bufferSize);
 }
 
-}} // namespace lsst::qserv::util
+}}} // namespace lsst::qserv::util

@@ -29,11 +29,13 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace mysql {
+    // Forward
+    class SqlConfig;
+}
+
 namespace wconfig {
-
-// Forward
-class SqlConfig;
-
 
 // The Config object provides a thin abstraction layer to shield code from
 // the details of how the qserv worker is configured.  It currently
@@ -46,7 +48,7 @@ public:
     std::string const& getString(std::string const& key) const;
     bool getIsValid() const { return _isValid; }
     std::string const& getError() const { return _error; }
-    SqlConfig const& getSqlConfig() const;
+    mysql::SqlConfig const& getSqlConfig() const;
 
 private:
     typedef std::map<std::string, std::string> StringMap;
@@ -57,7 +59,7 @@ private:
     StringMap _map;
     bool _isValid;
     std::string _error;
-    boost::shared_ptr<SqlConfig> _sqlConfig;
+    boost::shared_ptr<mysql::SqlConfig> _sqlConfig;
 };
 
 Config& getConfig();

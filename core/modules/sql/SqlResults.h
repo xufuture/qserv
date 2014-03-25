@@ -34,7 +34,10 @@
 #include <boost/utility.hpp>
 #include "sql/SqlErrorObject.h"
 
-namespace lsst { namespace qserv {
+namespace lsst {
+namespace qserv {
+namespace sql {
+
 class SqlResults : boost::noncopyable {
 public:
     SqlResults(bool discardImmediately=false)
@@ -64,10 +67,6 @@ private:
     bool _discardImmediately;
 };
 
-
-
-}} // namespace lsst::qserv
-
+}}} // namespace lsst::qserv:: sql
 
 #endif // LSST_QSERV_SQLRESULTS_H
-

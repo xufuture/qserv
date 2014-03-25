@@ -37,6 +37,13 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace parser {
+    // Forward
+    class ModFactory;
+}
+    
+        
 namespace query {
 
 /// OrderByTerm is an element of an OrderByClause
