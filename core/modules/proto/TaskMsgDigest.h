@@ -25,9 +25,14 @@
 
 namespace lsst {
 namespace qserv {
+namespace proto {
+
+// Forward
 class TaskMsg;
+
 std::string hashTaskMsg(TaskMsg const& m);
-}} // lsst::qserv
+
+}}} // lsst::qserv::proto
 
 #endif // LSST_QSERV_TASKMSGDIGEST_H
 
