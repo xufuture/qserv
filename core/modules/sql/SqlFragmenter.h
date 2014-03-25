@@ -21,11 +21,12 @@
  */
 #ifndef LSST_QSERV_WORKER_SQLFRAGMENTER_H
 #define LSST_QSERV_WORKER_SQLFRAGMENTER_H
+
 #include <string>
 
 namespace lsst {
 namespace qserv {
-namespace qsl {
+namespace sql {
 
 // SqlFragmenter: Simple iteration over pieces of a longer batch
 // of sql statements.

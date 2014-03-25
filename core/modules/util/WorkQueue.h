@@ -35,6 +35,7 @@
 
 namespace lsst {
 namespace qserv {
+namespace util {
 
 class WorkQueue {
 public:
@@ -79,6 +80,6 @@ private:
     RunnerDeque _runners;
 };
 
-}}  // namespace lsst::qserv
+}}}  // namespace lsst::qserv::util
 
 #endif // LSST_QSERV_WORKQUEUE_H

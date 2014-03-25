@@ -61,7 +61,7 @@ public:
     };
     // Wrap up a notification into a no-argument functor that can be queued.
     template <class C>
-    class ResultCallable : public WorkQueue::Callable {
+    class ResultCallable : public util::WorkQueue::Callable {
     public:
         typedef boost::shared_ptr<ResultCallable> Ptr;
         ResultCallable(C const& c, Item const& i) : _c(c), _i(i) {}
@@ -174,7 +174,7 @@ private:
     NewsMap _news;
     boost::mutex _signalsMutex;
     boost::mutex _newsMutex;
-    WorkQueue _workQueue;
+    util::WorkQueue _workQueue;
 };
 
 }}} // namespace lsst::qserv::wcontrol
