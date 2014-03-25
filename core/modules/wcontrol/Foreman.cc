@@ -63,7 +63,7 @@ public:
     virtual ~ForemanImpl();
 
     bool squashByHash(std::string const& hash);
-    bool accept(boost::shared_ptr<lsst::qserv::wcontrol::TaskMsg> msg);
+    bool accept(boost::shared_ptr<lsst::qserv::proto::TaskMsg> msg);
     class RunnerMgr;
     class Runner  {
     public:
@@ -87,7 +87,7 @@ public:
         void reportStart(wcontrol::Task::Ptr t);
         void signalDeath(Runner* r);
         wcontrol::Task::Ptr getNextTask(Runner* r, wcontrol::Task::Ptr previous);
-        WLogger::Ptr getLog();
+        wlog::WLogger::Ptr getLog();
         bool squashByHash(std::string const& hash);
 
     private:
@@ -109,7 +109,7 @@ private:
     Scheduler::Ptr _scheduler;
     RunnerDeque _runners;
     boost::scoped_ptr<RunnerMgr> _rManager;
-    WLogger::Ptr _log;
+    wlog::WLogger::Ptr _log;
 
     TaskQueuePtr _running;
 };
@@ -117,7 +117,7 @@ private:
 // Foreman factory function
 ////////////////////////////////////////////////////////////////////////
 Foreman::Ptr
-newForeman(Foreman::Scheduler::Ptr sched, WLogger::Ptr log) {
+newForeman(Foreman::Scheduler::Ptr sched, wlog::WLogger::Ptr log) {
     if(!sched) {
         sched.reset(new wsched::FifoScheduler());
     }
@@ -218,7 +218,8 @@ ForemanImpl::RunnerMgr::getNextTask(Runner* r, wcontrol::Task::Ptr previous) {
     return tq->front();
 }
 
-WLogger::Ptr ForemanImpl::RunnerMgr::getLog() {
+wlog::WLogger::Ptr 
+ForemanImpl::RunnerMgr::getLog() {
     return _f._log;
 }
 /// matchHash: helper functor that matches queries by hash.
@@ -288,13 +289,13 @@ void ForemanImpl::Runner::operator()() {
 // ForemanImpl
 ////////////////////////////////////////////////////////////////////////
 ForemanImpl::ForemanImpl(Scheduler::Ptr s,
-                         WLogger::Ptr log)
+                         wlog::WLogger::Ptr log)
     : _scheduler(s), _running(new TaskQueue()) {
     if(!log) {
         // Make basic logger.
-        _log.reset(new WLogger());
+        _log.reset(new wlog::WLogger());
     } else {
-        _log.reset(new WLogger(log));
+        _log.reset(new wlog::WLogger(log));
         _log->setPrefix("Foreman:");
     }
     _rManager.reset(new RunnerMgr(*this));
@@ -326,7 +327,7 @@ bool ForemanImpl::squashByHash(std::string const& hash) {
 }
 
 bool
-ForemanImpl::accept(boost::shared_ptr<lsst::qserv::qproc::TaskMsg> msg) {
+ForemanImpl::accept(boost::shared_ptr<proto::TaskMsg> msg) {
     // Pass to scheduler.
     assert(_scheduler);
     wcontrol::Task::Ptr t(new wcontrol::Task(msg));

@@ -34,12 +34,18 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 
+
+// Forward declarations
+namespace lsst {
+namespace qserv {
+namespace wlog {
+    class WLogger;
+}}} // End of forward declarations
+
+
 namespace lsst {
 namespace qserv {
 namespace wpublish {
-
-// Forward
-class WLogger;
 
 
 class MySqlExportMgr {
@@ -50,7 +56,7 @@ public:
     typedef std::map<int,StringSet> ChunkMap;
     typedef std::map<std::string, ChunkMap> ExistMap;
 
-    MySqlExportMgr(std::string const& name, WLogger& log)
+    MySqlExportMgr(std::string const& name, wlog::WLogger& log)
         : _name(name), _log(log) {
         _init();
     }
@@ -71,8 +77,7 @@ private:
     void _init();
     ExistMap _existMap;
     std::string _name;
-    WLogger& _log;
-
+    wlog::WLogger& _log;
 };
 
 }}} // namespace lsst::qserv::wpublish

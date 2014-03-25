@@ -33,11 +33,11 @@
 namespace test = boost::test_tools;
 
 
-Task::Ptr makeTask(boost::shared_ptr<lsst::qserv::TaskMsg> tm) {
+Task::Ptr makeTask(boost::shared_ptr<lsst::qserv::proto::TaskMsg> tm) {
     return Task::Ptr(new Task(tm));
 }
 struct SchedulerFixture {
-    typedef boost::shared_ptr<lsst::qserv::TaskMsg> TaskMsgPtr;
+    typedef boost::shared_ptr<lsst::qserv::proto::TaskMsg> TaskMsgPtr;
 
     SchedulerFixture(void)
         : fs(1) {
@@ -48,13 +48,13 @@ struct SchedulerFixture {
     ~SchedulerFixture(void) { }
 
     TaskMsgPtr newTaskMsg(int seq) {
-        lsst::qserv::TaskMsg* t;
-        t = new lsst::qserv::TaskMsg();
+        lsst::qserv::proto::TaskMsg* t;
+        t = new lsst::qserv::proto::TaskMsg();
         t->set_session(123456);
         t->set_chunkid(20 + seq);
         t->set_db("elephant");
         for(int i=0; i < 3; ++i) {
-            lsst::qserv::TaskMsg::Fragment* f = t->add_fragment();
+            lsst::qserv::proto::TaskMsg::Fragment* f = t->add_fragment();
             f->add_query("Hello, this is a query.");
             f->mutable_subchunks()->add_id(100+i);
             f->set_resulttable("r_341");

@@ -36,7 +36,7 @@
 
 namespace {
     void updateSubchunks(std::string const& s,
-                         Task::Fragment& f) {
+                         lsst::qserv::wcontrol::Task::Fragment& f) {
         // deprecated though...
         f.mutable_subchunks()->clear_id();
         std::stringstream ss;
@@ -54,7 +54,7 @@ namespace {
     }
 
     void updateResultTables(std::string const& script,
-                            Task::Fragment& f) {
+                            lsst::qserv::wcontrol::Task::Fragment& f) {
         f.clear_resulttable();
         // Find resultTable prefix
         char const prefix[] = "-- RESULTTABLES:";
@@ -72,8 +72,9 @@ namespace {
         f.set_resulttable(tables);
     }
 
-    std::ostream& dump(std::ostream& os,
-                       lsst::qserv::TaskMsg_Fragment const& f) {
+    std::ostream& 
+    dump(std::ostream& os,
+         lsst::qserv::proto::TaskMsg_Fragment const& f) {
         os << "frag: "
            << "q=";
         for(int i=0; i < f.query_size(); ++i) {
@@ -116,14 +117,14 @@ Task::ChunkIdGreater::operator()(Task::Ptr const& x, Task::Ptr const& y) {
 std::string const 
 Task::defaultUser = "qsmaster";
 
-Task::Task(ScriptMeta const& s, std::string const& user_) {
-    TaskMsgPtr t(new TaskMsg());
+Task::Task(wbase::ScriptMeta const& s, std::string const& user_) {
+    TaskMsgPtr t(new proto::TaskMsg());
     // Try to force non copy-on-write
     hash.assign(s.hash.c_str());
     dbName.assign(s.dbName.c_str());
     resultPath.assign(s.resultPath.c_str());
     t->set_chunkid(s.chunkId);
-    lsst::qserv::TaskMsg::Fragment* f = t->add_fragment();
+    proto::TaskMsg::Fragment* f = t->add_fragment();
     updateSubchunks(s.script, *f);
     updateResultTables(s.script, *f);
     f->add_query(s.script);
@@ -135,16 +136,16 @@ Task::Task(ScriptMeta const& s, std::string const& user_) {
 Task::Task(Task::TaskMsgPtr t, std::string const& user_) {
     hash = hashTaskMsg(*t);
     dbName = "q_" + hash;
-    resultPath = hashToResultPath(hash);
+    resultPath = wbase::hashToResultPath(hash);
     // Try to force non copy-on-write
-    msg.reset(new TaskMsg(*t));
+    msg.reset(new proto::TaskMsg(*t));
     user = user_;
     needsCreate = true;
     timestr[0] = '\0';
 }
 
 std::ostream& operator<<(std::ostream& os, Task const& t) {
-    TaskMsg& m = *t.msg;
+    proto::TaskMsg& m = *t.msg;
     os << "Task: "
        << "msg: session=" << m.session()
        << " chunk=" << m.chunkid()
