@@ -54,7 +54,7 @@
 ////////////////////////////////////////////////////////////////////////
 namespace {
 template <typename T>
-inline void renderTemplate(QueryTemplate& qt,
+inline void renderTemplate(lsst::qserv::query::QueryTemplate& qt,
                            char const prefix[],
                            boost::shared_ptr<T> t) {
     if(t.get()) {

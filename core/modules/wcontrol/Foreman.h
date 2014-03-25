@@ -60,7 +60,7 @@ namespace wcontrol {
 class WLogger;
 
 
-class Foreman : public TaskAcceptor {
+class Foreman : public wbase::TaskAcceptor {
 public:
     typedef boost::shared_ptr<Foreman> Ptr;
 

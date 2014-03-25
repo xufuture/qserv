@@ -34,11 +34,16 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace wdb {
+    // Forward
+    class TaskMsg_Fragment;
+}
+        
 namespace wcontrol {
 
-// forward
+// Forward
 class TaskMsg;
-class TaskMsg_Fragment;
 class ScriptMeta;
 
 struct Task {
@@ -46,7 +51,7 @@ public:
     static std::string const defaultUser;
 
     typedef boost::shared_ptr<Task> Ptr;
-    typedef lsst::qserv::TaskMsg_Fragment Fragment;
+    typedef wdb::TaskMsg_Fragment Fragment;
     typedef boost::shared_ptr<Fragment> FragmentPtr;
     typedef boost::shared_ptr<TaskMsg> TaskMsgPtr;
 

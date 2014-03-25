@@ -33,7 +33,10 @@
 #include "mysql/MySqlConnection.h"
 #include "sql/SqlResults.h"
 
-using namespace lsst::qserv;
+namespace lsst {
+namespace qserv {
+namespace sql {
+
 
 namespace { 
 void
@@ -84,7 +87,7 @@ SqlResultIter::done() const {
 bool
 SqlResultIter::_setup(mysql::SqlConfig const& sqlConfig, std::string const& query) {
     _columnCount = 0;
-    _connection.reset(new MySqlConnection(sqlConfig, true));
+    _connection.reset(new mysql::MySqlConnection(sqlConfig, true));
     if(!_connection->connect()) {
         populateErrorObject(*_connection, _errObj);
         return false;
@@ -104,12 +107,12 @@ SqlConnection::SqlConnection()
 }
 
 SqlConnection::SqlConnection(mysql::SqlConfig const& sc, bool useThreadMgmt)
-    : _connection(new MySqlConnection(sc, useThreadMgmt)) {
+    : _connection(new mysql::MySqlConnection(sc, useThreadMgmt)) {
 }
 
 void
 SqlConnection::reset(mysql::SqlConfig const& sc, bool useThreadMgmt) {
-    _connection.reset(new MySqlConnection(sc, useThreadMgmt));
+    _connection.reset(new mysql::MySqlConnection(sc, useThreadMgmt));
 }
 
 SqlConnection::~SqlConnection() {
@@ -381,3 +384,5 @@ SqlConnection::_setErrorObject(SqlErrorObject& errObj,
     }
     return false;
 }
+
+}}} // namespace lsst::qserv::sql

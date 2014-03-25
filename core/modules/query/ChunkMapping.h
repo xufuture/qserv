@@ -49,7 +49,7 @@ namespace query {
 //
 class ChunkMapping {
 public:
-    typedef StringMap Map;
+    typedef util::StringMap Map;
     typedef Map::value_type MapValue;
 
     ChunkMapping() :_subPrefix("_sc") {}

@@ -31,6 +31,12 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace parser {
+    // Forward
+    class ModFactory;
+}
+
 namespace query {
 
 class QueryTemplate;

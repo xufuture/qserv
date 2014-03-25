@@ -61,11 +61,11 @@ public:
     QueryRunnerArg() {}
 
     QueryRunnerArg(boost::shared_ptr<WLogger> log_,
-                   Task::Ptr task_,
+                   wcontrol::Task::Ptr task_,
                    std::string overrideDump_=std::string())
         : log(log_), task(task_), overrideDump(overrideDump_) { }
     boost::shared_ptr<WLogger> log;
-    Task::Ptr task;
+    wcontrol::Task::Ptr task;
     std::string overrideDump;
 };
 class ArgFunc {
@@ -80,7 +80,7 @@ class QueryRunner {
 // write a new one to leverage the new xrootd interface and new result
 // transfer. ResultTracker may be eliminated.
 public:
-    typedef ResultTracker<std::string, ResultError> Tracker;
+    typedef wcontrol::ResultTracker<std::string, wcontrol::ResultError> Tracker;
     QueryRunner(QueryRunnerArg const& a);
     ~QueryRunner();
     bool operator()(); // exec and loop as long as there are queries
@@ -102,7 +102,7 @@ private:
 
     bool _act();
     std::string _getDumpTableList(std::string const& script);
-    bool _runTask(Task::Ptr t);
+    bool _runTask(wcontrol::Task::Ptr t);
     bool _runFragment(SqlConnection& sqlConn,
                       QuerySql const& qSql);
     void _buildSubchunkScripts(std::string const& script,
@@ -118,15 +118,15 @@ private:
     std::string _getErrorString() const;
     boost::shared_ptr<ArgFunc> getResetFunc();
     bool _checkPoisoned();
-    boost::shared_ptr<CheckFlag> _makeAbort();
+    boost::shared_ptr<wbase::CheckFlag> _makeAbort();
     bool _poisonCleanup();
 
     // Fields
     boost::shared_ptr<WLogger> _log;
-    SqlErrorObject _errObj;
+    sql::SqlErrorObject _errObj;
     std::string _user;
     boost::shared_ptr<QueryPhyResult> _pResult;
-    Task::Ptr _task;
+    wcontrol::Task::Ptr _task;
     std::string _scriptId;
     boost::shared_ptr<boost::mutex> _poisonedMutex;
     StringDeque _poisoned;

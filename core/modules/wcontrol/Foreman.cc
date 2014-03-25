@@ -32,7 +32,6 @@
 #include <boost/make_shared.hpp>
 #include <boost/scoped_ptr.hpp>
 
-// Pkg: lsst::qserv::worker
 #include "wsched/FifoScheduler.h"
 #include "wdb/QueryRunner.h"
 #include "wbase/Base.h"
@@ -49,12 +48,12 @@ namespace {
         q.erase(i);
         return true;
     }
-}
+} // annonymous namespace
 
 namespace lsst {
-namespase qserv {
+namespace qserv {
 namespace control {
-    
+
 ////////////////////////////////////////////////////////////////////////
 // ForemanImpl declaration
 ////////////////////////////////////////////////////////////////////////

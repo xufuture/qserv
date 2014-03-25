@@ -88,7 +88,7 @@ WorkQueue::~WorkQueue() {
 }
 
 void
-WorkQueue::add(boost::shared_ptr<lsst::qserv::WorkQueue::Callable> c) {
+WorkQueue::add(boost::shared_ptr<WorkQueue::Callable> c) {
     boost::lock_guard<boost::mutex> lock(_mutex);
     if(_isDead && !isPoison(c.get())) {
         //std::cerr << "Queue refusing work: dead" << std::endl;
@@ -111,7 +111,7 @@ WorkQueue::cancelQueued() {
     }
 }
 
-boost::shared_ptr<lsst::qserv::WorkQueue::Callable>
+boost::shared_ptr<WorkQueue::Callable>
 WorkQueue::getNextCallable() {
     boost::unique_lock<boost::mutex> lock(_mutex);
     while(_queue.empty()) {
@@ -167,7 +167,7 @@ WorkQueue::_dropQueue(bool final) {
 //////////////////////////////////////////////////////////////////////
 
 namespace {
-class MyCallable : public WorkQueue::Callable {
+class MyCallable : public lsst::qserv::util::WorkQueue::Callable {
 public:
     typedef boost::shared_ptr<MyCallable> Ptr;
 
@@ -202,7 +202,7 @@ void test() {
     //ts.tv_sec = 10;
     //ts.tv_nsec=0;
     cout << "main started" << endl;
-    lsst::qserv::WorkQueue wq(10);
+    lsst::qserv::util::WorkQueue wq(10);
     cout << "wq started " << endl;
     for(int i=0; i < 50; ++i) {
         wq.add(MyCallable::Ptr(new MyCallable(i, 0.2)));
