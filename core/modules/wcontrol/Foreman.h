@@ -52,13 +52,17 @@
 #include "wbase/Base.h"
 #include "wcontrol/Task.h"
 
+// Forward declarations
+namespace lsst {
+namespace qserv {
+namespace wlog {
+    class WLogger;
+}}}
+// End of forward declarations
+
 namespace lsst {
 namespace qserv {
 namespace wcontrol {
-
-// Forward
-class WLogger;
-
 
 class Foreman : public wbase::TaskAcceptor {
 public:
@@ -90,14 +94,15 @@ public:
 
     virtual bool squashByHash(std::string const& hash) {}
 
-    virtual bool accept(boost::shared_ptr<TaskMsg> msg) { return false; }
+    virtual bool accept(boost::shared_ptr<proto::TaskMsg> msg) { return false; }
     virtual ~Foreman() {}
 
 protected:
     explicit Foreman() {}
 };
 
-Foreman::Ptr newForeman(Foreman::Scheduler::Ptr s, boost::shared_ptr<WLogger> log);
+    Foreman::Ptr 
+    newForeman(Foreman::Scheduler::Ptr s, boost::shared_ptr<wlog::WLogger> log);
 
 }}}  // namespace lsst::qserv::wcontrol
 

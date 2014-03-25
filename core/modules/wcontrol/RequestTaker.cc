@@ -43,7 +43,8 @@ namespace lsst {
 namespace qserv {
 namespace wcontrol {
 
-RequestTaker::RequestTaker(TaskAcceptor::Ptr acceptor, QservPath const& path)
+RequestTaker::RequestTaker(wbase::TaskAcceptor::Ptr acceptor, 
+                           obsolete::QservPath const& path)
     : _acceptor(acceptor), _chunk(path.chunk()), _db(path.db()) {
 }
 
@@ -55,7 +56,7 @@ RequestTaker::receive(Size offset, char const* buffer, Size bufferSize) {
 
 bool
 RequestTaker::complete() {
-    boost::shared_ptr<TaskMsg> tm(new TaskMsg());
+    boost::shared_ptr<proto::TaskMsg> tm(new proto::TaskMsg());
     gio::ArrayInputStream input(_queryBuffer.getData(),
                                 _queryBuffer.getLength());
     gio::CodedInputStream coded(&input);

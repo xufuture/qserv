@@ -45,26 +45,37 @@
 #include "wcontrol/Task.h"
 #include "wcontrol/ResultTracker.h"
 
+
+// Forward declarations
 namespace lsst {
 namespace qserv {
-namespace wdb {        
+namespace sql {
+    class SqlConnection;
+}
+namespace wdb {
+    class QuerySql;
+    class QueryPhyResult;
+}
+namespace wlog {
+    class WLogger;
+}}}
+// End of forward declarations
 
-// Forward
-class SqlConnection;
-class WLogger;
-class QuerySql;
-class QueryPhyResult;
+
+namespace lsst {
+namespace qserv {
+namespace wdb {
 
 ////////////////////////////////////////////////////////////////////////
 struct QueryRunnerArg {
 public:
     QueryRunnerArg() {}
 
-    QueryRunnerArg(boost::shared_ptr<WLogger> log_,
+    QueryRunnerArg(boost::shared_ptr<wlog::WLogger> log_,
                    wcontrol::Task::Ptr task_,
                    std::string overrideDump_=std::string())
         : log(log_), task(task_), overrideDump(overrideDump_) { }
-    boost::shared_ptr<WLogger> log;
+    boost::shared_ptr<wlog::WLogger> log;
     wcontrol::Task::Ptr task;
     std::string overrideDump;
 };
@@ -103,13 +114,13 @@ private:
     bool _act();
     std::string _getDumpTableList(std::string const& script);
     bool _runTask(wcontrol::Task::Ptr t);
-    bool _runFragment(SqlConnection& sqlConn,
-                      QuerySql const& qSql);
+    bool _runFragment(sql::SqlConnection& sqlConn,
+                      wdb::QuerySql const& qSql);
     void _buildSubchunkScripts(std::string const& script,
                                std::string& build, std::string& cleanup);
-    bool _prepareAndSelectResultDb(SqlConnection& sqlConn,
+    bool _prepareAndSelectResultDb(sql::SqlConnection& sqlConn,
                                    std::string const& dbName=std::string());
-    bool _prepareScratchDb(SqlConnection& sqlConn);
+    bool _prepareScratchDb(sql::SqlConnection& sqlConn);
     bool _performMysqldump(std::string const& dbName,
                            std::string const& dumpFile,
                            std::string const& tables);
@@ -122,10 +133,10 @@ private:
     bool _poisonCleanup();
 
     // Fields
-    boost::shared_ptr<WLogger> _log;
+    boost::shared_ptr<wlog::WLogger> _log;
     sql::SqlErrorObject _errObj;
     std::string _user;
-    boost::shared_ptr<QueryPhyResult> _pResult;
+    boost::shared_ptr<wdb::QueryPhyResult> _pResult;
     wcontrol::Task::Ptr _task;
     std::string _scriptId;
     boost::shared_ptr<boost::mutex> _poisonedMutex;

@@ -32,28 +32,32 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 
+
+// Forward declarations
 namespace lsst {
 namespace qserv {
-
-namespace wdb {
-    // Forward
-    class TaskMsg_Fragment;
+namespace wbase {
+    class ScriptMeta;
 }
-        
-namespace wcontrol {
+namespace proto {
+    class TaskMsg;
+    class TaskMsg_Fragment;
+}}}
+// End of forward declarations
 
-// Forward
-class TaskMsg;
-class ScriptMeta;
+
+namespace lsst {
+namespace qserv {        
+namespace wcontrol {
 
 struct Task {
 public:
     static std::string const defaultUser;
 
     typedef boost::shared_ptr<Task> Ptr;
-    typedef wdb::TaskMsg_Fragment Fragment;
+    typedef proto::TaskMsg_Fragment Fragment;
     typedef boost::shared_ptr<Fragment> FragmentPtr;
-    typedef boost::shared_ptr<TaskMsg> TaskMsgPtr;
+    typedef boost::shared_ptr<proto::TaskMsg> TaskMsgPtr;
 
     struct ChunkEqual {
         bool operator()(Task::Ptr const& x, Task::Ptr const& y);
@@ -63,7 +67,7 @@ public:
     };
 
     explicit Task() {}
-    explicit Task(ScriptMeta const& s, std::string const& user_=defaultUser);
+    explicit Task(wbase::ScriptMeta const& s, std::string const& user_=defaultUser);
     explicit Task(TaskMsgPtr t, std::string const& user_=defaultUser);
 
     TaskMsgPtr msg;

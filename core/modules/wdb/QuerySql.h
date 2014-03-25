@@ -35,20 +35,28 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 
+
+// Forward declarations
+namespace lsst {
+namespace qserv {
+namespace proto {
+    class TaskMsg_Fragment;
+}
+namespace wdb {
+    class Task;
+}}}
+// End of forward declarations
+
+
 namespace lsst {
 namespace qserv {
 namespace wdb {
-
-// Forward        
-class TaskMsg_Fragment;
-class Task;
 
 class QuerySql {
 public:
     typedef std::deque<std::string> StringList;
     QuerySql() {}
-    typedef lsst::qserv::TaskMsg_Fragment Fragment;
-
+    typedef lsst::qserv::proto::TaskMsg_Fragment Fragment;
 
     StringList buildList;
     StringList executeList; // Consider using SqlFragmenter to break this up into fragments.
