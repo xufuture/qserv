@@ -32,6 +32,13 @@
 
 namespace lsst {
 namespace qserv {
+
+namespace query {
+    // Forward
+    class FromList;
+    class QueryContext;
+}
+    
 namespace qana {
 
 namespace query {
