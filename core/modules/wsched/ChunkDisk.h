@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_CHUNKDISK_H
-#define LSST_QSERV_WORKER_CHUNKDISK_H
+#ifndef LSST_QSERV_WSCHED_CHUNKDISK_H
+#define LSST_QSERV_WSCHED_CHUNKDISK_H
  /**
   * @file ChunkDisk.h
   *
@@ -135,4 +135,4 @@ private:
 
 }}} // namespace lsst::qserv::wsched
 
-#endif // LSST_QSERV_WORKER_CHUNKDISK_H
+#endif // LSST_QSERV_WSCHED_CHUNKDISK_H

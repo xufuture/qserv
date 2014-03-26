@@ -28,8 +28,8 @@
 // the filesystem.
 
 
-#ifndef LSST_QSERV_WORKER_QSERVOSS_H
-#define LSST_QSERV_WORKER_QSERVOSS_H
+#ifndef LSST_QSERV_XRDOSS_QSERVOSS_H
+#define LSST_QSERV_XRDOSS_QSERVOSS_H
 #include "XrdOss/XrdOss.hh"
 #include <deque>
 #include <set>
@@ -122,4 +122,4 @@ private:
 
 }}} // namespace lsst::qserv::xrdoss
 
-#endif //  LSST_QSERV_WORKER_QSERVOSS_H
+#endif //  LSST_QSERV_XRDOSS_QSERVOSS_H

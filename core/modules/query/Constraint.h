@@ -19,8 +19,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_CONSTRAINT_H
-#define LSST_QSERV_MASTER_CONSTRAINT_H
+#ifndef LSST_QSERV_QUERY_CONSTRAINT_H
+#define LSST_QSERV_QUERY_CONSTRAINT_H
 /**
   * @file
   *
@@ -76,4 +76,4 @@ private:
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_CONSTRAINT_H
+#endif // LSST_QSERV_QUERY_CONSTRAINT_H

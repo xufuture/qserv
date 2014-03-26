@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_XRDPRINTER_H
-#define LSST_QSERV_WORKER_XRDPRINTER_H
+#ifndef LSST_QSERV_XRDFS_XRDPRINTER_H
+#define LSST_QSERV_XRDFS_XRDPRINTER_H
 #include "wlog/WLogger.h"
 #include "XrdSys/XrdSysLogger.hh"
 #include "XrdSys/XrdSysError.hh"
@@ -42,4 +42,4 @@ public:
 
 }}} // namespace lsst::qserv::xrdfs
 
-#endif // LSST_QSERV_WORKER_XRDPRINTER_H
+#endif // LSST_QSERV_XRDFS_XRDPRINTER_H

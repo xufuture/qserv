@@ -27,8 +27,8 @@
 /// coherent layer that abstracts the rest of qserv from
 /// xrootd-specific semantics.
 
-#ifndef LSST_QSERV_MASTER_XRDFILE_H
-#define LSST_QSERV_MASTER_XRDFILE_H
+#ifndef LSST_QSERV_XRDC_XRDFILE_H
+#define LSST_QSERV_XRDC_XRDFILE_H
 
 #include <string>
 
@@ -82,4 +82,4 @@ XrdTransResult xrdOpenWriteReadSave(const char *path,
 
 }}} // namespace lsst::qserv::xrdc
 
-#endif // #ifndef LSST_QSERV_MASTER_XRDFILE_H
+#endif // #ifndef LSST_QSERV_XRDC_XRDFILE_H

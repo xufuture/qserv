@@ -20,8 +20,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_MASTER_CHUNKMAPPING_H
-#define LSST_QSERV_MASTER_CHUNKMAPPING_H
+#ifndef LSST_QSERV_QUERY_CHUNKMAPPING_H
+#define LSST_QSERV_QUERY_CHUNKMAPPING_H
 
 // C++
 #include <map>
@@ -86,4 +86,4 @@ private:
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_CHUNKMAPPING_H
+#endif // LSST_QSERV_QUERY_CHUNKMAPPING_H

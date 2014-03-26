@@ -22,8 +22,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_MASTER_XROOTD_H
-#define LSST_QSERV_MASTER_XROOTD_H
+#ifndef LSST_QSERV_UTIL_XROOTD_H
+#define LSST_QSERV_UTIL_XROOTD_H
 
 
 // xrootd.h : consolidates xrootd/lower-level helper functions (i.e.,
@@ -40,5 +40,5 @@ std::string makeUrl(char const* hostport, std::string const& path);
 
 }}} // namespace lsst::qserv::util
 
-#endif // LSST_QSERV_MASTER_XROOTD_H
+#endif // LSST_QSERV_UTIL_XROOTD_H
 

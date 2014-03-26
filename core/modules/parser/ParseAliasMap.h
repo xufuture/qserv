@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_PARSEALIASMAP_H
-#define LSST_QSERV_MASTER_PARSEALIASMAP_H
+#ifndef LSST_QSERV_PARSER_PARSEALIASMAP_H
+#define LSST_QSERV_PARSER_PARSEALIASMAP_H
 /**
   * @file ParseAliasMap.h
   *
@@ -83,4 +83,4 @@ std::ostream& operator<<(std::ostream& os, ParseAliasMap const& m);
 
 }}} // namespace lsst::qserv::parser
 
-#endif // LSST_QSERV_MASTER_PARSEALIASMAP_H
+#endif // LSST_QSERV_PARSER_PARSEALIASMAP_H

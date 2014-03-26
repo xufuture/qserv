@@ -25,8 +25,8 @@
 // (over-the-wire) additional concrete info related to physical
 // execution conditions.
 /// @author Daniel L. Wang (danielw)
-#ifndef LSST_QSERV_WORKER_TASK_H
-#define LSST_QSERV_WORKER_TASK_H
+#ifndef LSST_QSERV_WCONTROL_TASK_H
+#define LSST_QSERV_WCONTROL_TASK_H
 
 #include <deque>
 #include <string>
@@ -87,4 +87,4 @@ typedef boost::shared_ptr<TaskQueue> TaskQueuePtr;
 
 }}} // namespace lsst::qserv::wcontrol
 
-#endif // LSST_QSERV_WORKER_TASK_H
+#endif // LSST_QSERV_WCONTROL_TASK_H

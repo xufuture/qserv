@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_QUERYPLUGIN_H
-#define LSST_QSERV_MASTER_QUERYPLUGIN_H
+#ifndef LSST_QSERV_QANA_QUERYPLUGIN_H
+#define LSST_QSERV_QANA_QUERYPLUGIN_H
 /**
   * @file
   *
@@ -113,4 +113,4 @@ public:
 
 }}} // namespace lsst::qserv::qana
 
-#endif // LSST_QSERV_MASTER_QUERYPLUGIN_H
+#endif // LSST_QSERV_QANA_QUERYPLUGIN_H

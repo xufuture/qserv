@@ -21,8 +21,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_WORKER_CONFIG_H
-#define LSST_QSERV_WORKER_CONFIG_H
+#ifndef LSST_QSERV_WCONFIG_CONFIG_H
+#define LSST_QSERV_WCONFIG_CONFIG_H
 #include <map>
 #include <string>
 #include <boost/shared_ptr.hpp>
@@ -66,4 +66,4 @@ Config& getConfig();
 
 }}} // namespace qserv::core::wconfig
 
-#endif // LSST_QSERV_WORKER_CONFIG_H
+#endif // LSST_QSERV_WCONFIG_CONFIG_H

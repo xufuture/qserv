@@ -21,8 +21,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_MASTER_AGGOP_H
-#define LSST_QSERV_MASTER_AGGOP_H
+#ifndef LSST_QSERV_QUERY_AGGOP_H
+#define LSST_QSERV_QUERY_AGGOP_H
 /**
   * @file AggOp.h
   *
@@ -82,4 +82,4 @@ private:
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_AGGOP_H
+#endif // LSST_QSERV_QUERY_AGGOP_H

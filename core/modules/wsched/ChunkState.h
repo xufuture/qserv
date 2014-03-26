@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_CHUNKSTATE_H
-#define LSST_QSERV_WORKER_CHUNKSTATE_H
+#ifndef LSST_QSERV_WSCHED_CHUNKSTATE_H
+#define LSST_QSERV_WSCHED_CHUNKSTATE_H
  /**
   *
   * @brief ChunkState is a way to track which chunks are being scanned
@@ -100,5 +100,5 @@ private:
 
 }}} // namespace lsst::qserv::wsched
 
-#endif // LSST_QSERV_WORKER_CHUNKSTATE_H
+#endif // LSST_QSERV_WSCHED_CHUNKSTATE_H
 

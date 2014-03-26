@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_WHEREFACTORY_H
-#define LSST_QSERV_MASTER_WHEREFACTORY_H
+#ifndef LSST_QSERV_PARSER_WHEREFACTORY_H
+#define LSST_QSERV_PARSER_WHEREFACTORY_H
 /**
   * @file WhereFactory.h
   *
@@ -75,5 +75,5 @@ private:
 
 }}} // namespace lsst::qserv::parser
 
-#endif // LSST_QSERV_MASTER_WHEREFACTORY_H
+#endif // LSST_QSERV_PARSER_WHEREFACTORY_H
 

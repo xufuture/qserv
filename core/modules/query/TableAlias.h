@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_TABLEALIAS_H
-#define LSST_QSERV_MASTER_TABLEALIAS_H
+#ifndef LSST_QSERV_QUERY_TABLEALIAS_H
+#define LSST_QSERV_QUERY_TABLEALIAS_H
 /**
   * @file TableAlias.h
   *
@@ -94,4 +94,4 @@ private:
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_TABLEALIAS_H
+#endif // LSST_QSERV_QUERY_TABLEALIAS_H

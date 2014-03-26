@@ -21,8 +21,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_MASTER_SQLTOKEN_H
-#define LSST_QSERV_MASTER_SQLTOKEN_H
+#ifndef LSST_QSERV_SQL_SQLTOKEN_H
+#define LSST_QSERV_SQL_SQLTOKEN_H
 /**
   * @file
   *
@@ -42,5 +42,5 @@ bool sqlShouldSeparate(std::string const& s, int last, int next);
 
 }}} // namespace lsst::qserv::sql
 
-#endif // LSST_QSERV_MASTER_XXXX_H
+#endif // LSST_QSERV_SQL_XXXX_H
 

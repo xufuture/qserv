@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_SCANSCHEDULER_H
-#define LSST_QSERV_WORKER_SCANSCHEDULER_H
+#ifndef LSST_QSERV_WSCHED_SCANSCHEDULER_H
+#define LSST_QSERV_WSCHED_SCANSCHEDULER_H
 
 #include <boost/thread/mutex.hpp>
 #include "wcontrol/Foreman.h"
@@ -79,5 +79,5 @@ private:
 extern lsst::qserv::wsched::ScanScheduler* dbgScanScheduler; //< A symbol for gdb
 extern lsst::qserv::wsched::ChunkDisk* dbgChunkDisk1; //< A symbol for gdb
 
-#endif // LSST_QSERV_WORKER_SCANSCHEDULER_H
+#endif // LSST_QSERV_WSCHED_SCANSCHEDULER_H
 

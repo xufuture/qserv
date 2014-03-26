@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_QUERYSQL_H
-#define LSST_QSERV_WORKER_QUERYSQL_H
+#ifndef LSST_QSERV_WDB_QUERYSQL_H
+#define LSST_QSERV_WDB_QUERYSQL_H
  /**
   * @file QuerySql.h
   *
@@ -77,5 +77,5 @@ public:
 
 }}} // namespace lsst::qserv::wdb
 
-#endif // LSST_QSERV_WORKER_QUERYSQL_H
+#endif // LSST_QSERV_WDB_QUERYSQL_H
 

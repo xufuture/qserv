@@ -20,8 +20,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_MASTER_MERGETYPES_H
-#define LSST_QSERV_MASTER_MERGETYPES_H
+#ifndef LSST_QSERV_MERGER_MERGETYPES_H
+#define LSST_QSERV_MERGER_MERGETYPES_H
 /**
   * @file mergeTypes.h
   *
@@ -61,4 +61,4 @@ public:
 
 }}} // namespace lsst::qserv::merger
 
-#endif // LSST_QSERV_MASTER_MERGETYPES_H
+#endif // LSST_QSERV_MERGER_MERGETYPES_H
