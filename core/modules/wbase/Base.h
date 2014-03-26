@@ -31,23 +31,26 @@
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 
+
+// Forward declarations
 class XrdSysError;
 class XrdSysLogger;
 class XrdSfsAio;
+namespace lsst {
+namespace qserv {
+namespace proto {
+    class TaskMsg;
+}
+namespace wbase {
+    class StringBuffer;
+    class StringBuffer2;
+}}}
+// End of forward declarations
+
 
 namespace lsst {
 namespace qserv {
-
-namespace proto {
-    // Forward
-    class TaskMsg;
-}
-    
 namespace wbase {
-
-// Forward:
-class StringBuffer;
-class StringBuffer2;
 
 typedef long long StringBufferOffset;
 typedef int StringBufferSize;

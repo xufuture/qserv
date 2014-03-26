@@ -30,10 +30,10 @@ namespace lsst {
 namespace qserv {
 namespace xrdfs {
 
-class XrdPrinter : public WLogger::Printer {
+class XrdPrinter : public wlog::WLogger::Printer {
 public:
     XrdPrinter(XrdSysLogger* log) : xrdSysError(log) {}
-    virtual WLogger::Printer& operator()(char const* s) {
+    virtual wlog::WLogger::Printer& operator()(char const* s) {
         xrdSysError.Say(s);
         return *this;
     }

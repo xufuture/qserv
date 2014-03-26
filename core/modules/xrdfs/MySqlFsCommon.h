@@ -26,15 +26,19 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 
+// Forward declarations
 class XrdSysError;
+namespace lsst {
+namespace qserv {
+namespace obsolete {
+    class QservPath;
+}}} // End of forward declarations
 
 namespace lsst {
 namespace qserv {
 namespace xrdfs {
-
-// Forward
-class QservPath;
-
+namespace fs {
+        
 enum FileClass {COMBO, TWO_WRITE, TWO_READ, UNKNOWN};
 
 // Xrootd file path functionality
@@ -52,9 +56,9 @@ class PathValidator {
 public:
     typedef boost::shared_ptr<PathValidator> Ptr;
     virtual ~PathValidator() {}
-    virtual bool operator()(QservPath const& qp) = 0;
+    virtual bool operator()(obsolete::QservPath const& qp) = 0;
 };
 
-}}}} // namespace lsst::qserv:xrdfs
+}}}} // namespace lsst::qserv:xrdfs::fs
 
 #endif
