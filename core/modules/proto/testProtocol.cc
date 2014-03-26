@@ -88,11 +88,11 @@ struct ProtocolFixture {
         return nonFragEq && fEqual && sTablesEq;
     }
 
-    lsst::qserv::ResultHeader* makeResultHeader() {
-        lsst::qserv::ResultHeader* r(new lsst::qserv::ResultHeader());
+    lsst::qserv::proto::ResultHeader* makeResultHeader() {
+        lsst::qserv::proto::ResultHeader* r(new lsst::qserv::proto::ResultHeader());
         r->set_session(256+counter);
         for(int i=0; i < 4; ++i) {
-            lsst::qserv::ResultHeader::Result* res = r->add_result();
+            lsst::qserv::proto::ResultHeader::Result* res = r->add_result();
             std::stringstream hash;
             while(hash.tellp() < 16) { hash << counter; }
             res->set_hash(hash.str().substr(0,16));
@@ -134,8 +134,8 @@ struct ProtocolFixture {
         return qEqual && sEqual;
     }
 
-    bool compareResultHeaders(lsst::qserv::ResultHeader const& r1,
-                              lsst::qserv::ResultHeader const& r2) {
+    bool compareResultHeaders(lsst::qserv::proto::ResultHeader const& r1,
+                              lsst::qserv::proto::ResultHeader const& r2) {
         bool same = r1.session() == r2.session();
         same = same && (r1.result_size() == r2.result_size());
         for(int i=0; i < r1.result_size(); ++i) {
@@ -145,8 +145,8 @@ struct ProtocolFixture {
         return same;
     }
 
-    bool compareResults(lsst::qserv::ResultHeader_Result const& r1,
-                        lsst::qserv::ResultHeader_Result const& r2) {
+    bool compareResults(lsst::qserv::proto::ResultHeader_Result const& r1,
+                        lsst::qserv::proto::ResultHeader_Result const& r2) {
         return (r1.hash() == r2.hash())
             && (r1.resultsize() == r2.resultsize())
             && (r1.chunkid() == r2.chunkid());
@@ -175,13 +175,13 @@ BOOST_AUTO_TEST_CASE(TaskMsgMsgSanity) {
 
 BOOST_AUTO_TEST_CASE(ResultMsgSanity) {
     std::stringstream ss;
-    boost::scoped_ptr<lsst::qserv::ResultHeader> r1(makeResultHeader());
+    boost::scoped_ptr<lsst::qserv::proto::ResultHeader> r1(makeResultHeader());
     BOOST_CHECK(r1.get());
     r1->SerializeToOstream(&ss);
 
     std::string blah = ss.str();
     std::stringstream ss2(blah);
-    boost::scoped_ptr<lsst::qserv::ResultHeader> r2(new lsst::qserv::ResultHeader());
+    boost::scoped_ptr<lsst::qserv::proto::ResultHeader> r2(new lsst::qserv::proto::ResultHeader());
     BOOST_CHECK(r1.get());
     r2->ParseFromIstream(&ss2);
     BOOST_CHECK(compareResultHeaders(*r1, *r2));
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(ResultMsgSanity) {
 
 BOOST_AUTO_TEST_CASE(MsgBuffer) {
     std::stringstream ss;
-    boost::scoped_ptr<lsst::qserv::ResultHeader> r1(makeResultHeader());
+    boost::scoped_ptr<lsst::qserv::proto::ResultHeader> r1(makeResultHeader());
     BOOST_CHECK(r1.get());
     r1->SerializeToOstream(&ss);
 
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(MsgBuffer) {
     gio::ArrayInputStream input(raw.data(),
                                 raw.size());
     gio::CodedInputStream coded(&input);
-    boost::scoped_ptr<lsst::qserv::ResultHeader> r2(new lsst::qserv::ResultHeader());
+    boost::scoped_ptr<lsst::qserv::proto::ResultHeader> r2(new lsst::qserv::proto::ResultHeader());
     BOOST_CHECK(r1.get());
     r2->MergePartialFromCodedStream(&coded);
     BOOST_CHECK(compareResultHeaders(*r1, *r2));
