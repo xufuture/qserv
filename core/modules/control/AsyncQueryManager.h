@@ -22,8 +22,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_MASTER_ASYNCQUERYMANAGER_H
-#define LSST_QSERV_MASTER_ASYNCQUERYMANAGER_H
+#ifndef LSST_QSERV_CONTROL_ASYNCQUERYMANAGER_H
+#define LSST_QSERV_CONTROL_ASYNCQUERYMANAGER_H
 /**
   * @file AsyncQueryManager.h
   *
@@ -180,4 +180,4 @@ private:
 };
 }}} // namespace lsst::qserv::control
 
-#endif // LSST_QSERV_MASTER_ASYNCQUERYMANAGER_H
+#endif // LSST_QSERV_CONTROL_ASYNCQUERYMANAGER_H

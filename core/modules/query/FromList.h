@@ -20,8 +20,14 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_FROMLIST_H
-#define LSST_QSERV_MASTER_FROMLIST_H
+#ifndef LSST_QSERV_QUERY_FROMLIST_H
+#define LSST_QSERV_QUERY_FROMLIST_H
+/**
+  * @file
+  *
+  * @author Daniel L. Wang, SLAC
+  */
+
 #include <boost/shared_ptr.hpp>
 #include "query/TableRefN.h"
 
@@ -66,4 +72,4 @@ private:
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_FROMLIST_H
+#endif // LSST_QSERV_QUERY_FROMLIST_H

@@ -25,8 +25,8 @@
 /// is less dependent on Xrootd. (some dependencies still exist in
 /// MySqlFs.)
 /// @author Daniel L. Wang (danielw)
-#ifndef LSST_QSERV_WORKER_ORDERTAKER_H
-#define LSST_QSERV_WORKER_ORDERTAKER_H
+#ifndef LSST_QSERV_WCONTROL_ORDERTAKER_H
+#define LSST_QSERV_WCONTROL_ORDERTAKER_H
 #include "wbase/Base.h" // StringBuffer2
 
 namespace lsst {
@@ -57,4 +57,4 @@ private:
 
 }}} // namespace lsst::qserv::wcontrol
 
-#endif // LSST_QSERV_WORKER_ORDERTAKER_H
+#endif // LSST_QSERV_WCONTROL_ORDERTAKER_H

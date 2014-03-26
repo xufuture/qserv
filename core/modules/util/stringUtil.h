@@ -20,8 +20,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_MASTER_STRINGUTIL_H
-#define LSST_QSERV_MASTER_STRINGUTIL_H
+#ifndef LSST_QSERV_UTIL_STRINGUTIL_H
+#define LSST_QSERV_UTIL_STRINGUTIL_H
 
 #include <sstream>
 #include <map>
@@ -110,4 +110,4 @@ public:
 };
 
 }}} // namesapce lsst::qserv::util
-#endif // LSST_QSERV_MASTER_STRINGUTIL_H
+#endif // LSST_QSERV_UTIL_STRINGUTIL_H

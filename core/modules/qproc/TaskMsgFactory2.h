@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_TASKMSGFACTORY2_H
-#define LSST_QSERV_MASTER_TASKMSGFACTORY2_H
+#ifndef LSST_QSERV_QPROC_TASKMSGFACTORY2_H
+#define LSST_QSERV_QPROC_TASKMSGFACTORY2_H
 /**
   * @file TaskMsgFactory2.h
   *
@@ -62,5 +62,5 @@ private:
 
 }}} // namespace lsst::qserv::qproc
 
-#endif // LSST_QSERV_MASTER_TASKMSGFACTORY2_H
+#endif // LSST_QSERV_QPROC_TASKMSGFACTORY2_H
 

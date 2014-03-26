@@ -23,8 +23,8 @@
 /// loggerInterface.h declares an interface for the logging mechanism for exporting
 /// via SWIG to the python layer of Qserv.
 
-#ifndef LSST_QSERV_MASTER_LOGGERINTERFACE_H
-#define LSST_QSERV_MASTER_LOGGERINTERFACE_H
+#ifndef LSST_QSERV_LOG_LOGGERINTERFACE_H
+#define LSST_QSERV_LOG_LOGGERINTERFACE_H
 #include <string>
 
 namespace lsst {
@@ -36,5 +36,5 @@ void logger(int severity, std::string const& s);
 
 }}} // namespace lsst::qserv::log
 
-#endif // LSST_QSERV_MASTER_LOGGERINTERFACE_H
+#endif // LSST_QSERV_LOG_LOGGERINTERFACE_H
 

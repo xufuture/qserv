@@ -21,8 +21,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_MASTER_COLUMNREF_H
-#define LSST_QSERV_MASTER_COLUMNREF_H
+#ifndef LSST_QSERV_QUERY_COLUMNREF_H
+#define LSST_QSERV_QUERY_COLUMNREF_H
 /**
   * @file ColumnRef.h
   *
@@ -63,4 +63,4 @@ public:
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_COLUMNREF_H
+#endif // LSST_QSERV_QUERY_COLUMNREF_H

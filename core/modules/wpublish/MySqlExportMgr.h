@@ -25,8 +25,8 @@
 // It includes helper functions for checking the resulting data structure for
 // the existence of certain xrootd paths.
 
-#ifndef LSST_QSERV_WORKER_MYSQLEXPORTMGR_H
-#define LSST_QSERV_WORKER_MYSQLEXPORTMGR_H
+#ifndef LSST_QSERV_WPUBLISH_MYSQLEXPORTMGR_H
+#define LSST_QSERV_WPUBLISH_MYSQLEXPORTMGR_H
 #include <deque>
 #include <map>
 #include <set>
@@ -82,4 +82,4 @@ private:
 
 }}} // namespace lsst::qserv::wpublish
 
-#endif // LSST_QSERV_WORKER_MYSQLEXPORTMGR_H
+#endif // LSST_QSERV_WPUBLISH_MYSQLEXPORTMGR_H

@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_QSRESTRICTOR_H
-#define LSST_QSERV_MASTER_QSRESTRICTOR_H
+#ifndef LSST_QSERV_QUERY_QSRESTRICTOR_H
+#define LSST_QSERV_QUERY_QSRESTRICTOR_H
 /**
   * @file QsRestrictor.h
   *
@@ -76,4 +76,4 @@ std::ostream& operator<<(std::ostream& os, QsRestrictor const& q);
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_QSRESTRICTOR_H
+#endif // LSST_QSERV_QUERY_QSRESTRICTOR_H

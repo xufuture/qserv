@@ -20,8 +20,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 /// @file
-#ifndef LSST_QSERV_MASTER_DYNAMICWORKQUEUE_H
-#define LSST_QSERV_MASTER_DYNAMICWORKQUEUE_H
+#ifndef LSST_QSERV_CONTROL_DYNAMICWORKQUEUE_H
+#define LSST_QSERV_CONTROL_DYNAMICWORKQUEUE_H
 
 #include <map>
 #include <set>
@@ -116,5 +116,5 @@ private:
 
 }}} // namespace lsst::qserv::control
 
-#endif // LSST_QSERV_MASTER_DYNAMICWORKQUEUE_H
+#endif // LSST_QSERV_CONTROL_DYNAMICWORKQUEUE_H
 

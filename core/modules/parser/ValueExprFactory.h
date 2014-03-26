@@ -22,8 +22,8 @@
  */
 // ValueExprFactory constructs ValueExpr instances from antlr nodes.
 
-#ifndef LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
-#define LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
+#ifndef LSST_QSERV_PARSER_VALUEEXPRFACTORY_H
+#define LSST_QSERV_PARSER_VALUEEXPRFACTORY_H
 /**
   * @file ValueExprFactory.h
   *
@@ -60,4 +60,4 @@ private:
 
 }}} // namespace lsst::qserv::parser
 
-#endif // LSST_QSERV_MASTER_VALUEEXPRFACTORY_H
+#endif // LSST_QSERV_PARSER_VALUEEXPRFACTORY_H

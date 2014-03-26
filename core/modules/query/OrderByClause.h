@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_ORDERBYCLAUSE_H
-#define LSST_QSERV_MASTER_ORDERBYCLAUSE_H
+#ifndef LSST_QSERV_QUERY_ORDERBYCLAUSE_H
+#define LSST_QSERV_QUERY_ORDERBYCLAUSE_H
 /**
   * @file OrderByClause.h
   *
@@ -105,5 +105,5 @@ private:
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_ORDERBYCLAUSE_H
+#endif // LSST_QSERV_QUERY_ORDERBYCLAUSE_H
 

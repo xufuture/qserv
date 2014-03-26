@@ -23,8 +23,8 @@
 /// queryMsg.h declares an interface for the query messaging mechanism for exporting
 /// via SWIG to the python layer of Qserv.
 
-#ifndef LSST_QSERV_MASTER_QUERYMSG_H
-#define LSST_QSERV_MASTER_QUERYMSG_H
+#ifndef LSST_QSERV_CONTROL_QUERYMSG_H
+#define LSST_QSERV_CONTROL_QUERYMSG_H
 #include <string>
 
 namespace lsst {
@@ -41,5 +41,5 @@ void queryMsgAddMsg(int session, int chunkId, int code, std::string const& messa
 
 }}} // namespace lsst::qserv::control
 
-#endif // LSST_QSERV_MASTER_QUERYMSG_H
+#endif // LSST_QSERV_CONTROL_QUERYMSG_H
 

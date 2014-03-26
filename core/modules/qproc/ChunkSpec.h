@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_CHUNKSPEC_H
-#define LSST_QSERV_MASTER_CHUNKSPEC_H
+#ifndef LSST_QSERV_QPROC_CHUNKSPEC_H
+#define LSST_QSERV_QPROC_CHUNKSPEC_H
 /**
   * @file
   *
@@ -82,5 +82,5 @@ std::ostream& operator<<(std::ostream& os, ChunkSpecSingle const& c);
 
 }}} // namespace lsst::qserv::qproc
 
-#endif // LSST_QSERV_MASTER_CHUNKSPEC_H
+#endif // LSST_QSERV_QPROC_CHUNKSPEC_H
 

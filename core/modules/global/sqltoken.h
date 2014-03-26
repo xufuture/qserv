@@ -40,4 +40,5 @@ namespace sql {
 bool sqlShouldSeparate(std::string const& s, int last, int next);
 
 }}} // namespace lsst::qserv::sql
+
 #endif // LSST_QSERV_GLOBAL_SQLTOKEN_H

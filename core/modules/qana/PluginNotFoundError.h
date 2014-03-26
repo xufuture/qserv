@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
-#define LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
+#ifndef LSST_QSERV_QANA_PLUGINNOTFOUNDERROR_H
+#define LSST_QSERV_QANA_PLUGINNOTFOUNDERROR_H
 /**
   * @file PluginNotFoundError.h
   *
@@ -57,5 +57,5 @@ private:
 
 }}} // namespace lsst::qserv::qana
 
-#endif // LSST_QSERV_MASTER_PLUGINNOTFOUNDERROR_H
+#endif // LSST_QSERV_QANA_PLUGINNOTFOUNDERROR_H
 

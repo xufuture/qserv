@@ -25,8 +25,8 @@
 // Initially used with TableMerger.
 //
 
-#ifndef LSST_QSERV_MASTER_MMAPFILE_H
-#define LSST_QSERV_MASTER_MMAPFILE_H
+#ifndef LSST_QSERV_UTIL_MMAPFILE_H
+#define LSST_QSERV_UTIL_MMAPFILE_H
 
 #include <boost/shared_ptr.hpp>
 #include <sys/stat.h>
@@ -64,4 +64,4 @@ private:
 
 }}} // namespace lsst::qserv::util
 
-#endif // LSST_QSERV_MASTER_MMAPFILE_H
+#endif // LSST_QSERV_UTIL_MMAPFILE_H

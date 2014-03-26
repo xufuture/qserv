@@ -20,8 +20,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_WORKER_QUERYPHYRESULT_H
-#define LSST_QSERV_WORKER_QUERYPHYRESULT_H
+#ifndef LSST_QSERV_WDB_QUERYPHYRESULT_H
+#define LSST_QSERV_WDB_QUERYPHYRESULT_H
 
 // C++
 #include <string>
@@ -72,4 +72,4 @@ private:
 
 }}} // namespace lsst::qserv::wdb
 
-#endif // LSST_QSERV_WORKER_QUERYPHYRESULT _H
+#endif // LSST_QSERV_WDB_QUERYPHYRESULT _H

@@ -20,8 +20,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_WORKER_BASE_H
-#define LSST_QSERV_WORKER_BASE_H
+#ifndef LSST_QSERV_WBASE_BASE_H
+#define LSST_QSERV_WBASE_BASE_H
 
 // Std
 #include <deque>
@@ -155,4 +155,4 @@ typedef lsst::qserv::worker::PosFormat Pformat;
 typedef boost::format Pformat;
 #endif
 
-#endif // LSST_QSERV_WORKER_BASE_H
+#endif // LSST_QSERV_WBASE_BASE_H
