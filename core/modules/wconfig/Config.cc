@@ -98,6 +98,11 @@ std::string validateMysql(Config const& c) {
 }
 } // anonymous namespace
 
+
+namespace lsst {
+namespace qserv {
+namespace wconfig {
+
 ////////////////////////////////////////////////////////////////////////
 // class Config
 ////////////////////////////////////////////////////////////////////////
@@ -171,3 +176,5 @@ Config& getConfig() {
     boost::call_once(callOnceHelper, configHelperFlag);
     return getConfigHelper();
 }
+
+}}} // namespace lsst::qserv::wconfig

@@ -49,16 +49,16 @@
 #include "query/Constraint.h"
 
 using lsst::qserv::parser::SelectParser;
-using lsst::qserv::parser::SelectStmt;
 using lsst::qserv::qdisp::ChunkMeta;
-using lsst::qserv::qdisp::ChunkSpec;
 using lsst::qserv::qproc::ChunkQuerySpec;
+using lsst::qserv::qproc::ChunkSpec;
 using lsst::qserv::qproc::QuerySession;
 using lsst::qserv::query::Constraint;
 using lsst::qserv::query::ConstraintVec;
 using lsst::qserv::query::ConstraintVector;
 using lsst::qserv::query::QsRestrictor;
 using lsst::qserv::query::QueryContext;
+using lsst::qserv::query::SelectStmt;
 using lsst::qserv::util::StringPair;
 
 
