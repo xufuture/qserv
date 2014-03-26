@@ -61,7 +61,8 @@
 
 #define QSERV_USE_STUPID_STRING 1
 
-
+namespace {
+    
 // Boost launching helper
 template <typename Callable>
 void launchThread(Callable const& c) {
@@ -76,7 +77,7 @@ void launchThread(Callable const& c) {
 
 class ReadCallable {
 public:
-    ReadCallable(MySqlFsFile& fsfile,
+    ReadCallable(lsst::qserv::xrdfs::MySqlFsFile& fsfile,
                  XrdSfsAio* aioparm)
         : _fsfile(fsfile), _aioparm(aioparm), _sfsAio(aioparm->sfsAio) {}
 
@@ -87,7 +88,7 @@ public:
         _aioparm->doneRead();
     }
 private:
-    MySqlFsFile& _fsfile;
+    lsst::qserv::xrdfs::MySqlFsFile& _fsfile;
     XrdSfsAio* _aioparm;
     struct aiocb& _sfsAio;
 
@@ -95,7 +96,7 @@ private:
 
 class WriteCallable {
 public:
-    WriteCallable(MySqlFsFile& fsfile,
+    WriteCallable(lsst::qserv::xrdfs::MySqlFsFile& fsfile,
                   XrdSfsAio* aioparm, char* buffer)
         : _fsfile(fsfile), _aioparm(aioparm), _sfsAio(aioparm->sfsAio),
           _buffer(buffer)
@@ -119,19 +120,19 @@ public:
     }
 
 private:
-    MySqlFsFile& _fsfile;
+    lsst::qserv::xrdfs::MySqlFsFile& _fsfile;
     XrdSfsAio* _aioparm;
     struct aiocb& _sfsAio;
     char* _buffer;
-    static Semaphore _sema;
+    static lsst::qserv::util::Semaphore _sema;
 };
 // for now, two simultaneous writes (queries)
-Semaphore WriteCallable::_sema(2);
+    lsst::qserv::util::Semaphore WriteCallable::_sema(2);
 
-bool flushOrQueue(QueryRunnerArg const& a)  {
+bool flushOrQueue(lsst::qserv::wdb::QueryRunnerArg const& a)  {
     // Obsolete
-//    QueryRunner::Manager& mgr = QueryRunner::getMgr();
-//    mgr.runOrEnqueue(a);
+    //    lsst::qserv::wdb::QueryRunner::Manager& mgr = QueryRunner::getMgr();
+    //    mgr.runOrEnqueue(a);
     return true;
 }
 
@@ -176,13 +177,19 @@ std::ostream& operator<<(std::ostream& os, Timer const& tm) {
     return os;
 }
 
+} // annonymous namespace
+
+namespace lsst {
+namespace qserv {
+namespace xrdfs {
+
 //////////////////////////////////////////////////////////////////////////////
 // MySqlFsFile
 //////////////////////////////////////////////////////////////////////////////
 MySqlFsFile::MySqlFsFile(boost::shared_ptr<wlog::WLogger> log,
                          char const* user,
                          AddCallbackFunction::Ptr acf,
-                         FileValidator::Ptr fv,
+                         fs::FileValidator::Ptr fv,
                          boost::shared_ptr<wcontrol::Service> service)
     : XrdSfsFile(user),
       _log(log),
@@ -214,7 +221,7 @@ int MySqlFsFile::_acceptFile(char const* fileName) {
                    % fileName % _userName).str().c_str());
         return SFS_ERROR;
 
-    case obsolete:QservPath::OLDQ1:
+    case obsolete::QservPath::OLDQ1:
         _log->error((Pformat("Unrecognized file open %1% by %2%")
                      % fileName % _userName).str().c_str());
 
@@ -229,8 +236,8 @@ int MySqlFsFile::_acceptFile(char const* fileName) {
                          % fileName % _chunkId ).str().c_str());
             return SFS_ERROR;
         }
-        _requestTaker.reset(new RequestTaker(_service->getAcceptor(),
-                                             *_path));
+        _requestTaker.reset(new wcontrol::RequestTaker(_service->getAcceptor(),
+                                                       *_path));
         _chunkId = -1; // unused.
         return SFS_OK; // No other action is needed.
 
@@ -279,8 +286,8 @@ int MySqlFsFile::close(void) {
                % _path->chunk() % _userName).str().c_str());
     if(_path->requestType() == obsolete::QservPath::RESULT) {
         // Get rid of the news.
-        std::string hash = stripPath(_dumpName);
-        QueryRunner::getTracker().clearNews(hash);
+        std::string hash = fs::stripPath(_dumpName);
+        wdb::QueryRunner::getTracker().clearNews(hash);
 
         // Must remove dump file while we are doing the single-query workaround
         // _eDest->Say((Pformat("Not Removing dump file(%1%)")
@@ -320,7 +327,7 @@ int MySqlFsFile::read(XrdSfsFileOffset fileOffset,
     _log->info((Pformat("File read(%1%) at %2% by %3%")
                % _path->chunk() % fileOffset % _userName).str().c_str());
     if(_dumpName.empty()) { _setDumpNameAsChunkId(); }
-    if (!dumpFileExists(_dumpName)) {
+    if (!wdb::dumpFileExists(_dumpName)) {
         std::string s = "Can't find dumpfile: " + _dumpName;
         _log->error(s);
 
@@ -345,7 +352,7 @@ XrdSfsXferSize MySqlFsFile::read(
            % _dumpName % statbuf.st_size).str();
     _log->info(msg);
     if(_dumpName.empty()) { _setDumpNameAsChunkId(); }
-    int fd = dumpFileOpen(_dumpName);
+    int fd = wdb::dumpFileOpen(_dumpName);
     if (fd == -1) {
       std::stringstream ss;
       ss << (void*)this << "  Can't open dumpfile: " << _dumpName;
@@ -477,13 +484,13 @@ void MySqlFsFile::_addCallback(std::string const& filename) {
     (*_addCallbackF)(*this, filename);
 }
 
-ResultErrorPtr
+wcontrol::ResultErrorPtr
 MySqlFsFile::_getResultState(std::string const& physFilename) {
     assert(_path->requestType() == obsolete::QservPath::RESULT);
     // Lookup result hash.
-    std::string hash = stripPath(physFilename);
+    std::string hash = fs::stripPath(physFilename);
     //_eDest->Say(("Getting news for hash=" +hash).c_str());
-    ResultErrorPtr p = QueryRunner::getTracker().getNews(hash);
+    wcontrol::ResultErrorPtr p = wdb::QueryRunner::getTracker().getNews(hash);
     return p;
 }
 
@@ -505,8 +512,9 @@ bool MySqlFsFile::_flushWrite() {
 }
 
 bool MySqlFsFile::_flushWriteDetach() {
-    Task::Ptr t(new Task(ScriptMeta(_queryBuffer, _chunkId), _userName));
-    QueryRunnerArg a(_log, t);
+    wcontrol::Task::Ptr t(
+        new wcontrol::Task(wbase::ScriptMeta(_queryBuffer, _chunkId), _userName));
+    wdb::QueryRunnerArg a(_log, t);
     return flushOrQueue(a);
 }
 
@@ -517,7 +525,7 @@ bool MySqlFsFile::_flushWriteSync() {
     // Task::Ptr t(new Task(ScriptMeta(_queryBuffer, _chunkId), _userName));
     // _setDumpNameAsChunkId(); // Because reads may get detached from writes.
     // _eDest->Say((Pformat("No mdb=%1%.") % s.dbName).str().c_str());
-    // QueryRunner runner(_log, t, _dumpName);
+    // wdb::QueryRunner runner(_log, t, _dumpName);
     // return runner();
 }
 
@@ -536,19 +544,19 @@ bool MySqlFsFile::_hasPacketEof(
 void MySqlFsFile::_setDumpNameAsChunkId() {
     // This can get deprecated soon.
     std::stringstream ss;
-    ss << DUMP_BASE << _chunkId << ".dump";
+    ss << wbase::DUMP_BASE << _chunkId << ".dump";
     ss >> _dumpName;
 }
 
 int MySqlFsFile::_handleTwoReadOpen(char const* fileName) {
-    std::string hash = stripPath(fileName);
+    std::string hash = fs::stripPath(fileName);
     return _checkForHash(hash);
 }
 
 int MySqlFsFile::_checkForHash(std::string const& hash) {
-    _dumpName = hashToResultPath(hash);
+    _dumpName = wbase::hashToResultPath(hash);
     _hasRead = false;
-    ResultErrorPtr p = _getResultState(_dumpName);
+    wcontrol::ResultErrorPtr p = _getResultState(_dumpName);
     if(p.get()) {
         if(p->first != 0) { // Error, so report it.
             error.setErrInfo(EINVAL, p->second.c_str());
@@ -560,3 +568,5 @@ int MySqlFsFile::_checkForHash(std::string const& hash) {
     }
     return SFS_OK;
 }
+
+}}} // namespace lsst::qserv::xrdfs
