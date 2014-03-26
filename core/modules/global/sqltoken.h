@@ -20,8 +20,10 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
+
 #ifndef LSST_QSERV_GLOBAL_SQLTOKEN_H
 #define LSST_QSERV_GLOBAL_SQLTOKEN_H
+
 /**
   * @file
   *
@@ -41,4 +43,9 @@ bool sqlShouldSeparate(std::string const& s, int last, int next);
 
 }}} // namespace lsst::qserv::sql
 
+<<<<<<< HEAD:core/modules/global/sqltoken.h
 #endif // LSST_QSERV_GLOBAL_SQLTOKEN_H
+=======
+#endif // LSST_QSERV_SQL_XXXX_H
+
+>>>>>>> fixed ifdefs:core/modules/sql/sqltoken.h
