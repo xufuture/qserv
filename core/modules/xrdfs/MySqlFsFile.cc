@@ -488,7 +488,7 @@ wcontrol::ResultErrorPtr
 MySqlFsFile::_getResultState(std::string const& physFilename) {
     assert(_path->requestType() == obsolete::QservPath::RESULT);
     // Lookup result hash.
-    std::string hash = stripPath(physFilename);
+    std::string hash = fs::stripPath(physFilename);
     //_eDest->Say(("Getting news for hash=" +hash).c_str());
     wcontrol::ResultErrorPtr p = wdb::QueryRunner::getTracker().getNews(hash);
     return p;
@@ -549,7 +549,7 @@ void MySqlFsFile::_setDumpNameAsChunkId() {
 }
 
 int MySqlFsFile::_handleTwoReadOpen(char const* fileName) {
-    std::string hash = stripPath(fileName);
+    std::string hash = fs::stripPath(fileName);
     return _checkForHash(hash);
 }
 
