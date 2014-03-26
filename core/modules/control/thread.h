@@ -26,8 +26,8 @@
 /// provided thread management for subquery threads.  Much of this is
 /// no longer needed since we have switched to asynchronous
 /// (non-blocking) usage of the Xrootd client libraries.
-#ifndef LSST_QSERV_MASTER_THREAD_H
-#define LSST_QSERV_MASTER_THREAD_H
+#ifndef LSST_QSERV_CONTROL_THREAD_H
+#define LSST_QSERV_CONTROL_THREAD_H
 
 // Standard
 #include <map>
@@ -212,4 +212,4 @@ private:
 
 }}} // namespace lsst::qserv::control
 
-#endif // LSST_QSERV_MASTER_THREAD_H
+#endif // LSST_QSERV_CONTROL_THREAD_H

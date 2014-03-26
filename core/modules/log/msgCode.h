@@ -23,8 +23,8 @@
 /// msgCode.h maintains message codes used by the query messaging system
 /// within the C++ layer of Qesrv.
 
-#ifndef LSST_QSERV_MASTER_MSGCODE_H
-#define LSST_QSERV_MASTER_MSGCODE_H
+#ifndef LSST_QSERV_LOG_MSGCODE_H
+#define LSST_QSERV_LOG_MSGCODE_H
 
 namespace lsst {
 namespace qserv {
@@ -43,5 +43,5 @@ const int MSG_FINALIZED     = 2000;
 
 }}} // namespace lsst::qserv::log
 
-#endif // LSST_QSERV_MASTER_MSGCODE_H
+#endif // LSST_QSERV_LOG_MSGCODE_H
 

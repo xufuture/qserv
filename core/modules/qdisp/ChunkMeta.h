@@ -21,8 +21,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_MASTER_CHUNKMETA_H
-#define LSST_QSERV_MASTER_CHUNKMETA_H
+#ifndef LSST_QSERV_QDISP_CHUNKMETA_H
+#define LSST_QSERV_QDISP_CHUNKMETA_H
 
 // C++
 #include <list>
@@ -67,4 +67,4 @@ private:
 
 }}} // namespace lsst::qserv::qdisp
 
-#endif // LSST_QSERV_MASTER_CHUNKMETA_H
+#endif // LSST_QSERV_QDISP_CHUNKMETA_H

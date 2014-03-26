@@ -19,8 +19,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_XRDLOGGER_H
-#define LSST_QSERV_WORKER_XRDLOGGER_H
+#ifndef LSST_QSERV_XRDFS_XRDLOGGER_H
+#define LSST_QSERV_XRDFS_XRDLOGGER_H
 #include "wbase/Base.h"
 #include "XrdSys/XrdSysError.hh"
 
@@ -44,5 +44,5 @@ private:
 
 }}} // namespace lsst::qserv:xrdfs
 
-#endif // LSST_QSERV_WORKER_XRDLOGGER_H
+#endif // LSST_QSERV_XRDFS_XRDLOGGER_H
 

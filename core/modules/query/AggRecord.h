@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_AGGRECORD_H
-#define LSST_QSERV_MASTER_AGGRECORD_H
+#ifndef LSST_QSERV_QUERY_AGGRECORD_H
+#define LSST_QSERV_QUERY_AGGRECORD_H
 /**
   * @file
   *
@@ -56,5 +56,5 @@ public:
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_AGGRECORD_H
+#endif // LSST_QSERV_QUERY_AGGRECORD_H
 

@@ -21,8 +21,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 // class ChunkQuery represents a query regarding a single chunk.
-#ifndef LSST_QSERV_MASTER_CHUNKQUERY_H
-#define LSST_QSERV_MASTER_CHUNKQUERY_H
+#ifndef LSST_QSERV_QDISP_CHUNKQUERY_H
+#define LSST_QSERV_QDISP_CHUNKQUERY_H
 
 // Scalla/xrootd
 #include "XrdPosix/XrdPosixCallBack.hh"
@@ -122,4 +122,4 @@ private:
 
 }}} // namespace lsst::qserv::qdisp
 
-#endif // LSST_QSERV_MASTER_CHUNKQUERY_H
+#endif // LSST_QSERV_QDISP_CHUNKQUERY_H

@@ -22,8 +22,8 @@
  */
 // PredicateFactory constructs Predicate instances from antlr nodes.
 
-#ifndef LSST_QSERV_MASTER_PREDICATEFACTORY_H
-#define LSST_QSERV_MASTER_PREDICATEFACTORY_H
+#ifndef LSST_QSERV_PARSER_PREDICATEFACTORY_H
+#define LSST_QSERV_PARSER_PREDICATEFACTORY_H
 /**
   * @file PredicateFactory.h
   *
@@ -66,4 +66,4 @@ private:
 
 }}} // namespace lsst::qserv::parser
 
-#endif // LSST_QSERV_MASTER_PREDICATEFACTORY_H
+#endif // LSST_QSERV_PARSER_PREDICATEFACTORY_H

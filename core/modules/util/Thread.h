@@ -20,8 +20,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_WORKER_THREAD_H
-#define LSST_QSERV_WORKER_THREAD_H
+#ifndef LSST_QSERV_UTIL_THREAD_H
+#define LSST_QSERV_UTIL_THREAD_H
 
 #include <set>
 
@@ -190,4 +190,4 @@ private:
 
 }}} // namespace lsst.qserv.util
 
-#endif // LSST_QSERV_WORKER_THREAD_H
+#endif // LSST_QSERV_UTIL_THREAD_H

@@ -25,8 +25,8 @@
 // mysqldump output and iterates over them.
 //
 
-#ifndef LSST_QSERV_MASTER_SQLINSERTITER_H
-#define LSST_QSERV_MASTER_SQLINSERTITER_H
+#ifndef LSST_QSERV_MERGER_SQLINSERTITER_H
+#define LSST_QSERV_MERGER_SQLINSERTITER_H
 
 // Boost
 #include <boost/regex.hpp>
@@ -99,4 +99,4 @@ private:
 
 }}} // namespace lsst::qserv::merger
 
-#endif // LSST_QSERV_MASTER_SQLINSERTITER_H
+#endif // LSST_QSERV_MERGER_SQLINSERTITER_H

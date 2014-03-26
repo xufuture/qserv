@@ -25,8 +25,8 @@
  * @brief Common utilty functions for lsst::qserv::master. Only std C++ dependencies allowed.
  *
  */
-#ifndef LSST_QSERV_MASTER_COMMON_H
-#define LSST_QSERV_MASTER_COMMON_H
+#ifndef LSST_QSERV_UTIL_COMMON_H
+#define LSST_QSERV_UTIL_COMMON_H
 
 #include <list>
 #include <map>
@@ -100,4 +100,4 @@ std::ostream& printList(std::ostream &os, char const* label, C const& c) {
 
 
 }}} // namesapce lsst::qserv::util
-#endif // LSST_QSERV_MASTER_COMMON_H
+#endif // LSST_QSERV_UTIL_COMMON_H

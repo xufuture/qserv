@@ -23,8 +23,8 @@
 // FromFactory constructs a FromList that maintains parse state of
 // the FROM clause for future interrogation, manipulation, and
 // reconstruction.
-#ifndef LSST_QSERV_MASTER_FROMFACTORY_H
-#define LSST_QSERV_MASTER_FROMFACTORY_H
+#ifndef LSST_QSERV_PARSER_FROMFACTORY_H
+#define LSST_QSERV_PARSER_FROMFACTORY_H
 /**
   * @file FromFactory.h
   *
@@ -75,5 +75,5 @@ private:
 
 }}} // namespace lsst::qserv::parser
 
-#endif // LSST_QSERV_MASTER_FROMFACTORY_H
+#endif // LSST_QSERV_PARSER_FROMFACTORY_H
 

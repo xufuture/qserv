@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_SELECTSTMT_H
-#define LSST_QSERV_MASTER_SELECTSTMT_H
+#ifndef LSST_QSERV_QUERY_SELECTSTMT_H
+#define LSST_QSERV_QUERY_SELECTSTMT_H
 /**
   * @file SelectStmt.h
   *
@@ -121,4 +121,4 @@ public:
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_SELECTSTMT_H
+#endif // LSST_QSERV_QUERY_SELECTSTMT_H

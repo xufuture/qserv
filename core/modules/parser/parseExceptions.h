@@ -24,8 +24,8 @@
 //
 //
 
-#ifndef LSST_QSERV_MASTER_PARSEEXCEPTIONS_H
-#define LSST_QSERV_MASTER_PARSEEXCEPTIONS_H
+#ifndef LSST_QSERV_PARSER_PARSEEXCEPTIONS_H
+#define LSST_QSERV_PARSER_PARSEEXCEPTIONS_H
 
 // C++
 #include <string>
@@ -46,7 +46,7 @@ public:
 
 }}} // namespace lsst::qserv::parser
 
-#endif // LSST_QSERV_MASTER_PARSEEXCEPTIONS_H
+#endif // LSST_QSERV_PARSER_PARSEEXCEPTIONS_H
 
 // Local Variables:
 // mode:c++

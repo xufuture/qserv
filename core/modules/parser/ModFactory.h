@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_MODFACTORY_H
-#define LSST_QSERV_MASTER_MODFACTORY_H
+#ifndef LSST_QSERV_PARSER_MODFACTORY_H
+#define LSST_QSERV_PARSER_MODFACTORY_H
 /**
   * @file ModFactory.h
   *
@@ -91,4 +91,4 @@ private:
 
 }}} // namespace lsst::qserv::parser
 
-#endif // LSST_QSERV_MASTER_MODFACTORY_H
+#endif // LSST_QSERV_PARSER_MODFACTORY_H

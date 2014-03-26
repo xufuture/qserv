@@ -19,8 +19,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_SERVICE_H
-#define LSST_QSERV_WORKER_SERVICE_H
+#ifndef LSST_QSERV_WCONTROL_SERVICE_H
+#define LSST_QSERV_WCONTROL_SERVICE_H
 #include <boost/shared_ptr.hpp>
 
 // Forward declarations
@@ -57,5 +57,5 @@ private:
 
 }}} // namespace lsst::qserv:wcontrol
 
-#endif // LSST_QSERV_WORKER_SERVICE_H
+#endif // LSST_QSERV_WCONTROL_SERVICE_H
 

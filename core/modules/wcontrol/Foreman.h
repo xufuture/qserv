@@ -46,8 +46,8 @@
 //  classes include at least: Task, QueryRunner. Those that
 //  depend on them would need tweaks, but should be able to escape
 //  templating or polymorphism.
-#ifndef LSST_QSERV_WORKER_FOREMAN_H
-#define LSST_QSERV_WORKER_FOREMAN_H
+#ifndef LSST_QSERV_WCONTROL_FOREMAN_H
+#define LSST_QSERV_WCONTROL_FOREMAN_H
 #include <boost/shared_ptr.hpp>
 #include "wbase/Base.h"
 #include "wcontrol/Task.h"
@@ -106,4 +106,4 @@ protected:
 
 }}}  // namespace lsst::qserv::wcontrol
 
-#endif // LSST_QSERV_WORKER_FOREMAN_H
+#endif // LSST_QSERV_WCONTROL_FOREMAN_H

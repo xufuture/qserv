@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_SELECTLISTFACTORY_H
-#define LSST_QSERV_MASTER_SELECTLISTFACTORY_H
+#ifndef LSST_QSERV_PARSER_SELECTLISTFACTORY_H
+#define LSST_QSERV_PARSER_SELECTLISTFACTORY_H
 /**
   * @file
   *
@@ -92,5 +92,5 @@ private:
 
 }}} // namespace lsst::qserv::parser
 
-#endif // LSST_QSERV_MASTER_SELECTLISTFACTORY_H
+#endif // LSST_QSERV_PARSER_SELECTLISTFACTORY_H
 

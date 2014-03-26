@@ -20,8 +20,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_WORKER_RESULT_TRACKER_H
-#define LSST_QSERV_WORKER_RESULT_TRACKER_H
+#ifndef LSST_QSERV_WCONTROL_RESULT_TRACKER_H
+#define LSST_QSERV_WCONTROL_RESULT_TRACKER_H
 #include <deque>
 #include <iostream>
 
@@ -179,4 +179,4 @@ private:
 
 }}} // namespace lsst::qserv::wcontrol
 
-#endif // LSST_QSERV_WORKER_RESULT_TRACKER_H
+#endif // LSST_QSERV_WCONTROL_RESULT_TRACKER_H

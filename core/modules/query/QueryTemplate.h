@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_QUERYTEMPLATE_H
-#define LSST_QSERV_MASTER_QUERYTEMPLATE_H
+#ifndef LSST_QSERV_QUERY_QUERYTEMPLATE_H
+#define LSST_QSERV_QUERY_QUERYTEMPLATE_H
 /**
   * @file
   *
@@ -110,4 +110,4 @@ typedef std::list<boost::shared_ptr<QueryTemplate> >QueryTemplateList;
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_QUERYTEMPLATE_H
+#endif // LSST_QSERV_QUERY_QUERYTEMPLATE_H

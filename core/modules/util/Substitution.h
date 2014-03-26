@@ -20,8 +20,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_MASTER_SUBSTITUTION_H
-#define LSST_QSERV_MASTER_SUBSTITUTION_H
+#ifndef LSST_QSERV_UTIL_SUBSTITUTION_H
+#define LSST_QSERV_UTIL_SUBSTITUTION_H
 
 #include <string>
 
@@ -67,5 +67,5 @@ private:
 };
 
 }}} // namespace lsst::qserv::util
-#endif // LSST_QSERV_MASTER_SUBSTITUTION_H
+#endif // LSST_QSERV_UTIL_SUBSTITUTION_H
 

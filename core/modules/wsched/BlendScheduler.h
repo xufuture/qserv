@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_BLENDSCHEDULER_H
-#define LSST_QSERV_WORKER_BLENDSCHEDULER_H
+#ifndef LSST_QSERV_WSCHED_BLENDSCHEDULER_H
+#define LSST_QSERV_WSCHED_BLENDSCHEDULER_H
 
 #include "wcontrol/Foreman.h"
 
@@ -88,4 +88,4 @@ private:
 
 extern lsst::qserv::wsched::BlendScheduler* dbgBlendScheduler; //< A symbol for gdb
 
-#endif // LSST_QSERV_WORKER_BLENDSCHEDULER_H
+#endif // LSST_QSERV_WSCHED_BLENDSCHEDULER_H
