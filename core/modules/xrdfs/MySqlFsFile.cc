@@ -179,11 +179,11 @@ std::ostream& operator<<(std::ostream& os, Timer const& tm) {
 //////////////////////////////////////////////////////////////////////////////
 // MySqlFsFile
 //////////////////////////////////////////////////////////////////////////////
-MySqlFsFile::MySqlFsFile(boost::shared_ptr<WLogger> log,
-                                  char const* user,
-                                  AddCallbackFunction::Ptr acf,
-                                  fs::FileValidator::Ptr fv,
-                                  boost::shared_ptr<Service> service)
+MySqlFsFile::MySqlFsFile(boost::shared_ptr<wlog::WLogger> log,
+                         char const* user,
+                         AddCallbackFunction::Ptr acf,
+                         FileValidator::Ptr fv,
+                         boost::shared_ptr<wcontrol::Service> service)
     : XrdSfsFile(user),
       _log(log),
       _addCallbackF(acf),
@@ -205,21 +205,21 @@ MySqlFsFile::~MySqlFsFile(void) {
 
 int MySqlFsFile::_acceptFile(char const* fileName) {
     int rc;
-    _path.reset(new QservPath(fileName));
-    QservPath::RequestType rt = _path->requestType();
+    _path.reset(new obsolete::QservPath(fileName));
+    obsolete::QservPath::RequestType rt = _path->requestType();
     switch(rt) {
-    case QservPath::GARBAGE:
-    case QservPath::UNKNOWN:
+    case obsolete::QservPath::GARBAGE:
+    case obsolete::QservPath::UNKNOWN:
         _log->error((Pformat("Unrecognized file open %1% by %2%")
                    % fileName % _userName).str().c_str());
         return SFS_ERROR;
 
-    case QservPath::OLDQ1:
+    case obsolete:QservPath::OLDQ1:
         _log->error((Pformat("Unrecognized file open %1% by %2%")
                      % fileName % _userName).str().c_str());
 
         return SFS_ERROR; // Unimplemented
-    case QservPath::CQUERY:
+    case obsolete::QservPath::CQUERY:
         // For now, use old validator.
         // _eDest->Say((Pformat("Newstyle open: %1% for chunk %2%")
         //              % fileName % _path->chunk()).str().c_str());
@@ -234,7 +234,7 @@ int MySqlFsFile::_acceptFile(char const* fileName) {
         _chunkId = -1; // unused.
         return SFS_OK; // No other action is needed.
 
-    case QservPath::RESULT:
+    case obsolete::QservPath::RESULT:
         rc = _checkForHash(_path->hashName());
         if(rc == SFS_ERROR) {
             _log->error((Pformat("File open %1% fail. Query error: %2%.")
@@ -244,7 +244,7 @@ int MySqlFsFile::_acceptFile(char const* fileName) {
                        % fileName % _userName).str().c_str());
         }
         return rc;
-    case QservPath::OLDQ2:
+    case obsolete::QservPath::OLDQ2:
         _chunkId = _path->chunk();
         _log->info((Pformat("File open %1% for query invocation by %2%")
                      % fileName % _userName).str().c_str());
@@ -260,7 +260,6 @@ int MySqlFsFile::_acceptFile(char const* fileName) {
                      % fileName % _userName).str().c_str());
         return SFS_ERROR;
     }
-
 }
 
 int MySqlFsFile::open(char const* fileName,
@@ -278,9 +277,9 @@ int MySqlFsFile::open(char const* fileName,
 int MySqlFsFile::close(void) {
     _log->info((Pformat("File close(%1%) by %2%")
                % _path->chunk() % _userName).str().c_str());
-    if(_path->requestType() == QservPath::RESULT) {
+    if(_path->requestType() == obsolete::QservPath::RESULT) {
         // Get rid of the news.
-        std::string hash = fs::stripPath(_dumpName);
+        std::string hash = stripPath(_dumpName);
         QueryRunner::getTracker().clearNews(hash);
 
         // Must remove dump file while we are doing the single-query workaround
@@ -398,7 +397,7 @@ XrdSfsXferSize MySqlFsFile::write(
         error.setErrInfo(EINVAL, "No query provided");
         return -EINVAL;
     }
-    if(_path->requestType() == QservPath::CQUERY) {
+    if(_path->requestType() == obsolete::QservPath::CQUERY) {
         if(_requestTaker->receive(fileOffset, buffer, bufferSize)) {
             if (_hasPacketEof(buffer, bufferSize)) {
                 _requestTaker->complete();
@@ -473,16 +472,16 @@ bool MySqlFsFile::_addWritePacket(XrdSfsFileOffset offset,
 }
 
 void MySqlFsFile::_addCallback(std::string const& filename) {
-    assert(_path->requestType() == QservPath::RESULT);
+    assert(_path->requestType() == obsolete::QservPath::RESULT);
     assert(_addCallbackF.get() != 0);
     (*_addCallbackF)(*this, filename);
 }
 
 ResultErrorPtr
 MySqlFsFile::_getResultState(std::string const& physFilename) {
-    assert(_path->requestType() == QservPath::RESULT);
+    assert(_path->requestType() == obsolete::QservPath::RESULT);
     // Lookup result hash.
-    std::string hash = fs::stripPath(physFilename);
+    std::string hash = stripPath(physFilename);
     //_eDest->Say(("Getting news for hash=" +hash).c_str());
     ResultErrorPtr p = QueryRunner::getTracker().getNews(hash);
     return p;
@@ -490,12 +489,12 @@ MySqlFsFile::_getResultState(std::string const& physFilename) {
 
 bool MySqlFsFile::_flushWrite() {
     switch(_path->requestType()) {
-    case QservPath::CQUERY:
+    case obsolete::QservPath::CQUERY:
         //return _fs.addQuery(_queryBuffer);
         return true;
-    case QservPath::OLDQ2:
+    case obsolete::QservPath::OLDQ2:
         return _flushWriteDetach();
-    case QservPath::OLDQ1:
+    case obsolete::QservPath::OLDQ1:
         return _flushWriteSync();
     default:
         _log->error("Wrong filestate for writing. FIX THIS BUG.");
@@ -542,7 +541,7 @@ void MySqlFsFile::_setDumpNameAsChunkId() {
 }
 
 int MySqlFsFile::_handleTwoReadOpen(char const* fileName) {
-    std::string hash = fs::stripPath(fileName);
+    std::string hash = stripPath(fileName);
     return _checkForHash(hash);
 }
 

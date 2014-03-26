@@ -28,7 +28,8 @@
 namespace lsst {
 namespace qserv {
 namespace xrdfs {
-
+namespace fs {
+        
 
 FileClass
 computeFileClass(std::string const& filename) {
@@ -54,4 +55,4 @@ stripPath(std::string const& filename) {
     return filename.substr(1+pos, std::string::npos);
 }
 
-}}} // namespace lsst::qserv::xrdfs
+}}}} // namespace lsst::qserv::xrdfs::fs
