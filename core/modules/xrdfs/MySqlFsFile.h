@@ -48,13 +48,7 @@ namespace obsolete {
 }
 namespace wcontrol {
     class RequestTaker;
-}}}
-// End of forward declarations
-
-
-namespace lsst {
-namespace qserv {
-namespace xrdfs {
+}}} // End of forward declarations
 
 
 /// A factory functor that exists for the MySqlFsFile to register a callback for
