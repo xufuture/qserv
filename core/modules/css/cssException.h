@@ -28,8 +28,8 @@
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_CSS_EXCEPTION_HH
-#define LSST_QSERV_CSS_EXCEPTION_HH
+#ifndef LSST_QSERV_CSS_CSSEXCEPTION_H
+#define LSST_QSERV_CSS_CSSEXCEPTION_H
 
 // Standard library
 #include <map>
@@ -73,4 +73,4 @@ private:
 
 }}} // namespace lsst::qserv::css
 
-#endif // LSST_QSERV_CSS_EXCEPTION_HH
+#endif // LSST_QSERV_CSS_CSSEXCEPTION_H

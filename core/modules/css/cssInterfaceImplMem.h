@@ -29,8 +29,8 @@
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_CSS_INTERFACE_IMPL_MEM_HH
-#define LSST_QSERV_CSS_INTERFACE_IMPL_MEM_HH
+#ifndef LSST_QSERV_CSS_CSSINTERFACEIMPLMEM_H
+#define LSST_QSERV_CSS_CSSINTERFACEIMPLMEM_H
 
 // standard library imports
 #include <map>
@@ -62,4 +62,4 @@ private:
 
 }}} // namespace lsst::qserv::css
 
-#endif // LSST_QSERV_CSS_INTERFACE_IMPL_MEM_HH
+#endif // LSST_QSERV_CSS_CSSINTERFACEIMPLMEM_H

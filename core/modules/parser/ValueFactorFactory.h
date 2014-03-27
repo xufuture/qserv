@@ -20,8 +20,10 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_PARSER_VALUETERMFACTORY_H
-#define LSST_QSERV_PARSER_VALUETERMFACTORY_H
+
+#ifndef LSST_QSERV_PARSER_VALUEFACTORFACTORY_H
+#define LSST_QSERV_PARSER_VALUEFACTORFACTORY_H
+
 /**
   * @file ValueFactor.h
   *
@@ -58,4 +60,4 @@ private:
 
 }}} // namespace lsst::qserv::parser
 
-#endif // LSST_QSERV_PARSER_VALUETERMFACTORY_H
+#endif // LSST_QSERV_PARSER_VALUEFACTORFACTORY_H

@@ -28,8 +28,8 @@
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_CSS_INTERFACE_HH
-#define LSST_QSERV_CSS_INTERFACE_HH
+#ifndef LSST_QSERV_CSS_CSSINTERFACE_H
+#define LSST_QSERV_CSS_CSSINTERFACE_H
 
 // standard library imports
 #include <vector>
@@ -58,4 +58,4 @@ protected:
 
 }}} // namespace lsst::qserv::css
 
-#endif // LSST_QSERV_CSS_INTERFACE_HH
+#endif // LSST_QSERV_CSS_CSSINTERFACE_H

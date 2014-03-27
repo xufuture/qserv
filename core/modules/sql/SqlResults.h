@@ -25,8 +25,9 @@
 // Unfortunately, including SqlResults.h will pull in mysql.h since MYSQL_RES is
 // used in the class declaration and MYSQL_RES is a typedef rather than a class
 // or simple struct.
-#ifndef LSST_QSERV_SQLRESULTS_H
-#define LSST_QSERV_SQLRESULTS_H
+
+#ifndef LSST_QSERV_SQL_SQLRESULTS_H
+#define LSST_QSERV_SQL_SQLRESULTS_H
 
 #include <string>
 #include <vector>
@@ -69,4 +70,4 @@ private:
 
 }}} // namespace lsst::qserv:: sql
 
-#endif // LSST_QSERV_SQLRESULTS_H
+#endif // LSST_QSERV_SQL_SQLRESULTS_H

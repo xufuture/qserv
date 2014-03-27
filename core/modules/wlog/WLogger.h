@@ -22,8 +22,9 @@
  */
 // Logger is a logging class used right now in the qserv worker plugins.
 
-#ifndef LSST_QSERV_WLOG_LOGGER_H
-#define LSST_QSERV_WLOG_LOGGER_H
+#ifndef LSST_QSERV_WLOG_WLOGGER_H
+#define LSST_QSERV_WLOG_WLOGGER_H
+
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -99,4 +100,4 @@ private:
 
 }}} // namespace lsst::qserv::wlog
 
-#endif // LSST_QSERV_WLOG_LOGGER_H
+#endif // LSST_QSERV_WLOG_WLOGGER_H

@@ -20,8 +20,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_LSPEED_MYSQLFSCOMMON_H
-#define LSST_LSPEED_MYSQLFSCOMMON_H
+#ifndef LSST_QSERV_XRDFS_MYSQLFSCOMMON_H
+#define LSST_QSERV_XRDFS_MYSQLFSCOMMON_H
 
 #include <string>
 #include <boost/shared_ptr.hpp>
@@ -61,4 +61,4 @@ public:
 
 }}}} // namespace lsst::qserv:xrdfs::fs
 
-#endif
+#endif // LSST_QSERV_XRDFS_MYSQLFSCOMMON_H

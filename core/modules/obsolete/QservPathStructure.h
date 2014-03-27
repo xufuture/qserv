@@ -20,8 +20,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_QSERVPATHSTRUCTURE_H
-#define LSST_QSERV_QSERVPATHSTRUCTURE_H
+#ifndef LSST_QSERV_OBSOLETE_QSERVPATHSTRUCTURE_H
+#define LSST_QSERV_OBSOLETE_QSERVPATHSTRUCTURE_H
 
 #include <string>
 #include <vector>
@@ -71,4 +71,4 @@ private:
 
 }}} // namespace lsst::qserv::obsolete
 
-#endif // LSST_QSERV_QSERVPATHEXPORT_H
+#endif // LSST_QSERV_OBSOLETE_QSERVPATHEXPORT_H

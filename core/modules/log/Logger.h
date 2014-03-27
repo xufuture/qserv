@@ -24,8 +24,8 @@
 // class Logger -- A class that handles application-wide logging.
 //
 
-#ifndef LSST_QSERV_LOGGER_H
-#define LSST_QSERV_LOGGER_H
+#ifndef LSST_QSERV_LOG_LOGGER_H
+#define LSST_QSERV_LOG_LOGGER_H
 
 // These directives are for convenience.
 #define LOG_STRM(level) lsst::qserv::log::Logger::Instance(lsst::qserv::log::Logger::level)
@@ -86,4 +86,4 @@ private:
 
 }}} // namespace lsst::qserv::log
 
-#endif // LSST_QSERV_LOGGER_H
+#endif // LSST_QSERV_LOG_LOGGER_H

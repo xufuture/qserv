@@ -21,8 +21,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_LSPEED_MYSQLFS_H
-#define LSST_LSPEED_MYSQLFS_H
+#ifndef LSST_QSERV_XRDFS_MYSQLFS_H
+#define LSST_QSERV_XRDFS_MYSQLFS_H
 
 #include "XrdSfs/XrdSfsInterface.hh"
 #include <boost/shared_ptr.hpp>
@@ -124,4 +124,5 @@ XrdSfsFileSystem* XrdSfsGetFileSystem(XrdSfsFileSystem* native_fs,
                                       XrdSysLogger* lp,
                                       char const* fileName);
 }
-#endif
+
+#endif // LSST_QSERV_XRDFS_MYSQLFS_H

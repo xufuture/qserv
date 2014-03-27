@@ -21,8 +21,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_LSPEED_MYSQLFSFILE_H
-#define LSST_LSPEED_MYSQLFSFILE_H
+#ifndef LSST_LSST_QSERV_XRDFS_MYSQLFSFILE_H
+#define LSST_LSST_QSERV_XRDFS_MYSQLFSFILE_H
 
 #include <sys/types.h>
 
@@ -142,4 +142,4 @@ private:
 
 }}} // namespace lsst::qserv::xrdfs
 
-#endif // LSST_LSPEED_MYSQLFSFILE_H
+#endif // LSST_LSST_QSERV_XRDFS_MYSQLFSFILE_H

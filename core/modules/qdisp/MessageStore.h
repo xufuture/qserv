@@ -28,8 +28,8 @@
 /// The MessageStore classes are responsible for maintaining status and
 /// error messages associated with a query.
 
-#ifndef LSST_QSERV_QDISP_MESSAGE_STORE_H
-#define LSST_QSERV_QDISP_MESSAGE_STORE_H
+#ifndef LSST_QSERV_QDISP_MESSAGESTORE_H
+#define LSST_QSERV_QDISP_MESSAGESTORE_H
 
 #include <string>
 #include <ctime>
@@ -72,4 +72,4 @@ private:
 
 }}} // namespace lsst::qserv::qdisp
 
-#endif // LSST_QSERV_QDISP_MESSAGE_STORE_H
+#endif // LSST_QSERV_QDISP_MESSAGESTORE_H
