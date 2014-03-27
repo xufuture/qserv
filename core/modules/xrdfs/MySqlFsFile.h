@@ -77,7 +77,7 @@ class MySqlFsFile : public XrdSfsFile {
 public:
     MySqlFsFile(boost::shared_ptr<wlog::WLogger> log, char const* user = 0,
                 AddCallbackFunction::Ptr acf = AddCallbackFunction::Ptr(),
-                fs::FileValidator::Ptr fv = fs::FileValidator::Ptr(),
+                FileValidator::Ptr fv = FileValidator::Ptr(),
                 boost::shared_ptr<wcontrol::Service> service =
                     wcontrol::Service::Ptr());
     virtual ~MySqlFsFile(void);
@@ -129,7 +129,7 @@ private:
 
     boost::shared_ptr<wlog::WLogger> _log;
     AddCallbackFunction::Ptr _addCallbackF;
-    fs::FileValidator::Ptr _validator;
+    FileValidator::Ptr _validator;
     int _chunkId;
     std::string _userName;
     std::string _dumpName;

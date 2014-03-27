@@ -72,7 +72,7 @@ public:
     }
 };
 
-class FakeFileValidator : public lsst::qserv::xrdfs::fs::FileValidator {
+class FakeFileValidator : public lsst::qserv::xrdfs::FileValidator {
 public:
     typedef boost::shared_ptr<FakeFileValidator> Ptr;
     FakeFileValidator() {}
@@ -125,34 +125,14 @@ public:
 };
 #endif // ifndef NO_XROOTD_FS
 
-/// Filesystem-based file path validation. Deprecated in favor of the
-/// internal data-structure-backed PathValidator (populated via mysqld
-/// upon startup/initialization)
-class FileValidator : public lsst::qserv::xrdfs::fs::FileValidator {
-public:
-    typedef boost::shared_ptr<FileValidator> Ptr;
-    FileValidator(char const* localroot) : _localroot(localroot) {}
-    virtual ~FileValidator() {}
-    virtual bool operator()(std::string const& filename) {
-        std::string expanded(_localroot);
-        expanded += "/" + filename;
-        struct stat statbuf;
-        return ::stat(expanded.c_str(), &statbuf) == 0 &&
-            S_ISREG(statbuf.st_mode) &&
-            (statbuf.st_mode & S_IRUSR) == S_IRUSR;
-    }
-private:
-    char const* _localroot;
-};
-
-/// PathValidator
+/// ChunkValidator
 /// Uses exports data struct instead of hitting the filesystem.
-class PathValidator : public lsst::qserv::xrdfs::fs::FileValidator {
+class ChunkValidator : public lsst::qserv::xrdfs::FileValidator {
 public:
-    typedef boost::shared_ptr<PathValidator> Ptr;
-    PathValidator(lsst::qserv::wpublish::MySqlExportMgr::StringSet const& exports)
+    typedef boost::shared_ptr<ChunkValidator> Ptr;
+    ChunkValidator(lsst::qserv::wpublish::MySqlExportMgr::StringSet const& exports)
         : _exports(exports) {}
-    virtual ~PathValidator() {}
+    virtual ~ChunkValidator() {}
     virtual bool operator()(std::string const& filename) {
         lsst::qserv::obsolete::QservPath qp(filename);
         if(qp.requestType() != lsst::qserv::obsolete::QservPath::CQUERY) {
@@ -230,7 +210,7 @@ MySqlFs::newFile(char* user, int MonID) {
     return new MySqlFsFile(
         _log, user,
         boost::make_shared<AddCallbackFunc>(),
-        boost::make_shared<PathValidator>(*_exports), _service);
+        boost::make_shared<ChunkValidator>(*_exports), _service);
 #endif
 }
 
@@ -285,12 +265,12 @@ int MySqlFs::rem(
     char const* path, XrdOucErrInfo& outError, XrdSecEntity const* client,
     char const* opaque) {
     // Check for qserv result path
-    fs::FileClass c = fs::computeFileClass(path);
-    if(c != fs::TWO_READ) { // Only support removal of result files.
+    FileClass c = computeFileClass(path);
+    if(c != TWO_READ) { // Only support removal of result files.
         outError.setErrInfo(ENOTSUP, "Operation not supported");
         return SFS_ERROR;
     }
-    std::string hash = fs::stripPath(path);
+    std::string hash = stripPath(path);
     // Signal query squashing
     _service->squashByHash(hash);
     //wdb::QueryRunner::Manager& mgr = wdb::QueryRunner::getMgr();

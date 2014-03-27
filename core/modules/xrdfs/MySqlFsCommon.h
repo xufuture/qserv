@@ -37,7 +37,6 @@ namespace obsolete {
 namespace lsst {
 namespace qserv {
 namespace xrdfs {
-namespace fs {
         
 enum FileClass {COMBO, TWO_WRITE, TWO_READ, UNKNOWN};
 
@@ -59,6 +58,6 @@ public:
     virtual bool operator()(obsolete::QservPath const& qp) = 0;
 };
 
-}}}} // namespace lsst::qserv:xrdfs::fs
+}}} // namespace lsst::qserv:xrdfs
 
 #endif // LSST_QSERV_XRDFS_MYSQLFSCOMMON_H

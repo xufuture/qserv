@@ -189,7 +189,7 @@ namespace xrdfs {
 MySqlFsFile::MySqlFsFile(boost::shared_ptr<wlog::WLogger> log,
                          char const* user,
                          AddCallbackFunction::Ptr acf,
-                         fs::FileValidator::Ptr fv,
+                         FileValidator::Ptr fv,
                          boost::shared_ptr<wcontrol::Service> service)
     : XrdSfsFile(user),
       _log(log),
@@ -286,7 +286,7 @@ int MySqlFsFile::close(void) {
                % _path->chunk() % _userName).str().c_str());
     if(_path->requestType() == obsolete::QservPath::RESULT) {
         // Get rid of the news.
-        std::string hash = fs::stripPath(_dumpName);
+        std::string hash = stripPath(_dumpName);
         wdb::QueryRunner::getTracker().clearNews(hash);
 
         // Must remove dump file while we are doing the single-query workaround
@@ -488,7 +488,7 @@ wcontrol::ResultErrorPtr
 MySqlFsFile::_getResultState(std::string const& physFilename) {
     assert(_path->requestType() == obsolete::QservPath::RESULT);
     // Lookup result hash.
-    std::string hash = fs::stripPath(physFilename);
+    std::string hash = stripPath(physFilename);
     //_eDest->Say(("Getting news for hash=" +hash).c_str());
     wcontrol::ResultErrorPtr p = wdb::QueryRunner::getTracker().getNews(hash);
     return p;
@@ -549,7 +549,7 @@ void MySqlFsFile::_setDumpNameAsChunkId() {
 }
 
 int MySqlFsFile::_handleTwoReadOpen(char const* fileName) {
-    std::string hash = fs::stripPath(fileName);
+    std::string hash = stripPath(fileName);
     return _checkForHash(hash);
 }
 
