@@ -77,4 +77,4 @@ private:
 
 }}} // namespace lsst::qserv::wdb
 
-#endif // LSST_QSERV_WDB_QUERYPHYRESULT _H
+#endif // LSST_QSERV_WDB_QUERYPHYRESULT_H

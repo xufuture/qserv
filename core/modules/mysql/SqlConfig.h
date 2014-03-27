@@ -20,10 +20,11 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_SQL_CONFIG_H
-#define LSST_QSERV_SQL_CONFIG_H
+#ifndef LSST_QSERV_MYSQL_SQLCONFIG_H
+#define LSST_QSERV_MYSQL_SQLCONFIG_H
 
 #include <string>
+
 namespace lsst {
 namespace qserv {
 namespace mysql {
@@ -50,4 +51,4 @@ public:
 
 }}} // namespace lsst::qserv::mysql
 
-#endif // LSST_QSERV_SQL_CONFIG_H
+#endif // LSST_QSERV_MYSQL_SQLCONFIG_H

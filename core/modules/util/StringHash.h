@@ -21,8 +21,9 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_STRINGHASH_H
-#define LSST_QSERV_STRINGHASH_H
+#ifndef LSST_QSERV_UTIL_STRINGHASH_H
+#define LSST_QSERV_UTIL_STRINGHASH_H
+
 #include <string>
 
 namespace lsst {
@@ -39,4 +40,4 @@ public:
 
 }}} // namespace lsst::qserv::util
 
-#endif // LSST_QSERV_STRINGHASH_H
+#endif // LSST_QSERV_UTIL_STRINGHASH_H

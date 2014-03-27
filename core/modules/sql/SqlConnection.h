@@ -28,8 +28,9 @@
 // not all.
 // It is uncertain of how this usage conflicts with db usage via the
 // python MySQLdb api, but no problems have been detected so far.
-#ifndef LSST_QSERV_SQLCONNECTION_H
-#define LSST_QSERV_SQLCONNECTION_H
+
+#ifndef LSST_QSERV_SQL_SQLCONNECTION_H
+#define LSST_QSERV_SQL_SQLCONNECTION_H
 
 // Standard
 #include <string>
@@ -129,4 +130,4 @@ private:
 // comment-column:0
 // End:
 
-#endif // LSST_QSERV_SQLCONNECTION_H
+#endif // LSST_QSERV_SQL_SQLCONNECTION_H

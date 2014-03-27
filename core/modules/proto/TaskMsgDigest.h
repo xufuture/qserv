@@ -19,8 +19,10 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_TASKMSGDIGEST_H
-#define LSST_QSERV_TASKMSGDIGEST_H
+
+#ifndef LSST_QSERV_PROTO_TASKMSGDIGEST_H
+#define LSST_QSERV_PROTO_TASKMSGDIGEST_H
+
 #include <string>
 
 namespace lsst {
@@ -34,5 +36,5 @@ std::string hashTaskMsg(TaskMsg const& m);
 
 }}} // lsst::qserv::proto
 
-#endif // LSST_QSERV_TASKMSGDIGEST_H
+#endif // LSST_QSERV_PROTO_TASKMSGDIGEST_H
 

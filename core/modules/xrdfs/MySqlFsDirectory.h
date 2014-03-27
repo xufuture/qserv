@@ -21,8 +21,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_LSPEED_MYSQLFSDIRECTORY_H
-#define LSST_LSPEED_MYSQLFSDIRECTORY_H
+#ifndef LSST_QSERV_XRDFS_MYSQLFSDIRECTORY_H
+#define LSST_QSERV_XRDFS_MYSQLFSDIRECTORY_H
 
 #include "XrdSfs/XrdSfsInterface.hh"
 #include <boost/shared_ptr.hpp>
@@ -60,4 +60,4 @@ private:
 
 }}} // namespace lsst::qserv::xrdfs
 
-#endif
+#endif // LSST_QSERV_XRDFS_MYSQLFSDIRECTORY_H

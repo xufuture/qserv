@@ -26,8 +26,9 @@
 //  Used to do lightweight concurrent things without thread
 //  creation/destruction overhead.
 //
-#ifndef LSST_QSERV_WORKQUEUE_H
-#define LSST_QSERV_WORKQUEUE_H
+#ifndef LSST_QSERV_UTIL_WORKQUEUE_H
+#define LSST_QSERV_UTIL_WORKQUEUE_H
+
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -82,4 +83,4 @@ private:
 
 }}}  // namespace lsst::qserv::util
 
-#endif // LSST_QSERV_WORKQUEUE_H
+#endif // LSST_QSERV_UTIL_WORKQUEUE_H

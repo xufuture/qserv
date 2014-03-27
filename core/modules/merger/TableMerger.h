@@ -31,8 +31,9 @@
 /// collected, a fixup step may be needed, as specified when
 /// configuring the TableMerger.
 
-#ifndef LSST_QSERV_MERGER_TABLE_MERGER_H
-#define LSST_QSERV_MERGER_TABLE_MERGER_H
+#ifndef LSST_QSERV_MERGER_TABLEMERGER_H
+#define LSST_QSERV_MERGER_TABLEMERGER_H
+
 #include <string>
 #include <boost/thread.hpp> // for mutex.
 #include <boost/shared_ptr.hpp> 
@@ -166,4 +167,4 @@ private:
 // comment-column:0
 // End:
 
-#endif // LSST_QSERV_MERGER_TABLE_MERGER_H
+#endif // LSST_QSERV_MERGER_TABLEMERGER_H

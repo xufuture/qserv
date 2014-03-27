@@ -28,8 +28,8 @@
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_CSS_STORE_H
-#define LSST_QSERV_CSS_STORE_H
+#ifndef LSST_QSERV_CSS_FACADE_H
+#define LSST_QSERV_CSS_FACADE_H
 
 // Standard
 #include <iostream>
@@ -92,4 +92,4 @@ private:
 
 }}} // namespace lsst::qserv::css
 
-#endif // LSST_QSERV_CSS_STORE_H
+#endif // LSST_QSERV_CSS_FACADE_H
