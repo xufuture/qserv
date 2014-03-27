@@ -54,4 +54,4 @@ stripPath(std::string const& filename) {
     return filename.substr(1+pos, std::string::npos);
 }
 
-}}}} // namespace lsst::qserv::xrdfs::fs
+}}} // namespace lsst::qserv::xrdfs
