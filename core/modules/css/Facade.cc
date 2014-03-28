@@ -309,8 +309,8 @@ Facade::getDbStriping(string const& dbName) {
     string v = _cssI->get(_prefix + "/DATABASES/" + dbName + "/partitioningId");
     string p = _prefix + "/DATABASE_PARTITIONING/_" + v + "/";
     IntPair striping;
-    striping.a = _getIntValue(p+"nStripes");
-    striping.b = _getIntValue(p+"nSubStripes");
+    striping.stripes = _getIntValue(p+"nStripes");
+    striping.subStripes = _getIntValue(p+"nSubStripes");
     return striping;
 }
 
