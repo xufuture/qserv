@@ -4,7 +4,6 @@
 export REPOSITORY_BASE=git://git.lsstcorp.org/contrib/eupspkg
 export EUPSPKG_REPOSITORY_PATH='git://git.lsstcorp.org/contrib/eupspkg/$PRODUCT'
 export EUPSPKG_SOURCE=git
-export TICKET=DM-58
 export VERSION=6.0.0rc1-${TICKET}
 export LOCAL_PKGROOT=$INSTALL_DIR/distserver-${TICKET}
 export DEPS_DIR=${QSERV_SRC_DIR}/eupspkg/dist/dependencies

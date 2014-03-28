@@ -35,6 +35,7 @@ INSTALLSCRIPT_DIR=${INSTALL_DIR}/${PREFIX}
 CFG_FILE="${INSTALLSCRIPT_DIR}/eupspkg/env.sh"
 /bin/cat <<EOM >$CFG_FILE
 export INSTALL_DIR=${INSTALL_DIR}
+export TICKET=${TICKET}
 export EUPS_PKGROOT=${EUPS_PKGROOT}
 export EUPS_GIT_CLONE_CMD="git clone https://github.com/RobertLuptonTheGood/eups.git"
 export EUPS_GIT_CHECKOUT_CMD="git checkout 1.3.0"
