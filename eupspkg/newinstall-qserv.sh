@@ -7,10 +7,11 @@
 # set -x
 SHELL=/bin/bash
 INSTALL_DIR=$PWD
-export EUPS_PKGROOT="http://datasky.in2p3.fr/qserv/distserver"
+TICKET="DM-58"
+export EUPS_PKGROOT="http://datasky.in2p3.fr/qserv/distserver/${TICKET}"
 
 QSERV_REPO=git://dev.lsstcorp.org/LSST/DMS/qserv
-QSERV_BRANCH=tickets/3100
+QSERV_BRANCH=tickets/${TICKET}
 
 while [ $# -gt 0 ]; do
     case "$1" in 
