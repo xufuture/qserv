@@ -32,6 +32,7 @@ git tag -f ${VERSION} &&
 git push origin master -f --tags &&
 
 echo "INFO : Retrieving Qserv tests dataset"
+mkdir -p ${LOCAL_PKGROOT}/tarballs &&
 git archive --remote=${DATA_REPO} --format=tar --prefix=testdata/ ${DATA_BRANCH} | gzip > ${LOCAL_PKGROOT}/tarballs/testdata-${VERSION}.tar.gz || 
 {
     echo "ERROR : Unable to download tests dataset" && 
