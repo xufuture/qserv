@@ -20,6 +20,7 @@ setup git
 eups_remove_all
 rm -rf LOCAL_PKGROOT/*
 eups declare python system -r none -m none
+eups declare java system -r none -m none
 eups declare numpy system -r none -m none
 eups_dist mysql 5.1.65 && 
 eups_dist xrootd qs5 &&
@@ -35,6 +36,7 @@ eups_dist mysqlpython 1.2.3 &&
 eups_dist protobuf 2.4.1 && 
 eups_dist zopeinterface 3.8.0 && 
 eups_dist twisted 12.0.0 && 
+eups_dist zookeeper 3.4.6 && 
 eups_dist qserv 6.0.0rc1 ||
 exit -1
 
