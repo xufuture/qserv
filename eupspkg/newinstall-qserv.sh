@@ -10,7 +10,7 @@ INSTALL_DIR=$PWD
 export EUPS_PKGROOT="http://datasky.in2p3.fr/qserv/distserver"
 
 QSERV_REPO=git://dev.lsstcorp.org/LSST/DMS/qserv
-QSERV_BRANCH=tickets/3100
+QSERV_BRANCH=tickets/DM-58
 
 while [ $# -gt 0 ]; do
     case "$1" in 

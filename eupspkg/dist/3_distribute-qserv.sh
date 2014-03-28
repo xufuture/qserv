@@ -12,12 +12,6 @@ then
     eups_install
 fi
 
-QSERV_REPO=git://dev.lsstcorp.org/LSST/DMS/qserv
-QSERV_BRANCH=tickets/3100
-
-DATA_REPO=git://dev.lsstcorp.org/LSST/DMS/testdata/qservdata.git
-DATA_BRANCH=master
-
 QSERV_REPO_PATH=${DEPS_DIR}/qserv
 
 rm -f ${LOCAL_PKGROOT}/tables/qserv-${VERSION}.table &&
@@ -34,7 +28,7 @@ cd ${QSERV_REPO_PATH} &&
 # update repos
 git add upstream/qserv-${VERSION}.tar.gz &&
 git commit -m "Packaging qserv-${VERSION}" &&
-git tag | head -1 | xargs git tag -f &&
+git tag -f ${VERSION} &&
 git push origin master -f --tags &&
 
 echo "INFO : Retrieving Qserv tests dataset"
