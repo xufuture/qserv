@@ -95,7 +95,7 @@ setupRequired(python)
 envPrepend(PYTHONPATH, $SYSPATH)
 EOF
         eups declare numpy system -r ${EUPS_NUMPY} -m ${EUPS_NUMPY_TABLE}
-        cat > $EUPS_PATH/site/manifest.remap <<-EOF
+        cat >> $EUPS_PATH/site/manifest.remap <<-EOF
 numpy  system
 EOF
     else        
