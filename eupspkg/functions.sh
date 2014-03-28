@@ -72,3 +72,35 @@ upload_to_distserver() {
     cp ${QSERV_SRC_DIR}/eupspkg/dist/.htaccess ${LOCAL_PKGROOT}
     lftp -e "mirror -Re ${LOCAL_PKGROOT} www/htdocs/qserv/; quit" sftp://datasky:od39yW0e@datasky.in2p3.fr/
 }
+
+check_java_version() {
+
+    if [ -z "$1" ]; then
+        echo "check_java_version() require one argument" >&2
+        return 1
+    fi
+
+    min_java_version=$1
+    JAVA_OK=1
+    if type -p java; then
+        echo "Found java executable in PATH"
+        _java=java
+    elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]];  then
+        echo Found java executable in JAVA_HOME     
+        _java="$JAVA_HOME/bin/java"
+    else
+        echo "System java not found"
+    fi
+
+    if [[ "$_java" ]]; then
+        version=$("$_java" -version 2>&1 | awk -F '"' '/version/ {print $2}')
+        echo version "$version"
+        if [[ "$version" == ${min_java_version}* ]] || [[ "$version" > "${min_java_version}" ]]; then
+            echo "Java version is more than ${min_java_version}"
+            JAVA_OK=0        
+        else         
+            echo "Java version is less than ${min_java_version}"
+        fi
+    fi
+    return $JAVA_OK
+}
