@@ -37,6 +37,7 @@ eups_dist protobuf 2.4.1 &&
 eups_dist zopeinterface 3.8.0 && 
 eups_dist twisted 12.0.0 && 
 eups_dist zookeeper 3.4.6 && 
+eups_dist kazoo 1.3.1 && 
 eups_dist qserv 6.0.0rc1 ||
 exit -1
 
