@@ -24,8 +24,8 @@
 // function invocations should move into this class (and perhaps its
 // delegates).
 
+#include "mysql/MySqlConfig.h"
 #include "mysql/MySqlConnection.h"
-#include "mysql/SqlConfig.h"
 
 
 namespace { // File-scope helpers
@@ -52,9 +52,9 @@ MySqlConnection::MySqlConnection()
     _initMySql();
 }
 
-MySqlConnection::MySqlConnection(SqlConfig const& sqlConfig,
+MySqlConnection::MySqlConnection(MySqlConfig const& sqlConfig,
                                  bool useThreadMgmt)
-    : _sqlConfig(new SqlConfig(sqlConfig)), _useThreadMgmt(useThreadMgmt),
+    : _sqlConfig(new MySqlConfig(sqlConfig)), _useThreadMgmt(useThreadMgmt),
       _mysql(NULL), _mysql_res(NULL) {
     _initMySql();
 }
