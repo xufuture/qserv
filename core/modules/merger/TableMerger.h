@@ -42,7 +42,7 @@
 namespace lsst {
 namespace qserv {
 // Forward
-class SqlConfig;
+class MySqlConfig;
 class SqlConnection;
 }}
 
@@ -138,7 +138,7 @@ private:
 
     TableMergerConfig _config;
     std::string _loadCmd;
-    boost::shared_ptr<SqlConfig> _sqlConfig;
+    boost::shared_ptr<MySqlConfig> _sqlConfig;
     boost::shared_ptr<SqlConnection> _sqlConn;
 
     std::string _mergeTable;

@@ -27,12 +27,12 @@
 #include <sstream>
 #include <boost/thread/once.hpp>
 
-#include "mysql/SqlConfig.h"
+#include "mysql/MySqlConfig.h"
 #include "sql/SqlConnection.h"
 
 namespace qWorker = lsst::qserv::worker;
 using lsst::qserv::worker::Config;
-using lsst::qserv::SqlConfig;
+using lsst::qserv::MySqlConfig;
 
 namespace {
 // Settings declaration ////////////////////////////////////////////////
@@ -73,7 +73,7 @@ bool isExecutable(std::string const& execFile) {
 std::string validateMysql(qWorker::Config const& c) {
     using namespace lsst::qserv;
     // Check config
-    SqlConfig sc;
+    MySqlConfig sc;
     sc.hostname = "";
     sc.username = c.getString("mysqlDefaultUser");
     sc.password = "";
@@ -127,7 +127,8 @@ std::string const& Config::getString(std::string const& key) const {
     }
     return i->second;
 }
-SqlConfig const& Config::getSqlConfig() const {
+
+MySqlConfig const& Config::getSqlConfig() const {
     assert(_sqlConfig.get());
     return *_sqlConfig;
 }
@@ -149,8 +150,8 @@ void Config::_load() {
     for(int i = 0; i < settingsCount; ++i) {
         _map[settings[i][0]] = _getEnvDefault(settings[i][1], settings[i][2]);
     }
-    _sqlConfig.reset(new SqlConfig);
-    SqlConfig& sc = *_sqlConfig;
+    _sqlConfig.reset(new MySqlConfig);
+    MySqlConfig& sc = *_sqlConfig;
     sc.hostname = "";
     sc.username = "qsmaster"; /// Empty default for now.
                               /// Consider "qworker" or "qsw"

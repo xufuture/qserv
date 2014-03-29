@@ -44,7 +44,7 @@
 #include "merger/SqlInsertIter.h"
 #include "util/MmapFile.h"
 using lsst::qserv::SqlErrorObject;
-using lsst::qserv::SqlConfig;
+using lsst::qserv::MySqlConfig;
 using lsst::qserv::SqlConnection;
 using lsst::qserv::master::TableMerger;
 using lsst::qserv::master::TableMergerError;
@@ -63,8 +63,8 @@ std::string getTimeStampId() {
     // FIXME: is there a better idea?
 }
 
-boost::shared_ptr<SqlConfig> makeSqlConfig(TableMergerConfig const& c) {
-    boost::shared_ptr<SqlConfig> sc(new SqlConfig());
+boost::shared_ptr<MySqlConfig> makeSqlConfig(TableMergerConfig const& c) {
+    boost::shared_ptr<MySqlConfig> sc(new MySqlConfig());
     assert(sc.get());
     sc->username = c.user;
     sc->dbName = c.targetDb;

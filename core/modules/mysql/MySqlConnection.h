@@ -33,12 +33,12 @@
 
 namespace lsst { namespace qserv {
 // Forward
-class SqlConfig;
+class MySqlConfig;
 
 class MySqlConnection : boost::noncopyable {
 public:
     MySqlConnection();
-    MySqlConnection(SqlConfig const& sqlConfig, bool useThreadMgmt=false);
+    MySqlConnection(MySqlConfig const& sqlConfig, bool useThreadMgmt=false);
 
     ~MySqlConnection();
 
@@ -47,7 +47,7 @@ public:
     bool connected() const { return _isConnected; }
     // instance destruction invalidates this return value
     MYSQL* getMySql() { return _mysql;}
-    SqlConfig const& getSqlConfig() const { return *_sqlConfig; }
+    MySqlConfig const& getMySqlConfig() const { return *_sqlConfig; }
 
     bool queryUnbuffered(std::string const& query);
     MYSQL_RES* getResult() { return _mysql_res; }
@@ -56,7 +56,7 @@ public:
         assert(_mysql);
         return mysql_field_count(_mysql);
     }
-    SqlConfig const& getConfig() const { return *_sqlConfig; }
+    MySqlConfig const& getConfig() const { return *_sqlConfig; }
     bool selectDb(std::string const& dbName);
 
 
@@ -68,7 +68,7 @@ private:
     MYSQL* _mysql;
     MYSQL_RES* _mysql_res;
     bool _isConnected;
-    boost::shared_ptr<SqlConfig> _sqlConfig;
+    boost::shared_ptr<MySqlConfig> _sqlConfig;
     bool _useThreadMgmt;
 };
 

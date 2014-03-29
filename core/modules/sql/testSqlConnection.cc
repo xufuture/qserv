@@ -77,9 +77,9 @@ struct PerTestFixture {
     }
     ~PerTestFixture () {}
     boost::shared_ptr<qsrv::SqlConnection> sqlConn;
-    static qsrv::SqlConfig sqlConfig;
+    static qsrv::MySqlConfig sqlConfig;
 };
-qsrv::SqlConfig PerTestFixture::sqlConfig;
+qsrv::MySqlConfig PerTestFixture::sqlConfig;
 
 BOOST_FIXTURE_TEST_SUITE(SqlConnectionTestSuite, PerTestFixture)
 

@@ -48,7 +48,7 @@
 #include "wconfig/Config.h"
 
 using lsst::qserv::SqlErrorObject;
-using lsst::qserv::SqlConfig;
+using lsst::qserv::MySqlConfig;
 using lsst::qserv::SqlConnection;
 
 using namespace lsst::qserv::worker;
@@ -272,7 +272,7 @@ std::string QueryRunner::_getErrorString() const {
   }
 */
 bool QueryRunner::_runTask(Task::Ptr t) {
-    SqlConfig sc(getConfig().getSqlConfig());
+    MySqlConfig sc(getConfig().getSqlConfig());
     sc.username = _user.c_str(); // Override with master-passed username.
     SqlConnection _sqlConn(sc, true);
     bool success = true;

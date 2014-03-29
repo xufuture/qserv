@@ -25,7 +25,7 @@
 // delegates).
 
 #include "mysql/MySqlConnection.h"
-#include "SqlConfig.h"
+#include "MySqlConfig.h"
 
 using namespace lsst::qserv;
 
@@ -47,9 +47,9 @@ MySqlConnection::MySqlConnection()
     _initMySql();
 }
 
-MySqlConnection::MySqlConnection(SqlConfig const& sqlConfig,
+MySqlConnection::MySqlConnection(MySqlConfig const& sqlConfig,
                                  bool useThreadMgmt)
-    : _sqlConfig(new SqlConfig(sqlConfig)), _useThreadMgmt(useThreadMgmt),
+    : _sqlConfig(new MySqlConfig(sqlConfig)), _useThreadMgmt(useThreadMgmt),
       _mysql(NULL), _mysql_res(NULL) {
     _initMySql();
 }

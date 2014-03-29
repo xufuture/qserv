@@ -352,7 +352,7 @@ void MySqlFs::_initExports() {
 /// @return true if cleanup was successful, false otherwise.
 bool MySqlFs::_cleanup() {
     if(getConfig().getIsValid()) {
-        SqlConfig sqlConfig = getConfig().getSqlConfig();
+        MySqlConfig sqlConfig = getConfig().getSqlConfig();
         // FIXME: Use qsmaster privileges for now.
         sqlConfig.username = "qsmaster";
         sqlConfig.dbName = "";
