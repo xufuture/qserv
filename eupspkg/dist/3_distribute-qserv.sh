@@ -41,7 +41,7 @@ git archive --remote=${DATA_REPO} --format=tar --prefix=testdata/ ${DATA_BRANCH}
 
 echo "INFO : Distributing Qserv"
 cd - &&
-eups distrib install git --repository="http://lsst-web.ncsa.illinois.edu/~mjuric/pkgs" &&
+eups distrib install git --repository="${EUPS_PKGROOT_LSST}" &&
 setup git &&
 eups_dist qserv ${VERSION} ||
 {
