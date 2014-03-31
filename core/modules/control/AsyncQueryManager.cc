@@ -381,15 +381,20 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
         "Error, resultdb.db not found. Using qservResult.",
         "qservResult");
 
+    std::string cssTech = getConfigElement(
+        cfg, "css.technology",
+        "Error, css.technology not found.",
+        "invalid");
     std::string cssConn = getConfigElement(
         cfg, "css.connection",
         "Error, css.connection not found.",
         "");
-    std::string cssTechnology = getConfigElement(
-        cfg, "css.technology",
-        "Error, css.technology not found.",
-        "invalid");
-    if (cssTechnology == "zoo") {
+    _initFacade(cssTech, cssConn);
+}
+
+void AsyncQueryManager::_initFacade(std::string const& cssTech, 
+                                    std::string const& cssConn) {
+    if (cssTech == "zoo") {
         LOGGER_INF << "Initializing zookeeper-based css, with " 
                    << cssConn << std::endl;
         boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(cssConn));
