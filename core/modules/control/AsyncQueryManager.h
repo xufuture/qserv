@@ -43,7 +43,6 @@
 #include <boost/thread.hpp>
 
 #include "control/DynamicWorkQueue.h"
-#include "css/IntPair.h"
 #include "xrdc/xrdfile.h"
 
 namespace lsst {
@@ -108,7 +107,6 @@ public:
     void addToWriteQueue(DynamicWorkQueue::Callable * callable);
 
     QuerySession& getQuerySession() { return *_qSession; }
-    css::IntPair getDbStriping();
         
 private:
     // QuerySpec: ChunkQuery object + result name

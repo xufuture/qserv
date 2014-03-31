@@ -36,8 +36,8 @@ namespace qserv {
 namespace css {
 
 struct IntPair {
-    int a;
-    int b;
+    int stripes;
+    int subStripes;
 };
 
 }}} // namespace lsst::qserv::css

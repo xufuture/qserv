@@ -284,8 +284,8 @@ BOOST_AUTO_TEST_CASE(getKeyColumn) {
 
 BOOST_AUTO_TEST_CASE(getDbStriping) {
     IntPair s = store->getDbStriping("dbA");
-    BOOST_REQUIRE(s.a == 18);
-    BOOST_REQUIRE(s.b == 40);
+    BOOST_REQUIRE(s.stripes == 18);
+    BOOST_REQUIRE(s.subStripes == 40);
 }
 
 
