@@ -11,7 +11,9 @@ b) db package. Hacky way to get it for now:
 
 ##### Building core/modules/css #####
 
-see core/modules/css/buildIt
+Build core, as you normally would (create custom.py and run
+scons from core/ directory)
+
 
 ##### Starting zookeeper #####
 
