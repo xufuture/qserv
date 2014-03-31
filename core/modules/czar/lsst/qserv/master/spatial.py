@@ -32,7 +32,7 @@ def makePmap(dominantDb, stripes, subStripes):
         msg = "Partitioner's stripes and substripes must be natural numbers."
         raise lsst.qserv.master.config.ConfigError(msg)
     p = SphericalBoxPartitionMap(stripes, subStripes)
-    logger.inf("Using %d stripesmodules/control/AsyncQueryManager.cc and %d substripes." % (stripes, subStripes))
+    logger.inf("Using %d stripes and %d substripes." % (stripes, subStripes))
     return p
 
 
