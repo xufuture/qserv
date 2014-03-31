@@ -50,7 +50,7 @@ eups_dist() {
     cmd="eups declare ${product} ${version} -r ." &&
     echo "CMD : $cmd" &&
     $cmd &&
-    cmd="eups distrib create --nodepend --server-dir=${INSTALL_DIR}/distserver -f generic -d eupspkg -t current ${product}"
+    cmd="eups distrib create --nodepend --server-dir=${LOCAL_PKGROOT} -f generic -d eupspkg -t current ${product}"
     echo "Running : $cmd" &&
     $cmd &&
     # for debug purpose only : build file generation

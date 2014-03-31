@@ -50,7 +50,7 @@ eups_install
 source "${INSTALL_DIR}/eups/bin/setups.sh"
 
 # If you don't have git > v1.8.4, do:
-eups distrib install git --repository="http://lsst-web.ncsa.illinois.edu/~mjuric/pkgs" &&
+eups distrib install git --repository="${EUPS_PKGROOT_LSST}"
 setup git ||
 {
     echo "Unable to install git. ${MSG_ABORT}" >&2
@@ -95,7 +95,7 @@ fi
 #    echo "Qserv depends on system ${PRODUCT} 1.6. Please install it. ${MSG_ABORT}" >&2
 #    exit 2  
 #fi    
-eups distrib install sconsUtils --repository="http://lsst-web.ncsa.illinois.edu/~mjuric/pkgs" &&
+eups distrib install sconsUtils --repository="${EUPS_PKGROOT_LSST}" &&
 setup sconsUtils ||
 {
     echo "Unable to install sconsUtils. ${MSG_ABORT}" >&2
