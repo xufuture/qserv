@@ -399,7 +399,7 @@ void AsyncQueryManager::_initFacade(std::string const& cssTech,
                    << cssConn << std::endl;
         boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(cssConn));
         _qSession.reset(new QuerySession(cssFPtr));
-    } else if (cssTechnology == "mem") {
+    } else if (cssTech == "mem") {
         LOGGER_INF << "Initializing memory-based css, with " 
                    << cssConn << std::endl;
         boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(cssConn, true));
