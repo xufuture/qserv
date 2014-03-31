@@ -399,7 +399,6 @@ void AsyncQueryManager::_initFacade(std::string const& cssTech,
     if (cssTech == "zoo") {
         LOGGER_INF << "Initializing zookeeper-based css, with " 
                    << cssConn << std::endl;
-        
         boost::shared_ptr<css::Facade> cssFPtr(
             css::FacadeFactory::createZooFacade(cssConn));
         _qSession.reset(new QuerySession(cssFPtr));
