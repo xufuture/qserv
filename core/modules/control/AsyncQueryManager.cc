@@ -267,8 +267,7 @@ void AsyncQueryManager::joinEverything() {
     while(!_queries.empty()) {
         count = _queries.size();
         if(count != lastCount) {
-            LOGGER_INF << "Still " << count
-                       << " in flight." << std::endl;
+            LOGGER_INF << "Still " << count << " in flight." << std::endl;
             count = lastCount;
             ++complainCount;
             if(complainCount > moreDetailThreshold) {
@@ -393,13 +392,13 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
         "Error, css.technology not found.",
         "invalid");
     if (cssTechnology == "zoo") {
-        std::cout << "Initializing zookeeper-based css, with " 
-                  << cssConn << std::endl;
+        LOGGER_INF << "Initializing zookeeper-based css, with " 
+                   << cssConn << std::endl;
         boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(cssConn));
         _qSession.reset(new qproc::QuerySession(cssFPtr));
     } else if (cssTechnology == "mem") {
-        std::cout << "Initializing memory-based css, with " 
-                  << cssConn << std::endl;
+        LOGGER_INF << "Initializing memory-based css, with " 
+                   << cssConn << std::endl;
         boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(cssConn, true));
         _qSession.reset(new qproc::QuerySession(cssFPtr));
     } else {
