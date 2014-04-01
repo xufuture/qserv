@@ -6,9 +6,13 @@ eups_install() {
     if [ -e "${INSTALL_DIR}/eups/bin/setups.sh" ]
     then   
         echo "Removing previous install"
-        source "${INSTALL_DIR}/eups/bin/setups.sh"
-        eups_unsetup_all
-        eups_remove_all
+        source "${INSTALL_DIR}/eups/bin/setups.sh" &&
+        eups_unsetup_all &&
+        eups_remove_all ||
+        {
+            echo "ERROR : Failed to remove previous packages" >&2
+            return 1
+        }
     fi
 
     rm -rf ~/.eups/ups_db ~/.eups/_caches_
@@ -26,9 +30,10 @@ eups_install() {
     make &&
     make install ||
     {
-        echo "Failed to install eups" >&2
-        exit 1
+        echo "ERROR : Failed to install eups" >&2
+        return 1 
     }
+    return 0
 }
 
 eups_dist() {
@@ -36,15 +41,21 @@ eups_dist() {
         echo "eups_dist requires two arguments"
         exit 1
     fi
-    
     product=$1 &&
-    version=$2 &&
+    version=$2
+
+    if [ -z "$3" ]; then
+        gitrepo=${REPOSITORY_BASE_CONTRIB}
+    else
+        gitrepo=$3
+    fi
+
     CWD=${PWD} &&
     TMP_DIR=${INSTALL_DIR}/tmp &&
     mkdir -p ${TMP_DIR} &&
     cd ${TMP_DIR} &&
     rm -rf ${product} &&
-    git clone ${REPOSITORY_BASE}/${product} &&
+    git clone ${gitrepo}/${product} &&
     cd ${product} &&
     git checkout -q ${version} -- ups &&
     cmd="eups declare ${product} ${version} -r ." &&
@@ -55,7 +66,10 @@ eups_dist() {
     $cmd &&
     # for debug purpose only : build file generation
     # eups expandbuild -V ${version} ups/${product}.build > ${product}-${version}.build
-    cd ${CWD}
+    cd ${CWD} ||
+    {
+        echo "ERROR : while creating package $product, $version"
+    }
 }
 
 eups_remove_all() {

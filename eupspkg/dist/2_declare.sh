@@ -6,7 +6,11 @@ then
 fi
 
 
-eups_install
+if [ ! eups_install ]
+then
+    echo "ERROR : unable to install eups"
+    exit 2
+fi
 
 # If you don't have python >= 2.7 with numpy >= 1.5.1 and
 # matplotlib >=1.2.0, use Anaconda python distribution by installing
@@ -37,9 +41,13 @@ eups_dist protobuf 2.4.1 &&
 eups_dist zopeinterface 3.8.0 && 
 eups_dist twisted 12.0.0 && 
 eups_dist zookeeper 3.4.6 && 
+eups_dist db 1.0 ${REPOSITORY_BASE_DMS} && 
 eups_dist kazoo 1.3.1 && 
 eups_dist qserv ${VERSION} ||
-exit -1
+{
+    echo "ERROR : unable to create all packages"
+    exit 2
+}
 
 echo "Declaring Qserv packages"
 # will allow to use eups distrib install pkg, without version
