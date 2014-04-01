@@ -1,26 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" ?>
  <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
-  <!-- Output the log message to system console.
-    -->
+
+  <!-- Output the log message to system console.  -->
   <appender name="appxConsoleAppender" class="org.apache.log4j.ConsoleAppender">    
     <param name="Target" value="System.out"/>
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d{yyyyMMdd HH:mm:ss,SSS} %t %-5p %m%n"/>
+            <param name="ConversionPattern" value="%d{yyyyMMdd HH:mm:ss,SSS} %t %-5p (%c) %m%n"/>
         </layout>
   </appender>
 
-  <!-- Output the log message to log file
-    -->
+  <!-- Output the log message to log file -->
   <appender name="appxNormalAppender" class="org.apache.log4j.FileAppender">
     <param name="file" value="/u1/bchick/sandbox2/modules/var/log/qserv-master.proto.log" />
     <param name="append" value="true" />
     <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%d %-5p %c{2} - %m%n" />
+      <param name="ConversionPattern" value="%d %-5p %c{2} (%F:%L) %m%n" />
     </layout>
   </appender>
 
-  <!-- My logger log file
-    -->
+  <!-- My logger log file -->
   <appender name="myLoggerAppender" class="org.apache.log4j.FileAppender">
     <param name="file" value="/u1/bchick/sandbox2/modules/var/log/mylogger.proto.log" />
     <param name="append" value="true" />
@@ -29,16 +27,155 @@
     </layout>
   </appender>
 
+  <!-- Tracing -->
+  <appender name="tracingAppender" class="org.apache.log4j.FileAppender">
+    <param name="file" value="/u1/bchick/sandbox2/modules/var/log/trace.proto.log" />
+    <param name="append" value="true" />
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%d{yyyyMMdd HH:mm:ss,SSS} %t %F:%L %M()%n" />
+    </layout>
+  </appender>
+
   <root>
         <priority value="info" />
-        <appender-ref ref="appxNormalAppender"/>
-        <appender-ref ref="appxConsoleAppender"/>
   </root>
 
-  <!-- Specify the level and appender for my logger -->
-  <category name="myLogger" >
-        <priority value ="debug" />
-        <appender-ref ref="myLoggerAppender"/>
+  <!-- Configure a logger for each qserv module. -->
+  <category name="control" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="czar" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="merger" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="meta" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="parser" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="qana" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="qdisp" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="qproc" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="query" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="sql" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="util" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="wbase" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="wconfig" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="wcontrol" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="wdb" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="wlog" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="wpublish" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="wsched" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="xrdc" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="xrdfs" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <category name="xrdoss" >
+        <priority value ="info" />
+        <appender-ref ref="appxNormalAppender"/>
+        <appender-ref ref="appxConsoleAppender"/>
+  </category>
+
+  <!-- Configure tracer loggers. -->
+  <category name="tracer" >
+        <priority value ="info" />
+        <appender-ref ref="tracingAppender"/>
+  </category>
+
+  <!-- Detailed tracing of AsynchQueryManager.cc -->
+  <category name="tracer.control.AsynchQueryManager" >
+        <priority value ="trace" />
   </category>
 
  </log4j:configuration>

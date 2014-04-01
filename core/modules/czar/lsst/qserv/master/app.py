@@ -416,8 +416,8 @@ class InbandQueryAction:
         protolog.log("qserv", protolog.INFO, "Hello from Python (via wrapper)!")
         name = "Bill"
         protolog.warn("This is a warning by %s!" % name)
-        protolog.log("myLogger", protolog.INFO, "Hello myLogger from Python.")
-        
+        protolog.log("qserv", protolog.INFO, "Hello myLogger from Python.")
+        protolog.debug("This is a debug statement!")
 
         ## Fields with leading underscores are internal-only
         ## Those without leading underscores may be read by clients

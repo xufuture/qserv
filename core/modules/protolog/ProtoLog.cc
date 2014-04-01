@@ -22,7 +22,6 @@
 // See ProtoLog.h
 
 #include "ProtoLog.h"
-#include <log4cxx/logger.h>
 #include <log4cxx/consoleappender.h>
 #include <log4cxx/simplelayout.h>
 #include <log4cxx/logmanager.h>
@@ -47,7 +46,7 @@ void vforcedLog(const log4cxx::LevelPtr &level,
                 std::string const& fmt,
                 va_list args) {
     char msg[MAX_LOG_MSG_LEN];
-    vsprintf(msg, fmt.c_str(), args);
+    vsnprintf(msg, MAX_LOG_MSG_LEN, fmt.c_str(), args);
     logger->forcedLog(level, msg,
                       log4cxx::spi::LocationInfo(filename.c_str(),
                                                  funcname.c_str(),
@@ -56,53 +55,23 @@ void vforcedLog(const log4cxx::LevelPtr &level,
 
 void ProtoLog::vlog(std::string const& filename, std::string const& funcname,
                     unsigned int lineno, std::string const& loggername,
-                    ProtoLog::log_level level, std::string const& fmt,
+                    const log4cxx::LevelPtr &level, std::string const& fmt,
                     va_list args) {
-
+    // Retrieve logger object
     log4cxx::LoggerPtr logger;
     if (loggername.empty() || loggername == "root")
         logger = log4cxx::Logger::getRootLogger();
     else
-        logger = log4cxx::LoggerPtr(log4cxx::Logger::getLogger(loggername));
-
-    bool (log4cxx::Logger::*checkEnabledFunction)() const = NULL;
-    log4cxx::LevelPtr (*getLevelFunction)() = NULL;
-    switch (level) {
-        case LOG_TRACE:
-            checkEnabledFunction = &log4cxx::Logger::isTraceEnabled;
-            getLevelFunction = &log4cxx::Level::getTrace;
-            break;
-        case LOG_DEBUG:
-            checkEnabledFunction = &log4cxx::Logger::isDebugEnabled;
-            getLevelFunction = &log4cxx::Level::getDebug;
-            break;
-        case LOG_WARN:
-            checkEnabledFunction = &log4cxx::Logger::isWarnEnabled;
-            getLevelFunction = &log4cxx::Level::getWarn;
-            break;
-        case LOG_ERROR:
-            checkEnabledFunction = &log4cxx::Logger::isErrorEnabled;
-            getLevelFunction = &log4cxx::Level::getError;
-            break;
-        case LOG_FATAL:
-            checkEnabledFunction = &log4cxx::Logger::isFatalEnabled;
-            getLevelFunction = &log4cxx::Level::getFatal;
-            break;
-        default:
-            checkEnabledFunction = &log4cxx::Logger::isInfoEnabled;
-            getLevelFunction = &log4cxx::Level::getInfo;
-            break;
-    }
- 
-    if ((logger->*checkEnabledFunction)())
-        vforcedLog((*getLevelFunction)(), logger, filename, funcname, lineno,
-                   fmt, args);
-        
+        logger = log4cxx::Logger::getLogger(loggername);
+    // Check logging level
+    if (logger->isEnabledFor(level))
+        vforcedLog(level, logger, filename, funcname, lineno, fmt, args);
 }
 
 void ProtoLog::log(std::string const& filename, std::string const& funcname,
                    unsigned int lineno, std::string const& loggername,
-                   ProtoLog::log_level level, std::string const& fmt, ...) {
+                   const log4cxx::LevelPtr &level, std::string const& fmt,
+                   ...) {
     va_list args;
     va_start(args, fmt);
     vlog(filename, funcname, lineno, loggername, level, fmt, args);

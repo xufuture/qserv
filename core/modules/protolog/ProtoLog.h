@@ -29,37 +29,42 @@
 
 #include <string>
 #include <stdarg.h>
+#include <log4cxx/logger.h>
 
-#define LOG_TRACE(msg...) LOG("root", lsst::qserv::ProtoLog::LOG_TRACE, msg)
-#define LOG_DEBUG(msg...) LOG("root", lsst::qserv::ProtoLog::LOG_DEBUG, msg)
-#define LOG_INFO(msg...) LOG("root", lsst::qserv::ProtoLog::LOG_INFO, msg)
-#define LOG_WARN(msg...) LOG("root", lsst::qserv::ProtoLog::LOG_WARN, msg)
-#define LOG_ERROR(msg...) LOG("root", lsst::qserv::ProtoLog::LOG_ERROR, msg)
-#define LOG_FATAL(msg...) LOG("root", lsst::qserv::ProtoLog::LOG_FATAL, msg)
+#ifndef DEFAULT_LOGGER
+#define DEFAULT_LOGGER "root"
+#endif
+
+#define LOG_TRACE(msg...) LOG(DEFAULT_LOGGER, LOG_LVL_TRACE, msg)
+#define LOG_DEBUG(msg...) LOG(DEFAULT_LOGGER, LOG_LVL_DEBUG, msg)
+#define LOG_INFO(msg...) LOG(DEFAULT_LOGGER, LOG_LVL_INFO, msg)
+#define LOG_WARN(msg...) LOG(DEFAULT_LOGGER, LOG_LVL_WARN, msg)
+#define LOG_ERROR(msg...) LOG(DEFAULT_LOGGER, LOG_LVL_ERROR, msg)
+#define LOG_FATAL(msg...) LOG(DEFAULT_LOGGER, LOG_LVL_FATAL, msg)
 #define LOG(loggername, level, msg...) \
-    lsst::qserv::ProtoLog::log(__FILE__, __PRETTY_FUNCTION__, __LINE__,\
-                               loggername, level, msg);
+    lsst::qserv::ProtoLog::log(__BASE_FILE__, __PRETTY_FUNCTION__, __LINE__,\
+                               loggername, (*level)(), msg);
+
+#define LOG_LVL_TRACE &log4cxx::Level::getTrace
+#define LOG_LVL_DEBUG &log4cxx::Level::getDebug
+#define LOG_LVL_INFO &log4cxx::Level::getInfo
+#define LOG_LVL_WARN &log4cxx::Level::getWarn
+#define LOG_LVL_ERROR &log4cxx::Level::getError
+#define LOG_LVL_FATAL &log4cxx::Level::getFatal
 
 namespace lsst {
 namespace qserv {
 
 class ProtoLog {
 public:
-    enum log_level {
-        LOG_TRACE = 0,
-        LOG_DEBUG,
-        LOG_INFO,
-        LOG_WARN,
-        LOG_ERROR,
-        LOG_FATAL
-    };
     static void initLog();
     static void log(std::string const& filename, std::string const& funcname,
                     unsigned int lineno, std::string const& loggername,
-                    log_level level, std::string const& fmt, ...);
+                    const log4cxx::LevelPtr &level, std::string const& fmt, ...);
     static void vlog(std::string const& filename, std::string const& funcname,
                      unsigned int lineno, std::string const& loggername,
-                     log_level level, std::string const& fmt, va_list args);
+                     const log4cxx::LevelPtr &level, std::string const& fmt,
+                     va_list args);
 };
 
 }} // lsst::qserv

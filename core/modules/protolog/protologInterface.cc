@@ -32,6 +32,19 @@ void qMaster::initLog_iface() {
     lsst::qserv::ProtoLog::initLog();
 }
 
+log4cxx::LevelPtr getLogLevel(int level) {
+    switch (level) {
+        case 0: return log4cxx::Level::getTrace();
+        case 1: return log4cxx::Level::getDebug();
+        case 2: return log4cxx::Level::getInfo();
+        case 3: return log4cxx::Level::getWarn();
+        case 4: return log4cxx::Level::getError();
+        case 5: return log4cxx::Level::getFatal();
+        // TODO: How should we handle invalid level number?
+        default: return log4cxx::Level::getInfo();
+    }
+}
+
 void qMaster::log_iface(std::string const& filename,
                         std::string const& funcname,
                         int lineno,
@@ -42,7 +55,7 @@ void qMaster::log_iface(std::string const& filename,
     va_list args;
     va_start(args, fmt);
     lsst::qserv::ProtoLog::vlog(filename, funcname, lineno, loggername,
-        static_cast<lsst::qserv::ProtoLog::log_level>(level), fmt, args);
+                                getLogLevel(level), fmt, args);
 }
 
 
