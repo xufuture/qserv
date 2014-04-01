@@ -51,9 +51,13 @@ source "${INSTALL_DIR}/eups/bin/setups.sh"
 
 # If you don't have git > v1.8.4, do:
 eups distrib install git --repository="${EUPS_PKGROOT_LSST}"
-setup git
+setup git ||
+{
+    echo "Unable to install git. ${MSG_ABORT}" >&2
+    exit 2
+}
 
-echo "Installing Qserv in ${INSTALL_DIR}"
+# Needed to build db package
 #
 # Try to use system python, if a compatible version is available
 #
@@ -66,13 +70,40 @@ then
     EUPS_PYTHON=$EUPS_PATH/$(eups flavor)/python/system
     mkdir -p $EUPS_PYTHON/ups
     eups declare python system -r $EUPS_PYTHON -m none
-    cat > $EUPS_PATH/site/manifest.remap <<-EOF
+    cat >> $EUPS_PATH/site/manifest.remap <<-EOF
 python  system
 EOF
 else
     echo "Qserv depends on system python 2.6 or 2.7. Please install it. ${MSG_ABORT}" >&2
     exit 2  
 fi    
+#
+# Try to use system scons, if a compatible version is available
+#
+# TODO check for 2.1.0
+#if which scons 
+#then 
+#    PRODUCT=scons
+#    echo "Detected Qserv-compatible sytem ${PRODUCT} version; will use it."
+#    EUPS_PRODUCT_PATH=${EUPS_PATH}/$(eups flavor)/${PRODUCT}/system
+#    mkdir -p $EUPS_PRODUCT_PATH/ups
+#    eups declare ${PRODUCT} system -r $EUPS_PRODUCT_PATH -m none
+#    cat >> $EUPS_PATH/site/manifest.remap <<-EOF
+#${PRODUCT}  system
+#EOF
+#else
+#    echo "Qserv depends on system ${PRODUCT} 1.6. Please install it. ${MSG_ABORT}" >&2
+#    exit 2  
+#fi    
+eups distrib install sconsUtils --repository="${EUPS_PKGROOT_LSST}" &&
+setup sconsUtils ||
+{
+    echo "Unable to install sconsUtils. ${MSG_ABORT}" >&2
+    exit 2
+}
+
+
+echo "Installing Qserv in ${INSTALL_DIR}"
 
 #
 # Try to use system numpy, if a compatible version is available
@@ -118,7 +149,7 @@ then
 ${PRODUCT}  system
 EOF
 else
-    echo "Qserv depends on system ${JAVA} 1.6. Please install it. ${MSG_ABORT}" >&2
+    echo "Qserv depends on system ${PRODUCT} 1.6. Please install it. ${MSG_ABORT}" >&2
     exit 2  
 fi    
 
