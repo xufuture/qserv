@@ -1,4 +1,4 @@
-# -*- python -*-
+2# -*- python -*-
 Import('env')
 Import('libProducts')
 Import('cacheObjs')

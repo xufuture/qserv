@@ -144,7 +144,6 @@ BOOST_AUTO_TEST_CASE(containsTable) {
 
     // for non-existing db
     BOOST_CHECK_THROW(facade->containsTable("Dummy", "NotHere"),
-                      CssException_DbDoesNotExist);
 }
 
 BOOST_AUTO_TEST_CASE(tableIsChunked) {
