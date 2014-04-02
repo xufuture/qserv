@@ -153,11 +153,19 @@ BOOST_AUTO_TEST_CASE(tableIsChunked) {
     BOOST_CHECK_EQUAL(facade->tableIsChunked("dbA", "Exposure"), false);
 
     // normal, table does not exist
+<<<<<<< HEAD
     BOOST_CHECK_THROW(facade->tableIsChunked("dbA", "NotHere"),
                       CssException_TableDoesNotExist);
 
     // for non-existing db
     BOOST_CHECK_THROW(facade->tableIsChunked("Dummy", "NotHere"),
+=======
+    BOOST_CHECK_THROW(store->checkIfTableIsChunked("dbA", "NotHere"),
+                      CssException_TableDoesNotExist);
+
+    // for non-existing db
+    BOOST_CHECK_THROW(store->checkIfTableIsChunked("Dummy", "NotHere"),
+>>>>>>> a39a3b6... switched to specialized run time errors
                       CssException_DbDoesNotExist);
 }
 
@@ -173,7 +181,6 @@ BOOST_AUTO_TEST_CASE(tableIsSubChunked) {
 
     // for non-existing db
     BOOST_CHECK_THROW(facade->tableIsSubChunked("Dummy", "NotHere"),
-                      CssException_DbDoesNotExist);
 }
 
 BOOST_AUTO_TEST_CASE(getAllowedDbs) {
