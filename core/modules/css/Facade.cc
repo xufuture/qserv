@@ -129,13 +129,7 @@ Facade::containsTable(string const& dbName, string const& tableName) const {
 bool
 Facade::tableIsChunked(string const& dbName, string const& tableName) const {
     LOGGER_INF << "tableIsChunked " << dbName << " " << tableName << endl;
-    try { // FIXME: remove it, it SHOULD throw an exception
-        _throwIfNotDbTbExists(dbName, tableName);
-    } catch (CssException& e) {
-        if (e.errCode()==CssException::DB_DOES_NOT_EXIST) {
-            return false;
-        }
-    }
+    _throwIfNotDbTbExists(dbName, tableName);
     return _tableIsChunked(dbName, tableName);
 }
 
@@ -247,13 +241,7 @@ Facade::getPartitionCols(string const& dbName, string const& tableName) const {
 int
 Facade::getChunkLevel(string const& dbName, string const& tableName) const {
     LOGGER_INF << "getChunkLevel(" << dbName << ", " << tableName << ")" << endl;
-    try { // FIXME: remove it, it SHOULD throw an exception
-        _throwIfNotDbTbExists(dbName, tableName);
-    } catch (CssException& e) {
-        if (e.errCode()==CssException::DB_DOES_NOT_EXIST) {
-            return -1;
-        }
-    }
+    _throwIfNotDbTbExists(dbName, tableName);
     bool isChunked = _tableIsChunked(dbName, tableName);
     bool isSubChunked = _tableIsSubChunked(dbName, tableName);
     if (isSubChunked) {
@@ -280,13 +268,7 @@ string
 Facade::getKeyColumn(string const& dbName, string const& tableName) const {
     LOGGER_INF << "*** Facade::getKeyColumn(" << dbName << ", " << tableName 
                << ")" << endl;
-    try { // FIXME: remove it, it SHOULD throw an exception
-        _throwIfNotDbTbExists(dbName, tableName);
-    } catch (CssException& e) {
-        if (e.errCode()==CssException::DB_DOES_NOT_EXIST) {
-            return "";
-        }
-    }
+    _throwIfNotDbTbExists(dbName, tableName);
     string ret, p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + tableName +
                     "/partitioning/secIndexColName";
     try {
