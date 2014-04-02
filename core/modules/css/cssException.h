@@ -40,35 +40,67 @@ namespace lsst {
 namespace qserv {
 namespace css {
 
-class CssException : public std::runtime_error {
-public:
-    enum errCodeT { 
-        DB_DOES_NOT_EXIST,
-        KEY_DOES_NOT_EXIST,
-        TB_DOES_NOT_EXIST,
-        AUTH_FAILURE,
-        CONN_FAILURE,
-        INTERNAL_ERROR
-    };     
-    //CssException(errCodeT errCode);
-    CssException(errCodeT errCode, std::string const& extraMsg="");
-    virtual ~CssException() throw() {
-        delete [] _errMsg;
-    }
-    
-    virtual const char* what() const throw();
-    errCodeT errCode() const {
-        return _errCode;
-    }
-
+/**
+ * Base class for all CSS run-time errors
+ */
+class CssRunTimeException : public std::runtime_error {
 protected:
-    explicit CssException(std::string const& msg)
+    explicit CssRunTimeException(std::string const& msg)
         : std::runtime_error(msg) {}
+};    
 
-private:
-    errCodeT _errCode;
-    char* _errMsg;
-    static std::map<errCodeT, std::string> _errMap;
+/**
+ * Specialized run-time error: database does not exist.
+ */
+class CssException_DbDoesNotExist : public CssRunTimeException {
+public:
+    CssException_DbDoesNotExist(std::string const& dbName)
+        : CssRunTimeException("Database '" + dbName + "' does not exist.") {}
+};
+
+/**
+ * Specialized run-time error: key does not exist.
+ */
+class CssException_KeyDoesNotExist : public CssRunTimeException {
+public:
+    CssException_KeyDoesNotExist(std::string const& keyName)
+        : CssRunTimeException("Key '" + keyName + "' does not exist.") {}
+};
+
+/**
+ * Specialized run-time error: table does not exist.
+ */
+class CssException_TableDoesNotExist : public CssRunTimeException {
+public:
+    CssException_TableDoesNotExist(std::string const& tableName)
+        : CssRunTimeException("Table '" + tableName + "' does not exist.") {}
+};
+
+/**
+ * Specialized run-time error: authorization failure.
+ */
+class CssException_AuthFailure : public CssRunTimeException {
+public:
+    CssException_AuthFailure()
+        : CssRunTimeException("Authorization failure.") {}
+};
+
+/**
+ * Specialized run-time error: connection failure.
+ */
+class CssException_ConnFailure : public CssRunTimeException {
+public:
+    CssException_ConnFailure()
+        : CssRunTimeException("Failed to connect to persistent store.") {}
+};
+
+/**
+ * Generic CSS run-time error.
+ */
+class CssException_InternalRunTimeError : public CssRunTimeException {
+public:
+    CssException_InternalRunTimeError(std::string const& extraMsg)
+        : CssRunTimeException("Internal run-time error. (" + extraMsg + ")") {}
 };
 
 }}} // namespace lsst::qserv::css

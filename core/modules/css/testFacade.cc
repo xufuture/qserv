@@ -141,11 +141,8 @@ BOOST_AUTO_TEST_CASE(checkIfContainsTable) {
     BOOST_REQUIRE(!store->checkIfContainsTable("dbA", "NotHere"));
 
     // for non-existing db
-    try {
-        store->checkIfContainsTable("Dummy", "NotHere");
-    } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
-    }
+    BOOST_CHECK_THROW(store->checkIfContainsTable("Dummy", "NotHere"),
+                      CssException_DbDoesNotExist);
 }
 
 BOOST_AUTO_TEST_CASE(checkIfTableIsChunked) {
@@ -155,18 +152,12 @@ BOOST_AUTO_TEST_CASE(checkIfTableIsChunked) {
     BOOST_REQUIRE(!store->checkIfTableIsChunked("dbA", "Exposure"));
 
     // normal, table does not exist
-    try {
-        store->checkIfTableIsChunked("dbA", "NotHere");
-    } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::TB_DOES_NOT_EXIST);
-    }
+    BOOST_CHECK_THROW(store->checkIfTableIsChunked("dbA", "NotHere"),
+                      CssException_TableDoesNotExist);
 
     // for non-existing db
-    try {
-        store->checkIfTableIsChunked("Dummy", "NotHere");
-    } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
-    }
+    BOOST_CHECK_THROW(store->checkIfTableIsChunked("Dummy", "NotHere"),
+                      CssException_DbDoesNotExist);
 }
 
 BOOST_AUTO_TEST_CASE(checkIfTableIsSubChunked) {
@@ -176,18 +167,12 @@ BOOST_AUTO_TEST_CASE(checkIfTableIsSubChunked) {
     BOOST_REQUIRE(!store->checkIfTableIsSubChunked("dbA", "Exposure"));
 
     // normal, table does not exist
-    try {
-        store->checkIfTableIsSubChunked("dbA", "NotHere");
-    } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::TB_DOES_NOT_EXIST);
-    }
+    BOOST_CHECK_THROW(store->checkIfTableIsSubChunked("dbA", "NotHere"),
+                      CssException_TableDoesNotExist);
 
     // for non-existing db
-    try {
-        store->checkIfTableIsSubChunked("Dummy", "NotHere");
-    } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
-    }
+    BOOST_CHECK_THROW(store->checkIfTableIsSubChunked("Dummy", "NotHere"),
+                      CssException_DbDoesNotExist);
 }
 
 BOOST_AUTO_TEST_CASE(getAllowedDbs) {
@@ -213,11 +198,8 @@ BOOST_AUTO_TEST_CASE(getChunkedTables) {
     BOOST_REQUIRE(0 == v.size());
 
     // for non-existing db
-    try {
-        store->getChunkedTables("Dummy");
-    } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
-    }
+    BOOST_CHECK_THROW(store->getChunkedTables("Dummy"),
+                      CssException_DbDoesNotExist);
 }
 
 BOOST_AUTO_TEST_CASE(getSubChunkedTables) {
@@ -232,11 +214,8 @@ BOOST_AUTO_TEST_CASE(getSubChunkedTables) {
     BOOST_REQUIRE(0 == v.size());
 
     // for non-existing db
-    try {
-        store->getSubChunkedTables("Dummy");
-    } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
-    }
+    BOOST_CHECK_THROW(store->getSubChunkedTables("Dummy"),
+                      CssException_DbDoesNotExist);
 }
 
 BOOST_AUTO_TEST_CASE(getPartitionCols) {
@@ -254,11 +233,8 @@ BOOST_AUTO_TEST_CASE(getPartitionCols) {
     BOOST_REQUIRE(v[2] == "");
 
     // for non-existing db
-    try {
-        store->getPartitionCols("Dummy", "x");
-    } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
-    }
+    BOOST_CHECK_THROW(store->getPartitionCols("Dummy", "x"),
+                      CssException_DbDoesNotExist);
 }
 
 BOOST_AUTO_TEST_CASE(getChunkLevel) {
@@ -275,11 +251,8 @@ BOOST_AUTO_TEST_CASE(getKeyColumn) {
     BOOST_REQUIRE(store->getKeyColumn("dbA", "Source") == "");
 
     // for non-existing db
-    try {
-        store->getKeyColumn("Dummy", "x");
-    } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
-    }
+    BOOST_CHECK_THROW(store->getKeyColumn("Dummy", "x"),
+                      CssException_DbDoesNotExist);
 }
 
 BOOST_AUTO_TEST_CASE(getDbStriping) {

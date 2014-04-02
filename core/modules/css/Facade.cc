@@ -130,10 +130,8 @@ Facade::checkIfTableIsChunked(string const& dbName, string const& tableName) {
     cout << "checkIfTableIsChunked " << dbName << " " << tableName << endl;
     try { // FIXME: remove it, it SHOULD throw an exception
         _validateDbTbExists(dbName, tableName);
-    } catch (CssException& e) {
-        if (e.errCode()==CssException::DB_DOES_NOT_EXIST) {
-            return false;
-        }
+    } catch (CssException_DbDoesNotExist& e) {
+        return false;
     }
     return _checkIfTableIsChunked(dbName, tableName);
 }
@@ -246,10 +244,8 @@ Facade::getChunkLevel(string const& dbName, string const& tableName) {
     cout << "getChunkLevel(" << dbName << ", " << tableName << ")" << endl;
     try { // FIXME: remove it, it SHOULD throw an exception
         _validateDbTbExists(dbName, tableName);
-    } catch (CssException& e) {
-        if (e.errCode()==CssException::DB_DOES_NOT_EXIST) {
-            return -1;
-        }
+    } catch (CssException_DbDoesNotExist& e) {
+        return -1;
     }
     bool isChunked = _checkIfTableIsChunked(dbName, tableName);
     bool isSubChunked = _checkIfTableIsSubChunked(dbName, tableName);
@@ -278,20 +274,15 @@ Facade::getKeyColumn(string const& dbName, string const& tableName) {
     cout << "*** Facade::getKeyColumn(" << dbName << ", " << tableName << ")"<<endl;
     try { // FIXME: remove it, it SHOULD throw an exception
         _validateDbTbExists(dbName, tableName);
-    } catch (CssException& e) {
-        if (e.errCode()==CssException::DB_DOES_NOT_EXIST) {
-            return "";
-        }
+    } catch (CssException_DbDoesNotExist& e) {
+        return "";
     }
     string ret, p = _prefix + "/DATABASES/" + dbName + "/TABLES/" + tableName +
                     "/partitioning/secIndexColName";
     try {
         ret = _cssI->get(p);
-    } catch (CssException& e) {
-        if (e.errCode()==CssException::KEY_DOES_NOT_EXIST) {
-            ret = "";
-        }
-        throw;
+    } catch (CssException_KeyDoesNotExist& e) {
+        ret = "";
     }
     cout << "Facade::getKeyColumn, returning: " << ret << endl;
     return ret;
@@ -325,8 +316,7 @@ Facade::_getIntValue(string const& key) {
 void
 Facade::_validateDbExists(string const& dbName) {
     if (!checkIfContainsDb(dbName)) {
-        cout << "db " << dbName << " not found" << endl;
-        throw CssException(CssException::DB_DOES_NOT_EXIST, dbName);
+        throw CssException_DbDoesNotExist(dbName);
     }
 }
 
@@ -336,8 +326,7 @@ Facade::_validateDbExists(string const& dbName) {
 void
 Facade::_validateTbExists(string const& dbName, string const& tableName) {
     if (!checkIfContainsTable(dbName, tableName)) {
-        cout << "table " << dbName << "." << tableName << " not found" << endl;
-        throw CssException(CssException::TB_DOES_NOT_EXIST, dbName+"."+tableName);
+        throw CssException_TableDoesNotExist(dbName+"."+tableName);
     }
 }
 

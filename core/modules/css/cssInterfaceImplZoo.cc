@@ -169,25 +169,26 @@ CssInterfaceImplZoo::deleteNode(string const& key) {
   * @param extraMsg optional extra message to include in the error message
   */
 void
-CssInterfaceImplZoo::zooFailure(int rc, string const& fName, string const& extraMsg){
+CssInterfaceImplZoo::zooFailure(int rc, string const& fName, 
+                                string const& extraMsg) {
     string ffName = "*** CssInterfaceImplZoo::" + fName + "(). ";
     if (rc==ZNONODE) {
         if (_verbose) {
             cout << ffName << "Key '" << extraMsg << "' does not exist." << endl;
         }
-        throw CssException(CssException::KEY_DOES_NOT_EXIST, extraMsg);
+        throw CssException_KeyDoesNotExist(extraMsg);
     }
     if (rc==ZCONNECTIONLOSS) {
         if (_verbose) {
             cout << ffName << "Can't connect to zookeeper." << endl;
         }
-        throw CssException(CssException::CONN_FAILURE);
+        throw CssException_ConnFailure();
     }
     if (rc==ZNOAUTH) {
         if (_verbose) {
             cout << ffName << "Zookeeper authorization failure." << endl;
         }
-        throw CssException(CssException::AUTH_FAILURE);
+        throw CssException_AuthFailure();
     }
     ostringstream s;
     s << ffName << "Zookeeper error #" << rc << ".";
@@ -197,7 +198,7 @@ CssInterfaceImplZoo::zooFailure(int rc, string const& fName, string const& extra
     if (_verbose) {
         cout << s.str() << endl;
     }
-    throw CssException(CssException::INTERNAL_ERROR, s.str());
+    throw CssException_InternalRunTimeError(s.str());
 }
 
 }}} // namespace lsst::qserv::css
