@@ -420,10 +420,12 @@ class InbandQueryAction:
                    self.constraints.size())
         dominantDb = getDominantDb(self.sessionId)
         dbStriping = getDbStriping(self.sessionId)
-        if (dbStriping.a < 1) or (dbStriping.b < 1):
+        if (dbStriping.stripes < 1) or (dbStriping.subStripes < 1):
             msg = "Partitioner's stripes and substripes must be natural numbers."
             raise lsst.qserv.master.config.ConfigError(msg)
-        self.pmap = spatial.makePmap(dominantDb, dbStriping.a, dbStriping.b)
+        self.pmap = spatial.makePmap(dominantDb, 
+                                     dbStriping.stripes, 
+                                     dbStriping.subStripes)
 
         def iterateConstraints(constraintVec):
             for i in range(constraintVec.size()):
