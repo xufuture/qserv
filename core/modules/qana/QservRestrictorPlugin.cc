@@ -163,8 +163,8 @@ public:
         }
         std::string const& db = t->getDb();
         std::string const& table = t->getTable();
-        if(!_metadata.checkIfContainsDb(db)
-           || !_metadata.checkIfContainsTable(db, table)) {
+        if(!_cssFacade.containsDb(db)
+           || !_cssFacade.containsTable(db, table)) {
             throw std::logic_error("Invalid db/table:" + db + "." + table);
         }
         // Is table chunked?
