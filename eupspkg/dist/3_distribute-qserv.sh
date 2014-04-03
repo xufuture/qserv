@@ -14,6 +14,7 @@ fi
 
 QSERV_REPO_PATH=${DEPS_DIR}/qserv
 
+echo "Packaging Qserv in ${LOCAL_PKGROOT}"
 rm -f ${LOCAL_PKGROOT}/tables/qserv-${VERSION}.table &&
 
 echo "INFO : Retrieving Qserv archive"
