@@ -26,7 +26,7 @@ rm -rf LOCAL_PKGROOT/*
 eups declare python system -r none -m none
 eups declare java system -r none -m none
 eups declare numpy system -r none -m none
-eups_dist mysql 5.1.65 && 
+eups_dist mysql 5.1.65 &&
 eups_dist xrootd qs5 &&
 eups_dist lua 5.1.4 &&
 eups_dist luasocket 2.0.2 &&
@@ -35,15 +35,14 @@ eups_dist luaexpat 1.1 &&
 eups_dist luaxmlrpc v1.2.1-2 &&
 eups_dist libevent 2.0.16-stable &&
 eups_dist mysqlproxy 0.8.2 &&
-eups_dist virtualenv_python 1.10.1 && 
+eups_dist virtualenv_python 1.10.1 &&
 eups_dist mysqlpython 1.2.3 &&
-eups_dist protobuf 2.4.1 && 
-eups_dist zopeinterface 3.8.0 && 
-eups_dist twisted 12.0.0 && 
-eups_dist zookeeper 3.4.6 && 
-eups_dist db 1.0 ${REPOSITORY_BASE_DMS} && 
-eups_dist kazoo 1.3.1 && 
-eups_dist qserv ${VERSION} ||
+eups_dist protobuf 2.4.1 &&
+eups_dist zopeinterface 3.8.0 &&
+eups_dist twisted 12.0.0 &&
+eups_dist zookeeper 3.4.6 &&
+eups_dist db 1.0 ${REPOSITORY_BASE_DMS} &&
+eups_dist kazoo 1.3.1 ||
 {
     echo "ERROR : unable to create all packages"
     exit 2
