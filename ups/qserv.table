@@ -1,0 +1,16 @@
+setupRequired(db)
+setupRequired(kazoo)
+setupRequired(luaxmlrpc)
+setupRequired(mysqlproxy)
+setupRequired(mysqlpython)
+setupRequired(numpy)
+setupRequired(protobuf)
+setupRequired(twisted)
+setupRequired(virtualenv_python)
+setupRequired(xrootd)
+setupRequired(zookeeper)
+
+envPrepend(PYTHONPATH, ${PRODUCT_DIR}/lib/python)
+envPrepend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
+envPrepend(PATH, ${PRODUCT_DIR}/bin)
+
