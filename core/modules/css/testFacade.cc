@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(getKeyColumn) {
 }
 
 BOOST_AUTO_TEST_CASE(getDbStriping) {
-    IntPair s = facade->getDbStriping("dbA");
+    StripingParams s = facade->getDbStriping("dbA");
     BOOST_CHECK_EQUAL(s.stripes, 18);
     BOOST_CHECK_EQUAL(s.subStripes, 40);
 }

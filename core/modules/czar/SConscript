@@ -21,7 +21,7 @@ def _debug_dist_target():
 # isn't knowledgeable enough to ensure their presence when using VariantDir
 depends = ['control/transaction.h',
            'control/dispatcher.h',
-           'css/IntPair.h',
+           'css/StripingParams.h',
            'merger/TableMerger.h',
            'merger/mergeTypes.h',
            'query/Constraint.h',

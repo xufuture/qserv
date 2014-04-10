@@ -22,21 +22,21 @@ Daniel.:core/modules/css/IntPair.h
  */
 
 /**
-  * @file IntPair.h
+  * @file StripingParams.h
   *
   * @brief Struct containing 2 integers, for C++-->python swig.
   *
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_CSS_INTPAIR_H
-#define LSST_QSERV_CSS_INTPAIR_H
+#ifndef LSST_QSERV_CSS_STRIPINGPARAMS_H
+#define LSST_QSERV_CSS_STRIPINGPARAMS_H
 
 namespace lsst {
 namespace qserv {
 namespace css {
 
-struct IntPair {
+struct StripingParams {
     int stripes;
     int subStripes;
 };
@@ -57,4 +57,4 @@ DbStriping getDbStriping(int metaSessionId, char const* dbName);
 
 }}} // namespace lsst::qserv::css
 
-#endif // LSST_QSERV_CSS_INTPAIR_H
+#endif // LSST_QSERV_CSS_STRIPINGPARAMS_H
