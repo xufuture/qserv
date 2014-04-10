@@ -305,8 +305,8 @@ class CommandParser(object):
             opts["clusteredIndex"] = ''
         if not opts.has_key("partitioning"):
             self._logger.info(
-                "param 'partitioning' not found, will use default: off")
-            opts["partitioning"] = "off"
+                "param 'partitioning' not found, will use default: 0")
+            opts["partitioning"] = "0"
         if not opts.has_key("objIdIndex"):
             self._logger.info(
                 "param 'objIdIndex' not found, will use default: ''")
@@ -358,7 +358,7 @@ class CommandParser(object):
         if not x.has_key("partitioning"):
             raise QAdmException(QAdmException.MISSING_PARAM, "partitioning")
 
-        partOff = x["partitioning"] == "off" 
+        partOff = x["partitioning"] == "0" 
         for (theName, theOpts) in xxOpts.items():
             for o in theOpts:
                 # skip optional parameters
@@ -372,7 +372,7 @@ class CommandParser(object):
                     raise QAdmException(QAdmException.MISSING_PARAM, o)
         if partOff:
             return
-        if x["partitioning"] != "on":
+        if x["partitioning"] != "1":
             raise QAdmException(QAdmException.WRONG_PARAM_VAL, "partitioning",
                                 "got: '%s'" % x["partitioning"],
                                 "expecting: on/off")
