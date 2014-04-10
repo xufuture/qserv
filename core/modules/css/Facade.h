@@ -59,31 +59,41 @@ public:
     ~Facade();
 
     // accessors
-    bool containsDb(std::string const&) const;
-    bool containsTable(std::string const&, std::string const&) const;
-    bool tableIsChunked(std::string const&, std::string const&) const;
-    bool tableIsSubChunked(std::string const&, std::string const&) const;
+    bool containsDb(std::string const& dbName) const;
+    bool containsTable(std::string const& dbName, 
+                       std::string const& tableName) const;
+    bool tableIsChunked(std::string const& dbName, 
+                        std::string const& tableName) const;
+    bool tableIsSubChunked(std::string const& dbName, 
+                           std::string const& tableName) const;
     std::vector<std::string> getAllowedDbs() const;
-    std::vector<std::string> getChunkedTables(std::string const&) const;
-    std::vector<std::string> getSubChunkedTables(std::string const&) const;
-    std::vector<std::string> getPartitionCols(std::string const&, 
-                                              std::string const&) const;
-    int getChunkLevel(std::string const&, std::string const&) const;
-    std::string getKeyColumn(std::string const&, std::string const&) const;
-    IntPair getDbStriping(std::string const&) const;
+    std::vector<std::string> getChunkedTables(std::string const& dbName) const;
+    std::vector<std::string> getSubChunkedTables(std::string const& dbName) const;
+    std::vector<std::string> getPartitionCols(std::string const& dbName, 
+                                              std::string const& tableName) const;
+    int getChunkLevel(std::string const& dbName, 
+                      std::string const& tableName) const;
+    std::string getKeyColumn(std::string const& dbName, 
+                             std::string const& tableName) const;
+    IntPair getDbStriping(std::string const& dbName) const;
 
 private:
-    Facade(std::string const&);
-    Facade(std::string const&, std::string const&);
-    Facade(std::string const&, bool);
+    Facade(std::string const& connInfo);
+    Facade(std::string const& connInfo, std::string const& prefix);
+    Facade(std::string const& mapPath, bool isMap);
 
-    void _throwIfNotDbExists(std::string const&) const;
-    void _throwIfNotTbExists(std::string const&, std::string const&) const;
-    void _throwIfNotDbTbExists(std::string const&, std::string const&) const;
-    bool _containsTable(std::string const&, std::string const&) const;
-    bool _tableIsChunked(std::string const&, std::string const&) const;
-    bool _tableIsSubChunked(std::string const&, std::string const&) const;
-    int _getIntValue(std::string const&) const;
+    void _throwIfNotDbExists(std::string const& dbName) const;
+    void _throwIfNotTbExists(std::string const& dbName, 
+                             std::string const& tableName) const;
+    void _throwIfNotDbTbExists(std::string const& dbName, 
+                               std::string const& tableName) const;
+    bool _containsTable(std::string const& dbName, 
+                        std::string const& tableName) const;
+    bool _tableIsChunked(std::string const& dbName, 
+                         std::string const& tableName) const;
+    bool _tableIsSubChunked(std::string const& dbName, 
+                            std::string const& tableName) const;
+    int _getIntValue(std::string const& key) const;
 
     friend class FacadeFactory;
     
@@ -94,10 +104,11 @@ private:
 
 class FacadeFactory {
 public:
-    static boost::shared_ptr<Facade> createZooFacade(std::string const&);
-    static boost::shared_ptr<Facade> createMemFacade(std::string const&);
-    static boost::shared_ptr<Facade> createZooTestFacade(std::string const&,
-                                                         std::string const&);
+    static boost::shared_ptr<Facade> createZooFacade(std::string const& connInfo);
+    static boost::shared_ptr<Facade> createMemFacade(std::string const& connInfo);
+    static boost::shared_ptr<Facade> createZooTestFacade(
+                                                     std::string const& connInfo,
+                                                     std::string const& prefix);
 };
 
 }}} // namespace lsst::qserv::css
