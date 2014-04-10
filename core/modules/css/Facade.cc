@@ -35,6 +35,9 @@
 // Standard library imports
 #include <iostream>
 
+// Boost
+#include <boost/lexical_cast.hpp>
+
 // Local imports
 #include "Facade.h"
 #include "CssException.h"
@@ -56,7 +59,9 @@ namespace css {
   * Initialize the Facade, the Facade will use Zookeeper-based interface, this is
   * for production use.
   *
-  * @param connInfo connection information
+  * @param connInfo connection information in a form supported by Zookeeper:
+  *                 comma separated host:port pairs, each corresponding to 
+  *                 a Zookeeper server.
   */
 Facade::Facade(string const& connInfo) {
     _kvI = new KvInterfaceImplZoo(connInfo);
@@ -66,7 +71,9 @@ Facade::Facade(string const& connInfo) {
   * Initialize the Facade, the Facade will use Zookeeper-based interface, but will
   * place all data in some non-standard location, use this constructor for testing.
   *
-  * @param connInfo connection information
+  * @param connInfo connection information in a form supported by Zookeeper:
+  *                 comma separated host:port pairs, each corresponding to 
+  *                 a Zookeeper server.
   * @param prefix, for testing, to avoid polluting production setup
   */
 Facade::Facade(string const& connInfo, string const& prefix) :
@@ -302,8 +309,7 @@ Facade::getDbStriping(string const& dbName) const {
 
 int
 Facade::_getIntValue(string const& key) const {
-    string s = _kvI->get(key);
-    return atoi(s.c_str());
+    return boost::lexical_cast<int>( _kvI->get(key) );
 }
 
 /** Validates if database exists. Throw exception if it does not.
