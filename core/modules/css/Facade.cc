@@ -295,13 +295,13 @@ Facade::getKeyColumn(string const& dbName, string const& tableName) const {
   *
   * @param db database name
   */
-IntPair
+StripingParams
 Facade::getDbStriping(string const& dbName) const {
     LOGGER_INF << "*** getDbStriping(" << dbName << ")" << endl;
     _throwIfNotDbExists(dbName);
     string v = _kvI->get(_prefix + "/DATABASES/" + dbName + "/partitioningId");
     string p = _prefix + "/DATABASE_PARTITIONING/_" + v + "/";
-    IntPair striping;
+    StripingParams striping;
     striping.stripes = _getIntValue(p+"nStripes");
     striping.subStripes = _getIntValue(p+"nSubStripes");
     return striping;

@@ -42,7 +42,7 @@
 
 // Local imports
 #include "KvInterface.h"
-#include "IntPair.h"
+#include "StripingParams.h"
 
 namespace lsst {
 namespace qserv {
@@ -75,7 +75,7 @@ public:
                       std::string const& tableName) const;
     std::string getKeyColumn(std::string const& dbName, 
                              std::string const& tableName) const;
-    IntPair getDbStriping(std::string const& dbName) const;
+    StripingParams getDbStriping(std::string const& dbName) const;
 
 private:
     Facade(std::string const& connInfo);

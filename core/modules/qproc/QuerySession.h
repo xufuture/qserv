@@ -77,7 +77,7 @@ public:
     /// dispatch. This is distinct from the default database, which is what is
     /// used for unqualified table and column references
     std::string const& getDominantDb() const;
-    css::IntPair getDbStriping();
+    css::StripingParams getDbStriping();
     std::string const& getError() const { return _error; }
 
     MergeFixup makeMergeFixup() const;

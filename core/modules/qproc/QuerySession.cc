@@ -144,7 +144,7 @@ std::string const& QuerySession::getDominantDb() const {
     return _context->dominantDb; // parsed query's dominant db (via TablePlugin)
 }
 
-css::IntPair
+css::StripingParams
 QuerySession::getDbStriping() {
     return _context->getDbStriping();
 }
