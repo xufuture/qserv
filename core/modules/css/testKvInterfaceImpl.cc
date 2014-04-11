@@ -25,7 +25,7 @@
 /**
   * @file testKvInterface.cc
   *
-  * @brief Unit test for the Common State System Interface.
+  * @brief Unit test for the implementations of the Common State System Interface.
   *
   * @Author Jacek Becla, SLAC
   */
@@ -45,6 +45,7 @@
 #include <boost/lexical_cast.hpp>
 
 // local imports
+#include "KvInterfaceImplMem.h"
 #include "KvInterfaceImplZoo.h"
 
 using std::cout;
@@ -63,39 +64,50 @@ struct KvInterfaceFixture {
         v1 = "firstOne";
         v2 = "secondOne";
     };
+
     ~KvInterfaceFixture(void) {
     };
+
+    void doIt(lsst::qserv::css::KvInterface* kvI) {
+        kvI->create(prefix, v1);
+        kvI->create(k1, v1);
+        kvI->create(k2, v2);
+        
+        string s = kvI->get(k1);
+        BOOST_CHECK(s == v1);
+        BOOST_CHECK(kvI->exists(k1));
+        BOOST_CHECK(!kvI->exists(k3));
+
+        vector<string> v = kvI->getChildren(prefix);
+        BOOST_CHECK(2 == v.size());
+        std::sort (v.begin(), v.end());
+        BOOST_CHECK(v[0]=="xyzA");
+        BOOST_CHECK(v[1]=="xyzB");
+
+        kvI->deleteKey(k1);
+
+        v = kvI->getChildren(prefix);
+        BOOST_CHECK(1 == v.size());
+
+        kvI->deleteKey(k2);
+        kvI->deleteKey(prefix);
+
+        delete kvI;
+    }
+
     string prefix, k1, k2, k3, v1, v2;
 };
 
 BOOST_FIXTURE_TEST_SUITE(KvInterfaceTest, KvInterfaceFixture)
 
-BOOST_AUTO_TEST_CASE(createGetCheck) {
-    lsst::qserv::css::KvInterfaceImplZoo kvI =
-        lsst::qserv::css::KvInterfaceImplZoo("localhost:2181");
+BOOST_AUTO_TEST_CASE(testZoo) {
+    std::cout << "========== Testing ZOO ==========" << std::endl;
+    doIt(new lsst::qserv::css::KvInterfaceImplZoo("localhost:2181"));
+}
 
-    kvI.create(prefix, v1);
-    kvI.create(k1, v1);
-    kvI.create(k2, v2);
-
-    string s = kvI.get(k1);
-    BOOST_CHECK(s == v1);
-    BOOST_CHECK(kvI.exists(k1));
-    BOOST_CHECK(!kvI.exists(k3));
-
-    vector<string> v = kvI.getChildren(prefix);
-    BOOST_CHECK(2 == v.size());
-    std::sort (v.begin(), v.end());
-    BOOST_CHECK(v[0]=="xyzA");
-    BOOST_CHECK(v[1]=="xyzB");
-
-    kvI.deleteKey(k1);
-
-    v = kvI.getChildren(prefix);
-    BOOST_CHECK(1 == v.size());
-
-    kvI.deleteKey(k2);
-    kvI.deleteKey(prefix);
+BOOST_AUTO_TEST_CASE(testMem) {
+    std::cout << "========== Testing MEM ==========" << std::endl;
+    doIt(new lsst::qserv::css::KvInterfaceImplMem());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

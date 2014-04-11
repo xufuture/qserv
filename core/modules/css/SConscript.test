@@ -19,10 +19,7 @@ extDeps = "antlr boost_regex boost_thread-mt protobuf ssl crypto XrdPosix XrdCli
 p = env.Program(["testCssException.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
 programs.append(p)
 
-p = env.Program(["testKvInterfaceImplMem.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
-programs.append(p)
-
-p = env.Program(["testKvInterfaceImplZoo.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
+p = env.Program(["testKvInterfaceImpl.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
 programs.append(p)
 
 p = env.Program(["testFacade.cc"] + env.Object(myDeps) + deps, LIBS=extDeps)
