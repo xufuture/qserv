@@ -48,6 +48,7 @@ namespace css {
 map<CssException::errCodeT, string> 
 CssException::_errMap = boost::assign::map_list_of 
     (DB_DOES_NOT_EXIST,  "Database does not exist.")
+    (KEY_EXISTS,         "Key already exist.")
     (KEY_DOES_NOT_EXIST, "Key does not exist.")
     (TB_DOES_NOT_EXIST,  "Table does not exist.")
     (AUTH_FAILURE,       "Authorization failure.")
