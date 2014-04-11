@@ -43,10 +43,33 @@ class KvInterface {
 public:
     virtual ~KvInterface() {};
 
+    /**
+     * Create a key/value pair. 
+     * Throws CssException on failure.
+     */
     virtual void create(std::string const& key, std::string const& value) = 0;
+
+    /**
+     * Check if the key exists.
+     */
     virtual bool exists(std::string const& key) = 0;
+
+    /**
+     * Returns value for a given key.
+     * Throws CssException on failure.
+     */
     virtual std::string get(std::string const& key) = 0;
+
+    /**
+     * Returns children (vector of strings) for a given key.
+     * Throws CssException on failure.
+     */
     virtual std::vector<std::string> getChildren(std::string const& key) = 0;
+
+    /**
+     * Delete a key.
+     * Throws CssException on failure.
+     */
     virtual void deleteNode(std::string const& key /*, bool recurvive*/) = 0;
 
 protected:
