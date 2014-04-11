@@ -73,10 +73,7 @@ public:
     virtual void deleteKey(std::string const& key) = 0;
 
 protected:
-    KvInterface(bool verbose=true) : _verbose(verbose) {}
-
-protected:
-    bool _verbose; // FIXME: this will go away when we switch to proper logging.
+    KvInterface() {}
 };
 
 }}} // namespace lsst::qserv::css

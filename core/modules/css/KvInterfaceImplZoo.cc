@@ -66,9 +66,7 @@ namespace css {
  *
  * @param connInfo connection information
  */
-KvInterfaceImplZoo::KvInterfaceImplZoo(string const& connInfo, 
-                                       bool verbose)
-    : KvInterface(verbose) {
+KvInterfaceImplZoo::KvInterfaceImplZoo(string const& connInfo) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
     _zh = zookeeper_init(connInfo.c_str(), 0, 10000, 0, 0, 0);
     if ( !_zh ) {
@@ -86,10 +84,8 @@ KvInterfaceImplZoo::~KvInterfaceImplZoo() {
 
 void
 KvInterfaceImplZoo::create(string const& key, string const& value) {
-    if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplZoo::create(), " << key << " --> " 
-                   << value << endl;
-    }
+    LOGGER_INF << "*** KvInterfaceImplZoo::create(), " << key << " --> " 
+               << value << endl;
     char buffer[512];
     int rc = zoo_create(_zh, key.c_str(), value.c_str(), value.length(), 
                         &ZOO_OPEN_ACL_UNSAFE, 0, buffer, sizeof(buffer)-1);
@@ -100,9 +96,7 @@ KvInterfaceImplZoo::create(string const& key, string const& value) {
 
 bool
 KvInterfaceImplZoo::exists(string const& key) {
-    if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplZoo::exist(), key: " << key << endl;
-    }
+    LOGGER_INF << "*** KvInterfaceImplZoo::exist(), key: " << key << endl;
     struct Stat stat;
     int rc = zoo_exists(_zh, key.c_str(), 0,  &stat);
     if (rc==ZOK) {
@@ -117,9 +111,7 @@ KvInterfaceImplZoo::exists(string const& key) {
 
 string
 KvInterfaceImplZoo::get(string const& key) {
-    if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplZoo::get(), key: " << key << endl;
-    }
+    LOGGER_INF << "*** KvInterfaceImplZoo::get(), key: " << key << endl;
     char buffer[512];
     memset(buffer, 0, 512);
     int buflen = sizeof(buffer);
@@ -128,17 +120,13 @@ KvInterfaceImplZoo::get(string const& key) {
     if (rc=ZOK) {
         _throwZooFailure(rc, "get", key);
     }
-    if (_verbose) {
-        LOGGER_INF << "*** got: '" << buffer << "'" << endl;
-    }
+    LOGGER_INF << "*** got: '" << buffer << "'" << endl;
     return string(buffer);
 }
 
 vector<string> 
 KvInterfaceImplZoo::getChildren(string const& key) {
-    if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplZoo::getChildren(), key: " << key << endl;
-    }
+    LOGGER_INF << "*** KvInterfaceImplZoo::getChildren(), key: " << key << endl;
     struct String_vector strings;
     int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
     if (rc!=ZOK) {
@@ -156,9 +144,7 @@ KvInterfaceImplZoo::getChildren(string const& key) {
 
 void
 KvInterfaceImplZoo::deleteKey(string const& key) {
-    if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplZoo::deleteKey, key: " << key << endl;
-    }
+    LOGGER_INF << "*** KvInterfaceImplZoo::deleteKey, key: " << key << endl;
     int rc = zoo_delete(_zh, key.c_str(), -1);
     if (rc!=ZOK) {
         _throwZooFailure(rc, "deleteKey", key);
@@ -175,22 +161,15 @@ KvInterfaceImplZoo::_throwZooFailure(int rc, string const& fName,
                                      string const& extraMsg) {
     string ffName = "*** KvInterfaceImplZoo::" + fName + "(). ";
     if (rc==ZNONODE) {
-        if (_verbose) {
-            LOGGER_INF << ffName << "Key '" << extraMsg << "' does not exist." 
-                       << endl;
-        }
+        LOGGER_INF << ffName << "Key '" << extraMsg << "' does not exist." << endl;
         throw CssException(CssException::KEY_DOES_NOT_EXIST, extraMsg);
     }
     if (rc==ZCONNECTIONLOSS) {
-        if (_verbose) {
-            LOGGER_INF << ffName << "Can't connect to zookeeper." << endl;
-        }
+        LOGGER_INF << ffName << "Can't connect to zookeeper." << endl;
         throw CssException(CssException::CONN_FAILURE);
     }
     if (rc==ZNOAUTH) {
-        if (_verbose) {
-            LOGGER_INF << ffName << "Zookeeper authorization failure." << endl;
-        }
+        LOGGER_INF << ffName << "Zookeeper authorization failure." << endl;
         throw CssException(CssException::AUTH_FAILURE);
     }
     ostringstream s;
@@ -198,9 +177,7 @@ KvInterfaceImplZoo::_throwZooFailure(int rc, string const& fName,
     if (extraMsg != "") {
         s << " (" << extraMsg << ")";
     }
-    if (_verbose) {
-        LOGGER_INF << s.str() << endl;
-    }
+    LOGGER_INF << s.str() << endl;
     throw CssException(CssException::INTERNAL_ERROR, s.str());
 }
 

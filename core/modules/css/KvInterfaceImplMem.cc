@@ -81,10 +81,8 @@ namespace css {
   * 3) then copy the generate file to final destination:
   *    mv /tmp/testCppParser.kwmap <destination>
   */
-KvInterfaceImplMem::KvInterfaceImplMem(string const& mapPath,
-                                       bool verbose)
-    : KvInterface(verbose) {
-    std::ifstream f("./modules/qproc/testCppParser.kwmap"); // FIXME
+KvInterfaceImplMem::KvInterfaceImplMem(string const& mapPath) {
+    std::ifstream f(mapPath.c_str());
     string line;
     vector<string> strs;
     while ( std::getline(f, line) ) {
@@ -111,40 +109,30 @@ KvInterfaceImplMem::~KvInterfaceImplMem() {
 
 void
 KvInterfaceImplMem::create(string const& key, string const& value) {
-    if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplMem::create(), " << key << " --> " 
-                   << value << endl;
-    }
+    LOGGER_INF << "*** KvInterfaceImplMem::create(), " << key << " --> " 
+               << value << endl;
     _kwMap[key] = value;
 }
 
 bool
 KvInterfaceImplMem::exists(string const& key) {
     bool ret = _kwMap.find(key) != _kwMap.end();
-    if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplMem::exists(), key: " << key 
-                   << ": " << ret << endl;
-    }
+    LOGGER_INF << "*** KvInterfaceImplMem::exists(), key: " << key 
+               << ": " << ret << endl;
     return ret;
 }
 
 string
 KvInterfaceImplMem::get(string const& key) {
-    if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplMem::get(), key: " << key << endl;
-    }
+    LOGGER_INF << "*** KvInterfaceImplMem::get(), key: " << key << endl;
     string s = _kwMap[key];
-    if (_verbose) {
-        LOGGER_INF << "*** got: '" << s << "'" << endl;
-    }
+    LOGGER_INF << "*** got: '" << s << "'" << endl;
     return s;
 }
 
 vector<string> 
 KvInterfaceImplMem::getChildren(string const& key) {
-    if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplMem::getChildren(), key: " << key << endl;
-    }
+    LOGGER_INF << "*** KvInterfaceImplMem::getChildren(), key: " << key << endl;
     vector<string> retV;
     map<string, string>::const_iterator itrM;
     for (itrM=_kwMap.begin() ; itrM!=_kwMap.end() ; itrM++) {
@@ -158,22 +146,18 @@ KvInterfaceImplMem::getChildren(string const& key) {
             }
         }
     }
-    if (_verbose) {
-        LOGGER_INF << "got " << retV.size() << " children:" << endl;
-        vector<string>::const_iterator itrV;
-        for (itrV=retV.begin(); itrV!=retV.end() ; itrV++) {
-            LOGGER_INF << "'" << *itrV << "', ";
-        }
-        LOGGER_INF << endl;
+    LOGGER_INF << "got " << retV.size() << " children:" << endl;
+    vector<string>::const_iterator itrV;
+    for (itrV=retV.begin(); itrV!=retV.end() ; itrV++) {
+        LOGGER_INF << "'" << *itrV << "', ";
     }
+    LOGGER_INF << endl;
     return retV;
 }
 
 void
 KvInterfaceImplMem::deleteKey(string const& key) {
-    if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplMem::deleteKey, key: " << key << endl;
-    }
+    LOGGER_INF << "*** KvInterfaceImplMem::deleteKey, key: " << key << endl;
     _kwMap.erase(key);
 }
 
