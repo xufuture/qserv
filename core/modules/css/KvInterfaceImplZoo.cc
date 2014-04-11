@@ -172,7 +172,7 @@ KvInterfaceImplZoo::deleteKey(string const& key) {
 void
 KvInterfaceImplZoo::_throwZooFailure(int rc, string const& fName, 
                                      string const& extraMsg) {
-    string ffName = "*** KvInterfaceImplZoo::" + fName + "(). ";
+    string ffName = "*** css::KvInterfaceImplZoo::" + fName + "(). ";
     if (rc==ZNONODE) {
         LOGGER_INF << ffName << "Key '" << extraMsg << "' does not exist." << endl;
         throw CssException(CssException::KEY_DOES_NOT_EXIST, extraMsg);
