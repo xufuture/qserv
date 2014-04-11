@@ -222,16 +222,24 @@ status_of_proc () {
     shift $(($OPTIND - 1))
 
     if [ -n "$pidfile" ]; then
-        pidfile="-p $pidfile"
+        pidfileopt="-p $pidfile"
     fi
     daemon="$1"
     name="$2"
 
     status="0"
-    pidofproc $pidfile $daemon >/dev/null || status="$?"
+    pidofproc $pidfileopt $daemon >/dev/null || status="$?"
     if [ "$status" = 0 ]; then
-        log_success_msg "$name is running"
+	read pid < $pidfile	
+        log_success_msg "$name is running (${pid})"
         return 0
+    elif [ "$status" = 1 ]; then
+        log_failure_msg "$name is dead but PID file exists"
+        echo "  see $pidfile"
+        return $status
+    elif [ "$status" = 2 ]; then
+        log_failure_msg "$name is dead but lockfile exists"
+        return $status
     elif [ "$status" = 4 ]; then
         log_failure_msg "could not access PID file for $name"
         return $status
