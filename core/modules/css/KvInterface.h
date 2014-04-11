@@ -45,7 +45,8 @@ public:
 
     /**
      * Create a key/value pair. 
-     * Throws CssException on failure.
+     * Throws CssException if the key already exists (or if any other problem,
+     * e.g., a connection error is detected).
      */
     virtual void create(std::string const& key, std::string const& value) = 0;
 
@@ -56,13 +57,15 @@ public:
 
     /**
      * Returns value for a given key.
-     * Throws CssException on failure.
+     * Throws CssException if the key does not exist (or if any other problem, 
+     * e.g., a connection error is detected).
      */
     virtual std::string get(std::string const& key) = 0;
 
     /**
      * Returns children (vector of strings) for a given key.
-     * Throws CssException on failure.
+     * Throws CssException if the key does not exist (or if any other problem,
+     * e.g., a connection error is detected)
      */
     virtual std::vector<std::string> getChildren(std::string const& key) = 0;
 
