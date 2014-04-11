@@ -170,9 +170,9 @@ KvInterfaceImplMem::getChildren(string const& key) {
 }
 
 void
-KvInterfaceImplMem::deleteNode(string const& key) {
+KvInterfaceImplMem::deleteKey(string const& key) {
     if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplMem::deleteNode, key: " << key << endl;
+        LOGGER_INF << "*** KvInterfaceImplMem::deleteKey, key: " << key << endl;
     }
     _kwMap.erase(key);
 }

@@ -54,7 +54,7 @@ public:
     virtual bool exists(std::string const& key);
     virtual std::string get(std::string const& key);
     virtual std::vector<std::string> getChildren(std::string const& key);
-    virtual void deleteNode(std::string const& key /*, bool recurvive*/);
+    virtual void deleteKey(std::string const& key /*, bool recurvive*/);
 
 private:
     std::map<std::string, std::string> _kwMap;

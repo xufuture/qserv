@@ -70,7 +70,7 @@ public:
      * Delete a key.
      * Throws CssException on failure.
      */
-    virtual void deleteNode(std::string const& key /*, bool recurvive*/) = 0;
+    virtual void deleteKey(std::string const& key /*, bool recurvive*/) = 0;
 
 protected:
     KvInterface(bool verbose=true) : _verbose(verbose) {}

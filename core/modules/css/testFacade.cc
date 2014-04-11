@@ -118,7 +118,7 @@ struct FacadeFixture {
         KvInterfaceImplZoo kvI = KvInterfaceImplZoo("localhost:2181", false);
         vector<std::pair<string, string> >::const_reverse_iterator itr;
         for (itr=kv.rbegin() ; itr!=kv.rend() ; ++itr) {
-            kvI.deleteNode(itr->first);
+            kvI.deleteKey(itr->first);
         }
     };
 
