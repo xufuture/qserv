@@ -75,9 +75,14 @@ KvInterfaceImplZoo::KvInterfaceImplZoo(string const& connInfo) {
 }
 
 KvInterfaceImplZoo::~KvInterfaceImplZoo() {
-    int rc = zookeeper_close(_zh);
-    if ( rc != ZOK ) {
-        LOGGER_ERR << "*** ~KvInterfaceImplZoo - zookeeper error " << rc
+    try {    
+        int rc = zookeeper_close(_zh);
+        if ( rc != ZOK ) {
+            LOGGER_ERR << "*** ~KvInterfaceImplZoo - zookeeper error " << rc
+                       << "when closing connection" << endl;
+        }
+    } catch (...) {
+        LOGGER_ERR << "*** ~KvInterfaceImplZoo - zookeeper exception "
                    << "when closing connection" << endl;
     }
 }
@@ -98,12 +103,13 @@ bool
 KvInterfaceImplZoo::exists(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::exist(), key: " << key << endl;
     struct Stat stat;
+    memset(&stat, 0, sizeof(Stat));
     int rc = zoo_exists(_zh, key.c_str(), 0,  &stat);
     if (rc==ZOK) {
-        return 1;
+        return true;
     }
     if (rc==ZNONODE) {
-        return 0;
+        return false;
     }
     _throwZooFailure(rc, "exists", key);
     return false;
@@ -113,10 +119,11 @@ string
 KvInterfaceImplZoo::get(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::get(), key: " << key << endl;
     char buffer[512];
-    memset(buffer, 0, 512);
-    int buflen = sizeof(buffer);
+    int bufLen = static_cast<int>(sizeof(buffer));
+    memset(buffer, 0, bufLen);
     struct Stat stat;
-    int rc = zoo_get(_zh, key.c_str(), 0, buffer, &buflen, &stat);
+    memset(&stat, 0, sizeof(Stat));
+    int rc = zoo_get(_zh, key.c_str(), 0, buffer, &bufLen, &stat);
     if (rc=ZOK) {
         _throwZooFailure(rc, "get", key);
     }
@@ -128,16 +135,22 @@ vector<string>
 KvInterfaceImplZoo::getChildren(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::getChildren(), key: " << key << endl;
     struct String_vector strings;
+    memset(&strings, 0, sizeof(strings));
     int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
     if (rc!=ZOK) {
         _throwZooFailure(rc, "getChildren", key);
     }
     LOGGER_INF << "got " << strings.count << " children" << endl;
     vector<string> v;
-    int i;
-    for (i=0 ; i < strings.count ; i++) {
-        LOGGER_INF << "   " << i+1 << ": " << strings.data[i] << endl;
-        v.push_back(strings.data[i]);
+    try {    
+        int i;
+        for (i=0 ; i<strings.count ; i++) {
+            LOGGER_INF << "   " << i+1 << ": " << strings.data[i] << endl;
+            v.push_back(strings.data[i]);
+        }
+        deallocate_String_vector(&strings);
+    } catch (const std::bad_alloc& ba) {
+        deallocate_String_vector(&strings);
     }
     return v;
 }
