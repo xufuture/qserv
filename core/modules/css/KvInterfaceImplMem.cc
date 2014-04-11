@@ -56,7 +56,6 @@
 #include "log/Logger.h"
 
 using std::endl;
-using std::exception;
 using std::map;
 using std::ostringstream;
 using std::string;
@@ -111,6 +110,9 @@ void
 KvInterfaceImplMem::create(string const& key, string const& value) {
     LOGGER_INF << "*** KvInterfaceImplMem::create(), " << key << " --> " 
                << value << endl;
+    if (exists(key)) {
+        throw CssException(CssException::KEY_EXISTS, key);
+    }
     _kwMap[key] = value;
 }
 
@@ -158,6 +160,9 @@ KvInterfaceImplMem::getChildren(string const& key) {
 void
 KvInterfaceImplMem::deleteKey(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplMem::deleteKey, key: " << key << endl;
+    if ( ! exists(key) ) {
+        throw CssException(CssException::KEY_DOES_NOT_EXIST, key);
+    }
     _kwMap.erase(key);
 }
 

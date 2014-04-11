@@ -46,6 +46,7 @@
 
 // local imports
 #include "KvInterfaceImplMem.h"
+#include "CssException.h"
 
 using std::cout;
 using std::endl;
@@ -75,6 +76,7 @@ BOOST_AUTO_TEST_CASE(createGetCheck) {
 
     kvI.create(prefix, v1);
     kvI.create(k1, v1);
+    BOOST_CHECK_THROW(kvI.create(k1, v1), lsst::qserv::css::CssException);
     kvI.create(k2, v2);
     string s = kvI.get(k1);
     BOOST_CHECK(s == v1);
@@ -88,6 +90,7 @@ BOOST_AUTO_TEST_CASE(createGetCheck) {
     BOOST_CHECK(v[1]=="xyzB");
 
     kvI.deleteKey(k1);
+    BOOST_CHECK_THROW(kvI.deleteKey(k1), lsst::qserv::css::CssException);
 
     v = kvI.getChildren(prefix);
     BOOST_CHECK(1 == v.size());
