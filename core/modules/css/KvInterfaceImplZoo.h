@@ -47,20 +47,20 @@ namespace css {
 
 class KvInterfaceImplZoo : public KvInterface {
 public:
-    KvInterfaceImplZoo(std::string const& connInfo, bool verbose=true);
+    KvInterfaceImplZoo(std::string const& connInfo);
     virtual ~KvInterfaceImplZoo();
 
     virtual void create(std::string const& key, std::string const& value);
     virtual bool exists(std::string const& key);
     virtual std::string get(std::string const& key);
     virtual std::vector<std::string> getChildren(std::string const& key);
-    virtual void deleteKey(std::string const& key /*, bool recurvive*/);
+    virtual void deleteKey(std::string const& key);
 
 private:
     void _throwZooFailure(int, std::string const&, std::string const& extraMsg="");
     
 private:
-    zhandle_t *_zh; // zookeeper handle
+    zhandle_t *_zh; // zhookeeper handle
 };
 
 }}} // namespace lsst::qserv::css

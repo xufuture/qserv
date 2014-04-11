@@ -46,15 +46,15 @@ namespace css {
 
 class KvInterfaceImplMem : public KvInterface {
 public:
-    KvInterfaceImplMem(bool verbose=true) {}
-    KvInterfaceImplMem(std::string const&, bool verbose=true);
+    KvInterfaceImplMem() {}
+    KvInterfaceImplMem(std::string const&);
     virtual ~KvInterfaceImplMem();
 
     virtual void create(std::string const& key, std::string const& value);
     virtual bool exists(std::string const& key);
     virtual std::string get(std::string const& key);
     virtual std::vector<std::string> getChildren(std::string const& key);
-    virtual void deleteKey(std::string const& key /*, bool recurvive*/);
+    virtual void deleteKey(std::string const& key);
 
 private:
     std::map<std::string, std::string> _kwMap;

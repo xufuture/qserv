@@ -71,7 +71,7 @@ BOOST_FIXTURE_TEST_SUITE(KvInterfaceTest, KvInterfaceFixture)
 
 BOOST_AUTO_TEST_CASE(createGetCheck) {
     lsst::qserv::css::KvInterfaceImplMem kvI =
-        lsst::qserv::css::KvInterfaceImplMem(true);
+        lsst::qserv::css::KvInterfaceImplMem();
 
     kvI.create(prefix, v1);
     kvI.create(k1, v1);
