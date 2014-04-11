@@ -85,24 +85,24 @@ KvInterfaceImplMem::KvInterfaceImplMem(string const& mapPath,
                                        bool verbose)
     : KvInterface(verbose) {
     std::ifstream f("./modules/qproc/testCppParser.kwmap"); // FIXME
-    std::string line;
-    std::vector<std::string> strs;
+    string line;
+    vector<string> strs;
     while ( std::getline(f, line) ) {
         boost::split(strs, line, boost::is_any_of("\t"));
-        std::string theKey = strs[0];
-        std::string theVal = strs[1];
+        string theKey = strs[0];
+        string theVal = strs[1];
         if (theVal == "\\N") {
             theVal = "";
         }
         _kwMap[theKey] = theVal;
     }
-    //std::map<std::string, std::string>::const_iterator itrM;
+    //map<string, string>::const_iterator itrM;
     //for (itrM=_kwMap.begin() ; itrM!=_kwMap.end() ; itrM++) {
-    //    std::string val = "\\N";
+    //    string val = "\\N";
     //    if (itrM->second != "") {
     //        val = itrM->second;
     //    }
-    //    LOGGER_INF << itrM->first << "\t" << val << std::endl;
+    //    LOGGER_INF << itrM->first << "\t" << val << endl;
     //}
 }
 
