@@ -155,13 +155,13 @@ KvInterfaceImplZoo::getChildren(string const& key) {
 }
 
 void
-KvInterfaceImplZoo::deleteNode(string const& key) {
+KvInterfaceImplZoo::deleteKey(string const& key) {
     if (_verbose) {
-        LOGGER_INF << "*** KvInterfaceImplZoo::deleteNode, key: " << key << endl;
+        LOGGER_INF << "*** KvInterfaceImplZoo::deleteKey, key: " << key << endl;
     }
     int rc = zoo_delete(_zh, key.c_str(), -1);
     if (rc!=ZOK) {
-        _throwZooFailure(rc, "deleteNode", key);
+        _throwZooFailure(rc, "deleteKey", key);
     }   
 }
 

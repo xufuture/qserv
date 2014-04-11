@@ -87,13 +87,13 @@ BOOST_AUTO_TEST_CASE(createGetCheck) {
     BOOST_CHECK(v[0]=="xyzA");
     BOOST_CHECK(v[1]=="xyzB");
 
-    kvI.deleteNode(k1);
+    kvI.deleteKey(k1);
 
     v = kvI.getChildren(prefix);
     BOOST_CHECK(1 == v.size());
 
-    kvI.deleteNode(k2);
-    kvI.deleteNode(prefix);
+    kvI.deleteKey(k2);
+    kvI.deleteKey(prefix);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
