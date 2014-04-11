@@ -127,6 +127,9 @@ KvInterfaceImplMem::exists(string const& key) {
 string
 KvInterfaceImplMem::get(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplMem::get(), key: " << key << endl;
+    if ( ! exists(key) ) {
+        throw CssException(CssException::KEY_DOES_NOT_EXIST, key);
+    }
     string s = _kwMap[key];
     LOGGER_INF << "*** got: '" << s << "'" << endl;
     return s;
@@ -135,6 +138,9 @@ KvInterfaceImplMem::get(string const& key) {
 vector<string> 
 KvInterfaceImplMem::getChildren(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplMem::getChildren(), key: " << key << endl;
+    if ( ! exists(key) ) {
+        throw CssException(CssException::KEY_DOES_NOT_EXIST, key);
+    }
     vector<string> retV;
     map<string, string>::const_iterator itrM;
     for (itrM=_kwMap.begin() ; itrM!=_kwMap.end() ; itrM++) {

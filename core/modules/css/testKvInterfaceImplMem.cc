@@ -92,6 +92,9 @@ BOOST_AUTO_TEST_CASE(createGetCheck) {
     kvI.deleteKey(k1);
     BOOST_CHECK_THROW(kvI.deleteKey(k1), lsst::qserv::css::CssException);
 
+    BOOST_CHECK_THROW(kvI.get(k1), lsst::qserv::css::CssException);
+    BOOST_CHECK_THROW(kvI.getChildren(k1), lsst::qserv::css::CssException);
+
     v = kvI.getChildren(prefix);
     BOOST_CHECK(1 == v.size());
 
