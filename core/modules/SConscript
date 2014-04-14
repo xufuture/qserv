@@ -155,9 +155,10 @@ def makeSharedObjectCC(env, ccFile):
     else: return ccFile
 
 def getTests(env, mName):
+    state.log.debug("Looking for %s tests" % mName)
     scriptPath = os.path.join(mName, "SConscript.test")
     if env.Glob(scriptPath):
-        tests = SConscript(scriptPath, exports={'env' : env,
+        tgts = SConscript(scriptPath, exports={'env' : env,
                                                 'libProducts' : libProducts,
                                                 'defaultTgts' : defaultTgts,
                                                 'findLibs' : findLibs,
@@ -220,12 +221,15 @@ extraTgts['dist'].append(('bin', env.File(target)))
 # Tests
 
 # module tests
+state.log.debug("Looking for tests : %s" % libProducts)
+testTgts=[]
 for m in libProducts.keys():
-    tgts = getTests(env, m)
-    if tgts: print tgts
-    # FIXME: run tests.
-#
+    testTgts.append(getTests(env, m))
 
-installTgts = extraTgts['dist']
+if testTgts: 
+    state.log.debug("Test tgts to install : %s" % testTgts)
+    # FIXME: run tests.
+
+installTgts = (extraTgts['dist'], testTgts)
 
 Return('installTgts')

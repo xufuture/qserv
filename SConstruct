@@ -100,8 +100,11 @@ def get_install_targets() :
   # Setup the #include paths
   # env.Append(CPPPATH="modules")
 
-  coreFilesToInstall = SConscript('core/modules/SConscript', variant_dir=env['build_dir'], duplicate=1,
-    exports=['env', 'ARGUMENTS'])
+  (coreFilesToInstall, testTargets) = SConscript('core/modules/SConscript', 
+    variant_dir=env['build_dir'], 
+    duplicate=1,
+    exports=['env', 'ARGUMENTS']
+    )
   targetFiles = []
   for (path, sourceNode) in coreFilesToInstall :
     installPath=os.path.join(env['prefix'], path)
@@ -109,7 +112,11 @@ def get_install_targets() :
     targetFile = fileutils.replace_base_path(None, installPath, sourceNode, env)
     env.InstallAs(targetFile, sourceNode)
     targetFiles.append(targetFile)
-  return targetFiles
+
+  installTargets = targetFiles + testTargets
+  state.log.debug("%s " % installTargets)
+    
+  return installTargets
 
 env.Alias("dist-core", get_install_targets())
 

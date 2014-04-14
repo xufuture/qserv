@@ -50,6 +50,8 @@ def _findPrefix(product, binName=None):
 
     if binName:
         binFullPath = SCons.Util.WhereIs(binName)
+        if not binFullPath :
+            log.fail("Unable to locate executable : \"%s\"" % binName)
         (binpath, binname) = os.path.split(binFullPath)
         (basepath, bin) = os.path.split(binpath)
         if bin.lower() == "bin":
@@ -59,7 +61,7 @@ def _findPrefix(product, binName=None):
         prefix = os.getenv("%s_DIR" % product.upper())
 
     if not prefix:
-        log.fails("Could not locate %s install prefix" % product)
+        log.fail("Could not locate %s install prefix" % product)
 
     return prefix
 
@@ -110,9 +112,6 @@ def _initVariables(src_dir):
             (PathVariable('ZOOKEEPER_LIB', 'zookeeper c-binding libraries path', os.path.join(env['ZOOKEEPER_DIR'], "c-binding", "lib"), PathVariable.PathIsDir))
             )
     opts.Update(env)
-
-    print "DEBUG " + str(opts)
-    print "DEBUG " + env.Dump() 
 
     opts.AddVariables(
             (PathVariable('python_prefix', 'qserv install directory for python modules', os.path.join(env['prefix'], "lib", "python"), PathVariable.PathIsDirCreate))
