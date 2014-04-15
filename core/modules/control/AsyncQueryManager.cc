@@ -265,8 +265,7 @@ void AsyncQueryManager::joinEverything() {
     while(!_queries.empty()) {
         count = _queries.size();
         if(count != lastCount) {
-            LOGGER_INF << "Still " << count
-                       << " in flight." << std::endl;
+            LOGGER_INF << "Still " << count << " in flight." << std::endl;
             count = lastCount;
             ++complainCount;
             if(complainCount > moreDetailThreshold) {
@@ -382,23 +381,31 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
         "Error, resultdb.db not found. Using qservResult.",
         "qservResult");
 
+    std::string cssTech = getConfigElement(
+        cfg, "css.technology",
+        "Error, css.technology not found.",
+        "invalid");
     std::string cssConn = getConfigElement(
         cfg, "css.connection",
         "Error, css.connection not found.",
         "");
-    std::string cssTechnology = getConfigElement(
-        cfg, "css.technology",
-        "Error, css.technology not found.",
-        "invalid");
-    if (cssTechnology == "zoo") {
-        std::cout << "Initializing zookeeper-based css, with " 
-                  << cssConn << std::endl;
-        boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(cssConn));
+    _initFacade(cssTech, cssConn);
+}
+
+void AsyncQueryManager::_initFacade(std::string const& cssTech, 
+                                    std::string const& cssConn) {
+    if (cssTech == "zoo") {
+        LOGGER_INF << "Initializing zookeeper-based css, with " 
+                   << cssConn << std::endl;
+        
+        boost::shared_ptr<css::Facade> cssFPtr(
+            css::FacadeFactory::createZooFacade(cssConn));
         _qSession.reset(new QuerySession(cssFPtr));
-    } else if (cssTechnology == "mem") {
-        std::cout << "Initializing memory-based css, with " 
-                  << cssConn << std::endl;
-        boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(cssConn, true));
+    } else if (cssTech == "mem") {
+        LOGGER_INF << "Initializing memory-based css, with " 
+                   << cssConn << std::endl;
+        boost::shared_ptr<css::Facade> cssFPtr(
+            css::FacadeFactory::createMemFacade(cssConn));
         _qSession.reset(new QuerySession(cssFPtr));
     } else {
         LOGGER_ERR << "Unable to determine css technology, check config file." 

@@ -74,6 +74,10 @@ lookupKey(QueryContext& context, boost::shared_ptr<ColumnRef> cr) {
     // Match cr as a column ref against the key column for a database's
     // partitioning strategy.
     if((!cr) || !context.cssFacade) { return false; }
+    if(!context.cssFacade->containsDb(cr->db)
+       || !context.cssFacade->containsTable(cr->db, cr->table)) {
+            throw std::logic_error("Invalid db/table:" + cr->db + "." + cr->table);
+        }
     std::string keyColumn = context.cssFacade->getKeyColumn(cr->db, cr->table);
     return (!cr->column.empty()) && (keyColumn == cr->column);
 }
@@ -159,9 +163,12 @@ public:
         }
         std::string const& db = t->getDb();
         std::string const& table = t->getTable();
-
+        if(!_cssFacade.containsDb(db)
+           || !_cssFacade.containsTable(db, table)) {
+            throw std::logic_error("Invalid db/table:" + db + "." + table);
+        }
         // Is table chunked?
-        if(!_cssFacade.checkIfTableIsChunked(db, table)) {
+        if(!_cssFacade.tableIsChunked(db, table)) {
             return; // Do nothing for non-chunked tables
         }
         // Now save an entry for WHERE clause processing.
@@ -563,6 +570,12 @@ QservRestrictorPlugin::_convertObjectId(QueryContext& context,
     // db, table, column, val1, val2, ...
     p->_params.push_back(context.dominantDb);
     p->_params.push_back(context.anonymousTable);
+    if(!context.cssFacade->containsDb(context.dominantDb)
+       || !context.cssFacade->containsTable(context.dominantDb,
+                                            context.anonymousTable) ) {
+        throw std::logic_error("Invalid db/table: " + context.dominantDb 
+                               + "." + context.anonymousTable);
+    }
     std::string keyColumn = context.cssFacade->getKeyColumn(context.dominantDb,
                                                             context.anonymousTable);
     p->_params.push_back(keyColumn);

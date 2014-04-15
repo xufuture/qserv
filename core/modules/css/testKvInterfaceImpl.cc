@@ -23,9 +23,9 @@
  */
 
 /**
-  * @file testCssInterface.cc
+  * @file testKvInterface.cc
   *
-  * @brief Unit test for the Common State System Interface.
+  * @brief Unit test for the implementations of the Common State System Interface.
   *
   * @Author Jacek Becla, SLAC
   */
@@ -45,7 +45,8 @@
 #include <boost/lexical_cast.hpp>
 
 // local imports
-#include "cssInterfaceImplZoo.h"
+#include "KvInterfaceImplMem.h"
+#include "KvInterfaceImplZoo.h"
 
 using std::cout;
 using std::endl;
@@ -54,8 +55,8 @@ using std::string;
 using std::vector;
 
 
-struct CssInterfaceFixture {
-    CssInterfaceFixture(void) {
+struct KvInterfaceFixture {
+    KvInterfaceFixture(void) {
         prefix = "/unittest_" + boost::lexical_cast<std::string>(rand());
         k1 = prefix + "/xyzA";
         k2 = prefix + "/xyzB";
@@ -63,39 +64,50 @@ struct CssInterfaceFixture {
         v1 = "firstOne";
         v2 = "secondOne";
     };
-    ~CssInterfaceFixture(void) {
+
+    ~KvInterfaceFixture(void) {
     };
+
+    void doIt(lsst::qserv::css::KvInterface* kvI) {
+        kvI->create(prefix, v1);
+        kvI->create(k1, v1);
+        kvI->create(k2, v2);
+        
+        string s = kvI->get(k1);
+        BOOST_CHECK(s == v1);
+        BOOST_CHECK(kvI->exists(k1));
+        BOOST_CHECK(!kvI->exists(k3));
+
+        vector<string> v = kvI->getChildren(prefix);
+        BOOST_CHECK(2 == v.size());
+        std::sort (v.begin(), v.end());
+        BOOST_CHECK(v[0]=="xyzA");
+        BOOST_CHECK(v[1]=="xyzB");
+
+        kvI->deleteKey(k1);
+
+        v = kvI->getChildren(prefix);
+        BOOST_CHECK(1 == v.size());
+
+        kvI->deleteKey(k2);
+        kvI->deleteKey(prefix);
+
+        delete kvI;
+    }
+
     string prefix, k1, k2, k3, v1, v2;
 };
 
-BOOST_FIXTURE_TEST_SUITE(CssInterfaceTest, CssInterfaceFixture)
+BOOST_FIXTURE_TEST_SUITE(KvInterfaceTest, KvInterfaceFixture)
 
-BOOST_AUTO_TEST_CASE(createGetCheck) {
-    lsst::qserv::css::CssInterfaceImplZoo cssI =
-        lsst::qserv::css::CssInterfaceImplZoo("localhost:2181");
+BOOST_AUTO_TEST_CASE(testZoo) {
+    std::cout << "========== Testing ZOO ==========" << std::endl;
+    doIt(new lsst::qserv::css::KvInterfaceImplZoo("localhost:2181"));
+}
 
-    cssI.create(prefix, v1);
-    cssI.create(k1, v1);
-    cssI.create(k2, v2);
-
-    string s = cssI.get(k1);
-    BOOST_CHECK(s == v1);
-    BOOST_CHECK(cssI.exists(k1));
-    BOOST_CHECK(!cssI.exists(k3));
-
-    vector<string> v = cssI.getChildren(prefix);
-    BOOST_CHECK(2 == v.size());
-    std::sort (v.begin(), v.end());
-    BOOST_CHECK(v[0]=="xyzA");
-    BOOST_CHECK(v[1]=="xyzB");
-
-    cssI.deleteNode(k1);
-
-    v = cssI.getChildren(prefix);
-    BOOST_CHECK(1 == v.size());
-
-    cssI.deleteNode(k2);
-    cssI.deleteNode(prefix);
+BOOST_AUTO_TEST_CASE(testMem) {
+    std::cout << "========== Testing MEM ==========" << std::endl;
+    doIt(new lsst::qserv::css::KvInterfaceImplMem());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -23,51 +23,55 @@
 /**
   * @file CssException.h
   *
-  * @brief Exception class for CssInterface.
+  * @brief Exception class for KvInterface.
   *
   * @Author Jacek Becla, SLAC
   */
 
+#ifndef LSST_QSERV_CSS_EXCEPTION_HH
+#define LSST_QSERV_CSS_EXCEPTION_HH
 
 // Standard library
-#include <iostream>
-
-// Boost includes
-#include "boost/assign.hpp"
-
-// Local includes
-#include "cssException.h"
-
-using std::map;
-using std::string;
+#include <map>
+#include <stdexcept>
+#include <string>
 
 namespace lsst {
 namespace qserv {
 namespace css {
 
-map<CssException::errCodeT, string> 
-CssException::_errMap = boost::assign::map_list_of 
-    (DB_DOES_NOT_EXIST,  "Database does not exist.")
-    (KEY_DOES_NOT_EXIST, "Key does not exist.")
-    (TB_DOES_NOT_EXIST,  "Table does not exist.")
-    (AUTH_FAILURE,       "Authorization failure.")
-    (CONN_FAILURE,       "Failed to connect to persistent store.")
-    (INTERNAL_ERROR,     "Internal error.");
-
-CssException::CssException(errCodeT errCode, string const& extraMsg) :
-    std::runtime_error(""),
-    _errCode(errCode) {
-    string s = "CssException: " + _errMap.find(_errCode)->second;
-    if (extraMsg != "") {
-        s = s + " (" + extraMsg + ")";
+class CssException : public std::runtime_error {
+public:
+    enum errCodeT { 
+        DB_DOES_NOT_EXIST,
+        KEY_DOES_NOT_EXIST,
+        KEY_EXISTS,
+        TB_DOES_NOT_EXIST,
+        AUTH_FAILURE,
+        CONN_FAILURE,
+        INTERNAL_ERROR
+    };     
+    //CssException(errCodeT errCode);
+    CssException(errCodeT errCode, std::string const& extraMsg="");
+    virtual ~CssException() throw() {
+        delete [] _errMsg;
     }
-    _errMsg = new char[s.length()+1];
-    strcpy(_errMsg, s.c_str());
-}
+    
+    virtual const char* what() const throw();
+    errCodeT errCode() const {
+        return _errCode;
+    }
 
-const char*
-CssException::what() const throw () {
-    return _errMsg;
-}
+protected:
+    explicit CssException(std::string const& msg)
+        : std::runtime_error(msg) {}
+
+private:
+    errCodeT _errCode;
+    char* _errMsg;
+    static std::map<errCodeT, std::string> _errMap;
+};
 
 }}} // namespace lsst::qserv::css
+
+#endif // LSST_QSERV_CSS_EXCEPTION_HH

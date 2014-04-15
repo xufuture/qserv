@@ -43,7 +43,7 @@ import readline
 
 # local imports
 from lsst.db.exception import produceExceptionClass
-from cssInterface import CssException
+from kvInterface import CssException
 from qserv_admin_impl import QservAdminImpl
 
 ####################################################################################
@@ -101,18 +101,18 @@ class CommandParser(object):
         terminate: CTRL-D, or 'exit;' or 'quit;'.
         """
         line = ''
-        sql = ''
+        cmd = ''
         while True:
             line = raw_input("qserv > ")
-            sql += line.strip()+' '
-            while re.search(';', sql):
-                pos = sql.index(';')
+            cmd += line.strip()+' '
+            while re.search(';', cmd):
+                pos = cmd.index(';')
                 try:
-                    self._parse(sql[:pos])
+                    self._parse(cmd[:pos])
                 except QAdmException as e:
                     self._logger.error(e.__str__())
                     print "ERROR: ", e.__str__()
-                sql = sql[pos+1:]
+                cmd = cmd[pos+1:]
 
     def _parse(self, cmd):
         """
@@ -305,8 +305,8 @@ class CommandParser(object):
             opts["clusteredIndex"] = ''
         if not opts.has_key("partitioning"):
             self._logger.info(
-                "param 'partitioning' not found, will use default: off")
-            opts["partitioning"] = "off"
+                "param 'partitioning' not found, will use default: 0")
+            opts["partitioning"] = "0"
         if not opts.has_key("objIdIndex"):
             self._logger.info(
                 "param 'objIdIndex' not found, will use default: ''")
@@ -358,7 +358,7 @@ class CommandParser(object):
         if not x.has_key("partitioning"):
             raise QAdmException(QAdmException.MISSING_PARAM, "partitioning")
 
-        partOff = x["partitioning"] == "off" 
+        partOff = x["partitioning"] == "0" 
         for (theName, theOpts) in xxOpts.items():
             for o in theOpts:
                 # skip optional parameters
@@ -372,7 +372,7 @@ class CommandParser(object):
                     raise QAdmException(QAdmException.MISSING_PARAM, o)
         if partOff:
             return
-        if x["partitioning"] != "on":
+        if x["partitioning"] != "1":
             raise QAdmException(QAdmException.WRONG_PARAM_VAL, "partitioning",
                                 "got: '%s'" % x["partitioning"],
                                 "expecting: on/off")
@@ -410,15 +410,15 @@ class CommandParser(object):
         if kL: logging.getLogger("kazoo.client").setLevel(int(kL))
 
 ####################################################################################
-class VolcabCompleter:
+class WordCompleter:
     """
     Set auto-completion for commonly used words.
     """
-    def __init__(self, volcab):
-        self.volcab = volcab
+    def __init__(self, word):
+        self.word = word
 
     def complete(self, text, state):
-        results = [x+' ' for x in self.volcab 
+        results = [x+' ' for x in self.word 
                    if x.startswith(text.upper())] + [None]
         return results[state]
 
@@ -435,7 +435,7 @@ words = ['CONFIG',
          'RELEASE',
          'SHOW',
          'TABLE']
-completer = VolcabCompleter(words)
+completer = WordCompleter(words)
 readline.set_completer(completer.complete)
 
 ####################################################################################
