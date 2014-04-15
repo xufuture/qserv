@@ -21,25 +21,45 @@
  */
 
 /**
-  * @file IntPair.h
+  * @file KvInterfaceImplMem.h
   *
-  * @brief Struct containing 2 integers, for C++-->python swig.
+  * @brief Interface to the Common State System - in memory key-value based
+  * implementation.
   *
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_CSS_INTPAIR_H
-#define LSST_QSERV_CSS_INTPAIR_H
+#ifndef LSST_QSERV_KVINTERFACE_IMPL_MEM_HH
+#define LSST_QSERV_KVINTERFACE_IMPL_MEM_HH
+
+// standard library imports
+#include <map>
+#include <string>
+#include <vector>
+
+// local imports
+#include "KvInterface.h"
 
 namespace lsst {
 namespace qserv {
 namespace css {
 
-struct IntPair {
-    int stripes;
-    int subStripes;
+class KvInterfaceImplMem : public KvInterface {
+public:
+    KvInterfaceImplMem() {}
+    KvInterfaceImplMem(std::string const&);
+    virtual ~KvInterfaceImplMem();
+
+    virtual void create(std::string const& key, std::string const& value);
+    virtual bool exists(std::string const& key);
+    virtual std::string get(std::string const& key);
+    virtual std::vector<std::string> getChildren(std::string const& key);
+    virtual void deleteKey(std::string const& key);
+
+private:
+    std::map<std::string, std::string> _kwMap;
 };
 
 }}} // namespace lsst::qserv::css
 
-#endif // LSST_QSERV_CSS_INTPAIR_H
+#endif // LSST_QSERV_CSS_INTERFACE_IMPL_MEM_HH

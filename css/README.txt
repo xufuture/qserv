@@ -24,8 +24,8 @@ zookeeper-3.4.5/bin/zkServer.sh start
 
 export LD_LIBRARY_PATH=<path>/lib:<path>/lib/mysql
 core/bld/css/testCssException
-core/bld/css/dist/testCssInterfaceImplDummy
-core/bld/css/dist/testCssInterfaceImplZoo
+core/bld/css/dist/testKvInterfaceImplDummy
+core/bld/css/dist/testKvInterfaceImplZoo
 core/bld/css/dist/testStore
 
 

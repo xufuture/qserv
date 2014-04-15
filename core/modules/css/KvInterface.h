@@ -21,7 +21,7 @@
  */
 
 /**
-  * @file CssInterface.h
+  * @file KvInterface.h
   *
   * @brief Abstract Interface to the Common State System.
   *
@@ -39,21 +39,44 @@ namespace lsst {
 namespace qserv {
 namespace css {
 
-class CssInterface {
+class KvInterface {
 public:
-    virtual ~CssInterface() {};
+    virtual ~KvInterface() {};
 
+    /**
+     * Create a key/value pair. 
+     * Throws CssException if the key already exists (or if any other problem,
+     * e.g., a connection error is detected).
+     */
     virtual void create(std::string const& key, std::string const& value) = 0;
+
+    /**
+     * Check if the key exists.
+     */
     virtual bool exists(std::string const& key) = 0;
+
+    /**
+     * Returns value for a given key.
+     * Throws CssException if the key does not exist (or if any other problem, 
+     * e.g., a connection error is detected).
+     */
     virtual std::string get(std::string const& key) = 0;
+
+    /**
+     * Returns children (vector of strings) for a given key.
+     * Throws CssException if the key does not exist (or if any other problem,
+     * e.g., a connection error is detected)
+     */
     virtual std::vector<std::string> getChildren(std::string const& key) = 0;
-    virtual void deleteNode(std::string const& key /*, bool recurvive*/) = 0;
+
+    /**
+     * Delete a key.
+     * Throws CssException on failure.
+     */
+    virtual void deleteKey(std::string const& key) = 0;
 
 protected:
-    CssInterface(bool verbose=true) : _verbose(verbose) {}
-
-protected:
-    bool _verbose; // FIXME: this will go away when we switch to proper logging.
+    KvInterface() {}
 };
 
 }}} // namespace lsst::qserv::css

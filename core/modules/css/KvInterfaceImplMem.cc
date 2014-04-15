@@ -23,7 +23,7 @@
  */
 
 /**
-  * @file CssInterfaceImplMem.cc
+  * @file KvInterfaceImplMem.cc
   *
   * @brief Interface to the Common State System - zookeeper-based implementation.
   *
@@ -35,7 +35,6 @@
  * http://zookeeper.apache.org/doc/r3.3.4/zookeeperProgrammers.html#ZooKeeper+C+client+API
  *
  * To do:
- *  - logging
  *  - perhaps switch to async (seems to be recommended by zookeeper)
  */
 
@@ -52,13 +51,11 @@
 #include <boost/algorithm/string.hpp>
 
 // local imports
-#include "cssInterfaceImplMem.h"
-#include "cssException.h"
+#include "KvInterfaceImplMem.h"
+#include "CssException.h"
+#include "log/Logger.h"
 
-
-using std::cout;
 using std::endl;
-using std::exception;
 using std::map;
 using std::ostringstream;
 using std::string;
@@ -83,98 +80,94 @@ namespace css {
   * 3) then copy the generate file to final destination:
   *    mv /tmp/testCppParser.kwmap <destination>
   */
-CssInterfaceImplMem::CssInterfaceImplMem(string const& mapPath,
-                                         bool verbose) :
-    CssInterface(verbose) {
-    std::ifstream f("./modules/qproc/testCppParser.kwmap"); // FIXME
-    std::string line;
-    std::vector<std::string> strs;
+KvInterfaceImplMem::KvInterfaceImplMem(string const& mapPath) {
+    std::ifstream f(mapPath.c_str());
+    string line;
+    vector<string> strs;
     while ( std::getline(f, line) ) {
         boost::split(strs, line, boost::is_any_of("\t"));
-        std::string theKey = strs[0];
-        std::string theVal = strs[1];
+        string theKey = strs[0];
+        string theVal = strs[1];
         if (theVal == "\\N") {
             theVal = "";
         }
         _kwMap[theKey] = theVal;
     }
-    //std::map<std::string, std::string>::const_iterator itrM;
+    //map<string, string>::const_iterator itrM;
     //for (itrM=_kwMap.begin() ; itrM!=_kwMap.end() ; itrM++) {
-    //    std::string val = "\\N";
+    //    string val = "\\N";
     //    if (itrM->second != "") {
     //        val = itrM->second;
     //    }
-    //    std::cout << itrM->first << "\t" << val << std::endl;
+    //    LOGGER_INF << itrM->first << "\t" << val << endl;
     //}
 }
 
-CssInterfaceImplMem::~CssInterfaceImplMem() {
+KvInterfaceImplMem::~KvInterfaceImplMem() {
 }
 
 void
-CssInterfaceImplMem::create(string const& key, string const& value) {
-    if (_verbose) {
-        cout << "*** CssInterfaceImplMem::create(), " << key << " --> " 
-             << value << endl;
+KvInterfaceImplMem::create(string const& key, string const& value) {
+    LOGGER_INF << "*** KvInterfaceImplMem::create(), " << key << " --> " 
+               << value << endl;
+    if (exists(key)) {
+        throw CssException(CssException::KEY_EXISTS, key);
     }
     _kwMap[key] = value;
 }
 
 bool
-CssInterfaceImplMem::exists(string const& key) {
+KvInterfaceImplMem::exists(string const& key) {
     bool ret = _kwMap.find(key) != _kwMap.end();
-    if (_verbose) {
-        cout << "*** CssInterfaceImplMem::exists(), key: " << key 
-             << ": " << ret << endl;
-    }
+    LOGGER_INF << "*** KvInterfaceImplMem::exists(), key: " << key 
+               << ": " << ret << endl;
     return ret;
 }
 
 string
-CssInterfaceImplMem::get(string const& key) {
-    if (_verbose) {
-        cout << "*** CssInterfaceImplMem::get(), key: " << key << endl;
+KvInterfaceImplMem::get(string const& key) {
+    LOGGER_INF << "*** KvInterfaceImplMem::get(), key: " << key << endl;
+    if ( ! exists(key) ) {
+        throw CssException(CssException::KEY_DOES_NOT_EXIST, key);
     }
     string s = _kwMap[key];
-    if (_verbose) {
-        cout << "*** got: '" << s << "'" << endl;
-    }
+    LOGGER_INF << "*** got: '" << s << "'" << endl;
     return s;
 }
 
 vector<string> 
-CssInterfaceImplMem::getChildren(string const& key) {
-    if (_verbose) {
-        cout << "*** CssInterfaceImplMem::getChildren(), key: " << key << endl;
+KvInterfaceImplMem::getChildren(string const& key) {
+    LOGGER_INF << "*** KvInterfaceImplMem::getChildren(), key: " << key << endl;
+    if ( ! exists(key) ) {
+        throw CssException(CssException::KEY_DOES_NOT_EXIST, key);
     }
     vector<string> retV;
     map<string, string>::const_iterator itrM;
     for (itrM=_kwMap.begin() ; itrM!=_kwMap.end() ; itrM++) {
         string fullKey = itrM->first;
-        cout << "fullKey: " << fullKey << endl;
+        LOGGER_INF << "fullKey: " << fullKey << endl;
         if (boost::starts_with(fullKey, key+"/")) {
             string theChild = fullKey.substr(key.length()+1);
             if (theChild.size() > 0) {
-                cout << "child: " << theChild << endl;
+                LOGGER_INF << "child: " << theChild << endl;
                 retV.push_back(theChild);
             }
         }
     }
-    if (_verbose) {
-        cout << "got " << retV.size() << " children:" << endl;
-        vector<string>::const_iterator itrV;
-        for (itrV=retV.begin(); itrV!=retV.end() ; itrV++) {
-            cout << "'" << *itrV << "', ";
-        }
-        cout << endl;
+    LOGGER_INF << "got " << retV.size() << " children:" << endl;
+    vector<string>::const_iterator itrV;
+    for (itrV=retV.begin(); itrV!=retV.end() ; itrV++) {
+        LOGGER_INF << "'" << *itrV << "', ";
     }
+    LOGGER_INF << endl;
     return retV;
 }
 
 void
-CssInterfaceImplMem::deleteNode(string const& key) {
-    if (_verbose) {
-        cout << "*** CssInterfaceImplMem::deleteNode, key: " << key << endl;
+KvInterfaceImplMem::deleteKey(string const& key) {
+    LOGGER_INF << "*** KvInterfaceImplMem::deleteKey, key: " << key << endl;
+    if ( ! exists(key) ) {
+        throw CssException(CssException::KEY_DOES_NOT_EXIST, key);
     }
     _kwMap.erase(key);
 }

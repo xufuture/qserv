@@ -155,7 +155,7 @@ public:
         {}
 
     void operator()(Tuple& t) {
-        t.allowed = cssFacade.checkIfContainsDb(t.db);
+        t.allowed = cssFacade.containsDb(t.db);
         if(t.allowed) {
             t.chunkLevel = cssFacade.getChunkLevel(t.db, t.prePatchTable);
             if(t.chunkLevel == -1) {

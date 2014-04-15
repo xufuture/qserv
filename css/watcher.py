@@ -27,7 +27,7 @@ Database Watcher - runs on each Qserv node and maintains Qserv databases (create
 
 
 Known issues and todos:
- * need to go through cssInterface interface, now bypassing it in two places:
+ * need to go through kvInterface interface, now bypassing it in two places:
     - @self._interface._zk.DataWatch
     - @self._interface._zk.ChildrenWatch
  * considering implementing garbage collection for threads corresponding to
@@ -44,7 +44,7 @@ import os
 import time
 import threading
 
-from cssInterface import CssInterface
+from kvInterface import KvInterface
 from lsst.db.db import Db, DbException
 
 
@@ -55,11 +55,11 @@ class OneDbWatcher(threading.Thread):
     It runs in a dedicated thread.
     """
 
-    def __init__(self, cssI, db, pathToWatch):
+    def __init__(self, kvI, db, pathToWatch):
         """
         Initialize shared state.
         """
-        self._cssI = cssI
+        self._kvI = kvI
         self._db = db
         self._path = pathToWatch
         self._dbName = pathToWatch[11:] # skip '/DATABASES/'
@@ -71,7 +71,11 @@ class OneDbWatcher(threading.Thread):
         """
         Watch for changes, and act upon them: create/drop databases.
         """
+<<<<<<< HEAD
         @self._cssI._zk.DataWatch(self._path, allow_missing_node=True)
+=======
+        @self._kvI._zk.DataWatch(self._path, allow_missing_node=True)
+>>>>>>> u/jbecla/cssProto5
         def my_watcher_func(newData, stat):
             if newData == self._data: return
             if newData is None and stat is None:
@@ -99,17 +103,29 @@ class AllDbsWatcher(threading.Thread):
     thread.
     """
 
+<<<<<<< HEAD
     def __init__(self, cssI, db):
         """
         Initialize shared data.
         """
         self._cssI = cssI
+=======
+    def __init__(self, kvI, db):
+        """
+        Initialize shared data.
+        """
+        self._kvI = kvI
+>>>>>>> u/jbecla/cssProto5
         self._db = db
         self._path =  "/DATABASES"
         self._children = []
         self._watchedDbs = [] # registry of all watched databases
         # make sure the path exists
+<<<<<<< HEAD
         if not cssI.exists(self._path): cssI.create(self._path)
+=======
+        if not kvI.exists(self._path): kvI.create(self._path)
+>>>>>>> u/jbecla/cssProto5
         self._logger = logging.getLogger("WATCHER.ALLDBS")
         threading.Thread.__init__(self)
 
@@ -118,7 +134,11 @@ class AllDbsWatcher(threading.Thread):
         Watch for new/deleted nodes, and act upon them: setup new watcher for each
         new database.
         """
+<<<<<<< HEAD
         @self._cssI._zk.ChildrenWatch(self._path)
+=======
+        @self._kvI._zk.ChildrenWatch(self._path)
+>>>>>>> u/jbecla/cssProto5
         def my_watcher_func(children):
             # look for new entries
             for val in children:
@@ -128,7 +148,11 @@ class AllDbsWatcher(threading.Thread):
                     p2 = "%s/%s" % (self._path, val)
                     if p2 not in self._watchedDbs:
                         self._logger.info("Setting a new watcher for '%s'" % p2)
+<<<<<<< HEAD
                         w = OneDbWatcher(self._cssI, self._db, p2)
+=======
+                        w = OneDbWatcher(self._kvI, self._db, p2)
+>>>>>>> u/jbecla/cssProto5
                         w.start()
                         self._watchedDbs.append(p2)
                     else:
@@ -234,7 +258,11 @@ def main():
     if kL: logging.getLogger("kazoo.client").setLevel(int(kL))
 
     # initialize CSS
+<<<<<<< HEAD
     cssI = CssInterface(p.connInfo)
+=======
+    kvI = KvInterface(p.connInfo)
+>>>>>>> u/jbecla/cssProto5
 
     # initialize database connection, and connect (to catch issues early)
     db = Db(read_default_file=p.credFile)
@@ -246,7 +274,11 @@ def main():
 
     # setup the thread watching
     try:
+<<<<<<< HEAD
         w1 = AllDbsWatcher(cssI, db)
+=======
+        w1 = AllDbsWatcher(kvI, db)
+>>>>>>> u/jbecla/cssProto5
         w1.start()
         while True: time.sleep(60)
     except(KeyboardInterrupt, SystemExit):

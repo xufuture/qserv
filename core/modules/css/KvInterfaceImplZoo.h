@@ -21,7 +21,7 @@
  */
 
 /**
-  * @file CssInterface.h
+  * @file KvInterface.h
   *
   * @brief Interface to the Common State System - zookeeper-based implementation.
   *
@@ -39,28 +39,28 @@
 #include "zookeeper.h"
 
 // local imports
-#include "cssInterface.h"
+#include "KvInterface.h"
 
 namespace lsst {
 namespace qserv {
 namespace css {
 
-class CssInterfaceImplZoo : public CssInterface {
+class KvInterfaceImplZoo : public KvInterface {
 public:
-    CssInterfaceImplZoo(std::string const& connInfo, bool verbose=true);
-    virtual ~CssInterfaceImplZoo();
+    KvInterfaceImplZoo(std::string const& connInfo);
+    virtual ~KvInterfaceImplZoo();
 
     virtual void create(std::string const& key, std::string const& value);
     virtual bool exists(std::string const& key);
     virtual std::string get(std::string const& key);
     virtual std::vector<std::string> getChildren(std::string const& key);
-    virtual void deleteNode(std::string const& key /*, bool recurvive*/);
+    virtual void deleteKey(std::string const& key);
 
 private:
-    void zooFailure(int, std::string const&, std::string const& extraMsg="");
+    void _throwZooFailure(int, std::string const&, std::string const& extraMsg="");
     
 private:
-    zhandle_t *_zh; // zookeeper handle
+    zhandle_t *_zh; // zhookeeper handle
 };
 
 }}} // namespace lsst::qserv::css

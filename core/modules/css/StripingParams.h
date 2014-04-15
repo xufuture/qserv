@@ -21,45 +21,25 @@
  */
 
 /**
-  * @file CssInterface.h
+  * @file StripingParams.h
   *
-  * @brief Interface to the Common State System - in memory key-value based
-  * implementation.
+  * @brief Struct containing 2 integers, for C++-->python swig.
   *
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_CSS_INTERFACE_IMPL_MEM_HH
-#define LSST_QSERV_CSS_INTERFACE_IMPL_MEM_HH
-
-// standard library imports
-#include <map>
-#include <string>
-#include <vector>
-
-// local imports
-#include "cssInterface.h"
+#ifndef LSST_QSERV_CSS_STRIPINGPARAMS_H
+#define LSST_QSERV_CSS_STRIPINGPARAMS_H
 
 namespace lsst {
 namespace qserv {
 namespace css {
 
-class CssInterfaceImplMem : public CssInterface {
-public:
-    CssInterfaceImplMem(bool verbose=true) {}
-    CssInterfaceImplMem(std::string const&, bool verbose=true);
-    virtual ~CssInterfaceImplMem();
-
-    virtual void create(std::string const& key, std::string const& value);
-    virtual bool exists(std::string const& key);
-    virtual std::string get(std::string const& key);
-    virtual std::vector<std::string> getChildren(std::string const& key);
-    virtual void deleteNode(std::string const& key /*, bool recurvive*/);
-
-private:
-    std::map<std::string, std::string> _kwMap;
+struct StripingParams {
+    int stripes;
+    int subStripes;
 };
 
 }}} // namespace lsst::qserv::css
 
-#endif // LSST_QSERV_CSS_INTERFACE_IMPL_MEM_HH
+#endif // LSST_QSERV_CSS_STRIPINGPARAMS_H
