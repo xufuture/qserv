@@ -341,8 +341,6 @@ class CommandParser(object):
             "sphBox": ("nStripes", 
                        "nSubStripes", 
                        "overlap")}
-        # validate the options
-        self._validateKVOptions(opts, _crDbOpts, _crDbPSOpts, "db_info")
         return opts
 
     def _processTbOptions(self, opts):
@@ -367,63 +365,10 @@ class CommandParser(object):
                           "isView")}
         _crTbPSOpts = {
             "sphBox":("overlap",
-                      "phiColName", 
                       "lonColName", 
                       "latColName")}
-        # validate the options
-        #self._validateKVOptions(opts,_crTbOpts,_crTbPSOpts,"table_info")
         return opts
 
-
-    def _validateKVOptions(self, x, xxOpts, psOpts, whichInfo):
-        if not x.has_key("partitioning"):
-            raise QAdmException(QAdmException.MISSING_PARAM, "partitioning")
-
-        partOff = x["partitioning"] == "0" 
-        for (theName, theOpts) in xxOpts.items():
-            for o in theOpts:
-                # skip optional parameters
-                if o == "partitioning":
-                    continue
-                # if partitioning is "off", partitioningStrategy does not 
-                # need to be specified 
-                if not (o == "partitiongStrategy" and partOff):
-                    continue
-                if not x.has_key(o):
-                    raise QAdmException(QAdmException.MISSING_PARAM, o)
-        if partOff:
-            return
-        if x["partitioning"] != "1":
-            raise QAdmException(QAdmException.WRONG_PARAM_VAL, "partitioning",
-                                "got: '%s'" % x["partitioning"],
-                                "expecting: on/off")
-
-        if not x.has_key("partitioningStrategy"):
-            raise QAdmException(QAdmException.MISSING_PARAM, "partitioningStrategy",
-                                "(required if partitioning is on)")
-
-        psFound = False
-        for (psName, theOpts) in psOpts.items():
-            if x["partitioningStrategy"] == psName:
-                psFound = True
-                # check if all required options are specified
-                for o in theOpts:
-                    if not x.has_key(o):
-                        raise QAdmException(QAdmException.MISSING_PARAM, o)
-
-                # check if there are any unrecognized options
-                for o in x:
-                    if not ((o in xxOpts[whichInfo]) or (o in theOpts)):
-                        # skip non required, these are not in xxOpts/theOpts
-                        if whichInfo=="db_info" and o=="clusteredIndex":
-                            continue
-                        if whichInfo=="db_info" and o=="objIdIndex":
-                            continue
-                        if whichInfo=="table_info" and o=="partitioningStrategy":
-                            continue
-                        raise QAdmException(QAdmException.WRONG_PARAM, o)
-        if not psFound:
-            raise QAdmException(QAdmException.WRONG_PARAM,x["partitioningStrategy"])
 
     def _initLogging(self):
         self._logger = logging.getLogger("QADM")
