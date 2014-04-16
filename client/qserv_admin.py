@@ -36,7 +36,7 @@ Known issues and todos:
 # standard library imports
 import ConfigParser
 import logging
-from optparse import OptionParser
+from argparse import ArgumentParser
 import os
 import re
 import readline
@@ -427,15 +427,15 @@ OPTIONS
         Connection information.
 """
 
-    parser = OptionParser(usage=usage)
-    parser.add_option("-v", dest="verbT", default=40) # default is ERROR
-    parser.add_option("-f", dest="logF", default=None)
-    parser.add_option("-c", dest="connI", default = '127.0.0.1:2181')
+    parser = ArgumentParser(usage=usage)
+    parser.add_argument("-v", dest="verbT", default=40) # default is ERROR
+    parser.add_argument("-f", dest="logF", default=None)
+    parser.add_argument("-c", dest="connI", default = '127.0.0.1:2181')
                       # default for kazoo (single node, local))
-    (options, args) = parser.parse_args()
-    if options.verbT > 50: options.verbT = 50
-    if options.verbT <  0: options.verbT = 0
-    return (options.verbT, options.logF, options.connI)
+    args = parser.parse_args()
+    if args.verbT > 50: args.verbT = 50
+    if args.verbT <  0: args.verbT = 0
+    return (args.verbT, args.logF, args.connI)
 
 ####################################################################################
 def main():
