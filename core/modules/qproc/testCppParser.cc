@@ -127,8 +127,8 @@ struct ParserFixture {
 
         // To learn how to dump the map, see qserv/core/css/KvInterfaceImplMem.cc
         // Use client/examples/testCppParser_generateMap
-        std::string kwMapPath = "./modules/qproc/testCppParser.kwmap"; // FIXME
-        cssFacade = lsst::qserv::css::FacadeFactory::createMemFacade(kwMapPath);
+        std::string kvMapPath = "./modules/qproc/testCppParser.kvmap"; // FIXME
+        cssFacade = lsst::qserv::css::FacadeFactory::createMemFacade(kvMapPath);
     };
     ~ParserFixture(void) { };
 
