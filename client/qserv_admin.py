@@ -380,12 +380,12 @@ class WordCompleter:
     """
     Set auto-completion for commonly used words.
     """
-    def __init__(self, word):
-        self.word = word
+    def __init__(self, words):
+        self.words = words
 
     def complete(self, text, state):
-        results = [x+' ' for x in self.word 
-                   if x.startswith(text.upper())] + [None]
+        results = [word+' ' for word in self.words 
+                   if word.startswith(text.upper())] + [None]
         return results[state]
 
 readline.parse_and_bind("tab: complete")
