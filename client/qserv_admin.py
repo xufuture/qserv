@@ -84,8 +84,8 @@ class CommandParser(object):
   Supported commands:
     CREATE DATABASE <dbName> <configFile>;
     CREATE DATABASE <dbName> LIKE <dbName2>;
-    CREATE TABLE <dbName> <tableName> <configFile>;
-    CREATE TABLE <dbName> <tableName> LIKE <dbName2> <tableName2>;
+    CREATE TABLE <dbName>.<tableName> <configFile>;
+    CREATE TABLE <dbName>.<tableName> LIKE <dbName2>.<tableName2>;
     DROP DATABASE <dbName>;
     DROP EVERYTHING;
     DUMP EVERYTHING [<outFile>];
@@ -105,7 +105,7 @@ class CommandParser(object):
         cmd = ''
         prompt = "qserv > "
         while True:
-            line = raw_input(prompt).decode(sys.stdin.encoding).strip()
+            line = raw_input(prompt).decode("utf-8").strip()
             cmd += line + ' '
             prompt = "qserv > " if line.endswith(';') else "~ "
             while re.search(';', cmd):
@@ -183,8 +183,12 @@ class CommandParser(object):
         Subparser - handles all CREATE TABLE requests.
         """
         l = len(tokens)
-        if l == 3:
-            (dbName, tbName, configFile) = tokens
+        if l == 2:
+            (dbTbName, configFile) = tokens
+            if '.' not in dbTbName:
+                raise QAdmException(QAdmException.BAD_CMD, 
+                   "Invalid argument '%s', should be <dbName>.<tbName>" % dbTbName)
+            (dbName, tbName) = dbTbName.split('.')
             options = self._fetchOptionsFromConfigFile(configFile)
             options = self._processTbOptions(options)
             try:
@@ -193,11 +197,19 @@ class CommandParser(object):
                 raise QAdmException(QAdmException.CSSERR, 
                           "Failed to create table '" + dbName + "." + tbName + \
                           "', error was: " +  e.__str__())
-        elif l == 5:
-            (dbName, tbName, likeToken, dbName2, tbName2) = tokens
+        elif l == 3:
+            (dbTbName, likeToken, dbTbName2) = tokens
             if likeToken.upper() != 'LIKE':
                 raise QAdmException(QAdmException.BAD_CMD, 
                                     "Expected 'LIKE', found: '%s'." % tokens[2])
+            if '.' not in dbTbName:
+                raise QAdmException(QAdmException.BAD_CMD, 
+                   "Invalid argument '%s', should be <dbName>.<tbName>" % dbTbName)
+            (dbName, tbName) = dbTbName.split('.')
+            if '.' not in dbTbName2:
+                raise QAdmException(QAdmException.BAD_CMD, 
+                   "Invalid argument '%s', should be <dbName>.<tbName>" % dbTbName2)
+            (dbName2, tbName2) = dbTbName2.split('.')
             try:
                 # FIXME, createTableLike is not implemented!
                 self._impl.createTableLike(dbName, tableName, dbName2, tableName2,
