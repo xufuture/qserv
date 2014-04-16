@@ -49,11 +49,12 @@ from qserv_admin_impl import QservAdminImpl
 
 ####################################################################################
 QAdmException = produceExceptionClass('QAdmException', [
-    (3001, "BAD_CMD",          "Bad command, see HELP for details."),
-    (3002, "CONFIG_NOT_FOUND", "Config file not found."),
-    (3003, "MISSING_PARAM",    "Missing parameter."),
-    (3004, "WRONG_PARAM",      "Unrecognized parameter."),
-    (3005, "WRONG_PARAM_VAL",  "Unrecognized value for parameter."),
+    (3001, "AUTH_PROBLEM",      "Can't access the config file."),
+    (3002, "BAD_CMD",          "Bad command, see HELP for details."),
+    (3003, "CONFIG_NOT_FOUND", "Config file not found."),
+    (3004, "MISSING_PARAM",    "Missing parameter."),
+    (3005, "WRONG_PARAM",      "Unrecognized parameter."),
+    (3006, "WRONG_PARAM_VAL",  "Unrecognized value for parameter."),
     (9997, "CSSERR",           "CSS error."),
     (9998, "NOT_IMPLEMENTED",  "Feature not implemented yet."),
     (9999, "INTERNAL",         "Internal error.")])
@@ -301,8 +302,10 @@ class CommandParser(object):
         Read config file <fName> for createDb and createTable command, and return
         key-value pair dictionary (flat, e.g., sections are ignored.)
         """
-        if not os.access(fName, os.R_OK):
+        if not os.path.exists(fName):
             raise QAdmException(QAdmException.CONFIG_NOT_FOUND, fName)
+        if not os.access(fName, os.R_OK):
+            raise QAdmException(QAdmException.AUTH_PROBLEM, fName)
         config = ConfigParser.ConfigParser()
         config.optionxform = str # case sensitive
         config.read(fName)
