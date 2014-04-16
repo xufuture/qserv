@@ -39,9 +39,9 @@ class TestKvInterface(unittest.TestCase):
 
     def testCreateGetSetDelete(self):
         # first delete everything
-        self._kvI.deleteAll("/unittest")
+        self._kvI.delete("/unittest", recursive=True)
         # try second time, just for fun, that should work too
-        self._kvI.deleteAll("/unittest")
+        self._kvI.delete("/unittest", recursive=True)
         # define key/value for testing
         k1 = "/unittest/my/first/testX"
         k2 = "/unittest/my/testY"

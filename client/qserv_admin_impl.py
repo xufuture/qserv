@@ -201,7 +201,11 @@ class QservAdminImpl(object):
         Dumps entire metadata in CSS. Output goes to file (if provided through
         "dest"), otherwise to stdout.
         """
-        self._kvI.dumpAll(dest)
+        if dest is None:
+            self._kvI.dumpAll()
+        else:
+            with open(dest, "w") as f:
+                self._kvI.dumpAll(f)
 
     def dropEverything(self):
         """

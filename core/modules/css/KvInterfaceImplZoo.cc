@@ -179,11 +179,11 @@ KvInterfaceImplZoo::_throwZooFailure(int rc, string const& fName,
     }
     if (rc==ZCONNECTIONLOSS) {
         LOGGER_INF << ffName << "Can't connect to zookeeper." << endl;
-        throw CssException(CssException::CONN_FAILURE);
+        throw CssException(CssException::CONN_FAILURE, extraMsg);
     }
     if (rc==ZNOAUTH) {
         LOGGER_INF << ffName << "Zookeeper authorization failure." << endl;
-        throw CssException(CssException::AUTH_FAILURE);
+        throw CssException(CssException::AUTH_FAILURE, extraMsg);
     }
     ostringstream s;
     s << ffName << "Zookeeper error #" << rc << ".";

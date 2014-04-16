@@ -175,26 +175,10 @@ class KvInterface(object):
             self._logger.error("in delete(), key %s does not exist" % k)
             raise CssException(CssException.KEY_DOES_NOT_EXIST, k)
 
-    def deleteAll(self, p):
-        """
-        Delete everything recursively starting from a given point in the tree.
-        This can be used to wipe out everything. It is too dangerous to expose
-        to users, it'll be well hidden, or disabled when we move to production.
-
-        @param p  Path.
-
-        Raise exception if the key doesn't exist.
-        """
-        if self._zk.exists(p):
-            self._deleteNode(p)
-
-    def dumpAll(self, dest=None):
+    def dumpAll(self, fileH=sys.stdout):
         """
         Returns entire contents.
         """
-        fileH = sys.stdout
-        if dest is not None:
-            fileH = open(dest, "w")
         self._printNode("/", fileH)
 
     def _printNode(self, p, fileH=None):
@@ -243,4 +227,4 @@ class KvInterface(object):
             if p != "/": 
                 self._zk.delete(p)
         except NoNodeError:
-            None
+            pass

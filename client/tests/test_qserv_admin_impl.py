@@ -30,7 +30,7 @@ This is a unittest for qserv_admin_impl
 import logging
 import unittest
 
-from kvInterface import KvException
+from kvInterface import CssException
 from qserv_admin_impl import QservAdminImpl
 
 
