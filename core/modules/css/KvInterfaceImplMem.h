@@ -57,7 +57,7 @@ public:
     virtual void deleteKey(std::string const& key);
 
 private:
-    std::map<std::string, std::string> _kwMap;
+    std::map<std::string, std::string> _kvMap;
 };
 
 }}} // namespace lsst::qserv::css
