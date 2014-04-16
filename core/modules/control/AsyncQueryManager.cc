@@ -33,9 +33,6 @@
   * @author Daniel L. Wang, SLAC
   */
 
-// Must be first include.
-#include "control/control.h"
-
 #include <iostream>
 
 #include <boost/format.hpp>
@@ -54,9 +51,10 @@
 #include "xrdc/PacketIter.h"
 
 #include "protolog/ProtoLog.h"
+#include <omp.h> // used to benchmark protolog
 
 // Part of a demonstration of hierarchical logging
-#define TRACE() LOG("tracer." __MODULE__ ".AsynchQueryManager", LOG_LVL_TRACE, "")
+#define TRACE() LOG("tracer.control.AsynchQueryManager", LOG_LVL_TRACE, "")
 
 // Namespace modifiers
 using boost::make_shared;
@@ -144,18 +142,64 @@ public:
 ////////////////////////////////////////////////////////////
 int AsyncQueryManager::add(TransactionSpec const& t,
                            std::string const& resultName) {
-    TRACE()
+    TRACE();
     LOGGER_DBG << "EXECUTING AsyncQueryManager::add(TransactionSpec, "
                << resultName << ")" << std::endl;
 
 
 
-    //lsst::qserv::ProtoLog::initLog();
-    LOG("qserv", LOG_LVL_INFO, "Hello from qserv logger!")
+    /*************************************************
+     * PROTOLOG DEMO CODE
+     *************************************************/
+
+    // basic demonstration of protolog
+    LOG("root", LOG_LVL_INFO, "Hello from root logger!");
+    LOG("qserv", LOG_LVL_INFO, "Hello from qserv logger!");
     const char* info_stuff = "important stuff";
     LOG_INFO("Here's some information: %s", info_stuff);
     int debug_stuff = 99;
     LOG_DEBUG("Here's some debugging: %d", debug_stuff);
+
+    // Using logger object for better performance (e.g. no logger lookups).
+    log4cxx::LoggerPtr logger = ProtoLog::getLogger("czar.control");
+    LOG(logger, LOG_LVL_INFO, "Logging with logger object.");
+
+    // The following is a simple example of logging contexts and
+    // hierarchical logging
+    LOG_INFO("About to demonstrate logging contexts.");
+    int levels = 5;
+    for (int i=0; i < levels; i++) {
+        std::stringstream ss;
+        ss << "loglevel_" << i;
+        LOG_PUSHCTX(ss.str());
+        LOG_DEBUG("debugging statement at level %d.", i);
+    }
+    for (int i=0; i < levels; i++) {
+        LOG_POPCTX();
+    }
+    LOG_INFO("Finished with demonstration.");
+
+    // Benchmark
+    int iterations = 100;
+    double start, stop;
+    start = omp_get_wtime();
+    for (int i=0; i < iterations; i++)
+        LOG("root", LOG_LVL_INFO, "Hello from root logger!");
+    stop = omp_get_wtime();
+    LOG_INFO("LOG(\"root\", LOG_LVL_INFO, ...): stop - start = %f", (stop - start)/iterations);
+    start = omp_get_wtime();
+    for (int i=0; i < iterations; i++)
+        LOG_INFO("Hello from default logger!");
+    stop = omp_get_wtime();
+    LOG_INFO("LOG_INFO(...): stop - start = %f", (stop - start)/iterations);
+    start = omp_get_wtime();
+    sleep(1);
+    stop = omp_get_wtime();
+    LOG_INFO("sleep(1): stop - start = %f", stop - start);
+    
+    /***********************************************
+     * PROTOLOG DEMO END
+     ***********************************************/
 
 
 
@@ -190,7 +234,7 @@ int AsyncQueryManager::add(TransactionSpec const& t,
 void AsyncQueryManager::finalizeQuery(int id,
                                       XrdTransResult r,
                                       bool aborted) {
-    TRACE()
+    TRACE();
     std::stringstream ss;
     Timer t1;
     t1.start();
@@ -278,7 +322,7 @@ void AsyncQueryManager::finalizeQuery(int id,
 // ceased activity and can recycle resources.
 // This is a performance optimization.
 void AsyncQueryManager::joinEverything() {
-    TRACE()
+    TRACE();
     boost::unique_lock<boost::mutex> lock(_queriesMutex);
     int lastCount = -1;
     int count;
@@ -305,13 +349,13 @@ void AsyncQueryManager::joinEverything() {
 }
 
 void AsyncQueryManager::configureMerger(TableMergerConfig const& c) {
-    TRACE()
+    TRACE();
     _merger = boost::make_shared<TableMerger>(c);
 }
 
 void AsyncQueryManager::configureMerger(MergeFixup const& m,
                                         std::string const& resultTable) {
-    TRACE()
+    TRACE();
     // Can we configure the merger without involving settings
     // from the python layer? Historically, the Python layer was
     // needed to generate the merging SQL statements, but we are now
@@ -330,7 +374,7 @@ void AsyncQueryManager::configureMerger(MergeFixup const& m,
 }
 
 std::string AsyncQueryManager::getMergeResultName() const {
-    TRACE()
+    TRACE();
     if(_merger.get()) {
         return _merger->getTargetTable();
     }
@@ -338,12 +382,12 @@ std::string AsyncQueryManager::getMergeResultName() const {
 }
 
 void AsyncQueryManager::addToReadQueue(DynamicWorkQueue::Callable * callable) {
-    TRACE()
+    TRACE();
     globalReadQueue.add(this, callable);
 }
 
 void AsyncQueryManager::addToWriteQueue(DynamicWorkQueue::Callable * callable) {
-    TRACE()
+    TRACE();
     globalWriteQueue.add(this, callable);
 }
 
@@ -374,7 +418,7 @@ inline std::string getConfigElement(std::map<std::string,
                                     std::string const& key,
                                     std::string const& errorMsg,
                                     std::string const& defaultValue) {
-    TRACE()
+    TRACE();
     std::map<std::string,std::string>::const_iterator i = cfg.find(key);
     if(i != cfg.end()) {
         return i->second;
@@ -386,7 +430,7 @@ inline std::string getConfigElement(std::map<std::string,
 
 void AsyncQueryManager::_readConfig(std::map<std::string,
                                     std::string> const& cfg) {
-    TRACE()
+    TRACE();
     /// localhost:1094 is the most reasonable default, even though it is
     /// the wrong choice for all but small developer installations.
     _xrootdHostPort = getConfigElement(
@@ -421,7 +465,7 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
 
 void AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,
                                       std::string const& tableName) {
-    TRACE()
+    TRACE();
     LOGGER_DBG << "EXECUTING AsyncQueryManager::_addNewResult(" << id
                << ", pacIter, " << tableName << ")" << std::endl;
     bool mergeResult = _merger->merge(pacIter, tableName);
@@ -447,7 +491,7 @@ void AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,
 void AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize,
                                       std::string const& dumpFile,
                                       std::string const& tableName) {
-    TRACE()
+    TRACE();
     if(dumpSize < 0) {
         throw std::invalid_argument("dumpSize < 0");
     }
@@ -488,7 +532,7 @@ void AsyncQueryManager::_printState(std::ostream& os) {
 }
 
 void AsyncQueryManager::_squashExecution() {
-    TRACE()
+    TRACE();
     // Halt new query dispatches and cancel the ones in flight.
     // This attempts to save on resources and latency, once a query
     // fault is detected.

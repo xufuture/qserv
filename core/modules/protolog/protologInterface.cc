@@ -32,6 +32,18 @@ void qMaster::initLog_iface() {
     lsst::qserv::ProtoLog::initLog();
 }
 
+void qMaster::pushContext_iface(std::string const& c) {
+    lsst::qserv::ProtoLog::pushContext(c);
+}
+
+void qMaster::popContext_iface() {
+    lsst::qserv::ProtoLog::popContext();
+}
+
+void qMaster::MDC_iface(std::string const& key, std::string const& value) {
+    lsst::qserv::ProtoLog::MDC(key, value);
+}
+
 log4cxx::LevelPtr getLogLevel(int level) {
     switch (level) {
         case 0: return log4cxx::Level::getTrace();
@@ -45,17 +57,17 @@ log4cxx::LevelPtr getLogLevel(int level) {
     }
 }
 
-void qMaster::log_iface(std::string const& filename,
+void qMaster::log_iface(std::string const& loggername,
+                        int level,
+                        std::string const& filename,
                         std::string const& funcname,
                         int lineno,
-                        std::string const& loggername,
-                        int level,
                         std::string const& fmt,
                         ...) {
     va_list args;
     va_start(args, fmt);
-    lsst::qserv::ProtoLog::vlog(filename, funcname, lineno, loggername,
-                                getLogLevel(level), fmt, args);
+    lsst::qserv::ProtoLog::vlog(loggername, getLogLevel(level), filename,
+                                funcname, lineno, fmt, args);
 }
 
 

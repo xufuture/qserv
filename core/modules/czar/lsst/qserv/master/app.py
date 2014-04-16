@@ -84,6 +84,7 @@ from lsst.qserv.meta.client import Client
 #from lsst.qserv.master import initLog
 #from lsst.qserv.master import log
 import protolog
+import logging
 
 # xrdfile - raw xrootd access
 from lsst.qserv.master import xrdOpen, xrdClose, xrdRead, xrdWrite
@@ -411,13 +412,31 @@ class InbandQueryAction:
         # Set logging severity threshold.
         logger.threshold_inf()
 
-        # Test protolog.
+
+
+        #######################################
+        # DEMONSTRATE PROTOLOG FROM PYTHON
+        #######################################
         protolog.initLog()
-        protolog.log("qserv", protolog.INFO, "Hello from Python (via wrapper)!")
+        protolog.pushContext("czar")
+        # Demonstrate MDC feature of protolog via python.
+        protolog.MDC("session", -1) 
+        protolog.log("czar", protolog.INFO, "Hello from Python (via wrapper)!")
         name = "Bill"
         protolog.warn("This is a warning by %s!" % name)
-        protolog.log("qserv", protolog.INFO, "Hello myLogger from Python.")
         protolog.debug("This is a debug statement!")
+
+        # Demonstrate ProtoLog via standard python logging module.
+        lgr = logging.getLogger()
+        lgr.setLevel(logging.WARN)
+        lgr.addHandler(protolog.ProtoLogHandler())
+        lgr.info("This is an info statement via the logging module.")
+        ####################################
+        # END PROTOLOG DEMO
+        ######################################
+
+
+
 
         ## Fields with leading underscores are internal-only
         ## Those without leading underscores may be read by clients

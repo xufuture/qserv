@@ -44,6 +44,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
+
 #include "log/Logger.h"
 #include "xrdc/xrdfile.h"
 #include "control/dispatcher.h"
@@ -56,6 +57,7 @@
 #include "qproc/QuerySession.h"
 #include "obsolete/QservPath.h"
 #include "qproc/TaskMsgFactory2.h"
+#include "protolog/ProtoLog.h"
 #include <sstream>
 
 #include <fstream>
@@ -193,6 +195,16 @@ qMaster::addChunk(int session, lsst::qserv::master::ChunkSpec const& cs ) {
 void
 qMaster::submitQuery3(int session) {
     LOGGER_DBG << "EXECUTING submitQuery3(" << session << ")" << std::endl;
+
+    // Demonstrate protolog's logging context feature.
+    LOG_PUSHCTX("control");
+    // Demonstrate protolog's key/value pair feature.
+    std::ostringstream convert;
+    convert << session;
+    LOG_MDC("session", convert.str());
+
+
+
     // Using the QuerySession, generate query specs (text, db, chunkId) and then
     // create query messages and send them to the async query manager.
     AsyncQueryManager& qm = getAsyncManager(session);

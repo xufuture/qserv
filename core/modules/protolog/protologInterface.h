@@ -29,11 +29,14 @@
 namespace lsst { namespace qserv { namespace master {
 
 void initLog_iface();
-void log_iface(std::string const& filename,
+void pushContext_iface(std::string const& c);
+void popContext_iface();
+void MDC_iface(std::string const& key, std::string const& value);
+void log_iface(std::string const& loggername,
+               int level,
+               std::string const& filename,
                std::string const& funcname,
                int lineno,
-               std::string const& loggername,
-               int level,
                std::string const& fmt,
                ...);
 

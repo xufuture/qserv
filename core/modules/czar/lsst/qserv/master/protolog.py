@@ -22,11 +22,10 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
-from lsst.qserv.master import initLog_iface
-from lsst.qserv.master import log_iface
+from lsst.qserv.master import initLog_iface, pushContext_iface,\
+                              popContext_iface, MDC_iface, log_iface
+import logging
 import inspect
-
-ROOT_LOGGER_NAME = "root"
 
 # logging levels
 TRACE = 0
@@ -39,26 +38,43 @@ FATAL = 5
 def initLog():
     initLog_iface()
 
+def pushContext(c):
+    pushContext_iface(c)
+
+def popContext():
+    popContext_iface()
+
+def MDC(key, value):
+    MDC_iface(str(key), str(value))
+
 def trace(msg):
-    log(ROOT_LOGGER_NAME, TRACE, msg)
+    log("", TRACE, msg)
 
 def debug(msg):
-    log(ROOT_LOGGER_NAME, DEBUG, msg)
+    log("", DEBUG, msg)
 
 def info(msg):
-    log(ROOT_LOGGER_NAME, INFO, msg)
+    log("", INFO, msg)
 
 def warn(msg):
-    log(ROOT_LOGGER_NAME, WARN, msg)
+    log("", WARN, msg)
 
 def error(msg):
-    log(ROOT_LOGGER_NAME, ERROR, msg)
+    log("", ERROR, msg)
 
 def fatal(msg):
-    log(ROOT_LOGGER_NAME, FATAL, msg)
+    log("", FATAL, msg)
 
 def log(loggerName, level, msg):
     f = inspect.currentframe().f_back
     funcname = inspect.stack()[1][3]
-    log_iface(f.f_code.co_filename, funcname, f.f_lineno, loggerName, level, msg)
-    
+    log_iface(loggerName, level, f.f_code.co_filename, funcname, f.f_lineno,
+              msg)
+
+class ProtoLogHandler(logging.Handler):
+    def emit(self, record):
+        log_iface(record.name, translateLevel(record.levelno), record.filename,
+                  record.funcName, record.lineno, record.msg % record.args)
+
+    def translateLevel(levelno):
+        return level/10

@@ -84,7 +84,7 @@ allModules = """control czar global log merger meta mysql obsolete
 # packetiter in util depends on xrdc, util shouldn't depend on anything
 # Products
 shProducts = { "xrdfs" : {'mods' : """proto xrdfs
-                                      mysql sql obsolete util
+                                      mysql sql obsolete protolog util
                                       wbase wconfig wcontrol wdb
                                       wpublish wsched
                                       wlog global""".split(),
@@ -111,7 +111,7 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                       mysqlclient_r protobuf
                                       XrdPosix XrdPosixPreload XrdUtils
                                       boost_regex boost_thread
-                                      boost_signals log4cxx""".split(),
+                                      boost_signals log4cxx gomp""".split(),
                                'SHLIBPREFIX' : '',
                                'distDir' : 'lsst/qserv/master'}
                }
