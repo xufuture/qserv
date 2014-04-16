@@ -103,9 +103,11 @@ class CommandParser(object):
         """
         line = ''
         cmd = ''
+        prompt = "qserv > "
         while True:
-            line = raw_input("qserv > ").decode(sys.stdin.encoding).strip()
+            line = raw_input(prompt).decode(sys.stdin.encoding).strip()
             cmd += line + ' '
+            prompt = "qserv > " if line.endswith(';') else "~ "
             while re.search(';', cmd):
                 pos = cmd.index(';')
                 try:
