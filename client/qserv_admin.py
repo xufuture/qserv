@@ -75,7 +75,9 @@ class CommandParser(object):
             'CREATE':  self._parseCreate,
             'DROP':    self._parseDrop,
             'DUMP':    self._parseDump,
+            'EXIT':    self._justExit,
             'HELP':    self._printHelp,
+            'QUIT':    self._justExit,
             'RELEASE': self._parseRelease,
             'SHOW':    self._parseShow
             }
@@ -129,8 +131,6 @@ class CommandParser(object):
         t = tokens[0].upper()
         if t in self._funcMap:
             self._funcMap[t](tokens[1:])
-        elif t == 'EXIT' or t == 'QUIT':
-            raise SystemExit()
         else:
             raise QAdmException(QAdmException.NOT_IMPLEMENTED, cmd)
 
@@ -261,6 +261,9 @@ class CommandParser(object):
             self._impl.dumpEverything(dest)
         else:
             raise QAdmException(QAdmException.BAD_CMD)
+
+    def _justExit(self, tokens):
+        raise SystemExit()
 
     def _printHelp(self, tokens):
         """
