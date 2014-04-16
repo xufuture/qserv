@@ -376,7 +376,7 @@ class CommandParser(object):
         if kL: logging.getLogger("kazoo.client").setLevel(int(kL))
 
 ####################################################################################
-class WordCompleter:
+class WordCompleter(object):
     """
     Set auto-completion for commonly used words.
     """
