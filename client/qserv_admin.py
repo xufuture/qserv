@@ -405,16 +405,9 @@ completer = WordCompleter(words)
 readline.set_completer(completer.complete)
 
 ####################################################################################
-class SimpleOptionParser:
-    """
-    Parse command line options.
-    """
 
-    def __init__(self):
-        self._verbosityT = 40 # default is ERROR
-        self._logFileName = None
-        self._connInfo = '127.0.0.1:2181' # default for kazoo (single node, local)
-        self._usage = \
+def getOptions():
+    usage = \
 """
 
 NAME
@@ -434,64 +427,37 @@ OPTIONS
         Connection information.
 """
 
-    def getVerbosityT(self):
-        """
-        Return verbosity threshold.
-        """
-        return self._verbosityT
-
-    def getLogFileName(self):
-        """
-        Return the name of the output log file.
-        """
-        return self._logFileName
-
-    def getConnInfo(self):
-        """
-        Return connection information. 
-        """
-        return self._connInfo
-
-    def parse(self):
-        """
-        Parse options.
-        """
-        parser = OptionParser(usage=self._usage)
-        parser.add_option("-v", dest="verbT")
-        parser.add_option("-f", dest="logF")
-        parser.add_option("-c", dest="connI")
-        (options, args) = parser.parse_args()
-        if options.verbT: 
-            self._verbosityT = int(options.verbT)
-            if   self._verbosityT > 50: self._verbosityT = 50
-            elif self._verbosityT <  0: self._verbosityT = 0
-        if options.logF:
-            self._logFileName = options.logF
-        if options.connI:
-            self._connInfo = options.connI
+    parser = OptionParser(usage=usage)
+    parser.add_option("-v", dest="verbT", default=40) # default is ERROR
+    parser.add_option("-f", dest="logF", default=None)
+    parser.add_option("-c", dest="connI", default = '127.0.0.1:2181')
+                      # default for kazoo (single node, local))
+    (options, args) = parser.parse_args()
+    if options.verbT > 50: options.verbT = 50
+    if options.verbT <  0: options.verbT = 0
+    return (options.verbT, options.logF, options.connI)
 
 ####################################################################################
 def main():
-    # parse arguments
-    p = SimpleOptionParser()
-    p.parse()
+
+    (verbosity, logFileName, connInfo) = getOptions()
 
     # configure logging
-    if p.getLogFileName():
+    if logFileName:
         logging.basicConfig(
-            filename=p.getLogFileName(),
+            filename=logFileName,
             format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
             datefmt='%m/%d/%Y %I:%M:%S', 
-            level=p.getVerbosityT())
+            level=verbosity)
     else:
         logging.basicConfig(
             format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
             datefmt='%m/%d/%Y %I:%M:%S', 
-            level=p.getVerbosityT())
+            level=verbosity)
 
     # wait for commands and process
     try:
-        CommandParser(p.getConnInfo()).receiveCommands()
+        CommandParser(connInfo).receiveCommands()
     except(KeyboardInterrupt, SystemExit, EOFError):
         print ""
 
