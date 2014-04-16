@@ -40,6 +40,7 @@ from optparse import OptionParser
 import os
 import re
 import readline
+import sys
 
 # local imports
 from lsst.db.exception import produceExceptionClass
@@ -103,8 +104,8 @@ class CommandParser(object):
         line = ''
         cmd = ''
         while True:
-            line = raw_input("qserv > ")
-            cmd += line.strip()+' '
+            line = raw_input("qserv > ").decode(sys.stdin.encoding).strip()
+            cmd += line + ' '
             while re.search(';', cmd):
                 pos = cmd.index(';')
                 try:
