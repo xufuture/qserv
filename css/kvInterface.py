@@ -174,7 +174,6 @@ class KvInterface(object):
                     for child in self.getChildren("/"):
                         if child != "zookeeper": # skip zookeeper internals
                             self._logger.info("DELETE '/%s'" % (child))
-                            print "DELETE '/%s'" % (child)
                             self._zk.delete("/%s" % child, recursive=True)
                 else:
                     pass
