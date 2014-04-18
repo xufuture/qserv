@@ -81,7 +81,7 @@ boost::shared_ptr<InPredicate> PredicateFactory::newInPredicate(antlr::RefAST a)
         }
         p->cands.push_back(_vf.newExpr(i->getFirstChild()));
     }
-    InPredicate& ip = *p;
+    // InPredicate& ip = *p; // for gdb
     return p;
 }
 
@@ -94,7 +94,7 @@ boost::shared_ptr<LikePredicate> PredicateFactory::newLikePredicate(antlr::RefAS
 
     p->value = _vf.newExpr(value->getFirstChild());
     p->charValue = _vf.newExpr(pattern->getFirstChild());
-    LikePredicate& lp = *p;
+    // LikePredicate& lp = *p; // for gdb
     return p;
 }
 
@@ -115,7 +115,7 @@ boost::shared_ptr<NullPredicate> PredicateFactory::newNullPredicate(antlr::RefAS
     }
 
     p->value = _vf.newExpr(value->getFirstChild());
-    NullPredicate& np = *p; // for debugging
+    // NullPredicate& np = *p; // for gdb
     return p;
 }
 

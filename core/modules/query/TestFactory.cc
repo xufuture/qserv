@@ -63,7 +63,7 @@ TestFactory::newStmt() {
     // FROM Bar b
     master::TableRefListPtr refp(new master::TableRefList());
     master::TableRef::Ptr tr(new master::TableRef("", "Bar", "b"));
-    refnp->push_back(tr);
+    refp->push_back(tr);
     master::FromList::Ptr fl(new master::FromList(refp));
     stmt->setFromList(fl);
 
