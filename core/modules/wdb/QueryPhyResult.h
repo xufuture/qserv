@@ -36,13 +36,7 @@ namespace sql {
 }
 namespace wlog {
     class WLogger;
-<<<<<<< HEAD
 }}} // End of forward declarations
-
-=======
-}}}
-// End of forward declarations
->>>>>>> continued
 
 namespace lsst {
 namespace qserv {
