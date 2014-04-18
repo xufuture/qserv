@@ -40,7 +40,7 @@
 #include <boost/lexical_cast.hpp>
 
 // local imports
-#include "cssException.h"
+#include "CssException.h"
 
 using std::cout;
 using std::endl;
@@ -64,19 +64,19 @@ BOOST_AUTO_TEST_CASE(testAll) {
     try {    
         throw CssException(CssException::KEY_DOES_NOT_EXIST);
     } catch (CssException& e) {
-        cout << "I cought: err #" << e.errCode() << ", " << e.what() << endl;
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::KEY_DOES_NOT_EXIST);
     }
 
     try {
         throw CssException(CssException::DB_DOES_NOT_EXIST);
     } catch (CssException& e) {
-        cout << "I cought: err #" << e.errCode() << ", " << e.what() << endl;
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::DB_DOES_NOT_EXIST);
     }
 
     try {
         throw CssException(CssException::DB_DOES_NOT_EXIST, "myDB");
     } catch (CssException& e) {
-        cout << "I cought: err #" << e.errCode() << ", " << e.what() << endl;
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::DB_DOES_NOT_EXIST);
     }
 }
 

@@ -40,7 +40,7 @@ namespace sql {
 
 namespace { 
 void
-populateErrorObject(MySqlConnection& m, SqlErrorObject& o) {
+populateErrorObject(mysql::MySqlConnection& m, SqlErrorObject& o) {
     MYSQL* mysql = m.getMySql();
     if(mysql == NULL) {
         o.setErrNo(-999);

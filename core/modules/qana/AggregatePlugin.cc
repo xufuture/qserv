@@ -253,7 +253,7 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
         ++i) {
         // Strip ORDER BY from parallel if merging.
         if(context.needsMerge && !hasLimit) {
-            (*i)->setOrderBy(boost::shared_ptr<OrderByClause>());
+            (*i)->setOrderBy(boost::shared_ptr<query::OrderByClause>());
         }
 
         if(i == b) continue;

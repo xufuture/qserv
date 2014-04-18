@@ -42,6 +42,9 @@ class XrdSysLogger;
 class XrdOucEnv;
 namespace lsst {
 namespace qserv {
+namespace wpublish {
+    class ChunkInventory;
+}
 namespace wlog {
     class WLogger;
 }}}

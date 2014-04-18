@@ -45,15 +45,21 @@
 #include "query/Constraint.h"
 
 
+
+// Forward declarations
 namespace lsst {
 namespace qserv {
-
+namespace css {
+    class StripingParams;
+}
 namespace query {
-    // Forward
     class SelectStmt;
     class QueryContext;
-}
+}}} // end of forward declarations
 
+
+namespace lsst {
+namespace qserv {
 namespace qproc {
 
 ///  QuerySession contains state and behavior for operating on user queries. It

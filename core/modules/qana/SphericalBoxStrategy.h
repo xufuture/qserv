@@ -30,23 +30,22 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 
+// Forward declarations
 namespace lsst {
 namespace qserv {
-
+namespace query {
+    class FromList;
+    class QueryContext;
+}
 namespace query {
     // Forward
     class FromList;
     class QueryContext;
-}
-    
-namespace qana {
+}}} // End of forward declarations
 
-namespace query {
-    // Forward
-    class FromList;
-    class QueryContext;
-}
     
+namespace lsst {
+namespace qserv {
 namespace qana {
 
 // Forward

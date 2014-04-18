@@ -54,10 +54,6 @@ namespace lsst {
 namespace qserv {
 namespace wcontrol {
 
-namespace lsst {
-namespace qserv {
-namespace control {
-
 ////////////////////////////////////////////////////////////////////////
 // ForemanImpl declaration
 ////////////////////////////////////////////////////////////////////////
@@ -67,7 +63,7 @@ public:
     virtual ~ForemanImpl();
 
     bool squashByHash(std::string const& hash);
-    bool accept(boost::shared_ptr<lsst::qserv::proto::TaskMsg> msg);
+    bool accept(boost::shared_ptr<proto::TaskMsg> msg);
     class RunnerMgr;
     class Runner  {
     public:

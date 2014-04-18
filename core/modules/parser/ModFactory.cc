@@ -246,5 +246,6 @@ void ModFactory::_importHaving(antlr::RefAST a) {
 
     // FIXME: Log this at the WARNING level
     LOGGER_WRN << "Parse warning: HAVING clause unhandled." << std::endl;
+}
 
 }}} // namespace lsst::qserv::parser

@@ -85,7 +85,7 @@ void QuerySession::setQuery(std::string const& inputQuery) {
         _showFinal(); // DEBUG
     } catch(qana::AnalysisError& e) {
         _error = std::string("AnalysisError:") + e.what();
-    } catch(ParseException& e) {
+    } catch(parser::ParseException& e) {
         _error = std::string("ParseException:") + e.what();
     } catch(antlr::NoViableAltException& e) {
         _error = std::string("ANTLR exception:") + e.getMessage();

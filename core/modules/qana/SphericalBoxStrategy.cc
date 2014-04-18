@@ -145,13 +145,14 @@ public:
         : parser::ParseException(std::string("Invalid table: ") + db + "." + table)
     {}
 };
-class InvalidDbException : public ParseException {
+
+class InvalidDbException : public parser::ParseException {
 public:
     InvalidDbException(char const* db)
-        : ParseException(std::string("Invalid db: ") + db)
+        : parser::ParseException(std::string("Invalid db: ") + db)
     {}
     InvalidDbException(std::string const& db)
-        : ParseException(std::string("Invalid db: ") + db)
+        : parser::ParseException(std::string("Invalid db: ") + db)
     {}
 };
 

@@ -28,8 +28,6 @@ namespace lsst {
 namespace qserv {
 namespace xrdfs {
 
-namespace fs {        
-
 FileClass
 computeFileClass(std::string const& filename) {
     if(std::string::npos != filename.find("/query2/")) {

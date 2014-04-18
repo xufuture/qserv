@@ -81,7 +81,7 @@ public:
     SqlConnection();
     SqlConnection(mysql::SqlConfig const& sc, bool useThreadMgmt=false);
     virtual ~SqlConnection();
-    virtual void reset(SqlConfig const& sc, bool useThreadMgmt=false);
+    virtual void reset(mysql::SqlConfig const& sc, bool useThreadMgmt=false);
     virtual bool connectToDb(SqlErrorObject&);
     virtual bool selectDb(std::string const& dbName, SqlErrorObject&);
     virtual bool runQuery(char const* query, int qSize,

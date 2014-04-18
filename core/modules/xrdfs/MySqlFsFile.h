@@ -51,6 +51,10 @@ namespace wcontrol {
 }}} // End of forward declarations
 
 
+namespace lsst {
+namespace qserv {
+namespace xrdfs {        
+
 /// A factory functor that exists for the MySqlFsFile to register a callback for
 /// a completed query operation. The callback object is constructed with a
 /// reference to the File object and attached to the ResultTracker. When the

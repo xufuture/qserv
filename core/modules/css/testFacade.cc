@@ -41,11 +41,12 @@
 #define BOOST_TEST_MODULE TestFacade
 #include <boost/test/included/unit_test.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/shared_ptr.hpp>
 
 // local imports
 #include "Facade.h"
-#include "cssInterfaceImplZoo.h"
-#include "cssException.h"
+#include "KvInterfaceImplZoo.h"
+#include "CssException.h"
 
 using std::cout;
 using std::endl;
@@ -59,8 +60,10 @@ namespace css {
             
 
 struct FacadeFixture {
-    FacadeFixture(void) {
-        string prefix = "/unittest_" + boost::lexical_cast<string>(rand());
+    FacadeFixture(void) :
+        prefix("/unittest_" + boost::lexical_cast<string>(rand())),
+        facade(FacadeFactory::createZooTestFacade("localhost:2181", prefix)) {
+
         cout << "My prefix is: " << prefix << endl;
         kv.push_back(make_pair(prefix, ""));
 
@@ -101,193 +104,191 @@ struct FacadeFixture {
         kv.push_back(make_pair(p, ""));
         kv.push_back(make_pair(p + "/Exposure", ""));
 
-        CssInterfaceImplZoo cssI = CssInterfaceImplZoo("localhost:2181", false);
+        KvInterfaceImplZoo kvI = KvInterfaceImplZoo("localhost:2181");
         vector<std::pair<string, string> >::const_iterator itr;
         cout << "--------------" << endl;
         for (itr=kv.begin() ; itr!=kv.end() ; ++itr) {
             cout << itr->first << " --> " << itr->second << endl;
-            cssI.create(itr->first, itr->second);
+            kvI.create(itr->first, itr->second);
         }
         cout << "--------------" << endl;
-        store = new Facade("localhost:2181", prefix);
     };
 
     ~FacadeFixture(void) {
-        CssInterfaceImplZoo cssI = CssInterfaceImplZoo("localhost:2181", false);
+        KvInterfaceImplZoo kvI = KvInterfaceImplZoo("localhost:2181");
         vector<std::pair<string, string> >::const_reverse_iterator itr;
         for (itr=kv.rbegin() ; itr!=kv.rend() ; ++itr) {
-            cssI.deleteNode(itr->first);
+            kvI.deleteKey(itr->first);
         }
-        delete store;
     };
 
+    std::string prefix;
     vector<std::pair<string, string> > kv;
-    Facade *store;
+    boost::shared_ptr<Facade> facade;
 };
 
 BOOST_FIXTURE_TEST_SUITE(FacadeTest, FacadeFixture)
 
-BOOST_AUTO_TEST_CASE(checkIfContainsDb) {
-    BOOST_REQUIRE( store->checkIfContainsDb("dbA"));
-    BOOST_REQUIRE( store->checkIfContainsDb("dbB"));
-    BOOST_REQUIRE(!store->checkIfContainsDb("Dummy"));
+BOOST_AUTO_TEST_CASE(containsDb) {
+    BOOST_CHECK_EQUAL(facade->containsDb("dbA"), true);
+    BOOST_CHECK_EQUAL(facade->containsDb("dbB"), true);
+    BOOST_CHECK_EQUAL(facade->containsDb("Dummy"), false);
 }
 
-BOOST_AUTO_TEST_CASE(checkIfContainsTable) {
+BOOST_AUTO_TEST_CASE(containsTable) {
     // it does
-    BOOST_REQUIRE(store->checkIfContainsTable("dbA", "Object"));
+    BOOST_CHECK_EQUAL(facade->containsTable("dbA", "Object"), true);
 
     // it does not
-    BOOST_REQUIRE(!store->checkIfContainsTable("dbA", "NotHere"));
+    BOOST_CHECK_EQUAL(facade->containsTable("dbA", "NotHere"), false);
 
     // for non-existing db
     try {
-        store->checkIfContainsTable("Dummy", "NotHere");
+        facade->containsTable("Dummy", "NotHere");
     } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::DB_DOES_NOT_EXIST);
     }
 }
 
-BOOST_AUTO_TEST_CASE(checkIfTableIsChunked) {
+BOOST_AUTO_TEST_CASE(tableIsChunked) {
     // normal, table exists
-    BOOST_REQUIRE( store->checkIfTableIsChunked("dbA", "Object"));
-    BOOST_REQUIRE( store->checkIfTableIsChunked("dbA", "Source"));
-    BOOST_REQUIRE(!store->checkIfTableIsChunked("dbA", "Exposure"));
+    BOOST_CHECK_EQUAL(facade->tableIsChunked("dbA", "Object"), true);
+    BOOST_CHECK_EQUAL(facade->tableIsChunked("dbA", "Source"), true);
+    BOOST_CHECK_EQUAL(facade->tableIsChunked("dbA", "Exposure"), false);
 
     // normal, table does not exist
     try {
-        store->checkIfTableIsChunked("dbA", "NotHere");
+        facade->tableIsChunked("dbA", "NotHere");
     } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::TB_DOES_NOT_EXIST);
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::TB_DOES_NOT_EXIST);
     }
 
     // for non-existing db
     try {
-        store->checkIfTableIsChunked("Dummy", "NotHere");
+        facade->tableIsChunked("Dummy", "NotHere");
     } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::DB_DOES_NOT_EXIST);
     }
 }
 
-BOOST_AUTO_TEST_CASE(checkIfTableIsSubChunked) {
+BOOST_AUTO_TEST_CASE(tableIsSubChunked) {
     // normal, table exists
-    BOOST_REQUIRE(store->checkIfTableIsSubChunked("dbA", "Object"));
-    BOOST_REQUIRE(!store->checkIfTableIsSubChunked("dbA", "Source"));
-    BOOST_REQUIRE(!store->checkIfTableIsSubChunked("dbA", "Exposure"));
+    BOOST_CHECK_EQUAL(facade->tableIsSubChunked("dbA", "Object"), true);
+    BOOST_CHECK_EQUAL(facade->tableIsSubChunked("dbA", "Source"), false);
+    BOOST_CHECK_EQUAL(facade->tableIsSubChunked("dbA", "Exposure"), false);
 
     // normal, table does not exist
     try {
-        store->checkIfTableIsSubChunked("dbA", "NotHere");
+        facade->tableIsSubChunked("dbA", "NotHere");
     } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::TB_DOES_NOT_EXIST);
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::TB_DOES_NOT_EXIST);
     }
 
     // for non-existing db
     try {
-        store->checkIfTableIsSubChunked("Dummy", "NotHere");
+        facade->tableIsSubChunked("Dummy", "NotHere");
     } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::DB_DOES_NOT_EXIST);
     }
 }
 
 BOOST_AUTO_TEST_CASE(getAllowedDbs) {
-    vector<string> v = store->getAllowedDbs();
-    BOOST_REQUIRE(3 == v.size());
+    vector<string> v = facade->getAllowedDbs();
+    BOOST_CHECK_EQUAL(3, v.size());
     std::sort (v.begin(), v.end());
-    BOOST_REQUIRE(v[0]=="dbA");
-    BOOST_REQUIRE(v[1]=="dbB");
-    BOOST_REQUIRE(v[2]=="dbC");
+    BOOST_CHECK_EQUAL(v[0], "dbA");
+    BOOST_CHECK_EQUAL(v[1], "dbB");
+    BOOST_CHECK_EQUAL(v[2], "dbC");
 }
 
 BOOST_AUTO_TEST_CASE(getChunkedTables) {
     // normal, 3 values
-    vector<string> v = store->getChunkedTables("dbA");
-    BOOST_REQUIRE(3 == v.size());
+    vector<string> v = facade->getChunkedTables("dbA");
+    BOOST_CHECK_EQUAL(3, v.size());
     std::sort (v.begin(), v.end());
-    BOOST_REQUIRE(v[0]=="FSource");
-    BOOST_REQUIRE(v[1]=="Object");
-    BOOST_REQUIRE(v[2]=="Source");
+    BOOST_CHECK_EQUAL(v[0], "FSource");
+    BOOST_CHECK_EQUAL(v[1], "Object");
+    BOOST_CHECK_EQUAL(v[2], "Source");
 
     // normal, no values
-    v = store->getChunkedTables("dbB");
-    BOOST_REQUIRE(0 == v.size());
+    v = facade->getChunkedTables("dbB");
+    BOOST_CHECK_EQUAL(0, v.size());
 
     // for non-existing db
     try {
-        store->getChunkedTables("Dummy");
+        facade->getChunkedTables("Dummy");
     } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::DB_DOES_NOT_EXIST);
     }
 }
 
 BOOST_AUTO_TEST_CASE(getSubChunkedTables) {
     // normal, 2 values
-    vector<string> v = store->getSubChunkedTables("dbA");
-    BOOST_REQUIRE(1 == v.size());
+    vector<string> v = facade->getSubChunkedTables("dbA");
+    BOOST_CHECK_EQUAL(1, v.size());
     //std::sort (v.begin(), v.end());
-    BOOST_REQUIRE(v[0]=="Object");
+    BOOST_CHECK_EQUAL(v[0], "Object");
 
     // normal, no values
-    v = store->getSubChunkedTables("dbB");
-    BOOST_REQUIRE(0 == v.size());
+    v = facade->getSubChunkedTables("dbB");
+    BOOST_CHECK_EQUAL(0, v.size());
 
     // for non-existing db
     try {
-        store->getSubChunkedTables("Dummy");
+        facade->getSubChunkedTables("Dummy");
     } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::DB_DOES_NOT_EXIST);
     }
 }
 
 BOOST_AUTO_TEST_CASE(getPartitionCols) {
     // normal, has value
-    vector<string> v = store->getPartitionCols("dbA", "Object");
-    BOOST_REQUIRE(v.size() == 3);
-    BOOST_REQUIRE(v[0] == "ra_PS");
-    BOOST_REQUIRE(v[1] == "decl_PS");
-    BOOST_REQUIRE(v[2] == "objId");
+    vector<string> v = facade->getPartitionCols("dbA", "Object");
+    BOOST_CHECK_EQUAL(v.size(), 3);
+    BOOST_CHECK_EQUAL(v[0], "ra_PS");
+    BOOST_CHECK_EQUAL(v[1], "decl_PS");
+    BOOST_CHECK_EQUAL(v[2], "objId");
 
-    v = store->getPartitionCols("dbA", "Source");
-    BOOST_REQUIRE(v.size() == 3);
-    BOOST_REQUIRE(v[0] == "ra");
-    BOOST_REQUIRE(v[1] == "decl");
-    BOOST_REQUIRE(v[2] == "");
+    v = facade->getPartitionCols("dbA", "Source");
+    BOOST_CHECK_EQUAL(v.size(), 3);
+    BOOST_CHECK_EQUAL(v[0], "ra");
+    BOOST_CHECK_EQUAL(v[1], "decl");
+    BOOST_CHECK_EQUAL(v[2], "");
 
     // for non-existing db
     try {
-        store->getPartitionCols("Dummy", "x");
+        facade->getPartitionCols("Dummy", "x");
     } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::DB_DOES_NOT_EXIST);
     }
 }
 
 BOOST_AUTO_TEST_CASE(getChunkLevel) {
-    BOOST_REQUIRE(store->getChunkLevel("dbA", "Object") == 2);
-    BOOST_REQUIRE(store->getChunkLevel("dbA", "Source") == 1);
-    BOOST_REQUIRE(store->getChunkLevel("dbA", "Exposure") == 0);
+    BOOST_CHECK_EQUAL(facade->getChunkLevel("dbA", "Object"), 2);
+    BOOST_CHECK_EQUAL(facade->getChunkLevel("dbA", "Source"), 1);
+    BOOST_CHECK_EQUAL(facade->getChunkLevel("dbA", "Exposure"), 0);
 }
 
 BOOST_AUTO_TEST_CASE(getKeyColumn) {
     // normal, has value
-    BOOST_REQUIRE(store->getKeyColumn("dbA", "Object") == "objId");
+    BOOST_CHECK_EQUAL(facade->getKeyColumn("dbA", "Object"), "objId");
 
     // normal, does not have value
-    BOOST_REQUIRE(store->getKeyColumn("dbA", "Source") == "");
+    BOOST_CHECK_EQUAL(facade->getKeyColumn("dbA", "Source"), "");
 
     // for non-existing db
     try {
-        store->getKeyColumn("Dummy", "x");
+        facade->getKeyColumn("Dummy", "x");
     } catch (CssException& e) {
-        BOOST_REQUIRE(e.errCode()==CssException::DB_DOES_NOT_EXIST);
+        BOOST_CHECK_EQUAL(e.errCode(), CssException::DB_DOES_NOT_EXIST);
     }
 }
 
 BOOST_AUTO_TEST_CASE(getDbStriping) {
-    IntPair s = store->getDbStriping("dbA");
-    BOOST_REQUIRE(s.a == 18);
-    BOOST_REQUIRE(s.b == 40);
+    StripingParams s = facade->getDbStriping("dbA");
+    BOOST_CHECK_EQUAL(s.stripes, 18);
+    BOOST_CHECK_EQUAL(s.subStripes, 40);
 }
-
 
 BOOST_AUTO_TEST_SUITE_END()
 
