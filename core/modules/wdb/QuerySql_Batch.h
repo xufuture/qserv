@@ -30,17 +30,19 @@
   * @author Daniel L. Wang, SLAC
   */
 #include "wdb/QuerySql.h"
-namespace lsst { namespace qserv { namespace worker {
+namespace lsst {
+namespace qserv {
+namespace worker {
 
 struct QuerySql::Batch {
     // Default to 10 SQL statements at a time.
     // Idea: Could add statements according to some cost metric(a
     // simple one) or to a certain overall query string length
     Batch(std::string const& name_,
-          QuerySql::StringList const& sequence_, int batchSize_=10)
+          QuerySql::StringDeque const& sequence_, int batchSize_=10)
         : name(name_), batchSize(batchSize_),
           pos(0) {
-        for(QuerySql::StringList::const_iterator i = sequence_.begin();
+        for(QuerySql::StringDeque::const_iterator i = sequence_.begin();
             i != sequence_.end(); ++i) {
             std::string::const_iterator last = i->begin() + (i->length() - 1);
             if(';' == *last) { // Clip trailing semicolon which
@@ -56,7 +58,7 @@ struct QuerySql::Batch {
     }
     std::string current() const {
         std::ostringstream os;
-        QuerySql::StringList::const_iterator begin;
+        QuerySql::StringDeque::const_iterator begin;
         assert((unsigned)pos < sequence.size()); // caller should have checked isDone()
         begin = sequence.begin() + pos;
         if(sequence.size() < static_cast<size_t>(pos + batchSize)) {
@@ -71,9 +73,9 @@ struct QuerySql::Batch {
     void next() { pos += batchSize; }
 
     std::string name;
-    QuerySql::StringList sequence;
-    int batchSize;
-    int pos;
+    QuerySql::StringDeque sequence;
+    QuerySql::StringDeque::size_type batchSize;
+    QuerySql::StringDeque::size_type pos;
 };
 
 }}} // lsst::qserv::worker
