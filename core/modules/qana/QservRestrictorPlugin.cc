@@ -63,7 +63,7 @@ resolveAsColumnRef(QueryContext& context, ValueExprPtr vexpr) {
     if(!cr) {
         return cr;
     }
-    DbTablePair p = context.resolve(cr);
+    query::DbTablePair p = context.resolve(cr);
     cr->table = p.table;
     cr->db = p.db;
     return cr;

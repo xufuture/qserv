@@ -140,7 +140,7 @@ StringPairList filterPartitioned(TableRefList const& tList) {
     getPartitioned gp(list);
     for(TableRefList::const_iterator i=tList.begin(), e=tList.end();
         i != e; ++i) {
-        (**i).applySimple(gp);
+        (**i).apply(gp);
     }
     return list;
 }

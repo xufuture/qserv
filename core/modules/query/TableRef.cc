@@ -28,6 +28,7 @@
   */
 #include "query/TableRef.h"
 #include <sstream>
+#include <algorithm>
 #include "query/JoinRef.h"
 #include "query/JoinSpec.h"
 
@@ -52,10 +53,10 @@ void TableRef::render::operator()(TableRef const& ref) {
 }
 
 std::ostream& TableRef::putStream(std::ostream& os) const {
-    os << "Table(" << db << "." << table << ")";
-    if(!alias.empty()) { os << " AS " << alias; }
+    os << "Table(" << _db << "." << _table << ")";
+    if(!_alias.empty()) { os << " AS " << _alias; }
     typedef JoinRefList::const_iterator Iter;
-    for(Iter i=joinRefList.begin(), e=joinRefList.end(); i != e; ++i) {
+    for(Iter i=_joinRefList.begin(), e=_joinRefList.end(); i != e; ++i) {
         JoinRef const& j = **i;
         os << " " << j;
     }
@@ -63,36 +64,63 @@ std::ostream& TableRef::putStream(std::ostream& os) const {
 }
 
 void TableRef::putTemplate(QueryTemplate& qt) const {
-    if(!db.empty()) {
-        qt.append(db); // Use TableEntry?
+    if(!_db.empty()) {
+        qt.append(_db); // Use TableEntry?
         qt.append(".");
     }
-    qt.append(table);
-    if(!alias.empty()) {
+    qt.append(_table);
+    if(!_alias.empty()) {
         qt.append("AS");
-        qt.append(alias);
+        qt.append(_alias);
     }
     typedef JoinRefList::const_iterator Iter;
-    for(Iter i=joinRefList.begin(), e=joinRefList.end(); i != e; ++i) {
+    for(Iter i=_joinRefList.begin(), e=_joinRefList.end(); i != e; ++i) {
         JoinRef const& j = **i;
         j.putTemplate(qt);
     }
 }
 
 void TableRef::addJoin(boost::shared_ptr<JoinRef> r) {
-    joinRefList.push_back(r);
+    _joinRefList.push_back(r);
 }
 
-void TableRef::applySimple(TableRef::Func& f) {
+void TableRef::apply(TableRef::Func& f) {
     f(*this);
     typedef JoinRefList::iterator Iter;
-    for(Iter i=joinRefList.begin(), e=joinRefList.end(); i != e; ++i) {
+    for(Iter i=_joinRefList.begin(), e=_joinRefList.end(); i != e; ++i) {
         JoinRef& j = **i;
-        j.getRight()->applySimple(f);
+        j.getRight()->apply(f);
     }
 }
 
-std::list<TableRef::Ptr> TableRef::permute(TableRef::Pfunc& p) const {
+void TableRef::apply(TableRef::FuncC& f) const {
+    typedef JoinRefList::const_iterator Iter;
+    for(Iter i=_joinRefList.begin(), e=_joinRefList.end(); i != e; ++i) {
+        JoinRef const& j = **i;
+        j.getRight()->apply(f);
+    }
+}
+
+/// Visit a TableRef and its JoinRefs recursively, permuting each
+/// DbTablePair into a some number of DbTablePairs, and returning a
+/// vector containing a TableRef using all combinations of DbTablePairs.
+std::vector<TableRef::Ptr> TableRef::permute(TableRef::PermuteFunc& p) const {
     throw std::logic_error("Undefined");
 }
+
+namespace {
+JoinRef::Ptr joinRefClone(JoinRef::Ptr const& r) {
+    return r->clone();
+}
+} // anonymous
+
+TableRef::Ptr TableRef::clone() const {
+    TableRef::Ptr newCopy(new TableRef(_db, _table, _alias));
+    std::transform(_joinRefList.begin(), _joinRefList.end(),
+                   std::back_inserter(newCopy->_joinRefList), joinRefClone);
+    return newCopy;
+}
+
+
+
 }}} // lsst::qserv::master

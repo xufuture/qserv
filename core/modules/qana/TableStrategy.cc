@@ -218,7 +218,7 @@ class addTable : public TableRef::Func {
 public:
     addTable(Tuples& tuples) : _tuples(tuples) { }
     void operator()(TableRef::Ptr t) {
-        if(t.get()) { t->applySimple(*this); }
+        if(t.get()) { t->apply(*this); }
     }
     virtual void operator()(TableRef& t) {
         std::string table = t.getTable();
@@ -261,7 +261,7 @@ public:
     inplaceComputeTable(Tuples& tuples) :_tuples(tuples) {
     }
     virtual void operator()(TableRef::Ptr t) {
-        t->applySimple(*this);
+        t->apply(*this);
     }
     virtual void operator()(TableRef& t) {
         Tuple const& tuple = tuplesFindByRefRO(_tuples, t);
@@ -296,10 +296,10 @@ public:
         typedef JoinRefList::const_iterator Iter;
         for(Iter i=jList.begin(), e=jList.end(); i != e; ++i) {
             JoinRef const& j = **i;
-            TableRef::Ptr right = visit(*j.getRightRO());
+            TableRef::Ptr right = visit(*j.getRight());
             JoinRef::Ptr r(new JoinRef(right, j.getJoinType(),
                                        j.isNatural(),
-                                       j.getSpecRO()->clone()));
+                                       j.getSpec()->clone()));
             newT->addJoin(r);
         }
         return newT;

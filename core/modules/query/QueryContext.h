@@ -81,7 +81,7 @@ public:
         return queryMapping.get() && queryMapping->hasChunks(); }
     bool hasSubChunks() const {
         return queryMapping.get() && queryMapping->hasSubChunks(); }
-    DbTablePair resolve(boost::shared_ptr<ColumnRef> cr);
+    query::DbTablePair resolve(boost::shared_ptr<ColumnRef> cr);
 
 };
 

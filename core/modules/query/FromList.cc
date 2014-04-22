@@ -111,7 +111,7 @@ void permuteHelper(ListList::iterator i, ListList::iterator e,
         permuteHelper(i, e, soFar, finals);
     }
 }
-FromList::PtrList FromList::permute(TableRef::Pfunc& f) {
+FromList::PtrList FromList::permute(TableRef::PermuteFunc& f) {
     PtrList pList;
     ListList combos;
     typedef TableRefList::const_iterator Iter;

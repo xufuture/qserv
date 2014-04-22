@@ -1,6 +1,6 @@
 /*
  * LSST Data Management System
- * Copyright 2013 LSST Corporation.
+ * Copyright 2013-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -31,6 +31,9 @@
 namespace lsst {
 namespace qserv {
 namespace master {
+inline bool isInconsistent(JoinSpec const& s) {
+    return s.getOn() && s.getUsing();
+}
 
 std::ostream& operator<<(std::ostream& os, JoinSpec const& js) {
     return js.putStream(os);
@@ -46,15 +49,15 @@ std::ostream& JoinSpec::putStream(std::ostream& os) const {
     return os << qt.generate();
 }
 void JoinSpec::putTemplate(QueryTemplate& qt) const {
+    if(isInconsistent(*this)) {
+        throw std::logic_error("Inconsistent JoinSpec with ON and USING");
+    }
     if(_onTerm) {
-        if(_usingColumn) { 
-            throw std::logic_error("Inconsistent JoinSpec with ON and USING");
-        }
         qt.append("ON");
-        _onTerm->renderTo(qt);        
-    } else if(_usingColumn) { 
+        _onTerm->renderTo(qt);
+    } else if(_usingColumn) {
         qt.append("USING");
-        qt.append("("); 
+        qt.append("(");
         qt.append(*_usingColumn); // FIXME: update to support column lists
         qt.append(")");
     } else {
@@ -63,6 +66,9 @@ void JoinSpec::putTemplate(QueryTemplate& qt) const {
 }
 
 JoinSpec::Ptr JoinSpec::clone() const {
+    if(isInconsistent(*this)) {
+        throw std::logic_error("Can't clone JoinSpec with ON and USING");
+    }
     if(_usingColumn) {
         boost::shared_ptr<ColumnRef> col(new ColumnRef(*_usingColumn));
         return Ptr(new JoinSpec(col));

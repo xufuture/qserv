@@ -32,9 +32,11 @@
 #include <stdexcept>
 #include <string>
 #include <list>
+#include <vector>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include "query/QueryTemplate.h"
+#include "query/DbTablePair.h"
 
 namespace lsst {
 namespace qserv {
@@ -52,11 +54,12 @@ typedef std::list<boost::shared_ptr<JoinRef> > JoinRefList;
 class TableRef {
 public:
     typedef boost::shared_ptr<TableRef> Ptr;
+    typedef boost::shared_ptr<TableRef const> CPtr;
     typedef std::list<Ptr> PtrList;
 
     TableRef(std::string const& db_, std::string const& table_,
                std::string const& alias_)
-        : alias(alias_), db(db_), table(table_)  {
+        : _alias(alias_), _db(db_), _table(table_)  {
         if(table_.empty()) { throw std::logic_error("TableRef without table"); }
     }
     virtual ~TableRef() {}
@@ -64,21 +67,21 @@ public:
     std::ostream& putStream(std::ostream& os) const;
     void putTemplate(QueryTemplate& qt) const;
 
-    bool isSimple() const { return joinRefList.empty(); }
-    std::string const& getDb() const { return db; }
-    std::string const& getTable() const { return table; }
-    std::string const& getAlias() const { return alias; }
+    bool isSimple() const { return _joinRefList.empty(); }
+    std::string const& getDb() const { return _db; }
+    std::string const& getTable() const { return _table; }
+    std::string const& getAlias() const { return _alias; }
 
     JoinRef const* getJoinRef(int i=0) const;
     JoinRefList const& getJoins() const {
-        return joinRefList; }
+        return _joinRefList; }
 
     // Modifiers
-    void setAlias(std::string const& a) { alias=a; }
-    void setDb(std::string const& db_) { db = db_; }
-    void setTable(std::string const& table_) { table = table_; }
+    void setAlias(std::string const& a) { _alias=a; }
+    void setDb(std::string const& db_) { _db = db_; }
+    void setTable(std::string const& table_) { _table = table_; }
     JoinRefList& getJoins() {
-        return joinRefList; }
+        return _joinRefList; }
     void addJoin(boost::shared_ptr<JoinRef> r);
 
     class Func {
@@ -87,28 +90,27 @@ public:
         virtual void operator()(TableRef& t) {}
     };
     class FuncC {
-    public:
+     public:
         virtual ~FuncC() {}
         virtual void operator()(TableRef const& t) {}
     };
-    void applySimple(Func& f);
-    void applySimpleRO(FuncC& f) const;
+    void apply(Func& f);
+    void apply(FuncC& f) const;
 
-    struct Pfunc {
-        virtual std::list<TableRef::Ptr> operator()(TableRef const& t) = 0;
+    struct PermuteFunc {
+        virtual ~PermuteFunc() {}
+        virtual std::list<query::DbTablePair> operator()(query::DbTablePair const& t) = 0;
     };
-    std::list<TableRef::Ptr> permute(Pfunc& p) const;
-    TableRef::Ptr clone() const {
-        // FIXME do deep copy.
-        return Ptr(new TableRef(*this));
-    }
+    std::vector<TableRef::Ptr> permute(PermuteFunc& p) const;
+    TableRef::Ptr clone() const;
 
     class render;
 private:
-    std::string alias;
-    std::string db;
-    std::string table;
-    JoinRefList joinRefList;
+
+    std::string _alias;
+    std::string _db;
+    std::string _table;
+    JoinRefList _joinRefList;
 };
 /// class render: helper functor for QueryTemplate conversion
 class TableRef::render {
@@ -126,7 +128,7 @@ std::ostream& operator<<(std::ostream& os, TableRef const& refN);
 std::ostream& operator<<(std::ostream& os, TableRef const* refN);
 
 // Containers
-typedef std::list<TableRef::Ptr> TableRefList;
+typedef std::vector<TableRef::Ptr> TableRefList;
 typedef boost::shared_ptr<TableRefList> TableRefListPtr;
 
 }}} // namespace lsst::qserv::master

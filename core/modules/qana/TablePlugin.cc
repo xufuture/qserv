@@ -87,7 +87,7 @@ public:
         : context(c), firstDb(firstDb_), firstTable(firstTable_)
         {}
     void operator()(TableRef::Ptr t) {
-        if(t.get()) { t->applySimple(*this); }
+        if(t.get()) { t->apply(*this); }
     }
     void operator()(TableRef& t) {
         std::string table = t.getTable();
@@ -106,7 +106,7 @@ class addAlias : public TableRef::Func {
 public:
     addAlias(G g, A a) : _generate(g), _addMap(a) {}
     void operator()(TableRef::Ptr t) {
-        if(t.get()) { t->applySimple(*this); }
+        if(t.get()) { t->apply(*this); }
     }
     void operator()(TableRef& t) {
         // LOGGER_INF << "tableref:";
@@ -304,7 +304,7 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
     }
     // Fill-in default db context.
 
-    DbTablePair p;
+    query::DbTablePair p;
     addDbContext adc(context, p.db, p.table);
     std::for_each(tList.begin(), tList.end(), adc);
     _dominantDb = context.dominantDb = p.db;

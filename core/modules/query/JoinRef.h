@@ -60,10 +60,10 @@ public:
     bool isNatural() const { return _isNatural; }
     Type getJoinType() const { return _joinType; }
 
-    TableRef const* getRightRO() const { return _right.get(); }
+    TableRef::CPtr getRight() const { return _right; }
     TableRef::Ptr getRight() { return _right; }
 
-    JoinSpec const* getSpecRO() const { return _spec.get(); }
+    boost::shared_ptr<JoinSpec const> getSpec() const { return _spec; }
     boost::shared_ptr<JoinSpec> getSpec() { return _spec; }
 
     std::ostream& putStream(std::ostream& os) const;

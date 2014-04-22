@@ -82,8 +82,8 @@ std::ostream& qMaster::LikePredicate::putStream(std::ostream& os) const {
     // FIXME
     return os;
 }
-std::ostream& qMaster::NullPredicate::putStream(std::ostream& os) const { 
-    return os; 
+std::ostream& qMaster::NullPredicate::putStream(std::ostream& os) const {
+    return os;
 }
 
 void qMaster::CompPredicate::renderTo(QueryTemplate& qt) const {
@@ -236,7 +236,7 @@ struct valueExprCopy {
 };
 
 BfTerm::Ptr InPredicate::copySyntax() const {
-    InPredicate* p = new InPredicate;
+    InPredicate::Ptr p(new InPredicate);
     if(value) p->value = value->clone();
     std::transform(cands.begin(), cands.end(),
                    std::back_inserter(p->cands),
@@ -244,7 +244,7 @@ BfTerm::Ptr InPredicate::copySyntax() const {
     return BfTerm::Ptr(p);
 }
 BfTerm::Ptr BetweenPredicate::copySyntax() const {
-    BetweenPredicate* p = new BetweenPredicate;
+    BetweenPredicate::Ptr p(new BetweenPredicate);
     if(value) p->value = value->clone();
     if(minValue) p->minValue = minValue->clone();
     if(maxValue) p->maxValue = maxValue->clone();
@@ -252,14 +252,14 @@ BfTerm::Ptr BetweenPredicate::copySyntax() const {
 }
 
 BfTerm::Ptr LikePredicate::copySyntax() const {
-    LikePredicate* p = new LikePredicate;
+    LikePredicate::Ptr p(new LikePredicate);
     if(value) p->value = value->clone();
     if(charValue) p->charValue = charValue->clone();
     return BfTerm::Ptr(p);
 }
 
 BfTerm::Ptr NullPredicate::copySyntax() const {
-    NullPredicate* p = new NullPredicate();
+    NullPredicate::Ptr p(new NullPredicate);
     if(value) p->value = value->clone();
     p->hasNot = hasNot;
     return BfTerm::Ptr(p);
