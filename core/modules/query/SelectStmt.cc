@@ -74,8 +74,8 @@ inline void renderTemplate(qMaster::QueryTemplate& qt,
 }
 template <typename T>
 inline void
-copyDeepIf(boost::shared_ptr<T>& dest, boost::shared_ptr<T> source) {
-    if(source.get()) dest = source->copyDeep();
+cloneIf(boost::shared_ptr<T>& dest, boost::shared_ptr<T> source) {
+    if(source.get()) dest = source->clone();
 }
 template <typename T>
 inline void
@@ -134,15 +134,15 @@ qMaster::SelectStmt::getWhere() const {
 }
 
 boost::shared_ptr<qMaster::SelectStmt>
-qMaster::SelectStmt::copyDeep() const {
+qMaster::SelectStmt::clone() const {
     boost::shared_ptr<SelectStmt> newS(new SelectStmt(*this));
     // Starting from a shallow copy, make a copy of the syntax portion.
-    copyDeepIf(newS->_fromList, _fromList);
-    copyDeepIf(newS->_selectList, _selectList);
-    copyDeepIf(newS->_whereClause, _whereClause);
-    copyDeepIf(newS->_orderBy, _orderBy);
-    copyDeepIf(newS->_groupBy, _groupBy);
-    copyDeepIf(newS->_having, _having);
+    cloneIf(newS->_fromList, _fromList);
+    cloneIf(newS->_selectList, _selectList);
+    cloneIf(newS->_whereClause, _whereClause);
+    cloneIf(newS->_orderBy, _orderBy);
+    cloneIf(newS->_groupBy, _groupBy);
+    cloneIf(newS->_having, _having);
     // For the other fields, default-copied versions are okay.
     return newS;
 }

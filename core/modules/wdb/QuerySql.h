@@ -45,6 +45,7 @@ class Task;
 
 class QuerySql {
 public:
+    typedef boost::shared_ptr<QuerySql> Ptr;
     typedef std::deque<std::string> StringDeque;
     typedef lsst::qserv::TaskMsg_Fragment Fragment;
 
@@ -58,7 +59,6 @@ public:
     StringDeque buildList;
     StringDeque executeList; // Consider using SqlFragmenter to break this up into fragments.
     StringDeque cleanupList;
-    class Factory;
     class Batch;
     friend std::ostream& operator<<(std::ostream& os, QuerySql const& q);
 };

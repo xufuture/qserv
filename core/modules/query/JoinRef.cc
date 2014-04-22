@@ -42,6 +42,14 @@ void JoinRef::putTemplate(QueryTemplate& qt) const {
     if(_spec) { _spec->putTemplate(qt); }
 }
 
+JoinRef::Ptr JoinRef::clone() const {
+    TableRef::Ptr r;
+    if(_right) { r = _right->clone(); }
+    JoinSpec::Ptr s;
+    if(_spec) { s = _spec->clone(); }
+    return Ptr(new JoinRef(r, _joinType, _isNatural, s));
+}
+
 void JoinRef::_putJoinTemplate(QueryTemplate& qt) const {
     if(_isNatural) { qt.append("NATURAL"); }
 

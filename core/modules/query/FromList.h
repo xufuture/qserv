@@ -49,7 +49,7 @@ public:
     void renderTo(QueryTemplate& qt) const;
 
     /// Deep-copy this node
-    boost::shared_ptr<FromList> copyDeep() const;
+    boost::shared_ptr<FromList> clone() const;
     /// Shallow copy this node, sharing its linked objects.
     boost::shared_ptr<FromList> copySyntax();
     /// Permutes according to the permuting function, sharing the columnRefMap

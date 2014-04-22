@@ -109,7 +109,7 @@ struct copyValueExpr {
         return p->clone();
     }
 };
-boost::shared_ptr<SelectList> SelectList::copyDeep() {
+boost::shared_ptr<SelectList> SelectList::clone() {
     boost::shared_ptr<SelectList> newS(new SelectList(*this));
     newS->_valueExprList.reset(new ValueExprList());
     ValueExprList& src = *_valueExprList;

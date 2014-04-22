@@ -391,7 +391,7 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
     int permutationCount = ts.getPermutationCount();
     if(permutationCount > 1)
         for(int i=0; i < permutationCount; ++i) {
-            boost::shared_ptr<SelectStmt> stmt = in.copyDeep();
+            boost::shared_ptr<SelectStmt> stmt = in.clone();
             TableRefListPtr trl = ts.getPermutation(i, fList.getTableRefList());
             FromList::Ptr f(new FromList(trl));
             stmt->setFromList(f);
@@ -411,7 +411,7 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
         typedef FromListList::iterator Iter;
         FromListList newFroms = s.computeNewFromLists();
         for(Iter i=newFroms.begin(), e=newFroms.end(); i != e; ++i) {
-            boost::shared_ptr<SelectStmt> stmt = in.copyDeep();
+            boost::shared_ptr<SelectStmt> stmt = in.clone();
             stmt->setFromList(*i);
             outList.push_back(stmt);
             ++added;

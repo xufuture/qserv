@@ -231,7 +231,7 @@ void QuerySession::_generateConcrete() {
     // Needs to copy SelectList, since the parallel statement's
     // version will get updated by plugins. Plugins probably need
     // access to the original as a reference.
-    _stmtParallel.push_back(_stmt->copyDeep());
+    _stmtParallel.push_back(_stmt->clone());
 
     // Copy SelectList and Mods, but not FROM, and perhaps not
     // WHERE(???). Conceptually, we want to copy the parts that are

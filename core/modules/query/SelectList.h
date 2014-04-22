@@ -61,7 +61,7 @@ public:
 
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
-    boost::shared_ptr<SelectList> copyDeep();
+    boost::shared_ptr<SelectList> clone();
     boost::shared_ptr<SelectList> copySyntax();
 
     // non-const accessor for query manipulation.

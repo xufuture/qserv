@@ -63,7 +63,7 @@ HavingClause::renderTo(QueryTemplate& qt) const {
 }
 
 boost::shared_ptr<HavingClause>
-HavingClause::copyDeep() {
+HavingClause::clone() const {
     return boost::make_shared<HavingClause>(*this); // FIXME
 }
 

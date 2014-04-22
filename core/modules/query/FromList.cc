@@ -30,12 +30,15 @@
 #include <iterator>
 
 namespace qMaster=lsst::qserv::master;
-using lsst::qserv::master::FromList;
 using lsst::qserv::master::TableRefList;
 using lsst::qserv::master::TableRefListPtr;
 
+namespace lsst {
+namespace qserv {
+namespace master {
+
 std::ostream&
-qMaster::operator<<(std::ostream& os, FromList const& fl) {
+operator<<(std::ostream& os, FromList const& fl) {
     os << "FROM ";
     if(fl._tableRefs.get() && fl._tableRefs->size() > 0) {
         TableRefList const& refList = *(fl._tableRefs);
@@ -47,7 +50,8 @@ qMaster::operator<<(std::ostream& os, FromList const& fl) {
     return os;
 }
 
-bool FromList::isJoin() const {
+bool
+FromList::isJoin() const {
     return (_tableRefs.get() && _tableRefs->size() > 1);
 }
 
@@ -66,7 +70,8 @@ FromList::renderTo(qMaster::QueryTemplate& qt) const {
     }
 }
 
-boost::shared_ptr<qMaster::FromList> FromList::copySyntax() {
+boost::shared_ptr<qMaster::FromList>
+FromList::copySyntax() {
     boost::shared_ptr<FromList> newL(new FromList(*this));
     // Shallow copy of expr list is okay.
     newL->_tableRefs.reset(new TableRefList(*_tableRefs));
@@ -74,7 +79,8 @@ boost::shared_ptr<qMaster::FromList> FromList::copySyntax() {
     return newL;
 }
 
-boost::shared_ptr<qMaster::FromList> FromList::copyDeep() const {
+boost::shared_ptr<qMaster::FromList>
+FromList::clone() const {
     typedef TableRefList::const_iterator Iter;
     boost::shared_ptr<FromList> newL(new FromList(*this));
 
@@ -88,7 +94,8 @@ boost::shared_ptr<qMaster::FromList> FromList::copyDeep() const {
 }
 
 typedef std::list<qMaster::TableRefListPtr> ListList;
-void permuteHelper(ListList::iterator i, ListList::iterator e,
+void
+permuteHelper(ListList::iterator i, ListList::iterator e,
                    qMaster::TableRefListPtr soFar, ListList& finals) {
 
     if(i == e) {
@@ -111,7 +118,9 @@ void permuteHelper(ListList::iterator i, ListList::iterator e,
         permuteHelper(i, e, soFar, finals);
     }
 }
-FromList::PtrList FromList::permute(TableRef::PermuteFunc& f) {
+
+FromList::PtrList
+FromList::permute(TableRef::PermuteFunc& f) {
     PtrList pList;
     ListList combos;
     typedef TableRefList::const_iterator Iter;
@@ -131,3 +140,4 @@ FromList::PtrList FromList::permute(TableRef::PermuteFunc& f) {
 
     return pList;
 }
+}}} // lsst::qserv::master
