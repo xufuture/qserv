@@ -27,12 +27,12 @@ env.Default(env.Alias("build"))
 env.Depends("install", env.Alias("build"))
 
 env.Requires(env.Alias('python-tests'), env.Alias('admin'))
-env.Requires(env.Alias('python-tests'), env.Alias('dist-qms'))
+env.Requires(env.Alias('python-tests'), env.Alias('dist-css'))
 
 env.Alias("install",
         [
         env.Alias("dist-core"),
-        env.Alias("dist-qms"),
+        env.Alias("dist-css"),
         env.Alias("admin"),
         env.Alias("python-tests"),
         env.Alias("templates")
@@ -47,15 +47,15 @@ env.Alias("install",
 python_tests = env.InstallPythonModule(target=env['python_prefix'], source=os.path.join("tests", "python"))
 env.Alias("python-tests", python_tests)
 
-# Install qms
+# Install css
 #########################
-qmsbin_target = os.path.join(env['prefix'], "bin")
-env.RecursiveInstall(qmsbin_target, os.path.join("meta", "bin"))
-python_qms = env.InstallPythonModule(target=env['python_prefix'], source=os.path.join("meta", "python"))
-env.Alias("dist-qms",
+cssbin_target = os.path.join(env['prefix'], "bin")
+env.RecursiveInstall(cssbin_target, os.path.join("client", "bin"))
+python_css = env.InstallPythonModule(target=env['python_prefix'], source=os.path.join("css", "python"))
+env.Alias("dist-css",
         [
-        python_qms,
-        qmsbin_target
+        python_css,
+        cssbin_target
         ]
 )
 
