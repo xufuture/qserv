@@ -36,10 +36,11 @@ Known issues and todos:
 # standard library imports
 import ConfigParser
 import logging
-from optparse import OptionParser
+from argparse import ArgumentParser
 import os
 import re
 import readline
+import sys
 
 # local imports
 from lsst.db.exception import produceExceptionClass
@@ -48,11 +49,12 @@ from qserv_admin_impl import QservAdminImpl
 
 ####################################################################################
 QAdmException = produceExceptionClass('QAdmException', [
-    (3001, "BAD_CMD",          "Bad command, see HELP for details."),
-    (3002, "CONFIG_NOT_FOUND", "Config file not found."),
-    (3003, "MISSING_PARAM",    "Missing parameter."),
-    (3004, "WRONG_PARAM",      "Unrecognized parameter."),
-    (3005, "WRONG_PARAM_VAL",  "Unrecognized value for parameter."),
+    (3001, "AUTH_PROBLEM",      "Can't access the config file."),
+    (3002, "BAD_CMD",          "Bad command, see HELP for details."),
+    (3003, "CONFIG_NOT_FOUND", "Config file not found."),
+    (3004, "MISSING_PARAM",    "Missing parameter."),
+    (3005, "WRONG_PARAM",      "Unrecognized parameter."),
+    (3006, "WRONG_PARAM_VAL",  "Unrecognized value for parameter."),
     (9997, "CSSERR",           "CSS error."),
     (9998, "NOT_IMPLEMENTED",  "Feature not implemented yet."),
     (9999, "INTERNAL",         "Internal error.")])
@@ -74,7 +76,9 @@ class CommandParser(object):
             'CREATE':  self._parseCreate,
             'DROP':    self._parseDrop,
             'DUMP':    self._parseDump,
+            'EXIT':    self._justExit,
             'HELP':    self._printHelp,
+            'QUIT':    self._justExit,
             'RELEASE': self._parseRelease,
             'SHOW':    self._parseShow
             }
@@ -83,8 +87,8 @@ class CommandParser(object):
   Supported commands:
     CREATE DATABASE <dbName> <configFile>;
     CREATE DATABASE <dbName> LIKE <dbName2>;
-    CREATE TABLE <dbName> <tableName> <configFile>;
-    CREATE TABLE <dbName> <tableName> LIKE <dbName2> <tableName2>;
+    CREATE TABLE <dbName>.<tableName> <configFile>;
+    CREATE TABLE <dbName>.<tableName> LIKE <dbName2>.<tableName2>;
     DROP DATABASE <dbName>;
     DROP EVERYTHING;
     DUMP EVERYTHING [<outFile>];
@@ -102,9 +106,11 @@ class CommandParser(object):
         """
         line = ''
         cmd = ''
+        prompt = "qserv > "
         while True:
-            line = raw_input("qserv > ")
-            cmd += line.strip()+' '
+            line = raw_input(prompt).decode("utf-8").strip()
+            cmd += line + ' '
+            prompt = "qserv > " if line.endswith(';') else "~ "
             while re.search(';', cmd):
                 pos = cmd.index(';')
                 try:
@@ -126,8 +132,6 @@ class CommandParser(object):
         t = tokens[0].upper()
         if t in self._funcMap:
             self._funcMap[t](tokens[1:])
-        elif t == 'EXIT' or t == 'QUIT':
-            raise SystemExit()
         else:
             raise QAdmException(QAdmException.NOT_IMPLEMENTED, cmd)
 
@@ -180,8 +184,12 @@ class CommandParser(object):
         Subparser - handles all CREATE TABLE requests.
         """
         l = len(tokens)
-        if l == 3:
-            (dbName, tbName, configFile) = tokens
+        if l == 2:
+            (dbTbName, configFile) = tokens
+            if '.' not in dbTbName:
+                raise QAdmException(QAdmException.BAD_CMD, 
+                   "Invalid argument '%s', should be <dbName>.<tbName>" % dbTbName)
+            (dbName, tbName) = dbTbName.split('.')
             options = self._fetchOptionsFromConfigFile(configFile)
             options = self._processTbOptions(options)
             try:
@@ -190,11 +198,19 @@ class CommandParser(object):
                 raise QAdmException(QAdmException.CSSERR, 
                           "Failed to create table '" + dbName + "." + tbName + \
                           "', error was: " +  e.__str__())
-        elif l == 5:
-            (dbName, tbName, likeToken, dbName2, tbName2) = tokens
+        elif l == 3:
+            (dbTbName, likeToken, dbTbName2) = tokens
             if likeToken.upper() != 'LIKE':
                 raise QAdmException(QAdmException.BAD_CMD, 
                                     "Expected 'LIKE', found: '%s'." % tokens[2])
+            if '.' not in dbTbName:
+                raise QAdmException(QAdmException.BAD_CMD, 
+                   "Invalid argument '%s', should be <dbName>.<tbName>" % dbTbName)
+            (dbName, tbName) = dbTbName.split('.')
+            if '.' not in dbTbName2:
+                raise QAdmException(QAdmException.BAD_CMD, 
+                   "Invalid argument '%s', should be <dbName>.<tbName>" % dbTbName2)
+            (dbName2, tbName2) = dbTbName2.split('.')
             try:
                 # FIXME, createTableLike is not implemented!
                 self._impl.createTableLike(dbName, tableName, dbName2, tableName2,
@@ -247,6 +263,9 @@ class CommandParser(object):
         else:
             raise QAdmException(QAdmException.BAD_CMD)
 
+    def _justExit(self, tokens):
+        raise SystemExit()
+
     def _printHelp(self, tokens):
         """
         Print available commands.
@@ -283,8 +302,10 @@ class CommandParser(object):
         Read config file <fName> for createDb and createTable command, and return
         key-value pair dictionary (flat, e.g., sections are ignored.)
         """
-        if not os.access(fName, os.R_OK):
+        if not os.path.exists(fName):
             raise QAdmException(QAdmException.CONFIG_NOT_FOUND, fName)
+        if not os.access(fName, os.R_OK):
+            raise QAdmException(QAdmException.AUTH_PROBLEM, fName)
         config = ConfigParser.ConfigParser()
         config.optionxform = str # case sensitive
         config.read(fName)
@@ -320,8 +341,6 @@ class CommandParser(object):
             "sphBox": ("nStripes", 
                        "nSubStripes", 
                        "overlap")}
-        # validate the options
-        self._validateKVOptions(opts, _crDbOpts, _crDbPSOpts, "db_info")
         return opts
 
     def _processTbOptions(self, opts):
@@ -346,63 +365,10 @@ class CommandParser(object):
                           "isView")}
         _crTbPSOpts = {
             "sphBox":("overlap",
-                      "phiColName", 
                       "lonColName", 
                       "latColName")}
-        # validate the options
-        #self._validateKVOptions(opts,_crTbOpts,_crTbPSOpts,"table_info")
         return opts
 
-
-    def _validateKVOptions(self, x, xxOpts, psOpts, whichInfo):
-        if not x.has_key("partitioning"):
-            raise QAdmException(QAdmException.MISSING_PARAM, "partitioning")
-
-        partOff = x["partitioning"] == "0" 
-        for (theName, theOpts) in xxOpts.items():
-            for o in theOpts:
-                # skip optional parameters
-                if o == "partitioning":
-                    continue
-                # if partitioning is "off", partitioningStrategy does not 
-                # need to be specified 
-                if not (o == "partitiongStrategy" and partOff):
-                    continue
-                if not x.has_key(o):
-                    raise QAdmException(QAdmException.MISSING_PARAM, o)
-        if partOff:
-            return
-        if x["partitioning"] != "1":
-            raise QAdmException(QAdmException.WRONG_PARAM_VAL, "partitioning",
-                                "got: '%s'" % x["partitioning"],
-                                "expecting: on/off")
-
-        if not x.has_key("partitioningStrategy"):
-            raise QAdmException(QAdmException.MISSING_PARAM, "partitioningStrategy",
-                                "(required if partitioning is on)")
-
-        psFound = False
-        for (psName, theOpts) in psOpts.items():
-            if x["partitioningStrategy"] == psName:
-                psFound = True
-                # check if all required options are specified
-                for o in theOpts:
-                    if not x.has_key(o):
-                        raise QAdmException(QAdmException.MISSING_PARAM, o)
-
-                # check if there are any unrecognized options
-                for o in x:
-                    if not ((o in xxOpts[whichInfo]) or (o in theOpts)):
-                        # skip non required, these are not in xxOpts/theOpts
-                        if whichInfo=="db_info" and o=="clusteredIndex":
-                            continue
-                        if whichInfo=="db_info" and o=="objIdIndex":
-                            continue
-                        if whichInfo=="table_info" and o=="partitioningStrategy":
-                            continue
-                        raise QAdmException(QAdmException.WRONG_PARAM, o)
-        if not psFound:
-            raise QAdmException(QAdmException.WRONG_PARAM,x["partitioningStrategy"])
 
     def _initLogging(self):
         self._logger = logging.getLogger("QADM")
@@ -410,16 +376,16 @@ class CommandParser(object):
         if kL: logging.getLogger("kazoo.client").setLevel(int(kL))
 
 ####################################################################################
-class WordCompleter:
+class WordCompleter(object):
     """
     Set auto-completion for commonly used words.
     """
-    def __init__(self, word):
-        self.word = word
+    def __init__(self, words):
+        self.words = words
 
     def complete(self, text, state):
-        results = [x+' ' for x in self.word 
-                   if x.startswith(text.upper())] + [None]
+        results = [word+' ' for word in self.words 
+                   if word.startswith(text.upper())] + [None]
         return results[state]
 
 readline.parse_and_bind("tab: complete")
@@ -439,16 +405,9 @@ completer = WordCompleter(words)
 readline.set_completer(completer.complete)
 
 ####################################################################################
-class SimpleOptionParser:
-    """
-    Parse command line options.
-    """
 
-    def __init__(self):
-        self._verbosityT = 40 # default is ERROR
-        self._logFileName = None
-        self._connInfo = '127.0.0.1:2181' # default for kazoo (single node, local)
-        self._usage = \
+def getOptions():
+    usage = \
 """
 
 NAME
@@ -468,64 +427,37 @@ OPTIONS
         Connection information.
 """
 
-    def getVerbosityT(self):
-        """
-        Return verbosity threshold.
-        """
-        return self._verbosityT
-
-    def getLogFileName(self):
-        """
-        Return the name of the output log file.
-        """
-        return self._logFileName
-
-    def getConnInfo(self):
-        """
-        Return connection information. 
-        """
-        return self._connInfo
-
-    def parse(self):
-        """
-        Parse options.
-        """
-        parser = OptionParser(usage=self._usage)
-        parser.add_option("-v", dest="verbT")
-        parser.add_option("-f", dest="logF")
-        parser.add_option("-c", dest="connI")
-        (options, args) = parser.parse_args()
-        if options.verbT: 
-            self._verbosityT = int(options.verbT)
-            if   self._verbosityT > 50: self._verbosityT = 50
-            elif self._verbosityT <  0: self._verbosityT = 0
-        if options.logF:
-            self._logFileName = options.logF
-        if options.connI:
-            self._connInfo = options.connI
+    parser = ArgumentParser(usage=usage)
+    parser.add_argument("-v", dest="verbT", default=40) # default is ERROR
+    parser.add_argument("-f", dest="logF", default=None)
+    parser.add_argument("-c", dest="connI", default = '127.0.0.1:2181')
+                      # default for kazoo (single node, local))
+    args = parser.parse_args()
+    if args.verbT > 50: args.verbT = 50
+    if args.verbT <  0: args.verbT = 0
+    return (args.verbT, args.logF, args.connI)
 
 ####################################################################################
 def main():
-    # parse arguments
-    p = SimpleOptionParser()
-    p.parse()
+
+    (verbosity, logFileName, connInfo) = getOptions()
 
     # configure logging
-    if p.getLogFileName():
+    if logFileName:
         logging.basicConfig(
-            filename=p.getLogFileName(),
+            filename=logFileName,
             format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
             datefmt='%m/%d/%Y %I:%M:%S', 
-            level=p.getVerbosityT())
+            level=verbosity)
     else:
         logging.basicConfig(
             format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
             datefmt='%m/%d/%Y %I:%M:%S', 
-            level=p.getVerbosityT())
+            level=verbosity)
 
     # wait for commands and process
     try:
-        CommandParser(p.getConnInfo()).receiveCommands()
+        CommandParser(connInfo).receiveCommands()
     except(KeyboardInterrupt, SystemExit, EOFError):
         print ""
 

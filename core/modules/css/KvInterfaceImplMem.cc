@@ -78,7 +78,7 @@ namespace css {
   *    ./client/qserv_admin.py <  <commands>
   *    (example commands can be found in client/examples/testCppParser_generateMap)
   * 3) then copy the generate file to final destination:
-  *    mv /tmp/testCppParser.kwmap <destination>
+  *    mv /tmp/testCppParser.kvmap <destination>
   */
 KvInterfaceImplMem::KvInterfaceImplMem(string const& mapPath) {
     std::ifstream f(mapPath.c_str());
@@ -91,10 +91,10 @@ KvInterfaceImplMem::KvInterfaceImplMem(string const& mapPath) {
         if (theVal == "\\N") {
             theVal = "";
         }
-        _kwMap[theKey] = theVal;
+        _kvMap[theKey] = theVal;
     }
     //map<string, string>::const_iterator itrM;
-    //for (itrM=_kwMap.begin() ; itrM!=_kwMap.end() ; itrM++) {
+    //for (itrM=_kvMap.begin() ; itrM!=_kvMap.end() ; itrM++) {
     //    string val = "\\N";
     //    if (itrM->second != "") {
     //        val = itrM->second;
@@ -113,12 +113,12 @@ KvInterfaceImplMem::create(string const& key, string const& value) {
     if (exists(key)) {
         throw CssException(CssException::KEY_EXISTS, key);
     }
-    _kwMap[key] = value;
+    _kvMap[key] = value;
 }
 
 bool
 KvInterfaceImplMem::exists(string const& key) {
-    bool ret = _kwMap.find(key) != _kwMap.end();
+    bool ret = _kvMap.find(key) != _kvMap.end();
     LOGGER_INF << "*** KvInterfaceImplMem::exists(), key: " << key 
                << ": " << ret << endl;
     return ret;
@@ -130,7 +130,7 @@ KvInterfaceImplMem::get(string const& key) {
     if ( ! exists(key) ) {
         throw CssException(CssException::KEY_DOES_NOT_EXIST, key);
     }
-    string s = _kwMap[key];
+    string s = _kvMap[key];
     LOGGER_INF << "*** got: '" << s << "'" << endl;
     return s;
 }
@@ -143,7 +143,7 @@ KvInterfaceImplMem::getChildren(string const& key) {
     }
     vector<string> retV;
     map<string, string>::const_iterator itrM;
-    for (itrM=_kwMap.begin() ; itrM!=_kwMap.end() ; itrM++) {
+    for (itrM=_kvMap.begin() ; itrM!=_kvMap.end() ; itrM++) {
         string fullKey = itrM->first;
         LOGGER_INF << "fullKey: " << fullKey << endl;
         if (boost::starts_with(fullKey, key+"/")) {
@@ -169,7 +169,7 @@ KvInterfaceImplMem::deleteKey(string const& key) {
     if ( ! exists(key) ) {
         throw CssException(CssException::KEY_DOES_NOT_EXIST, key);
     }
-    _kwMap.erase(key);
+    _kvMap.erase(key);
 }
 
 }}} // namespace lsst::qserv::css

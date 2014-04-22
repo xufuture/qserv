@@ -211,7 +211,7 @@ class QservAdminImpl(object):
         """
         Delete everything from the CSS (very dangerous, very useful for debugging.)
         """
-        self._kvI.deleteAll("/")
+        self._kvI.delete("/", recursive=True)
 
     def _dbExists(self, dbName):
         """

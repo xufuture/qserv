@@ -169,8 +169,17 @@ class KvInterface(object):
         @raise     Raise CssException if the key doesn't exist.
         """
         try:
-            self._logger.info("DELETE '%s'" % (k))
-            self._zk.delete(k, recursive=recursive)
+            if k == "/": # zookeeper will fail badly if we try to delete root node
+                if recursive:
+                    for child in self.getChildren("/"):
+                        if child != "zookeeper": # skip zookeeper internals
+                            self._logger.info("DELETE '/%s'" % (child))
+                            self._zk.delete("/%s" % child, recursive=True)
+                else:
+                    pass
+            else:
+                self._logger.info("DELETE '%s'" % (k))
+                self._zk.delete(k, recursive=recursive)
         except NoNodeError:
             self._logger.error("in delete(), key %s does not exist" % k)
             raise CssException(CssException.KEY_DOES_NOT_EXIST, k)
