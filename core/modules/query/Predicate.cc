@@ -67,23 +67,19 @@ void NullPredicate::findColumnRefs(ColumnRef::List& list) {
 }
 
 std::ostream& qMaster::CompPredicate::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
+    return QueryTemplate::renderDbg(os, *this);
 }
 std::ostream& qMaster::InPredicate::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
+    return QueryTemplate::renderDbg(os, *this);
 }
 std::ostream& qMaster::BetweenPredicate::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
+    return QueryTemplate::renderDbg(os, *this);
 }
 std::ostream& qMaster::LikePredicate::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
+    return QueryTemplate::renderDbg(os, *this);
 }
 std::ostream& qMaster::NullPredicate::putStream(std::ostream& os) const {
-    return os;
+    return QueryTemplate::renderDbg(os, *this);
 }
 
 void qMaster::CompPredicate::renderTo(QueryTemplate& qt) const {
@@ -221,12 +217,16 @@ int CompPredicate::lookupOp(char const* op) {
     }
 }
 
-BfTerm::Ptr CompPredicate::copySyntax() const {
+BfTerm::Ptr CompPredicate::clone() const {
     CompPredicate* p = new CompPredicate;
     if(left) p->left = left->clone();
     p->op = op;
     if(right) p->right = right->clone();
     return BfTerm::Ptr(p);
+}
+BfTerm::Ptr GenericPredicate::clone() const {
+    //return BfTerm::Ptr(new GenericPredicate());
+    return BfTerm::Ptr();
 }
 
 struct valueExprCopy {
@@ -235,7 +235,7 @@ struct valueExprCopy {
     }
 };
 
-BfTerm::Ptr InPredicate::copySyntax() const {
+BfTerm::Ptr InPredicate::clone() const {
     InPredicate::Ptr p(new InPredicate);
     if(value) p->value = value->clone();
     std::transform(cands.begin(), cands.end(),
@@ -243,7 +243,7 @@ BfTerm::Ptr InPredicate::copySyntax() const {
                    valueExprCopy());
     return BfTerm::Ptr(p);
 }
-BfTerm::Ptr BetweenPredicate::copySyntax() const {
+BfTerm::Ptr BetweenPredicate::clone() const {
     BetweenPredicate::Ptr p(new BetweenPredicate);
     if(value) p->value = value->clone();
     if(minValue) p->minValue = minValue->clone();
@@ -251,14 +251,14 @@ BfTerm::Ptr BetweenPredicate::copySyntax() const {
     return BfTerm::Ptr(p);
 }
 
-BfTerm::Ptr LikePredicate::copySyntax() const {
+BfTerm::Ptr LikePredicate::clone() const {
     LikePredicate::Ptr p(new LikePredicate);
     if(value) p->value = value->clone();
     if(charValue) p->charValue = charValue->clone();
     return BfTerm::Ptr(p);
 }
 
-BfTerm::Ptr NullPredicate::copySyntax() const {
+BfTerm::Ptr NullPredicate::clone() const {
     NullPredicate::Ptr p(new NullPredicate);
     if(value) p->value = value->clone();
     p->hasNot = hasNot;

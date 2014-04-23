@@ -64,7 +64,11 @@ HavingClause::renderTo(QueryTemplate& qt) const {
 
 boost::shared_ptr<HavingClause>
 HavingClause::clone() const {
-    return boost::make_shared<HavingClause>(*this); // FIXME
+    boost::shared_ptr<HavingClause> hc(new HavingClause);
+    if(_tree) {
+        hc->_tree = _tree->clone();
+    }
+    return hc;
 }
 
 boost::shared_ptr<HavingClause>

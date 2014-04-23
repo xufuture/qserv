@@ -111,6 +111,14 @@ public:
     void clear();
     void optimize();
 
+    template <class T>
+    static std::ostream& renderDbg(std::ostream& os, T const& t) {
+        QueryTemplate qt;
+        t.renderTo(qt);
+        return os << qt.dbgStr();
+    }
+
+
 private:
     std::list<boost::shared_ptr<Entry> > _entries;
 };
