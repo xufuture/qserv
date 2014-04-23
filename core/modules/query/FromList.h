@@ -52,8 +52,8 @@ public:
     boost::shared_ptr<FromList> clone() const;
     /// Shallow copy this node, sharing its linked objects.
     boost::shared_ptr<FromList> copySyntax();
-    /// Permutes according to the permuting function, sharing the columnRefMap
-    PtrList permute(TableRef::PermuteFunc& f);
+    /// Compute all possible FromLists from the permutation function
+    PtrList computePermutations(TableRef::PermuteFunc& f);
 
 private:
     friend std::ostream& operator<<(std::ostream& os, FromList const& fl);

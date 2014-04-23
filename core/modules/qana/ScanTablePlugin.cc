@@ -119,11 +119,8 @@ ScanTablePlugin::applyFinal(QueryContext& context) {
     }
 }
 
-struct getPartitioned : public TableRef::Func {
+struct getPartitioned : public TableRef::FuncC {
     getPartitioned(StringPairList& sList_) : sList(sList_) {}
-    virtual void operator()(TableRef& t) {
-        (*this)(const_cast<TableRef const&>(t));
-    }
     virtual void operator()(TableRef const& tRef) {
         StringPair entry(tRef.getDb(), tRef.getTable());
         if(found.end() != found.find(entry)) return;

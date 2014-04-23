@@ -161,6 +161,7 @@ public:
         : _metadata(metadata),
           _entries(entries) {}
     void operator()(TableRef::Ptr t) {
+        // FIXME: Modify so we can use TableRef::apply()
         if(!t) {
             throw qana::AnalysisBug("NULL TableRefN::Ptr");
         }
