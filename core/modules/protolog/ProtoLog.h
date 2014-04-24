@@ -37,6 +37,7 @@
 #define LOG_POPCTX() lsst::qserv::ProtoLog::popContext()
 
 #define LOG_MDC(key, value) lsst::qserv::ProtoLog::MDC(key, value)
+#define LOG_MDC_REMOVE(key) lsst::qserv::ProtoLog::MDCRemove(key)
 
 #define LOG(loggername, level, msg...) \
     lsst::qserv::ProtoLog::log(loggername, (*level)(), __BASE_FILE__,\
@@ -65,6 +66,7 @@ public:
     static void pushContext(std::string const& c);
     static void popContext(void);
     static void MDC(std::string const& key, std::string const& value);
+    static void MDCRemove(std::string const& key);
     static log4cxx::LoggerPtr getLogger(std::string const& loggername);
     static void log(std::string const& loggername,
                     const log4cxx::LevelPtr &level, std::string const& filename,

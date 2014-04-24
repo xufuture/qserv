@@ -32,6 +32,7 @@ void initLog_iface();
 void pushContext_iface(std::string const& c);
 void popContext_iface();
 void MDC_iface(std::string const& key, std::string const& value);
+void MDCRemove_iface(std::string const& key);
 void log_iface(std::string const& loggername,
                int level,
                std::string const& filename,

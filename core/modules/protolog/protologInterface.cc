@@ -44,6 +44,10 @@ void qMaster::MDC_iface(std::string const& key, std::string const& value) {
     lsst::qserv::ProtoLog::MDC(key, value);
 }
 
+void qMaster::MDCRemove_iface(std::string const& key) {
+    lsst::qserv::ProtoLog::MDCRemove(key);
+}
+
 log4cxx::LevelPtr getLogLevel(int level) {
     switch (level) {
         case 0: return log4cxx::Level::getTrace();

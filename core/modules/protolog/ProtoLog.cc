@@ -66,6 +66,10 @@ void ProtoLog::MDC(std::string const& key, std::string const& value) {
     log4cxx::MDC::put(key, value);
 }
 
+void ProtoLog::MDCRemove(std::string const& key) {
+    log4cxx::MDC::remove(key);
+}
+
 void vforcedLog(const log4cxx::LevelPtr &level,
                 log4cxx::LoggerPtr logger,
                 std::string const& filename,

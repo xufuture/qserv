@@ -47,6 +47,9 @@ def popContext():
 def MDC(key, value):
     MDC_iface(str(key), str(value))
 
+def MDCRemove(key):
+    MDCRemove_iface(str(key))
+
 def trace(msg):
     log("", TRACE, msg)
 
