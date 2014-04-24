@@ -32,6 +32,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "qana/QueryMapping.h"
+#include "query/DbTablePair.h"
 #include "query/TableAlias.h"
 #include "util/common.h"
 namespace lsst {
@@ -58,10 +59,11 @@ public:
     typedef std::list<boost::shared_ptr<QsRestrictor> > RestrList;
 
     MetadataCache* metadata; ///< Unowned, assumed to be alive for this lifetime.
-    std::string defaultDb; ///< Implicit db context
+    std::string defaultDb; ///< User session db context
     std::string dominantDb; ///< "dominant" database for this query
     std::string anonymousTable; ///< Implicit table context
     std::string username; ///< unused, but reserved.
+    std::vector<query::DbTablePair> resolverTables; ///< Implicit column resolution context. Will obsolete anonymousTable.
 
     StringPairList scanTables; // Tables scanned (for shared scans)
 

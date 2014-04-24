@@ -160,13 +160,18 @@ public:
     getTable(MetadataCache& metadata, RestrictorEntries& entries)
         : _metadata(metadata),
           _entries(entries) {}
+
+
     void operator()(TableRef::Ptr t) {
         // FIXME: Modify so we can use TableRef::apply()
         if(!t) {
             throw qana::AnalysisBug("NULL TableRefN::Ptr");
         }
-        std::string const& db = t->getDb();
-        std::string const& table = t->getTable();
+        (*this)(*t);
+    }
+    virtual void operator()(TableRef& t) {
+        std::string const& db = t.getDb();
+        std::string const& table = t.getTable();
 
         if(!_metadata.checkIfContainsDb(db)
            || !_metadata.checkIfContainsTable(db, table)) {
@@ -177,7 +182,7 @@ public:
             return; // Do nothing for non-chunked tables
         }
         // Now save an entry for WHERE clause processing.
-        std::string alias = t->getAlias();
+        std::string alias = t.getAlias();
         if(alias.empty()) {
             // For now, only accept aliased tablerefs (should have
             // been done earlier)
@@ -188,7 +193,7 @@ public:
                            StringPair(pCols[0], pCols[1]),
                            pCols[2]);
         _entries.push_back(se);
-        JoinRefList& jList = t->getJoins();
+        JoinRefList& jList = t.getJoins();
         typedef JoinRefList::iterator Iter;
         for(Iter i=jList.begin(), e=jList.end(); i != e; ++i) {
             (*this)((**i).getRight());

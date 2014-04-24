@@ -384,6 +384,10 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
         cfg, "runtime.metaCacheSession",
         "No runtime.metaCacheSession. using default.",
         "");
+    std::string defaultDb = getConfigElement(
+        cfg, "table.defaultdb",
+        "Empty table.defaultdb. Using LSST",
+        "LSST");
     int metaCacheSession = coerceInt(metaStr, -1);
     // Setup session
     _qSession.reset(new QuerySession(metaCacheSession));

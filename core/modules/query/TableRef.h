@@ -87,12 +87,12 @@ public:
     class Func {
     public:
         virtual ~Func() {}
-        virtual void operator()(TableRef& t) {}
+        virtual void operator()(TableRef& t)=0;
     };
     class FuncC {
      public:
         virtual ~FuncC() {}
-        virtual void operator()(TableRef const& t) {}
+        virtual void operator()(TableRef const& t)=0;
     };
     void apply(Func& f);
     void apply(FuncC& f) const;

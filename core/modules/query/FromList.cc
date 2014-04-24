@@ -28,10 +28,12 @@
   */
 #include "query/FromList.h"
 #include <iterator>
+#include <algorithm>
 
 namespace qMaster=lsst::qserv::master;
 using lsst::qserv::master::TableRefList;
 using lsst::qserv::master::TableRefListPtr;
+using lsst::qserv::query::DbTablePair;
 
 namespace lsst {
 namespace qserv {
@@ -68,6 +70,23 @@ FromList::isJoin() const {
         }
     }
     return false;
+}
+
+std::vector<DbTablePair>
+FromList::computeResolverTables() const {
+    struct Memo : public TableRef::FuncC {
+        virtual void operator()(TableRef const& t) {
+            vec.push_back(DbTablePair(t.getDb(), t.getTable()));
+        }
+        std::vector<DbTablePair> vec;
+    };
+    Memo m;
+    typedef TableRefList::const_iterator Iter;
+    for(Iter i=_tableRefs->begin(), e= _tableRefs->end();
+        i != e; ++i) {
+        (**i).apply(m);
+    }
+    return m.vec;
 }
 
 std::string

@@ -46,6 +46,7 @@
 #include "qana/QueryMapping.h"
 #include "qana/QueryPlugin.h"
 #include "parser/ParseException.h"
+#include "parser/parseExceptions.h"
 #include "meta/ifaceMeta.h" // Retrieve metadata object
 #include "log/Logger.h"
 
@@ -66,6 +67,10 @@ void printConstraints(ConstraintVector const& cv) {
 ////////////////////////////////////////////////////////////////////////
 QuerySession::QuerySession(int metaCacheSession)
     : _metaCacheSession(metaCacheSession) {
+}
+
+void QuerySession::setDefaultDb(std::string const& defaultDb) {
+    _defaultDb = defaultDb;
 }
 
 void QuerySession::setQuery(std::string const& inputQuery) {
@@ -90,6 +95,8 @@ void QuerySession::setQuery(std::string const& inputQuery) {
         _error = std::string("ParseException:") + e.what();
     } catch(antlr::NoViableAltException& e) {
         _error = std::string("ANTLR exception:") + e.getMessage();
+    } catch(UnknownAntlrError& e) {
+        _error = e.what();
     }
 }
 
@@ -181,10 +188,17 @@ QuerySession::Iter QuerySession::cQueryBegin() {
 QuerySession::Iter QuerySession::cQueryEnd() {
     return Iter(*this, _chunks.end());
 }
+QuerySession::QuerySession(Test& t)
+    : _metaCacheSession(t.metaSession) {
+    _initContext();
+    if(!t.defaultDb.empty()) {
+        _defaultDb = t.defaultDb;
+    }
+}
 
 void QuerySession::_initContext() {
     _context.reset(new QueryContext());
-    _context->defaultDb = "LSST";
+    _context->defaultDb = _defaultDb;
     _context->username = "default";
     _context->needsMerge = false;
     _context->chunkCount = 0;
@@ -341,7 +355,7 @@ ChunkQuerySpec& QuerySession::Iter::dereference() const {
 
 void QuerySession::Iter::_buildCache() const {
     assert(_qs != NULL);
-    _cache.db = _qs->_context->defaultDb;
+    _cache.db = _qs->_context->dominantDb;
     // LOGGER_INF << "scantables "
     //            << (_qs->_context->scanTables.empty() ? "is " : "is not ")
     //            << " empty" << std::endl;

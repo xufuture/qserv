@@ -29,6 +29,9 @@
 #include "query/QueryContext.h"
 #include "query/ColumnRef.h"
 
+using lsst::qserv::query::DbTablePair;
+using lsst::qserv::query::DbTableVector;
+
 namespace lsst {
 namespace qserv {
 namespace master {
@@ -50,11 +53,30 @@ QueryContext::resolve(boost::shared_ptr<ColumnRef> cr) {
         }
     }
     // Set default db and table.
-    query::DbTablePair p(defaultDb, anonymousTable);
-
-    // Extract db and table from ref if available
-    if(!cr->db.empty()) { p.db = cr->db; }
-    if(!cr->table.empty()) { p.table = cr->table; }
+    DbTablePair p;
+    if(cr->table.empty()) { // No db or table: choose first resolver pair
+        p = resolverTables[0];
+        // TODO: We can be fancy and check the column name against the
+        // schema for the entries on the resolverTables, and choose
+        // the matching entry.
+    } else if(cr->db.empty()) { // Table, but not alias.
+        // Match against resolver stack
+        for(DbTableVector::const_iterator i=resolverTables.begin(),
+                e=resolverTables.end();
+            i != e; ++i) {
+            if(i->table == cr->table) {
+                p = *i;
+                break;
+            }
+        }
+        return DbTablePair(); // No resolution.
+    } else { // both table and db exist, so return them
+        return DbTablePair(cr->db, cr->table);
+    }
+    if(p.db.empty()) {
+        // Fill partially-resolved empty db with user db context
+        p.db = defaultDb;
+    }
     return p;
 }
 

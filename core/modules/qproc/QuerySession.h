@@ -56,6 +56,7 @@ public:
     friend class AsyncQueryManager; // factory for QuerySession.
 
     std::string const& getOriginal() const { return _original; }
+    void setDefaultDb(std::string const& db);
     void setQuery(std::string const& q);
     bool hasAggregate() const;
 
@@ -85,9 +86,8 @@ public:
     Iter cQueryEnd();
 
     // For test harnesses.
-    struct Test { int cfgNum; int metaSession; };
-    explicit QuerySession(Test& t)
-        : _metaCacheSession(t.metaSession) { _initContext(); }
+    struct Test { int cfgNum; int metaSession; std::string defaultDb; };
+    explicit QuerySession(Test& t);
     boost::shared_ptr<QueryContext> dbgGetContext() { return _context; }
 
 private:
@@ -108,6 +108,7 @@ private:
 
     // Fields
     int _metaCacheSession;
+    std::string _defaultDb;
     std::string _original;
     boost::shared_ptr<QueryContext> _context;
     boost::shared_ptr<SelectStmt> _stmt;

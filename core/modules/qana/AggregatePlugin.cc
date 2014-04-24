@@ -73,7 +73,6 @@ private:
         }
         bool& hasAgg;
     };
-
     void _makeRecord(ValueExpr const& e) {
         bool hasAgg = false;
         checkAgg ca(hasAgg);
@@ -83,10 +82,16 @@ private:
 
         if(!ca.hasAgg) {
             std::string interName;
-            if(origAlias.empty() && !e.isStar()) {
-                interName = aMgr.getAggName("PASS");}
-            else { // Leave "*" alone
-                interName = origAlias;
+            if(origAlias.empty()) {
+                if(e.isStar()) { // Leave "*" alone
+                    interName = origAlias;
+                } else if(e.isColumnRef()) {
+                    // Leave column refs alone.
+                } else {
+                    interName = aMgr.getAggName("PASS");
+                }
+            } else {
+                interName = origAlias; // Leave existing alias alone.
             }
             ValueExprPtr par(e.clone());
             par->setAlias(interName);

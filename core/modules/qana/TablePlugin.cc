@@ -47,6 +47,7 @@
 #include "query/ValueFactor.h"
 #include "log/Logger.h"
 
+using lsst::qserv::query::DbTableVector;
 namespace lsst {
 namespace qserv {
 namespace master {
@@ -303,6 +304,8 @@ TablePlugin::applyLogical(SelectStmt& stmt, QueryContext& context) {
         std::for_each(veI, veEnd, fixExprAlias(context.tableAliasReverses));
     }
     // Fill-in default db context.
+    DbTableVector v = fList.computeResolverTables();
+    context.resolverTables.swap(v);
 
     query::DbTablePair p;
     addDbContext adc(context, p.db, p.table);

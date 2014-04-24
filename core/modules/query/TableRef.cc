@@ -94,6 +94,7 @@ void TableRef::apply(TableRef::Func& f) {
 }
 
 void TableRef::apply(TableRef::FuncC& f) const {
+    f(*this);
     typedef JoinRefList::const_iterator Iter;
     for(Iter i=_joinRefList.begin(), e=_joinRefList.end(); i != e; ++i) {
         JoinRef const& j = **i;

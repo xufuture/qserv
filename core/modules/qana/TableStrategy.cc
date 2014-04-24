@@ -270,13 +270,13 @@ public:
     }
     Tuples& _tuples;
 };
-class computeTable : public TableRef::Func {
+class computeTable {
 public:
     computeTable(Tuples& tuples, int permutation)
         : _tuples(tuples), _permutation(permutation) {
         // Should already know how many permutations. 0 - (n-1)
     }
-    virtual TableRef::Ptr operator()(TableRef::Ptr t) {
+    TableRef::Ptr operator()(TableRef::Ptr t) {
         return visit(*t);
         // See if tuple matches table.
         // if t in tuples,
@@ -286,6 +286,7 @@ public:
         // if match, replace. otherwise, it's compound. For now, just
         // visit both sides of the join.
     }
+
     inline TableRef::Ptr visit(TableRef const& t) {
         TableRef::Ptr newT = lookup(t, _permutation);
         if(!newT) {
