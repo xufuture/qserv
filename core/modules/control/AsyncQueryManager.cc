@@ -381,12 +381,6 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
         "Error, resultdb.db not found. Using qservResult.",
         "qservResult");
 
-    std::string defaultDb = getConfigElement(
-        cfg, "table.defaultdb",
-        "Empty table.defaultdb. Using LSST",
-        "LSST");
-    _qSession->setDefaultDb(defaultDb);
-
     std::string cssTech = getConfigElement(
         cfg, "css.technology",
         "Error, css.technology not found.",
@@ -396,6 +390,12 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
         "Error, css.connection not found.",
         "");
     _initFacade(cssTech, cssConn);
+
+    std::string defaultDb = getConfigElement(
+        cfg, "table.defaultdb",
+        "Empty table.defaultdb. Using LSST",
+        "LSST");
+    _qSession->setDefaultDb(defaultDb);
 }
 
 void AsyncQueryManager::_initFacade(std::string const& cssTech, 

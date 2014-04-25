@@ -65,7 +65,7 @@ public:
     std::string dominantDb; ///< "dominant" database for this query
     std::string anonymousTable; ///< Implicit table context
     std::string username; ///< unused, but reserved.
-    std::vector<query::DbTablePair> resolverTables; ///< Implicit column resolution context. Will obsolete anonymousTable.
+    std::vector<lsst::qserv::query::DbTablePair> resolverTables; ///< Implicit column resolution context. Will obsolete anonymousTable.
 
     StringPairList scanTables; // Tables scanned (for shared scans)
 
@@ -89,7 +89,7 @@ public:
         return queryMapping.get() && queryMapping->hasChunks(); }
     bool hasSubChunks() const {
         return queryMapping.get() && queryMapping->hasSubChunks(); }
-    DbTablePair resolve(boost::shared_ptr<ColumnRef> cr);
+    lsst::qserv::query::DbTablePair resolve(boost::shared_ptr<ColumnRef> cr);
 };
 
 }}} // namespace lsst::qserv::master

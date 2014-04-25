@@ -168,8 +168,8 @@ public:
         (*this)(*t);
     }
     virtual void operator()(TableRef& t) {
-        std::string const& db = t->getDb();
-        std::string const& table = t->getTable();
+        std::string const& db = t.getDb();
+        std::string const& table = t.getTable();
 
         if(!_cssFacade.containsDb(db)
            || !_cssFacade.containsTable(db, table)) {
