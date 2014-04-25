@@ -391,6 +391,7 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
     int metaCacheSession = coerceInt(metaStr, -1);
     // Setup session
     _qSession.reset(new QuerySession(metaCacheSession));
+    _qSession->setDefaultDb(defaultDb);
 }
 
 void AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,

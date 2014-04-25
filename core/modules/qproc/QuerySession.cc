@@ -189,11 +189,8 @@ QuerySession::Iter QuerySession::cQueryEnd() {
     return Iter(*this, _chunks.end());
 }
 QuerySession::QuerySession(Test& t)
-    : _metaCacheSession(t.metaSession) {
+    : _metaCacheSession(t.metaSession), _defaultDb(t.defaultDb) {
     _initContext();
-    if(!t.defaultDb.empty()) {
-        _defaultDb = t.defaultDb;
-    }
 }
 
 void QuerySession::_initContext() {

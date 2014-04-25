@@ -81,17 +81,15 @@ private:
         std::for_each(factorOps.begin(), factorOps.end(), ca);
 
         if(!ca.hasAgg) {
-            std::string interName;
-            if(origAlias.empty()) {
-                if(e.isStar()) { // Leave "*" alone
-                    interName = origAlias;
-                } else if(e.isColumnRef()) {
-                    // Leave column refs alone.
-                } else {
+            // Compute aliases as necessary to protect select list
+            // elements so that result tables can be dumped and the
+            // columns can be re-referenced in merge queries.
+            std::string interName = origAlias;
+            // If there is no user alias, the expression is unprotected
+            // * cannot be protected--can't alias a set of columns
+            // simple column names are already legal column names
+            if(origAlias.empty() && !e.isStar() && !e.isColumnRef()) {
                     interName = aMgr.getAggName("PASS");
-                }
-            } else {
-                interName = origAlias; // Leave existing alias alone.
             }
             ValueExprPtr par(e.clone());
             par->setAlias(interName);
