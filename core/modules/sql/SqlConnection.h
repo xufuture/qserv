@@ -28,8 +28,9 @@
 // not all.
 // It is uncertain of how this usage conflicts with db usage via the
 // python MySQLdb api, but no problems have been detected so far.
-#ifndef LSST_QSERV_SQLCONNECTION_H
-#define LSST_QSERV_SQLCONNECTION_H
+
+#ifndef LSST_QSERV_SQL_SQLCONNECTION_H
+#define LSST_QSERV_SQL_SQLCONNECTION_H
 
 // Standard
 #include <string>
@@ -37,30 +38,38 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "mysql/SqlConfig.h"
+#include "mysql/MySqlConfig.h"
 #include "sql/SqlErrorObject.h"
 
 namespace lsst {
 namespace qserv {
-// forward
-class MySqlConnection;
+
+namespace mysql {
+    // Forward
+    class MySqlConnection;
+}
+    
+namespace sql {
+
+// Forward
 class SqlResults;
 
 class SqlResultIter {
 public:
     typedef std::vector<std::string> List;
     SqlResultIter() {}
-    SqlResultIter(SqlConfig const& sc, std::string const& query);
-    SqlErrorObject& getErrorObject() { return _errObj; }
+    SqlResultIter(mysql::MySqlConfig const& sc, std::string const& query);
+    virtual ~SqlResultIter() {}
+    virtual SqlErrorObject& getErrorObject() { return _errObj; }
 
-    List const& operator*() const { return _current; }
-    SqlResultIter& operator++(); // pre-increment iterator advance.
-    bool done() const; // Would like to relax LSST standard 3-4 for iterator classes
+    virtual List const& operator*() const { return _current; }
+    virtual SqlResultIter& operator++(); // pre-increment iterator advance.
+    virtual bool done() const; // Would like to relax LSST standard 3-4 for iterator classes
 
 private:
-    bool _setup(SqlConfig const& sqlConfig, std::string const& query);
+    bool _setup(mysql::MySqlConfig const& sqlConfig, std::string const& query);
 
-    boost::shared_ptr<MySqlConnection> _connection;
+    boost::shared_ptr<mysql::MySqlConnection> _connection;
     List _current;
     SqlErrorObject _errObj;
     int _columnCount;
@@ -70,42 +79,40 @@ private:
 class SqlConnection {
 public:
     SqlConnection();
-    SqlConnection(SqlConfig const& sc, bool useThreadMgmt=false);
-    ~SqlConnection();
-    void reset(SqlConfig const& sc, bool useThreadMgmt=false);
-    bool connectToDb(SqlErrorObject&);
-    bool selectDb(std::string const& dbName, SqlErrorObject&);
-    bool runQuery(char const* query, int qSize,
-                  SqlResults& results, SqlErrorObject&);
-    bool runQuery(char const* query, int qSize, SqlErrorObject&);
-    bool runQuery(std::string const query, SqlResults&, SqlErrorObject&);
+    SqlConnection(mysql::MySqlConfig const& sc, bool useThreadMgmt=false);
+    virtual ~SqlConnection();
+    virtual void reset(mysql::MySqlConfig const& sc, bool useThreadMgmt=false);
+    virtual bool connectToDb(SqlErrorObject&);
+    virtual bool selectDb(std::string const& dbName, SqlErrorObject&);
+    virtual bool runQuery(char const* query, int qSize,
+                          SqlResults& results, SqlErrorObject&);
+    virtual bool runQuery(char const* query, int qSize, SqlErrorObject&);
+    virtual bool runQuery(std::string const query, SqlResults&, 
+                          SqlErrorObject&);
     /// with runQueryIter SqlConnection is busy until SqlResultIter is closed
-    boost::shared_ptr<SqlResultIter> getQueryIter(std::string const& query);
-    bool runQuery(std::string const query, SqlErrorObject&);
-    bool dbExists(std::string const& dbName, SqlErrorObject&);
-    bool createDb(std::string const& dbName, SqlErrorObject&,
-                  bool failIfExists=true);
-    bool createDbAndSelect(std::string const& dbName,
+    virtual boost::shared_ptr<SqlResultIter> getQueryIter(std::string const& query);
+    virtual bool runQuery(std::string const query, SqlErrorObject&);
+    virtual bool dbExists(std::string const& dbName, SqlErrorObject&);
+    virtual bool createDb(std::string const& dbName, SqlErrorObject&,
+                          bool failIfExists=true);
+    virtual bool createDbAndSelect(std::string const& dbName,
+                                   SqlErrorObject&,
+                                   bool failIfExists=true);
+    virtual bool dropDb(std::string const& dbName, SqlErrorObject&,
+                        bool failIfDoesNotExist=true);
+    virtual bool tableExists(std::string const& tableName,
+                             SqlErrorObject&,
+                             std::string const& dbName="");
+    virtual bool dropTable(std::string const& tableName,
                            SqlErrorObject&,
-                           bool failIfExists=true);
-    bool dropDb(std::string const& dbName, SqlErrorObject&,
-                bool failIfDoesNotExist=true);
-    bool tableExists(std::string const& tableName,
-                     SqlErrorObject&,
-                     std::string const& dbName="");
-    bool dropTable(std::string const& tableName,
-                   SqlErrorObject&,
-                   bool failIfDoesNotExist=true,
-                   std::string const& dbName="");
-    bool listTables(std::vector<std::string>&,
-                    SqlErrorObject&,
-                    std::string const& prefixed="",
-                    std::string const& dbName="");
+                           bool failIfDoesNotExist=true,
+                           std::string const& dbName="");
+    virtual bool listTables(std::vector<std::string>&,
+                            SqlErrorObject&,
+                            std::string const& prefixed="",
+                            std::string const& dbName="");
 
-    std::string getActiveDbName() const;
-
-    // Static helpers
-    static void populateErrorObject(MySqlConnection& m, SqlErrorObject& o);
+    virtual std::string getActiveDbName() const;
 
 private:
     friend class SqlResultIter;
@@ -113,15 +120,14 @@ private:
     bool _connect(SqlErrorObject&);
     bool _setErrorObject(SqlErrorObject&,
                          std::string const& details=std::string(""));
-
-    boost::shared_ptr<MySqlConnection> _connection;
+    boost::shared_ptr<mysql::MySqlConnection> _connection;
 }; // class SqlConnection
 
+}}} // namespace lsst::qserv::sql
 
-}} // namespace lsst::qserv
 // Local Variables:
 // mode:c++
 // comment-column:0
 // End:
 
-#endif // LSST_QSERV_SQLCONNECTION_H
+#endif // LSST_QSERV_SQL_SQLCONNECTION_H

@@ -25,13 +25,8 @@
 // delegates).
 
 #include "mysql/MySqlConnection.h"
-#include "SqlConfig.h"
+#include "mysql/MySqlConfig.h"
 
-using namespace lsst::qserv;
-
-// Statics
-bool MySqlConnection::_mysqlReady = false;
-boost::mutex MySqlConnection::_mysqlShared;
 
 namespace { // File-scope helpers
 inline void killMySql(MYSQL* mysql, bool useThreadMgmt) {
@@ -42,15 +37,26 @@ inline void killMySql(MYSQL* mysql, bool useThreadMgmt) {
 }
 } // anonymous namespace
 
+
+namespace lsst {
+namespace qserv {
+namespace mysql {
+
+// Statics
+bool MySqlConnection::_mysqlReady = false;
+boost::mutex MySqlConnection::_mysqlShared;
+
+
 MySqlConnection::MySqlConnection()
     : _mysql(NULL), _mysql_res(NULL) {
     _initMySql();
 }
 
-MySqlConnection::MySqlConnection(SqlConfig const& sqlConfig,
+MySqlConnection::MySqlConnection(MySqlConfig const& sqlConfig,
                                  bool useThreadMgmt)
-    : _sqlConfig(new SqlConfig(sqlConfig)), _useThreadMgmt(useThreadMgmt),
-      _mysql(NULL), _mysql_res(NULL) {
+    : _mysql(NULL), _mysql_res(NULL), 
+      _sqlConfig(new MySqlConfig(sqlConfig)), 
+      _useThreadMgmt(useThreadMgmt) {
     _initMySql();
 }
 
@@ -126,3 +132,5 @@ MySqlConnection::_initMySql() {
     }
     return true;
 }
+
+}}} // namespace lsst::qserv::mysql

@@ -27,12 +27,16 @@ Access to the classes from the qserv_master library
 "
 %enddef
 
+%ignore lsst::qserv::query::operator<<;
+%ignore lsst::qserv::qproc::operator<<;
+
  //%feature("autodoc", "1");
  //%module("threads"=1, package="lsst.qserv.master", docstring=qserv_master_DOCSTRING) masterLib
 %module("threads"=1, package="lsst.qserv.master") masterLib
 %{
 #define SWIG_FILE_WITH_INIT
 #include "xrdc/xrdfile.h"
+#include "css/StripingParams.h"
 #include "control/dispatcher.h"
 #include "control/queryMsg.h"
 #include "merger/mergeTypes.h"
@@ -41,7 +45,6 @@ Access to the classes from the qserv_master library
 #include "qproc/ChunkSpec.h"
 #include "merger/TableMerger.h"
 #include "util/common.h"
-#include "meta/ifaceMeta.h"
 
 #include "log/loggerInterface.h"
 %}
@@ -119,9 +122,9 @@ namespace std {
 %include "control/dispatcher.h"
 %include "control/transaction.h"
 %include "control/queryMsg.h"
+%include "css/StripingParams.h"
 %include "merger/mergeTypes.h"
 %include "merger/TableMerger.h"
-%include "meta/ifaceMeta.h"
 %include "log/loggerInterface.h"
 %include "qdisp/ChunkMeta.h"
 %include "qproc/ChunkSpec.h"

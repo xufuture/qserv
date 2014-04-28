@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_SELECTLISTFACTORY_H
-#define LSST_QSERV_MASTER_SELECTLISTFACTORY_H
+#ifndef LSST_QSERV_PARSER_SELECTLISTFACTORY_H
+#define LSST_QSERV_PARSER_SELECTLISTFACTORY_H
 /**
   * @file
   *
@@ -34,23 +34,31 @@
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>
 
+class SqlSQL2Parser;// forward
 namespace lsst {
 namespace qserv {
-namespace master {
+
+namespace query {
+    // Forward
+    class SelectList;
+    class ValueExpr;
+}
+    
+namespace parser {
+
 // Forward
 class ParseAliasMap;
-class ValueExpr;
-typedef boost::shared_ptr<ValueExpr> ValueExprPtr;
+class ValueExprFactory;
+
+typedef boost::shared_ptr<query::ValueExpr> ValueExprPtr;
 typedef std::list<ValueExprPtr> ValueExprList;
 
-class SelectList;
-class ValueExprFactory;
 
 /// SelectListFactory maintains parse state so that a SelectList can be built
 /// from a ANTLR parse tree nodes. It populates some state for SelectFactory.
 class SelectListFactory {
 public:
-    boost::shared_ptr<SelectList> getProduct();
+    boost::shared_ptr<query::SelectList> getProduct();
 private:
     friend class SelectFactory;
 
@@ -65,12 +73,12 @@ private:
     void attachTo(SqlSQL2Parser& p);
 
     // Really private
-    void _import(RefAST selectRoot);
-
-    void _addSelectColumn(RefAST expr);
-    void _addSelectStar(RefAST child=RefAST());
-    ValueExprPtr _newColumnExpr(RefAST expr);
-    ValueExprPtr _newSetFctSpec(RefAST expr);
+    void _import(antlr::RefAST selectRoot);
+    
+    void _addSelectColumn(antlr::RefAST expr);
+    void _addSelectStar(antlr::RefAST child=antlr::RefAST());
+    ValueExprPtr _newColumnExpr(antlr::RefAST expr);
+    ValueExprPtr _newSetFctSpec(antlr::RefAST expr);
 
     // Delegate handlers
     boost::shared_ptr<SelectListH> _selectListH;
@@ -83,7 +91,7 @@ private:
 
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::parser
 
-#endif // LSST_QSERV_MASTER_SELECTLISTFACTORY_H
+#endif // LSST_QSERV_PARSER_SELECTLISTFACTORY_H
 

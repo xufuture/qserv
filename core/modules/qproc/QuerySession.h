@@ -20,30 +20,46 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_QUERYSESSION_H
-#define LSST_QSERV_MASTER_QUERYSESSION_H
+#ifndef LSST_QSERV_QPROC_QUERYSESSION_H
+#define LSST_QSERV_QPROC_QUERYSESSION_H
 /**
   * @file
   *
   * @author Daniel L. Wang, SLAC
   */
+
+// Standard library imports
 #include <list>
 #include <string>
+
+// Boost
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "query/Constraint.h"
+// Local imports
+#include "css/Facade.h"
+#include "merger/mergeTypes.h"
+#include "qana/QueryPlugin.h"
 #include "qproc/ChunkQuerySpec.h"
 #include "qproc/ChunkSpec.h"
+#include "query/Constraint.h"
 
-#include "qana/QueryPlugin.h"
-#include "merger/mergeTypes.h"
+
+// Forward declarations
+namespace lsst {
+namespace qserv {
+namespace css {
+    class StripingParams;
+}
+namespace query {
+    class SelectStmt;
+    class QueryContext;
+}}} // end of forward declarations
+
 
 namespace lsst {
 namespace qserv {
-namespace master {
-class SelectStmt; // forward
-class QueryPlugin; // forward
+namespace qproc {
 
 ///  QuerySession contains state and behavior for operating on user queries. It
 ///  contains much of the query analysis-side of AsyncQueryManager's
@@ -55,14 +71,17 @@ public:
     friend class Iter;
     friend class AsyncQueryManager; // factory for QuerySession.
 
+    explicit QuerySession(boost::shared_ptr<css::Facade>);
+
     std::string const& getOriginal() const { return _original; }
+    void setDefaultDb(std::string const& db);
     void setQuery(std::string const& q);
     bool hasAggregate() const;
 
-    boost::shared_ptr<ConstraintVector> getConstraints() const;
+    boost::shared_ptr<query::ConstraintVector> getConstraints() const;
     void addChunk(ChunkSpec const& cs);
 
-    SelectStmt const& getStmt() const { return *_stmt; }
+    query::SelectStmt const& getStmt() const { return *_stmt; }
 
     // Resulttable concept will be obsolete after we implement query result
     // marshalling/transfer (at which point, table dump and restore will also be
@@ -74,9 +93,11 @@ public:
     /// dispatch. This is distinct from the default database, which is what is
     /// used for unqualified table and column references
     std::string const& getDominantDb() const;
+    bool containsDb(std::string const& dbName) const;
+    css::StripingParams getDbStriping();
     std::string const& getError() const { return _error; }
 
-    MergeFixup makeMergeFixup() const;
+    merger::MergeFixup makeMergeFixup() const;
 
     /// Finalize a query after chunk coverage has been updated
     void finalize();
@@ -85,15 +106,16 @@ public:
     Iter cQueryEnd();
 
     // For test harnesses.
-    struct Test { int cfgNum; int metaSession; };
-    explicit QuerySession(Test& t)
-        : _metaCacheSession(t.metaSession) { _initContext(); }
-    boost::shared_ptr<QueryContext> dbgGetContext() { return _context; }
+    struct Test { 
+        int cfgNum; 
+        boost::shared_ptr<css::Facade> cssFacade;
+        std::string defaultDb;
+    };
+    explicit QuerySession(Test& t);
+    boost::shared_ptr<query::QueryContext> dbgGetContext() { return _context; }
 
 private:
-    typedef std::list<QueryPlugin::Ptr> PluginList;
-
-    explicit QuerySession(int metaCacheSession);
+    typedef std::list<qana::QueryPlugin::Ptr> PluginList;
 
     // Pipeline helpers
     void _initContext();
@@ -101,19 +123,20 @@ private:
     void _applyLogicPlugins();
     void _generateConcrete();
     void _applyConcretePlugins();
-    void _showFinal(); // Debug
+    void _showFinal(std::ostream& os); // Debug
 
     // Iterator help
-    std::vector<std::string> _buildChunkQueries(ChunkSpec const& s);
+    std::vector<std::string> _buildChunkQueries(ChunkSpec const& s) const;
 
     // Fields
-    int _metaCacheSession;
+    boost::shared_ptr<css::Facade> _cssFacade;
+    std::string _defaultDb;
     std::string _original;
-    boost::shared_ptr<QueryContext> _context;
-    boost::shared_ptr<SelectStmt> _stmt;
+    boost::shared_ptr<query::QueryContext> _context;
+    boost::shared_ptr<query::SelectStmt> _stmt;
     /// Group of parallel statements (not a sequence)
-    std::list<boost::shared_ptr<SelectStmt> > _stmtParallel;
-    boost::shared_ptr<SelectStmt> _stmtMerge;
+    std::list<boost::shared_ptr<query::SelectStmt> > _stmtParallel;
+    boost::shared_ptr<query::SelectStmt> _stmtMerge;
     bool _hasMerge;
     std::string _tmpTable;
     std::string _resultTable;
@@ -160,7 +183,6 @@ private:
     mutable bool _dirty;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::qproc
 
-
-#endif // LSST_QSERV_MASTER_QUERYSESSION_H
+#endif // LSST_QSERV_QPROC_QUERYSESSION_H

@@ -37,7 +37,8 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
+
 ////////////////////////////////////////////////////////////////////////
 // AggOp specializations
 // TODO: Refactor towards functions rather than functors
@@ -163,7 +164,7 @@ public:
 ////////////////////////////////////////////////////////////////////////
 // class AggOp::Mgr
 ////////////////////////////////////////////////////////////////////////
-AggOp::Mgr::Mgr() {
+AggOp::Mgr::Mgr() : _hasAggregate(false) {
     // Load the map
     _map["COUNT"].reset(new CountAggOp(*this));
     _map["AVG"].reset(new AvgAggOp(*this));
@@ -188,6 +189,7 @@ AggOp::Mgr::applyOp(std::string const& name, ValueFactor const& orig) {
     if(!p) {
         throw std::invalid_argument("Missing AggOp in applyOp()");
     }
+    _hasAggregate = true; // Mark existence of real aggregation record
     return (*p)(orig);
 }
 
@@ -197,4 +199,5 @@ std::string AggOp::Mgr::getAggName(std::string const& name) {
     ss << "QS" << s << "_" << name;
     return ss.str();
 }
-}}} // lsst::qserv::master
+
+}}} // namespace lsst::qserv::query

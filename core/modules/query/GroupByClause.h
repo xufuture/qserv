@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2012-2013 LSST Corporation.
+ * Copyright 2012-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_GROUPBYCLAUSE_H
-#define LSST_QSERV_MASTER_GROUPBYCLAUSE_H
+#ifndef LSST_QSERV_QUERY_GROUPBYCLAUSE_H
+#define LSST_QSERV_QUERY_GROUPBYCLAUSE_H
 /**
   * @file GroupByClause.h
   *
@@ -33,7 +33,15 @@
 #include <deque>
 #include <string>
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+
+namespace parser {
+    // Forward
+    class ModFactory;
+}
+    
+namespace query {
 
 // Forward
 class QueryTemplate;
@@ -49,11 +57,14 @@ public:
     ~GroupByTerm() {}
 
     boost::shared_ptr<const ValueExpr> getExpr();
-    std::string getCollate() const;
+    std::string getCollate() const { return _collate; }
+    GroupByTerm cloneValue() const;
+
+    GroupByTerm& operator=(GroupByTerm const& gb);
 
 private:
     friend std::ostream& operator<<(std::ostream& os, GroupByTerm const& gb);
-    friend class ModFactory;
+    friend class parser::ModFactory;
 
     boost::shared_ptr<ValueExpr> _expr;
     std::string _collate;
@@ -61,6 +72,7 @@ private:
 /// GroupByClause is a parsed GROUP BY ... element.
 class GroupByClause {
 public:
+    typedef boost::shared_ptr<GroupByClause> Ptr;
     typedef std::deque<GroupByTerm> List;
 
     GroupByClause() : _terms(new List()) {}
@@ -68,16 +80,18 @@ public:
 
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
-    boost::shared_ptr<GroupByClause> copyDeep();
+    boost::shared_ptr<GroupByClause> clone() const;
     boost::shared_ptr<GroupByClause> copySyntax();
 
 private:
     friend std::ostream& operator<<(std::ostream& os, GroupByClause const& gc);
-    friend class ModFactory;
+    friend class parser::ModFactory;
 
     void _addTerm(GroupByTerm const& t) { _terms->push_back(t); }
     boost::shared_ptr<List> _terms;
 };
-}}} // namespace lsst::qserv::master
-#endif // LSST_QSERV_MASTER_GROUPBYCLAUSE_H
+
+}}} // namespace lsst::qserv::query
+
+#endif // LSST_QSERV_QUERY_GROUPBYCLAUSE_H
 

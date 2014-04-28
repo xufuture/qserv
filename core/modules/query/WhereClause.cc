@@ -35,7 +35,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
 
 BoolTerm::Ptr findAndTerm(BoolTerm::Ptr tree) {
     while(1) {
@@ -132,7 +132,7 @@ void WhereClause::renderTo(QueryTemplate& qt) const {
     }
 }
 
-boost::shared_ptr<WhereClause> WhereClause::copyDeep() const {
+boost::shared_ptr<WhereClause> WhereClause::clone() const {
     // FIXME
     boost::shared_ptr<WhereClause> newC(new WhereClause(*this));
     // Shallow copy of expr list is okay.
@@ -365,4 +365,4 @@ void WhereClause::ValueExprIter::_updateValueExprIter() {
     _vEnd = p->valueExprCacheEnd();
 }
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::query

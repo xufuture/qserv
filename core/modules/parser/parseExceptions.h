@@ -24,15 +24,15 @@
 //
 //
 
-#ifndef LSST_QSERV_MASTER_PARSEEXCEPTIONS_H
-#define LSST_QSERV_MASTER_PARSEEXCEPTIONS_H
+#ifndef LSST_QSERV_PARSER_PARSEEXCEPTIONS_H
+#define LSST_QSERV_PARSER_PARSEEXCEPTIONS_H
 
 // C++
 #include <string>
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 class UnsupportedSyntaxError : public std::exception {
 public:
@@ -44,8 +44,18 @@ public:
     std::string desc;
 };
 
-}}} // lsst::qserv::master
-#endif // LSST_QSERV_MASTER_PARSEEXCEPTIONS_H
+class UnknownAntlrError : public std::exception {
+public:
+    virtual ~UnknownAntlrError() throw() {}
+    virtual const char* what() const throw() {
+        return "Unknown ANTLR error"; }
+
+};
+
+}}} // namespace lsst::qserv::parser
+
+#endif // LSST_QSERV_PARSER_PARSEEXCEPTIONS_H
+
 // Local Variables:
 // mode:c++
 // comment-column:0

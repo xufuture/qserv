@@ -20,13 +20,15 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_QSERVPATH_H
-#define LSST_QSERV_QSERVPATH_H
+#ifndef LSST_QSERV_OBSOLETE_QSERVPATH_H
+#define LSST_QSERV_OBSOLETE_QSERVPATH_H
+
 #include <string>
 #include <map>
 
 namespace lsst {
 namespace qserv {
+namespace obsolete {
 
 class QservPath {
 public:
@@ -62,8 +64,8 @@ public:
 private:
     class Tokenizer;
     void _setFromPath(std::string const& path);
-    std::string _ingestKeys(std::string const& leafPlusKeys);
-    std::string _ingestKeyStr(std::string const& keyStr);
+    void _ingestKeys(std::string const& leafPlusKeys);
+    void _ingestKeyStr(std::string const& keyStr);
 
     RequestType _requestType;
     std::string _db;
@@ -77,5 +79,6 @@ private:
 
 };
 
-}} // namespace lsst::qserv
-#endif // LSST_QSERV_QSERVPATH_H
+}}} // namespace lsst::qserv::obsolete
+
+#endif // LSST_QSERV_OBSOLETE_QSERVPATH_H

@@ -21,8 +21,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_MASTER_AGGOP_H
-#define LSST_QSERV_MASTER_AGGOP_H
+#ifndef LSST_QSERV_QUERY_AGGOP_H
+#define LSST_QSERV_QUERY_AGGOP_H
 /**
   * @file AggOp.h
   *
@@ -36,7 +36,9 @@
 #include "query/AggRecord.h"
 #include "query/ValueExpr.h"
 
-namespace lsst { namespace qserv { namespace master {
+namespace lsst {
+namespace qserv {
+namespace query {
 
 /// class AggOp is a function object that creates AggRecords from
 /// aggregation parameters. It is used to contain the differences in how
@@ -72,14 +74,13 @@ public:
     AggRecord::Ptr applyOp(std::string const& name, ValueFactor const& orig);
     int getNextSeq() { return ++_seq; }
     std::string getAggName(std::string const& name);
-    bool hasAggregate() const { return _seq > 0; };
+    bool hasAggregate() const { return _hasAggregate; }
 private:
     OpMap _map;
     int _seq;
+    bool _hasAggregate;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::query
 
-
-#endif // LSST_QSERV_MASTER_AGGOP_H
-
+#endif // LSST_QSERV_QUERY_AGGOP_H

@@ -37,10 +37,10 @@
 #include <sys/time.h>
 #include "XrdSys/XrdSysLogger.hh"
 #include "wpublish/MySqlExportMgr.h"
+#include "wpublish/ChunkInventory.h"
 #include "xrdfs/XrdName.h"
 #include "xrdfs/XrdPrinter.h"
 
-using namespace lsst::qserv::worker;
 
 namespace {
 /*
@@ -65,8 +65,10 @@ inline void fillVSInfo(XrdOssVSInfo *sP, char const* sname) {
     }
 
 }
-inline std::ostream& print(std::ostream& os, QservOss::StringSet const& h) {
-    QservOss::StringSet::const_iterator i;
+
+inline std::ostream&
+print(std::ostream& os, lsst::qserv::xrdoss::QservOss::StringSet const& h) {
+    lsst::qserv::xrdoss::QservOss::StringSet::const_iterator i;
     bool first = true;
     for(i = h.begin(); i != h.end(); ++i) {
         os << *i;
@@ -79,7 +81,9 @@ inline std::ostream& print(std::ostream& os, QservOss::StringSet const& h) {
 
 } // anonymous namespace
 
-
+namespace lsst {
+namespace qserv {
+namespace xrdoss {
 
 ////////////////////////////////////////////////////////////////////////
 // QservOss static
@@ -158,8 +162,12 @@ void QservOss::_fillQueryFileStat(struct stat &buf) {
 }
 
 bool QservOss::_checkExist(std::string const& db, int chunk) {
+#if 0
     assert(_pathSet.get());
-    return MySqlExportMgr::checkExist(*_pathSet, db, chunk);
+    return wpublish::MySqlExportMgr::checkExist(*_pathSet, db, chunk);
+#else 
+    return _chunkInventory->has(db, chunk);
+#endif
 }
 /******************************************************************************/
 /*                                 s t a t                                    */
@@ -189,8 +197,8 @@ int QservOss::Stat(const char *path, struct stat *buff, int opts, XrdOucEnv*) {
     std::string db;
     int chunk;
     // Unpack path.
-    QservPath qp(path);
-    if(qp.requestType() != QservPath::CQUERY) {
+    obsolete::QservPath qp(path);
+    if(qp.requestType() != obsolete::QservPath::CQUERY) {
         // FIXME: Do we need to support /result here?
         return -ENOENT;
     }
@@ -245,12 +253,12 @@ int QservOss::StatVS(XrdOssVSInfo *sP, const char *sname,
 
 int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
     _xrdSysLogger = log;
-    boost::shared_ptr<XrdPrinter> printer(new XrdPrinter(log));
+    boost::shared_ptr<xrdfs::XrdPrinter> printer(new xrdfs::XrdPrinter(log));
     if(log) {
-        _log.reset(new WLogger(printer));
+        _log.reset(new wlog::WLogger(printer));
         _log->setPrefix("QservOss");
     } else {
-        _log.reset(new WLogger());
+        _log.reset(new wlog::WLogger());
     }
     if(!cfgFn) {
         _cfgFn.assign("");
@@ -258,17 +266,27 @@ int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
         _cfgFn = cfgFn;
     }
     _log->info("QservOss Init");
+#if 1
     _pathSet.reset(new StringSet);
-    MySqlExportMgr m(_name, *_log);
+    wpublish::MySqlExportMgr m(_name, *_log);
     m.fillDbChunks(*_pathSet);
     // Print out diags.
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "Valid paths: ";
     print(ss, *_pathSet);
+    _log->info(ss.str());
+#endif
+    ss.str("");
+    ss << "Valid paths(ci): ";
+    _chunkInventory.reset(new wpublish::ChunkInventory(_name, *_log));
+    _chunkInventory->dbgPrint(ss);
     _log->info(ss.str());
     // TODO: update self with new config?
     return 0;
 }
+
+}}} // namespace lsst::qserv::xrdoss
+
 
 /******************************************************************************/
 /*                XrdOssGetSS (a.k.a. XrdOssGetStorageSystem)                 */
@@ -283,13 +301,15 @@ int QservOss::Init(XrdSysLogger* log, const char* cfgFn) {
 //
 extern "C"
 {
-XrdOss *XrdOssGetStorageSystem(XrdOss       *native_oss,
-                               XrdSysLogger *Logger,
-                               const char   *config_fn,
-                               const char   *parms)
+XrdOss*
+XrdOssGetStorageSystem(XrdOss       *native_oss,
+                       XrdSysLogger *Logger,
+                       const char   *config_fn,
+                       const char   *parms)
 {
-    QservOss* oss = QservOss::getInstance();
-    XrdName x;
+    lsst::qserv::xrdoss::QservOss* oss =
+        lsst::qserv::xrdoss::QservOss::getInstance();
+    lsst::qserv::xrdfs::XrdName x;
     std::string name = x.getName();
     oss->reset(native_oss, Logger, config_fn, parms, name.c_str());
     static XrdSysError eRoute(Logger, "QservOssFs");

@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_WORKER_QUERYSQL_H
-#define LSST_QSERV_WORKER_QUERYSQL_H
+#ifndef LSST_QSERV_WDB_QUERYSQL_H
+#define LSST_QSERV_WDB_QUERYSQL_H
  /**
   * @file QuerySql.h
   *
@@ -35,38 +35,42 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 
+
+// Forward declarations
 namespace lsst {
 namespace qserv {
-class TaskMsg_Fragment;
+namespace proto {
+    class TaskMsg_Fragment;
+}
+namespace wdb {
+    class Task;
+}}} // End of forward declarations
 
-namespace worker {
 
-class Task;
+namespace lsst {
+namespace qserv {
+namespace wdb {
 
 class QuerySql {
 public:
-    typedef std::deque<std::string> StringList;
+typedef boost::shared_ptr<QuerySql> Ptr;
+    typedef std::deque<std::string> StringDeque;
+    typedef lsst::qserv::proto::TaskMsg_Fragment Fragment;
+
     QuerySql() {}
-    typedef lsst::qserv::TaskMsg_Fragment Fragment;
+    QuerySql(std::string const& db,
+             int chunkId,
+             proto::TaskMsg_Fragment const& f,
+             bool needCreate,
+             std::string const& defaultResultTable);
 
-
-    StringList buildList;
-    StringList executeList; // Consider using SqlFragmenter to break this up into fragments.
-    StringList cleanupList;
-    class Factory;
+    StringDeque buildList;
+    StringDeque executeList; // Consider using SqlFragmenter to break this up into fragments.
+    StringDeque cleanupList;
     class Batch;
     friend std::ostream& operator<<(std::ostream& os, QuerySql const& q);
 };
 
-class QuerySql::Factory {
-public:
-    boost::shared_ptr<QuerySql> newQuerySql(std::string const& db,
-                                            int chunkId,
-                                            Fragment const& f,
-                                            bool needCreate,
-                                            std::string const& defaultResultTable);
-};
+}}} // namespace lsst::qserv::wdb
 
-}}} // lsst::qserv::worker
-#endif // LSST_QSERV_WORKER_QUERYSQL_H
-
+#endif // LSST_QSERV_WDB_QUERYSQL_H

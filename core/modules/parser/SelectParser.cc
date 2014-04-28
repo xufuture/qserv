@@ -52,13 +52,14 @@
 #include "parser/SelectFactory.h"
 #include "query/SelectStmt.h"
 #include "parser/ParseException.h"
+#include "parser/parseExceptions.h"
 #include "parser/parseTreeUtil.h"
 
 #include <antlr/CommonAST.hpp>
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 ////////////////////////////////////////////////////////////////////////
 // AntlrParser -- Antlr parsing complex
@@ -78,9 +79,11 @@ public:
             parser.sql_stmt();
         } catch(antlr::NoViableAltException& e) {
             throw ParseException("ANTLR parse error:" + e.getMessage(), e.node);
+        } catch (...) {
+            // leading underscores in literals as value_expr throw this.
+            throw UnknownAntlrError();
         }
         RefAST a = parser.getAST();
-
     }
 
     std::string statement;
@@ -107,13 +110,14 @@ SelectParser::SelectParser(std::string const& statement)
 
 void
 SelectParser::setup() {
-    _selectStmt.reset(new SelectStmt());
+    _selectStmt.reset(new query::SelectStmt());
     _aParser.reset(new AntlrParser(_statement));
     // model 3: parse tree construction to build intermediate expr.
     SelectFactory sf;
     sf.attachTo(_aParser->parser);
     _aParser->run();
     _selectStmt = sf.getStatement();
-    _selectStmt->diagnose();
+    // _selectStmt->diagnose(); // helpful for debugging.
 }
-}}}
+
+}}} // namespace lsst::qserv::parser

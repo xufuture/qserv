@@ -33,12 +33,28 @@
 #include "mysql/MySqlConnection.h"
 #include "sql/SqlResults.h"
 
-using namespace lsst::qserv;
+namespace lsst {
+namespace qserv {
+namespace sql {
+
+
+namespace { 
+void
+populateErrorObject(mysql::MySqlConnection& m, SqlErrorObject& o) {
+    MYSQL* mysql = m.getMySql();
+    if(mysql == NULL) {
+        o.setErrNo(-999);
+    } else {
+        o.setErrNo( mysql_errno(mysql) );
+        o.addErrMsg( mysql_error(mysql) );
+    }
+}
+} // anonymous namespace
 
 ////////////////////////////////////////////////////////////////////////
 // class SqlResultIter
 ////////////////////////////////////////////////////////////////////////
-SqlResultIter::SqlResultIter(SqlConfig const& sqlConfig,
+SqlResultIter::SqlResultIter(mysql::MySqlConfig const& sqlConfig,
                              std::string const& query) {
     if(!_setup(sqlConfig, query)) { return; }
     // if not error, prime the iterator
@@ -69,15 +85,16 @@ SqlResultIter::done() const {
 }
 
 bool
-SqlResultIter::_setup(SqlConfig const& sqlConfig, std::string const& query) {
+SqlResultIter::_setup(mysql::MySqlConfig const& sqlConfig, 
+                      std::string const& query) {
     _columnCount = 0;
-    _connection.reset(new MySqlConnection(sqlConfig, true));
+    _connection.reset(new mysql::MySqlConnection(sqlConfig, true));
     if(!_connection->connect()) {
-        SqlConnection::populateErrorObject(*_connection, _errObj);
+        populateErrorObject(*_connection, _errObj);
         return false;
     }
     if(!_connection->queryUnbuffered(query)) {
-        SqlConnection::populateErrorObject(*_connection, _errObj);
+        populateErrorObject(*_connection, _errObj);
         return false;
     }
     return true;
@@ -90,13 +107,13 @@ SqlConnection::SqlConnection()
     : _connection() {
 }
 
-SqlConnection::SqlConnection(SqlConfig const& sc, bool useThreadMgmt)
-    : _connection(new MySqlConnection(sc, useThreadMgmt)) {
+SqlConnection::SqlConnection(mysql::MySqlConfig const& sc, bool useThreadMgmt)
+    : _connection(new mysql::MySqlConnection(sc, useThreadMgmt)) {
 }
 
 void
-SqlConnection::reset(SqlConfig const& sc, bool useThreadMgmt) {
-    _connection.reset(new MySqlConnection(sc, useThreadMgmt));
+SqlConnection::reset(mysql::MySqlConfig const& sc, bool useThreadMgmt) {
+    _connection.reset(new mysql::MySqlConnection(sc, useThreadMgmt));
 }
 
 SqlConnection::~SqlConnection() {
@@ -354,17 +371,6 @@ SqlConnection::getActiveDbName() const {
     return _connection->getConfig().dbName;
 }
 
-void
-SqlConnection::populateErrorObject(MySqlConnection& m, SqlErrorObject& o) {
-    MYSQL* mysql = m.getMySql();
-    if(mysql == NULL) {
-        o.setErrNo(-999);
-    } else {
-        o.setErrNo( mysql_errno(mysql) );
-        o.addErrMsg( mysql_error(mysql) );
-    }
-}
-
 ////////////////////////////////////////////////////////////////////////
 // private
 ////////////////////////////////////////////////////////////////////////
@@ -379,3 +385,5 @@ SqlConnection::_setErrorObject(SqlErrorObject& errObj,
     }
     return false;
 }
+
+}}} // namespace lsst::qserv::sql

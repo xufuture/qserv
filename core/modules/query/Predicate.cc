@@ -1,6 +1,6 @@
 /*
  * LSST Data Management System
- * Copyright 2013 LSST Corporation.
+ * Copyright 2013-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -22,7 +22,7 @@
 /**
   * @file Predicate.cc
   *
-  * @brief Predicate, CompPredicate, InPredicate, BetweenPredicate implementations.
+  * @brief Predicate, CompPredicate, InPredicate, BetweenPredicate, LikePredicate, and NullPredicate implementations.
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -32,14 +32,13 @@
 #include "parser/SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
 // FIXME: should not depend on parser/, move logic to factory.
 
-namespace qMaster=lsst::qserv::master;
 
 namespace { // File-scope helpers
 }
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
 
 void CompPredicate::findColumnRefs(ColumnRef::List& list) {
     if(left) { left->findColumnRefs(list); }
@@ -62,24 +61,27 @@ void LikePredicate::findColumnRefs(ColumnRef::List& list) {
     if(charValue) { charValue->findColumnRefs(list); }
 }
 
-std::ostream& qMaster::CompPredicate::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
-}
-std::ostream& qMaster::InPredicate::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
-}
-std::ostream& qMaster::BetweenPredicate::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
-}
-std::ostream& qMaster::LikePredicate::putStream(std::ostream& os) const {
-    // FIXME
-    return os;
+void NullPredicate::findColumnRefs(ColumnRef::List& list) {
+    if(value) { value->findColumnRefs(list); }
 }
 
-void qMaster::CompPredicate::renderTo(QueryTemplate& qt) const {
+std::ostream& CompPredicate::putStream(std::ostream& os) const {
+    return QueryTemplate::renderDbg(os, *this);
+}
+std::ostream& InPredicate::putStream(std::ostream& os) const {
+    return QueryTemplate::renderDbg(os, *this);
+}
+std::ostream& BetweenPredicate::putStream(std::ostream& os) const {
+    return QueryTemplate::renderDbg(os, *this);
+}
+std::ostream& LikePredicate::putStream(std::ostream& os) const {
+    return QueryTemplate::renderDbg(os, *this);
+}
+std::ostream& NullPredicate::putStream(std::ostream& os) const {
+    return QueryTemplate::renderDbg(os, *this);
+}
+
+void CompPredicate::renderTo(QueryTemplate& qt) const {
 
     ValueExpr::render r(qt, false);
     r(left);
@@ -95,7 +97,7 @@ void qMaster::CompPredicate::renderTo(QueryTemplate& qt) const {
     r(right);
 }
 
-void qMaster::InPredicate::renderTo(QueryTemplate& qt) const {
+void InPredicate::renderTo(QueryTemplate& qt) const {
     ValueExpr::render r(qt, false);
     r(value);
     qt.append("IN");
@@ -105,7 +107,7 @@ void qMaster::InPredicate::renderTo(QueryTemplate& qt) const {
     qt.append(")");
 }
 
-void qMaster::BetweenPredicate::renderTo(QueryTemplate& qt) const {
+void BetweenPredicate::renderTo(QueryTemplate& qt) const {
     ValueExpr::render r(qt, false);
     r(value);
     qt.append("BETWEEN");
@@ -113,11 +115,19 @@ void qMaster::BetweenPredicate::renderTo(QueryTemplate& qt) const {
     qt.append("AND");
     r(maxValue);
 }
-void qMaster::LikePredicate::renderTo(QueryTemplate& qt) const {
+void LikePredicate::renderTo(QueryTemplate& qt) const {
     ValueExpr::render r(qt, false);
     r(value);
     qt.append("LIKE");
     r(charValue);
+}
+
+void NullPredicate::renderTo(QueryTemplate& qt) const {
+    ValueExpr::render r(qt, false);
+    r(value);
+    qt.append("IS");
+    if(hasNot) { qt.append("NOT"); }
+    qt.append("NULL");
 }
 
 void CompPredicate::cacheValueExprList() {
@@ -142,6 +152,10 @@ void LikePredicate::cacheValueExprList() {
     _cache->push_back(value);
     _cache->push_back(charValue);
 }
+void NullPredicate::cacheValueExprList() {
+    _cache.reset(new ValueExprList());
+    _cache->push_back(value);
+}
 
 
 // CompPredicate special function
@@ -165,13 +179,53 @@ int CompPredicate::reverseOp(int op) {
         throw std::logic_error("Invalid op type for reversing");
     }
 }
+char const* CompPredicate::lookupOp(int op) {
+    switch(op) {
+    case SqlSQL2TokenTypes::NOT_EQUALS_OP:
+        return "<>";
+    case SqlSQL2TokenTypes::LESS_THAN_OR_EQUALS_OP:
+        return "<=";
+    case  SqlSQL2TokenTypes::GREATER_THAN_OR_EQUALS_OP:
+        return ">=";
+    case SqlSQL2TokenTypes::LESS_THAN_OP:
+        return "<";
+    case  SqlSQL2TokenTypes::GREATER_THAN_OP:
+        return ">";
+    case SqlSQL2TokenTypes::EQUALS_OP:
+        return "==";
+    default:
+        throw std::invalid_argument("Invalid op type");
+    }
+}
 
-BfTerm::Ptr CompPredicate::copySyntax() const {
+int CompPredicate::lookupOp(char const* op) {
+    switch(op[0]) {
+    case '<':
+        if(op[1] == '\0') { return SqlSQL2TokenTypes::LESS_THAN_OP; }
+        else if(op[1] == '>') { return SqlSQL2TokenTypes::NOT_EQUALS_OP; }
+        else if(op[1] == '=') { return SqlSQL2TokenTypes::LESS_THAN_OR_EQUALS_OP; }
+        else { throw std::invalid_argument("Invalid op string <?"); }
+    case '>':
+        if(op[1] == '\0') { return SqlSQL2TokenTypes::GREATER_THAN_OP; }
+        else if(op[1] == '=') { return SqlSQL2TokenTypes::GREATER_THAN_OR_EQUALS_OP; }
+        else { throw std::invalid_argument("Invalid op string >?"); }
+    case '=':
+        return SqlSQL2TokenTypes::EQUALS_OP;
+    default:
+        throw std::invalid_argument("Invalid op string ?");
+    }
+}
+
+BfTerm::Ptr CompPredicate::clone() const {
     CompPredicate* p = new CompPredicate;
     if(left) p->left = left->clone();
     p->op = op;
     if(right) p->right = right->clone();
     return BfTerm::Ptr(p);
+}
+BfTerm::Ptr GenericPredicate::clone() const {
+    //return BfTerm::Ptr(new GenericPredicate());
+    return BfTerm::Ptr();
 }
 
 struct valueExprCopy {
@@ -180,27 +234,34 @@ struct valueExprCopy {
     }
 };
 
-BfTerm::Ptr InPredicate::copySyntax() const {
-    InPredicate* p = new InPredicate;
+BfTerm::Ptr InPredicate::clone() const {
+    InPredicate::Ptr p(new InPredicate);
     if(value) p->value = value->clone();
     std::transform(cands.begin(), cands.end(),
                    std::back_inserter(p->cands),
                    valueExprCopy());
     return BfTerm::Ptr(p);
 }
-BfTerm::Ptr BetweenPredicate::copySyntax() const {
-    BetweenPredicate* p = new BetweenPredicate;
+BfTerm::Ptr BetweenPredicate::clone() const {
+    BetweenPredicate::Ptr p(new BetweenPredicate);
     if(value) p->value = value->clone();
     if(minValue) p->minValue = minValue->clone();
     if(maxValue) p->maxValue = maxValue->clone();
     return BfTerm::Ptr(p);
 }
 
-BfTerm::Ptr LikePredicate::copySyntax() const {
-    LikePredicate* p = new LikePredicate;
+BfTerm::Ptr LikePredicate::clone() const {
+    LikePredicate::Ptr p(new LikePredicate);
     if(value) p->value = value->clone();
     if(charValue) p->charValue = charValue->clone();
     return BfTerm::Ptr(p);
 }
 
-}}} // lsst::qserv::master
+BfTerm::Ptr NullPredicate::clone() const {
+    NullPredicate::Ptr p(new NullPredicate);
+    if(value) p->value = value->clone();
+    p->hasNot = hasNot;
+    return BfTerm::Ptr(p);
+}
+
+}}} // namespace lsst::qserv::query

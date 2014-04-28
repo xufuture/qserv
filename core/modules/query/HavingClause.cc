@@ -36,7 +36,7 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace query {
 
 ////////////////////////////////////////////////////////////////////////
 // HavingClause
@@ -63,8 +63,12 @@ HavingClause::renderTo(QueryTemplate& qt) const {
 }
 
 boost::shared_ptr<HavingClause>
-HavingClause::copyDeep() {
-    return boost::make_shared<HavingClause>(*this); // FIXME
+HavingClause::clone() const {
+    boost::shared_ptr<HavingClause> hc(new HavingClause);
+    if(_tree) {
+        hc->_tree = _tree->clone();
+    }
+    return hc;
 }
 
 boost::shared_ptr<HavingClause>
@@ -72,4 +76,4 @@ HavingClause::copySyntax() {
     return boost::make_shared<HavingClause>(*this);
 }
 
-}}} // lsst::qserv::master
+}}} // namespace lsst::qserv::query

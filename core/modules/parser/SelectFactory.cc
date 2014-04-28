@@ -1,6 +1,6 @@
 /*
  * LSST Data Management System
- * Copyright 2012-2013 LSST Corporation.
+ * Copyright 2012-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -32,28 +32,26 @@
   */
 #include "parser/SelectFactory.h"
 
-// C++
-#include <deque>
-#include <iterator>
+// antlr
+#include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
 
 // Package
-#include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
 #include "parser/ColumnRefH.h"
-
 #include "query/SelectStmt.h"
-
-#include "parser/SelectListFactory.h"
 #include "query/SelectList.h"
+#include "query/ValueFactor.h"
+// Delegate factories
 #include "parser/FromFactory.h"
 #include "parser/WhereFactory.h"
 #include "parser/ModFactory.h"
+#include "parser/SelectListFactory.h"
 #include "parser/ValueExprFactory.h"
-#include "query/ValueFactor.h"
+#include "parser/WhereFactory.h"
 
 #include "parser/ParseAliasMap.h"
 #include "parser/ParseException.h"
 #include "parser/parseTreeUtil.h"
-#include "query/TableRefN.h"
+//#include "query/TableRef.h"
 
 #include "log/Logger.h"
 
@@ -62,15 +60,15 @@
 ////////////////////////////////////////////////////////////////////////
 namespace lsst {
 namespace qserv {
-namespace master {
+namespace parser {
 
 SelectFactory::SelectFactory()
     : _columnAliases(new ParseAliasMap()),
       _tableAliases(new ParseAliasMap()),
       _columnRefNodeMap(new ColumnRefNodeMap()),
-      _fFactory(new FromFactory(_tableAliases)),
       _vFactory(new ValueExprFactory(_columnRefNodeMap)) {
 
+    _fFactory.reset(new FromFactory(_tableAliases, _vFactory));
     _slFactory.reset(new SelectListFactory(_columnAliases, _vFactory));
     _mFactory.reset(new ModFactory(_vFactory));
     _wFactory.reset(new WhereFactory(_vFactory));
@@ -86,9 +84,9 @@ SelectFactory::attachTo(SqlSQL2Parser& p) {
     _mFactory->attachTo(p);
 }
 
-boost::shared_ptr<SelectStmt>
+boost::shared_ptr<query::SelectStmt>
 SelectFactory::getStatement() {
-    boost::shared_ptr<SelectStmt> stmt(new SelectStmt());
+    boost::shared_ptr<query::SelectStmt> stmt(new query::SelectStmt());
     stmt->_selectList = _slFactory->getProduct();
     stmt->_fromList = _fFactory->getProduct();
     stmt->_whereClause = _wFactory->getProduct();
@@ -106,6 +104,7 @@ SelectFactory::_attachShared(SqlSQL2Parser& p) {
     p._columnRefHandler = crh;
 }
 
+#if 0
 ////////////////////////////////////////////////////////////////////////
 // SelectListFactory::SelectListH
 ////////////////////////////////////////////////////////////////////////
@@ -173,8 +172,9 @@ SelectListFactory::attachTo(SqlSQL2Parser& p) {
     p._columnAliasHandler = _columnAliasH;
 }
 
-boost::shared_ptr<SelectList> SelectListFactory::getProduct() {
-    boost::shared_ptr<SelectList> slist(new SelectList());
+boost::shared_ptr<query::SelectList> 
+SelectListFactory::getProduct() {
+    boost::shared_ptr<query::SelectList> slist(new query::SelectList());
     slist->_valueExprList = _valueExprList;
     return slist;
 }
@@ -244,7 +244,7 @@ SelectListFactory::_addSelectStar(RefAST child) {
     // If child.get(), this means that it's in the form of
     // "table.*". There might be sibling handling (i.e., multiple
     // table.* expressions).
-    ValueFactorPtr vt;
+    query::ValueFactorPtr vt;
     std::string tableName;
     if(child.get()) {
         // child should be QUALIFIED_NAME, so its child should be a
@@ -256,8 +256,10 @@ SelectListFactory::_addSelectStar(RefAST child) {
         tableName = tokenText(table);
         LOGGER_INF << "table ref'd for *: " << tableName << std::endl;
     }
-    vt = ValueFactor::newStarFactor(tableName);
-    _valueExprList->push_back(ValueExpr::newSimple(vt));
+    vt = query::ValueFactor::newStarFactor(tableName);
+    _valueExprList->push_back(query::ValueExpr::newSimple(vt));
 }
 
-}}} // lsst::qserv::master
+#endif
+
+}}} // namespace lsst::qserv::parser

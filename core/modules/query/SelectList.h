@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2012-2013 LSST Corporation.
+ * Copyright 2012-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_SELECTLIST_H
-#define LSST_QSERV_MASTER_SELECTLIST_H
+#ifndef LSST_QSERV_QUERY_SELECTLIST_H
+#define LSST_QSERV_QUERY_SELECTLIST_H
 /**
   * @file SelectList.h
   *
@@ -30,7 +30,6 @@
 #include <list>
 #include <map>
 #include <deque>
-#include <antlr/AST.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "query/ColumnRef.h"
@@ -38,7 +37,14 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+
+namespace parser {
+    // Forward
+    class SelectListFactory;
+}
+
+namespace query {
+
 // Forward
 class ColumnRefNodeMap;
 class ColumnAliasMap;
@@ -51,27 +57,31 @@ class GroupByClause;
 /// columns in the SELECT query's result.
 class SelectList {
 public:
+    typedef boost::shared_ptr<SelectList> Ptr;
+
     SelectList()
         : _valueExprList(new ValueExprList())
         {}
     ~SelectList() {}
     void addStar(std::string const& table);
-    void dbgPrint() const;
+    void dbgPrint(std::ostream& os) const;
+
     std::string getGenerated();
     void renderTo(QueryTemplate& qt) const;
-    boost::shared_ptr<SelectList> copyDeep();
+    boost::shared_ptr<SelectList> clone();
     boost::shared_ptr<SelectList> copySyntax();
 
     // non-const accessor for query manipulation.
     boost::shared_ptr<ValueExprList> getValueExprList()
         { return _valueExprList; }
 
-    friend class SelectListFactory;
+    friend class parser::SelectListFactory;
 private:
     friend std::ostream& operator<<(std::ostream& os, SelectList const& sl);
     boost::shared_ptr<ValueExprList> _valueExprList;
     boost::shared_ptr<ColumnRefNodeMap const> _aliasMap;
 };
 
-}}} // namespace lsst::qserv::master
-#endif // LSST_QSERV_MASTER_SELECTLIST_H
+}}} // namespace lsst::qserv::query
+
+#endif // LSST_QSERV_QUERY_SELECTLIST_H

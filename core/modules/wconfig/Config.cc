@@ -20,6 +20,7 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
+
 /// Includes Config class implementation and declarations of key
 /// environment variables for qserv worker instances.
 #include "wconfig/Config.h"
@@ -27,12 +28,11 @@
 #include <sstream>
 #include <boost/thread/once.hpp>
 
-#include "mysql/SqlConfig.h"
+#include "mysql/MySqlConfig.h"
 #include "sql/SqlConnection.h"
 
-namespace qWorker = lsst::qserv::worker;
-using lsst::qserv::worker::Config;
-using lsst::qserv::SqlConfig;
+using lsst::qserv::wconfig::Config;
+using lsst::qserv::mysql::MySqlConfig;
 
 namespace {
 // Settings declaration ////////////////////////////////////////////////
@@ -70,10 +70,9 @@ bool isExecutable(std::string const& execFile) {
     return 0 == ::access(execFile.c_str(), X_OK);
 }
 
-std::string validateMysql(qWorker::Config const& c) {
-    using namespace lsst::qserv;
+std::string validateMysql(Config const& c) {
     // Check config
-    SqlConfig sc;
+    MySqlConfig sc;
     sc.hostname = "";
     sc.username = c.getString("mysqlDefaultUser");
     sc.password = "";
@@ -83,8 +82,8 @@ std::string validateMysql(qWorker::Config const& c) {
     if(!sc.isValid()) return "Invalid MySQL config:" + sc.asString();
 
     { // Check connection
-        SqlConnection scn(sc);
-        SqlErrorObject eo;
+        lsst::qserv::sql::SqlConnection scn(sc);
+        lsst::qserv::sql::SqlErrorObject eo;
         if(!scn.connectToDb(eo)) {
             return "Unable to connect to MySQL with config:" + sc.asString();
         }
@@ -98,6 +97,11 @@ std::string validateMysql(qWorker::Config const& c) {
     return std::string(); // All checks passed.
 }
 } // anonymous namespace
+
+
+namespace lsst {
+namespace qserv {
+namespace wconfig {
 
 ////////////////////////////////////////////////////////////////////////
 // class Config
@@ -127,7 +131,8 @@ std::string const& Config::getString(std::string const& key) const {
     }
     return i->second;
 }
-SqlConfig const& Config::getSqlConfig() const {
+
+MySqlConfig const& Config::getSqlConfig() const {
     assert(_sqlConfig.get());
     return *_sqlConfig;
 }
@@ -135,7 +140,7 @@ SqlConfig const& Config::getSqlConfig() const {
 // class Config private
 ////////////////////////////////////////////////////////////////////////
 char const* Config::_getEnvDefault(char const* varName,
-                                            char const* defVal) {
+                                   char const* defVal) {
     char const* s = ::getenv(varName);
     if(s != (char const*)0) {
         return s;
@@ -149,8 +154,8 @@ void Config::_load() {
     for(int i = 0; i < settingsCount; ++i) {
         _map[settings[i][0]] = _getEnvDefault(settings[i][1], settings[i][2]);
     }
-    _sqlConfig.reset(new SqlConfig);
-    SqlConfig& sc = *_sqlConfig;
+    _sqlConfig.reset(new MySqlConfig);
+    MySqlConfig& sc = *_sqlConfig;
     sc.hostname = "";
     sc.username = "qsmaster"; /// Empty default for now.
                               /// Consider "qworker" or "qsw"
@@ -168,7 +173,9 @@ void Config::_validate() {
 }
 
 ////////////////////////////////////////////////////////////////////////
-Config& qWorker::getConfig() {
+Config& getConfig() {
     boost::call_once(callOnceHelper, configHelperFlag);
     return getConfigHelper();
 }
+
+}}} // namespace lsst::qserv::wconfig

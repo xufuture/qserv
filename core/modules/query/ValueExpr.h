@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2013 LSST Corporation.
+ * Copyright 2013-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,8 +20,8 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_MASTER_VALUEEXPR_H
-#define LSST_QSERV_MASTER_VALUEEXPR_H
+#ifndef LSST_QSERV_QUERY_VALUEEXPR_H
+#define LSST_QSERV_QUERY_VALUEEXPR_H
 /**
   * @file
   *
@@ -36,7 +36,14 @@
 
 namespace lsst {
 namespace qserv {
-namespace master {
+
+namespace parser {
+    // Forward
+    class ValueExprFactory;
+}
+    
+namespace query {
+
 // Forward
 class QueryTemplate;
 
@@ -52,6 +59,9 @@ public:
     ValueExpr();
     enum Op {NONE=200, UNKNOWN, PLUS, MINUS, MULTIPLY, DIVIDE};
     struct FactorOp {
+        explicit FactorOp(boost::shared_ptr<ValueFactor> factor_, Op op_=NONE)
+            : factor(factor_), op(op_) {}
+        FactorOp() {}
         boost::shared_ptr<ValueFactor> factor;
         Op op;
     };
@@ -77,13 +87,16 @@ public:
     bool isFactor() const;
     boost::shared_ptr<ValueFactor const> getFactor() const;
 
+    // Convenience checkers
+    bool isColumnRef() const;
+
     ValueExprPtr clone() const;
     friend std::ostream& operator<<(std::ostream& os, ValueExpr const& ve);
     friend std::ostream& operator<<(std::ostream& os, ValueExpr const* ve);
 
     static ValueExprPtr newSimple(boost::shared_ptr<ValueFactor> vt);
 
-    friend class ValueExprFactory;
+    friend class parser::ValueExprFactory;
     class render;
     friend class render;
 private:
@@ -105,6 +118,6 @@ public:
     int _count;
 };
 
-}}} // namespace lsst::qserv::master
+}}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_MASTER_VALUEEXPR_H
+#endif // LSST_QSERV_QUERY_VALUEEXPR_H
