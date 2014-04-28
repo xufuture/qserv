@@ -46,8 +46,7 @@ def _findPrefix(product, binName=None):
     - else env var PRODUCT_DIR is used
     - if no prefix is detected, exit with an error message
     """
-    prefix = None
-
+    prefix = os.getenv("%s_DIR" % product.upper())
     if binName:
         binFullPath = SCons.Util.WhereIs(binName)
         if not binFullPath :
@@ -56,9 +55,6 @@ def _findPrefix(product, binName=None):
         (basepath, bin) = os.path.split(binpath)
         if bin.lower() == "bin":
            prefix = basepath
-
-    if not prefix:
-        prefix = os.getenv("%s_DIR" % product.upper())
 
     if not prefix:
         log.fail("Could not locate %s install prefix" % product)
