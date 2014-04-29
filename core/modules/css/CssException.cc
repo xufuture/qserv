@@ -1,5 +1,3 @@
-// -*- LSST-C++ -*-
-
 /*
  * LSST Data Management System
  * Copyright 2014 LSST Corporation.
@@ -23,63 +21,54 @@
  */
 
 /**
-  * @file testCssException.cc
+  * @file CssException.h
   *
-  * @brief Unit test for CssException.
+  * @brief Exception class for KvInterface.
   *
   * @Author Jacek Becla, SLAC
   */
 
 
-// standard library imports
+// Standard library
 #include <iostream>
 
-// boost
-#define BOOST_TEST_MODULE MyTest
-#include <boost/test/included/unit_test.hpp>
-#include <boost/lexical_cast.hpp>
+// Boost includes
+#include "boost/assign.hpp"
 
-// local imports
+// Local includes
 #include "CssException.h"
 
-using std::cout;
-using std::endl;
+using std::map;
+using std::string;
 
 namespace lsst {
 namespace qserv {
 namespace css {
 
+map<CssException::errCodeT, string> 
+CssException::_errMap = boost::assign::map_list_of 
+    (DB_DOES_NOT_EXIST,  "Database does not exist.")
+    (KEY_EXISTS,         "Key already exist.")
+    (KEY_DOES_NOT_EXIST, "Key does not exist.")
+    (TB_DOES_NOT_EXIST,  "Table does not exist.")
+    (AUTH_FAILURE,       "Authorization failure.")
+    (CONN_FAILURE,       "Failed to connect to persistent store.")
+    (INTERNAL_ERROR,     "Internal error.");
 
-struct CssExFixture {
-    CssExFixture(void) {
-    };
-
-    ~CssExFixture(void) {
-    };
-};
-
-BOOST_FIXTURE_TEST_SUITE(CssExTest, CssExFixture)
-
-BOOST_AUTO_TEST_CASE(testAll) {
-    try {    
-        throw CssException_KeyDoesNotExist();
-    } catch (CssException& e) {
-        BOOST_CHECK_EQUAL(e.errCode(), CssException::KEY_DOES_NOT_EXIST);
+CssException::CssException(errCodeT errCode, string const& extraMsg) :
+    std::runtime_error(""),
+    _errCode(errCode) {
+    string s = "CssException: " + _errMap.find(_errCode)->second;
+    if (extraMsg != "") {
+        s = s + " (" + extraMsg + ")";
     }
-
-    try {
-        throw CssException(CssException::DB_DOES_NOT_EXIST);
-    } catch (CssException& e) {
-        BOOST_CHECK_EQUAL(e.errCode(), CssException::DB_DOES_NOT_EXIST);
-    }
-
-    try {
-        throw CssException(CssException::DB_DOES_NOT_EXIST, "myDB");
-    } catch (CssException& e) {
-        BOOST_CHECK_EQUAL(e.errCode(), CssException::DB_DOES_NOT_EXIST);
-    }
+    _errMsg = new char[s.length()+1];
+    strcpy(_errMsg, s.c_str());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+const char*
+CssException::what() const throw () {
+    return _errMsg;
+}
 
 }}} // namespace lsst::qserv::css
