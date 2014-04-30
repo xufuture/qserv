@@ -21,7 +21,7 @@ if [ ! -d ${DATA_DIR} ]; then
     exit 1
 fi
 
-META_CMD="metaClientTool.py --auth=${HOME}/.lsst/qmsadm"
+META_CMD="qserv_admin.py"
 
 die() { echo "$@" 1>&2 ; exit 1; }
 
@@ -35,32 +35,33 @@ run_cmd() {
     echo
     echo "${ACTION}"
     echo "     ${CMD}"
-    ${CMD} || die "error (errno:$?) in step : ${ACTION}"
+    echo "${CMD};" | ${META_CMD}|| die "error (errno:$?) in step : ${ACTION}"
 
 }
 
-ACTION="Checking if meta db ${DB_NAME} exists :";
-echo ${ACTION}
-CMD="${META_CMD} checkDbExists ${DB_NAME}"
-echo "     ${CMD}"
-DB_EXISTS=$(${CMD})
-RET=$?
+# qserv_admin.py does not have equvalent of checkDbExists yet
+#ACTION="Checking if meta db ${DB_NAME} exists :";
+#echo ${ACTION}
+#CMD="${META_CMD} checkDbExists ${DB_NAME}"
+#echo "     ${CMD}"
+DB_EXISTS=yes$(${CMD})
+#RET=$?
 
 echo "Already existing database ${DB_NAME} : ${DB_EXISTS}"
 
 # installing meta if needed
-if [ ${RET} -eq ${ERR_NO_META} ]
-then
-    run_cmd "${META_CMD} installMeta" "Meta not currently installed : installing it"
-fi
+#if [ ${RET} -eq ${ERR_NO_META} ]
+#then
+    #    run_cmd "${META_CMD} installMeta" "Meta not currently installed : installing it"
+#fi
 
 # creating db if needed
 if [ "${DB_EXISTS}" == "yes" ]
 then
-    run_cmd "${META_CMD} dropDb ${DB_NAME}" "Dropping previous meta db ${DB_NAME}"
+    run_cmd "DROP DATABASE ${DB_NAME}" "Dropping previous meta db ${DB_NAME}"
 fi
 
-run_cmd "${META_CMD} createDb ${DB_NAME} @${DATA_DIR}/db.params" "Creating meta db ${DB_NAME}"
+run_cmd "CREATE DATABASE ${DB_NAME} ${DATA_DIR}/db.params" "Creating meta db ${DB_NAME}"
 
 # needed to access schema files, specified with relative path in .params files
 cd ${DATA_DIR} || die "Error while looking for tables meta-files in ${DATA_DIR}"
@@ -81,5 +82,6 @@ fi
 
 for META_TABLE in ${META_FILE_LST}
 do
-    run_cmd "${META_CMD} createTable ${DB_NAME} @${DATA_DIR}/${META_TABLE}" "Creating meta table ${META_TABLE}"
+	tablename=$(basename $META_TABLE .params)
+    run_cmd "CREATE TABLE ${DB_NAME}.${tablename} ${DATA_DIR}/${META_TABLE}" "Creating meta table ${META_TABLE}"
 done

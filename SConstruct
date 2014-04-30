@@ -52,10 +52,12 @@ env.Alias("python-tests", python_tests)
 cssbin_target = os.path.join(env['prefix'], "bin")
 env.RecursiveInstall(cssbin_target, os.path.join("client", "bin"))
 python_css = env.InstallPythonModule(target=env['python_prefix'], source=os.path.join("css", "python"))
+qserv_admin = env.Install(target=os.path.join(env['prefix'], 'bin'), source=[os.path.join('client', 'qserv_admin.py'), os.path.join('client', 'qserv_admin_impl.py')])
 env.Alias("dist-css",
         [
         python_css,
-        cssbin_target
+        cssbin_target,
+        qserv_admin
         ]
 )
 

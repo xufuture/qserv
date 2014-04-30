@@ -19,12 +19,13 @@ def main():
 
     bench = Benchmark(options.case_no, options.out_dirname)
     bench.run(options.mode_list, options.load_data, options.stop_at_query)
-    failed_queries = bench.analyzeQueryResults()
-
-    if len(failed_queries) == 0:
-        print "Test case%s succeed" % options.case_no
-    else:
-        print "Test case%s failed" % options.case_no
+    if 'mysql' in options.mode_list and 'qserv' in options.mode_list:
+        failed_queries = bench.analyzeQueryResults()
+    
+        if len(failed_queries) == 0:
+            print "Test case%s succeed" % options.case_no
+        else:
+            print "Test case%s failed" % options.case_no
     
     if options.load_data == False:
             print ("Please check that corresponding data are loaded, otherwise run {0} with -l option.".format(os.path.basename(__file__)))
