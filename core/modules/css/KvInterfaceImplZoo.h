@@ -36,7 +36,7 @@
 #include <string>
 
 // third-party imports
-#include "zookeeper.h"
+#include "zookeeper/zookeeper.h"
 
 // local imports
 #include "KvInterface.h"
