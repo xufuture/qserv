@@ -82,6 +82,9 @@ namespace css {
   */
 KvInterfaceImplMem::KvInterfaceImplMem(string const& mapPath) {
     std::ifstream f(mapPath.c_str());
+    if(f.fail()) {
+        throw CssException_ConnFailure();
+    }
     string line;
     vector<string> strs;
     while ( std::getline(f, line) ) {
