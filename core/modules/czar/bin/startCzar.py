@@ -22,7 +22,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
-# startQserv.py -- This is a "driver" program that provides a
+# startCzar.py -- This is a "driver" program that provides a
 # command-line interface to start qserv or its tests.  Specifically,
 # you can:
 # * Run tests (invoke cases in testHintedParser.py and testAppInterface.py)
