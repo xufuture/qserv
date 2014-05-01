@@ -20,7 +20,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
-# protocol module for lsst.qserv.master
+# protocol module for lsst.qserv.czar
 # Manages wire-protocol-related operations for qserv.
 import worker_pb2
 
