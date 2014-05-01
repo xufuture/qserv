@@ -18,7 +18,7 @@ then
 fi
 
 echo 
-echo "-- Initializing Qserv master database "
+echo "-- Initializing Qserv czar database "
 ${QSERV_DIR}/etc/init.d/mysqld start &&
 echo "-- Inserting data"
 ${MYSQL_CMD} < ${SQL_DIR}/qserv-czar.sql && 
