@@ -10,7 +10,7 @@ SQL_DIR=${QSERV_DIR}/tmp/configure/sql
 
 MYSQL_CMD="${MYSQL_DIR}/bin/mysql -vvv --user=${MYSQLD_USER} --password=${MYSQLD_PASS} --sock=${MYSQLD_SOCK}"
 
-DEST="${QSERV_DIR}/lib/python/lsst/qserv/master/"
+DEST="${QSERV_DIR}/lib/python/lsst/qserv/czar/"
 if [ ! -f ${DEST}/geometry.py ]
 then
     echo "Downloading geometry.py"

@@ -23,4 +23,4 @@
 # lsst.qserv.czar module initialization
 
 # Import SWIG'd C++ code
-from masterLib import *
+from czarLib import *
