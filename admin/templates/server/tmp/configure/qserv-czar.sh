@@ -21,7 +21,7 @@ echo
 echo "-- Initializing Qserv master database "
 ${QSERV_DIR}/etc/init.d/mysqld start &&
 echo "-- Inserting data"
-${MYSQL_CMD} < ${SQL_DIR}/qserv-master.sql && 
+${MYSQL_CMD} < ${SQL_DIR}/qserv-czar.sql && 
 ${MYSQL_CMD} < ${SQL_DIR}/qservw_workerid.sql && 
 ${QSERV_DIR}/etc/init.d/mysqld stop ||
 exit 1
