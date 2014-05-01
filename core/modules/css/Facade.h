@@ -80,7 +80,7 @@ public:
 private:
     Facade(std::string const& connInfo);
     Facade(std::string const& connInfo, std::string const& prefix);
-    Facade(std::string const& mapPath, bool isMap);
+    Facade(std::istream& mapStream);
 
     void _throwIfNotDbExists(std::string const& dbName) const;
     void _throwIfNotTbExists(std::string const& dbName, 
@@ -105,7 +105,8 @@ private:
 class FacadeFactory {
 public:
     static boost::shared_ptr<Facade> createZooFacade(std::string const& connInfo);
-    static boost::shared_ptr<Facade> createMemFacade(std::string const& connInfo);
+    static boost::shared_ptr<Facade> createMemFacade(std::string const& mapPath);
+    static boost::shared_ptr<Facade> createMemFacade(std::istream& mapStream);
     static boost::shared_ptr<Facade> createZooTestFacade(
                                                      std::string const& connInfo,
                                                      std::string const& prefix);
