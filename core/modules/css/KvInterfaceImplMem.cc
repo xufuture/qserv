@@ -71,7 +71,7 @@ namespace css {
   * @param mapPath path to the map dumped using ./client/qserv_admin.py
   *
   * To generate the key/value map, follow this recipe:
-  * 1) cleanup everything in zookeeper. careful, this will wipe out 
+  * 1) cleanup everything in zookeeper. careful, this will wipe out
   *    everyting in zookeeper!
   *    echo "drop everything;" | ./client/qserv_admin.py
   * 2) generate the clean set:
@@ -110,7 +110,7 @@ KvInterfaceImplMem::~KvInterfaceImplMem() {
 
 void
 KvInterfaceImplMem::create(string const& key, string const& value) {
-    LOGGER_INF << "*** KvInterfaceImplMem::create(), " << key << " --> " 
+    LOGGER_INF << "*** KvInterfaceImplMem::create(), " << key << " --> "
                << value << endl;
     if (exists(key)) {
         throw CssException_KeyDoesNotExist(key);
@@ -121,7 +121,7 @@ KvInterfaceImplMem::create(string const& key, string const& value) {
 bool
 KvInterfaceImplMem::exists(string const& key) {
     bool ret = _kvMap.find(key) != _kvMap.end();
-    LOGGER_INF << "*** KvInterfaceImplMem::exists(), key: " << key 
+    LOGGER_INF << "*** KvInterfaceImplMem::exists(), key: " << key
                << ": " << ret << endl;
     return ret;
 }
@@ -148,7 +148,7 @@ KvInterfaceImplMem::get(string const& key, string const& defaultValue) {
     return s;
 }
 
-vector<string> 
+vector<string>
 KvInterfaceImplMem::getChildren(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplMem::getChildren(), key: " << key << endl;
     if ( ! exists(key) ) {

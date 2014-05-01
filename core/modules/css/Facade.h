@@ -49,7 +49,7 @@ namespace qserv {
 namespace css {
 
 class KvInterface; // forward declaration
-    
+
 /** The class stores Qserv-specific metadata and state information from the
     Central State System.
  */
@@ -60,20 +60,20 @@ public:
 
     // accessors
     bool containsDb(std::string const& dbName) const;
-    bool containsTable(std::string const& dbName, 
+    bool containsTable(std::string const& dbName,
                        std::string const& tableName) const;
-    bool tableIsChunked(std::string const& dbName, 
+    bool tableIsChunked(std::string const& dbName,
                         std::string const& tableName) const;
-    bool tableIsSubChunked(std::string const& dbName, 
+    bool tableIsSubChunked(std::string const& dbName,
                            std::string const& tableName) const;
     std::vector<std::string> getAllowedDbs() const;
     std::vector<std::string> getChunkedTables(std::string const& dbName) const;
     std::vector<std::string> getSubChunkedTables(std::string const& dbName) const;
-    std::vector<std::string> getPartitionCols(std::string const& dbName, 
+    std::vector<std::string> getPartitionCols(std::string const& dbName,
                                               std::string const& tableName) const;
-    int getChunkLevel(std::string const& dbName, 
+    int getChunkLevel(std::string const& dbName,
                       std::string const& tableName) const;
-    std::string getKeyColumn(std::string const& dbName, 
+    std::string getKeyColumn(std::string const& dbName,
                              std::string const& tableName) const;
     StripingParams getDbStriping(std::string const& dbName) const;
 
@@ -83,20 +83,20 @@ private:
     Facade(std::istream& mapStream);
 
     void _throwIfNotDbExists(std::string const& dbName) const;
-    void _throwIfNotTbExists(std::string const& dbName, 
+    void _throwIfNotTbExists(std::string const& dbName,
                              std::string const& tableName) const;
-    void _throwIfNotDbTbExists(std::string const& dbName, 
+    void _throwIfNotDbTbExists(std::string const& dbName,
                                std::string const& tableName) const;
-    bool _containsTable(std::string const& dbName, 
+    bool _containsTable(std::string const& dbName,
                         std::string const& tableName) const;
-    bool _tableIsChunked(std::string const& dbName, 
+    bool _tableIsChunked(std::string const& dbName,
                          std::string const& tableName) const;
-    bool _tableIsSubChunked(std::string const& dbName, 
+    bool _tableIsSubChunked(std::string const& dbName,
                             std::string const& tableName) const;
     int _getIntValue(std::string const& key, int defaultValue) const;
 
     friend class FacadeFactory;
-    
+
 private:
     KvInterface* _kvI;
     std::string _prefix; // optional prefix, for isolating tests from production
