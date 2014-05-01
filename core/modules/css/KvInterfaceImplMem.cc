@@ -76,18 +76,17 @@ namespace css {
   *    echo "drop everything;" | ./client/qserv_admin.py
   * 2) generate the clean set:
   *    ./client/qserv_admin.py <  <commands>
-  *    (example commands can be found in client/examples/testCppParser_generateMap)
+  *    (example commands can be found in client/examples/testMap_generateMap)
   * 3) then copy the generate file to final destination:
-  *    mv /tmp/testCppParser.kvmap <destination>
+  *    mv /tmp/testMap.kvmap <destination>
   */
-KvInterfaceImplMem::KvInterfaceImplMem(string const& mapPath) {
-    std::ifstream f(mapPath.c_str());
-    if(f.fail()) {
+KvInterfaceImplMem::KvInterfaceImplMem(std::istream& mapStream) {
+    if(mapStream.fail()) {
         throw CssException_ConnFailure();
     }
     string line;
     vector<string> strs;
-    while ( std::getline(f, line) ) {
+    while ( std::getline(mapStream, line) ) {
         boost::split(strs, line, boost::is_any_of("\t"));
         string theKey = strs[0];
         string theVal = strs[1];
