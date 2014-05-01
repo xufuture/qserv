@@ -8,14 +8,13 @@ import itertools
 
 programs = []
 
-# build kwmap.h
+# build kvmap.h
 def charArrayGenerator(filename):
     bSize = 70
     with open(filename,"rb") as f:
         while True:
             block = f.read(10)
             if not block: return
-            #print "yielding blob:", block
             yield ",".join(map(lambda s: hex(ord(s)), block))
 
 ## Scons wants args=(target, source, env)
@@ -24,7 +23,6 @@ def charArrayGenerator(filename):
 def buildHeader(target, source, env):
     blobFile = str(source[0]) # coerce SCons.File to string
     (name, ext) = os.path.splitext(blobFile)
-    print "name is, ", name
     arrayName = os.path.basename(name)
     headerPfx = "unsigned char %s[] = {" % arrayName
     headerSfx = "};"

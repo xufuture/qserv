@@ -415,10 +415,9 @@ FacadeFactory::createMemFacade(string const& mapPath) {
     if(f.fail()) {
         throw CssException_ConnFailure();
     }
-
-    boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(f));
-    return cssFPtr;
+    return FacadeFactory::createMemFacade(f);
 }
+
 boost::shared_ptr<Facade>
 FacadeFactory::createMemFacade(std::istream& mapStream) {
     boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(mapStream));
