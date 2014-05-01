@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # 
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
@@ -22,33 +20,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
-# logger.py : A module with a logging interface that utilizes SWIG
-# enabled Logger class.
+# lsst.qserv.czar module initialization
 
-# Package imports
-from lsst.qserv.master import logger_threshold
-from lsst.qserv.master import logger
-
-def threshold_dbg():
-    logger_threshold(0)
-
-def threshold_inf():
-    logger_threshold(1)
-
-def threshold_wrn():
-    logger_threshold(2)
-
-def threshold_err():
-    logger_threshold(3)
-
-def dbg(*args):
-    logger(0, ' '.join(map(str, args)))
-
-def inf(*args):
-    logger(1, ' '.join(map(str, args)))
-
-def wrn(*args):
-    logger(2, ' '.join(map(str, args)))
-
-def err(*args):
-    logger(3, ' '.join(map(str, args)))
+# Import SWIG'd C++ code
+from masterLib import *
