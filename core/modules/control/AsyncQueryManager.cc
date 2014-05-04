@@ -404,8 +404,7 @@ void AsyncQueryManager::_initFacade(std::string const& cssTech,
                                     std::string const& cssConn) {
     if (cssTech == "zoo") {
         LOGGER_INF << "Initializing zookeeper-based css, with " 
-                   << cssConn << std::endl;
-        
+                   << cssConn << std::endl;        
         boost::shared_ptr<css::Facade> cssFPtr(
             css::FacadeFactory::createZooFacade(cssConn));
         _qSession.reset(new qproc::QuerySession(cssFPtr));
