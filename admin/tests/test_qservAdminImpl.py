@@ -30,33 +30,33 @@ This is a unittest for qservAdminImpl
 import logging
 import unittest
 
-from lsst.qserv.css.kvInterface import CssException
-from qservAdminImpl import QservAdminImpl
+from lsst.qserv.admin.qservAdminImpl import QservAdminImpl, QAdmException
+from lsst.qserv.css.kvInterface import KvException
 
 
 class TestQservAdminImpl(unittest.TestCase):
     def setUp(self):
-        self._impl = QservAdminImpl('127.0.0.1:2181')
+        self._impl = QservAdminImpl('127.0.0.1:12181')
         self._baseDir = "client/examples"
 
     def testCreateDb(self):
         dd = {"dbGroup": "L2",
-              "partitioning": "on",
+              "partitioning": "1",
               "partitioningStrategy": "sphBox",
               "nStripes": "10",
               "nSubStripes": "23",
               "overlap": "0.0001",
               "objIdIndex": "0.25"}
         self._impl.createDb("db1a", dd)
-        self.assertRaises(CssException, self._impl.createDb, "db1a", dd)
+        self.assertRaises(QAdmException, self._impl.createDb, "db1a", dd)
         self._impl.createDbLike("db1b", "db1a")
         # attempt to create db that already exists
-        self.assertRaises(CssException, self._impl.createDbLike, "db1b", "db1a")
+        self.assertRaises(QAdmException, self._impl.createDbLike, "db1b", "db1a")
         # attempt to create db like non-existing db
-        self.assertRaises(CssException, self._impl.createDbLike, "db1b", "xxxx")
+        self.assertRaises(QAdmException, self._impl.createDbLike, "db1b", "xxxx")
         # attempt to create db like self
-        self.assertRaises(CssException, self._impl.createDbLike, "db1a", "db1a")
-        self.assertRaises(CssException, self._impl.createDbLike, "xxxx", "xxxx")
+        self.assertRaises(QAdmException, self._impl.createDbLike, "db1a", "db1a")
+        self.assertRaises(QAdmException, self._impl.createDbLike, "xxxx", "xxxx")
 
         self._impl.createDb("db2", dd)
         self._impl.dumpEverything()
