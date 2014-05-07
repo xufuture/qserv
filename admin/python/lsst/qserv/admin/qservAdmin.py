@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # LSST Data Management System
-# Copyright 2013 LSST Corporation.
+# Copyright 2013-2014 LSST Corporation.
 # 
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -215,6 +215,27 @@ class QservAdmin(object):
         Delete everything from the CSS (very dangerous, very useful for debugging.)
         """
         self._kvI.delete("/", recursive=True)
+
+    def restore(self, fileName):
+        """
+        Restore all data from the file fileName.
+        """
+        if self._kvI.getChildren("/") > 0:
+            print "Data exist, restore on top (y/n)? ",
+            "existing data will not be deleted)"
+
+        try:
+            f = open(fileName, 'r')
+            for line in f.readlines():
+                (k, v) = line.rstrip().split()
+                if v == '\N':
+                    v = ''
+                if k != '/':
+                    self._kvI.create(k, v)
+        except IOError:
+            print "Can't find file: '" + fileName + "'" # FIXME!!!
+        finally:
+            f.close()
 
     def _dbExists(self, dbName):
         """
