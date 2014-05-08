@@ -95,12 +95,6 @@ chunkLimit=-1
 [mysql]
 mysqlclient=
 
-[metaServer]
-host=localhost
-port=7082
-user=qms
-passwd=qmsPass
-
 """)
 
 
