@@ -37,11 +37,12 @@ Known issues and todos:
 import logging
 import uuid
 
-from lsst.qserv.css.kvInterface import KvInterface, CssException
+from lsst.qserv.css.kvInterface import KvInterface, KvException
+from lsst.qserv.admin.qservAdminException import QservAdminException
 
-class QservAdminImpl(object):
+class QservAdmin(object):
     """
-    QservAdminImpl implements functions needed by qserv_admin client program.
+    QservAdmin implements functions needed by qserv_admin client program.
     """
 
     def __init__(self, connInfo):
@@ -65,13 +66,13 @@ class QservAdminImpl(object):
                                (dbName, str(options)))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
-            raise CssException(CssException.DB_EXISTS, dbName)
+            raise QservAdminException(QservAdminException.DB_EXISTS, dbName)
         # double check if all required options are specified
         for x in ["nStripes", "nSubStripes", "overlap", "storageClass",
                   "objIdIndex"]:
             if x not in options:
                 self._logger.error("Required option '%s' missing" % x)
-                raise CssException(CssException.MISSING_PARAM, x)
+                raise KvException(KvException.MISSING_PARAM, x)
         dbP = "/DATABASES/%s" % dbName
         ptP = None
         try:
@@ -88,7 +89,7 @@ class QservAdminImpl(object):
                 self._kvI.create("%s/%s" % (dbP, x), options[x])
             self._createDbLockSection(dbP)
             self._kvI.set(dbP, "READY")
-        except CssException as e:
+        except KvException as e:
             self._logger.error("Failed to create database '%s', " % dbName +
                                "error was: " + e.__str__())
             self._kvI.delete(dbP, recursive=True)
@@ -106,10 +107,10 @@ class QservAdminImpl(object):
         self._logger.info("Creating db '%s' like '%s'" % (dbName, dbName2))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
-            raise CssException(CssException.DB_EXISTS, dbName)
+            raise QservAdminException(QservAdminException.DB_EXISTS, dbName)
         if not self._dbExists(dbName2):
             self._logger.error("Database '%s' does not exist." % dbName2)
-            raise CssException(CssException.DB_DOES_NOT_EXIST, dbName2)
+            raise QservAdminException(QservAdminException.DB_DOES_NOT_EXIST, dbName2)
         dbP = "/DATABASES/%s" % dbName
         try:
             self._kvI.create(dbP, "PENDING")
@@ -119,7 +120,7 @@ class QservAdminImpl(object):
                                 "releaseStatus", "objIdIndex"))
             self._createDbLockSection(dbP)
             self._kvI.set(dbP, "READY")
-        except CssException as e:
+        except KvException as e:
             self._logger.error("Failed to create database '%s', " % dbName +
                                "error was: " + e.__str__())
             self._kvI.delete(dbP, recursive=True)
@@ -134,7 +135,7 @@ class QservAdminImpl(object):
         self._logger.info("Drop database '%s'" % dbName)
         if not self._dbExists(dbName):
             self._logger.error("Database '%s' does not exist." % dbName)
-            raise CssException(CssException.DB_DOES_NOT_EXIST, dbName)
+            raise QservAdminException(QservAdminException.DB_DOES_NOT_EXIST, dbName)
         self._kvI.delete("/DATABASES/%s" % dbName, recursive=True)
 
     def showDatabases(self):
@@ -173,10 +174,11 @@ class QservAdminImpl(object):
                                (dbName, tableName, str(options)))
         if not self._dbExists(dbName):
             self._logger.error("Database '%s' does not exist." % dbName)
-            raise CssException(CssException.DB_DOES_NOT_EXIST, dbName)
+            raise QservAdminException(QservAdminException.DB_DOES_NOT_EXIST, dbName)
         if self._tableExists(dbName, tableName):
             self._logger.error("Table '%s.%s' exists." % (dbName, tableName))
-            raise CssException(CssException.TB_EXISTS, "%s.%s" % (dbName,tableName))
+            raise QservAdminException(QservAdminException.TB_EXISTS, 
+                                      "%s.%s" % (dbName,tableName))
         tbP = "/DATABASES/%s/TABLES/%s" % (dbName, tableName)
         options["uuid"] = str(uuid.uuid4())
         try:
@@ -189,7 +191,7 @@ class QservAdminImpl(object):
                 else:
                     self._logger.info("'%s' not provided" % o[0])
             self._kvI.set(tbP, "READY")
-        except CssException as e:
+        except KvException as e:
             self._logger.error("Failed to create table '%s.%s', " % \
                                 (dbName, tableName) + "error was: " + e.__str__())
             self._kvI.delete(tbP, recursive=True)

@@ -21,7 +21,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
 """
-This is a unittest for qservAdminImpl
+This is a unittest for qservAdmin
 
 @author  Jacek Becla, SLAC
 
@@ -30,13 +30,14 @@ This is a unittest for qservAdminImpl
 import logging
 import unittest
 
-from lsst.qserv.admin.qservAdminImpl import QservAdminImpl
-from lsst.qserv.css.kvInterface import CssException
+from lsst.qserv.admin.qservAdmin import QservAdmin
+from lsst.qserv.admin.qservAdminException import QservAdminException
+from lsst.qserv.css.kvInterface import KvException
 
 
-class TestQservAdminImpl(unittest.TestCase):
+class TestQservAdmin(unittest.TestCase):
     def setUp(self):
-        self._impl = QservAdminImpl('127.0.0.1:12181')
+        self._impl = QservAdmin('127.0.0.1:12181')
         self._baseDir = "admin/examples"
 
     def testCreateDb(self):
@@ -48,15 +49,19 @@ class TestQservAdminImpl(unittest.TestCase):
               "overlap": "0.0001",
               "objIdIndex": "0.25"}
         self._impl.createDb("db1a", dd)
-        self.assertRaises(CssException, self._impl.createDb, "db1a", dd)
+        self.assertRaises(QservAdminException, self._impl.createDb, "db1a", dd)
         self._impl.createDbLike("db1b", "db1a")
         # attempt to create db that already exists
-        self.assertRaises(CssException, self._impl.createDbLike, "db1b", "db1a")
+        self.assertRaises(QservAdminException, self._impl.createDbLike, 
+                          "db1b", "db1a")
         # attempt to create db like non-existing db
-        self.assertRaises(CssException, self._impl.createDbLike, "db1b", "xxxx")
+        self.assertRaises(QservAdminException, self._impl.createDbLike, 
+                          "db1b", "xxxx")
         # attempt to create db like self
-        self.assertRaises(CssException, self._impl.createDbLike, "db1a", "db1a")
-        self.assertRaises(CssException, self._impl.createDbLike, "xxxx", "xxxx")
+        self.assertRaises(QservAdminException, self._impl.createDbLike, 
+                          "db1a", "db1a")
+        self.assertRaises(QservAdminException, self._impl.createDbLike, 
+                          "xxxx", "xxxx")
 
         self._impl.createDb("db2", dd)
         self._impl.dumpEverything()
@@ -86,7 +91,6 @@ class TestQservAdminImpl(unittest.TestCase):
 ####################################################################################
 def setLogging():
     logging.basicConfig(
-        #filename="/tmp/testQservAdminImpl.log",
         format='%(asctime)s %(name)s %(levelname)s: %(message)s', 
         datefmt='%m/%d/%Y %I:%M:%S', 
         level=logging.DEBUG)

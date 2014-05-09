@@ -85,7 +85,7 @@ def _initVariables(src_dir):
             (PathVariable('build_dir', 'Qserv build dir', os.path.join(src_dir,'build'), PathVariable.PathIsDirCreate)),
             (EnumVariable('debug', 'debug gcc output and symbols', 'yes', allowed_values=('yes', 'no'))),
             (PathVariable('XROOTD_DIR', 'xrootd install dir', _findPrefix("XROOTD", "xrootd"), PathVariable.PathIsDir)),
-            (PathVariable('MYSQL_DIR', 'mysql install dir', _findPrefix("MYSQL", "mysql"), PathVariable.PathIsDir)),
+            (PathVariable('MYSQL_DIR', 'mysql install dir', _findPrefix("MYSQL", "mysqld_safe"), PathVariable.PathIsDir)),
             (PathVariable('MYSQLPROXY_DIR', 'mysqlproxy install dir', _findPrefix("MYSQLPROXY", "mysql-proxy"), PathVariable.PathIsDir)),
             (PathVariable('PROTOBUF_DIR', 'protobuf install dir', _findPrefix("PROTOBUF", "protoc"), PathVariable.PathIsDir)),
             (PathVariable('LUA_DIR', 'lua install dir', _findPrefix("LUA", "lua"), PathVariable.PathIsDir)),
@@ -132,7 +132,7 @@ def _initEnvironment(src_dir):
     """Construction and basic setup of the state.env variable."""
 
     global env
-    env = Environment(tools=['default', 'textfile', 'pymod', 'protoc', 'antlr', 'swig', 'recinstall'])
+    env = Environment(tools=['default', 'textfile', 'pymod', 'protoc', 'antlr', 'recinstall', 'swig_scanner'])
 
     _initVariables(src_dir)
 
