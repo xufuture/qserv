@@ -59,44 +59,10 @@ class Indexer:
             if d.has_key("index"):
                 self._makeIndex(t, p.partitionCols, d["index"])
         
-    def _makeIndex(self, table, pCols, iCols):
-        selCols = ",".join(iCols)
-        q = "SELECT %s FROM %s;" % (selCols, table)
-        indexName = metadata.getIndexNameForTable(table)
-        # might need to drop this table.
-
-        # configure merger to drop ENGINE=MEMORY from merged table.
-        config.config.set("resultdb","dropMem", "yes")
-        # configure qserv to buffer in a big place
-        #config.config.set("frontend", "scratch_path","/tmp/qsIndex")
-
-        db = Db()
-        db.activate()
-        db.applySql("DROP TABLE IF EXISTS %s;" %(indexName)) #make room first.
-        a = app.HintedQueryAction(q, {"db" : metadata.getMetaDbName()}, 
-                                  self.pmap, 
-                                  lambda e: None, indexName)
-        
-        assert a.getIsValid()
-        logger.inf("Gathering objectId/chunkId locality from workers")
-        logger.inf(a.invoke())
-        logger.inf(a.getResult())
-        logger.inf("Retrieved result.")
-        for i in iCols:
-            if i in pCols: continue
-            logger.inf("creating index for", i)
-            iq = "ALTER TABLE %s ADD INDEX (%s);" % (indexName, i)
-            logger.inf(iq)
-            cids = db.applySql(iq)
-            cids = map(lambda t: t[0], cids)
-            del db
-            logger.inf(cids)
-    pass
     
 def makeQservIndexes():
     i = Indexer()
     i.setupIndexes()
-
     
 
 class PartitionGroup:
