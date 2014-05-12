@@ -219,11 +219,12 @@ class QservAdmin(object):
     def restore(self, fileName):
         """
         Restore all data from the file fileName.
+
+        @param           fileName Input file name containing data to be restored.
         """
         if self._kvI.getChildren("/") > 0:
-            print "Data exist, restore on top (y/n)? ",
-            "existing data will not be deleted)"
-
+            print "Unable to restore, data exists."
+            return
         try:
             f = open(fileName, 'r')
             for line in f.readlines():
@@ -233,7 +234,7 @@ class QservAdmin(object):
                 if k != '/':
                     self._kvI.create(k, v)
         except IOError:
-            print "Can't find file: '" + fileName + "'" # FIXME!!!
+            print "Can't find file: '" + fileName + "'."
         finally:
             f.close()
 
