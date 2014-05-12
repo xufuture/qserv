@@ -28,7 +28,6 @@
 
 // Third-party headers
 #include "boost/scoped_ptr.hpp"
-#include "boost/test/included/unit_test.hpp"
 #include "XrdSfs/XrdSfsInterface.hh"
 #include "XrdSys/XrdSysLogger.hh"
 
