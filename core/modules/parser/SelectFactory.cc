@@ -37,16 +37,18 @@
 
 // Local headers
 #include "log/Logger.h"
-#include "parser/ColumnRefH.h"
+   // parser: factories
 #include "parser/FromFactory.h"
 #include "parser/SelectListFactory.h"
 #include "parser/WhereFactory.h"
 #include "parser/ModFactory.h"
+#include "parser/ValueExprFactory.h"
+#include "parser/WhereFactory.h"
+  // parser: all others
+#include "parser/ColumnRefH.h"
 #include "parser/ParseAliasMap.h"
 #include "parser/ParseException.h"
 #include "parser/parseTreeUtil.h"
-#include "parser/ValueExprFactory.h"
-#include "parser/WhereFactory.h"
 #include "query/SelectList.h"
 #include "query/SelectStmt.h"
 #include "query/ValueFactor.h"
