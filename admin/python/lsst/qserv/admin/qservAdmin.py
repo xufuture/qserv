@@ -222,7 +222,7 @@ class QservAdmin(object):
 
         @param           fileName Input file name containing data to be restored.
         """
-        if self._kvI.getChildren("/") > 0:
+        if len(self._kvI.getChildren("/")) > 1:
             print "Unable to restore, data exists."
             return
         try:
