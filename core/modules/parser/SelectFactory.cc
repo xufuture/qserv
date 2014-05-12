@@ -30,6 +30,7 @@
   *
   * @author Daniel L. Wang, SLAC
   */
+
 #include "parser/SelectFactory.h"
 
 // Third-party headers
