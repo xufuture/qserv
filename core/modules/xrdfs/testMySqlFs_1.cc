@@ -20,8 +20,6 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#define BOOST_TEST_MODULE MySqlFs_1
-
 // System headers
 #include <cerrno>
 #include <cstdlib>
@@ -36,6 +34,10 @@
 
 // Local headers
 #include "xrdfs/MySqlFs.h"
+
+// Boost unit test header
+#define BOOST_TEST_MODULE MySqlFs_1
+#include "boost/test/included/unit_test.hpp"
 
 
 namespace test = boost::test_tools;
