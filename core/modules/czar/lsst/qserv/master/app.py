@@ -81,9 +81,8 @@ from lsst.qserv.meta.client import Client
 # SWIG'd functions
 
 # protolog
-#from lsst.qserv.master import initLog
-#from lsst.qserv.master import log
 import protolog
+from protolog import ProtoLogContext, ProtoLogHandler
 import logging
 
 # xrdfile - raw xrootd access
@@ -417,24 +416,103 @@ class InbandQueryAction:
         #######################################
         # DEMONSTRATE PROTOLOG FROM PYTHON
         #######################################
-        protolog.initLog()
-        protolog.pushContext("czar")
+        protolog.initLog("/u1/bchick/sandbox2/modules/etc/Log4cxxConfig.xml")
         # Demonstrate MDC feature of protolog via python.
         protolog.MDC("session", -1) 
-        protolog.log("czar", protolog.INFO, "Hello from Python (via wrapper)!")
+        # Demonstrate object-free logging
         name = "Bill"
-        protolog.warn("This is a warning by %s!" % name)
-        protolog.debug("This is a debug statement!")
+        protolog.log("czar", protolog.INFO,
+                     "This is an object-free log statement by %s", name)
+        protolog.log(protolog.getDefaultLoggerName(), protolog.INFO,
+                     "defaultLoggerName = %s", protolog.getDefaultLoggerName())
+        # Demonstrate ProtoLogContext
+        context = ProtoLogContext(name="czar", level=protolog.INFO)
+        context.open() # must call open() to set logging context
+        context.warn("This is a warning by %s!", name)
+        context.debug("This first debug statement should NOT display.")
+        context.setLevel(protolog.DEBUG)
+        context.debug("This second debug statement should display.")
+        context.setLevel(protolog.INFO)
+        context.debug("This third debug statement should NOT display.")
+        context.info("defaultLoggerName = %s", protolog.getDefaultLoggerName())
 
-        # Demonstrate ProtoLog via standard python logging module.
-        lgr = logging.getLogger()
-        lgr.setLevel(logging.WARN)
-        lgr.addHandler(protolog.ProtoLogHandler())
-        lgr.info("This is an info statement via the logging module.")
+        # Demonstrate with statement
+        context.setLevel(protolog.INFO)
+        with ProtoLogContext(name="innerContext", level=protolog.DEBUG) as innerC:
+            innerC.info("Hello from inner context!")
+            innerC.debug("Debug statement in inner context should display.")
+            innerC.info("defaultLoggerName = %s",
+                         protolog.getDefaultLoggerName())
+        context.debug("Debug statement in outer context  should NOT display.")
+        context.info("defaultLoggerName = %s", protolog.getDefaultLoggerName())
+
+
+        # Demonstrate standard python logging module.
+        def loggingFunc():
+            lgr = logging.getLogger()
+            lgr.setLevel(logging.WARN) # unlike protolog levels, which are global,
+                                       # python logging module levels are local to
+                                       # a logging handler
+            handler = ProtoLogHandler(name="handler")
+            lgr.addHandler(handler)
+            lgr.info("Info statemnet via logging module that should NOT display.")
+            lgr.warning("Warning via logging module that should display.")
+            context.info("Info statement after logging module that should "
+                         "display in the czar.handler context.")
+            # MUST DO THIS TO POP CONTEXT
+            lgr.removeHandler(handler)
+            handler.close() 
+
+        loggingFunc()
+        loggingFunc()
+        context.info("Info statement after logging module that should display "
+                     "in the czar context.")
+
+        #### Demonstration of fine-grained debugging ####
+        def debugLoggerName(num):
+            return '%s.debug%d' % (protolog.getDefaultLoggerName(), num)
+
+        def debugAt(num, fmt, *args):
+            protolog.log(debugLoggerName(num), protolog.DEBUG, fmt, *args)
+
+        def debugSetAt(num):
+            for i in range(5):
+                protolog.setLevel(debugLoggerName(i),
+                                  protolog.INFO if i < num else protolog.DEBUG)
+        debugSetAt(1)
+        debugAt(1, "Debug 1 statement that should display")
+        debugAt(2, "Debug 2 statement that should display")
+        debugAt(3, "Debug 3 statement that should display")
+        debugAt(4, "Debug 4 statement that should display")
+        debugAt(5, "Debug 5 statement that should display")
+        debugSetAt(2)
+        debugAt(1, "Debug 1 statement that should NOT display")
+        debugAt(2, "Debug 2 statement that should display")
+        debugAt(3, "Debug 3 statement that should display")
+        debugAt(4, "Debug 4 statement that should display")
+        debugAt(5, "Debug 5 statement that should display")
+        debugSetAt(3)
+        debugAt(1, "Debug 1 statement that should NOT display")
+        debugAt(2, "Debug 2 statement that should NOT display")
+        debugAt(3, "Debug 3 statement that should display")
+        debugAt(4, "Debug 4 statement that should display")
+        debugAt(5, "Debug 5 statement that should display")
+        debugSetAt(4)
+        debugAt(1, "Debug 1 statement that should NOT display")
+        debugAt(2, "Debug 2 statement that should NOT display")
+        debugAt(3, "Debug 3 statement that should NOT display")
+        debugAt(4, "Debug 4 statement that should display")
+        debugAt(5, "Debug 5 statement that should display")
+        debugSetAt(5)
+        debugAt(1, "Debug 1 statement that should NOT display")
+        debugAt(2, "Debug 2 statement that should NOT display")
+        debugAt(3, "Debug 3 statement that should NOT display")
+        debugAt(4, "Debug 4 statement that should NOT display")
+        debugAt(5, "Debug 5 statement that should display")
+                                
         ####################################
         # END PROTOLOG DEMO
         ######################################
-
 
 
 

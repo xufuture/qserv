@@ -1,6 +1,6 @@
 /*
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -28,8 +28,6 @@
 #include <log4cxx/xml/domconfigurator.h>
 #include <stdio.h>
 
-#include <iostream> // TODO: remove. debugging only.
-
 #define MAX_LOG_MSG_LEN 512
 
 using namespace lsst::qserv;
@@ -37,11 +35,24 @@ using namespace lsst::qserv;
 std::stack<std::string> ProtoLog::context;
 std::string ProtoLog::defaultLogger;
 
-void ProtoLog::initLog() {
+void ProtoLog::initLog(std::string const& filename) {
     // Load XML configuration file using DOMConfigurator
-    // TODO: CONFIG FILE PATH NEEDS TO BE DETERMINED DYNAMICALLY.
-    log4cxx::xml::DOMConfigurator::configure("/u1/bchick/sandbox2/modules/etc/Log4cxxConfig.xml");
+    log4cxx::xml::DOMConfigurator::configure(filename);
+    // Clear context
     while (!context.empty()) context.pop();
+}
+
+std::string ProtoLog::getDefaultLoggerName() {
+    return defaultLogger;
+}
+
+log4cxx::LoggerPtr ProtoLog::getLogger(std::string const& loggername) {
+    log4cxx::LoggerPtr logger;
+    if (loggername.empty())
+        logger = log4cxx::Logger::getLogger(defaultLogger);
+    else
+        logger = log4cxx::Logger::getLogger(loggername);
+    return logger;
 }
 
 void ProtoLog::pushContext(std::string const& c) {
@@ -70,8 +81,28 @@ void ProtoLog::MDCRemove(std::string const& key) {
     log4cxx::MDC::remove(key);
 }
 
-void vforcedLog(const log4cxx::LevelPtr &level,
-                log4cxx::LoggerPtr logger,
+void ProtoLog::setLevel(std::string const& loggername, int level) {
+    getLogger(loggername)->setLevel(log4cxx::Level::toLevel(level));
+}
+
+int ProtoLog::getLevel(std::string const& loggername) {
+    log4cxx::LevelPtr levelPtr = getLogger(loggername)->getLevel();
+    int level = -1; // TODO: Is this the right thing to do?
+    if (levelPtr != NULL)
+        level = levelPtr->toInt();
+    return level;
+}
+
+bool ProtoLog::isEnabledFor(std::string const& loggername, int level) {
+    log4cxx::LoggerPtr logger = getLogger(loggername);
+    if (logger->isEnabledFor(log4cxx::Level::toLevel(level)))
+        return true;
+    else
+        return false;
+}
+
+void vforcedLog(log4cxx::LoggerPtr logger,
+                const log4cxx::LevelPtr &level,
                 std::string const& filename,
                 std::string const& funcname,
                 unsigned int lineno,
@@ -85,44 +116,42 @@ void vforcedLog(const log4cxx::LevelPtr &level,
                                                  lineno));
 }
 
-log4cxx::LoggerPtr ProtoLog::getLogger(std::string const& loggername) {
-    log4cxx::LoggerPtr logger;
-    if (loggername.empty())
-        logger = log4cxx::Logger::getLogger(defaultLogger);
-    else
-        logger = log4cxx::Logger::getLogger(loggername);
-    return logger;
-}
-
-void ProtoLog::vlog(std::string const& loggername,
-                    const log4cxx::LevelPtr &level, std::string const& filename,
-                    std::string const& funcname, unsigned int lineno,
-                    std::string const& fmt, va_list args) {
+void ProtoLog::vlog(std::string const& loggername, int level,
+                    std::string const& filename, std::string const& funcname,
+                    unsigned int lineno, std::string const& fmt, va_list args) {
     vlog(getLogger(loggername), level, filename, funcname, lineno, fmt, args);
 }
 
-void ProtoLog::log(std::string const& loggername,
-                   const log4cxx::LevelPtr &level, std::string const& filename,
-                   std::string const& funcname, unsigned int lineno,
-                   std::string const& fmt, ...) {
+void ProtoLog::vlog(log4cxx::LoggerPtr logger, int level,
+                    std::string const& filename, std::string const& funcname,
+                    unsigned int lineno, std::string const& fmt, va_list args) {
+    log4cxx::LevelPtr levelPtr = log4cxx::Level::toLevel(level);
+    if (logger->isEnabledFor(levelPtr))
+        vforcedLog(logger, levelPtr, filename, funcname, lineno, fmt, args);
+}
+
+void ProtoLog::log(std::string const& loggername, int level,
+                   std::string const& filename, std::string const& funcname,
+                   unsigned int lineno, std::string const& fmt, ...) {
     va_list args;
     va_start(args, fmt);
     vlog(loggername, level, filename, funcname, lineno, fmt, args);
 }
 
-void ProtoLog::vlog(log4cxx::LoggerPtr logger,
-                    const log4cxx::LevelPtr &level, std::string const& filename,
-                    std::string const& funcname, unsigned int lineno,
-                    std::string const& fmt, va_list args) {
-    if (logger->isEnabledFor(level))
-        vforcedLog(level, logger, filename, funcname, lineno, fmt, args);
-}
-
-void ProtoLog::log(log4cxx::LoggerPtr logger,
-                   const log4cxx::LevelPtr &level, std::string const& filename,
-                   std::string const& funcname, unsigned int lineno,
-                   std::string const& fmt, ...) {
+void ProtoLog::log(log4cxx::LoggerPtr logger, int level,
+                   std::string const& filename, std::string const& funcname,
+                   unsigned int lineno, std::string const& fmt, ...) {
     va_list args;
     va_start(args, fmt);
     vlog(logger, level, filename, funcname, lineno, fmt, args);
+}
+
+ProtoLogContext::ProtoLogContext(std::string const& name) {
+    _name = name;
+    ProtoLog::pushContext(name);
+}
+
+ProtoLogContext::~ProtoLogContext() {
+    if (!_name.empty())
+        ProtoLog::popContext();
 }

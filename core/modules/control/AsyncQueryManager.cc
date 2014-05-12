@@ -153,7 +153,10 @@ int AsyncQueryManager::add(TransactionSpec const& t,
      *************************************************/
 
     // basic demonstration of protolog
-    LOG("root", LOG_LVL_INFO, "Hello from root logger!");
+    LOG("root", LOG_LVL_INFO, "First hello from root logger!");
+    LOG_SET_LVL("root", LOG_LVL_INFO);
+    LOG("root", LOG_LVL_INFO, "Second hello from root logger!");
+    LOG("root", LOG_LVL_WARN, "A warning from root logger!");
     LOG("qserv", LOG_LVL_INFO, "Hello from qserv logger!");
     const char* info_stuff = "important stuff";
     LOG_INFO("Here's some information: %s", info_stuff);
@@ -179,7 +182,14 @@ int AsyncQueryManager::add(TransactionSpec const& t,
     }
     LOG_INFO("Finished with demonstration.");
 
+    // Demonstration of logger object
+    ProtoLog*  protoLogger = new ProtoLog("protoLogger");
+    LOG_INFO("Info statement after creating protoLogger.");
+    delete protoLogger;
+    LOG_INFO("Info statement after destroying protoLogger.");
+
     // Benchmark
+/*
     int iterations = 100;
     double start, stop;
     start = omp_get_wtime();
@@ -196,6 +206,7 @@ int AsyncQueryManager::add(TransactionSpec const& t,
     sleep(1);
     stop = omp_get_wtime();
     LOG_INFO("sleep(1): stop - start = %f", stop - start);
+*/
     
     /***********************************************
      * PROTOLOG DEMO END

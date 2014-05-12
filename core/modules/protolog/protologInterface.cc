@@ -28,8 +28,12 @@
 
 namespace qMaster=lsst::qserv::master;
 
-void qMaster::initLog_iface() {
-    lsst::qserv::ProtoLog::initLog();
+void qMaster::initLog_iface(std::string const& filename) {
+    lsst::qserv::ProtoLog::initLog(filename);
+}
+
+std::string qMaster::getDefaultLoggerName_iface(void) {
+    return lsst::qserv::ProtoLog::getDefaultLoggerName();
 }
 
 void qMaster::pushContext_iface(std::string const& c) {
@@ -48,17 +52,16 @@ void qMaster::MDCRemove_iface(std::string const& key) {
     lsst::qserv::ProtoLog::MDCRemove(key);
 }
 
-log4cxx::LevelPtr getLogLevel(int level) {
-    switch (level) {
-        case 0: return log4cxx::Level::getTrace();
-        case 1: return log4cxx::Level::getDebug();
-        case 2: return log4cxx::Level::getInfo();
-        case 3: return log4cxx::Level::getWarn();
-        case 4: return log4cxx::Level::getError();
-        case 5: return log4cxx::Level::getFatal();
-        // TODO: How should we handle invalid level number?
-        default: return log4cxx::Level::getInfo();
-    }
+void qMaster::setLevel_iface(std::string const& loggername, int level) {
+    lsst::qserv::ProtoLog::setLevel(loggername, level);
+}
+
+int qMaster::getLevel_iface(std::string const& loggername) {
+    return lsst::qserv::ProtoLog::getLevel(loggername);
+}
+
+bool qMaster::isEnabledFor_iface(std::string const& loggername, int level) {
+    return lsst::qserv::ProtoLog::isEnabledFor(loggername, level);
 }
 
 void qMaster::log_iface(std::string const& loggername,
@@ -70,8 +73,8 @@ void qMaster::log_iface(std::string const& loggername,
                         ...) {
     va_list args;
     va_start(args, fmt);
-    lsst::qserv::ProtoLog::vlog(loggername, getLogLevel(level), filename,
-                                funcname, lineno, fmt, args);
+    lsst::qserv::ProtoLog::vlog(loggername, level, filename, funcname, lineno,
+                                fmt, args);
 }
 
 

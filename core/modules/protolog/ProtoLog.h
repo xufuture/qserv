@@ -1,6 +1,6 @@
 /*
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2013 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -33,14 +33,23 @@
 #include <log4cxx/logger.h>
 
 // Convenience macros
+#define LOG_DEFAULT_NAME() lsst::qserv::ProtoLog::getDefaultLoggerName()
+
 #define LOG_PUSHCTX(c) lsst::qserv::ProtoLog::pushContext(c)
 #define LOG_POPCTX() lsst::qserv::ProtoLog::popContext()
 
 #define LOG_MDC(key, value) lsst::qserv::ProtoLog::MDC(key, value)
 #define LOG_MDC_REMOVE(key) lsst::qserv::ProtoLog::MDCRemove(key)
 
+#define LOG_SET_LVL(loggername, level) \
+    lsst::qserv::ProtoLog::setLevel(loggername, level)
+#define LOG_GET_LVL(loggername) \
+    lsst::qserv::ProtoLog::getLevel(loggername)
+#define LOG_CHECK_LVL(loggername, level) \
+    lsst::qserv::ProtoLog::isEnabledFor(loggername, level)
+
 #define LOG(loggername, level, msg...) \
-    lsst::qserv::ProtoLog::log(loggername, (*level)(), __BASE_FILE__,\
+    lsst::qserv::ProtoLog::log(loggername, level, __BASE_FILE__,\
                                __PRETTY_FUNCTION__, __LINE__, msg)
 
 #define LOG_TRACE(msg...) LOG("", LOG_LVL_TRACE, msg)
@@ -50,41 +59,52 @@
 #define LOG_ERROR(msg...) LOG("", LOG_LVL_ERROR, msg)
 #define LOG_FATAL(msg...) LOG("", LOG_LVL_FATAL, msg)
 
-#define LOG_LVL_TRACE &log4cxx::Level::getTrace
-#define LOG_LVL_DEBUG &log4cxx::Level::getDebug
-#define LOG_LVL_INFO &log4cxx::Level::getInfo
-#define LOG_LVL_WARN &log4cxx::Level::getWarn
-#define LOG_LVL_ERROR &log4cxx::Level::getError
-#define LOG_LVL_FATAL &log4cxx::Level::getFatal
+#define LOG_LVL_TRACE log4cxx::Level::TRACE_INT
+#define LOG_LVL_DEBUG log4cxx::Level::DEBUG_INT
+#define LOG_LVL_INFO log4cxx::Level::INFO_INT
+#define LOG_LVL_WARN log4cxx::Level::WARN_INT
+#define LOG_LVL_ERROR log4cxx::Level::ERROR_INT
+#define LOG_LVL_FATAL log4cxx::Level::FATAL_INT
 
 namespace lsst {
 namespace qserv {
 
 class ProtoLog {
 public:
-    static void initLog();
+    static void initLog(std::string const& filename);
+    static std::string getDefaultLoggerName(void);
     static void pushContext(std::string const& c);
     static void popContext(void);
     static void MDC(std::string const& key, std::string const& value);
     static void MDCRemove(std::string const& key);
+    static void setLevel(std::string const& loggername, int level);
+    static int getLevel(std::string const& loggername);
+    static bool isEnabledFor(std::string const& loggername, int level);
     static log4cxx::LoggerPtr getLogger(std::string const& loggername);
-    static void log(std::string const& loggername,
-                    const log4cxx::LevelPtr &level, std::string const& filename,
-                    std::string const& funcname, unsigned int lineno,
-                    std::string const& fmt, ...);
-    static void vlog(std::string const& loggername,
-                     const log4cxx::LevelPtr &level,
-                     std::string const& filename, std::string const& funcname,
-                     unsigned int lineno, std::string const& fmt, va_list args);
-    static void log(log4cxx::LoggerPtr logger, const log4cxx::LevelPtr &level,
+    static void log(std::string const& loggername, int level,
                     std::string const& filename, std::string const& funcname,
                     unsigned int lineno, std::string const& fmt, ...);
-    static void vlog(log4cxx::LoggerPtr logger, const log4cxx::LevelPtr &level,
+    static void vlog(std::string const& loggername, int level,
+                     std::string const& filename, std::string const& funcname,
+                     unsigned int lineno, std::string const& fmt, va_list args);
+    static void log(log4cxx::LoggerPtr logger, int level,
+                    std::string const& filename, std::string const& funcname,
+                    unsigned int lineno, std::string const& fmt, ...);
+    static void vlog(log4cxx::LoggerPtr logger, int level,
                      std::string const& filename, std::string const& funcname,
                      unsigned int lineno, std::string const& fmt, va_list args);
 private:
     static std::stack<std::string> context;
     static std::string defaultLogger;
+};
+
+class ProtoLogContext {
+public:
+    ProtoLogContext(void);
+    ProtoLogContext(std::string const& name);
+    ~ProtoLogContext(void);
+private:
+    std::string _name;
 };
 
 }} // lsst::qserv
