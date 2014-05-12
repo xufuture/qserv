@@ -37,13 +37,9 @@ void MDCRemove_iface(std::string const& key);
 void setLevel_iface(std::string const& loggername, int level);
 int getLevel_iface(std::string const& loggername);
 bool isEnabledFor_iface(std::string const& loggername, int level);
-void log_iface(std::string const& loggername,
-               int level,
-               std::string const& filename,
-               std::string const& funcname,
-               int lineno,
-               std::string const& fmt,
-               ...);
+void log_iface(std::string const& loggername, int level,
+               std::string const& filename, std::string const& funcname,
+               int lineno, std::string const& mdg);
 
 }}} // namespace lsst::qserv::master
 

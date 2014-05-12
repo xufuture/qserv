@@ -28,9 +28,9 @@
 #define LSST_QSERV_PROTOLOG_H
 
 #include <string>
-#include <stdarg.h>
 #include <stack>
 #include <log4cxx/logger.h>
+#include <boost/format.hpp>
 
 // Convenience macros
 #define LOG_DEFAULT_NAME() lsst::qserv::ProtoLog::getDefaultLoggerName()
@@ -48,16 +48,16 @@
 #define LOG_CHECK_LVL(loggername, level) \
     lsst::qserv::ProtoLog::isEnabledFor(loggername, level)
 
-#define LOG(loggername, level, msg...) \
-    lsst::qserv::ProtoLog::log(loggername, level, __BASE_FILE__,\
-                               __PRETTY_FUNCTION__, __LINE__, msg)
+#define LOG(loggername, level, fmt) \
+    lsst::qserv::ProtoLogFormatter(loggername, level, __BASE_FILE__,\
+                                   __PRETTY_FUNCTION__, __LINE__, fmt)
 
-#define LOG_TRACE(msg...) LOG("", LOG_LVL_TRACE, msg)
-#define LOG_DEBUG(msg...) LOG("", LOG_LVL_DEBUG, msg)
-#define LOG_INFO(msg...) LOG("", LOG_LVL_INFO, msg)
-#define LOG_WARN(msg...) LOG("", LOG_LVL_WARN, msg)
-#define LOG_ERROR(msg...) LOG("", LOG_LVL_ERROR, msg)
-#define LOG_FATAL(msg...) LOG("", LOG_LVL_FATAL, msg)
+#define LOG_TRACE(fmt) LOG("", LOG_LVL_TRACE, fmt)
+#define LOG_DEBUG(fmt) LOG("", LOG_LVL_DEBUG, fmt)
+#define LOG_INFO(fmt) LOG("", LOG_LVL_INFO, fmt)
+#define LOG_WARN(fmt) LOG("", LOG_LVL_WARN, fmt)
+#define LOG_ERROR(fmt) LOG("", LOG_LVL_ERROR, fmt)
+#define LOG_FATAL(fmt) LOG("", LOG_LVL_FATAL, fmt)
 
 #define LOG_LVL_TRACE log4cxx::Level::TRACE_INT
 #define LOG_LVL_DEBUG log4cxx::Level::DEBUG_INT
@@ -81,18 +81,11 @@ public:
     static int getLevel(std::string const& loggername);
     static bool isEnabledFor(std::string const& loggername, int level);
     static log4cxx::LoggerPtr getLogger(std::string const& loggername);
-    static void log(std::string const& loggername, int level,
-                    std::string const& filename, std::string const& funcname,
-                    unsigned int lineno, std::string const& fmt, ...);
-    static void vlog(std::string const& loggername, int level,
-                     std::string const& filename, std::string const& funcname,
-                     unsigned int lineno, std::string const& fmt, va_list args);
-    static void log(log4cxx::LoggerPtr logger, int level,
-                    std::string const& filename, std::string const& funcname,
-                    unsigned int lineno, std::string const& fmt, ...);
-    static void vlog(log4cxx::LoggerPtr logger, int level,
-                     std::string const& filename, std::string const& funcname,
-                     unsigned int lineno, std::string const& fmt, va_list args);
+    static void forcedLog(log4cxx::LoggerPtr logger,
+                          const log4cxx::LevelPtr &level,
+                          std::string const& filename,
+                          std::string const& funcname,
+                          unsigned int lineno, std::string const& msg);
 private:
     static std::stack<std::string> context;
     static std::string defaultLogger;
@@ -107,6 +100,28 @@ private:
     std::string _name;
 };
 
+class ProtoLogFormatter {
+public:
+    ProtoLogFormatter(std::string const& loggername, int level,
+                      std::string const& filename, std::string const& funcname,
+                      unsigned int lineno, const char* fmt);
+    ProtoLogFormatter(log4cxx::LoggerPtr logger, int level,
+                      std::string const& filename, std::string const& funcname,
+                      unsigned int lineno, const char* fmt);
+    ~ProtoLogFormatter(void);
+    template <typename T> ProtoLogFormatter& operator %(T value) {
+        _fmter % value;
+        return *this;
+    }
+private:
+    log4cxx::LoggerPtr _logger;
+    int _level;
+    std::string const& _filename;
+    std::string const& _funcname;
+    unsigned int _lineno;
+    boost::format _fmter;
+};
+    
 }} // lsst::qserv
 
 #endif // LSST_QSERV_PROTOLOG_H

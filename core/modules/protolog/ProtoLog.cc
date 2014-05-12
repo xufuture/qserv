@@ -26,11 +26,10 @@
 #include <log4cxx/simplelayout.h>
 #include <log4cxx/logmanager.h>
 #include <log4cxx/xml/domconfigurator.h>
-#include <stdio.h>
-
-#define MAX_LOG_MSG_LEN 512
 
 using namespace lsst::qserv;
+
+// ProtoLog class
 
 std::stack<std::string> ProtoLog::context;
 std::string ProtoLog::defaultLogger;
@@ -101,50 +100,19 @@ bool ProtoLog::isEnabledFor(std::string const& loggername, int level) {
         return false;
 }
 
-void vforcedLog(log4cxx::LoggerPtr logger,
-                const log4cxx::LevelPtr &level,
-                std::string const& filename,
-                std::string const& funcname,
-                unsigned int lineno,
-                std::string const& fmt,
-                va_list args) {
-    char msg[MAX_LOG_MSG_LEN];
-    vsnprintf(msg, MAX_LOG_MSG_LEN, fmt.c_str(), args);
-    logger->forcedLog(level, msg,
+void ProtoLog::forcedLog(log4cxx::LoggerPtr logger,
+                         const log4cxx::LevelPtr &level,
+                         std::string const& filename,
+                         std::string const& funcname,
+                         unsigned int lineno,
+                         std::string const& msg) {
+    logger->forcedLog(level, msg.c_str(),
                       log4cxx::spi::LocationInfo(filename.c_str(),
                                                  funcname.c_str(),
                                                  lineno));
 }
 
-void ProtoLog::vlog(std::string const& loggername, int level,
-                    std::string const& filename, std::string const& funcname,
-                    unsigned int lineno, std::string const& fmt, va_list args) {
-    vlog(getLogger(loggername), level, filename, funcname, lineno, fmt, args);
-}
-
-void ProtoLog::vlog(log4cxx::LoggerPtr logger, int level,
-                    std::string const& filename, std::string const& funcname,
-                    unsigned int lineno, std::string const& fmt, va_list args) {
-    log4cxx::LevelPtr levelPtr = log4cxx::Level::toLevel(level);
-    if (logger->isEnabledFor(levelPtr))
-        vforcedLog(logger, levelPtr, filename, funcname, lineno, fmt, args);
-}
-
-void ProtoLog::log(std::string const& loggername, int level,
-                   std::string const& filename, std::string const& funcname,
-                   unsigned int lineno, std::string const& fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    vlog(loggername, level, filename, funcname, lineno, fmt, args);
-}
-
-void ProtoLog::log(log4cxx::LoggerPtr logger, int level,
-                   std::string const& filename, std::string const& funcname,
-                   unsigned int lineno, std::string const& fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    vlog(logger, level, filename, funcname, lineno, fmt, args);
-}
+// ProtoLogContext class
 
 ProtoLogContext::ProtoLogContext(std::string const& name) {
     _name = name;
@@ -155,3 +123,37 @@ ProtoLogContext::~ProtoLogContext() {
     if (!_name.empty())
         ProtoLog::popContext();
 }
+
+// ProtoLogFormatter class
+
+ProtoLogFormatter::ProtoLogFormatter(std::string const& loggername, int level,
+                                     std::string const& filename,
+                                     std::string const& funcname,
+                                     unsigned int lineno, const char* fmt) :
+                                     _logger(ProtoLog::getLogger(loggername)),
+                                     _level(level),
+                                     _filename(filename),
+                                     _funcname(funcname),
+                                     _lineno(lineno),
+                                     _fmter(fmt) {
+}
+
+ProtoLogFormatter::ProtoLogFormatter(log4cxx::LoggerPtr logger, int level,
+                                     std::string const& filename,
+                                     std::string const& funcname,
+                                     unsigned int lineno, const char* fmt) :
+                                     _logger(logger),
+                                     _level(level),
+                                     _filename(filename),
+                                     _funcname(funcname),
+                                     _lineno(lineno),
+                                     _fmter(fmt) {
+}
+
+ProtoLogFormatter::~ProtoLogFormatter() {
+    log4cxx::LevelPtr levelPtr = log4cxx::Level::toLevel(_level);
+    if (_logger->isEnabledFor(levelPtr))
+        ProtoLog::forcedLog(_logger, levelPtr, _filename, _funcname, _lineno,
+                            _fmter.str());
+}
+

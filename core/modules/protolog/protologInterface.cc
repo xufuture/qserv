@@ -64,17 +64,12 @@ bool qMaster::isEnabledFor_iface(std::string const& loggername, int level) {
     return lsst::qserv::ProtoLog::isEnabledFor(loggername, level);
 }
 
-void qMaster::log_iface(std::string const& loggername,
-                        int level,
+void qMaster::log_iface(std::string const& loggername, int level,
                         std::string const& filename,
-                        std::string const& funcname,
-                        int lineno,
-                        std::string const& fmt,
-                        ...) {
-    va_list args;
-    va_start(args, fmt);
-    lsst::qserv::ProtoLog::vlog(loggername, level, filename, funcname, lineno,
-                                fmt, args);
+                        std::string const& funcname, int lineno,
+                        std::string const& msg) {
+    lsst::qserv::ProtoLogFormatter(loggername, level, filename, funcname,
+                                   lineno, msg.c_str());
 }
 
 

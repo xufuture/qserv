@@ -159,9 +159,9 @@ int AsyncQueryManager::add(TransactionSpec const& t,
     LOG("root", LOG_LVL_WARN, "A warning from root logger!");
     LOG("qserv", LOG_LVL_INFO, "Hello from qserv logger!");
     const char* info_stuff = "important stuff";
-    LOG_INFO("Here's some information: %s", info_stuff);
+    LOG_INFO("Here's some information: %s") % info_stuff;
     int debug_stuff = 99;
-    LOG_DEBUG("Here's some debugging: %d", debug_stuff);
+    LOG_DEBUG("Here's some debugging: %d") % debug_stuff;
 
     // Using logger object for better performance (e.g. no logger lookups).
     log4cxx::LoggerPtr logger = ProtoLog::getLogger("czar.control");
@@ -175,7 +175,7 @@ int AsyncQueryManager::add(TransactionSpec const& t,
         std::stringstream ss;
         ss << "loglevel_" << i;
         LOG_PUSHCTX(ss.str());
-        LOG_DEBUG("debugging statement at level %d.", i);
+        LOG_DEBUG("debugging statement at level %d.") % i;
     }
     for (int i=0; i < levels; i++) {
         LOG_POPCTX();
@@ -183,10 +183,10 @@ int AsyncQueryManager::add(TransactionSpec const& t,
     LOG_INFO("Finished with demonstration.");
 
     // Demonstration of logger object
-    ProtoLog*  protoLogger = new ProtoLog("protoLogger");
-    LOG_INFO("Info statement after creating protoLogger.");
-    delete protoLogger;
-    LOG_INFO("Info statement after destroying protoLogger.");
+    ProtoLogContext*  context = new ProtoLogContext("demo");
+    LOG_INFO("Info statement after creating demo context.");
+    delete context;
+    LOG_INFO("Info statement after destroying demo context.");
 
     // Benchmark
 /*
@@ -196,16 +196,16 @@ int AsyncQueryManager::add(TransactionSpec const& t,
     for (int i=0; i < iterations; i++)
         LOG("root", LOG_LVL_INFO, "Hello from root logger!");
     stop = omp_get_wtime();
-    LOG_INFO("LOG(\"root\", LOG_LVL_INFO, ...): stop - start = %f", (stop - start)/iterations);
+    LOG_INFO("LOG(\"root\", LOG_LVL_INFO, ...): stop - start = %f") % (stop - start)/iterations;
     start = omp_get_wtime();
     for (int i=0; i < iterations; i++)
         LOG_INFO("Hello from default logger!");
     stop = omp_get_wtime();
-    LOG_INFO("LOG_INFO(...): stop - start = %f", (stop - start)/iterations);
+    LOG_INFO("LOG_INFO(...): stop - start = %f") % (stop - start)/iterations;
     start = omp_get_wtime();
     sleep(1);
     stop = omp_get_wtime();
-    LOG_INFO("sleep(1): stop - start = %f", stop - start);
+    LOG_INFO("sleep(1): stop - start = %f") % stop - start;
 */
     
     /***********************************************
