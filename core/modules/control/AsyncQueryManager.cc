@@ -208,8 +208,14 @@ int AsyncQueryManager::add(TransactionSpec const& t,
         // These log messages will not print.
         LOG_INFO("Hello from default logger!");
     stop = omp_get_wtime();
-    LOG_SET_LVL("", LOG_LVL_INFO);
     LOG_WARN("LOG_INFO(...): avg time = %e") % ((stop - start)/iterations);
+    start = omp_get_wtime();
+    for (int i=0; i < iterations; i++)
+        // These log messages will not print.
+        LOG_INFO("Hello from default logger with %s.") % info_stuff;
+    stop = omp_get_wtime();
+    LOG_WARN("LOG_INFO(...) %% info_stuff: avg time = %e")
+        % ((stop - start)/iterations);
     start = omp_get_wtime();
     sleep(1);
     stop = omp_get_wtime();
