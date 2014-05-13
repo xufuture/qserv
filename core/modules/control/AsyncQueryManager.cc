@@ -184,31 +184,36 @@ int AsyncQueryManager::add(TransactionSpec const& t,
 
     // Demonstration of context object
     {
-        std::auto_ptr<LOG_CTX> context(LOG_NEWCTX("demo"));
+        LOG_CTX context("demo");
         LOG_INFO("Info statement after creating demo context.");
     }
     LOG_INFO("Info statement after destroying demo context.");
         
 
     // Benchmark
-/*
     int iterations = 100;
     double start, stop;
+    LOG_SET_LVL("root", LOG_LVL_WARN);
     start = omp_get_wtime();
     for (int i=0; i < iterations; i++)
+        // These log messages will not print.
         LOG("root", LOG_LVL_INFO, "Hello from root logger!");
     stop = omp_get_wtime();
-    LOG_INFO("LOG(\"root\", LOG_LVL_INFO, ...): stop - start = %f") % (stop - start)/iterations;
+    LOG_WARN("LOG(\"root\", LOG_LVL_INFO, ...): avg time = %e")
+        % ((stop - start)/iterations);
+    LOG_SET_LVL("", LOG_LVL_WARN);
+    assert(!LOG_CHECK_LVL("", LOG_LVL_INFO));
     start = omp_get_wtime();
     for (int i=0; i < iterations; i++)
+        // These log messages will not print.
         LOG_INFO("Hello from default logger!");
     stop = omp_get_wtime();
-    LOG_INFO("LOG_INFO(...): stop - start = %f") % (stop - start)/iterations;
+    LOG_SET_LVL("", LOG_LVL_INFO);
+    LOG_WARN("LOG_INFO(...): avg time = %e") % ((stop - start)/iterations);
     start = omp_get_wtime();
     sleep(1);
     stop = omp_get_wtime();
-    LOG_INFO("sleep(1): stop - start = %f") % stop - start;
-*/
+    LOG_INFO("sleep(1): stop - start = %f") % (stop - start);
     
     /***********************************************
      * PROTOLOG DEMO END
