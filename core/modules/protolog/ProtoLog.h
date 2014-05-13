@@ -57,6 +57,8 @@
     lsst::qserv::ProtoLogFormatter(logger, level, __BASE_FILE__,\
                                    __PRETTY_FUNCTION__, __LINE__, fmt)
 
+#define LOG_NO_OP() lsst::qserv::ProtoLogNoOp()
+
 #define LOG_TRACE(fmt) LOG("", LOG_LVL_TRACE, fmt)
 #define LOG_DEBUG(fmt) LOG("", LOG_LVL_DEBUG, fmt)
 #define LOG_INFO(fmt) LOG("", LOG_LVL_INFO, fmt)
@@ -128,6 +130,14 @@ private:
     std::string const& _funcname;
     unsigned int _lineno;
     boost::format _fmter;
+};
+
+// Simulate no operation while still handling the % operator.
+class ProtoLogNoOp {
+public:
+    template <typename T> ProtoLogNoOp& operator %(T value) {
+        return *this;
+    }
 };
     
 }} // lsst::qserv
