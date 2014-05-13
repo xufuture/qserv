@@ -73,7 +73,12 @@ class QservAdmin(object):
         dbP = "/DBS/%s" % dbName
         ptP = None
         try:
-            lockVersion = self._lockDb(dbName)
+            self._lockDb(dbName)
+            if self._kvI.exists(dbP):
+                self._logger.info("createDb database '%s' exists, aborting." % \
+                                      dbName)
+                self._unlockDb(dbName)
+                return
             self._kvI.create(dbP, "PENDING")
             ptP = self._kvI.create("/PARTITIONING/_", sequence=True)
             options["uuid"] = str(uuid.uuid4())
@@ -87,13 +92,13 @@ class QservAdmin(object):
                 self._kvI.create("%s/%s" % (dbP, x), options[x])
             self._createDbLockSection(dbP)
             self._kvI.set(dbP, "READY")
-            self._unlockDb(dbName, lockVersion)
+            self._unlockDb(dbName)
         except KvException as e:
             self._logger.error("Failed to create database '%s', " % dbName +
                                "error was: " + e.__str__())
             self._kvI.delete(dbP, recursive=True)
             if ptP is not None: self._kvI.delete(ptP, recursive=True)
-            self._unlockDb(dbName, lockVersion)
+            self._unlockDb(dbName)
             raise
         self._logger.debug("Create database '%s' succeeded." % dbName)
 
@@ -106,8 +111,8 @@ class QservAdmin(object):
         """
         self._logger.info("Creating db '%s' like '%s'" % (dbName, dbName2))
         dbP = "/DBS/%s" % dbName
-        lockVersion = self._lockDb(dbName)
-        lockVersion2 = self._lockDb(dbName2)
+        self._lockDb(dbName)
+        self._lockDb(dbName2)
         try:
             self._kvI.create(dbP, "PENDING")
             self._kvI.create("%s/uuid" % dbP, str(uuid.uuid4()))
@@ -116,14 +121,14 @@ class QservAdmin(object):
                                 "releaseStatus", "objIdIndex"))
             self._createDbLockSection(dbP)
             self._kvI.set(dbP, "READY")
-            self._unlockDb(dbName, lockVersion)
-            self._unlockDb(dbName2, lockVersion2)
+            self._unlockDb(dbName)
+            self._unlockDb(dbName2)
         except KvException as e:
             self._logger.error("Failed to create database '%s', " % dbName +
                                "error was: " + e.__str__())
             self._kvI.delete(dbP, recursive=True)
-            self._unlockDb(dbName, lockVersion)
-            self._unlockDb(dbName2, lockVersion2)
+            self._unlockDb(dbName)
+            self._unlockDb(dbName2)
             raise
 
     def dropDb(self, dbName):
@@ -134,9 +139,14 @@ class QservAdmin(object):
         """
         self._logger.info("Drop database '%s'" % dbName)
         dbP = "/DBS/%s" % dbName
-        lockVersion = self._lockDb(dbName)
+        self._lockDb(dbName)
+        if not self._kvI.exists(dbP):
+            self._logger.info("dropDb database '%s' gone, aborting.." % \
+                                  dbName)
+            self._unlockDb(dbName)
+            return
         self._kvI.delete(dbP, recursive=True)
-        self._unlockDb(dbName, lockVersion)
+        self._unlockDb(dbName)
 
     def showDatabases(self):
         """
@@ -174,7 +184,12 @@ class QservAdmin(object):
                                (dbName, tableName, str(options)))
         tbP = "/DBS/%s/TABLES/%s" % (dbName, tableName)
         options["uuid"] = str(uuid.uuid4())
-        lockVersion = self._lockDb(dbName)
+        self._lockDb(dbName)
+        if not self._kvI.exists("/DBS/%s" % dbName):
+            self._logger.info("createTable: database '%s' missing, aborting." % \
+                                  dbName)
+            self._unlockDb(dbName)
+            return
         try:
             self._kvI.create(tbP, "PENDING")
             for o in possibleOptions:
@@ -185,12 +200,12 @@ class QservAdmin(object):
                 else:
                     self._logger.info("'%s' not provided" % o[0])
             self._kvI.set(tbP, "READY")
-            self._unlockDb(dbName, lockVersion)
+            self._unlockDb(dbName)
         except KvException as e:
             self._logger.error("Failed to create table '%s.%s', " % \
                                 (dbName, tableName) + "error was: " + e.__str__())
             self._kvI.delete(tbP, recursive=True)
-            self._unlockDb(dbName, lockVersion)
+            self._unlockDb(dbName)
             raise
         self._logger.debug("Create table '%s.%s' succeeded." % (dbName, tableName))
 
@@ -286,11 +301,11 @@ class QservAdmin(object):
         Lock database to avoid collisions when running create/drop db, 
         create/drop tables.
         """
-        return self._kvI.createEphemeralNodeWaitIfNeeded(self._dbLockName(dbName))
+        self._kvI.createEphemeralNodeWaitIfNeeded(self._dbLockName(dbName))
 
-    def _unlockDb(self, dbName, version):
-        self._kvI.deleteSpecificVersion(self._dbLockName(dbName), version)
+    def _unlockDb(self, dbName):
+        self._kvI.delete(self._dbLockName(dbName))
 
-    @static
-    def _dbLockName(self, dbName):
+    @staticmethod
+    def _dbLockName(dbName):
         return "/LOCKS/%s" % dbName

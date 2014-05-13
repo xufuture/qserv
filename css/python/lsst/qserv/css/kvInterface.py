@@ -180,10 +180,6 @@ class KvInterface(object):
             self._logger.error("in delete(), key %s does not exist" % k)
             raise KvException(KvException.KEY_DOES_NOT_EXIST, k)
 
-    def deleteSpecificVersion(self, k, version):
-        self._logger.info("DELETE '%s', version: " % (k, version))
-        self._zk.delete(k, version=version)
-
     def dumpAll(self, fileH=sys.stdout):
         """
         Returns entire contents.
@@ -199,14 +195,14 @@ class KvInterface(object):
         sleepTime = 0
         while True:
             try:
-                self._kvI.create(k, "", ephemeral=True)
+                self._logger.info("CREATE ephemeral '%s' --> ''" % k)
+                self._zk.create(k, "", ephemeral=True, makepath=True)
             except NodeExistsError:
                 if sleepTime < 30:
                     sleepTime += 1
                 time.sleep(sleepTime)
             finally:
-                data, stats = self._kvI.get(k)
-                return stats.version
+                return
 
     def _printNode(self, p, fileH=None):
         """
