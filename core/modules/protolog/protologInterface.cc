@@ -36,8 +36,8 @@ std::string qMaster::getDefaultLoggerName_iface(void) {
     return lsst::qserv::ProtoLog::getDefaultLoggerName();
 }
 
-void qMaster::pushContext_iface(std::string const& c) {
-    lsst::qserv::ProtoLog::pushContext(c);
+void qMaster::pushContext_iface(std::string const& name) {
+    lsst::qserv::ProtoLog::pushContext(name);
 }
 
 void qMaster::popContext_iface() {

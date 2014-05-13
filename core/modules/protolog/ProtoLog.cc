@@ -54,14 +54,14 @@ log4cxx::LoggerPtr ProtoLog::getLogger(std::string const& loggername) {
     return logger;
 }
 
-void ProtoLog::pushContext(std::string const& c) {
-    context.push(c);
+void ProtoLog::pushContext(std::string const& name) {
+    context.push(name);
     // construct new default logger name
     std::stringstream ss;
     if (defaultLogger.empty())
-        ss << c;
+        ss << name;
     else
-        ss << defaultLogger << "." << c;
+        ss << defaultLogger << "." << name;
     defaultLogger = ss.str();
 }
 

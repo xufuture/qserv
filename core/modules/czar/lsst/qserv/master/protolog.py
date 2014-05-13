@@ -45,8 +45,8 @@ def getDefaultLoggerName():
     name = getDefaultLoggerName_iface()
     return name
 
-def pushContext(c):
-    pushContext_iface(c)
+def pushContext(name):
+    pushContext_iface(name)
 
 def popContext():
     popContext_iface()
@@ -57,33 +57,51 @@ def MDC(key, value):
 def MDCRemove(key):
     MDCRemove_iface(str(key))
 
-def getLevel(loggerName):
-    return getLevel_iface(loggerName)
+def setLevel(loggername, level):
+    setLevel_iface(loggername, level)
 
-def setLevel(loggerName, level):
-    setLevel_iface(loggerName, level)
+def getLevel(loggername):
+    return getLevel_iface(loggername)
 
-def isEnabledFor(loggerName, level):
-    return isEnabledFor_iface(loggerName, level)
+def isEnabledFor(loggername, level):
+    return isEnabledFor_iface(loggername, level)
     
-def log(loggerName, level, fmt, *args, **kwargs):
-    if 'depth' in kwargs:
-        depth = kwargs['depth']
-    else:
-        depth = 1
-    if isEnabledFor(loggerName, level):
-        frame = getFrame(depth)
-        log_iface(loggerName, level, path.split(frame.f_code.co_filename)[1],
-                      getFuncName(depth), frame.f_lineno, fmt % args)
-
-def getFrame(depth):
+def _getFrame(depth):
     frame = inspect.currentframe().f_back
     for i in range(depth):
         frame = frame.f_back
     return frame
 
-def getFuncName(depth):
+def _getFuncName(depth):
     return inspect.stack()[depth+1][3]
+
+def log(loggername, level, fmt, *args, **kwargs):
+    if 'depth' in kwargs:
+        depth = kwargs['depth']
+    else:
+        depth = 1
+    if isEnabledFor(loggername, level):
+        frame = _getFrame(depth)
+        log_iface(loggername, level, path.split(frame.f_code.co_filename)[1],
+                      _getFuncName(depth), frame.f_lineno, fmt % args)
+
+def trace(fmt, *args):
+    log("", TRACE, fmt, *args, depth=2)
+
+def debug(fmt, *args):
+    log("", DEBUG, fmt, *args, depth=2)
+
+def info(fmt, *args):
+    log("", INFO, fmt, *args, depth=2)
+
+def warn(fmt, *args):
+    log("", WARN, fmt, *args, depth=2)
+
+def error(fmt, *args):
+    log("", ERROR, fmt, *args, depth=2)
+
+def fatal(fmt, *args):
+    log("", FATAL, fmt, *args, depth=2)
 
 class ProtoLogContext:
 
@@ -112,32 +130,14 @@ class ProtoLogContext:
             popContext()
             self.name = None
 
-    def getLevel(self):
-        return getLevel("")
-
     def setLevel(self, level):
         setLevel("", level)
 
+    def getLevel(self):
+        return getLevel("")
+
     def isEnabledFor(self, level):
         return isEnabledFor("", level)
-
-    def trace(self, fmt, *args):
-        log("", TRACE, fmt, *args, depth=2)
-    
-    def debug(self, fmt, *args):
-        log("", DEBUG, fmt, *args, depth=2)
-    
-    def info(self, fmt, *args):
-        log("", INFO, fmt, *args, depth=2)
-    
-    def warn(self, fmt, *args):
-        log("", WARN, fmt, *args, depth=2)
-    
-    def error(self, fmt, *args):
-        log("", ERROR, fmt, *args, depth=2)
-    
-    def fatal(self, fmt, *args):
-        log("", FATAL, fmt, *args, depth=2)
 
 class ProtoLogHandler(logging.Handler):
     def __init__(self, name=None, level=None):

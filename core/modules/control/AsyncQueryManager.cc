@@ -164,7 +164,7 @@ int AsyncQueryManager::add(TransactionSpec const& t,
     LOG_DEBUG("Here's some debugging: %d") % debug_stuff;
 
     // Using logger object for better performance (e.g. no logger lookups).
-    log4cxx::LoggerPtr logger = ProtoLog::getLogger("czar.control");
+    LOG_LOGGER logger = LOG_GET("czar.control");
     LOG(logger, LOG_LVL_INFO, "Logging with logger object.");
 
     // The following is a simple example of logging contexts and
@@ -182,11 +182,13 @@ int AsyncQueryManager::add(TransactionSpec const& t,
     }
     LOG_INFO("Finished with demonstration.");
 
-    // Demonstration of logger object
-    ProtoLogContext*  context = new ProtoLogContext("demo");
-    LOG_INFO("Info statement after creating demo context.");
-    delete context;
+    // Demonstration of context object
+    {
+        std::auto_ptr<LOG_CTX> context(LOG_NEWCTX("demo"));
+        LOG_INFO("Info statement after creating demo context.");
+    }
     LOG_INFO("Info statement after destroying demo context.");
+        
 
     // Benchmark
 /*

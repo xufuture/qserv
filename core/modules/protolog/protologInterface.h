@@ -30,7 +30,7 @@ namespace lsst { namespace qserv { namespace master {
 
 void initLog_iface(std::string const& filename);
 std::string getDefaultLoggerName_iface(void);
-void pushContext_iface(std::string const& c);
+void pushContext_iface(std::string const& name);
 void popContext_iface();
 void MDC_iface(std::string const& key, std::string const& value);
 void MDCRemove_iface(std::string const& key);

@@ -33,9 +33,14 @@
 #include <boost/format.hpp>
 
 // Convenience macros
+#define LOG_INIT(filename) lsst::qserv::ProtoLog::initLog(filename)
+
 #define LOG_DEFAULT_NAME() lsst::qserv::ProtoLog::getDefaultLoggerName()
 
-#define LOG_PUSHCTX(c) lsst::qserv::ProtoLog::pushContext(c)
+#define LOG_GET(loggername) lsst::qserv::ProtoLog::getLogger(loggername)
+
+#define LOG_NEWCTX(name) (new lsst::qserv::ProtoLogContext(name))
+#define LOG_PUSHCTX(name) lsst::qserv::ProtoLog::pushContext(name)
 #define LOG_POPCTX() lsst::qserv::ProtoLog::popContext()
 
 #define LOG_MDC(key, value) lsst::qserv::ProtoLog::MDC(key, value)
@@ -48,8 +53,8 @@
 #define LOG_CHECK_LVL(loggername, level) \
     lsst::qserv::ProtoLog::isEnabledFor(loggername, level)
 
-#define LOG(loggername, level, fmt) \
-    lsst::qserv::ProtoLogFormatter(loggername, level, __BASE_FILE__,\
+#define LOG(logger, level, fmt) \
+    lsst::qserv::ProtoLogFormatter(logger, level, __BASE_FILE__,\
                                    __PRETTY_FUNCTION__, __LINE__, fmt)
 
 #define LOG_TRACE(fmt) LOG("", LOG_LVL_TRACE, fmt)
@@ -58,6 +63,9 @@
 #define LOG_WARN(fmt) LOG("", LOG_LVL_WARN, fmt)
 #define LOG_ERROR(fmt) LOG("", LOG_LVL_ERROR, fmt)
 #define LOG_FATAL(fmt) LOG("", LOG_LVL_FATAL, fmt)
+
+#define LOG_LOGGER log4cxx::LoggerPtr
+#define LOG_CTX lsst::qserv::ProtoLogContext
 
 #define LOG_LVL_TRACE log4cxx::Level::TRACE_INT
 #define LOG_LVL_DEBUG log4cxx::Level::DEBUG_INT
@@ -73,7 +81,7 @@ class ProtoLog {
 public:
     static void initLog(std::string const& filename);
     static std::string getDefaultLoggerName(void);
-    static void pushContext(std::string const& c);
+    static void pushContext(std::string const& name);
     static void popContext(void);
     static void MDC(std::string const& key, std::string const& value);
     static void MDCRemove(std::string const& key);

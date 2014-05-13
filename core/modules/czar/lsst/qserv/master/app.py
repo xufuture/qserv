@@ -428,23 +428,23 @@ class InbandQueryAction:
         # Demonstrate ProtoLogContext
         context = ProtoLogContext(name="czar", level=protolog.INFO)
         context.open() # must call open() to set logging context
-        context.warn("This is a warning by %s!", name)
-        context.debug("This first debug statement should NOT display.")
+        protolog.warn("This is a warning by %s!", name)
+        protolog.debug("This first debug statement should NOT display.")
         context.setLevel(protolog.DEBUG)
-        context.debug("This second debug statement should display.")
+        protolog.debug("This second debug statement should display.")
         context.setLevel(protolog.INFO)
-        context.debug("This third debug statement should NOT display.")
-        context.info("defaultLoggerName = %s", protolog.getDefaultLoggerName())
+        protolog.debug("This third debug statement should NOT display.")
+        protolog.info("defaultLoggerName = %s", protolog.getDefaultLoggerName())
 
         # Demonstrate with statement
         context.setLevel(protolog.INFO)
         with ProtoLogContext(name="innerContext", level=protolog.DEBUG) as innerC:
-            innerC.info("Hello from inner context!")
-            innerC.debug("Debug statement in inner context should display.")
-            innerC.info("defaultLoggerName = %s",
+            protolog.info("Hello from inner context!")
+            protolog.debug("Debug statement in inner context should display.")
+            protolog.info("defaultLoggerName = %s",
                          protolog.getDefaultLoggerName())
-        context.debug("Debug statement in outer context  should NOT display.")
-        context.info("defaultLoggerName = %s", protolog.getDefaultLoggerName())
+        protolog.debug("Debug statement in outer context  should NOT display.")
+        protolog.info("defaultLoggerName = %s", protolog.getDefaultLoggerName())
 
 
         # Demonstrate standard python logging module.
@@ -457,7 +457,7 @@ class InbandQueryAction:
             lgr.addHandler(handler)
             lgr.info("Info statemnet via logging module that should NOT display.")
             lgr.warning("Warning via logging module that should display.")
-            context.info("Info statement after logging module that should "
+            protolog.info("Info statement after logging module that should "
                          "display in the czar.handler context.")
             # MUST DO THIS TO POP CONTEXT
             lgr.removeHandler(handler)
@@ -465,8 +465,8 @@ class InbandQueryAction:
 
         loggingFunc()
         loggingFunc()
-        context.info("Info statement after logging module that should display "
-                     "in the czar context.")
+        protolog.info("Info statement after logging module that should display "
+                      "in the czar context.")
 
         #### Demonstration of fine-grained debugging ####
         def debugLoggerName(num):
