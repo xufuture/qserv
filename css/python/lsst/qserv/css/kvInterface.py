@@ -154,7 +154,7 @@ class KvInterface(object):
             self._logger.error("in set(), key %s does not exist" % k)
             raise KvException(KvException.KEY_DOES_NOT_EXIST, k)
 
-    def delete(self, k, recursive=False):
+    def delete(self, k, recursive=False, version=None):
         """
         Delete a key, including all children if recursive flag is set.
 
@@ -180,11 +180,33 @@ class KvInterface(object):
             self._logger.error("in delete(), key %s does not exist" % k)
             raise KvException(KvException.KEY_DOES_NOT_EXIST, k)
 
+    def deleteSpecificVersion(self, k, version):
+        self._logger.info("DELETE '%s', version: " % (k, version))
+        self._zk.delete(k, version=version)
+
     def dumpAll(self, fileH=sys.stdout):
         """
         Returns entire contents.
         """
         self._printNode("/", fileH)
+
+    def createEphemeralNodeWaitIfNeeded(self, k):
+        """
+        Creates an ephemeral node 'k'. If the node exists, it will sleep in between
+        of retrying, starting from 1 sec, growing up to 30 sec. Returns version 
+        number.
+        """
+        sleepTime = 0
+        while True:
+            try:
+                self._kvI.create(k, "", ephemeral=True)
+            except NodeExistsError:
+                if sleepTime < 30:
+                    sleepTime += 1
+                time.sleep(sleepTime)
+            finally:
+                data, stats = self._kvI.get(k)
+                return stats.version
 
     def _printNode(self, p, fileH=None):
         """
