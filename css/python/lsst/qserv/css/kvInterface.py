@@ -190,22 +190,22 @@ class KvInterface(object):
         """
         self._printNode("/", fileH)
 
-    def createNodeWaitIfNeeded(self, k, v):
+    def createEphNodeWaitIfNeeded(self, k, v):
         """
         Creates an ephemeral node 'k'. If the node exists, it will sleep in between
         of retrying, starting from 1 sec, growing up to 30 sec. Returns version 
         number.
         """
-        sleepTime = 0
+        sleepTime = 0 # in milisec, incremented by 50 msec each time up to 5 sec
         while True:
             try:
                 self.create(k, v, ephemeral=True)
             except:
-                if sleepTime < 30:
-                    sleepTime += 1
-                    self._logger.info("sleeping %s sec" % sleepTime)
-                time.sleep(sleepTime)
-            finally:
+                if sleepTime < 5000:
+                    sleepTime += 50
+                self._logger.info("sleeping %s msec" % sleepTime)
+                time.sleep(sleepTime / 1000.0)
+            else:
                 return
 
     def _printNode(self, p, fileH=None):

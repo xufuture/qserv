@@ -304,8 +304,8 @@ class QservAdmin(object):
         Lock database to avoid collisions when running create/drop db, 
         create/drop tables.
         """
-        self._kvI.createNodeWaitIfNeeded(self._dbLockName(dbName), 
-                                         self._uniqueId())
+        self._kvI.createEphNodeWaitIfNeeded(self._dbLockName(dbName), 
+                                            self._uniqueId())
 
     def _unlockDb(self, dbName):
         self._kvI.delete(self._dbLockName(dbName))
