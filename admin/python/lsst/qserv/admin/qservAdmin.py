@@ -55,6 +55,7 @@ class QservAdmin(object):
         """
         self._kvI = KvInterface(connInfo)
         self._logger = logging.getLogger("QADMI")
+        self._uniqueLockId = 1
 
     #### DATABASES #################################################################
     def createDb(self, dbName, options):
@@ -126,8 +127,8 @@ class QservAdmin(object):
             self._unlockDb(dbName)
             self._unlockDb(dbName2)
         except KvException as e:
-            self._logger.error("Failed to create database '%s', " % dbName +
-                               "error was: " + e.__str__())
+            self._logger.error("Failed to create database '%s' like '%s', " % \
+                                  (dbName, dbName2) + "error was: " + e.__str__())
             self._kvI.delete(dbP, recursive=True)
             self._unlockDb(dbName)
             self._unlockDb(dbName2)
@@ -314,6 +315,10 @@ class QservAdmin(object):
         return "/LOCKS/%s" % dbName
 
     @staticmethod
-    def _uniqueId():
+    def _uniqueIdStatic():
         return str(socket.gethostbyname(socket.gethostname())) + '_' + \
                    str(os.getpid())
+
+    def _uniqueId(self):
+        self._uniqueLockId += 1
+        return self._uniqueIdStatic() + '_' + str(self._uniqueLockId)

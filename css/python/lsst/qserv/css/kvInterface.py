@@ -75,7 +75,7 @@ class KvInterface(object):
         self._zk = KazooClient(hosts=connInfo)
         self._zk.start()
 
-    def create(self, k, v='', sequence=False):
+    def create(self, k, v='', sequence=False, ephemeral=False):
         """
         Add a new key/value entry. Create entire path as necessary. 
 
@@ -86,9 +86,11 @@ class KvInterface(object):
 
         @raise     KvException if the key k already exists.
         """
-        self._logger.info("CREATE '%s' --> '%s'" % (k, v))
+        self._logger.info("CREATE '%s' --> '%s', seq=%s, eph=%s" % \
+                              (k, v, sequence, ephemeral))
         try:
-            return self._zk.create(k, v, sequence=sequence, makepath=True)
+            return self._zk.create(k, v, sequence=sequence, 
+                                   ephemeral=ephemeral, makepath=True)
         except NodeExistsError:
             self._logger.error("in create(), key %s exists" % k)
             raise KvException(KvException.KEY_EXISTS, k)
@@ -197,15 +199,12 @@ class KvInterface(object):
         sleepTime = 0
         while True:
             try:
-                self.create(k, v)
-            except NodeExistsError:
+                self.create(k, v, ephemeral=True)
+            except:
                 if sleepTime < 30:
                     sleepTime += 1
                     self._logger.info("sleeping %s sec" % sleepTime)
                 time.sleep(sleepTime)
-            except:
-                e = sys.exc_info()[0]
-                self._logger.error("something is really wrong!!!" + e)
             finally:
                 return
 
