@@ -101,7 +101,9 @@ class KvInterface(object):
 
         @return boolean  True if the key exists, False otherwise.
         """
-        return self._zk.exists(k)
+        ret = (self._zk.exists(k) != None)
+        self._logger.info("EXISTS '%s': %s" % (k, ret))
+        return ret
 
     def get(self, k):
         """
@@ -154,7 +156,7 @@ class KvInterface(object):
             self._logger.error("in set(), key %s does not exist" % k)
             raise KvException(KvException.KEY_DOES_NOT_EXIST, k)
 
-    def delete(self, k, recursive=False, version=None):
+    def delete(self, k, recursive=False):
         """
         Delete a key, including all children if recursive flag is set.
 
@@ -186,7 +188,7 @@ class KvInterface(object):
         """
         self._printNode("/", fileH)
 
-    def createEphemeralNodeWaitIfNeeded(self, k):
+    def createNodeWaitIfNeeded(self, k, v):
         """
         Creates an ephemeral node 'k'. If the node exists, it will sleep in between
         of retrying, starting from 1 sec, growing up to 30 sec. Returns version 
@@ -195,12 +197,15 @@ class KvInterface(object):
         sleepTime = 0
         while True:
             try:
-                self._logger.info("CREATE ephemeral '%s' --> ''" % k)
-                self._zk.create(k, "", ephemeral=True, makepath=True)
+                self.create(k, v)
             except NodeExistsError:
                 if sleepTime < 30:
                     sleepTime += 1
+                    self._logger.info("sleeping %s sec" % sleepTime)
                 time.sleep(sleepTime)
+            except:
+                e = sys.exc_info()[0]
+                self._logger.error("something is really wrong!!!" + e)
             finally:
                 return
 

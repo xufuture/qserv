@@ -35,6 +35,8 @@ Known issues and todos:
 """
 
 import logging
+import os
+import socket
 import uuid
 
 from lsst.qserv.css.kvInterface import KvInterface, KvException
@@ -301,7 +303,8 @@ class QservAdmin(object):
         Lock database to avoid collisions when running create/drop db, 
         create/drop tables.
         """
-        self._kvI.createEphemeralNodeWaitIfNeeded(self._dbLockName(dbName))
+        self._kvI.createNodeWaitIfNeeded(self._dbLockName(dbName), 
+                                         self._uniqueId())
 
     def _unlockDb(self, dbName):
         self._kvI.delete(self._dbLockName(dbName))
@@ -309,3 +312,8 @@ class QservAdmin(object):
     @staticmethod
     def _dbLockName(dbName):
         return "/LOCKS/%s" % dbName
+
+    @staticmethod
+    def _uniqueId():
+        return str(socket.gethostbyname(socket.gethostname())) + '_' + \
+                   str(os.getpid())
