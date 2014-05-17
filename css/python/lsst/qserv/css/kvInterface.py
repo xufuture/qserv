@@ -190,23 +190,15 @@ class KvInterface(object):
         """
         self._printNode("/", fileH)
 
-    def createEphNodeWaitIfNeeded(self, k, v):
+    def getLockObject(self, k, id):
         """
-        Creates an ephemeral node 'k'. If the node exists, it will sleep in between
-        of retrying, starting from 1 sec, growing up to 30 sec. Returns version 
-        number.
+        Returns a lock for the key k, using identified id.
+
+        @return lock object
         """
-        sleepTime = 0 # in milisec, incremented by 50 msec each time up to 5 sec
-        while True:
-            try:
-                self.create(k, v, ephemeral=True)
-            except:
-                if sleepTime < 5000:
-                    sleepTime += 50
-                self._logger.info("sleeping %s msec" % sleepTime)
-                time.sleep(sleepTime / 1000.0)
-            else:
-                return
+        self._logger.info("Getting lock '%s' on '%s'" % (id, k))
+        lockK = "%s.LOCK" % k
+        return self._zk.Lock(lockK, id)
 
     def _printNode(self, p, fileH=None):
         """
