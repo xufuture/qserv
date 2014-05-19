@@ -486,7 +486,6 @@ class InbandQueryAction:
         logger.inf("Final state of all queries", getQueryStateString(s))
         if not self.isValid:
             discardSession(self.sessionId)
-            return
 
     def _importQconfig(self):
         """Import config file settings into self"""

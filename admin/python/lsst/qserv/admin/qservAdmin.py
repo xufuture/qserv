@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # LSST Data Management System
-# Copyright 2013 LSST Corporation.
+# Copyright 2013-2014 LSST Corporation.
 # 
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -37,11 +37,12 @@ Known issues and todos:
 import logging
 import uuid
 
-from lsst.qserv.css.kvInterface import KvInterface, CssException
+from lsst.qserv.css.kvInterface import KvInterface, KvException
+from lsst.qserv.admin.qservAdminException import QservAdminException
 
-class QservAdminImpl(object):
+class QservAdmin(object):
     """
-    QservAdminImpl implements functions needed by qserv_admin client program.
+    QservAdmin implements functions needed by qserv_admin client program.
     """
 
     def __init__(self, connInfo):
@@ -65,18 +66,17 @@ class QservAdminImpl(object):
                                (dbName, str(options)))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
-            raise CssException(CssException.DB_EXISTS, dbName)
+            raise QservAdminException(QservAdminException.DB_EXISTS, dbName)
         # double check if all required options are specified
-        for x in ["nStripes", "nSubStripes", "overlap", "storageClass",
-                  "objIdIndex"]:
+        for x in ["nStripes", "nSubStripes", "overlap", "storageClass"]:
             if x not in options:
                 self._logger.error("Required option '%s' missing" % x)
-                raise CssException(CssException.MISSING_PARAM, x)
-        dbP = "/DATABASES/%s" % dbName
+                raise KvException(KvException.MISSING_PARAM, x)
+        dbP = "/DBS/%s" % dbName
         ptP = None
         try:
             self._kvI.create(dbP, "PENDING")
-            ptP = self._kvI.create("/DATABASE_PARTITIONING/_", sequence=True)
+            ptP = self._kvI.create("/PARTITIONING/_", sequence=True)
             options["uuid"] = str(uuid.uuid4())
             for x in ["nStripes", "nSubStripes", "overlap", "uuid"]:
                 self._kvI.create("%s/%s" % (ptP, x), options[x])
@@ -84,11 +84,11 @@ class QservAdminImpl(object):
             pId = ptP[-10:] # the partitioning id is always 10 digit, 0 padded
             self._kvI.create("%s/partitioningId" % dbP, str(pId))
             self._kvI.create("%s/releaseStatus" % dbP,"UNRELEASED")
-            for x in ["storageClass", "objIdIndex"]:
+            for x in ["storageClass"]:
                 self._kvI.create("%s/%s" % (dbP, x), options[x])
             self._createDbLockSection(dbP)
             self._kvI.set(dbP, "READY")
-        except CssException as e:
+        except KvException as e:
             self._logger.error("Failed to create database '%s', " % dbName +
                                "error was: " + e.__str__())
             self._kvI.delete(dbP, recursive=True)
@@ -106,20 +106,19 @@ class QservAdminImpl(object):
         self._logger.info("Creating db '%s' like '%s'" % (dbName, dbName2))
         if self._dbExists(dbName):
             self._logger.error("Database '%s' already exists." % dbName)
-            raise CssException(CssException.DB_EXISTS, dbName)
+            raise QservAdminException(QservAdminException.DB_EXISTS, dbName)
         if not self._dbExists(dbName2):
             self._logger.error("Database '%s' does not exist." % dbName2)
-            raise CssException(CssException.DB_DOES_NOT_EXIST, dbName2)
-        dbP = "/DATABASES/%s" % dbName
+            raise QservAdminException(QservAdminException.DB_DOES_NOT_EXIST, dbName2)
+        dbP = "/DBS/%s" % dbName
         try:
             self._kvI.create(dbP, "PENDING")
             self._kvI.create("%s/uuid" % dbP, str(uuid.uuid4()))
             self._copyKeyValue(dbName, dbName2, 
-                               ("storageClass", "partitioningId", 
-                                "releaseStatus", "objIdIndex"))
+                               ("storageClass", "partitioningId", "releaseStatus"))
             self._createDbLockSection(dbP)
             self._kvI.set(dbP, "READY")
-        except CssException as e:
+        except KvException as e:
             self._logger.error("Failed to create database '%s', " % dbName +
                                "error was: " + e.__str__())
             self._kvI.delete(dbP, recursive=True)
@@ -134,17 +133,17 @@ class QservAdminImpl(object):
         self._logger.info("Drop database '%s'" % dbName)
         if not self._dbExists(dbName):
             self._logger.error("Database '%s' does not exist." % dbName)
-            raise CssException(CssException.DB_DOES_NOT_EXIST, dbName)
-        self._kvI.delete("/DATABASES/%s" % dbName, recursive=True)
+            raise QservAdminException(QservAdminException.DB_DOES_NOT_EXIST, dbName)
+        self._kvI.delete("/DBS/%s" % dbName, recursive=True)
 
     def showDatabases(self):
         """
         Print to stdout the list of databases registered for Qserv use.
         """
-        if not self._kvI.exists("/DATABASES"):
+        if not self._kvI.exists("/DBS"):
             print "No databases found."
         else:
-            print self._kvI.getChildren("/DATABASES")
+            print self._kvI.getChildren("/DBS")
 
     #### TABLES ####################################################################
     def createTable(self, dbName, tableName, options):
@@ -164,20 +163,21 @@ class QservAdminImpl(object):
             ["/isRefMatch"  , "keyColInTable2" ],
             ["/partitioning", "subChunks"      ],
             ["/partitioning", "secIndexColName"],
-            ["/partitioning", "drivingTable"   ],
+            ["/partitioning", "dirTable"       ],
             ["/partitioning", "lonColName"     ],
             ["/partitioning", "latColName"     ],
-            ["/partitioning", "keyColName"     ] ]
+            ["/partitioning", "dirColName"     ] ]
 
         self._logger.debug("Create table '%s.%s', options: %s" % \
                                (dbName, tableName, str(options)))
         if not self._dbExists(dbName):
             self._logger.error("Database '%s' does not exist." % dbName)
-            raise CssException(CssException.DB_DOES_NOT_EXIST, dbName)
+            raise QservAdminException(QservAdminException.DB_DOES_NOT_EXIST, dbName)
         if self._tableExists(dbName, tableName):
             self._logger.error("Table '%s.%s' exists." % (dbName, tableName))
-            raise CssException(CssException.TB_EXISTS, "%s.%s" % (dbName,tableName))
-        tbP = "/DATABASES/%s/TABLES/%s" % (dbName, tableName)
+            raise QservAdminException(QservAdminException.TB_EXISTS, 
+                                      "%s.%s" % (dbName,tableName))
+        tbP = "/DBS/%s/TABLES/%s" % (dbName, tableName)
         options["uuid"] = str(uuid.uuid4())
         try:
             self._kvI.create(tbP, "PENDING")
@@ -189,7 +189,7 @@ class QservAdminImpl(object):
                 else:
                     self._logger.info("'%s' not provided" % o[0])
             self._kvI.set(tbP, "READY")
-        except CssException as e:
+        except KvException as e:
             self._logger.error("Failed to create table '%s.%s', " % \
                                 (dbName, tableName) + "error was: " + e.__str__())
             self._kvI.delete(tbP, recursive=True)
@@ -214,13 +214,35 @@ class QservAdminImpl(object):
         """
         self._kvI.delete("/", recursive=True)
 
+    def restore(self, fileName):
+        """
+        Restore all data from the file fileName.
+
+        @param           fileName Input file name containing data to be restored.
+        """
+        if len(self._kvI.getChildren("/")) > 1:
+            print "Unable to restore, data exists."
+            return
+        try:
+            f = open(fileName, 'r')
+            for line in f.readlines():
+                (k, v) = line.rstrip().split()
+                if v == '\N':
+                    v = ''
+                if k != '/':
+                    self._kvI.create(k, v)
+        except IOError:
+            print "Can't find file: '" + fileName + "'."
+        finally:
+            f.close()
+
     def _dbExists(self, dbName):
         """
         Check if the database exists.
 
         @param dbName    Database name.
         """
-        p = "/DATABASES/%s" % dbName
+        p = "/DBS/%s" % dbName
         return self._kvI.exists(p)
 
     def _tableExists(self, dbName, tableName):
@@ -230,7 +252,7 @@ class QservAdminImpl(object):
         @param dbName    Database name.
         @param tableName Table name.
         """
-        p = "/DATABASES/%s/TABLES/%s" % (dbName, tableName)
+        p = "/DBS/%s/TABLES/%s" % (dbName, tableName)
         return self._kvI.exists(p)
 
     def _copyKeyValue(self, dbDest, dbSrc, theList):
@@ -241,8 +263,8 @@ class QservAdminImpl(object):
         @param dbSrc     Source database name
         @param theList   The list of elements to copy.
         """
-        dbS  = "/DATABASES/%s" % dbSrc
-        dbD = "/DATABASES/%s" % dbDest
+        dbS  = "/DBS/%s" % dbSrc
+        dbD = "/DBS/%s" % dbDest
         for x in theList:
             v = self._kvI.get("%s/%s" % (dbS, x))
             self._kvI.create("%s/%s" % (dbD, x), v)
