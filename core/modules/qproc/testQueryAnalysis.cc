@@ -78,12 +78,6 @@ using lsst::qserv::util::StringPair;
 namespace test = boost::test_tools;
 
 namespace {
-ChunkMeta newTestCmeta(bool withSubchunks=true) {
-    ChunkMeta m;
-    m.add("LSST","Object",2);
-    m.add("LSST","Source",1);
-    return m;
-}
 
 ChunkSpec makeChunkSpec(int chunkNum, bool withSubChunks=false) {
     ChunkSpec cs;
@@ -123,8 +117,8 @@ boost::shared_ptr<QuerySession> testStmt3(QuerySession::Test& t,
     return qs;
 }
 
-std::string computeFirst(QuerySession& qs) {
-    qs.addChunk(makeChunkSpec(100,true));
+std::string computeFirst(QuerySession& qs, bool withSubChunks=true) {
+    qs.addChunk(makeChunkSpec(100, withSubChunks));
     QuerySession::Iter i = qs.cQueryBegin();
     QuerySession::Iter e = qs.cQueryEnd();
     BOOST_REQUIRE(i != e);
@@ -153,16 +147,7 @@ void printChunkQuerySpecs(boost::shared_ptr<QuerySession> qs) {
 } // anonymous namespace
 
 struct ParserFixture {
-    ParserFixture(void)
-        : delimiter("%$#") {
-        cMeta.add("LSST", "Source", 1);
-        cMeta.add("LSST", "Object", 2);
-        tableNames.push_back("Object");
-        tableNames.push_back("Source");
-        config["table.defaultdb"] ="LSST";
-        config["table.partitioncols"] = "Object:ra_Test,decl_Test,objectIdObjTest;"
-            "Source:raObjectTest,declObjectTest,objectIdSourceTest";
-
+    ParserFixture(void) {
         qsTest.cfgNum = 0;
         qsTest.defaultDb = "LSST";
         // To learn how to dump the map, see qserv/core/css/KvInterfaceImplMem.cc
@@ -176,22 +161,11 @@ struct ParserFixture {
     ~ParserFixture(void) { };
 
     SelectParser::Ptr getParser(std::string const& stmt) {
-        return getParser(stmt, config);
-    }
-    SelectParser::Ptr getParser(std::string const& stmt,
-                                std::map<std::string,std::string> const& cfg) {
         SelectParser::Ptr p;
         p = SelectParser::newInstance(stmt);
         p->setup();
         return p;
     }
-
-    ChunkMeta cMeta;
-    std::list<std::string> tableNames;
-    std::string delimiter;
-    std::map<std::string, std::string> config;
-    std::map<std::string, int> whiteList;
-    std::string defaultDb;
 
     QuerySession::Test qsTest;
 };
@@ -818,6 +792,34 @@ BOOST_AUTO_TEST_CASE(Expression) {
         "AND scisql_fluxToAbMag(iFlux_PS)-scisql_fluxToAbMag(zFlux_PS) >=-0.35 "
         "AND scisql_fluxToAbMag(zFlux_PS)-scisql_fluxToAbMag(yFlux_PS) >=-0.40;";
     testStmt3(qsTest, stmt);
+}
+
+BOOST_AUTO_TEST_CASE(MatchTableWithoutWhere) {
+    std::string stmt = "SELECT * FROM RefObjMatch;";
+    std::string expected = "SELECT * FROM LSST.RefObjMatch_100 AS QST_1_ WHERE "
+                           "(refObjectId IS NULL OR flags<>2)";
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    SelectStmt const& ss = qs->getStmt();
+    BOOST_CHECK(context);
+    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+    BOOST_CHECK(!ss.hasGroupBy());
+    BOOST_CHECK(!context->needsMerge);
+    std::string actual = computeFirst(*qs, false);
+    BOOST_CHECK_EQUAL(actual, expected);
+}
+
+BOOST_AUTO_TEST_CASE(MatchTableWithWhere) {
+    std::string stmt = "SELECT * FROM RefObjMatch WHERE "
+                       "foo!=bar AND baz<3.14159;";
+    std::string expected = "SELECT * FROM LSST.RefObjMatch_100 AS QST_1_ WHERE "
+                           "(refObjectId IS NULL OR flags<>2) "
+                           "AND foo!=bar AND baz<3.14159";
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    std::string actual = computeFirst(*qs, false);
+    BOOST_CHECK_EQUAL(actual, expected);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
