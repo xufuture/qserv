@@ -51,7 +51,7 @@ KvException = produceExceptionClass('KvException', [
         (2010, "INVALID_CONNECTION", "Invalid connection information."),
         (2015, "KEY_EXISTS",         "Key already exists."),
         (2020, "KEY_DOES_NOT_EXIST", "Key does not exist."),
-        (2025, "KEY_INVALID",        "Key Invalid key."),
+        (2025, "KEY_INVALID",        "Invalid key."),
         (2030, "MISSING_PARAM",      "Missing parameter."),
         (9998, "NOT_IMPLEMENTED",    "Feature not implemented yet."),
         (9999, "INTERNAL",           "Internal error.")])

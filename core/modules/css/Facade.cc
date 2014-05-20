@@ -1,5 +1,4 @@
 // -*- LSST-C++ -*-
-
 /*
  * LSST Data Management System
  * Copyright 2014 LSST Corporation.
@@ -154,9 +153,25 @@ Facade::tableIsChunked(string const& dbName, string const& tableName) const {
 bool
 Facade::tableIsSubChunked(string const& dbName,
                           string const& tableName) const {
-    LOGGER_INF << "tableIsSubChunked(" << dbName << ", " << tableName << ")" <<endl;
+    LOGGER_INF << "tableIsSubChunked(" << dbName << ", " << tableName << ")" << endl;
     _throwIfNotDbTbExists(dbName, tableName);
     return _tableIsSubChunked(dbName, tableName);
+}
+
+/** Returns true if the given table is a match table; that is, if it is a
+  * table that relates two director tables.
+  */
+bool
+Facade::isMatchTable(std::string const& dbName,
+                     std::string const& tableName) const {
+    LOGGER_INF << "isMatchTable(" << dbName << ", " << tableName << ")" << endl;
+    _throwIfNotDbTbExists(dbName, tableName);
+    string k = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName + "/match";
+    string v = _kvI->get(k, "0");
+    bool m = (v == "1");
+    LOGGER_INF << "*** " << dbName << "." << tableName << " is "
+               << (m ? "" : "not ") << " a match table.";
+    return m;
 }
 
 /** Gets allowed databases (database that are configured for qserv)
@@ -310,14 +325,41 @@ Facade::getDbStriping(string const& dbName) const {
     return striping;
 }
 
+/** Retrieve match-table specific metadata for a table. Throws an
+  * exception if the database or table does not exist, and returns
+  * a MatchTableParams containing only empty strings if the given
+  * table is not a match table.
+  */
+MatchTableParams
+Facade::getMatchTableParams(std::string const& dbName,
+                            std::string const& tableName) const {
+    LOGGER_INF << "*** getMatchTableParams(" << dbName << ", "
+               << tableName << ")" << endl;
+    _throwIfNotDbTbExists(dbName, tableName);
+    MatchTableParams p;
+    string k = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName + "/match";
+    string v = _kvI->get(k, "0");
+    if (v == "1") {
+        try {
+            p.dirTable1 = _kvI->get(k + "/dirTable1");
+            p.dirColName1 = _kvI->get(k + "/dirColName1");
+            p.dirTable2 = _kvI->get(k + "/dirTable2");
+            p.dirColName2 = _kvI->get(k + "/dirColName2");
+            p.flagColName = _kvI->get(k + "/flagColName");
+        } catch (CssException_KeyDoesNotExist & ex) {
+            throw CssException_InternalRunTimeError(
+                string("Invalid match-table metadata for table ") +
+                dbName + "." + tableName);
+        }
+    }
+    return p;
+}
+
 int
 Facade::_getIntValue(string const& key, int defaultValue) const {
-    static const string defaultValueS = "!@#$%^&*()";
-    string ret = _kvI->get(key, defaultValueS);
-    if (ret == defaultValueS) {
-        return defaultValue;
-    }
-    return boost::lexical_cast<int>(ret);
+    string s = boost::lexical_cast<string>(defaultValue);
+    string v = _kvI->get(key, s);
+    return v == s ? defaultValue : boost::lexical_cast<int>(v);
 }
 
 /** Validates if database exists. Throw exception if it does not.
@@ -381,13 +423,8 @@ Facade::_tableIsChunked(string const& dbName, string const& tableName) const{
     return ret;
 }
 
-/** Checks if a given table is subchunked. Does not check if database and/or table
-    exist.
-  *
-  * @param dbName database name
-  * @param tableName table name
-  *
-  * @return returns true if the table is subchunked, false otherwise.
+/** Returns true if the given table is subchunked.
+  * Does not check for database or table existence.
   */
 bool
 Facade::_tableIsSubChunked(string const& dbName,
@@ -396,9 +433,8 @@ Facade::_tableIsSubChunked(string const& dbName,
                tableName + "/partitioning/" + "subChunks";
     string retS = _kvI->get(p, "0");
     bool retV = (retS == "1");
-    LOGGER_INF << "*** " << dbName << "." << tableName << " is ";
-    if (!retV) LOGGER_INF << "NOT ";
-    LOGGER_INF << "subchunked." << endl;
+    LOGGER_INF << "*** " << dbName << "." << tableName << " is "
+               << (retV ? "" : "NOT ") << "subchunked.";
     return retV;
 }
 
