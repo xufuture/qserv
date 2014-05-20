@@ -28,8 +28,8 @@ setup qserv
 # -------------------
 
 # install test dataset in order to run Qserv integration tests
-eups distrib install qservdata -r http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
-setup qservdata
+eups distrib install qserv_testdata -r http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
+setup qserv_testdata
 
 # Configuration :
 # ---------------
