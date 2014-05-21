@@ -49,11 +49,13 @@
 
 using boost::make_shared;
 using boost::shared_ptr;
-using lsst::qserv::query::AndTerm;
 using lsst::qserv::query::BoolFactor;
+using lsst::qserv::query::BoolTermFactor;
 using lsst::qserv::query::ColumnRef;
 using lsst::qserv::query::CompPredicate;
 using lsst::qserv::query::NullPredicate;
+using lsst::qserv::query::OrTerm;
+using lsst::qserv::query::PassTerm;
 using lsst::qserv::query::TableRef;
 using lsst::qserv::query::ValueExpr;
 using lsst::qserv::query::ValueFactor;
@@ -80,7 +82,7 @@ namespace qana {
 /// - Bit 1 is set if the sub-chunk of the second entity is equal to the
 ///   sub-chunk of the row.
 ///
-/// So, if rows with a non-null second-entity reference and partitioning flags
+/// So, if rows with a non-null first-entity reference and partitioning flags
 /// set to 2 are removed, then duplicates introduced by the partitioner will
 /// not be returned.
 ///
@@ -146,27 +148,40 @@ void MatchTablePlugin::applyLogical(query::SelectStmt& stmt,
     }
     css::MatchTableParams mt = f.getMatchTableParams(t.getDb(), t.getTable());
     // Build BoolTerm for duplicate filtering logic
-    // 1. dirCol2 IS NOT NULL
+    // Create IR nodes for "dirCol1 IS NULL"
     shared_ptr<NullPredicate> nullPred = make_shared<NullPredicate>();
-    nullPred->hasNot = true;
+    nullPred->hasNot = false;
     nullPred->value = ValueExpr::newSimple(ValueFactor::newColumnRefFactor(
-        make_shared<ColumnRef>(t.getDb(), t.getTable(), mt.dirColName2)));
-    // 2. flagCol != 2
+        make_shared<ColumnRef>("", "", mt.dirColName1)));
+    // Create IR nodes for "flagCol<>2"
     shared_ptr<CompPredicate> compPred = make_shared<CompPredicate>();
     compPred->left = ValueExpr::newSimple(ValueFactor::newColumnRefFactor(
-        make_shared<ColumnRef>(t.getDb(), t.getTable(), mt.flagColName)));
+        make_shared<ColumnRef>("", "", mt.flagColName)));
     compPred->op = SqlSQL2TokenTypes::NOT_EQUALS_OP;
     compPred->right = ValueExpr::newSimple(ValueFactor::newConstFactor("2"));
-    // Create BoolFactors for the above
+    // Create BoolFactors for the Predicate nodes created above
     shared_ptr<BoolFactor> bf1 = make_shared<BoolFactor>();
     bf1->_terms.push_back(nullPred);
     shared_ptr<BoolFactor> bf2 = make_shared<BoolFactor>();
     bf2->_terms.push_back(compPred);
-    // 3. AND together the terms created above
-    boost::shared_ptr<AndTerm> filter = make_shared<AndTerm>();
-    filter->_terms.push_back(bf1);
-    filter->_terms.push_back(bf2);
-    // Add filter to existing WHERE clause, or create a WHERE clause.
+    // OR together the BoolFactor nodes created above and place
+    // inside a BoolTermFactor.
+    shared_ptr<OrTerm> bfs = make_shared<OrTerm>();
+    bfs->_terms.push_back(bf1);
+    bfs->_terms.push_back(bf2);
+    shared_ptr<BoolTermFactor> btf = make_shared<BoolTermFactor>();
+    btf->_term = bfs;
+    // Create PassTerm objects for parentheses
+    shared_ptr<PassTerm> openParen = make_shared<PassTerm>();
+    openParen->_text = "(";
+    shared_ptr<PassTerm> closeParen = make_shared<PassTerm>();
+    closeParen->_text = ")";
+    // Wrap everything up in a BoolFactor
+    shared_ptr<BoolFactor> filter = make_shared<BoolFactor>();
+    filter->_terms.push_back(openParen);
+    filter->_terms.push_back(btf);
+    filter->_terms.push_back(closeParen);
+    // Finally, insert the above into the WHERE clause.
     if (stmt.hasWhereClause()) {
         stmt.getWhereClause().prependAndTerm(filter);
     } else {
