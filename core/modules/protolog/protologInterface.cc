@@ -68,8 +68,10 @@ void qMaster::log_iface(std::string const& loggername, int level,
                         std::string const& filename,
                         std::string const& funcname, int lineno,
                         std::string const& msg) {
-    lsst::qserv::ProtoLogFormatter(loggername, level, filename, funcname,
-                                   lineno, msg.c_str());
+    if (lsst::qserv::ProtoLog::isEnabledFor(loggername, level))
+        lsst::qserv::ProtoLogFormatter(loggername,
+            log4cxx::Level::toLevel(level), filename, funcname, lineno,
+            msg.c_str());
 }
 
 

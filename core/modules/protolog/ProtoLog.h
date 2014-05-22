@@ -28,6 +28,7 @@
 #define LSST_QSERV_PROTOLOG_H
 
 #include <string>
+#include <stdarg.h>
 #include <stack>
 #include <log4cxx/logger.h>
 #include <boost/format.hpp>
@@ -37,7 +38,7 @@
 
 #define LOG_DEFAULT_NAME() lsst::qserv::ProtoLog::getDefaultLoggerName()
 
-#define LOG_GET(loggername) lsst::qserv::ProtoLog::getLogger(loggername)
+#define LOG_GET(logger) lsst::qserv::ProtoLog::getLogger(logger)
 
 #define LOG_NEWCTX(name) (new lsst::qserv::ProtoLogContext(name))
 #define LOG_PUSHCTX(name) lsst::qserv::ProtoLog::pushContext(name)
@@ -46,28 +47,110 @@
 #define LOG_MDC(key, value) lsst::qserv::ProtoLog::MDC(key, value)
 #define LOG_MDC_REMOVE(key) lsst::qserv::ProtoLog::MDCRemove(key)
 
-#define LOG_SET_LVL(loggername, level) \
-    lsst::qserv::ProtoLog::setLevel(loggername, level)
-#define LOG_GET_LVL(loggername) \
-    lsst::qserv::ProtoLog::getLevel(loggername)
-#define LOG_CHECK_LVL(loggername, level) \
-    lsst::qserv::ProtoLog::isEnabledFor(loggername, level)
-
-#define LOG(logger, level, fmt) \
-    lsst::qserv::ProtoLogFormatter(logger, level, __BASE_FILE__,\
-                                   __PRETTY_FUNCTION__, __LINE__, fmt)
+#define LOG_SET_LVL(logger, level) \
+    lsst::qserv::ProtoLog::setLevel(logger, level)
+#define LOG_GET_LVL(logger) \
+    lsst::qserv::ProtoLog::getLevel(logger)
+#define LOG_CHECK_LVL(logger, level) \
+    lsst::qserv::ProtoLog::isEnabledFor(logger, level)
 
 #define LOG_NO_OP() lsst::qserv::ProtoLogNoOp()
 
-#define LOG_TRACE(fmt) LOG("", LOG_LVL_TRACE, fmt)
-#define LOG_DEBUG(fmt) LOG("", LOG_LVL_DEBUG, fmt)
-#define LOG_INFO(fmt) LOG("", LOG_LVL_INFO, fmt)
-#define LOG_WARN(fmt) LOG("", LOG_LVL_WARN, fmt)
-#define LOG_ERROR(fmt) LOG("", LOG_LVL_ERROR, fmt)
-#define LOG_FATAL(fmt) LOG("", LOG_LVL_FATAL, fmt)
+// boost::format style logging API
 
-#define LOG_LOGGER log4cxx::LoggerPtr
-#define LOG_CTX lsst::qserv::ProtoLogContext
+#define LOG_FMT lsst::qserv::ProtoLogFormatter
+#define LOGF(logger, level, fmt) ( \
+    lsst::qserv::ProtoLog::isEnabledFor(logger, level) ? \
+        lsst::qserv::ProtoLogFormatter(logger, \
+            log4cxx::Level::toLevel(level), __BASE_FILE__,\
+             __PRETTY_FUNCTION__, __LINE__, fmt) : \
+        lsst::qserv::ProtoLogFormatter())
+#define LOGF_TRACE(fmt) ( \
+    lsst::qserv::ProtoLog::defaultLogger->isTraceEnabled() ? \
+        lsst::qserv::ProtoLogFormatter(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getTrace(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt) : \
+        lsst::qserv::ProtoLogFormatter())
+#define LOGF_DEBUG(fmt) ( \
+    lsst::qserv::ProtoLog::defaultLogger->isDebugEnabled() ? \
+        lsst::qserv::ProtoLogFormatter(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getDebug(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt) : \
+        lsst::qserv::ProtoLogFormatter())
+#define LOGF_INFO(fmt) ( \
+    lsst::qserv::ProtoLog::defaultLogger->isInfoEnabled() ? \
+        lsst::qserv::ProtoLogFormatter(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getInfo(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt) : \
+        lsst::qserv::ProtoLogFormatter())
+#define LOGF_WARN(fmt) ( \
+    lsst::qserv::ProtoLog::defaultLogger->isWarnEnabled() ? \
+        lsst::qserv::ProtoLogFormatter(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getWarn(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt) : \
+        lsst::qserv::ProtoLogFormatter())
+#define LOGF_ERROR(fmt) ( \
+    lsst::qserv::ProtoLog::defaultLogger->isErrorEnabled() ? \
+        lsst::qserv::ProtoLogFormatter(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getError(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt) : \
+        lsst::qserv::ProtoLogFormatter())
+#define LOGF_FATAL(fmt) ( \
+    lsst::qserv::ProtoLog::defaultLogger->isFatalEnabled() ? \
+        lsst::qserv::ProtoLogFormatter(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getFatal(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt) : \
+        lsst::qserv::ProtoLogFormatter())
+
+// varargs logging API
+
+#define LOGV(logger, level, fmt...) \
+    if (lsst::qserv::ProtoLog::isEnabledFor(logger, level)) { \
+        lsst::qserv::ProtoLog::log(logger, log4cxx::Level::toLevel(level), \
+        __BASE_FILE__, __PRETTY_FUNCTION__, __LINE__, fmt); }
+#define LOGV_TRACE(fmt...) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isTraceEnabled()) { \
+        lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getTrace(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt); }
+#define LOGV_DEBUG(fmt...) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isDebugEnabled()) { \
+        lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getDebug(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt); }
+#define LOGV_INFO(fmt...) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isInfoEnabled()) { \
+        lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getInfo(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt); }
+#define LOGV_WARN(fmt...) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isWarnEnabled()) { \
+        lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getWarn(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt); }
+#define LOGV_ERROR(fmt...) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isErrorEnabled()) { \
+        lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getError(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt); }
+#define LOGV_FATAL(fmt...) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isFatalEnabled()) { \
+        lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
+            log4cxx::Level::getFatal(), __BASE_FILE__, __PRETTY_FUNCTION__, \
+            __LINE__, fmt); }
+
+// log4cxx streaming style logging API
+
+#define LOGS(logger, level, message) { \
+    if (lsst::qserv::ProtoLog::isEnabledFor(logger, level)) { \
+        LOG4CXX_LOG(lsst::qserv::ProtoLog::getLogger(logger), \
+                    log4cxx::Level::toLevel(level), message); }}
+#define LOGS_TRACE(message) LOG4CXX_TRACE(lsst::qserv::ProtoLog::defaultLogger, message)
+#define LOGS_DEBUG(message) LOG4CXX_DEBUG(lsst::qserv::ProtoLog::defaultLogger, message)
+#define LOGS_INFO(message) LOG4CXX_INFO(lsst::qserv::ProtoLog::defaultLogger, message)
+#define LOGS_WARN(message) LOG4CXX_WARN(lsst::qserv::ProtoLog::defaultLogger, message)
+#define LOGS_ERROR(message) LOG4CXX_ERROR(lsst::qserv::ProtoLog::defaultLogger, message)
+#define LOGS_FATAL(message) LOG4CXX_FATAL(lsst::qserv::ProtoLog::defaultLogger, message)
 
 #define LOG_LVL_TRACE log4cxx::Level::TRACE_INT
 #define LOG_LVL_DEBUG log4cxx::Level::DEBUG_INT
@@ -76,29 +159,49 @@
 #define LOG_LVL_ERROR log4cxx::Level::ERROR_INT
 #define LOG_LVL_FATAL log4cxx::Level::FATAL_INT
 
+#define LOG_LOGGER log4cxx::LoggerPtr
+#define LOG_CTX lsst::qserv::ProtoLogContext
+
 namespace lsst {
 namespace qserv {
 
-class ProtoLog {
+class ProtoLogFormatter {
 public:
-    static void initLog(std::string const& filename);
-    static std::string getDefaultLoggerName(void);
-    static void pushContext(std::string const& name);
-    static void popContext(void);
-    static void MDC(std::string const& key, std::string const& value);
-    static void MDCRemove(std::string const& key);
-    static void setLevel(std::string const& loggername, int level);
-    static int getLevel(std::string const& loggername);
-    static bool isEnabledFor(std::string const& loggername, int level);
-    static log4cxx::LoggerPtr getLogger(std::string const& loggername);
-    static void forcedLog(log4cxx::LoggerPtr logger,
-                          const log4cxx::LevelPtr &level,
-                          std::string const& filename,
-                          std::string const& funcname,
-                          unsigned int lineno, std::string const& msg);
+    ProtoLogFormatter(void);
+    ProtoLogFormatter(std::string const& loggername, log4cxx::LevelPtr level,
+                      std::string filename, std::string funcname,
+                      unsigned int lineno, const char* fmt);
+    ProtoLogFormatter(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
+                      std::string filename, std::string funcname,
+                      unsigned int lineno, const char* fmt);
+    ~ProtoLogFormatter(void);
+    template <typename T> ProtoLogFormatter& operator %(T value) {
+        if (_enabled) {
+            *_fmter % value;
+            _dumped = false;
+        }
+        return *this;
+    }
+    void dump(void);
 private:
-    static std::stack<std::string> context;
-    static std::string defaultLogger;
+    bool _enabled;
+    bool _dumped;
+    log4cxx::LoggerPtr _logger;
+    log4cxx::LevelPtr _level;
+    std::string* _filename;
+    std::string* _funcname;
+    unsigned int _lineno;
+    boost::format* _fmter;
+};
+
+// Simulate no operation while still handling the % operator.
+class ProtoLogNoOp {
+public:
+    template <typename T> ProtoLogNoOp& operator %(T value) {
+        return *this;
+    }
+private:
+    ProtoLogFormatter* _formatter;
 };
 
 class ProtoLogContext {
@@ -110,36 +213,46 @@ private:
     std::string _name;
 };
 
-class ProtoLogFormatter {
+class ProtoLog {
 public:
-    ProtoLogFormatter(std::string const& loggername, int level,
-                      std::string const& filename, std::string const& funcname,
-                      unsigned int lineno, const char* fmt);
-    ProtoLogFormatter(log4cxx::LoggerPtr logger, int level,
-                      std::string const& filename, std::string const& funcname,
-                      unsigned int lineno, const char* fmt);
-    ~ProtoLogFormatter(void);
-    template <typename T> ProtoLogFormatter& operator %(T value) {
-        _fmter % value;
-        return *this;
-    }
+    static log4cxx::LoggerPtr defaultLogger;
+    static void initLog(std::string const& filename);
+    static std::string getDefaultLoggerName(void);
+    static log4cxx::LoggerPtr getLogger(log4cxx::LoggerPtr logger);
+    static log4cxx::LoggerPtr getLogger(std::string const& loggername);
+    static void pushContext(std::string const& name);
+    static void popContext(void);
+    static void MDC(std::string const& key, std::string const& value);
+    static void MDCRemove(std::string const& key);
+    static void setLevel(log4cxx::LoggerPtr logger, int level);
+    static void setLevel(std::string const& loggername, int level);
+    static int getLevel(log4cxx::LoggerPtr logger);
+    static int getLevel(std::string const& loggername);
+    static bool isEnabledFor(log4cxx::LoggerPtr logger, int level);
+    static bool isEnabledFor(std::string const& loggername, int level);
+    static void forcedLog(log4cxx::LoggerPtr logger,
+                          const log4cxx::LevelPtr &level,
+                          std::string const& filename,
+                          std::string const& funcname,
+                          unsigned int lineno, const char* msg);
+    // varargs logging
+    static void log(std::string const& loggername, log4cxx::LevelPtr level,
+                    std::string const& filename, std::string const& funcname,
+                    unsigned int lineno, std::string const& fmt, ...);
+    static void vlog(std::string const& loggername, log4cxx::LevelPtr level,
+                     std::string const& filename, std::string const& funcname,
+                     unsigned int lineno, std::string const& fmt, va_list args);
+    static void log(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
+                    std::string const& filename, std::string const& funcname,
+                    unsigned int lineno, std::string const& fmt, ...);
+    static void vlog(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
+                     std::string const& filename, std::string const& funcname,
+                     unsigned int lineno, std::string const& fmt, va_list args);
 private:
-    log4cxx::LoggerPtr _logger;
-    int _level;
-    std::string const& _filename;
-    std::string const& _funcname;
-    unsigned int _lineno;
-    boost::format _fmter;
+    static std::stack<std::string> context;
+    static std::string defaultLoggerName;
 };
 
-// Simulate no operation while still handling the % operator.
-class ProtoLogNoOp {
-public:
-    template <typename T> ProtoLogNoOp& operator %(T value) {
-        return *this;
-    }
-};
-    
 }} // lsst::qserv
 
 #endif // LSST_QSERV_PROTOLOG_H
