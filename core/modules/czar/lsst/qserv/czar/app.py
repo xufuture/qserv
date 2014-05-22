@@ -85,9 +85,6 @@ from lsst.qserv.czar import xrdReadToLocalFile, xrdOpenWriteReadSaveClose
 
 from lsst.qserv.czar import charArray_frompointer, charArray
 
-# transaction
-from lsst.qserv.czar import TransactionSpec
-
 # Dispatcher
 from lsst.qserv.czar import newSession, discardSession
 from lsst.qserv.czar import setupQuery, getSessionError

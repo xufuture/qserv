@@ -33,6 +33,7 @@
   */
 
 // Local headers
+#include "ccontrol/QueryState.h"
 #include "ccontrol/transaction.h"
 #include "css/StripingParams.h"
 #include "rproc/TableMerger.h"
@@ -50,8 +51,6 @@ namespace qproc {
 } // namespace qproc
 
 namespace ccontrol {
-
-enum QueryState {UNKNOWN, WAITING, DISPATCHED, SUCCESS, ERROR};
 
 int submitQuery(int session, ccontrol::TransactionSpec const& s,
                 std::string const& resultName=std::string());
@@ -77,8 +76,7 @@ void addChunk(int session, qproc::ChunkSpec const& cs );
 void submitQuery3(int session);
 // TODO: need pokes into running state for debugging.
 
-QueryState joinSession(int session);
-std::string const& getQueryStateString(QueryState const& qs);
+lsst::qserv::ccontrol::QueryState joinSession(int session);
 std::string getErrorDesc(int session);
 int newSession(std::map<std::string,std::string> const& cfg);
 void configureSessionMerger(int session,
