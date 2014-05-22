@@ -24,13 +24,13 @@
 /**
   * @file
   *
-  * @brief Exception class for KvInterface.
+  * @brief RunTimeErrors for KvInterface.
   *
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_CSS_EXCEPTION_HH
-#define LSST_QSERV_CSS_EXCEPTION_HH
+#ifndef LSST_QSERV_CSS_RUNTIMEERROR_H
+#define LSST_QSERV_CSS_RUNTIMEERROR_H
 
 // System headers
 #include <map>
@@ -44,66 +44,66 @@ namespace css {
 /**
  * Base class for all CSS run-time errors
  */
-class CssRunTimeException : public std::runtime_error {
+class CssRunTimeError : public std::runtime_error {
 protected:
-    explicit CssRunTimeException(std::string const& msg)
+    explicit CssRunTimeError(std::string const& msg)
         : std::runtime_error(msg) {}
 };
 
 /**
  * Specialized run-time error: database does not exist.
  */
-class CssException_DbDoesNotExist : public CssRunTimeException {
+class NoSuchDb : public CssRunTimeError {
 public:
-    CssException_DbDoesNotExist(std::string const& dbName)
-        : CssRunTimeException("Database '" + dbName + "' does not exist.") {}
+    NoSuchDb(std::string const& dbName)
+        : CssRunTimeError("Database '" + dbName + "' does not exist.") {}
 };
 
 /**
  * Specialized run-time error: key does not exist.
  */
-class CssException_KeyDoesNotExist : public CssRunTimeException {
+class NoSuchKey : public CssRunTimeError {
 public:
-    CssException_KeyDoesNotExist(std::string const& keyName)
-        : CssRunTimeException("Key '" + keyName + "' does not exist.") {}
+    NoSuchKey(std::string const& keyName)
+        : CssRunTimeError("Key '" + keyName + "' does not exist.") {}
 };
 
 /**
  * Specialized run-time error: table does not exist.
  */
-class CssException_TableDoesNotExist : public CssRunTimeException {
+class NoSuchTable : public CssRunTimeError {
 public:
-    CssException_TableDoesNotExist(std::string const& tableName)
-        : CssRunTimeException("Table '" + tableName + "' does not exist.") {}
+    NoSuchTable(std::string const& tableName)
+        : CssRunTimeError("Table '" + tableName + "' does not exist.") {}
 };
 
 /**
  * Specialized run-time error: authorization failure.
  */
-class CssException_AuthFailure : public CssRunTimeException {
+class AuthError : public CssRunTimeError {
 public:
-    CssException_AuthFailure()
-        : CssRunTimeException("Authorization failure.") {}
+    AuthError()
+        : CssRunTimeError("Authorization failure.") {}
 };
 
 /**
  * Specialized run-time error: connection failure.
  */
-class CssException_ConnFailure : public CssRunTimeException {
+class ConnError : public CssRunTimeError {
 public:
-    CssException_ConnFailure()
-        : CssRunTimeException("Failed to connect to persistent store.") {}
+    ConnError()
+        : CssRunTimeError("Failed to connect to persistent store.") {}
 };
 
 /**
  * Generic CSS run-time error.
  */
-class CssException_InternalRunTimeError : public CssRunTimeException {
+class CssError : public CssRunTimeError {
 public:
-    CssException_InternalRunTimeError(std::string const& extraMsg)
-        : CssRunTimeException("Internal run-time error. (" + extraMsg + ")") {}
+    CssError(std::string const& extraMsg)
+        : CssRunTimeError("Internal run-time error. (" + extraMsg + ")") {}
 };
 
 }}} // namespace lsst::qserv::css
 
-#endif // LSST_QSERV_CSS_EXCEPTION_HH
+#endif // LSST_QSERV_CSS_RUNTIMEERROR_H
