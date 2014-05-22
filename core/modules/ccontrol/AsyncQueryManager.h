@@ -44,6 +44,7 @@
 
 // Local headers
 #include "ccontrol/DynamicWorkQueue.h"
+#include "global/stringTypes.h"
 #include "xrdc/xrdfile.h"
 
 // Forward declarations
@@ -64,8 +65,8 @@ namespace rproc {
     class TableMerger;
     class TableMergerConfig;
 }
-namespace xrdc {
-    class PacketIter;
+namespace util {
+    class PacketBuffer;
 }}} // End of forward declarations
 
 
@@ -86,8 +87,6 @@ public:
     typedef std::deque<Result> ResultDeque;
     typedef std::deque<Result>::const_iterator ResultDequeCItr;
     typedef boost::shared_ptr<AsyncQueryManager> Ptr;
-    typedef std::map<std::string, std::string> StringMap;
-    typedef boost::shared_ptr<xrdc::PacketIter> PacIterPtr;
 
     class ConfigError : public std::invalid_argument {
     public:
@@ -146,7 +145,8 @@ private:
     void _printState(std::ostream& os);
     void _addNewResult(int id, ssize_t dumpSize, std::string const& dumpFile,
                        std::string const& tableName);
-    void _addNewResult(int id, PacIterPtr pacIter, std::string const& tableName);
+    void _addNewResult(int id, boost::shared_ptr<util::PacketBuffer> pb,
+                       std::string const& tableName);
     void _squashExecution();
     void _squashRemaining();
 

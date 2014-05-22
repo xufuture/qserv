@@ -25,6 +25,9 @@
 #ifndef LSST_QSERV_QDISP_CHUNKQUERY_H
 #define LSST_QSERV_QDISP_CHUNKQUERY_H
 
+// System headers
+#include <memory> // auto_ptr
+
 // Third-party headers
 #include <boost/thread.hpp>
 #include "XrdPosix/XrdPosixCallBack.hh"
@@ -41,7 +44,7 @@ namespace ccontrol {
     class AsyncQueryManager;
 }
 namespace xrdc {
-    class PacketIter;
+    class XrdBufferSource;
 }}} // End of forward declarations
 
 
@@ -85,7 +88,7 @@ public:
         if(_result.read >= 0) return _result.localWrite;
         else return -1;
     }
-    boost::shared_ptr<xrdc::PacketIter> getResultIter();
+    std::auto_ptr<xrdc::XrdBufferSource> getResultBuffer();
     // Attempt to squash this query's execution.  This implies that
     // nobody cares about this query's results anymore.
     void requestSquash();
@@ -108,7 +111,6 @@ private:
     std::string _hash;
     std::string _resultUrl;
     std::string _queryHostPort;
-    boost::shared_ptr<xrdc::PacketIter> _packetIter;
     ccontrol::AsyncQueryManager* _manager;
     bool _shouldSquash;
     util::Timer _writeOpenTimer;
@@ -118,6 +120,7 @@ private:
     util::Timer _readTimer;
     util::Timer _readCloseTimer;
     int _attempts;
+    int _xrdFd;
 
 };// class ChunkQuery
 

@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2009-2014 LSST Corporation.
+ * Copyright 2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -21,46 +21,46 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_CCONTROL_TRANSACTION_H
-#define LSST_QSERV_CCONTROL_TRANSACTION_H
+#ifndef LSST_QSERV_CONTROL_USERQUERYFACTORY_H
+#define LSST_QSERV_CONTROL_USERQUERYFACTORY_H
 /**
   * @file
   *
-  * @brief Value classes for SWIG-mediated interaction between Python
-  * and C++. Includes TransactionSpec.
+  * @brief Factory for UserQuery.
   *
   * @author Daniel L. Wang, SLAC
   */
 
-// System headers
-#include <list>
-#include <string>
-#include <vector>
-
 // Third-party headers
 #include <boost/shared_ptr.hpp>
+#include <boost/utility.hpp>
+
+// Local headers
+/* #include "control/transaction.h" */
+/* #include "css/StripingParams.h" */
+/* #include "merger/TableMerger.h" */
+/* #include "query/Constraint.h" */
+#include "global/stringTypes.h"
+/* #include "xrdc/xrdfile.h" */
+
 
 namespace lsst {
 namespace qserv {
 namespace ccontrol {
 
-/// class TransactionSpec - A value class for the minimum
-/// specification of a subquery, as far as the xrootd layer is
-/// concerned.
-class TransactionSpec {
+///  UserQueryFactory breaks construction of user queries into two phases:
+///  creation/configuration of the factory and construction of the
+///  UserQuery. This facilitates re-use of initialized state that is usually
+///  constant between successive user queries. 
+class UserQueryFactory : public boost::noncopyable {   
 public:
- TransactionSpec() : chunkId(-1) {}
-    int chunkId;
-    std::string path;
-    std::string query;
-    int bufferSize;
-    std::string savePath;
-
-    bool isNull() const { return path.length() == 0; }
-
-    class Reader;  // defined in thread.h
+    UserQueryFactory(lsst::qserv::StringMap const& m);
+    int newUserQuery(std::string const& query, std::string const& resultTable);
+private:
+    class Impl;
+    boost::shared_ptr<Impl> _impl;
 };
 
-}}} // namespace lsst::qserv::ccontrol
+}}} // namespace lsst::qserv:control
 
-#endif // LSST_QSERV_CCONTROL_TRANSACTION_H
+#endif // LSST_QSERV_CONTROL_USERQUERYFACTORY_H

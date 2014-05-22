@@ -37,6 +37,9 @@ Access to the classes from the qserv_czar library
 #define SWIG_FILE_WITH_INIT
 #include "ccontrol/dispatcher.h"
 #include "ccontrol/queryMsg.h"
+#include "ccontrol/QueryState.h"
+#include "ccontrol/UserQueryFactory.h"
+#include "ccontrol/userQueryProxy.h"
 #include "css/StripingParams.h"
 #include "global/constants.h"
 #include "log/loggerInterface.h"
@@ -120,8 +123,11 @@ namespace std {
 %apply int *OUTPUT { int* chunkId, int* code, time_t* timestamp };
 
 %include "ccontrol/dispatcher.h"
-%include "ccontrol/transaction.h"
 %include "ccontrol/queryMsg.h"
+%include "ccontrol/queryMsg.h"
+%include "ccontrol/QueryState.h"
+%include "ccontrol/UserQueryFactory.h"
+%include "ccontrol/userQueryProxy.h"
 %include "css/StripingParams.h"
 %include "global/constants.h"
 %include "log/loggerInterface.h"
@@ -132,6 +138,7 @@ namespace std {
 %include "rproc/TableMerger.h"
 %include "util/Substitution.h"
 %include "xrdc/xrdfile.h"
+
 
 // Instantiate any templates here:
 // %template(setBool) lsst::daf::base::PropertySet::set<bool>;
