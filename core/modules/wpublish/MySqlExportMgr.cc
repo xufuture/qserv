@@ -37,7 +37,6 @@
 #include "wconfig/Config.h"
 #include "wlog/WLogger.h"
 
-using lsst::qserv::wpublish::MySqlExportMgr;
 
 namespace { // File-scope helpers
 
@@ -145,7 +144,8 @@ public:
         std::for_each(tables.begin(), tables.end(),
                       doTable(_regex, chunkMap));
         // All databases get a dummy chunk.
-        MySqlExportMgr::StringSet tablesAtBeginChunk = chunkMap.begin()->second;
+        lsst::qserv::wpublish::MySqlExportMgr::StringSet tablesAtBeginChunk =
+            chunkMap.begin()->second;
         chunkMap[lsst::qserv::DUMMY_CHUNK]= tablesAtBeginChunk;
 
         //std::for_each(chunkMap.begin(), chunkMap.end(), printChunk(std::cout));
@@ -183,6 +183,7 @@ void MySqlExportMgr::_init() {
     std::for_each(dbs.begin(), dbs.end(), doDb(sc, regex, _existMap));
     //
 }
+
 void MySqlExportMgr::fillDbChunks(MySqlExportMgr::StringSet& s) {
     s.clear();
     for(ExistMap::const_iterator ei=_existMap.begin();
