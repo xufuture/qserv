@@ -105,11 +105,6 @@ public:
     void apply(Func& f);
     void apply(FuncC& f) const;
 
-    struct PermuteFunc {
-        virtual ~PermuteFunc() {}
-        virtual std::list<query::DbTablePair> operator()(query::DbTablePair const& t) = 0;
-    };
-    std::vector<TableRef::Ptr> permute(PermuteFunc& p) const;
     TableRef::Ptr clone() const;
 
     class render;
