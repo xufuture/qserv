@@ -77,10 +77,20 @@ ProtoLogFormatter::~ProtoLogFormatter() {
 
 void ProtoLogFormatter::dump() {
     if (_enabled) {
-        ProtoLog::forcedLog(_logger, _level, *_filename, *_funcname, _lineno,
-                            _fmter->str().c_str());
+        _logger->forcedLog(_level, _fmter->str().c_str(),
+                           log4cxx::spi::LocationInfo(_filename->c_str(),
+                                                      _funcname->c_str(),
+                                                      _lineno));
         _dumped = true;
     }
+}
+
+// ProtoLogFormatter2 (for "fast-format" version)
+
+ProtoLogFormatter2::ProtoLogFormatter2() : _enabled(false) {}
+    
+ProtoLogFormatter2::~ProtoLogFormatter2() {
+    if (_enabled) delete _fmter;
 }
 
 // ProtoLogContext class
@@ -187,31 +197,16 @@ bool ProtoLog::isEnabledFor(std::string const& loggername, int level) {
     return isEnabledFor(getLogger(loggername), level);
 }
 
-void ProtoLog::forcedLog(log4cxx::LoggerPtr logger,
-                         const log4cxx::LevelPtr &level,
-                         std::string const& filename,
-                         std::string const& funcname,
-                         unsigned int lineno,
-                         const char *msg) {
-    logger->forcedLog(level, msg, log4cxx::spi::LocationInfo(filename.c_str(),
-                                                             funcname.c_str(),
-                                                             lineno));
-}
-
 // varargs logging
-
-void ProtoLog::vlog(std::string const& loggername, log4cxx::LevelPtr level,
-                    std::string const& filename, std::string const& funcname,
-                    unsigned int lineno, std::string const& fmt, va_list args) {
-    vlog(getLogger(loggername), level, filename, funcname, lineno, fmt, args);
-}
 
 void ProtoLog::vlog(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
                     std::string const& filename, std::string const& funcname,
                     unsigned int lineno, std::string const& fmt, va_list args) {
     char msg[MAX_LOG_MSG_LEN];
     vsnprintf(msg, MAX_LOG_MSG_LEN, fmt.c_str(), args);
-    forcedLog(logger, level, filename, funcname, lineno, msg);
+    logger->forcedLog(level, msg, log4cxx::spi::LocationInfo(filename.c_str(),
+                                                             funcname.c_str(),
+                                                             lineno));
 }
 
 void ProtoLog::log(std::string const& loggername, log4cxx::LevelPtr level,
@@ -219,7 +214,7 @@ void ProtoLog::log(std::string const& loggername, log4cxx::LevelPtr level,
                    unsigned int lineno, std::string const& fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    vlog(loggername, level, filename, funcname, lineno, fmt, args);
+    vlog(getLogger(loggername), level, filename, funcname, lineno, fmt, args);
 }
 
 void ProtoLog::log(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,

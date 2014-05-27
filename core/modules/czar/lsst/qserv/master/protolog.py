@@ -2,7 +2,7 @@
 
 #
 # LSST Data Management System
-# Copyright 2008, 2009, 2010 LSST Corporation.
+# Copyright 2013 LSST Corporation.
 #
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -25,7 +25,7 @@
 from lsst.qserv.master import initLog_iface, getDefaultLoggerName_iface,\
                               pushContext_iface, popContext_iface, MDC_iface,\
                               MDCRemove_iface, getLevel_iface, setLevel_iface,\
-                              isEnabledFor_iface, log_iface
+                              isEnabledFor_iface, forcedLog_iface
 import logging
 import inspect
 from os import path
@@ -82,8 +82,9 @@ def log(loggername, level, fmt, *args, **kwargs):
         depth = 1
     if isEnabledFor(loggername, level):
         frame = _getFrame(depth)
-        log_iface(loggername, level, path.split(frame.f_code.co_filename)[1],
-                      _getFuncName(depth), frame.f_lineno, fmt % args)
+        forcedLog_iface(loggername, level,
+                        path.split(frame.f_code.co_filename)[1],
+                        _getFuncName(depth), frame.f_lineno, fmt % args)
 
 def trace(fmt, *args):
     log("", TRACE, fmt, *args, depth=2)
@@ -160,7 +161,7 @@ class ProtoLogHandler(logging.Handler):
             logging.Handler.handle(self, record)
 
     def emit(self, record):
-        log_iface("", self.translateLevel(record.levelno), record.filename,
+        forcedLog_iface("", self.translateLevel(record.levelno), record.filename,
                   record.funcName, record.lineno, record.msg % record.args)
 
     def translateLevel(self, levelno):

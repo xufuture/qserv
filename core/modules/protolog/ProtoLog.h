@@ -102,6 +102,51 @@
             __LINE__, fmt) : \
         lsst::qserv::ProtoLogFormatter())
 
+// boost::format style within parentheses (FF=fast format)
+
+#define LOGFF(logger, level, fmt) \
+    if (lsst::qserv::ProtoLog::isEnabledFor(logger, level)) { \
+        lsst::qserv::ProtoLogFormatter2 fmter_; \
+        lsst::qserv::ProtoLog::getLogger(logger)->forcedLog( \
+            log4cxx::Level::toLevel(level), (fmter_ % fmt).str().c_str(), \
+            LOG4CXX_LOCATION); }
+#define LOGFF_TRACE(fmt) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isTraceEnabled()) { \
+        lsst::qserv::ProtoLogFormatter2 fmter_; \
+        lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
+            log4cxx::Level::getTrace(), (fmter_ % fmt).str().c_str(), \
+            LOG4CXX_LOCATION); }
+#define LOGFF_DEBUG(fmt) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isDebugEnabled()) { \
+        lsst::qserv::ProtoLogFormatter2 fmter_; \
+        lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
+            log4cxx::Level::getDebug(), (fmter_ % fmt).str().c_str(), \
+            LOG4CXX_LOCATION); }
+#define LOGFF_INFO(fmt) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isInfoEnabled()) { \
+        lsst::qserv::ProtoLogFormatter2 fmter_; \
+        lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
+            log4cxx::Level::getInfo(), (fmter_ % fmt).str().c_str(), \
+            LOG4CXX_LOCATION); }
+#define LOGFF_WARN(fmt) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isWarnEnabled()) { \
+        lsst::qserv::ProtoLogFormatter2 fmter_; \
+        lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
+            log4cxx::Level::getWarn(), (fmter_ % fmt).str().c_str(), \
+            LOG4CXX_LOCATION); }
+#define LOGFF_ERROR(fmt) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isErrorEnabled()) { \
+        lsst::qserv::ProtoLogFormatter2 fmter_; \
+        lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
+            log4cxx::Level::getError(), (fmter_ % fmt).str().c_str(), \
+            LOG4CXX_LOCATION); }
+#define LOGFF_FATAL(fmt) \
+    if (lsst::qserv::ProtoLog::defaultLogger->isFatalEnabled()) { \
+        lsst::qserv::ProtoLogFormatter2 fmter_; \
+        lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
+            log4cxx::Level::getFatal(), (fmter_ % fmt).str().c_str(), \
+            LOG4CXX_LOCATION); }
+
 // varargs logging API
 
 #define LOGV(logger, level, fmt...) \
@@ -194,6 +239,20 @@ private:
     boost::format* _fmter;
 };
 
+class ProtoLogFormatter2 {
+public:
+    ProtoLogFormatter2(void);
+    ~ProtoLogFormatter2(void);
+    template <typename T> boost::format& operator %(T fmt) {
+        _enabled = true;
+        _fmter = new boost::format(fmt);
+        return *_fmter;
+    }
+private:
+    bool _enabled;
+    boost::format* _fmter;
+};
+
 // Simulate no operation while still handling the % operator.
 class ProtoLogNoOp {
 public:
@@ -230,24 +289,16 @@ public:
     static int getLevel(std::string const& loggername);
     static bool isEnabledFor(log4cxx::LoggerPtr logger, int level);
     static bool isEnabledFor(std::string const& loggername, int level);
-    static void forcedLog(log4cxx::LoggerPtr logger,
-                          const log4cxx::LevelPtr &level,
-                          std::string const& filename,
-                          std::string const& funcname,
-                          unsigned int lineno, const char* msg);
     // varargs logging
-    static void log(std::string const& loggername, log4cxx::LevelPtr level,
-                    std::string const& filename, std::string const& funcname,
-                    unsigned int lineno, std::string const& fmt, ...);
-    static void vlog(std::string const& loggername, log4cxx::LevelPtr level,
-                     std::string const& filename, std::string const& funcname,
-                     unsigned int lineno, std::string const& fmt, va_list args);
-    static void log(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
-                    std::string const& filename, std::string const& funcname,
-                    unsigned int lineno, std::string const& fmt, ...);
     static void vlog(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
                      std::string const& filename, std::string const& funcname,
                      unsigned int lineno, std::string const& fmt, va_list args);
+    static void log(std::string const& loggername, log4cxx::LevelPtr level,
+                    std::string const& filename, std::string const& funcname,
+                    unsigned int lineno, std::string const& fmt, ...);
+    static void log(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
+                    std::string const& filename, std::string const& funcname,
+                    unsigned int lineno, std::string const& fmt, ...);
 private:
     static std::stack<std::string> context;
     static std::string defaultLoggerName;

@@ -64,14 +64,14 @@ bool qMaster::isEnabledFor_iface(std::string const& loggername, int level) {
     return lsst::qserv::ProtoLog::isEnabledFor(loggername, level);
 }
 
-void qMaster::log_iface(std::string const& loggername, int level,
+void qMaster::forcedLog_iface(std::string const& loggername, int level,
                         std::string const& filename,
                         std::string const& funcname, int lineno,
                         std::string const& msg) {
-    if (lsst::qserv::ProtoLog::isEnabledFor(loggername, level))
-        lsst::qserv::ProtoLogFormatter(loggername,
-            log4cxx::Level::toLevel(level), filename, funcname, lineno,
-            msg.c_str());
+    lsst::qserv::ProtoLog::getLogger(loggername)->forcedLog(
+        log4cxx::Level::toLevel(level), msg.c_str(),
+        log4cxx::spi::LocationInfo(filename.c_str(), funcname.c_str(), lineno)
+    );
 }
 
 
