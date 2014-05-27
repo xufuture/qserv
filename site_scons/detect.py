@@ -31,9 +31,10 @@ def checkMySql(env):
     * a built MySQL directory specified by the env var MYSQL_ROOT
     """
     conf = env.Configure()
-    state.log.debug("checkMySql() %s %s" % (env["LIBPATH"], env["CPPPATH"]))
+    state.log.debug("checkMySql() LIBPATH : %s CPPPATH : %s" % (env["LIBPATH"], env["CPPPATH"]))
 
-    conf.CheckCXXHeader('mysql/mysql.h')
+    if not conf.CheckCXXHeader('mysql/mysql.h'):
+        state.log.fail("Could not locate MySQL headers (mysql/mysql.h)")
     
     if conf.CheckLibWithHeader("mysqlclient_r", "mysql/mysql.h",
                                    language="C++", autoadd=0):
@@ -42,10 +43,10 @@ def checkMySql(env):
             conf.Finish()
             return True
         else:
-            state.log.fails("mysqlclient too old")
+            state.log.fail("mysqlclient too old")
     else:
         # MySQL support not found or inadequate.
-        state.log.fails("Could not locate MySQL headers (mysql/mysql.h)"\
+        state.log.fail("Could not locate MySQL headers (mysql/mysql.h)"\
             + " or find multithreaded mysql lib (mysqlclient_r)")
 
     conf.Finish()
@@ -68,11 +69,13 @@ class BoostChecker:
         return r
 
     def _getLibName(self, libName):
+        state.log.debug("BoostChecker._getLibName() LIBPATH : %s, CPPPATH : %s" % (self.env["LIBPATH"], self.env["CPPPATH"]))
         if self.suffix == None:
             conf = self.env.Configure()
 
             def checkSuffix(sfx):
                 return conf.CheckLib(libName + sfx, language="C++", autoadd=0)
+
             for i in self.suffixes:
                 if checkSuffix(i):
                     self.suffix = i
@@ -173,14 +176,14 @@ def checkXrootdLink(env, autoadd=0):
     found = conf.CheckLibs() and conf.CheckCXXHeader(header)
     conf.Finish()
     if not found:
-        state.log.fails("Missing at least one xrootd lib or header file")
+        state.log.fail("Missing at least one xrootd lib or header file")
     return found
 
 
 def setXrootd(env):
     (found, path) = findXrootdInclude(env)
     if not found :
-        state.log.fails("Missing Xrootd include path")
+        state.log.fail("Missing Xrootd include path")
     elif found and path:
         env.Append(CPPPATH=[path])
     return found
@@ -225,8 +228,22 @@ def importCustom(env, extraTgts):
 def checkTwisted():
     try:
         import twisted.internet
-        state.log.info("Twisted python library found")
-        return True
     except ImportError, e:
-        return None
-    pass
+    	state.log.fail("Missing Twisted python library.\n" + 
+			"Check that Twisted is configured for Qserv Czar startup.")
+	return False
+    else:
+	state.log.info("Twisted python library found")
+        return True
+
+def checkGeom():
+    try:
+        import lsst.geom.geometry
+    except ImportError, e:
+    	state.log.fail("Missing LSST Geometry python library.\n" + 
+			"To correct this please run 'export PYTHONPATH=${PYTHONPATH}:/path/to/geom/python'," +
+			" assuming geometry.py is in /path/to/geom/python/lsst/geom/geometry.py")
+	return False
+    else:
+        state.log.info("LSST Geometry python library found")
+        return True
