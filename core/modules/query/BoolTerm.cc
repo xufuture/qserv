@@ -328,4 +328,21 @@ BfTerm::Ptr BoolTermFactor::copySyntax() const {
     return BfTerm::Ptr(p);
 }
 
+BoolTerm::Ptr findAndTerm(BoolTerm::Ptr tree) {
+    while (true) {
+        AndTerm * at = dynamic_cast<AndTerm *>(tree.get());
+        if (at) {
+            return tree;
+        } else {
+            OrTerm * ot = dynamic_cast<OrTerm *>(tree.get());
+            if (ot && (ot->_terms.size() == 1)) {
+                tree = ot->_terms.front();
+                continue;
+            } else {
+                return tree;
+            }
+        }
+    }
+}
+
 }}} // namespace lsst::qserv::query

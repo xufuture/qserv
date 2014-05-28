@@ -42,23 +42,6 @@ namespace lsst {
 namespace qserv {
 namespace query {
 
-BoolTerm::Ptr findAndTerm(BoolTerm::Ptr tree) {
-    while(1) {
-        AndTerm* at = dynamic_cast<AndTerm*>(tree.get());
-        if(at) {
-            return tree;
-        } else {
-            OrTerm* ot = dynamic_cast<OrTerm*>(tree.get());
-            if(ot && (ot->_terms.size() == 1)) {
-                tree = ot->_terms.front();
-                continue;
-            } else {
-                return tree;
-            }
-        }
-    }
-}
-
 ////////////////////////////////////////////////////////////////////////
 // WhereClause
 ////////////////////////////////////////////////////////////////////////

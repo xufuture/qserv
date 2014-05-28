@@ -49,6 +49,7 @@ namespace query {
 
 class QueryTemplate; // Forward
 class ValueExpr;
+
 /// BfTerm is a term in a in a BoolFactor
 class BfTerm {
 public:
@@ -93,6 +94,7 @@ public:
     virtual boost::shared_ptr<BoolTerm> copySyntax() const {
         return boost::shared_ptr<BoolTerm>(); }
 };
+
 /// OrTerm is a set of OR-connected BoolTerms
 class OrTerm : public BoolTerm {
 public:
@@ -111,6 +113,7 @@ public:
 
     BoolTerm::PtrList _terms;
 };
+
 /// AndTerm is a set of AND-connected BoolTerms
 class AndTerm : public BoolTerm {
 public:
@@ -130,6 +133,7 @@ public:
     virtual boost::shared_ptr<BoolTerm> copySyntax() const;
     BoolTerm::PtrList _terms;
 };
+
 /// BoolFactor is a plain factor in a BoolTerm
 class BoolFactor : public BoolTerm {
 public:
@@ -150,6 +154,7 @@ private:
     bool _reduceTerms(BfTerm::PtrList& newTerms, BfTerm::PtrList& oldTerms);
     bool _checkParen(BfTerm::PtrList& terms);
 };
+
 /// UnknownTerm is a catch-all term intended to help the framework pass-through
 /// syntax that is not analyzed, modified, or manipulated in Qserv.
 class UnknownTerm : public BoolTerm {
@@ -159,6 +164,7 @@ public:
     virtual void renderTo(QueryTemplate& qt) const;
     virtual boost::shared_ptr<BoolTerm> clone() const;
 };
+
 /// PassTerm is a catch-all boolean factor term that can be safely passed
 /// without further analysis or manipulation.
 class PassTerm : public BfTerm {
@@ -172,6 +178,7 @@ public: // text
 
     std::string _text;
 };
+
 /// PassListTerm is like a PassTerm, but holds a list of passing strings
 class PassListTerm : public BfTerm {
 public: // ( term, term, term )
@@ -199,6 +206,12 @@ public:
     virtual void findColumnRefs(ColumnRef::List& list);
     boost::shared_ptr<BoolTerm> _term;
 };
+
+/// Given a BoolTerm, find the root AND term within it. If the input tree
+/// can be reduced to "subtree_1 AND subtree_2 ...", the return value will
+/// be an actual AndTerm. Otherwise, the return value will be a (multi-element)
+/// OrTerm, or a BoolFactor or UnknownTerm, and may equal the input tree.
+BoolTerm::Ptr findAndTerm(BoolTerm::Ptr tree);
 
 }}} // namespace lsst::qserv::query
 
