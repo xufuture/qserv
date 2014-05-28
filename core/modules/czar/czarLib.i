@@ -40,8 +40,6 @@ Access to the classes from the qserv_czar library
 #include "css/StripingParams.h"
 #include "global/constants.h"
 #include "log/loggerInterface.h"
-#include "merger/mergeTypes.h"
-#include "util/Substitution.h"
 #include "qdisp/ChunkMeta.h"
 #include "qproc/ChunkSpec.h"
 #include "rproc/mergeTypes.h"
@@ -122,12 +120,10 @@ namespace std {
 %apply int *OUTPUT { int* chunkId, int* code, time_t* timestamp };
 
 %include "ccontrol/dispatcher.h"
-%include "ccontrol/transaction.h"
 %include "ccontrol/queryMsg.h"
+%include "ccontrol/transaction.h"
 %include "css/StripingParams.h"
 %include "global/constants.h"
-%include "merger/mergeTypes.h"
-%include "merger/TableMerger.h"
 %include "log/loggerInterface.h"
 %include "qdisp/ChunkMeta.h"
 %include "qproc/ChunkSpec.h"
@@ -139,4 +135,3 @@ namespace std {
 
 // Instantiate any templates here:
 // %template(setBool) lsst::daf::base::PropertySet::set<bool>;
-

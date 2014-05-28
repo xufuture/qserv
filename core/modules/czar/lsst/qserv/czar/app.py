@@ -126,8 +126,7 @@ def debug(sig, frame):
 def listen():
     """Register debug() as a signal handler to SIGUSR1"""
     signal.signal(signal.SIGUSR1, debug)  # Register handler
-listen()
-
+    listen()
 
 ######################################################################
 ## Methods
