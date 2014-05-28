@@ -34,62 +34,9 @@ using namespace lsst::qserv;
 
 // ProtoLogFormatter class
 
-ProtoLogFormatter::ProtoLogFormatter() {
-    _enabled = false;
-}
-
-ProtoLogFormatter::ProtoLogFormatter(std::string const& loggername,
-                                     log4cxx::LevelPtr level,
-                                     std::string filename,
-                                     std::string funcname,
-                                     unsigned int lineno,
-                                     const char* fmt) {
-    _enabled = true;
-    _dumped = false;
-    _logger = ProtoLog::getLogger(loggername);
-    _level = level;
-    _filename = &filename;
-    _funcname = &funcname;
-    _lineno = lineno;
-    _fmter = new boost::format(fmt);
-}
-
-ProtoLogFormatter::ProtoLogFormatter(log4cxx::LoggerPtr logger,
-                                     log4cxx::LevelPtr level,
-                                     std::string filename,
-                                     std::string funcname,
-                                     unsigned int lineno,
-                                     const char* fmt) {
-    _enabled = true;
-    _dumped = false;
-    _logger = logger;
-    _level = level;
-    _filename = &filename;
-    _funcname = &funcname;
-    _lineno = lineno;
-    _fmter = new boost::format(fmt);
-}
-
-ProtoLogFormatter::~ProtoLogFormatter() {
-    if (!_dumped) dump();
-    if (_enabled) delete _fmter;
-}
-
-void ProtoLogFormatter::dump() {
-    if (_enabled) {
-        _logger->forcedLog(_level, _fmter->str().c_str(),
-                           log4cxx::spi::LocationInfo(_filename->c_str(),
-                                                      _funcname->c_str(),
-                                                      _lineno));
-        _dumped = true;
-    }
-}
-
-// ProtoLogFormatter2 (for "fast-format" version)
-
-ProtoLogFormatter2::ProtoLogFormatter2() : _enabled(false) {}
+ProtoLogFormatter::ProtoLogFormatter() : _enabled(false) {}
     
-ProtoLogFormatter2::~ProtoLogFormatter2() {
+ProtoLogFormatter::~ProtoLogFormatter() {
     if (_enabled) delete _fmter;
 }
 
@@ -176,7 +123,7 @@ void ProtoLog::setLevel(std::string const& loggername, int level) {
 
 int ProtoLog::getLevel(log4cxx::LoggerPtr logger) {
     log4cxx::LevelPtr level = logger->getLevel();
-    int levelno = -1; // TODO: Is this the right thing to do?
+    int levelno = -1;
     if (level != NULL)
         levelno = level->toInt();
     return levelno;
@@ -197,7 +144,7 @@ bool ProtoLog::isEnabledFor(std::string const& loggername, int level) {
     return isEnabledFor(getLogger(loggername), level);
 }
 
-// varargs logging
+// varargs/printf style logging
 
 void ProtoLog::vlog(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
                     std::string const& filename, std::string const& funcname,

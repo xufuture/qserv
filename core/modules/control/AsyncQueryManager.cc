@@ -160,17 +160,15 @@ int AsyncQueryManager::add(TransactionSpec const& t,
     LOGF("root", LOG_LVL_WARN, "A warning from root logger!");
     LOGF("qserv", LOG_LVL_INFO, "Hello from qserv logger!");
     const char* info_stuff = "important stuff";
-    LOGF_INFO("Here's some information: %s") % info_stuff;
+    LOGF_INFO("Here's some information: %s" % info_stuff);
     LOG4CXX_INFO(LOG_GET(""), "Here's some more information: " << info_stuff);
     int debug_stuff = 99;
-    LOGF_DEBUG("Here's some debugging: %d") % debug_stuff;
+    LOGF_DEBUG("Here's some debugging: %d" % debug_stuff);
 
-    // Using boost::format style in a loop.
-    LOG_FMT logFmt = LOGF_INFO("Here's some information: %d!");
-    for (int i=0; i < 10; i++) {
-        logFmt % i;
-        logFmt.dump();
-    }
+    // Demonstrate type-safe logging.
+    LOGF_INFO("Here is my type %1% safe log %2% message %3%." % "blah" % 5.678 % 3);
+    LOGF_INFO("Uh oh. Here's the wrong kind of data = %d" % "not an integer");
+    LOG_INFO("Uh oh. Here's the wrong kind of data = %d", "not an integer");
 
     // Using logger object for better performance (e.g. no logger lookups).
     LOG_LOGGER logger = LOG_GET("czar.control");
@@ -184,7 +182,7 @@ int AsyncQueryManager::add(TransactionSpec const& t,
         std::stringstream ss;
         ss << "loglevel_" << i;
         LOG_PUSHCTX(ss.str());
-        LOGF_DEBUG("debugging statement at level %d.") % i;
+        LOGF_DEBUG("debugging statement at level %d." % i);
     }
     for (int i=0; i < levels; i++) {
         LOG_POPCTX();
@@ -200,9 +198,8 @@ int AsyncQueryManager::add(TransactionSpec const& t,
 
     // Compare output formats
     LOG_SET_LVL("", LOG_LVL_INFO);
-    LOGF_INFO("Format demo from LOGF_INFO() (boost::format style) with %s") % info_stuff;
-    LOGV_INFO("Format demo from LOGV_INFO() (varargs style) with %s", info_stuff);
-    LOGS_INFO("Format demo from LOGS_INFO() with %s" << info_stuff);
+    LOGF_INFO("Format demo from LOGF_INFO() (fast boost::format style) with %s" % info_stuff);
+    LOG_INFO("Format demo from LOG_INFO() (varargs style) with %s", info_stuff);
     LOG4CXX_INFO(LOG_GET(""), "Format demo from LOG4CXX_INFO() with " << info_stuff);
 
     /************************************************
@@ -219,116 +216,118 @@ int AsyncQueryManager::add(TransactionSpec const& t,
     for (int i=0; i < iterations; i++)
         LOGF("root", LOG_LVL_INFO, "Hello from root logger!");
     stop = omp_get_wtime();
-    LOGF_WARN("LOGF(\"root\", LOG_LVL_INFO, ...): avg time = %e") % ((stop - start)/iterations);
+    LOGF_WARN("LOGF(\"root\", LOG_LVL_INFO, ...): avg time = %e" % ((stop - start)/iterations));
 
     // LOGF with root logger with information
     start = omp_get_wtime();
     for (int i=0; i < iterations; i++)
-        LOGF("root", LOG_LVL_INFO, "Hello from root logger with %s!") % information;
+        LOGF("root", LOG_LVL_INFO, "Hello from root logger with %s!" % information);
     stop = omp_get_wtime();
-    LOGF_WARN("LOGF(\"root\", LOG_LVL_INFO, ...) %% information: avg time = %e") % ((stop - start)/iterations);
+    LOGF_WARN("LOGF(\"root\", LOG_LVL_INFO, ... <perc> information): avg time = %e" % ((stop - start)/iterations));
 
-    // LOGF with root logger in a tight loop
-    logFmt = LOGF("root", LOG_LVL_INFO, "Hello from root logger!");
+    // LOG with root logger
     start = omp_get_wtime();
     for (int i=0; i < iterations; i++)
-        logFmt.dump();
+        LOG("root", LOG_LVL_INFO, "Hello from root logger!");
     stop = omp_get_wtime();
-    LOGF_WARN("logFmt.dump(): avg time = %e") % ((stop - start)/iterations);
+    LOGF_WARN("LOG(\"root\", LOG_LVL_INFO, ...): avg time = %e" % ((stop - start)/iterations));
 
-    // LOGF with root logger in a tight loop with information
-    logFmt = LOGF("root", LOG_LVL_INFO, "Hello from root logger with %s!");
-    start = omp_get_wtime();
-    for (int i=0; i < iterations; i++) {
-        logFmt % information;
-        logFmt.dump();
-    }
-    stop = omp_get_wtime();
-    LOGF_WARN("logFmt %% information; logFmt.dump(): avg time = %e") % ((stop - start)/iterations);
-
-    // LOGV with root logger
+    // LOG with root logger with information
     start = omp_get_wtime();
     for (int i=0; i < iterations; i++)
-        LOGV("root", LOG_LVL_INFO, "Hello from root logger!");
+        LOG("root", LOG_LVL_INFO, "Hello from root logger with %s!", information);
     stop = omp_get_wtime();
-    LOGF_WARN("LOGV(\"root\", LOG_LVL_INFO, ...): avg time = %e") % ((stop - start)/iterations);
-
-    // LOGV with root logger with information
-    start = omp_get_wtime();
-    for (int i=0; i < iterations; i++)
-        LOGV("root", LOG_LVL_INFO, "Hello from root logger with %s!", information);
-    stop = omp_get_wtime();
-    LOGF_WARN("LOGV(\"root\", LOG_LVL_INFO, ..., information): avg time = %e") % ((stop - start)/iterations);
-
-    // LOGS with root logger
-    start = omp_get_wtime();
-    for (int i=0; i < iterations; i++)
-        LOGS("root", LOG_LVL_INFO, "Hello from root logger!");
-    stop = omp_get_wtime();
-    LOGF_WARN("LOGS(\"root\", LOG_LVL_INFO, ...): avg time = %e") % ((stop - start)/iterations);
-
-    // LOGS with root logger with information
-    start = omp_get_wtime();
-    for (int i=0; i < iterations; i++)
-        LOGS("root", LOG_LVL_INFO, "Hello from root logger with: " << information << "!");
-    stop = omp_get_wtime();
-    LOGF_WARN("LOGS(\"root\", LOG_LVL_INFO, ... << information << \"!\"): avg time = %e") % ((stop - start)/iterations);
+    LOGF_WARN("LOG(\"root\", LOG_LVL_INFO, ..., information): avg time = %e" % ((stop - start)/iterations));
 
     // LOG4CXX_INFO with root logger
     start = omp_get_wtime();
     for (int i=0; i < iterations; i++)
         LOG4CXX_INFO(LOG_GET("root"), "Hello from root logger!");
     stop = omp_get_wtime();
-    LOGF_WARN("LOG4CXX_INFO(LOG_GET(\"root\"), ...): avg time = %e") % ((stop - start)/iterations);
+    LOGF_WARN("LOG4CXX_INFO(LOG_GET(\"root\"), ...): avg time = %e" % ((stop - start)/iterations));
 
     // LOG4CXX_INFO with root logger with information
     start = omp_get_wtime();
     for (int i=0; i < iterations; i++)
         LOG4CXX_INFO(LOG_GET("root"), "Hello from root logger with:" << information  << "!");
     stop = omp_get_wtime();
-    LOGF_WARN("LOG4CXX_INFO(LOG_GET(\"root\"), ...): avg time = %e") % ((stop - start)/iterations);
+    LOGF_WARN("LOG4CXX_INFO(LOG_GET(\"root\"), ...): avg time = %e" % ((stop - start)/iterations));
+
+    //===================================
+
+    logger = LOG_GET("root");
+
+    // LOGF with pre-looked-up logger
+    start = omp_get_wtime();
+    for (int i=0; i < iterations; i++)
+        LOGF(logger, LOG_LVL_INFO, "Hello from root logger!");
+    stop = omp_get_wtime();
+    LOGF_WARN("LOGF(logger, LOG_LVL_INFO, ...): avg time = %e" % ((stop - start)/iterations));
+
+    // LOGF with pre-looked-up logger with information
+    start = omp_get_wtime();
+    for (int i=0; i < iterations; i++)
+        LOGF(logger, LOG_LVL_INFO, "Hello from root logger with %s!" % information);
+    stop = omp_get_wtime();
+    LOGF_WARN("LOGF(logger, LOG_LVL_INFO, ... <perc> information): avg time = %e" % ((stop - start)/iterations));
+
+    // LOG with pre-looked-up logger
+    start = omp_get_wtime();
+    for (int i=0; i < iterations; i++)
+        LOG(logger, LOG_LVL_INFO, "Hello from root logger!");
+    stop = omp_get_wtime();
+    LOGF_WARN("LOG(logger, LOG_LVL_INFO, ...): avg time = %e" % ((stop - start)/iterations));
+
+    // LOG with pre-looked-up logger with information
+    start = omp_get_wtime();
+    for (int i=0; i < iterations; i++)
+        LOG(logger, LOG_LVL_INFO, "Hello from root logger with %s!", information);
+    stop = omp_get_wtime();
+    LOGF_WARN("LOG(logger, LOG_LVL_INFO, ..., information): avg time = %e" % ((stop - start)/iterations));
+
+    // LOG4CXX_INFO with pre-looked-up logger
+    start = omp_get_wtime();
+    for (int i=0; i < iterations; i++)
+        LOG4CXX_INFO(logger, "Hello from root logger!");
+    stop = omp_get_wtime();
+    LOGF_WARN("LOG4CXX_INFO(logger, ...): avg time = %e" % ((stop - start)/iterations));
+
+    // LOG4CXX_INFO with pre-looked-up logger with information
+    start = omp_get_wtime();
+    for (int i=0; i < iterations; i++)
+        LOG4CXX_INFO(logger, "Hello from root logger with:" << information  << "!");
+    stop = omp_get_wtime();
+    LOGF_WARN("LOG4CXX_INFO(logger, ...): avg time = %e" % ((stop - start)/iterations));
+
+    //===================================
 
     // LOGF_INFO
     start = omp_get_wtime();
     for (int i=0; i < iterations; i++)
         LOGF_INFO("Hello from default logger!");
     stop = omp_get_wtime();
-    LOGF_WARN("LOGF_INFO(...): avg time = %e") % ((stop - start)/iterations);
+    LOGF_WARN("LOGF_INFO(...): avg time = %e" % ((stop - start)/iterations));
+
+    // LOGF_INFO with information
+    start = omp_get_wtime();
+    for (int i=0; i < iterations; i++)
+        LOGF_INFO("Hello from default logger with %s!" % information);
+    stop = omp_get_wtime();
+    LOGF_WARN("LOGF_INFO(... <perc> information): avg time = %e" % ((stop - start)/iterations));
+
+    // LOG_INFO
+    start = omp_get_wtime();
+    for (int i=0; i < iterations; i++)
+        LOG_INFO("Hello from default logger!");
+    stop = omp_get_wtime();
+    LOGF_WARN("LOG_INFO(...): avg time = %e" % ((stop - start)/iterations));
 
     // LOG_INFO with information
     start = omp_get_wtime();
     for (int i=0; i < iterations; i++)
-        LOGF_INFO("Hello from default logger with %s!") % information;
+        LOG_INFO("Hello from default logger with %s!", information);
     stop = omp_get_wtime();
-    LOGF_WARN("LOGF_INFO(...) %% information: avg time = %e") % ((stop - start)/iterations);
-
-    // LOGV_INFO
-    start = omp_get_wtime();
-    for (int i=0; i < iterations; i++)
-        LOGV_INFO("Hello from default logger!");
-    stop = omp_get_wtime();
-    LOGF_WARN("LOGV_INFO(...): avg time = %e") % ((stop - start)/iterations);
-
-    // LOGV_INFO with information
-    start = omp_get_wtime();
-    for (int i=0; i < iterations; i++)
-        LOGV_INFO("Hello from default logger with %s!", information);
-    stop = omp_get_wtime();
-    LOGF_WARN("LOGV_INFO(..., information): avg time = %e") % ((stop - start)/iterations);
-
-    // LOGS_INFO
-    start = omp_get_wtime();
-    for (int i=0; i < iterations; i++)
-        LOGS_INFO("Hello from default logger!");
-    stop = omp_get_wtime();
-    LOGF_WARN("LOGS_INFO(...): avg time = %e") % ((stop - start)/iterations);
-
-    // LOGS_INFO with information
-    start = omp_get_wtime();
-    for (int i=0; i < iterations; i++)
-        LOGS_INFO("Hello from default logger with: " << information << "!");
-    stop = omp_get_wtime();
-    LOGF_WARN("LOGS_INFO(...: << information << \"!\"): avg time = %e") % ((stop - start)/iterations);
+    LOGF_WARN("LOG_INFO(..., information): avg time = %e" % ((stop - start)/iterations));
 
     // LOG4CXX_INFO with logger in hand
     start = omp_get_wtime();
@@ -336,14 +335,14 @@ int AsyncQueryManager::add(TransactionSpec const& t,
     for (int i=0; i < iterations; i++)
         LOG4CXX_INFO(lgr, "Hello from default logger");
     stop = omp_get_wtime();
-    LOGF_WARN("LOG4CXX_INFO(...): avg time = %e") % ((stop - start)/iterations);
+    LOGF_WARN("LOG4CXX_INFO(...): avg time = %e" % ((stop - start)/iterations));
 
     // LOG4CXX_INFO with logger in hand with information
     start = omp_get_wtime();
     for (int i=0; i < iterations; i++)
         LOG4CXX_INFO(lgr, "Hello from default logger with: " << information << "!");
     stop = omp_get_wtime();
-    LOGF_WARN("LOG4CXX_INFO(... << information << \"!\"): avg time = %e") % ((stop - start)/iterations);
+    LOGF_WARN("LOG4CXX_INFO(... << information << \"!\"): avg time = %e" % ((stop - start)/iterations));
 
     LOG_SET_LVL("", LOG_LVL_INFO);
 
