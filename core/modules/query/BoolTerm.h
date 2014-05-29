@@ -26,29 +26,35 @@
 /**
   * @file
   *
-  * @brief BoolTerm, BfTerm, OrTerm, AndTerm, BoolFactor, PassTerm, UnknownTerm,
-  * ValueExprTerm declarations.
+  * @brief BoolTerm, BfTerm, OrTerm, AndTerm, BoolFactor, PassTerm, PassListTerm,
+  *        UnknownTerm, BoolTermFactor declarations.
   *
   * @author Daniel L. Wang, SLAC
   */
 
 // System headers
 #include <list>
+#include <stack>
 #include <string>
+#include <utility>
 
 // Third-party headers
 #include <boost/shared_ptr.hpp>
+#include <boost/iterator_adaptors.hpp>
 
 // Local headers
 #include "query/ColumnRef.h"
-
 
 namespace lsst {
 namespace qserv {
 namespace query {
 
-class QueryTemplate; // Forward
+// Forward declarations
+class QueryTemplate;
 class ValueExpr;
+
+typedef boost::shared_ptr<ValueExpr> ValueExprPtr;
+typedef std::list<ValueExprPtr> ValueExprList;
 
 /// BfTerm is a term in a in a BoolFactor
 class BfTerm {
@@ -60,9 +66,9 @@ public:
     virtual Ptr copySyntax() const = 0;
     virtual std::ostream& putStream(std::ostream& os) const = 0;
     virtual void renderTo(QueryTemplate& qt) const = 0;
+
+    virtual void findValueExprs(ValueExprList& list) {}
     virtual void findColumnRefs(ColumnRef::List& list) {}
-    class ConstOp { public: virtual void operator()(BfTerm const& t) = 0; };
-    class Op { public: virtual void operator()(BfTerm& t) = 0; };
 };
 
 /// BoolTerm is a representation of a boolean-valued term in a SQL WHERE
@@ -74,13 +80,13 @@ public:
     virtual ~BoolTerm() {}
     virtual char const* getName() const { return "BoolTerm"; }
 
+    virtual void findValueExprs(ValueExprList& list) {}
+    virtual void findColumnRefs(ColumnRef::List& list) {}
+
     /// @return a mutable list iterator for the contained terms
     virtual PtrList::iterator iterBegin() { return PtrList::iterator(); }
     /// @return the terminal iterator
     virtual PtrList::iterator iterEnd() { return PtrList::iterator(); }
-
-    virtual void visitBfTerm(BfTerm::ConstOp& o) const {}
-    virtual void visitBfTerm(BfTerm::Op& o) {}
 
     /// @return the reduced form of this term, or null if no reduction is
     /// possible.
@@ -101,6 +107,20 @@ public:
     typedef boost::shared_ptr<OrTerm> Ptr;
 
     virtual char const* getName() const { return "OrTerm"; }
+
+    virtual void findValueExprs(ValueExprList& list) {
+        typedef BoolTerm::PtrList::iterator Iter;
+        for (Iter i = _terms.begin(), e = _terms.end(); i != e; ++i) {
+            if (*i) { (*i)->findValueExprs(list); }
+        }
+    }
+    virtual void findColumnRefs(ColumnRef::List& list) {
+        typedef BoolTerm::PtrList::iterator Iter;
+        for (Iter i = _terms.begin(), e = _terms.end(); i != e; ++i) {
+            if (*i) { (*i)->findColumnRefs(list); }
+        }
+    }
+
     virtual PtrList::iterator iterBegin() { return _terms.begin(); }
     virtual PtrList::iterator iterEnd() { return _terms.end(); }
 
@@ -121,6 +141,19 @@ public:
 
     virtual char const* getName() const { return "AndTerm"; }
 
+    virtual void findValueExprs(ValueExprList& list) {
+        typedef BoolTerm::PtrList::iterator Iter;
+        for (Iter i = _terms.begin(), e = _terms.end(); i != e; ++i) {
+            if (*i) { (*i)->findValueExprs(list); }
+        }
+    }
+    virtual void findColumnRefs(ColumnRef::List& list) {
+        typedef BoolTerm::PtrList::iterator Iter;
+        for (Iter i = _terms.begin(), e = _terms.end(); i != e; ++i) {
+            if (*i) { (*i)->findColumnRefs(list); }
+        }
+    }
+
     virtual PtrList::iterator iterBegin() { return _terms.begin(); }
     virtual PtrList::iterator iterEnd() { return _terms.end(); }
 
@@ -140,6 +173,18 @@ public:
     typedef boost::shared_ptr<BoolFactor> Ptr;
     virtual char const* getName() const { return "BoolFactor"; }
 
+    virtual void findValueExprs(ValueExprList& list) {
+        typedef BfTerm::PtrList::iterator Iter;
+        for (Iter i = _terms.begin(), e = _terms.end(); i != e; ++i) {
+            if (*i) { (*i)->findValueExprs(list); }
+        }
+    }
+    virtual void findColumnRefs(ColumnRef::List& list) {
+        typedef BfTerm::PtrList::iterator Iter;
+        for (Iter i = _terms.begin(), e = _terms.end(); i != e; ++i) {
+            if (*i) { (*i)->findColumnRefs(list); }
+        }
+    }
 
     virtual boost::shared_ptr<BoolTerm> getReduced();
 
@@ -147,7 +192,6 @@ public:
     virtual void renderTo(QueryTemplate& qt) const;
     virtual boost::shared_ptr<BoolTerm> clone() const;
     virtual boost::shared_ptr<BoolTerm> copySyntax() const;
-    virtual void findColumnRefs(ColumnRef::List& list);
 
     BfTerm::PtrList _terms;
 private:
@@ -203,7 +247,14 @@ public:
     virtual BfTerm::Ptr copySyntax() const;
     virtual std::ostream& putStream(std::ostream& os) const;
     virtual void renderTo(QueryTemplate& qt) const;
-    virtual void findColumnRefs(ColumnRef::List& list);
+
+    virtual void findValueExprs(ValueExprList& list) {
+        if (_term) { _term->findValueExprs(list); }
+    }
+    virtual void findColumnRefs(ColumnRef::List& list) {
+        if (_term) { _term->findColumnRefs(list); }
+    }
+
     boost::shared_ptr<BoolTerm> _term;
 };
 

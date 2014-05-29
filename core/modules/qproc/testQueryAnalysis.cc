@@ -852,8 +852,10 @@ BOOST_AUTO_TEST_CASE(SpecIndexUsing) {
 
 BOOST_AUTO_TEST_CASE(SpecIndexOn) {
     std::string stmt = "SELECT s.ra, s.decl, o.foo "
-        "FROM Object o JOIN Source s ON s.objectIdObjTest = o.objectIdObjTest JOIN Source s2 ON s.objectIdObjTest = s2.objectIdObjTest "
-        "WHERE o.objectId = 430209694171136;";
+        "FROM Object o "
+        "JOIN Source s ON s.objectIdObjTest = Object.objectIdObjTest "
+        "JOIN Source s2 ON s.objectIdObjTest = s2.objectIdObjTest "
+        "WHERE LSST.Object.objectId = 430209694171136;";
     std::string expected = "SELECT s.ra,s.decl,o.foo "
         "FROM Subchunks_LSST_100.Object_100_100000 AS o "
         "JOIN LSST.Source_100 AS s ON s.objectIdObjTest=o.objectIdObjTest "
