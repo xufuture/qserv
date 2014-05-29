@@ -2,6 +2,9 @@ R E L E A S E   2014_05
 =======================
 
 Bug fixes:
+ * DM-630: Non-partitioned table query returns duplicate rows
+ * DM-656: Selecting from non-paritioned table is broken
+ * DM-626: ORDER BY and DISTINCT do not work reliably in qserv
  * DM-633: Query sessions are never destroyed
  * DM-625: Too many connections from czar to zookeeper
  * DM-531: Qserv returns error table instead of error code
@@ -48,5 +51,11 @@ New features:
  * DM-460: Implement backup/restore for CSS
  * DM-52: Qserv configuration - detailed design
 
-Known issues:
- * 3 automated tests fail
+Tested and verified:
+ * selections from partitioned tables and non-partitioned tables, both simple (eg by objectId) and more complex
+ * area selections (e.g. distance from a point)
+ * full table scans
+ * scisql astrometry conversions (eg flux to mag)
+ * ORDER BY
+
+All enabled integration tests (34) pass cleanly.
