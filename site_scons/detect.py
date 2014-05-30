@@ -42,10 +42,10 @@ def checkMySql(env):
             conf.Finish()
             return True
         else:
-            state.log.fails("mysqlclient too old")
+            state.log.fail("mysqlclient too old")
     else:
         # MySQL support not found or inadequate.
-        state.log.fails("Could not locate MySQL headers (mysql/mysql.h)"\
+        state.log.fail("Could not locate MySQL headers (mysql/mysql.h)"\
             + " or find multithreaded mysql lib (mysqlclient_r)")
 
     conf.Finish()
@@ -173,14 +173,14 @@ def checkXrootdLink(env, autoadd=0):
     found = conf.CheckLibs() and conf.CheckCXXHeader(header)
     conf.Finish()
     if not found:
-        state.log.fails("Missing at least one xrootd lib or header file")
+        state.log.fail("Missing at least one xrootd lib or header file")
     return found
 
 
 def setXrootd(env):
     (found, path) = findXrootdInclude(env)
     if not found :
-        state.log.fails("Missing Xrootd include path")
+        state.log.fail("Missing Xrootd include path")
     elif found and path:
         env.Append(CPPPATH=[path])
     return found
