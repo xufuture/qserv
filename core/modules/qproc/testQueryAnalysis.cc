@@ -947,6 +947,20 @@ BOOST_AUTO_TEST_CASE(Case01_0002) {
                                   params, params+4);
 }
 
+BOOST_AUTO_TEST_CASE(Case01_0003) {
+    std::string stmt = "SELECT s.ra, s.decl, o.raRange, o.declRange "
+        "FROM   Object o "
+        "JOIN   Source s USING (objectId) "
+        "WHERE  o.objectId = 390034570102582 "
+        "AND    o.latestObsTime = s.taiMidPoint;";
+    std::cout << "statement is: " << stmt << std::endl;
+    boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
+    boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
+    BOOST_CHECK(context);
+    BOOST_CHECK(context->hasChunks());
+    BOOST_CHECK(!context->hasSubChunks());
+}
+
 BOOST_AUTO_TEST_CASE(Case01_0012) {
     // This is ticket #2048, actually a proxy problem.
     // Missing paren "(" after WHERE was what the parser received.
