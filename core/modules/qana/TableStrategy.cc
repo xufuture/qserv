@@ -141,24 +141,26 @@ public:
     }
 
     /// @return overall chunk level.
+    /// Turns on subchunking if at least two tables are subchunked
     static int patchTuples(Tuples& tuples) {
         // Are multiple subchunked tables involved? Then do
         // overlap... which requires creating a query sequence.
         // For now, skip the sequence part.
         // TODO: need to refactor a bit to allow creating a sequence.
-
-        // If chunked table count > 1, use highest chunkLevel and turn on
-        // subchunking.
         Tuples::iterator i = tuples.begin();
         Tuples::iterator e = tuples.end();
-        int chunkedCount = 0;
+        int chunkedCount = 0, subChunkedCount = 0;
         for(; i != e; ++i) {
             if(i->chunkLevel > 0) {
                 ++chunkedCount;
             }
+            if(i->chunkLevel > 1) {
+                ++subChunkedCount;
+            }
         }
         // Turn on chunking with any chunk table
         int finalChunkLevel = chunkedCount ? 1 : 0;
+
         bool firstSubChunk = true;
         for(i = tuples.begin(); i != e; ++i) {
             std::string const& prePatch = i->prePatchTable;
@@ -170,7 +172,7 @@ public:
                 i->tables.push_back(makeChunkTableTemplate(prePatch));
                 break;
             case 2:
-                if(chunkedCount > 1) {
+                if(subChunkedCount>=2) { // then turn on subchunking
                     i->db = makeSubChunkDbTemplate(i->db);
                     i->tables.push_back(makeSubChunkTableTemplate(prePatch));
                     if(firstSubChunk) {
