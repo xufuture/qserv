@@ -249,7 +249,7 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
 
     // Also need to operate on GROUP BY.
     // update context.
-    if(m.hasAggregate()) { context.needsMerge = true; }
+    if(m.hasAggregate()) { context.setNeedsMerge(); }
 
     // Make the select lists of other statements in the parallel
     // portion the same.
@@ -260,7 +260,7 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
         i != e;
         ++i) {
         // Strip ORDER BY from parallel if merging.
-        if(context.needsMerge && !hasLimit) {
+        if(context.needsMerge() && !hasLimit) {
             (*i)->setOrderBy(boost::shared_ptr<query::OrderByClause>());
         }
 

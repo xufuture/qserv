@@ -99,7 +99,7 @@ public:
     void operator()(query::TableRef& t) {
         std::string table = t.getTable();
         if(table.empty()) { throw std::logic_error("No table in TableRef"); }
-        if(t.getDb().empty()) { t.setDb(context.defaultDb); }
+        if(t.getDb().empty()) { t.setDb(context.defaultDb()); }
         if(firstDb.empty()) { firstDb = t.getDb(); }
         if(firstTable.empty()) { firstTable = table; }
     }
@@ -292,7 +292,7 @@ TablePlugin::applyLogical(query::SelectStmt& stmt,
 
     // For each tableref, modify to add alias.
     int seq=0;
-    addMap addMapContext(context.tableAliases, context.tableAliasReverses);
+    addMap addMapContext(context._tableAliases, context._tableAliasReverses);
 
     std::for_each(tList.begin(), tList.end(),
                   addAlias<generateAlias,addMap>(generateAlias(seq),
@@ -304,23 +304,24 @@ TablePlugin::applyLogical(query::SelectStmt& stmt,
     query::SelectList& sList = stmt.getSelectList();
     query::ValueExprList& exprList = *sList.getValueExprList();
     std::for_each(exprList.begin(), exprList.end(),
-                  fixExprAlias(context.tableAliasReverses));
+                  fixExprAlias(context._tableAliasReverses));
     // where
     if(stmt.hasWhereClause()) {
         query::WhereClause& wClause = stmt.getWhereClause();
         query::WhereClause::ValueExprIter veI = wClause.vBegin();
         query::WhereClause::ValueExprIter veEnd = wClause.vEnd();
-        std::for_each(veI, veEnd, fixExprAlias(context.tableAliasReverses));
+        std::for_each(veI, veEnd, fixExprAlias(context._tableAliasReverses));
     }
     // Fill-in default db context.
     DbTableVector v = fList.computeResolverTables();
-    context.resolverTables.swap(v);
+    context.swapResolverTables(v);
 
     query::DbTablePair p;
     addDbContext adc(context, p.db, p.table);
     std::for_each(tList.begin(), tList.end(), adc);
-    _dominantDb = context.dominantDb = p.db;
-    context.anonymousTable = p.table;
+    _dominantDb = p.db;
+    context.setDominantDb(p.db);
+    context.setAnonymousTable(p.table);
 
     // Apply function using the iterator...
     // wClause.walk(fixExprAlias(reverseAlias));

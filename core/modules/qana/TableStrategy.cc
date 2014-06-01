@@ -420,13 +420,13 @@ void TableStrategy::_import(query::FromList const& f) {
     query::TableRefList const& tList = f.getTableRefList();
     addTable a(_impl->tuples);
     std::for_each(tList.begin(), tList.end(), a);
-    updateChunkLevel ucl(_impl->context.cssFacade);
+    updateChunkLevel ucl(_impl->context._cssFacade);
     std::for_each(_impl->tuples.begin(), _impl->tuples.end(), ucl);
 
     _impl->chunkLevel = TableNamer::patchTuples(_impl->tuples);
     LOGGER_DBG << "TableStrategy::_import() : _impl->chunkLevel : "
                << _impl->chunkLevel << std::endl;
-    if(!_impl->context.cssFacade) {
+    if(!_impl->context._cssFacade) {
         throw std::logic_error("Missing context.cssFacade");
     }
     _updateContext();
@@ -434,10 +434,10 @@ void TableStrategy::_import(query::FromList const& f) {
 
 void TableStrategy::_updateContext() {
     // Patch context with mapping.
-    if(_impl->context.queryMapping.get()) {
-        _impl->context.queryMapping->update(*exportMapping());
+    if(_impl->context._queryMapping.get()) {
+        _impl->context._queryMapping->update(*exportMapping());
     } else {
-        _impl->context.queryMapping = exportMapping();
+        _impl->context._queryMapping = exportMapping();
     }
 }
 

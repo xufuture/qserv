@@ -43,18 +43,15 @@ namespace query {
 
 boost::shared_ptr<QueryContext>
 TestFactory::newContext() {
-    boost::shared_ptr<QueryContext> context(new QueryContext());
-    context->defaultDb = "Somedb";
-    context->username = "alice";
+    boost::shared_ptr<QueryContext> context(new QueryContext("Somedb"));
+    context->setUsername("alice");
     return context;
 }
 
 boost::shared_ptr<QueryContext>
 TestFactory::newContext(boost::shared_ptr<css::Facade> cssFacade) {
-    boost::shared_ptr<QueryContext> context(new QueryContext());
-    context->cssFacade = cssFacade;
-    context->defaultDb = "Somedb";
-    context->username = "alice";
+    boost::shared_ptr<QueryContext> context(new QueryContext("Somedb", cssFacade));
+    context->setUsername("alice");
     return context;
 }
 

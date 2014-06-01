@@ -113,43 +113,20 @@ bool QuerySession::hasAggregate() const {
     // multi-pass execution, the statement makes use of a (proper,
     // probably) subset of its components to compose each pass. Right
     // now, the only goal is to support aggregation using two passes.
-    return _context->needsMerge;
+    return _context->needsMerge();
 }
 
 bool QuerySession::hasChunks() const {
     return _context->hasChunks();
 }
 
-boost::shared_ptr<query::ConstraintVector> QuerySession::getConstraints() const {
-    boost::shared_ptr<query::ConstraintVector> cv;
-    boost::shared_ptr<query::QsRestrictor::List const> p = _context->restrictors;
-
-    if(p.get()) {
-        cv.reset(new query::ConstraintVector(p->size()));
-        int i=0;
-        query::QsRestrictor::List::const_iterator li;
-        for(li = p->begin(); li != p->end(); ++li) {
-            query::Constraint c;
-            query::QsRestrictor const& r = **li;
-            c.name = r._name;
-            util::StringList::const_iterator si;
-            for(si = r._params.begin(); si != r._params.end(); ++si) {
-                c.params.push_back(*si);
-            }
-            (*cv)[i] = c;
-            ++i;
-        }
-        //printConstraints(*cv);
-        return cv;
-    } else {
-        //LOGGER_INF << "No constraints." << std::endl;
-    }
-    // No constraint vector
-    return cv;
+boost::shared_ptr<query::ConstraintVector> 
+QuerySession::getConstraints() const {
+    return _context->getConstraints();
 }
 
 void QuerySession::addChunk(ChunkSpec const& cs) {
-    _context->chunkCount += 1;
+    _context->incrChunkCount();
     _chunks.push_back(cs);
 }
 
@@ -158,7 +135,7 @@ void QuerySession::setResultTable(std::string const& resultTable) {
 }
 
 std::string const& QuerySession::getDominantDb() const {
-    return _context->dominantDb; // parsed query's dominant db (via TablePlugin)
+    return _context->dominantDb(); // parsed query's dominant db (via TablePlugin)
 }
 
 bool QuerySession::containsDb(std::string const& dbName) const {
@@ -184,9 +161,9 @@ QuerySession::makeMergeFixup() const {
     t = _stmtMerge->getPostTemplate();
     std::string post = t.generate();
     std::string orderBy; // TODO
-    bool needsMerge = _context->needsMerge;
     return rproc::MergeFixup(select, post, orderBy,
-                              _stmtMerge->getLimit(), needsMerge);
+                             _stmtMerge->getLimit(), 
+                             _context->needsMerge());
 }
 
 void QuerySession::finalize() {
@@ -219,12 +196,7 @@ QuerySession::QuerySession(Test& t)
 }
 
 void QuerySession::_initContext() {
-    _context.reset(new query::QueryContext());
-    _context->defaultDb = _defaultDb;
-    _context->username = "default";
-    _context->needsMerge = false;
-    _context->chunkCount = 0;
-    _context->cssFacade = _cssFacade;
+    _context.reset(new query::QueryContext(_defaultDb, _cssFacade));
 }
 
 void QuerySession::_preparePlugins() {
@@ -292,14 +264,7 @@ void QuerySession::_showFinal(std::ostream& os) {
 
     os << "QuerySession::_showFinal() : parallel: " << par.dbgStr() << std::endl;
     os << "QuerySession::_showFinal() : merge: " << mer.dbgStr() << std::endl;
-    if(!_context->scanTables.empty()) {
-        util::StringPairList::const_iterator i,e;
-        for(i=_context->scanTables.begin(), e=_context->scanTables.end();
-            i != e; ++i) {
-            os << "ScanTable: " << i->first << "." << i->second
-                       << std::endl;
-        }
-    }
+    _context->printScanTables(os);
 }
 
 std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) const {
@@ -309,10 +274,10 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
         throw std::logic_error("Attempted buildChunkQueries without _stmtParallel");
     }
 
-    if(!_context->queryMapping) {
+    if(!_context->_queryMapping) {
         throw std::logic_error("Missing QueryMapping in _context");
     }
-    qana::QueryMapping const& queryMapping = *_context->queryMapping;
+    qana::QueryMapping const& queryMapping = *_context->_queryMapping;
 
     typedef std::list<boost::shared_ptr<query::SelectStmt> >::const_iterator Iter;
     typedef std::list<query::QueryTemplate> Tlist;
@@ -326,7 +291,7 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
     if(!queryMapping.hasSubChunks()) { // Non-subchunked?
         LOGGER_INF << "QuerySession::_buildChunkQueries() : Non-subchunked" << std::endl;
         for(TlistIter i=tlist.begin(), e=tlist.end(); i != e; ++i) {
-            q.push_back(_context->queryMapping->apply(s, *i));
+            q.push_back(_context->_queryMapping->apply(s, *i));
         }
     } else { // subchunked:
         LOGGER_INF << "QuerySession::_buildChunkQueries() : subchunked " << std::endl;
@@ -341,8 +306,8 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
             for(TlistIter j=tlist.begin(), je=tlist.end(); j != je; ++j) {
 
 	      LOGGER_DBG << "QuerySession::_buildChunkQueries() : adding query "
-                         << _context->queryMapping->apply(*i, *j) << std::endl;
-              q.push_back(_context->queryMapping->apply(*i, *j));
+                         << _context->_queryMapping->apply(*i, *j) << std::endl;
+              q.push_back(_context->_queryMapping->apply(*i, *j));
             }
         }
     }
@@ -374,17 +339,17 @@ ChunkQuerySpec& QuerySession::Iter::dereference() const {
 
 void QuerySession::Iter::_buildCache() const {
     assert(_qs != NULL);
-    _cache.db = _qs->_context->dominantDb;
+    _cache.db = _qs->getDominantDb();
     // LOGGER_INF << "scantables "
     //            << (_qs->_context->scanTables.empty() ? "is " : "is not ")
     //            << " empty" << std::endl;
 
-    _cache.scanTables = _qs->_context->scanTables;
+    _cache.scanTables = _qs->_context->_scanTables;
     _cache.chunkId = _pos->chunkId;
     _cache.nextFragment.reset();
     // Reset subChunkTables
     _cache.subChunkTables.clear();
-    qana::QueryMapping const& queryMapping = *(_qs->_context->queryMapping);
+    qana::QueryMapping const& queryMapping = *(_qs->_context->_queryMapping);
     qana::QueryMapping::StringSet const& sTables = queryMapping.getSubChunkTables();
     _cache.subChunkTables.insert(_cache.subChunkTables.begin(),
                                  sTables.begin(), sTables.end());

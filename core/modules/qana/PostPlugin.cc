@@ -134,7 +134,7 @@ PostPlugin::applyPhysical(QueryPlugin::Plan& p,
                 mList.addStar(std::string());
             }
             // Patch MergeFixup.
-            context.needsMerge = true;
+            context.setNeedsMerge();
         } // if((_limit != -1) || _orderBy)
         if(_orderBy) {
             // Remove orderby from parallel

@@ -111,15 +111,14 @@ registerPlugin registerScanTablePlugin;
 void
 ScanTablePlugin::applyLogical(query::SelectStmt& stmt,
                               query::QueryContext& context) {
-    _scanTables = _findScanTables(stmt, context);
-    context.scanTables = _scanTables;
+    context.setScanTables(_findScanTables(stmt, context));
 }
 
 void
 ScanTablePlugin::applyFinal(query::QueryContext& context) {
     int const scanThreshold = 2;
-    if(context.chunkCount < scanThreshold) {
-        context.scanTables.clear();
+    if(context.chunkCount() < scanThreshold) {
+        context.clearScanTables();
         LOGGER_INF << "Squash scan tables: <" << scanThreshold
                    << " chunks." << std::endl;
     }

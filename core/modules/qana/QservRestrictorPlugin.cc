@@ -80,13 +80,13 @@ bool
 lookupKey(query::QueryContext& context, boost::shared_ptr<query::ColumnRef> cr) {
     // Match cr as a column ref against the key column for a database's
     // partitioning strategy.
-    if((!cr) || !context.cssFacade) { return false; }
-    if(!context.cssFacade->containsDb(cr->db)
-       || !context.cssFacade->containsTable(cr->db, cr->table)) {
+    if((!cr) || !context._cssFacade) { return false; }
+    if(!context._cssFacade->containsDb(cr->db)
+       || !context._cssFacade->containsTable(cr->db, cr->table)) {
         throw qana::AnalysisError("Invalid db/table:"
                                   + cr->db + "." + cr->table);
         }
-    std::string keyColumn = context.cssFacade->getKeyColumn(cr->db, cr->table);
+    std::string keyColumn = context._cssFacade->getKeyColumn(cr->db, cr->table);
     return (!cr->column.empty()) && (keyColumn == cr->column);
 }
 
@@ -394,10 +394,10 @@ QservRestrictorPlugin::applyLogical(query::SelectStmt& stmt,
     query::FromList& fList = stmt.getFromList();
     query::TableRefList& tList = fList.getTableRefList();
     RestrictorEntries entries;
-    if(!context.cssFacade) {
+    if(!context._cssFacade) {
         throw qana::AnalysisBug("Missing metadata in context");
     }
-    getTable gt(*context.cssFacade, entries);
+    getTable gt(*context._cssFacade, entries);
     std::for_each(tList.begin(), tList.end(), gt);
 
     if(!stmt.hasWhereClause()) { return; }
@@ -414,42 +414,36 @@ QservRestrictorPlugin::applyLogical(query::SelectStmt& stmt,
     if(rListP && !rListP->empty()) {
         // spatial restrictions
         query::QsRestrictor::List const& rList = *rListP;
-        context.restrictors.reset(new query::QueryContext::RestrList);
+        context.resetRestrictors();
         newTerm.reset(new query::AndTerm);
 
         // Now, for each of the qserv restrictors:
         for(query::QsRestrictor::List::const_iterator i=rList.begin();
             i != rList.end(); ++i) {
             // for each restrictor entry
-            // generate a restrictor condition.
+            // Generate a restrictor condition.
             for(RestrictorEntries::const_iterator j = entries.begin();
                 j != entries.end(); ++j) {
                 newTerm->_terms.push_back(_makeCondition(*i, *j));
             }
             if((**i)._name == "qserv_objectId") {
-                // Convert to secIndex restrictor
-                query::QsRestrictor::Ptr p = _convertObjectId(context, **i);
-                context.restrictors->push_back(p);
+                // Convert to secIndex restrictor.
+                context.addRestrictor(_convertObjectId(context, **i));
             } else {
                 // Save restrictor in QueryContext.
-                context.restrictors->push_back(*i);
+                context.addRestrictor(*i);
             }
         }
     }
     wc.resetRestrs();
     // Merge in the implicit restrictors
     if(keyPreds) {
-        if(!context.restrictors) {
-            context.restrictors = keyPreds;
-        } else {
-        context.restrictors->insert(context.restrictors->end(),
-                                    keyPreds->begin(), keyPreds->end());
-        }
+        context.mergeInRestrictors(keyPreds);        
     }
-    if(context.restrictors && context.restrictors->empty()) {
-        context.restrictors.reset();
+    context.resetRestrictorsIfEmpty();
+    if(newTerm) {
+        wc.prependAndTerm(newTerm); 
     }
-    if(newTerm) { wc.prependAndTerm(newTerm); }
 }
 
 void
@@ -598,16 +592,17 @@ QservRestrictorPlugin::_convertObjectId(query::QueryContext& context,
     p->_name = "sIndex";
     // sIndex has paramers as follows:
     // db, table, column, val1, val2, ...
-    p->_params.push_back(context.dominantDb);
-    p->_params.push_back(context.anonymousTable);
-    if(!context.cssFacade->containsDb(context.dominantDb)
-       || !context.cssFacade->containsTable(context.dominantDb,
-                                            context.anonymousTable) ) {
-        throw qana::AnalysisError("Invalid db/table: " + context.dominantDb
-                                  + "." + context.anonymousTable);
+    p->_params.push_back(context.dominantDb());
+    p->_params.push_back(context.anonymousTable());
+    if(!context._cssFacade->containsDb(context.dominantDb())
+       || !context._cssFacade->containsTable(context.dominantDb(),
+                                             context.anonymousTable()) ) {
+        throw qana::AnalysisError("Invalid db/table: " + context.dominantDb()
+                                  + "." + context.anonymousTable());
     }
-    std::string keyColumn = context.cssFacade->getKeyColumn(context.dominantDb,
-                                                            context.anonymousTable);
+    std::string keyColumn = context._cssFacade->getKeyColumn(
+                                                   context.dominantDb(),
+                                                   context.anonymousTable());
     p->_params.push_back(keyColumn);
     std::copy(original._params.begin(), original._params.end(),
               std::back_inserter(p->_params));

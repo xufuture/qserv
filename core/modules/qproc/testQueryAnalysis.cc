@@ -215,11 +215,11 @@ BOOST_AUTO_TEST_CASE(TrivialSub) {
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     SelectStmt const& ss = qs->getStmt();
     BOOST_CHECK(context);
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(!context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(!context->hasSubChunks());
     BOOST_CHECK(!ss.hasGroupBy());
-    BOOST_CHECK(!context->needsMerge);
+    BOOST_CHECK(!context->needsMerge());
 
     std::string parallel = computeFirst(*qs);
     BOOST_CHECK_EQUAL(expected, parallel);
@@ -239,11 +239,11 @@ BOOST_AUTO_TEST_CASE(NoSub) {
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     SelectStmt const& ss = qs->getStmt();
     BOOST_CHECK(context);
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(!context->hasRestrictors());
     BOOST_CHECK(!context->hasChunks());
     BOOST_CHECK(!context->hasSubChunks());
     BOOST_CHECK(!ss.hasGroupBy());
-    BOOST_CHECK(!context->needsMerge);
+    BOOST_CHECK(!context->needsMerge());
     std::string parallel = computeFirst(*qs);
     BOOST_CHECK_EQUAL(goodRes, parallel);
 }
@@ -257,7 +257,7 @@ BOOST_AUTO_TEST_CASE(Aggregate) {
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     SelectStmt const& ss = qs->getStmt();
     BOOST_CHECK(context);
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(!context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(!context->hasSubChunks());
     BOOST_REQUIRE(ss.hasGroupBy());
@@ -273,9 +273,9 @@ BOOST_AUTO_TEST_CASE(Limit) {
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     SelectStmt const& ss = qs->getStmt();
     BOOST_CHECK(context);
-    BOOST_CHECK(!context->restrictors);
-    if(context->restrictors) {
-        QsRestrictor& r = *context->restrictors->front();
+    BOOST_CHECK(!context->hasRestrictors());
+    if(context->hasRestrictors()) {
+        const QsRestrictor& r = context->firstRestrictor();
         std::cout << "front restr is " << r << std::endl;
     }
 
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(OrderBy) {
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     SelectStmt const& ss = qs->getStmt();
     BOOST_CHECK(context);
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK(!context->hasRestrictors());
     BOOST_REQUIRE(ss.hasOrderBy());
     // TODO add testing of order-by clause
     //OrderByClause const& oc = ss->getOrderBy();
@@ -300,16 +300,15 @@ BOOST_AUTO_TEST_CASE(RestrictorBox) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_REQUIRE(context->restrictors);
-    BOOST_CHECK_EQUAL(context->restrictors->size(), 1);
-    BOOST_REQUIRE(context->restrictors->front());
-    QsRestrictor& r = *context->restrictors->front();
+    BOOST_REQUIRE(context->hasRestrictors());
+    BOOST_CHECK_EQUAL(context->nRestrictors(), 1);
+    const QsRestrictor& r = context->firstRestrictor();
     BOOST_CHECK_EQUAL(r._name, "qserv_areaspec_box");
     char const* params[] = {"0","0","1","1"};
     BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
                                   params, params+4);
-    BOOST_CHECK(!context->needsMerge);
-    BOOST_CHECK_EQUAL(context->anonymousTable, "Object");
+    BOOST_CHECK(!context->needsMerge());
+    BOOST_CHECK_EQUAL(context->anonymousTable(), "Object");
     BOOST_CHECK(!context->hasSubChunks());
 }
 BOOST_AUTO_TEST_CASE(RestrictorObjectId) {
@@ -317,11 +316,10 @@ BOOST_AUTO_TEST_CASE(RestrictorObjectId) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, "LSST");
-    BOOST_REQUIRE(context->restrictors);
-    BOOST_CHECK_EQUAL(context->restrictors->size(), 1);
-    BOOST_REQUIRE(context->restrictors->front());
-    QsRestrictor& r = *context->restrictors->front();
+    BOOST_CHECK_EQUAL(context->dominantDb(), "LSST");
+    BOOST_REQUIRE(context->hasRestrictors());
+    BOOST_CHECK_EQUAL(context->nRestrictors(), 1);
+    const QsRestrictor& r = context->firstRestrictor();
     BOOST_CHECK_EQUAL(r._name, "sIndex");
     char const* params[] = {"LSST","Object", "objectIdObjTest", "2","3145","9999"};
     BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
@@ -333,11 +331,10 @@ BOOST_AUTO_TEST_CASE(SecondaryIndex) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_REQUIRE(context->restrictors);
-    BOOST_CHECK_EQUAL(context->restrictors->size(), 1);
-    BOOST_REQUIRE(context->restrictors->front());
-    QsRestrictor& r = *context->restrictors->front();
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_REQUIRE(context->hasRestrictors());
+    BOOST_CHECK_EQUAL(context->nRestrictors(), 1);
+    const QsRestrictor& r = context->firstRestrictor();
     BOOST_CHECK_EQUAL(r._name, "sIndex");
     char const* params[] = {"LSST","Object", "objectIdObjTest", "2","3145","9999"};
     BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
@@ -349,11 +346,10 @@ BOOST_AUTO_TEST_CASE(RestrictorObjectIdAlias) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_REQUIRE(context->restrictors);
-    BOOST_CHECK_EQUAL(context->restrictors->size(), 1);
-    BOOST_REQUIRE(context->restrictors->front());
-    QsRestrictor& r = *context->restrictors->front();
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_REQUIRE(context->hasRestrictors());
+    BOOST_CHECK_EQUAL(context->nRestrictors(), 1);
+    const QsRestrictor& r = context->firstRestrictor();
     BOOST_CHECK_EQUAL(r._name, "sIndex");
     char const* params[] = {"LSST","Object", "objectIdObjTest", "2","3145","9999"};
     BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
@@ -373,11 +369,10 @@ BOOST_AUTO_TEST_CASE(RestrictorNeighborCount) {
 
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_REQUIRE(context->restrictors);
-    BOOST_CHECK_EQUAL(context->restrictors->size(), 1);
-    BOOST_REQUIRE(context->restrictors->front());
-    QsRestrictor& r = *context->restrictors->front();
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_REQUIRE(context->hasRestrictors());
+    BOOST_CHECK_EQUAL(context->nRestrictors(), 1);
+    const QsRestrictor& r = context->firstRestrictor();
     BOOST_CHECK_EQUAL(r._name, "qserv_areaspec_box");
     char const* params[] = {"6","6","7","7"};
     BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
@@ -416,7 +411,7 @@ BOOST_AUTO_TEST_CASE(BadDbAccess) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt, expectedErr);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("Bad"));
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("Bad"));
 }
 
 BOOST_AUTO_TEST_CASE(ObjectSourceJoin) {
@@ -432,11 +427,10 @@ BOOST_AUTO_TEST_CASE(ObjectSourceJoin) {
 
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_REQUIRE(context->restrictors);
-    BOOST_CHECK_EQUAL(context->restrictors->size(), 1);
-    BOOST_REQUIRE(context->restrictors->front());
-    QsRestrictor& r = *context->restrictors->front();
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_REQUIRE(context->hasRestrictors());
+    BOOST_CHECK_EQUAL(context->nRestrictors(), 1);
+    const QsRestrictor& r = context->firstRestrictor();
     BOOST_CHECK_EQUAL(r._name, "qserv_areaspec_box");
     char const* params[] = {"2","2","3","3"};
     BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
@@ -452,8 +446,8 @@ BOOST_AUTO_TEST_CASE(ObjectSelfJoin) {
 
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(!context->hasRestrictors());
 }
 
 BOOST_AUTO_TEST_CASE(ObjectSelfJoinQualified) {
@@ -465,11 +459,11 @@ BOOST_AUTO_TEST_CASE(ObjectSelfJoinQualified) {
 
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(!context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(context->hasSubChunks());
-    BOOST_CHECK(context->needsMerge);
+    BOOST_CHECK(context->needsMerge());
     std::string actual = computeFirst(*qs);
     BOOST_CHECK_EQUAL(actual, expected);
 }
@@ -488,11 +482,11 @@ BOOST_AUTO_TEST_CASE(ObjectSelfJoinWithAs) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(!context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(context->hasSubChunks());
-    BOOST_CHECK(!context->needsMerge);
+    BOOST_CHECK(!context->needsMerge());
     std::string actual = computeFirst(*qs);
     BOOST_CHECK_EQUAL(actual, expected);
 }
@@ -525,11 +519,11 @@ BOOST_AUTO_TEST_CASE(ObjectSelfJoinDistance) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(context->hasSubChunks());
-    BOOST_CHECK(context->needsMerge);
+    BOOST_CHECK(context->needsMerge());
     std::string actual = computeFirst(*qs);
     BOOST_CHECK_EQUAL(actual, expected);
 }
@@ -550,11 +544,11 @@ BOOST_AUTO_TEST_CASE(SelfJoinAliased) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(!context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(context->hasSubChunks());
-    BOOST_CHECK(!context->needsMerge);
+    BOOST_CHECK(!context->needsMerge());
     std::string actual = computeFirst(*qs);
     BOOST_CHECK_EQUAL(actual, expected);
 }
@@ -566,11 +560,11 @@ BOOST_AUTO_TEST_CASE(AliasHandling) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(!context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(context->hasSubChunks()); // Design question: do subchunks?
-    BOOST_CHECK(!context->needsMerge);
+    BOOST_CHECK(!context->needsMerge());
     std::string actual = computeFirst(*qs);
     BOOST_CHECK_EQUAL(actual, expected);
 }
@@ -584,11 +578,11 @@ BOOST_AUTO_TEST_CASE(SpatialRestr) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(!context->hasSubChunks());
-    BOOST_CHECK(context->needsMerge);
+    BOOST_CHECK(context->needsMerge());
     std::string actual = computeFirst(*qs);
     BOOST_CHECK_EQUAL(actual, expected);
 }
@@ -601,11 +595,11 @@ BOOST_AUTO_TEST_CASE(SpatialRestr2) { // Redundant?
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(!context->hasSubChunks());
-    BOOST_CHECK(context->needsMerge);
+    BOOST_CHECK(context->needsMerge());
     std::string actual = computeFirst(*qs);
     BOOST_CHECK_EQUAL(actual, expected);
 }
@@ -624,11 +618,11 @@ BOOST_AUTO_TEST_CASE(ChunkDensity) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(!context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(!context->hasSubChunks());
-    BOOST_CHECK(context->needsMerge);
+    BOOST_CHECK(context->needsMerge());
 }
 
 BOOST_AUTO_TEST_CASE(AltDbName) {
@@ -641,11 +635,12 @@ BOOST_AUTO_TEST_CASE(AltDbName) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, "rplante_PT1_2_u_pt12prod_im3000_qserv");
-    BOOST_CHECK(context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(),
+                      "rplante_PT1_2_u_pt12prod_im3000_qserv");
+    BOOST_CHECK(context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(!context->hasSubChunks());
-    BOOST_CHECK(context->needsMerge);
+    BOOST_CHECK(context->needsMerge());
     std::string actual = computeFirst(*qs);
     BOOST_CHECK_EQUAL(actual, expected);
 }
@@ -656,11 +651,11 @@ BOOST_AUTO_TEST_CASE(NonpartitionedTable) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(!context->hasRestrictors());
     BOOST_CHECK(!context->hasChunks());
     BOOST_CHECK(!context->hasSubChunks());
-    BOOST_CHECK(!context->needsMerge);
+    BOOST_CHECK(!context->needsMerge());
 }
 
 BOOST_AUTO_TEST_CASE(CountQuery) {
@@ -668,11 +663,11 @@ BOOST_AUTO_TEST_CASE(CountQuery) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(!context->hasRestrictors());
     BOOST_CHECK(context->hasChunks());
     BOOST_CHECK(!context->hasSubChunks());
-    BOOST_CHECK(context->needsMerge);
+    BOOST_CHECK(context->needsMerge());
 }
 
 BOOST_AUTO_TEST_CASE(CountQuery2) {
@@ -683,8 +678,8 @@ BOOST_AUTO_TEST_CASE(CountQuery2) {
 
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(!context->hasRestrictors());
 
     qs->addChunk(makeChunkSpec(100,true));
     QuerySession::Iter i = qs->cQueryBegin();
@@ -707,11 +702,11 @@ BOOST_AUTO_TEST_CASE(SimpleScan) {
 
         boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
         BOOST_CHECK(context);
-        BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-        BOOST_CHECK(!context->restrictors);
-        BOOST_CHECK_EQUAL(context->scanTables.size(), 1);
-        if(context->scanTables.size() >= 1) {
-            StringPair p = context->scanTables.front();
+        BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+        BOOST_CHECK(!context->hasRestrictors());
+        BOOST_CHECK_EQUAL(context->_scanTables.size(), 1);
+        if(context->_scanTables.size() >= 1) {
+            StringPair p = context->_scanTables.front();
             BOOST_CHECK_EQUAL(p.first, "LSST");
             BOOST_CHECK_EQUAL(p.second, "Object");
         }
@@ -724,8 +719,8 @@ BOOST_AUTO_TEST_CASE(UnpartLimit) {
 
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(!context->hasRestrictors());
     // BOOST_CHECK(!spr->getHasChunks());
     // BOOST_CHECK(!spr->getHasSubChunks());
     // BOOST_CHECK(!spr->getHasAggregate());
@@ -936,11 +931,10 @@ BOOST_AUTO_TEST_CASE(Case01_0002) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_REQUIRE(context->restrictors);
-    BOOST_CHECK_EQUAL(context->restrictors->size(), 1);
-    BOOST_REQUIRE(context->restrictors->front());
-    QsRestrictor& r = *context->restrictors->front();
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_REQUIRE(context->hasRestrictors());
+    BOOST_CHECK_EQUAL(context->nRestrictors(), 1);
+    const QsRestrictor& r = context->firstRestrictor();
     BOOST_CHECK_EQUAL(r._name, "sIndex");
     char const* params[] = {"LSST","Object", "objectIdObjTest", "430213989000"};
     BOOST_CHECK_EQUAL_COLLECTIONS(r._params.begin(), r._params.end(),
@@ -958,7 +952,7 @@ BOOST_AUTO_TEST_CASE(Case01_0012) {
     boost::shared_ptr<QuerySession> qs = testStmt3(qsTest, stmt);
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
     // BOOST_CHECK(!spr->getHasChunks());
     // BOOST_CHECK(!spr->getHasSubChunks());
     // BOOST_CHECK(!spr->getHasAggregate());
@@ -1042,8 +1036,8 @@ BOOST_AUTO_TEST_CASE(Case01_1081) {
 
     boost::shared_ptr<QueryContext> context = qs->dbgGetContext();
     BOOST_CHECK(context);
-    BOOST_CHECK_EQUAL(context->dominantDb, std::string("LSST"));
-    BOOST_CHECK(!context->restrictors);
+    BOOST_CHECK_EQUAL(context->dominantDb(), std::string("LSST"));
+    BOOST_CHECK(!context->hasRestrictors());
 
     std::string actual = computeFirst(*qs);
     BOOST_CHECK_EQUAL(actual, expected_100);
