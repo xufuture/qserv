@@ -87,12 +87,17 @@ class Db:
     def getCursor(self):
         return self._conn.cursor()
 
-    def applySql(self, sql):
+    def applySql(self, sql, params=None):
+        ''' Execute SQL statement, retry in case of some errors.
+        @param sql:       query string
+        @param params:    optional parameters for query
+        @return  all rows of the query result
+        '''
         failures = 0
         while True:
             c = self._conn.cursor()
             try:
-                c.execute(sql)
+                c.execute(sql, params)
                 break # Success: break out of the loop
             except _mysql_exceptions.OperationalError, e:
                 failures += 1
@@ -176,9 +181,9 @@ class TaskDb:
                     (3, 0, -fakeInfin, 0.0, -fakeInfin, 0.0),
                     (4, 0, -fakeInfin, 0.0, 0.0, fakeInfin),
                     ]
+        sqlstr = 'INSERT INTO partmap VALUES (%s, %s, %s, %s, %s, %s);'
         for cTuple in fakeRows:
-            sqlstr = 'INSERT INTO partmap VALUES %s;' % str(cTuple) 
-            c.execute(sqlstr)
+            c.execute(sqlstr, cTuple)
         c.close()
 
     
@@ -203,10 +208,9 @@ class TaskDb:
             a[0] = int(self.nextId())
             assert type(a[0]) is int
             taskparam = tuple(a)
-        taskstr = str(taskparam)
-        sqlstr = 'INSERT INTO tasks VALUES %s' % taskstr
+        sqlstr = 'INSERT INTO tasks VALUES (%s, %s)'
         logger.inf("---",sqlstr)
-        self._db.getCursor().execute(sqlstr)
+        self._db.getCursor().execute(sqlstr, taskparam)
         return a[0]
 
     def issueQuery(self, query):
