@@ -34,7 +34,7 @@
 #include <boost/format.hpp>
 
 // Convenience macros
-#define LOG_INIT(filename) lsst::qserv::ProtoLog::initLog(filename)
+#define LOG_CONFIG(filename) lsst::qserv::ProtoLog::configure(filename)
 
 #define LOG_DEFAULT_NAME() lsst::qserv::ProtoLog::getDefaultLoggerName()
 
@@ -99,7 +99,7 @@
             log4cxx::Level::getFatal(), (fmter_ % fmt).str().c_str(), \
             LOG4CXX_LOCATION); }
 
-// varargs logging API
+// varargs/printf style logging
 
 #define LOG(logger, level, fmt...) \
     if (lsst::qserv::ProtoLog::isEnabledFor(logger, level)) { \
@@ -175,7 +175,9 @@ private:
 class ProtoLog {
 public:
     static log4cxx::LoggerPtr defaultLogger;
-    static void initLog(std::string const& filename);
+    static void initLog(void);
+    static void configure(void);
+    static void configure(std::string const& filename);
     static std::string getDefaultLoggerName(void);
     static log4cxx::LoggerPtr getLogger(log4cxx::LoggerPtr logger);
     static log4cxx::LoggerPtr getLogger(std::string const& loggername);

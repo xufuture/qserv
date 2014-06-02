@@ -28,8 +28,12 @@
 
 namespace qMaster=lsst::qserv::master;
 
-void qMaster::initLog_iface(std::string const& filename) {
-    lsst::qserv::ProtoLog::initLog(filename);
+void qMaster::configure_iface() {
+    lsst::qserv::ProtoLog::configure();
+}
+
+void qMaster::configure_iface(std::string const& filename) {
+    lsst::qserv::ProtoLog::configure(filename);
 }
 
 std::string qMaster::getDefaultLoggerName_iface(void) {

@@ -28,7 +28,8 @@
 
 namespace lsst { namespace qserv { namespace master {
 
-void initLog_iface(std::string const& filename);
+void configure_iface(void);
+void configure_iface(std::string const& filename);
 std::string getDefaultLoggerName_iface(void);
 void pushContext_iface(std::string const& name);
 void popContext_iface();

@@ -22,7 +22,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
-from lsst.qserv.master import initLog_iface, getDefaultLoggerName_iface,\
+from lsst.qserv.master import configure_iface, getDefaultLoggerName_iface,\
                               pushContext_iface, popContext_iface, MDC_iface,\
                               MDCRemove_iface, getLevel_iface, setLevel_iface,\
                               isEnabledFor_iface, forcedLog_iface
@@ -38,8 +38,11 @@ WARN = 30000
 ERROR = 40000
 FATAL = 50000
 
-def initLog(filename):
-    initLog_iface(filename)
+def configure(*args):
+    if len(args) > 0:
+        configure_iface(args[0])
+    else:
+        configure_iface()
 
 def getDefaultLoggerName():
     name = getDefaultLoggerName_iface()
@@ -148,7 +151,6 @@ class ProtoLogHandler(logging.Handler):
 
     def __del__(self):
         self.close()
-        logging.Handler.__del__(self)
 
     def close(self):
         if self.context is not None:

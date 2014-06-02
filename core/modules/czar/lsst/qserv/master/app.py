@@ -416,7 +416,7 @@ class InbandQueryAction:
         #######################################
         # DEMONSTRATE PROTOLOG FROM PYTHON
         #######################################
-        protolog.initLog("/u1/bchick/sandbox2/modules/etc/Log4cxxConfig.xml")
+        protolog.configure("/u1/bchick/sandbox2/modules/etc/log4cxx.xml")
         # Demonstrate MDC feature of protolog via python.
         protolog.MDC("session", -1) 
         # Demonstrate object-free logging

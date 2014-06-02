@@ -25,9 +25,12 @@
 #include <log4cxx/consoleappender.h>
 #include <log4cxx/simplelayout.h>
 #include <log4cxx/logmanager.h>
+#include <log4cxx/basicconfigurator.h>
 #include <log4cxx/xml/domconfigurator.h>
+#include <log4cxx/propertyconfigurator.h>
 #include <stdio.h>
 
+// Max message length for varargs/printf style logging
 #define MAX_LOG_MSG_LEN 1024
 
 using namespace lsst::qserv;
@@ -54,17 +57,45 @@ ProtoLogContext::~ProtoLogContext() {
 
 // ProtoLog class
 
-log4cxx::LoggerPtr ProtoLog::defaultLogger;
+log4cxx::LoggerPtr ProtoLog::defaultLogger = log4cxx::Logger::getRootLogger();
 std::stack<std::string> ProtoLog::context;
 std::string ProtoLog::defaultLoggerName;
 
-void ProtoLog::initLog(std::string const& filename) {
-    // Load XML configuration file using DOMConfigurator
-    log4cxx::xml::DOMConfigurator::configure(filename);
+void ProtoLog::initLog() {
     // Clear context
     while (!context.empty()) context.pop();
     // Default logger initially set to root logger
-    defaultLogger = log4cxx::Logger::getLogger("");
+    defaultLogger = log4cxx::Logger::getRootLogger();
+}
+
+void ProtoLog::configure() {
+    // Is there a valid default configuration file from the environment?
+    // We check for this by sending a message to root logger. If default
+    // configuration exists, the root logger will have at least one
+    // appender afterward. Otherwise, we will use log4cxx's basic
+    // configuration.
+    log4cxx::LoggerPtr rootLogger = log4cxx::Logger::getRootLogger();
+    LOG4CXX_INFO(rootLogger, "Initializing Logging System");
+    if (rootLogger->getAllAppenders().size() == 0)
+        log4cxx::BasicConfigurator::configure();
+    initLog();
+}
+
+std::string getFileExtension(std::string const& filename) {
+    size_t dotpos = filename.find_last_of(".");
+    if (dotpos == std::string::npos) return "";
+    return filename.substr(dotpos, filename.size() - dotpos);
+}
+
+void ProtoLog::configure(std::string const& filename) {
+    log4cxx::BasicConfigurator::resetConfiguration();
+    if (getFileExtension(filename).compare(".xml") == 0)
+        // Load XML configuration file using DOMConfigurator
+        log4cxx::xml::DOMConfigurator::configure(filename);
+    else
+        // Otherwise, assume Java properties file
+        log4cxx::PropertyConfigurator::configure(filename);
+    initLog();
 }
 
 std::string ProtoLog::getDefaultLoggerName() {
