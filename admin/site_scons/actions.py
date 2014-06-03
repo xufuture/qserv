@@ -28,7 +28,7 @@ def check_root_dirs(target, source, env):
             sys.exit(1)
 
     for suffix in ('etc', 'build', 'var', 'var/lib', 'var/run', 'var/run/mysqld', 'var/lock/subsys'):
-        dir = os.path.join(config['qserv']['base_dir'],suffix)
+        dir = os.path.join(config['qserv']['run_base_dir'],suffix)
         if not fileutils.exists_and_is_writable(dir):
        	    logging.fatal("%s is not writable check/update permissions" % dir)
             sys.exit(1)
@@ -55,7 +55,7 @@ def check_root_symlinks(target, source, env):
         ('mysqld','data_dir', 'var/lib/mysql')
         ):
         symlink_target = config[section][option]
-        symlink_name = os.path.join(config['qserv']['base_dir'],symlink_suffix)
+        symlink_name = os.path.join(config['qserv']['run_base_dir'],symlink_suffix)
 
         # A symlink is needed if :
         #   - the target directory is not in qserv base dir

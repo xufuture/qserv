@@ -19,7 +19,7 @@
 
 # Source functions library.
 # WARN : this may clean environment
-. %(QSERV_DIR)s/etc/init.d/qserv-functions
+. %(QSERV_RUN_DIR)s/etc/init.d/qserv-functions
 
 NAME="qserv-czar"
 DAEMON=${NAME}
@@ -27,7 +27,7 @@ DAEMON=${NAME}
 QSERV_RUN_DIR=%(QSERV_RUN_DIR)s
 
 START=startCzar.py
-CONFIG=%(QSERV_DIR)s/etc/local.qserv.cnf
+CONFIG=%(QSERV_RUN_DIR)s/etc/local.qserv.cnf
 pidfile=%(QSERV_PID_DIR)s/${NAME}.pid
 lockfile=${QSERV_RUN_DIR}/var/lock/subsys/${NAME}
 LOGFILE=%(QSERV_LOG_DIR)s/${NAME}.log
