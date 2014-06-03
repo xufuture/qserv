@@ -15,10 +15,10 @@
 #              middleware used between Qserv master and nodes. \ 
 ### END INIT INFO
 
-. %(QSERV_DIR)s/etc/init.d/qserv-functions
+. %(QSERV_RUN_DIR)s/etc/init.d/qserv-functions
 
 XROOTD_DIR=%(XROOTD_DIR)s
-XROOTD_CONFIG=%(QSERV_DIR)s/etc/lsp.cf
+XROOTD_CONFIG=%(QSERV_RUN_DIR)s/etc/lsp.cf
 XROOTD_INSTANCE_NAME="worker"
 
 PID_DIR=%(QSERV_PID_DIR)s/${XROOTD_INSTANCE_NAME}
@@ -30,7 +30,7 @@ export LD_LIBRARY_PATH=%(LD_LIBRARY_PATH)s
 export QSW_XRDQUERYPATH="/q"
 export QSW_DBSOCK="%(MYSQLD_SOCK)s"
 export QSW_MYSQLDUMP=`which mysqldump`
-QSW_SCRATCHPATH="%(QSERV_DIR)s/tmp"
+QSW_SCRATCHPATH="%(QSERV_RUN_DIR)s/tmp"
 QSW_SCRATCHDB="qservScratch"
 export QSW_RESULTPATH="%(XROOTD_RUN_DIR)s/result"
 
@@ -41,7 +41,7 @@ start_service() {
 	prog=${1##*/}
 
 	pidfile=${PID_DIR}/${prog}.pid
-	lockfile=%(QSERV_DIR)s/var/lock/subsys/${prog}
+	lockfile=%(QSERV_RUN_DIR)s/var/lock/subsys/${prog}
 	BINARY=${XROOTD_DIR}/bin/${prog}
 	LOGFILE=${LOG_DIR}/${prog}.log
 	[ -x ${BINARY} ] || exit 5
@@ -62,7 +62,7 @@ stop_service() {
         prog=${1##*/}
 
 	pidfile=${PID_DIR}/${prog}.pid
-	lockfile=%(QSERV_DIR)s/var/lock/subsys/${prog}
+	lockfile=%(QSERV_RUN_DIR)s/var/lock/subsys/${prog}
 
 	eval stop -p $pidfile -l $lockfile $prog
 	retval=$?

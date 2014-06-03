@@ -30,7 +30,7 @@
 all.role server
 
 # Use qserv worker filesystem plugin
-# default path is %(QSERV_DIR)s/xrootd-run/
+# default path is %(QSERV_RUN_DIR)s/xrootd-run/
 xrootd.fslib %(QSERV_DIR)s/lib/libxrdfs.so
 ofs.osslib %(QSERV_DIR)s/lib/libxrdoss.so
 

@@ -1,10 +1,10 @@
 #!/bin/sh
 
-QSERV_DIR=%(QSERV_DIR)s
-. ${QSERV_DIR}/bin/env.sh
+QSERV_RUN_DIR=%(QSERV_RUN_DIR)s
+. ${QSERV_RUN_DIR}/bin/env.sh
 
 for service in ${SERVICES}; do
-    ${QSERV_DIR}/etc/init.d/$service status
+    ${QSERV_RUN_DIR}/etc/init.d/$service status
 done
 
  
