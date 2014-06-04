@@ -82,11 +82,11 @@ class BoostChecker:
         '''
 
         # helper internal method to check for files
-        def _libCheckFile(dir, libname, env):
+        def _libCheckFile(dirname, libname, env):
             ''' Check that library exists in a specified directory, tries all known prefix/suffix combinations '''
             for pfx in env['LIBPREFIXES']:
                 for sfx in env['LIBSUFFIXES']:
-                    path = os.path.join(env.subst(dir), env.subst(pfx) + libname + env.subst(sfx))
+                    path = os.path.join(env.subst(dirname), env.subst(pfx) + libname + env.subst(sfx))
                     if os.path.exists(path): return True
             return False
             
