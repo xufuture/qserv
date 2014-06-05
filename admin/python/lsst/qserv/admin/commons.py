@@ -19,7 +19,7 @@ def read_config(config_file):
 
     global config
     logger = logging.getLogger()
-    logger.debug("Reading build config file : %s" % config_file)
+    logger.debug("Reading config file : %s" % config_file)
 
     if not os.path.isfile(config_file):
         logger.fatal("qserv configuration file not found : %s" % config_file)
