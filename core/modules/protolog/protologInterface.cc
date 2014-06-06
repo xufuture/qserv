@@ -19,8 +19,15 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// protologInterface.cc houses the implementation of
-// protologInterface.h (SWIG-exported functions for writing to protolog.)
+
+/**
+ * @file protologInterface.cc
+ * @brief Logging module interface for exporting via SWIG to Python.
+ *
+ * @author Bill Chickering
+ * Contact: chickering@cs.stanford.edu
+ *
+ */
 
 #include "protolog/ProtoLog.h"
 #include "protolog/protologInterface.h"

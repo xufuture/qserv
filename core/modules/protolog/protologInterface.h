@@ -20,8 +20,15 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-/// protologInterface.h declares an interface for the logging mechanism for exporting
-/// via SWIG to the python layer of Qserv.
+
+/**
+ * @file protologInterface.h
+ * @brief Logging module interface for exporting via SWIG to Python.
+ *
+ * @author Bill Chickering
+ * Contact: chickering@cs.stanford.edu
+ *
+ */
 
 #ifndef LSST_QSERV_MASTER_PROTOLOGINTERFACE_H
 #define LSST_QSERV_MASTER_PROTOLOGINTERFACE_H

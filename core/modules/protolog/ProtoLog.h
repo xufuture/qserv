@@ -20,9 +20,14 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-// ProtoLog.h:
-// class ProtoLog -- A prototype class application-wide logging via log4cxx.
-//
+/**
+ * @file ProtoLog.h
+ * @brief LSST DM logging module built on log4cxx.
+ *
+ * @author Bill Chickering
+ * Contact: chickering@cs.stanford.edu
+ *
+ */
 
 #ifndef LSST_QSERV_PROTOLOG_H
 #define LSST_QSERV_PROTOLOG_H
@@ -33,108 +38,310 @@
 #include <log4cxx/logger.h>
 #include <boost/format.hpp>
 
-// Convenience macros
+/**
+  * @def LOG_CONFIG(filename)
+  * Configures log4cxx and initializes logging module.
+  *
+  * @param filename  Path to configuration file.
+  */
 #define LOG_CONFIG(filename) lsst::qserv::ProtoLog::configure(filename)
 
+/**
+  * @def LOG_DEFAULT_NAME()
+  * Get the current default logger name.
+  * @return String containing the default logger name.
+  */
 #define LOG_DEFAULT_NAME() lsst::qserv::ProtoLog::getDefaultLoggerName()
 
+/**
+  * @def LOG_GET(logger)
+  * Returns a pointer to the log4cxx logger object associated with LOGGER.
+  * @return log4cxx::LoggerPtr corresponding to LOGGER.
+  *
+  * @param logger  Either a logger name or a log4cxx logger object.
+  */
 #define LOG_GET(logger) lsst::qserv::ProtoLog::getLogger(logger)
 
+/**
+  * @def LOG_NEWCTX(name)
+  * Create a new logging context object.
+  * @return ProtoLogContext object.
+  *
+  * @param name  String containing name to push onto the logging context.
+  */
 #define LOG_NEWCTX(name) (new lsst::qserv::ProtoLogContext(name))
+
+/**
+  * @def LOG_PUSHCTX(name)
+  * Pushes NAME onto the global hierarchical default logger name.
+  *
+  * @param name  String to push onto logging context.
+  */
 #define LOG_PUSHCTX(name) lsst::qserv::ProtoLog::pushContext(name)
+
+/**
+  * @def LOG_POPCTX()
+  * Pops the last pushed name off the global hierarchical default logger
+  * name.
+  */
 #define LOG_POPCTX() lsst::qserv::ProtoLog::popContext()
 
+/**
+  * @def LOG_MDC(key, value)
+  * Places a KEY/VALUE pair in the Mapped Diagnostic Context (MDC) for the
+  * current thread. The VALUE may then be included in log messages by using
+  * the following the `X` conversion character within a pattern layout as
+  * `%X{KEY}`.
+  *
+  * @param key    Unique key.
+  * @param value  String value.
+  */
 #define LOG_MDC(key, value) lsst::qserv::ProtoLog::MDC(key, value)
+
+/**
+  * @def LOG_MDC_REMOVE(key)
+  * Remove the value associated with KEY within the MDC.
+  *
+  * @param key  Key identifying value to remove.
+  */
 #define LOG_MDC_REMOVE(key) lsst::qserv::ProtoLog::MDCRemove(key)
 
+/**
+  * @def LOG_SET_LVL(logger, level)
+  * Set the logging threshold for LOGGER to LEVEL.
+  *
+  * @param logger  Logger with threshold to adjust.
+  * @param level   New logging threshold.
+  */
 #define LOG_SET_LVL(logger, level) \
     lsst::qserv::ProtoLog::setLevel(logger, level)
+
+/**
+  * @def LOG_GET_LVL(logger)
+  * Retrieve the logging threshold for LOGGER.
+  * @return int Indicating the logging threshold.
+  *
+  * @param logger  Either name of logger or log4cxx logger with threshold
+  *                to return.
+  */
 #define LOG_GET_LVL(logger) \
     lsst::qserv::ProtoLog::getLevel(logger)
+
+/**
+  * @def LOG_CHECK_LVL(logger, level)
+  * Return whether the logging threshold of LOGGER is less than or equal
+  * to LEVEL.
+  * @return Bool indicating whether or not logger is enabled.
+  *
+  * @param logger  Either name of logger or log4cxx logger being queried.
+  * @param level   Logging threshold to check.
+  */
 #define LOG_CHECK_LVL(logger, level) \
     lsst::qserv::ProtoLog::isEnabledFor(logger, level)
 
-// boost::format style logging
-
-#define LOGF(logger, level, fmt) \
+/**
+  * @def LOGF(logger, level, message)
+  * Log a message using a boost::format style interface.
+  *
+  * @param logger   Either name of logger or log4cxx logger object.
+  * @param level    Logging level associated with message.
+  * @param message  A boost::format compatible format string followed by
+  *                 zero, one, or more arguments separated by `%`.
+  */
+#define LOGF(logger, level, message) \
     if (lsst::qserv::ProtoLog::isEnabledFor(logger, level)) { \
         lsst::qserv::ProtoLogFormatter fmter_; \
         lsst::qserv::ProtoLog::getLogger(logger)->forcedLog( \
-            log4cxx::Level::toLevel(level), (fmter_ % fmt).str().c_str(), \
+            log4cxx::Level::toLevel(level), (fmter_ % message).str().c_str(), \
             LOG4CXX_LOCATION); }
-#define LOGF_TRACE(fmt) \
+
+/**
+  * @def LOGF_TRACE(message)
+  * Log a trace-level message to the default logger using a boost::format
+  * syle interface.
+  *
+  * @param message  A boost::format compatible format string followed by
+  *                 zero, one, or more arguments separated by `%`.
+  */
+#define LOGF_TRACE(message) \
     if (lsst::qserv::ProtoLog::defaultLogger->isTraceEnabled()) { \
         lsst::qserv::ProtoLogFormatter fmter_; \
         lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
-            log4cxx::Level::getTrace(), (fmter_ % fmt).str().c_str(), \
+            log4cxx::Level::getTrace(), (fmter_ % message).str().c_str(), \
             LOG4CXX_LOCATION); }
-#define LOGF_DEBUG(fmt) \
+
+/**
+  * @def LOGF_DEBUG(message)
+  * Log a debug-level message to the default logger using a boost::format
+  * syle interface.
+  *
+  * @param message  A boost::format compatible format string followed by
+  *                 zero, one, or more arguments separated by `%`.
+  */
+#define LOGF_DEBUG(message) \
     if (lsst::qserv::ProtoLog::defaultLogger->isDebugEnabled()) { \
         lsst::qserv::ProtoLogFormatter fmter_; \
         lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
-            log4cxx::Level::getDebug(), (fmter_ % fmt).str().c_str(), \
+            log4cxx::Level::getDebug(), (fmter_ % message).str().c_str(), \
             LOG4CXX_LOCATION); }
-#define LOGF_INFO(fmt) \
+
+/**
+  * @def LOGF_INFO(message)
+  * Log a info-level message to the default logger using a boost::format
+  * syle interface.
+  *
+  * @param message  A boost::format compatible format string followed by
+  *                 zero, one, or more arguments separated by `%`.
+  */
+#define LOGF_INFO(message) \
     if (lsst::qserv::ProtoLog::defaultLogger->isInfoEnabled()) { \
         lsst::qserv::ProtoLogFormatter fmter_; \
         lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
-            log4cxx::Level::getInfo(), (fmter_ % fmt).str().c_str(), \
+            log4cxx::Level::getInfo(), (fmter_ % message).str().c_str(), \
             LOG4CXX_LOCATION); }
-#define LOGF_WARN(fmt) \
+
+/**
+  * @def LOGF_WARN(message)
+  * Log a warn-level message to the default logger using a boost::format
+  * syle interface.
+  *
+  * @param message  A boost::format compatible format string followed by
+  *                 zero, one, or more arguments separated by `%`.
+  */
+#define LOGF_WARN(message) \
     if (lsst::qserv::ProtoLog::defaultLogger->isWarnEnabled()) { \
         lsst::qserv::ProtoLogFormatter fmter_; \
         lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
-            log4cxx::Level::getWarn(), (fmter_ % fmt).str().c_str(), \
+            log4cxx::Level::getWarn(), (fmter_ % message).str().c_str(), \
             LOG4CXX_LOCATION); }
-#define LOGF_ERROR(fmt) \
+
+/**
+  * @def LOGF_ERROR(message)
+  * Log a error-level message to the default logger using a boost::format
+  * syle interface.
+  *
+  * @param message  A boost::format compatible format string followed by
+  *                 zero, one, or more arguments separated by `%`.
+  */
+#define LOGF_ERROR(message) \
     if (lsst::qserv::ProtoLog::defaultLogger->isErrorEnabled()) { \
         lsst::qserv::ProtoLogFormatter fmter_; \
         lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
-            log4cxx::Level::getError(), (fmter_ % fmt).str().c_str(), \
+            log4cxx::Level::getError(), (fmter_ % message).str().c_str(), \
             LOG4CXX_LOCATION); }
-#define LOGF_FATAL(fmt) \
+
+/**
+  * @def LOGF_FATAL(message)
+  * Log a fatal-level message to the default logger using a boost::format
+  * syle interface.
+  *
+  * @param message  A boost::format compatible format string followed by
+  *                 zero, one, or more arguments separated by `%`.
+  */
+#define LOGF_FATAL(message) \
     if (lsst::qserv::ProtoLog::defaultLogger->isFatalEnabled()) { \
         lsst::qserv::ProtoLogFormatter fmter_; \
         lsst::qserv::ProtoLog::defaultLogger->forcedLog( \
-            log4cxx::Level::getFatal(), (fmter_ % fmt).str().c_str(), \
+            log4cxx::Level::getFatal(), (fmter_ % message).str().c_str(), \
             LOG4CXX_LOCATION); }
 
-// varargs/printf style logging
-
-#define LOG(logger, level, fmt...) \
+/**
+  * @def LOG(logger, level, message...)
+  * Log a message using a varargs/printf style interface.
+  *
+  * @param logger      Either name of logger or log4cxx logger object.
+  * @param level       Logging level associated with message.
+  * @param message...  An sprintf-compatible format string followed by zero,
+  *                    one, or more comma-separated arguments.
+  */
+#define LOG(logger, level, message...) \
     if (lsst::qserv::ProtoLog::isEnabledFor(logger, level)) { \
         lsst::qserv::ProtoLog::log(logger, log4cxx::Level::toLevel(level), \
-        __BASE_FILE__, __PRETTY_FUNCTION__, __LINE__, fmt); }
-#define LOG_TRACE(fmt...) \
+        __BASE_FILE__, __PRETTY_FUNCTION__, __LINE__, message); }
+
+/**
+  * @def LOG_TRACE(message...)
+  * Log a trace-level message to the default logger using a varargs/printf
+  * syle interface.
+  *
+  * @param message...  An sprintf-compatible format string followed by zero,
+  *                    one, or more comma-separated arguments.
+  */
+#define LOG_TRACE(message...) \
     if (lsst::qserv::ProtoLog::defaultLogger->isTraceEnabled()) { \
         lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
             log4cxx::Level::getTrace(), __BASE_FILE__, __PRETTY_FUNCTION__, \
-            __LINE__, fmt); }
-#define LOG_DEBUG(fmt...) \
+            __LINE__, message); }
+
+/**
+  * @def LOG_DEBUG(message...)
+  * Log a debug-level message to the default logger using a varargs/printf
+  * syle interface.
+  *
+  * @param message...  An sprintf-compatible format string followed by zero,
+  *                    one, or more comma-separated arguments.
+  */
+#define LOG_DEBUG(message...) \
     if (lsst::qserv::ProtoLog::defaultLogger->isDebugEnabled()) { \
         lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
             log4cxx::Level::getDebug(), __BASE_FILE__, __PRETTY_FUNCTION__, \
-            __LINE__, fmt); }
-#define LOG_INFO(fmt...) \
+            __LINE__, message); }
+
+/**
+  * @def LOG_INFO(message...)
+  * Log a info-level message to the default logger using a varargs/printf
+  * syle interface.
+  *
+  * @param message...  An sprintf-compatible format string followed by zero,
+  *                    one, or more comma-separated arguments.
+  */
+#define LOG_INFO(message...) \
     if (lsst::qserv::ProtoLog::defaultLogger->isInfoEnabled()) { \
         lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
             log4cxx::Level::getInfo(), __BASE_FILE__, __PRETTY_FUNCTION__, \
-            __LINE__, fmt); }
-#define LOG_WARN(fmt...) \
+            __LINE__, message); }
+
+/**
+  * @def LOG_WARN(message...)
+  * Log a warn-level message to the default logger using a varargs/printf
+  * syle interface.
+  *
+  * @param message...  An sprintf-compatible format string followed by zero,
+  *                    one, or more comma-separated arguments.
+  */
+#define LOG_WARN(message...) \
     if (lsst::qserv::ProtoLog::defaultLogger->isWarnEnabled()) { \
         lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
             log4cxx::Level::getWarn(), __BASE_FILE__, __PRETTY_FUNCTION__, \
-            __LINE__, fmt); }
-#define LOG_ERROR(fmt...) \
+            __LINE__, message); }
+
+/**
+  * @def LOG_ERROR(message...)
+  * Log a error-level message to the default logger using a varargs/printf
+  * syle interface.
+  *
+  * @param message...  An sprintf-compatible format string followed by zero,
+  *                    one, or more comma-separated arguments.
+  */
+#define LOG_ERROR(message...) \
     if (lsst::qserv::ProtoLog::defaultLogger->isErrorEnabled()) { \
         lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
             log4cxx::Level::getError(), __BASE_FILE__, __PRETTY_FUNCTION__, \
-            __LINE__, fmt); }
-#define LOG_FATAL(fmt...) \
+            __LINE__, message); }
+
+/**
+  * @def LOG_FATAL(message...)
+  * Log a fatal-level message to the default logger using a varargs/printf
+  * syle interface.
+  *
+  * @param message...  An sprintf-compatible format string followed by zero,
+  *                    one, or more comma-separated arguments.
+  */
+#define LOG_FATAL(message...) \
     if (lsst::qserv::ProtoLog::defaultLogger->isFatalEnabled()) { \
         lsst::qserv::ProtoLog::log(lsst::qserv::ProtoLog::defaultLogger, \
             log4cxx::Level::getFatal(), __BASE_FILE__, __PRETTY_FUNCTION__, \
-            __LINE__, fmt); }
+            __LINE__, message); }
 
 #define LOG_LVL_TRACE log4cxx::Level::TRACE_INT
 #define LOG_LVL_DEBUG log4cxx::Level::DEBUG_INT
@@ -149,10 +356,19 @@
 namespace lsst {
 namespace qserv {
 
+/** This class is used by the LOGF_INFO and similar macros to support the
+  * boost::format-like operators in the message parameter.
+  */
 class ProtoLogFormatter {
 public:
     ProtoLogFormatter(void);
     ~ProtoLogFormatter(void);
+
+    /** Converts a format string into a boost::format object.
+      * @return a new boost::format object
+      *
+      * @param fmt  format string
+      */
     template <typename T> boost::format& operator %(T fmt) {
         _enabled = true;
         _fmter = new boost::format(fmt);
@@ -163,15 +379,21 @@ private:
     boost::format* _fmter;
 };
 
+/** This class handles the default logger name of a logging context.
+  */
 class ProtoLogContext {
 public:
-    ProtoLogContext(void);
     ProtoLogContext(std::string const& name);
     ~ProtoLogContext(void);
 private:
     std::string _name;
 };
 
+/** This static class includes a variety of methods for interacting with the
+  * the logging module. These methods are not meant for direct use. Rather,
+  * they are used by the LOG* macros and the SWIG interface declared in
+  * protologInterface.h.
+  */
 class ProtoLog {
 public:
     static log4cxx::LoggerPtr defaultLogger;
@@ -191,7 +413,6 @@ public:
     static int getLevel(std::string const& loggername);
     static bool isEnabledFor(log4cxx::LoggerPtr logger, int level);
     static bool isEnabledFor(std::string const& loggername, int level);
-    // varargs/printf style logging
     static void vlog(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
                      std::string const& filename, std::string const& funcname,
                      unsigned int lineno, std::string const& fmt, va_list args);

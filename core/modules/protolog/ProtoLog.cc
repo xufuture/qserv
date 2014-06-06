@@ -19,7 +19,15 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-// See ProtoLog.h
+
+/**
+ * @file ProtoLog.cc
+ * @brief LSST DM logging module built on log4cxx.
+ *
+ * @author Bill Chickering
+ * Contact: chickering@cs.stanford.edu
+ *
+ */
 
 #include "ProtoLog.h"
 #include <log4cxx/consoleappender.h>
@@ -45,6 +53,12 @@ ProtoLogFormatter::~ProtoLogFormatter() {
 
 // ProtoLogContext class
 
+/** Create a logging context associated with a default logger name
+  * constructed by pushing NAME onto the pre-existing hierarchical default
+  * logger name.
+  *
+  * @param name  String to push onto logging context.
+  */
 ProtoLogContext::ProtoLogContext(std::string const& name) {
     _name = name;
     ProtoLog::pushContext(name);
@@ -57,10 +71,15 @@ ProtoLogContext::~ProtoLogContext() {
 
 // ProtoLog class
 
+/** Reference to the defaultLogger used by LOG* macros.
+  */
 log4cxx::LoggerPtr ProtoLog::defaultLogger = log4cxx::Logger::getRootLogger();
+
 std::stack<std::string> ProtoLog::context;
 std::string ProtoLog::defaultLoggerName;
 
+/** Initializes logging module (e.g. default logger and logging context).
+  */
 void ProtoLog::initLog() {
     // Clear context
     while (!context.empty()) context.pop();
@@ -68,12 +87,23 @@ void ProtoLog::initLog() {
     defaultLogger = log4cxx::Logger::getRootLogger();
 }
 
+/** Configures log4cxx and initializes logging system by invoking
+  * initLog(). Uses either default configuration or log4cxx basic
+  * configuration according to the following algorithm (see
+  * http://logging.apache.org/log4cxx/usage.html for additional details):
+  *
+  * Set the configurationOptionStr string variable to the value of the
+  * LOG4CXX_CONFIGURATION environment variable if set, otherwise the value
+  * of the log4j.configuration or LOG4CXX_CONFIGURATION environment
+  * variable if set, otherwise the first of the following file names which
+  * exist in the current working directory, "log4cxx.xml",
+  * "log4cxx.properties", "log4j.xml" and "log4j.properties". If
+  * configurationOptionStr has not been set, then use BasicConfigurator,
+  * which is hardwired to add to the root logger a ConsoleAppender. In this
+  * case, the output will be formatted using a PatternLayout set to the
+  * pattern "%-4r [%t] %-5p %c %x - %m%n".
+  */
 void ProtoLog::configure() {
-    // Is there a valid default configuration file from the environment?
-    // We check for this by sending a message to root logger. If default
-    // configuration exists, the root logger will have at least one
-    // appender afterward. Otherwise, we will use log4cxx's basic
-    // configuration.
     log4cxx::LoggerPtr rootLogger = log4cxx::Logger::getRootLogger();
     LOG4CXX_INFO(rootLogger, "Initializing Logging System");
     if (rootLogger->getAllAppenders().size() == 0)
@@ -87,26 +117,47 @@ std::string getFileExtension(std::string const& filename) {
     return filename.substr(dotpos, filename.size() - dotpos);
 }
 
+/** Configures log4cxx using FILENAME and initializes logging module by
+  * invoking initLog(). If FILENAME ends with ".xml", it is passed to
+  * log4cxx::xml::DOMConfigurator::configure(). Otherwise, it assumed to be
+  * a log4j Java properties file and is passed to
+  * log4cxx::PropertyConfigurator::configure(). See
+  * http://logging.apache.org/log4cxx/usage.html for additional details.
+  *
+  * @param filename  Path to configuration file.
+  */
 void ProtoLog::configure(std::string const& filename) {
     log4cxx::BasicConfigurator::resetConfiguration();
     if (getFileExtension(filename).compare(".xml") == 0)
-        // Load XML configuration file using DOMConfigurator
         log4cxx::xml::DOMConfigurator::configure(filename);
     else
-        // Otherwise, assume Java properties file
         log4cxx::PropertyConfigurator::configure(filename);
     initLog();
 }
 
+/** Get the current default logger name.
+  * @return String containing the default logger name.
+  */
 std::string ProtoLog::getDefaultLoggerName() {
     return defaultLoggerName;
 }
 
-// Used to simplify macros
+/** This method exists solely to simplify the LOGF macro. It merely returns
+  * the argument LOGGER.
+  * @return log4cxx::LoggerPtr passed in.
+  *
+  * @param logger  log4cxx::LoggerPtr to return.
+  */
 log4cxx::LoggerPtr ProtoLog::getLogger(log4cxx::LoggerPtr logger) {
     return logger;
 }
 
+/** Returns a pointer to the log4cxx logger object associated with
+  * LOGGERNAME.
+  * @return log4cxx::LoggerPtr corresponding to LOGGERNAME.
+  *
+  * @param loggername  Name of logger to return.
+  */
 log4cxx::LoggerPtr ProtoLog::getLogger(std::string const& loggername) {
     if (loggername.empty())
         return defaultLogger;
@@ -114,6 +165,10 @@ log4cxx::LoggerPtr ProtoLog::getLogger(std::string const& loggername) {
         return log4cxx::Logger::getLogger(loggername);
 }
 
+/** Pushes NAME onto the global hierarchical default logger name.
+  *
+  * @param name  String to push onto logging context.
+  */
 void ProtoLog::pushContext(std::string const& name) {
     context.push(name);
     // Construct new default logger name
@@ -127,6 +182,9 @@ void ProtoLog::pushContext(std::string const& name) {
     defaultLogger = log4cxx::Logger::getLogger(defaultLoggerName);
 }
 
+/** Pops the last pushed name off the global hierarchical default logger
+  * name.
+  */
 void ProtoLog::popContext() {
     context.pop();
     // construct new default logger name
@@ -136,22 +194,49 @@ void ProtoLog::popContext() {
     defaultLogger = log4cxx::Logger::getLogger(defaultLoggerName);
 }
 
+/** Places a KEY/VALUE pair in the Mapped Diagnostic Context (MDC) for the
+  * current thread. The VALUE may then be included in log messages by using
+  * the following the `X` conversion character within a pattern layout as
+  * `%X{KEY}`.
+  *
+  * @param key    Unique key.
+  * @param value  String value.
+  */
 void ProtoLog::MDC(std::string const& key, std::string const& value) {
     log4cxx::MDC::put(key, value);
 }
 
+/** Remove the value associated with KEY within the MDC.
+  *
+  * @param key  Key identifying value to remove.
+  */
 void ProtoLog::MDCRemove(std::string const& key) {
     log4cxx::MDC::remove(key);
 }
 
+/** Set the logging threshold for LOGGER to LEVEL.
+  *
+  * @param logger  Logger with threshold to adjust.
+  * @param level   New logging threshold.
+  */
 void ProtoLog::setLevel(log4cxx::LoggerPtr logger, int level) {
     logger->setLevel(log4cxx::Level::toLevel(level));
 }
 
-void ProtoLog::setLevel(std::string const& loggername, int level) {
-    setLevel(getLogger(loggername), level);
+/** Set the logging threshold for the logger named LOGGERNAME to LEVEL.
+  *
+  * @param loggername  Name of logger with threshold to adjust.
+  * @param level       New logging threshold.
+  */
+void ProtoLog::setLevel(std::string const& loggername, int level) { 
+    setLevel(getLogger(loggername), level); 
 }
 
+/** Retrieve the logging threshold for LOGGER.
+  * @return int Indicating the logging threshold.
+  *
+  * @param logger  Logger with threshold to return.
+  */
 int ProtoLog::getLevel(log4cxx::LoggerPtr logger) {
     log4cxx::LevelPtr level = logger->getLevel();
     int levelno = -1;
@@ -160,10 +245,22 @@ int ProtoLog::getLevel(log4cxx::LoggerPtr logger) {
     return levelno;
 }
 
+/** Retrieve the logging threshold for the logger name LOGGERNAME.
+  * @return Int indicating the logging threshold.
+  *
+  * @param loggername  Name of logger with threshold to return.
+  */
 int ProtoLog::getLevel(std::string const& loggername) {
     return getLevel(getLogger(loggername));
 }
 
+/** Return whether the logging threshold of LOGGER is less than or equal
+  * to LEVEL.
+  * @return Bool indicating whether or not logger is enabled.
+  *
+  * @param logger  Logger being queried.
+  * @param level   Logging threshold to check.
+  */
 bool ProtoLog::isEnabledFor(log4cxx::LoggerPtr logger, int level) {
     if (logger->isEnabledFor(log4cxx::Level::toLevel(level)))
         return true;
@@ -171,15 +268,29 @@ bool ProtoLog::isEnabledFor(log4cxx::LoggerPtr logger, int level) {
         return false;
 }
 
+/** Return whether the logging threshold of the logger named LOGGERNAME
+  * is less than or equal to LEVEL.
+  * @return Bool indicating whether or not logger is enabled.
+  *
+  * @param loggername  Name of logger being queried.
+  * @param level       Logging threshold to check.
+  */
 bool ProtoLog::isEnabledFor(std::string const& loggername, int level) {
     return isEnabledFor(getLogger(loggername), level);
 }
 
-// varargs/printf style logging
-
-void ProtoLog::vlog(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
-                    std::string const& filename, std::string const& funcname,
-                    unsigned int lineno, std::string const& fmt, va_list args) {
+/** @overload void vlog(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
+  * std::string const& filename, std::string const& funcname,
+  * unsigned int lineno, std::string const& fmt, va_list args)
+  */
+void ProtoLog::vlog(log4cxx::LoggerPtr logger,   ///< the logger
+                    log4cxx::LevelPtr level,     ///< message level
+                    std::string const& filename, ///< source filename
+                    std::string const& funcname, ///< source function name
+                    unsigned int lineno,         ///< source line number
+                    std::string const& fmt,      ///< message format string
+                    va_list args                 ///< message arguments
+                   ) {
     char msg[MAX_LOG_MSG_LEN];
     vsnprintf(msg, MAX_LOG_MSG_LEN, fmt.c_str(), args);
     logger->forcedLog(level, msg, log4cxx::spi::LocationInfo(filename.c_str(),
@@ -187,17 +298,35 @@ void ProtoLog::vlog(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
                                                              lineno));
 }
 
-void ProtoLog::log(std::string const& loggername, log4cxx::LevelPtr level,
-                   std::string const& filename, std::string const& funcname,
-                   unsigned int lineno, std::string const& fmt, ...) {
+/** @overload void ProtoLog::log(std::string const& loggername,
+  * log4cxx::LevelPtr level, std::string const& filename,
+  * std::string const& funcname, unsigned int lineno,
+  * std::string const& fmt, ...)
+  */
+void ProtoLog::log(std::string const& loggername, ///< name of logger
+                   log4cxx::LevelPtr level,       ///< message level
+                   std::string const& filename,   ///< source filename
+                   std::string const& funcname,   ///< source function name
+                   unsigned int lineno,           ///< source line number
+                   std::string const& fmt,        ///< message format string
+                   ...                            ///< message arguments
+                  ) {
     va_list args;
     va_start(args, fmt);
     vlog(getLogger(loggername), level, filename, funcname, lineno, fmt, args);
 }
 
-void ProtoLog::log(log4cxx::LoggerPtr logger, log4cxx::LevelPtr level,
-                   std::string const& filename, std::string const& funcname,
-                   unsigned int lineno, std::string const& fmt, ...) {
+/** Method used by LOG_INFO and similar macros to process a log message
+  * with variable arguments along with associated metadata.
+  */
+void ProtoLog::log(log4cxx::LoggerPtr logger,   ///< the logger
+                   log4cxx::LevelPtr level,     ///< message level
+                   std::string const& filename, ///< source filename
+                   std::string const& funcname, ///< source function name
+                   unsigned int lineno,         ///< source line number
+                   std::string const& fmt,      ///< message format string
+                   ...                          ///< message arguments
+                  ) {
     va_list args;
     va_start(args, fmt);
     vlog(logger, level, filename, funcname, lineno, fmt, args);
