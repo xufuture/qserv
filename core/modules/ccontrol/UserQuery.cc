@@ -51,6 +51,7 @@
 #include "ccontrol/ResultReceiver.h"
 #include "log/Logger.h"
 #include "qdisp/Executive.h"
+#include "qdisp/MessageStore.h"
 #include "qproc/QuerySession.h"
 #include "qproc/TaskMsgFactory2.h"
 
@@ -167,8 +168,14 @@ void UserQuery::discard() {
                << std::endl;
 }
 
+bool UserQuery::containsDb(std::string const& dbName) const {
+    return _qSession->containsDb(dbName);
+}
+
 UserQuery::UserQuery(boost::shared_ptr<qproc::QuerySession> qs)
-    : _qSession(qs), _sequence(0) {
+    :  _messageStore(new qdisp::MessageStore()),
+       _qSession(qs), _sequence(0) {
+    // Some configuration done by factory: See UserQueryFactory
     LOGGER_INF << "Unfinished UserQuery::UserQuery(...). Have a look."
                << std::endl;
     // FIXME FIXME!!!

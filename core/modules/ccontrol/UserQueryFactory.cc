@@ -50,8 +50,8 @@ UserQueryFactory::UserQueryFactory(StringMap const& m) {
     _impl->readConfig(m);
 }
 
-int 
-UserQueryFactory::newUserQuery(std::string const& query, 
+int
+UserQueryFactory::newUserQuery(std::string const& query,
                                std::string const& resultTable) {
     qproc::QuerySession::Ptr qs(new qproc::QuerySession(_impl->facade));
     qs->setResultTable(resultTable);
@@ -101,7 +101,7 @@ void UserQueryFactory::Impl::readConfig(StringMap const& m) {
         "Error, css.connection not found.",
         "");
     initFacade(cssTech, cssConn);
-#if 0    
+#if 0
     std::string defaultDb = cm.get(
         "table.defaultdb",
         "Empty table.defaultdb. Using LSST",

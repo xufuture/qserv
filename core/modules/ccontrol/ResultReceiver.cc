@@ -107,6 +107,24 @@ bool ResultReceiver::finished() const {
     return _flushed;
 }
 
+std::ostream& ResultReceiver::print(std::ostream& os) const {
+    os << "ResultReceiver(" << _tableName << ", flushed="
+       << (_flushed ? "true" : "false");
+    return os;
+
+#if 0
+        boost::shared_ptr<rproc::TableMerger> _merger;
+    std::string _tableName;
+    util::UnaryCallable<void, bool>::Ptr _finishHook;
+
+    int _bufferSize;
+    int _actualSize;
+    boost::scoped_array<char> _actualBuffer;
+    char* _buffer;
+    bool _flushed;
+#endif
+}
+
 #if 0
     explicit TableMerger(TableMergerConfig const& c);
 

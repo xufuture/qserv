@@ -54,7 +54,7 @@ allModules = """ccontrol css czar global log mysql obsolete
                 rproc sql
                 tests util
                 wbase wconfig wcontrol wdb wlog wpublish wsched
-                xrdc xrdfs xrdoss""".split()
+                xrdc xrdfs xrdoss xrdsvc""".split()
 
 # Dependencies to fix:
 # packetiter in util depends on xrdc, util shouldn't depend on anything
@@ -78,6 +78,12 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                        mysqlclient_r ssl crypto""".split(),
                            'distDir' : 'lib'
                            },
+               "xrdsvc" : {'mods' : """wlog xrdsvc""".split(),
+                           'libs' : """boost_regex boost_signals boost_thread
+                                       mysqlclient_r ssl crypto""".split(),
+                           'distDir' : 'lib'
+                           },
+
                "_czarLib" : {'mods' : """css czar ccontrol global
                                          log rproc mysql
                                          parser query
@@ -86,7 +92,7 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                          qana qdisp qproc""".split(),
                              'libs' : """ssl crypto antlr
                                       mysqlclient_r protobuf
-                                      XrdPosix XrdPosixPreload XrdUtils
+                                      XrdClient XrdPosix XrdSsi XrdUtils
                                       boost_regex boost_thread boost_system
                                       boost_signals zookeeper_mt""".split(),
                                'SHLIBPREFIX' : '',

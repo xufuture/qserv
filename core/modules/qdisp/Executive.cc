@@ -73,11 +73,31 @@ namespace lsst {
 namespace qserv {
 namespace qdisp {
 
+std::ostream& operator<<(std::ostream& os, QueryReceiver const& qr) {
+    return qr.print(os);
+}
+
+template <typename Ptr>
+struct printMapSecond {
+    printMapSecond(std::ostream& os_, std::string sep_)
+        : os(os_), sep(sep_), first(true)  {}
+
+    void operator()(Ptr const& p) {
+        if(!first) { os << sep; }
+        os << *(p.second);
+        first = true;
+    }
+    std::ostream& os;
+    std::string sep;
+    bool first;
+};
+
 void Executive::_setup() {
     XrdSsiErrInfo eInfo;
     _service = XrdSsiGetClientService(eInfo, _config.serviceUrl.c_str()); // Step 1
     if(!_service) figureOutError(eInfo);
     assert(_service);
+    _requestCount = 0;
 }
 
 void Executive::add(int refNum, TransactionSpec const& t,
@@ -96,10 +116,15 @@ void Executive::add(int refNum, TransactionSpec const& t,
 }
 
 void Executive::add(int refNum, Executive::Spec const& s) {
-    _track(refNum, s.receiver); // Remember so we can join.
+    bool trackOk =_track(refNum, s.receiver); // Remember so we can join.
+    if(!trackOk) {
+        std::cout << "Ignoring duplicate add(" << refNum << ")\n";
+        return;
+    }
     QueryResource* r = new QueryResource(s.resource.path(),
                                          s.request,
                                          s.receiver);
+    std::cout << "Adding/provisioning " << s.resource.path() << std::endl;
     bool provisionOk = _service->Provision(r);  // 2
     if(!provisionOk) {
         std::cout << "There was an error provisioning " << __FILE__ << __LINE__ << std::endl;;
@@ -126,27 +151,82 @@ void Executive::add(int refNum, Executive::Spec const& s) {
 }
 
 bool Executive::join() {
+    // To join, we make sure that all of the chunks added so far are complete.
+    // Check to see if _receivers is empty, if not, then sleep on a condition.
+    _waitUntilEmpty();
+    // Okay to merge. probably not the Executive's responsibility
+    // _merger->finalize();
+    // _merger.reset();
+    LOGGER_INF << "Query exec finish. " << _requestCount << " dispatched." << std::endl;
+
     throw "Executive::join() unimplemented.";
     return false; // FIXME, unimplemented.
 }
 
-void Executive::_track(int refNum, ReceiverPtr r) {
+void Executive::remove(int refNum) {
+    LOGGER_INF << "Executive::remove(" << refNum << ")\n";
+    _unTrack(refNum);
+    LOGGER_INF << "FIXME: should check receiver for results\n";
+}
+
+void Executive::requestSquash(int refNum) {
+    LOGGER_ERR << "Executive::requestSquash() not implemented. Sorry.\n";
+}
+
+////////////////////////////////////////////////////////////////////////
+// class Executive (private)
+////////////////////////////////////////////////////////////////////////
+bool Executive::_track(int refNum, ReceiverPtr r) {
     assert(r);
     {
-        boost::lock_guard<boost::mutex> lock(_mapMutex);
-        _receivers[refNum] = r;
+        boost::lock_guard<boost::mutex> lock(_receiversMutex);
+        if(_receivers.find(refNum) == _receivers.end()) {
+            _receivers[refNum] = r;
+        } else {
+            return false;
+        }
     }
+    return true;
 }
+
 void Executive::_unTrack(int refNum) {
     {
-        boost::lock_guard<boost::mutex> lock(_mapMutex);
+        boost::lock_guard<boost::mutex> lock(_receiversMutex);
         ReceiverMap::iterator i = _receivers.find(refNum);
         if(i != _receivers.end()) {
             _receivers.erase(i);
+            if(_receivers.empty()) _receiversEmpty.notify_all();
         }
     }
 }
 
+void Executive::_waitUntilEmpty() {
+    boost::unique_lock<boost::mutex> lock(_receiversMutex);
+    int lastCount = -1;
+    int count;
+    int moreDetailThreshold = 5;
+    int complainCount = 0;
+    //_printState(LOG_STRM(Debug));
+    while(!_receivers.empty()) {
+        count = _receivers.size();
+        if(count != lastCount) {
+            LOGGER_INF << "Still " << count << " in flight." << std::endl;
+            count = lastCount;
+            ++complainCount;
+            if(complainCount > moreDetailThreshold) {
+                _printState(LOG_STRM(Warning));
+                complainCount = 0;
+            }
+        }
+        _receiversEmpty.timed_wait(lock, boost::posix_time::seconds(5));
+    }
+}
+
+/// precondition: _receiversMutex is held by current thread.
+void Executive::_printState(std::ostream& os) {
+    std::for_each(_receivers.begin(), _receivers.end(),
+                  printMapSecond<ReceiverMap::value_type>(os, "\n"));
+}
 
 #if 0
 // Local Helpers --------------------------------------------------
@@ -520,10 +600,6 @@ void AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize,
     }
 }
 
-void AsyncQueryManager::_printState(std::ostream& os) {
-    typedef std::map<int, boost::shared_ptr<qdisp::ChunkQuery> > QueryMap;
-    std::for_each(_queries.begin(), _queries.end(), printQueryMapValue(os));
-}
 
 void AsyncQueryManager::_squashExecution() {
     // Halt new query dispatches and cancel the ones in flight.

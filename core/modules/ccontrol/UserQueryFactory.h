@@ -51,10 +51,10 @@ namespace ccontrol {
 ///  UserQueryFactory breaks construction of user queries into two phases:
 ///  creation/configuration of the factory and construction of the
 ///  UserQuery. This facilitates re-use of initialized state that is usually
-///  constant between successive user queries. 
-class UserQueryFactory : public boost::noncopyable {   
+///  constant between successive user queries.
+class UserQueryFactory : private boost::noncopyable {
 public:
-    UserQueryFactory(lsst::qserv::StringMap const& m);
+    UserQueryFactory(std::map<std::string,std::string> const& m);
     int newUserQuery(std::string const& query, std::string const& resultTable);
 private:
     class Impl;
