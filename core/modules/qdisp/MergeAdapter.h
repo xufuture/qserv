@@ -44,6 +44,9 @@ public:
     virtual void flush(int bLen, bool last) {}
     virtual void errorFlush() {}
     virtual bool finished() const {return true; }
+    std::ostream& print(std::ostream& os) const {
+        return os << "MergeAdaper(...)"; }
+
     static boost::shared_ptr<MergeAdapter> newInstance() {
         return boost::make_shared<MergeAdapter>();
     }

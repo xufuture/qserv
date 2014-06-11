@@ -46,9 +46,12 @@
 
 namespace lsst {
 namespace qserv {
-
 namespace ccontrol {
 class UserQuery;
+
+// Set UserQueryEnable=1 to enable code that prefers UserQuery framework
+// UserQueryEnable=0 to prefer AsyncQueryManager
+enum _userQueryProxyConst {UserQueryEnable=1};
 
 /// @return error description
 std::string const& UserQuery_getError(int session);
@@ -69,13 +72,20 @@ void UserQuery_addChunk(int session, qproc::ChunkSpec const& cs );
 void UserQuery_submit(int session);
 
 QueryState UserQuery_join(int session);
-std::string const& UserQuery_getQueryStateString(QueryState const& qs);
+//std::string const& UserQuery_getQueryStateString(QueryState const& qs);
 //std::string UserQuery_getErrorDesc(int session);
 
 void UserQuery_discard(int session);
 
 /// @return sessionId
 int UserQuery_takeOwnership(UserQuery* uq);
+
+/// @return true if czar/css believes db exists
+bool UserQuery_containsDb(int session, std::string const& dbName);
+
+/// For peer python-interface code. Not to be called directly from
+/// the Python layer.
+UserQuery& UserQuery_get(int session);
 
 }}} // namespace lsst::qserv:ccontrol
 

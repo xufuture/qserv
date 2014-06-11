@@ -40,6 +40,7 @@ public:
     virtual void flush(int bLen, bool last) = 0;
     virtual void errorFlush() = 0;
     virtual bool finished() const = 0; 
+    virtual std::ostream& print(std::ostream& os) const = 0;
 };
 
 }}} // namespace lsst::qserv::qdisp

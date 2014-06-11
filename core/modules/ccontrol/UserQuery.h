@@ -83,9 +83,15 @@ public:
     QueryState join();
     void discard(); //< Release resources related to user query
 
+    // Exists only to help app.py with permission checking
+    // TODO: Eliminate after geometry is pushed to c++
+    bool containsDb(std::string const& dbName) const;
+
     // Delegate objects
-    boost::shared_ptr<qdisp::Executive> getExecutive();
-    boost::shared_ptr<qdisp::MessageStore> getMessageStore();
+    boost::shared_ptr<qdisp::Executive> getExecutive() {
+        return _executive; }
+    boost::shared_ptr<qdisp::MessageStore> getMessageStore() {
+        return _messageStore; }
 
 private:
     explicit UserQuery(boost::shared_ptr<qproc::QuerySession> qs);

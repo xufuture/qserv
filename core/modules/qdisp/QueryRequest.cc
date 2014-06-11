@@ -24,6 +24,7 @@ QueryRequest::QueryRequest(XrdSsiSession* session,
     : _session(session),
       _payload(payload),
       _receiver(receiver) {
+    std::cout << "New QueryRequest with payload(" << payload.size() << ")\n";
 }
 
 QueryRequest::~QueryRequest() {
