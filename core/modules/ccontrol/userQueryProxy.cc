@@ -60,33 +60,6 @@
 #include "util/StringHash.h"
 
 namespace {
-std::string makeSavePath(std::string const& dir,
-                         int sessionId,
-                         int chunkId,
-                         unsigned seq=0) {
-    std::stringstream ss;
-    ss << dir << "/" << sessionId << "_" << chunkId << "_" << seq;
-    return ss.str();
-}
-
-class TmpTableName {
-public:
-    TmpTableName(int sessionId, std::string const& query) {
-        std::stringstream ss;
-        ss << "r_" << sessionId
-           << lsst::qserv::util::StringHash::getMd5Hex(query.data(), query.size())
-           << "_";
-        _prefix = ss.str();
-    }
-    std::string make(int chunkId, int seq=0) {
-        std::stringstream ss;
-        ss << _prefix << chunkId << "_" << seq;
-        return ss.str();
-    }
-private:
-    std::string _prefix;
-};
-
 } // anonymous namespace
 
 
@@ -149,4 +122,20 @@ void UserQuery_discard(int session) {
     p.reset();
     uqManager.discardSession(session);
 }
+
+/// Take ownership of a UserQuery object and return a sessionId
+int UserQuery_takeOwnership(UserQuery* uq) {
+    UserQuery::Ptr uqp(uq);
+    return uqManager.newSession(uqp);
+}
+
+bool UserQuery_containsDb(int session, std::string const& dbName) {
+    LOGGER_DBG << "EXECUTING submitQuery3(" << session << ")" << std::endl;
+    return uqManager.get(session)->containsDb(dbName);
+}
+
+UserQuery& UserQuery_get(int session) {
+    return *uqManager.get(session);
+}
+
 }}} // namespace lsst::qserv::ccontrol

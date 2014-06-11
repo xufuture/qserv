@@ -59,6 +59,7 @@ public:
     virtual void flush(int bLen, bool last);
     virtual void errorFlush();
     virtual bool finished() const;
+    virtual std::ostream& print(std::ostream& os) const;
 
     void addFinishHook(util::UnaryCallable<void, bool>::Ptr f) {
         assert(!_finishHook);

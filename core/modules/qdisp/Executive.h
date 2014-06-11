@@ -71,12 +71,13 @@ public:
     };
 
 
-    Executive(Config::Ptr c) : _config(*c) {}
+    Executive(Config::Ptr c) : _config(*c) { _setup(); }
     void add(int refNum,
              TransactionSpec const& t, std::string const& resultName);
     void add(int refNum, Spec const& s);
     bool join();
     void remove(int refNum);
+    void requestSquash(int refNum);
 
     // FIXME
     std::string getProgressDesc() const { return std::string ("it's fine"); }
@@ -87,16 +88,22 @@ private:
     typedef std::map<int, ReceiverPtr> ReceiverMap;
 
     void _setup();
-    void _track(int refNum, ReceiverPtr r);
+    bool _track(int refNum, ReceiverPtr r);
     void _unTrack(int refNum);
+    void _waitUntilEmpty();
+
+    // for debugging
+    void _printState(std::ostream& os);
 
 
     Config _config; // Personal copy of config
     XrdSsiService* _service;
     ReceiverMap _receivers;
+    int _requestCount;
 
     // Mutexes
-    boost::mutex _mapMutex;
+    boost::mutex _receiversMutex;
+    boost::condition_variable _receiversEmpty;
 
 }; // class Executive
 }}} // namespace lsst::qserv::qdisp

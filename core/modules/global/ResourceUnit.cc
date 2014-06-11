@@ -76,11 +76,22 @@ std::string
 ResourceUnit::path() const {
     std::stringstream ss;
     ss << _pathSep << prefix(_unitType);
-    if(_unitType == CQUERY) {
+    switch(_unitType) {
+    case GARBAGE:
+        return "/GARBAGE";
+    case DBCHUNK: // For now, DBCHUNK is handled the same as CQUERY
+    case CQUERY:
         ss << _pathSep << _db;
         if(_chunk != -1) {
             ss << _pathSep << _chunk;
         }
+        break;
+    case UNKNOWN:
+        ss << _pathSep << "UNKNOWN_RESOURCE_UNIT";
+        break;
+    case RESULT:
+        ss << _hashName;
+        break;
     }
     return ss.str();
 }
