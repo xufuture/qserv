@@ -113,7 +113,7 @@ Facade::containsDb(string const& dbName) const {
     return ret;
 }
 
-/** Checks if a given table is registered in the qserv metadata. 
+/** Checks if a given table is registered in the qserv metadata.
   * Throws runtime_error if the database does not exist.
   *
   * @param dbName database name
@@ -129,7 +129,7 @@ Facade::containsTable(string const& dbName, string const& tableName) const {
     return _containsTable(dbName, tableName);
 }
 
-/** Checks if a given table is chunked. Throws runtime_error if the database 
+/** Checks if a given table is chunked. Throws runtime_error if the database
   * and/or table does not exist.
   *
   * @param dbName database name
