@@ -42,66 +42,57 @@ namespace qserv {
 namespace css {
 
 /**
- * Base class for all CSS run-time errors
+ * Base class for CSS run-time errors, represents a generic CSS run-time error.
  */
-class CssRunTimeError : public std::runtime_error {
-protected:
-    explicit CssRunTimeError(std::string const& msg)
+class CssError : public std::runtime_error {
+public:
+    explicit CssError(std::string const& msg)
         : std::runtime_error(msg) {}
 };
 
 /**
  * Specialized run-time error: database does not exist.
  */
-class NoSuchDb : public CssRunTimeError {
+class NoSuchDb : public CssError {
 public:
     NoSuchDb(std::string const& dbName)
-        : CssRunTimeError("Database '" + dbName + "' does not exist.") {}
+        : CssError("Database '" + dbName + "' does not exist.") {}
 };
 
 /**
  * Specialized run-time error: key does not exist.
  */
-class NoSuchKey : public CssRunTimeError {
+class NoSuchKey : public CssError {
 public:
     NoSuchKey(std::string const& keyName)
-        : CssRunTimeError("Key '" + keyName + "' does not exist.") {}
+        : CssError("Key '" + keyName + "' does not exist.") {}
 };
 
 /**
  * Specialized run-time error: table does not exist.
  */
-class NoSuchTable : public CssRunTimeError {
+class NoSuchTable : public CssError {
 public:
     NoSuchTable(std::string const& tableName)
-        : CssRunTimeError("Table '" + tableName + "' does not exist.") {}
+        : CssError("Table '" + tableName + "' does not exist.") {}
 };
 
 /**
  * Specialized run-time error: authorization failure.
  */
-class AuthError : public CssRunTimeError {
+class AuthError : public CssError {
 public:
     AuthError()
-        : CssRunTimeError("Authorization failure.") {}
+        : CssError("Authorization failure.") {}
 };
 
 /**
  * Specialized run-time error: connection failure.
  */
-class ConnError : public CssRunTimeError {
+class ConnError : public CssError {
 public:
     ConnError()
-        : CssRunTimeError("Failed to connect to persistent store.") {}
-};
-
-/**
- * Generic CSS run-time error.
- */
-class CssError : public CssRunTimeError {
-public:
-    CssError(std::string const& extraMsg)
-        : CssRunTimeError("Internal run-time error. (" + extraMsg + ")") {}
+        : CssError("Failed to connect to persistent store.") {}
 };
 
 }}} // namespace lsst::qserv::css
