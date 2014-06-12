@@ -54,37 +54,33 @@ namespace lsst {
 namespace qserv {
 namespace css {
 
-/**
-  * Initialize the Facade, the Facade will use Zookeeper-based interface, this is
-  * for production use.
+/** Creates a new Facade over metadata in a Zookeeper key-value store.
   *
-  * @param connInfo connection information in a form supported by Zookeeper:
-  *                 comma separated host:port pairs, each corresponding to
-  *                 a Zookeeper server.
+  * @param connInfo A comma separated list of host:port pairs, each
+  *                 each corresponding to a Zookeeper server.
   */
 Facade::Facade(string const& connInfo) {
     _kvI = new KvInterfaceImplZoo(connInfo);
 }
 
-/**
-  * Initialize the Facade, the Facade will use Zookeeper-based interface, but will
-  * place all data in some non-standard location, use this constructor for testing.
+/** Creates a new Facade over metadata in a Zookeeper key-value store.
+  * The given prefix will be used on all key names and can be used to
+  * avoid polluting the production namespace.
   *
-  * @param connInfo connection information in a form supported by Zookeeper:
-  *                 comma separated host:port pairs, each corresponding to
-  *                 a Zookeeper server.
-  * @param prefix, for testing, to avoid polluting production setup
+  * @param connInfo A comma separated list of host:port pairs, each
+  *                 each corresponding to a Zookeeper server.
+  * @param prefix   Key name prefix. If non-empty, should be of the
+  *                 form "/XXX".
   */
 Facade::Facade(string const& connInfo, string const& prefix) :
     _prefix(prefix) {
     _kvI = new KvInterfaceImplZoo(connInfo);
 }
 
-/**
-  * Initialize the Facade with dummy interface, use this constructor for testing.
+/** Creates a new Facade over metadata in an in-memory key-value store.
   *
-  * @param mapPath path to the map dumped using ./admin/bin/qserv-admin.py
-  * @param isMap   unusued argument to differentiate between different c'tors
+  * @param mapStream An input stream to data dumped using
+  *                  ./admin/bin/qserv-admin.py
   */
 Facade::Facade(std::istream& mapStream) {
     _kvI = new KvInterfaceImplMem(mapStream);
@@ -94,11 +90,7 @@ Facade::~Facade() {
     delete _kvI;
 }
 
-/** Checks if a given database is registered in the qserv metadata.
-  *
-  * @param dbName database name
-  *
-  * @return returns if given database is registered.
+/** Returns true if the given database exists.
   */
 bool
 Facade::containsDb(string const& dbName) const {
@@ -112,13 +104,8 @@ Facade::containsDb(string const& dbName) const {
     return ret;
 }
 
-/** Checks if a given table is registered in the qserv metadata. Throws exception
-  * if the database does not exist.
-  *
-  * @param dbName database name
-  * @param tableName table name
-  *
-  * @return returns if the database contains the table.
+/** Returns true if the given table exists. Throws an exception if the given
+  * database does not exist.
   */
 bool
 Facade::containsTable(string const& dbName, string const& tableName) const {
@@ -128,13 +115,8 @@ Facade::containsTable(string const& dbName, string const& tableName) const {
     return _containsTable(dbName, tableName);
 }
 
-/** Checks if a given table is chunked. Throws exception if a given database and/or
-  * table does not exist.
-  *
-  * @param dbName database name
-  * @param tableName table name
-  *
-  * @return returns true if the table is chunked.
+/** Returns true if the given table is chunked. Throws an exception if the
+  * table or its database does not exist.
   */
 bool
 Facade::tableIsChunked(string const& dbName, string const& tableName) const {
@@ -143,12 +125,8 @@ Facade::tableIsChunked(string const& dbName, string const& tableName) const {
     return _tableIsChunked(dbName, tableName);
 }
 
-/** Checks if a given table is subchunked
-  *
-  * @param dbName database name
-  * @param tableName table name
-  *
-  * @return returns true if the table is subchunked.
+/** Returns true if the given table is sub-chunked. Throws an exception if the
+  * table or its database does not exist.
   */
 bool
 Facade::tableIsSubChunked(string const& dbName,
@@ -158,8 +136,9 @@ Facade::tableIsSubChunked(string const& dbName,
     return _tableIsSubChunked(dbName, tableName);
 }
 
-/** Returns true if the given table is a match table; that is, if it is a
-  * table that relates two director tables.
+/** Returns true if the given table is a match table; that is, if it
+  * relates two director tables. Throws an exception if the table or
+  * its database does not exist.
   */
 bool
 Facade::isMatchTable(std::string const& dbName,
@@ -174,9 +153,8 @@ Facade::isMatchTable(std::string const& dbName,
     return m;
 }
 
-/** Gets allowed databases (database that are configured for qserv)
-  *
-  * @return returns a vector of database names that are configured for qserv
+/** Returns the names of all allowed databases (those that are configured
+  * for Qserv).
   */
 vector<string>
 Facade::getAllowedDbs() const {
@@ -184,11 +162,8 @@ Facade::getAllowedDbs() const {
     return _kvI->getChildren(p);
 }
 
-/** Gets chunked tables
-  *
-  * @param dbName database name
-  *
-  * @return Returns a vector of table names that are chunked.
+/** Returns the names of all chunked tables in a given database.
+  * An exception is thrown if the given database does not exist.
   */
 vector<string>
 Facade::getChunkedTables(string const& dbName) const {
@@ -206,11 +181,8 @@ Facade::getChunkedTables(string const& dbName) const {
     return ret;
 }
 
-/** Gets subchunked tables
-  *
-  * @param dbName database name
-  *
-  * @return Returns a vector of table names that are subchunked.
+/** Returns the names of all sub-chunked tables in a given database.
+  * An exception is thrown if the given database does not exist. 
   */
 vector<string>
 Facade::getSubChunkedTables(string const& dbName) const {
@@ -228,14 +200,11 @@ Facade::getSubChunkedTables(string const& dbName) const {
     return ret;
 }
 
-/** Gets names of partition columns (ra, decl, objectId) for a given database/table.
-  *
-  * @param dbName database name
-  * @param tableName table name
-  *
-  * @return Returns a 3-element vector with column names for the lon, lat,
-  *         and secIndex column names (e.g. [ra, decl, objectId]).
-  *         or empty string(s) for columns that do not exist.
+/** Returns the partitioning columns for the given table. This is a
+  * 3-element vector containing the longitude, latitude, and secondary
+  * index column name for that table. An empty string indicates
+  * that a column is not available. An exception is thrown if the given
+  * database or table does not exist.
   */
 vector<string>
 Facade::getPartitionCols(string const& dbName, string const& tableName) const {
@@ -244,30 +213,19 @@ Facade::getPartitionCols(string const& dbName, string const& tableName) const {
     _throwIfNotDbTbExists(dbName, tableName);
     string p = _prefix + "/DBS/" + dbName + "/TABLES/" +
                tableName + "/partitioning/";
-    vector<string> v, ret;
-    v.push_back("lonColName");
-    v.push_back("latColName");
-    v.push_back("secIndexColName");
-    vector<string>::const_iterator itr;
-    for (itr = v.begin() ; itr != v.end(); ++itr) {
-        string p1 = p + *itr;
-        string s = _kvI->get(p1, "");
-        ret.push_back(s);
-    }
-    LOGGER_INF << "*** getPartitionCols: " << v[0] << ", " << v[1] << ", "
-               << v[2] << endl;
-    return ret;
+    vector<string> v;
+    v.push_back(_kvI->get(p + "lonColName", ""));
+    v.push_back(_kvI->get(p + "latColName", ""));
+    v.push_back(_kvI->get(p + "dirColName", ""));
+    LOGGER_INF << "*** getPartitionCols: "
+               << v[0] << ", " << v[1] << ", " << v[2] << endl;
+    return v;
 }
 
-/** Gets chunking level for a particular database.table.
-  *
-  * @param dbName database name
-  * @param tableName table name
-  *
-  * @return Returns 0 if not partitioned, 1 if chunked, 2 if subchunked.
+/** Returns the chunk level for a table. This is 0 for replicated
+  * tables, 1 for chunked tables, and 2 for sub-chunked tables. 
   */
-int
-Facade::getChunkLevel(string const& dbName, string const& tableName) const {
+int Facade::getChunkLevel(string const& dbName, string const& tableName) const {
     LOGGER_INF << "getChunkLevel(" << dbName << ", " << tableName << ")" << endl;
     _throwIfNotDbTbExists(dbName, tableName);
     bool isChunked = _tableIsChunked(dbName, tableName);
@@ -280,35 +238,51 @@ Facade::getChunkLevel(string const& dbName, string const& tableName) const {
         LOGGER_INF << "getChunkLevel returns 1" << endl;
         return 1;
     }
-        LOGGER_INF << "getChunkLevel returns 0" << endl;
+    LOGGER_INF << "getChunkLevel returns 0" << endl;
     return 0;
 }
 
-/** Retrieve the key column for a database. Throws exception if the database
+/** Returns the name of the director column for the given table if there
+  * is one and an empty string otherwise. Throws an exception if the database
   * or table does not exist.
-  *
-  * @param db database name
-  * @param table table name
-  *
-  * @return the name of the partitioning key column, or an empty string if
-  * there is no key column.
   */
 string
-Facade::getKeyColumn(string const& dbName, string const& tableName) const {
-    LOGGER_INF << "*** Facade::getKeyColumn(" << dbName << ", " << tableName
+Facade::getDirColName(string const& dbName, string const& tableName) const {
+    LOGGER_INF << "*** Facade::getDirColName(" << dbName << ", " << tableName
                << ")" << endl;
     _throwIfNotDbTbExists(dbName, tableName);
-    string ret, p = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName +
-                    "/partitioning/secIndexColName";
-    ret = _kvI->get(p, "");
-    LOGGER_INF << "Facade::getKeyColumn, returning: " << ret << endl;
+    string p = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName +
+                    "/partitioning/dirColName";
+    string ret = _kvI->get(p, "");
+    LOGGER_INF << "Facade::getDirColName, returning: " << ret << endl;
     return ret;
 }
 
-/** Retrieve # stripes and subStripes for a database. Throws exception if
-  * the database does not exist. Returns (0,0) for non-partitioned databases.
-  *
-  * @param db database name
+/** Returns the names of all secondary index columns for the given table.
+  * Throws an exception if the database or table does not exist.
+  */
+vector<string>
+Facade::getSecIndexColNames(string const& dbName, string const& tableName) const {
+    LOGGER_INF << "*** Facade::getSecIndexColNames(" << dbName << ", " << tableName
+               << ")" << endl;
+    _throwIfNotDbTbExists(dbName, tableName);
+    // TODO: we don't actually support multiple secondary indexes yet. So
+    // the list of secondary index columnns is either empty, or contains
+    // just the director column.
+    string p = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName +
+                    "/partitioning/dirColName";
+    string dc = _kvI->get(p, "");
+    vector<string> ret;
+    if (!dc.empty()) {
+        ret.push_back(dc);
+    }
+    LOGGER_INF << "Facade::getSecIndexColNames, returning: [" << dc << "]" << endl;
+    return ret;
+}
+
+/** Retrieves the # of stripes and sub-stripes for a database. Throws an
+  * exception if the database does not exist. Returns (0,0) for unpartitioned
+  * databases.
   */
 StripingParams
 Facade::getDbStriping(string const& dbName) const {
@@ -325,9 +299,9 @@ Facade::getDbStriping(string const& dbName) const {
     return striping;
 }
 
-/** Retrieve match-table specific metadata for a table. Throws an
-  * exception if the database or table does not exist, and returns
-  * a MatchTableParams containing only empty strings if the given
+/** Retrieves match-table specific metadata for a table. Throws an
+  * exception if the database and/or table does not exist, and returns
+  * a MatchTableParams object containing only empty strings if the given
   * table is not a match table.
   */
 MatchTableParams
@@ -362,7 +336,7 @@ Facade::_getIntValue(string const& key, int defaultValue) const {
     return v == s ? defaultValue : boost::lexical_cast<int>(v);
 }
 
-/** Validates if database exists. Throw exception if it does not.
+/** Throws an exception if the given database does not exist.
   */
 void
 Facade::_throwIfNotDbExists(string const& dbName) const {
@@ -372,8 +346,8 @@ Facade::_throwIfNotDbExists(string const& dbName) const {
     }
 }
 
-/** Validates if table exists. Throw exception if it does not.
-    Does not check if the database exists.
+/** Throws an exception if the given  table does not exist.
+  * Database existence is not checked.
   */
 void
 Facade::_throwIfNotTbExists(string const& dbName, string const& tableName) const {
@@ -384,8 +358,7 @@ Facade::_throwIfNotTbExists(string const& dbName, string const& tableName) const
     }
 }
 
-/** Validate if database and table exist. Throw exception if either of them
-    does not.
+/** Throws an exception if the given database or table does not exist.
   */
 void
 Facade::_throwIfNotDbTbExists(string const& dbName, string const& tableName) const {
@@ -393,8 +366,8 @@ Facade::_throwIfNotDbTbExists(string const& dbName, string const& tableName) con
     _throwIfNotTbExists(dbName, tableName);
 }
 
-/** Checks if a given database contains a given table. Does not check if the
-    database exists.
+/** Returns true if the given database contains the given table.
+  * Database existence is not checked.
   */
 bool
 Facade::_containsTable(string const& dbName, string const& tableName) const {
@@ -404,13 +377,8 @@ Facade::_containsTable(string const& dbName, string const& tableName) const {
     return ret;
 }
 
-/** Checks if a given table is chunked. Does not check if database and/or table
-    exist.
-  *
-  * @param dbName database name
-  * @param tableName table name
-  *
-  * @return returns true if the table is chunked, false otherwise.
+/** Returns true if the given table is chunked.
+  * Database/table existence is not checked.
   */
 bool
 Facade::_tableIsChunked(string const& dbName, string const& tableName) const{
@@ -423,8 +391,8 @@ Facade::_tableIsChunked(string const& dbName, string const& tableName) const{
     return ret;
 }
 
-/** Returns true if the given table is subchunked.
-  * Does not check for database or table existence.
+/** Returns true if the given table is sub-chunked.
+  * Database/table existence is not checked.
   */
 bool
 Facade::_tableIsSubChunked(string const& dbName,

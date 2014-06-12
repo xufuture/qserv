@@ -165,7 +165,6 @@ class QservAdmin(object):
             ["/match"       , "dirColName2"    ],
             ["/match"       , "flagColName"    ],
             ["/partitioning", "subChunks"      ],
-            ["/partitioning", "secIndexColName"],
             ["/partitioning", "dirTable"       ],
             ["/partitioning", "lonColName"     ],
             ["/partitioning", "latColName"     ],

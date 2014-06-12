@@ -4,7 +4,7 @@ partitioning:    1
 schemaFile:      /u1/qserv/sandbox/qserv/meta/examples/tbSchema_Object.sql
 compression:     0
 subChunks:       0
-secIndexColName: objectId
-dirTable:        DeepForcedSource
+dirColName:      objectId
+dirTable:        DeepSource
 latColName:      decl
 lonColName:      ra

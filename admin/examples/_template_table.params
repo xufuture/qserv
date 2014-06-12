@@ -35,11 +35,6 @@ match: 0
 # Is this table subchunked? Allowed values: 0, 1
 subChunks: 1
 
-
-# Name of column used as secondary index (if any)
-secIndexColName: <columnName>
-
-
 # Name of the table that is a "director" table.
 # It can be name of the current table, or other table
 # If there is no director table, use current table name
@@ -54,5 +49,4 @@ lonColName: <ra col name>
 
 
 # name of the column used to join with the director table.
-# uncomment and set for non-director tables.
-#dirColName: <columnName>
+dirColName: <columnName>

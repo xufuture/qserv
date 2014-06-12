@@ -76,8 +76,10 @@ public:
                                               std::string const& tableName) const;
     int getChunkLevel(std::string const& dbName,
                       std::string const& tableName) const;
-    std::string getKeyColumn(std::string const& dbName,
-                             std::string const& tableName) const;
+    std::string getDirColName(std::string const& dbName,
+                              std::string const& tableName) const;
+    std::vector<std::string> getSecIndexColNames(std::string const& dbName,
+                                                 std::string const& tableName) const;
     StripingParams getDbStriping(std::string const& dbName) const;
     MatchTableParams getMatchTableParams(std::string const& dbName,
                                          std::string const& tableName) const;
