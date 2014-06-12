@@ -35,6 +35,8 @@ Known issues and todos:
 """
 
 import logging
+import os
+import socket
 import uuid
 
 from lsst.qserv.css.kvInterface import KvInterface, KvException
@@ -53,6 +55,7 @@ class QservAdmin(object):
         """
         self._kvI = KvInterface(connInfo)
         self._logger = logging.getLogger("QADMI")
+        self._uniqueLockId = 0
 
     #### DATABASES #################################################################
     def createDb(self, dbName, options):
@@ -64,9 +67,6 @@ class QservAdmin(object):
         """
         self._logger.debug("Create database '%s', options: %s" % \
                                (dbName, str(options)))
-        if self._dbExists(dbName):
-            self._logger.error("Database '%s' already exists." % dbName)
-            raise QservAdminException(QservAdminException.DB_EXISTS, dbName)
         # double check if all required options are specified
         for x in ["nStripes", "nSubStripes", "overlap", "storageClass"]:
             if x not in options:
@@ -74,26 +74,31 @@ class QservAdmin(object):
                 raise KvException(KvException.MISSING_PARAM, x)
         dbP = "/DBS/%s" % dbName
         ptP = None
-        try:
-            self._kvI.create(dbP, "PENDING")
-            ptP = self._kvI.create("/PARTITIONING/_", sequence=True)
-            options["uuid"] = str(uuid.uuid4())
-            for x in ["nStripes", "nSubStripes", "overlap", "uuid"]:
-                self._kvI.create("%s/%s" % (ptP, x), options[x])
-            self._kvI.create("%s/uuid" % dbP, str(uuid.uuid4()))
-            pId = ptP[-10:] # the partitioning id is always 10 digit, 0 padded
-            self._kvI.create("%s/partitioningId" % dbP, str(pId))
-            self._kvI.create("%s/releaseStatus" % dbP,"UNRELEASED")
-            for x in ["storageClass"]:
-                self._kvI.create("%s/%s" % (dbP, x), options[x])
-            self._createDbLockSection(dbP)
-            self._kvI.set(dbP, "READY")
-        except KvException as e:
-            self._logger.error("Failed to create database '%s', " % dbName +
-                               "error was: " + e.__str__())
-            self._kvI.delete(dbP, recursive=True)
-            if ptP is not None: self._kvI.delete(ptP, recursive=True)
-            raise
+        with self._getDbLock(dbName):
+            try:
+                if self._kvI.exists(dbP):
+                    self._logger.info("createDb database '%s' exists, aborting." % \
+                                          dbName)
+                    return
+                self._kvI.create(dbP, "PENDING")
+                ptP = self._kvI.create("/PARTITIONING/_", sequence=True)
+                options["uuid"] = str(uuid.uuid4())
+                for x in ["nStripes", "nSubStripes", "overlap", "uuid"]:
+                    self._kvI.create("%s/%s" % (ptP, x), options[x])
+                self._kvI.create("%s/uuid" % dbP, str(uuid.uuid4()))
+                pId = ptP[-10:] # the partitioning id is always 10 digit, 0 padded
+                self._kvI.create("%s/partitioningId" % dbP, str(pId))
+                self._kvI.create("%s/releaseStatus" % dbP,"UNRELEASED")
+                for x in ["storageClass"]:
+                    self._kvI.create("%s/%s" % (dbP, x), options[x])
+                self._createDbLockSection(dbP)
+                self._kvI.set(dbP, "READY")
+            except KvException as e:
+                self._logger.error("Failed to create database '%s', " % dbName +
+                                   "error was: " + e.__str__())
+                self._kvI.delete(dbP, recursive=True)
+                if ptP is not None: self._kvI.delete(ptP, recursive=True)
+                raise
         self._logger.debug("Create database '%s' succeeded." % dbName)
 
     def createDbLike(self, dbName, dbName2):
@@ -104,13 +109,13 @@ class QservAdmin(object):
         @param dbName2   Database name (of the template database)
         """
         self._logger.info("Creating db '%s' like '%s'" % (dbName, dbName2))
-        if self._dbExists(dbName):
-            self._logger.error("Database '%s' already exists." % dbName)
-            raise QservAdminException(QservAdminException.DB_EXISTS, dbName)
-        if not self._dbExists(dbName2):
-            self._logger.error("Database '%s' does not exist." % dbName2)
-            raise QservAdminException(QservAdminException.DB_DOES_NOT_EXIST, dbName2)
         dbP = "/DBS/%s" % dbName
+        dbP2 = "/DBS/%s" % dbName2
+        with self._getDbLock(dbName2):
+            with self._getDbLock(dbName):
+                self._createDbLike(dbP, dbName, dbName2)
+
+    def _createDbLike(self, dbP, dbName, dbName2):
         try:
             self._kvI.create(dbP, "PENDING")
             self._kvI.create("%s/uuid" % dbP, str(uuid.uuid4()))
@@ -118,9 +123,11 @@ class QservAdmin(object):
                                ("storageClass", "partitioningId", "releaseStatus"))
             self._createDbLockSection(dbP)
             self._kvI.set(dbP, "READY")
+            self._unlockDb(dbName)
+            self._unlockDb(dbName2)
         except KvException as e:
-            self._logger.error("Failed to create database '%s', " % dbName +
-                               "error was: " + e.__str__())
+            self._logger.error("Failed to create database '%s' like '%s', " % \
+                                   (dbName, dbName2) + "error was: " + e.__str__())
             self._kvI.delete(dbP, recursive=True)
             raise
 
@@ -131,10 +138,13 @@ class QservAdmin(object):
         @param dbName    Database name.
         """
         self._logger.info("Drop database '%s'" % dbName)
-        if not self._dbExists(dbName):
-            self._logger.error("Database '%s' does not exist." % dbName)
-            raise QservAdminException(QservAdminException.DB_DOES_NOT_EXIST, dbName)
-        self._kvI.delete("/DBS/%s" % dbName, recursive=True)
+        with self._getDbLock(dbName):
+            dbP = "/DBS/%s" % dbName
+            if not self._kvI.exists(dbP):
+                self._logger.info("dropDb database '%s' gone, aborting.." % \
+                                  dbName)
+                return
+            self._kvI.delete(dbP, recursive=True)
 
     def showDatabases(self):
         """
@@ -170,15 +180,17 @@ class QservAdmin(object):
 
         self._logger.debug("Create table '%s.%s', options: %s" % \
                                (dbName, tableName, str(options)))
-        if not self._dbExists(dbName):
-            self._logger.error("Database '%s' does not exist." % dbName)
-            raise QservAdminException(QservAdminException.DB_DOES_NOT_EXIST, dbName)
-        if self._tableExists(dbName, tableName):
-            self._logger.error("Table '%s.%s' exists." % (dbName, tableName))
-            raise QservAdminException(QservAdminException.TB_EXISTS, 
-                                      "%s.%s" % (dbName,tableName))
         tbP = "/DBS/%s/TABLES/%s" % (dbName, tableName)
         options["uuid"] = str(uuid.uuid4())
+
+        with self._getDbLock(dbName):
+            if not self._kvI.exists("/DBS/%s" % dbName):
+                self._logger.info("createTable: database '%s' missing, aborting." %\
+                                      dbName)
+                return
+            self._createTable(tbP, possibleOptions, options, dbName, tableName)
+
+    def _createTable(self, tbP, possibleOptions, options, dbName, tableName):
         try:
             self._kvI.create(tbP, "PENDING")
             for o in possibleOptions:
@@ -271,7 +283,8 @@ class QservAdmin(object):
 
     def _createDbLockSection(self, dbP):
         """
-        Create key/values related to "LOCK" for a given db path.
+        Create key/values related to "LOCK" for a given db path. This is used to
+        prevent users from running queries, e.g. during maintenance.
 
         @param dbP    Path to the database.
         """
@@ -281,3 +294,16 @@ class QservAdmin(object):
         self._kvI.create("%s/LOCK/lockedTime" % dbP)
         self._kvI.create("%s/LOCK/mode" % dbP)
         self._kvI.create("%s/LOCK/reason" % dbP)
+
+    ##### Locking related ##########################################################
+    def _getDbLock(self, dbName):
+            return self._kvI.getLockObject("/DBS/%s" % dbName, self._uniqueId())
+
+    @staticmethod
+    def _uniqueIdStatic():
+        return str(socket.gethostbyname(socket.gethostname())) + '_' + \
+                   str(os.getpid())
+
+    def _uniqueId(self):
+        self._uniqueLockId += 1
+        return self._uniqueIdStatic() + '_' + str(self._uniqueLockId)
