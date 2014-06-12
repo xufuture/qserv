@@ -192,7 +192,9 @@ class KvInterface(object):
 
     def getLockObject(self, k, id):
         """
-        Returns a lock for the key k, using identified id.
+        @param k         Key.
+        @param id        Name to use for this lock contender. This can be useful
+                         for querying to see who the current lock contenders are.
 
         @return lock object
         """
