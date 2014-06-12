@@ -47,6 +47,9 @@ class QservAdmin(object):
     QservAdmin implements functions needed by qserv_admin client program.
     """
 
+    # this produces a string in a form: 198.129.220.176_2899, used for unique id
+    _addrPort = str(socket.getaddrinfo(socket.gethostname(), None)[0][4][0]) + '_' + str(os.getpid())
+
     def __init__(self, connInfo):
         """
         Initialize: create KvInterface object.
@@ -113,7 +116,7 @@ class QservAdmin(object):
         dbP2 = "/DBS/%s" % dbName2
         # Acquire lock in sorted order. Otherwise two admins that run 
         # "CREATE DATABASE A LIKE B" and "CREATE DATABASE B LIKE A" can deadlock.
-        (name1, name2) = sorted(dbP, dbP2)
+        (name1, name2) = sorted((dbP, dbP2))
         with self._getDbLock(name1):
             with self._getDbLock(name2):
                 self._createDbLike(dbP, dbName, dbName2)
@@ -300,12 +303,6 @@ class QservAdmin(object):
     def _getDbLock(self, dbName):
             return self._kvI.getLockObject("/DBS/%s" % dbName, self._uniqueId())
 
-    @staticmethod
-    def _uniqueIdStatic():
-        (family, sockType, proto, canonName, sockAddr) = \
-                     socket.getaddrinfo(socket.gethostname(), None)[0]
-        return str(sockAddr[0] + '_' + str(os.getpid())
-
     def _uniqueId(self):
         self._uniqueLockId += 1
-        return self._uniqueIdStatic() + '_' + str(self._uniqueLockId)
+        return _addrPort + '_' + str(self._uniqueLockId)
