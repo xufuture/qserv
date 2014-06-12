@@ -433,7 +433,7 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
     // optimization, but this can come later.
     TableStrategy ts(fList, context);
     int permutationCount = ts.getPermutationCount();
-    if(permutationCount > 1)
+    if(permutationCount > 1) {
         for(int i=0; i < permutationCount; ++i) {
             boost::shared_ptr<query::SelectStmt> stmt = in.clone();
             query::TableRefListPtr trl =
@@ -442,6 +442,7 @@ int TablePlugin::_rewriteTables(SelectStmtList& outList,
             stmt->setFromList(f);
             outList.push_back(stmt);
             ++added;
+        }
     } else {
         ts.setToPermutation(0, fList.getTableRefList());
     }

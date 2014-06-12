@@ -68,7 +68,8 @@ public:
     ~WhereClause() {}
 
     boost::shared_ptr<QsRestrictor::List const> getRestrs() const {
-        return _restrs; }
+        return _restrs;
+    }
     boost::shared_ptr<BoolTerm const> getRootTerm() const {
         return _tree;
     }
