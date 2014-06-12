@@ -36,6 +36,7 @@ namespace qserv {
 // Other components may as well.
 class ResourceUnit {
 public:
+    class Checker;
     enum UnitType {GARBAGE, DBCHUNK, CQUERY, UNKNOWN, RESULT};
 
     ResourceUnit() : _chunk(-1) {}
@@ -63,7 +64,6 @@ public:
     void setAsCquery(std::string const& db, int chunk);
     void setAsCquery(std::string const& db);
     void setAsResult(std::string const& hashName);
-
     
     // Optional specifiers may not be supported by XrdSsi
     // Add optional specifiers ?foo&bar=1&bar2=2
@@ -86,6 +86,11 @@ private:
     static char const _varSep = '?';
     static char const _varDelim = '&';
 
+};
+
+class ResourceUnit::Checker {
+public:
+    virtual bool operator()(ResourceUnit const& ru) = 0;
 };
 
 }} // namespace lsst::qserv
