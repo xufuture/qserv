@@ -86,6 +86,7 @@ private:
     static char const _varSep = '?';
     static char const _varDelim = '&';
 
+    friend std::ostream& operator<<(std::ostream& os, ResourceUnit const& ru);
 };
 
 class ResourceUnit::Checker {

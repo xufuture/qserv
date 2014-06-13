@@ -41,6 +41,9 @@ class XrdSsiLogger;
 
 namespace lsst {
 namespace qserv {
+namespace wcontrol {
+class Service;
+}
 namespace wlog {
 class WLogger;
 }
@@ -68,11 +71,16 @@ public:
                            unsigned short timeOut=0);
 
 private:
-    void _initExports();
+    void _initInventory();
+    void _configure();
+    void _setupResultPath();
+    bool _setupScratchDb();
 
     XrdSsiSession* _session;    
+
     boost::shared_ptr<wlog::WLogger> _log;
     boost::shared_ptr<wpublish::ChunkInventory> _chunkInventory;
+    boost::shared_ptr<wcontrol::Service> _service;
 
 }; // class SsiService
 

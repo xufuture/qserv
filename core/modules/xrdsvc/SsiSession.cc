@@ -57,10 +57,10 @@ SsiSession::ProcessRequest(XrdSsiRequest* req, unsigned short timeout) {
        << std::string(reqData, reqSize);
     _log->info(os.str());
     std::cerr  << "ERRSTREAM" << os.str() << std::endl;
-    SsiResponder* resp = new SsiResponder(_validator);
+    SsiResponder* resp = new SsiResponder(_processor);
     resp->TakeRequest(req, this, resp); // Step 5
     ResourceUnit ru(sessName);
-    if(ru.unitType() == ResourceUnit::DBCHUNK) {        
+    if(ru.unitType() == ResourceUnit::DBCHUNK) {
         if(!(*_validator)(ru)) {
             os.str("");
             os << "WARNING: unowned chunk query detected: "
@@ -71,12 +71,13 @@ SsiSession::ProcessRequest(XrdSsiRequest* req, unsigned short timeout) {
         }
 
         resp->enqueue(ru, reqData, reqSize);
-        // resp should delete itself when it finishes.
+        // Record responder so we can get in touch (for squashing/cleanup)
+        _responders.push_back(boost::shared_ptr<SsiResponder>(resp));
     } else {
         // Ignore this request.
         // Should send an error...
         os.str("");
-        os << "TODO: Should send an error for Garbage request:" 
+        os << "TODO: Should send an error for Garbage request:"
            << sessName << std::endl;
         _log->info(os.str());
         delete resp;

@@ -32,6 +32,7 @@
 
 // Local headers
 #include "global/ResourceUnit.h"
+#include "wbase/MsgProcessor.h"
 
 // Forward declarations
 class XrdSsiService;
@@ -45,16 +46,19 @@ class WLogger;
 namespace lsst {
 namespace qserv {
 namespace xrdsvc {
+class SsiResponder;
 
 class SsiSession : public XrdSsiSession {
 public:
     typedef boost::shared_ptr<ResourceUnit::Checker> ValidatorPtr;
 
-    SsiSession(char const* sname, 
-               ValidatorPtr v, 
+    SsiSession(char const* sname,
+               ValidatorPtr validator,
+               boost::shared_ptr<wbase::MsgProcessor> processor,
                boost::shared_ptr<wlog::WLogger> log)
         : XrdSsiSession(strdup(sname), 0),
-          _validator(v),
+          _validator(validator),
+          _processor(processor),
           _log(log)
         {}
 
@@ -70,7 +74,9 @@ public:
     virtual bool Unprovision(bool forced);
 private:
     ValidatorPtr _validator;
+    boost::shared_ptr<wbase::MsgProcessor> _processor;
     boost::shared_ptr<wlog::WLogger> _log;
+    std::vector<boost::shared_ptr<SsiResponder> > _responders;
 }; // class SsiSession
 }}} // namespace lsst::qserv::xrdsvc
 

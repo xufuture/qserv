@@ -20,30 +20,35 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-//#include "xrdsvc/SsiService.h"
 
-// System headers
-#include <iostream>
-//#include <string>
+#ifndef LSST_QSERV_WBASE_MSGPROCESSOR_H
+#define LSST_QSERV_WBASE_MSGPROCESSOR_H
 
 // Third-party headers
-#include "XrdSsi/XrdSsiLogger.hh"
-#include "XrdSsi/XrdSsiService.hh"
+#include <boost/shared_ptr.hpp>
 
 // Qserv headers
-#include "xrdsvc/SsiService.h"
+#include "util/Callable.h"
 
-class XrdSsiLogger;
-class XrdSsiCluster;
+// Forward declarations
+namespace lsst {
+namespace qserv {
+namespace proto {
+    class TaskMsg;
+}}} // End of forward declarations
 
-extern "C" {
-XrdSsiService *XrdSsiGetServerService(XrdSsiLogger  *logP,
-                                      XrdSsiCluster *clsP,
-                                      const char    *cfgFn,
-                                      const char    *parms)
-{
-    std::cerr << " Returning new Service " << std::endl;
-    logP->Msg("pfx", "Hello");
-    return new lsst::qserv::xrdsvc::SsiService(logP);
-}
-} // extern "C"
+namespace lsst {
+namespace qserv {
+namespace wbase {
+
+class SendChannel;
+
+class MsgProcessor 
+    : public util::BinaryCallable<void, // TODO: a refHandle to track so we can squash.
+                                  boost::shared_ptr<proto::TaskMsg>,
+                                  boost::shared_ptr<SendChannel> > {
+public:
+    virtual void operator()(A1 taskMsg, A2 replyChannel) = 0;
+};
+}}} // lsst::qserv::wbase
+#endif // LSST_QSERV_WBASE_SENDCHANNEL_H
