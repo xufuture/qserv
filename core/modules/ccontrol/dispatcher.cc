@@ -82,7 +82,7 @@ namespace qserv {
 namespace ccontrol {
 
 int
-submitQuery(int session, TransactionSpec const& s,
+submitQuery(int session, qdisp::TransactionSpec const& s,
             std::string const& resultName) {
     LOGGER_DBG << "EXECUTING submitQuery(" << session << ", TransactionSpec s, "
                << resultName << ")" << std::endl;
@@ -217,7 +217,7 @@ submitQuery3(int session) {
         std::string chunkResultName = ttn.make(cs.chunkId);
         f.serializeMsg(cs, chunkResultName, ss);
 
-        TransactionSpec t;
+        qdisp::TransactionSpec t;
         obsolete::QservPath qp;
         qp.setAsCquery(cs.db, cs.chunkId);
         std::string path=qp.path();

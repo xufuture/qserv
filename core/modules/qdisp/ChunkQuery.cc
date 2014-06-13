@@ -270,7 +270,7 @@ void ChunkQuery::Complete(int Result) {
     LOGGER_INF << ss.str();
 }
 
-ChunkQuery::ChunkQuery(ccontrol::TransactionSpec const& t, int id,
+ChunkQuery::ChunkQuery(qdisp::TransactionSpec const& t, int id,
                        ccontrol::AsyncQueryManager* mgr)
     : XrdPosixCallBack(),
       _id(id), _spec(t),

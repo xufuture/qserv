@@ -34,13 +34,12 @@
 
 // Local headers
 #include "ccontrol/QueryState.h"
-#include "ccontrol/transaction.h"
 #include "css/StripingParams.h"
 #include "rproc/TableMerger.h"
+#include "qdisp/TransactionSpec.h"
 #include "query/Constraint.h"
 #include "util/common.h"
 #include "xrdc/xrdfile.h"
-
 
 namespace lsst {
 namespace qserv {
@@ -52,7 +51,7 @@ namespace qproc {
 
 namespace ccontrol {
 
-int submitQuery(int session, ccontrol::TransactionSpec const& s,
+int submitQuery(int session, lsst::qserv::qdisp::TransactionSpec const& s,
                 std::string const& resultName=std::string());
 
 // Parser model 3:
