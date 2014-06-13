@@ -20,30 +20,30 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-//#include "xrdsvc/SsiService.h"
+
+#ifndef LSST_QSERV_WBASE_SENDCHANNEL_H
+#define LSST_QSERV_WBASE_SENDCHANNEL_H
 
 // System headers
-#include <iostream>
-//#include <string>
+#include <string>
 
-// Third-party headers
-#include "XrdSsi/XrdSsiLogger.hh"
-#include "XrdSsi/XrdSsiService.hh"
+namespace lsst {
+namespace qserv {
+namespace wbase {
 
-// Qserv headers
-#include "xrdsvc/SsiService.h"
-
-class XrdSsiLogger;
-class XrdSsiCluster;
-
-extern "C" {
-XrdSsiService *XrdSsiGetServerService(XrdSsiLogger  *logP,
-                                      XrdSsiCluster *clsP,
-                                      const char    *cfgFn,
-                                      const char    *parms)
-{
-    std::cerr << " Returning new Service " << std::endl;
-    logP->Msg("pfx", "Hello");
-    return new lsst::qserv::xrdsvc::SsiService(logP);
-}
-} // extern "C"
+class SendChannel {
+public:
+    typedef long long Size;
+    
+    virtual void send(char const* buf, int bufLen) = 0;
+    
+    virtual void sendError(std::string const& msg, int code) = 0; 
+    virtual void sendFile(int fd, Size fSize) {
+        throw "Unsupported"; 
+    }
+    virtual void sendStream(char const* buf, int bufLen, bool last) {
+        throw "unsupported streaming";
+    }
+};
+}}} // lsst::qserv::wbase
+#endif // LSST_QSERV_WBASE_SENDCHANNEL_H

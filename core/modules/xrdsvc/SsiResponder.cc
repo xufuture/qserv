@@ -23,22 +23,103 @@
 #include "xrdsvc/SsiResponder.h"
 
 // System headers
+#include <errno.h>
+#include <iostream>
 #include <string>
+
+// Third-party headers
+#include <boost/shared_ptr.hpp>
 
 // Qserv headers
 #include "global/ResourceUnit.h"
+#include "proto/ProtoImporter.h"
+#include "proto/worker.pb.h"
+#include "wbase/MsgProcessor.h"
+#include "wbase/SendChannel.h"
 
 namespace lsst {
 namespace qserv {
 namespace xrdsvc {
+typedef proto::ProtoImporter<proto::TaskMsg> Importer;
+typedef boost::shared_ptr<Importer> ImporterPtr;
+
+class SsiResponder::ReplyChannel : public wbase::SendChannel {
+public:
+    typedef XrdSsiResponder::Status Status;
+    typedef boost::shared_ptr<ReplyChannel> Ptr;
+
+    ReplyChannel(SsiResponder& sr) : ssiResponder(sr) {}
+
+    virtual void send(char const* buf, int bufLen) {
+        Status s = ssiResponder.SetResponse(buf, bufLen);
+        if(s != XrdSsiResponder::wasPosted) {
+            std::cerr << "DANGER: Couldn't post response of length="
+                      << bufLen << std::endl;
+        }
+    }
+
+    virtual void sendError(std::string const& msg, int code) {
+        Status s = ssiResponder.SetErrResponse(msg.c_str(), code);
+        if(s != XrdSsiResponder::wasPosted) {
+            std::cerr << "DANGER: Couldn't post error response " << msg
+                      << std::endl;
+        }
+    }
+    SsiResponder& ssiResponder;
+};
+
+/// Feed ProtoImporter results to msgprocessor by bundling the responder as a
+/// SendChannel
+struct SsiProcessor : public Importer::Acceptor {
+    typedef boost::shared_ptr<SsiProcessor> Ptr;
+    SsiProcessor(ResourceUnit const& ru_,
+                 wbase::MsgProcessor::Ptr mp,
+                 boost::shared_ptr<wbase::SendChannel> sc)
+        : ru(ru_), msgProcessor(mp), sendChannel(sc) {}
+
+    virtual void operator()(boost::shared_ptr<proto::TaskMsg> m) {
+        if(m->has_db() && m->has_chunkid()
+           && (ru.db() == m->db()) && (ru.chunk() == m->chunkid())) {
+            (*msgProcessor)(m, sendChannel);
+        } else {
+            std::ostringstream os;
+            os << "Mismatched db/chunk in msg on resource db="
+               << ru.db() << " chunkId=" << ru.chunk();
+            sendChannel->sendError(os.str().c_str(), EINVAL);
+        }
+    }
+    ResourceUnit const& ru;
+    wbase::MsgProcessor::Ptr msgProcessor;
+    boost::shared_ptr<wbase::SendChannel> sendChannel;
+};
+
+SsiResponder::SsiResponder(boost::shared_ptr<wbase::MsgProcessor> processor)
+    :  XrdSsiResponder(this, (void *)11), // 11 = type for responder, not sure
+                                          // why we need it.
+       _processor(processor) {
+}
 
 void SsiResponder::enqueue(ResourceUnit const& ru, char* reqData, int reqSize) {
-#if 0
+#if 1
+    // reqData has the entire request, so we can unpack it without waiting for
+    // more data.
+    ReplyChannel::Ptr rc(new ReplyChannel(*this));
+    SsiProcessor::Ptr sp(new SsiProcessor(ru, _processor, rc));
+//    Importer::Acceptor imp(new Importer(sp));
+    proto::ProtoImporter<proto::TaskMsg> pi(sp);
+
+    pi(reqData, reqSize);
+    if(pi.numAccepted() < 1) {
+        // TODO Report error.
+    } else {
+        std::cerr << "enqueued task ok: " << ru << std::endl;
+    }
+#else
 // TODO
     _requestTaker.reset(new wcontrol::RequestTaker(_service->getAcceptor(),
                                                    *_path));
     _chunkId = -1; // unused.
-#endif    
+#endif
     ReleaseRequestBuffer();
 }
 
@@ -54,7 +135,7 @@ void SsiResponder::doStuff() {
 
     // action when it's my turn on the work queue
     bool noError = true;
-    if(noError) { 
+    if(noError) {
         // buf allocated by session obj.
         char* b = (char*)response.data();
         int blen = response.length();
@@ -75,7 +156,7 @@ void SsiResponder::doStuff() {
     } else {
         //SetResponse(filedesc);
         //SetResponse(XrdSsiStream)
-                
+
     }
 #endif
 }

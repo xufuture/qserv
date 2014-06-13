@@ -30,16 +30,14 @@
 
 // Local headers
 #include "global/ResourceUnit.h"
+#include "wbase/Base.h"
 
 // Forward declarations
-class XrdSsiRequest;   
-class XrdSsiService;
-class XrdSsiSession;
 
 namespace lsst {
 namespace qserv {
-namespace control {
-//class AsyncQueryManager;
+namespace wbase {
+class MsgProcessor;
 }}} // End of forward declarations
 
 namespace lsst {
@@ -48,9 +46,7 @@ namespace xrdsvc {
 
 class SsiResponder : public XrdSsiResponder {
 public:
-    SsiResponder(boost::shared_ptr<ResourceUnit::Checker> validator) 
-        :  XrdSsiResponder(this, (void *)11),
-                      _validator(validator) {}
+    SsiResponder(boost::shared_ptr<wbase::MsgProcessor> processor);
                                     
     void TakeRequest(XrdSsiRequest   *rqstP,
                      XrdSsiSession   *sessP,
@@ -60,10 +56,13 @@ public:
     
     void doStuff();
     void enqueue(ResourceUnit const& ru, char* reqData, int reqSize);
-private:
-    boost::shared_ptr<ResourceUnit::Checker> _validator;
-};
 
+    class ReplyChannel;
+    friend class ReplyChannel;
+
+private:
+    boost::shared_ptr<wbase::MsgProcessor> _processor;
+};
 
 }}} // namespace lsst::qserv::xrdsvc
 
