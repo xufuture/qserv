@@ -31,12 +31,14 @@
 #include "XrdSsi/XrdSsiLogger.hh"
 
 // Qserv headers
+#include "sql/SqlConnection.h"
+#include "wbase/Base.h"
+#include "wconfig/Config.h"
+#include "wcontrol/Service.h"
 #include "wlog/WLogger.h"
 #include "wpublish/ChunkInventory.h"
-#include "xrdsvc/SsiSession.h"
-#include "wconfig/Config.h"
-#include "sql/SqlConnection.h"
 #include "xrdfs/XrdName.h"
+#include "xrdsvc/SsiSession.h"
 
 class XrdPosixCallBack; // Forward.
 
@@ -51,7 +53,7 @@ public:
 
     virtual WLogger::Printer& operator()(char const* s) {
         std::cerr << "Qserv " << s << std::endl;
-        _ssiLog->Msg("Qserv", s);
+        //_ssiLog->Msgf("Qserv", s);
         return *this;
     }
     boost::shared_ptr<XrdSsiLogger> _ssiLog;
@@ -77,17 +79,24 @@ boost::shared_ptr<sql::SqlConnection> makeSqlConnection() {
 SsiService::SsiService(XrdSsiLogger* log) {
     boost::shared_ptr<lsst::qserv::wlog::WLogger::Printer>
         p(new XrdSsiPrinter(log));
-    _log.reset(new lsst::qserv::wlog::WLogger(p));    
+    _log.reset(new lsst::qserv::wlog::WLogger(p));
     _log->info("SsiService starting..");
     std::cerr << "EEEEE" << "service starting.\n";
-    _initExports();
+    _configure();
+    _initInventory();
+    _setupResultPath();
+    if(!_setupScratchDb()) {
+        throw "Couldn't setup scratch db"; // TODO: exception
+    }
+    _service.reset(new wcontrol::Service(_log));
+
 }
 
-SsiService::~SsiService() { 
+SsiService::~SsiService() {
     _log->info("SsiService dying.");
 }
 
-bool 
+bool
 SsiService::Provision(XrdSsiService::Resource* r,
                       unsigned short timeOut) { // Step 2
     std::ostringstream os;
@@ -96,15 +105,16 @@ SsiService::Provision(XrdSsiService::Resource* r,
     _log->info(os.str()); // Check here.
     std::cerr << "notice me!\n";
 
-    _session = new SsiSession(r->rName, 
+    _session = new SsiSession(r->rName,
                               _chunkInventory->newValidator(),
+                              _service->getProcessor(),
                               _log);
     r->ProvisionDone(_session); // Step 3
     // client-side ProvisionDone()
     return true;
 }
 
-void SsiService::_initExports() {
+void SsiService::_initInventory() {
     xrdfs::XrdName x;
     boost::shared_ptr<sql::SqlConnection> conn = makeSqlConnection();
     assert(conn);
@@ -113,6 +123,46 @@ void SsiService::_initExports() {
     os << "Paths exported: ";
     _chunkInventory->dbgPrint(os);
     _log->info(os.str());
+}
+
+void SsiService::_setupResultPath() {
+    wbase::updateResultPath();
+    wbase::clearResultPath();
+}
+
+void SsiService::_configure() {
+    if(!wconfig::getConfig().getIsValid()) {
+        std::string msg("Configuration invalid: "
+                        + wconfig::getConfig().getError());
+        throw "XrdfsConfigError, should be exception";
+    }
+}
+
+/// Cleanup scratch space and scratch dbs.
+/// This means that scratch db and scratch dirs CANNOT be shared among
+/// qserv workers. Take heed.
+/// @return true if cleanup was successful, false otherwise.
+bool SsiService::_setupScratchDb() {
+    boost::shared_ptr<sql::SqlConnection> conn = makeSqlConnection();
+    if(!conn) {
+        return false;
+    }
+    sql::SqlErrorObject errObj;
+    std::string dbName = wconfig::getConfig().getString("scratchDb");
+    _log->info((Pformat("Cleaning up scratchDb: %1%.")
+                % dbName).str());
+    if(!conn->dropDb(dbName, errObj, false)) {
+        _log->error((Pformat("Cfg error! couldn't drop scratchDb: %1% %2%.")
+                     % dbName % errObj.errMsg()).str());
+        return false;
+    }
+    errObj.reset();
+    if(!conn->createDb(dbName, errObj, true)) {
+        _log->error((Pformat("Cfg error! couldn't create scratchDb: %1% %2%.")
+                     % dbName % errObj.errMsg()).str());
+        return false;
+    }
+    return true;
 }
 
 

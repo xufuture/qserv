@@ -78,6 +78,12 @@ void fetchDbs(WLogger& log,
     log.debug("Launching query : " + listq);
     boost::shared_ptr<SqlResultIter> resultP = sc.getQueryIter(listq);
     assert(resultP.get());
+    if(resultP->getErrorObject().isSet()) {
+        SqlErrorObject& seo = resultP->getErrorObject();
+        log.error("ChunkInventory can't get list of publishable dbs.");
+        log.error(seo.printErrMsg());
+        return;
+    }
     bool nothing = true;
     for(; !resultP->done(); ++(*resultP)) {
         dbs.push_back((**resultP)[0]);

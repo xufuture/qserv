@@ -42,8 +42,21 @@ template <typename Ret, typename Arg>
 class UnaryCallable {
 public:
     typedef boost::shared_ptr<UnaryCallable<Ret,Arg> > Ptr;
+    typedef Arg A;
+
     virtual ~UnaryCallable() {}
     virtual Ret operator()(Arg a) = 0;
+};
+
+template <typename Ret, typename Arg1, typename Arg2>
+class BinaryCallable {
+public:
+    typedef boost::shared_ptr<BinaryCallable<Ret,Arg1,Arg2> > Ptr;
+    typedef Arg1 A1;
+    typedef Arg2 A2;
+
+    virtual ~BinaryCallable() {}
+    virtual Ret operator()(Arg1 a1, Arg2 a2) = 0;
 };
 
 }}} // lsst::qserv::util

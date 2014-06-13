@@ -50,12 +50,10 @@
 // Forward declarations
 namespace lsst {
 namespace qserv {
-namespace ccontrol {
-    class TransactionSpec;
-}
 namespace qdisp {
     class ChunkQuery;
     class MessageStore;
+    class TransactionSpec;
 }
 namespace qproc {
      class QuerySession;
@@ -112,7 +110,7 @@ public:
 
     boost::shared_ptr<qdisp::MessageStore> getMessageStore();
 
-    int add(TransactionSpec const& t, std::string const& resultName);
+    int add(qdisp::TransactionSpec const& t, std::string const& resultName);
     void join(int id);
     bool tryJoin(int id);
     void joinEverything();

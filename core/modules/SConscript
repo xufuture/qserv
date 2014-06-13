@@ -78,9 +78,10 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                        mysqlclient_r ssl crypto""".split(),
                            'distDir' : 'lib'
                            },
-               "xrdsvc" : {'mods' : """wlog xrdsvc""".split(),
+               "xrdsvc" : {'mods' : """global mysql sql wconfig wlog
+                                       wpublish xrdsvc""".split(),
                            'libs' : """boost_regex boost_signals boost_thread
-                                       mysqlclient_r ssl crypto""".split(),
+                                       mysqlclient_r ssl crypto XrdSsi""".split(),
                            'distDir' : 'lib'
                            },
 

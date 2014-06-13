@@ -33,7 +33,7 @@
 #include "XrdPosix/XrdPosixCallBack.hh"
 
 // Local headers
-#include "ccontrol/transaction.h"
+#include "qdisp/TransactionSpec.h"
 #include "util/Timer.h"
 #include "xrdc/xrdfile.h"
 
@@ -76,7 +76,7 @@ public:
     friend class WriteCallable;
 
     virtual void Complete(int Result);
-    explicit ChunkQuery(ccontrol::TransactionSpec const& t, int id,
+    explicit ChunkQuery(qdisp::TransactionSpec const& t, int id,
                         ccontrol::AsyncQueryManager* mgr);
     virtual ~ChunkQuery();
 
@@ -103,7 +103,7 @@ private:
     void _unlinkResult(std::string const& url);
 
     int _id;
-    ccontrol::TransactionSpec _spec;
+    qdisp::TransactionSpec _spec;
     WaitState _state;
     xrdc::XrdTransResult _result;
     boost::mutex _mutex;
