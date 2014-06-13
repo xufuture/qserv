@@ -53,6 +53,7 @@
 #include "rproc/TableMerger.h"
 #include "qdisp/ChunkQuery.h"
 #include "qdisp/MessageStore.h"
+#include "qdisp/TransactionSpec.h"
 #include "qproc/QuerySession.h"
 #include "util/PacketBuffer.h"
 #include "util/Timer.h"
@@ -144,7 +145,7 @@ public:
 ////////////////////////////////////////////////////////////
 // AsyncQueryManager
 ////////////////////////////////////////////////////////////
-int AsyncQueryManager::add(TransactionSpec const& t,
+int AsyncQueryManager::add(qdisp::TransactionSpec const& t,
                            std::string const& resultName) {
     LOGGER_DBG << "EXECUTING AsyncQueryManager::add(TransactionSpec, "
                << resultName << ")" << std::endl;
@@ -158,7 +159,7 @@ int AsyncQueryManager::add(TransactionSpec const& t,
         // If empty spec or fault already detected, refuse to run.
         return -1;
     }
-    TransactionSpec ts(t);
+    qdisp::TransactionSpec ts(t);
 
     doctorQueryPath(ts.path);
     QuerySpec qs(boost::make_shared<qdisp::ChunkQuery>(ts, id, this),

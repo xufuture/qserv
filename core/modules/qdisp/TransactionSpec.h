@@ -58,7 +58,7 @@ public:
 
     bool isNull() const { return path.length() == 0; }
 
-    class Reader;  // defined in thread.h
+    class Reader;
 };
 
 class TransactionSpec::Reader {
