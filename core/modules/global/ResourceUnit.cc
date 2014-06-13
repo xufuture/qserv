@@ -43,7 +43,6 @@ public:
     }
     
     std::string token() { 
-        assert(!done());
         return _s.substr(_cursor, _next-_cursor); 
     }
 
@@ -54,7 +53,7 @@ public:
         return num;
     }
 
-    void next() { _cursor = _next + 1; _seek(); }
+    void next() { assert(!done()); _cursor = _next + 1; _seek(); }
 
     bool done() { return _next == std::string::npos; }
 private:
@@ -208,6 +207,10 @@ ResourceUnit::_ingestKeyStr(std::string const& keyStr) {
     } else {
         _vars[keyStr.substr(0,equalsPos)] = keyStr.substr(equalsPos+1);
     }
+}
+
+std::ostream& operator<<(std::ostream& os, ResourceUnit const& ru) {
+    return os << "Resource(" << ru.path() << ")";
 }
 
 }} // namespace lsst::qserv
