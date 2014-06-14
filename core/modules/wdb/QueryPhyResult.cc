@@ -32,8 +32,10 @@
 // Local headers
 #include "sql/SqlErrorObject.h"
 #include "wbase/Base.h"
+#include "wbase/SendChannel.h"
 #include "wconfig/Config.h"
 #include "wlog/WLogger.h"
+#include "util/StringHash.h"
 
 
 namespace lsst {
@@ -69,6 +71,46 @@ std::string QueryPhyResult::_getSpaceResultTables() const {
     std::copy(_resultTables.begin(), _resultTables.end(),
               std::ostream_iterator<std::string const&>(ss, " "));
     return ss.str();
+}
+
+std::string QueryPhyResult::_computeTmpFileName() const {
+    // Should become obsolete with new result handling
+    std::string defPath = "/dev/shm";
+    std::ostringstream os;
+    // pid, time(seconds), hash of resulttables should be unique
+    pid_t pid = ::getpid();
+    time_t utime = ::time(0);
+    std::string tables = _getSpaceResultTables();
+    std::string hash = util::StringHash::getMd5Hex(tables.data(),
+                                                   tables.size());
+    os.str("");
+    os << defPath << "/" << pid << "_" << utime << "_" << hash;
+    return os.str();
+}
+
+bool QueryPhyResult::dumpToChannel(wlog::WLogger& log,
+                                   std::string const& user,
+                                   boost::shared_ptr<wbase::SendChannel> sc,
+                                   sql::SqlErrorObject& errObj) {
+    std::string dumpFile = _computeTmpFileName();
+    if(!performMysqldump(log, user, dumpFile, errObj)) {
+        return false;
+    }
+    int fd = ::open(dumpFile.c_str(), O_RDONLY);
+    if(fd == -1) { return false; }
+
+    struct stat s;
+    if(-1 == ::fstat(fd, &s)) {
+        ::close(fd);
+        return false;
+    }
+    wbase::SendChannel::Size fSize = s.st_size;
+
+    assert(sc);
+    sc->sendFile(fd, fSize);
+    ::close(fd);
+    ::unlink(dumpFile.c_str());
+    return true;
 }
 
 bool QueryPhyResult::performMysqldump(wlog::WLogger& log,

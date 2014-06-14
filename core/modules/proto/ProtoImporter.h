@@ -55,8 +55,9 @@ public:
     typedef boost::shared_ptr<Acceptor> AcceptorPtr;
 
     ProtoImporter(AcceptorPtr a) : _numAccepted(0), _acceptor(a) {}
+    ProtoImporter() : _numAccepted(0) {}
     
-    bool operator()(char* data, int size) {
+    bool operator()(char const* data, int size) {
         namespace gio = google::protobuf::io;
 
         boost::shared_ptr<Msg> m(new Msg());
@@ -65,7 +66,9 @@ public:
         //        m->MergePartialFromCodedStream(&coded);
         bool isClean = m->MergeFromCodedStream(&coded);
         if(isClean) {
-            (*_acceptor)(m);
+            if(_acceptor) {
+                (*_acceptor)(m);
+            }
             ++_numAccepted;
         }
         return isClean;

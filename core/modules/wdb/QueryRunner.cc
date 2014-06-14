@@ -328,7 +328,15 @@ QueryRunner::_runTask(wcontrol::Task::Ptr t) {
         _pResult->addResultTable(resultTable);
     }
     if(success) {
-        if(!_pResult->performMysqldump(*_log,_user,_task->resultPath,_errObj)) {
+        if(_task->sendChannel) {
+            if(!_pResult->dumpToChannel(*_log, _user,
+                                        _task->sendChannel, _errObj)) {
+                return false;
+            }
+        } else if(!_pResult->performMysqldump(*_log,
+                                              _user,
+                                              _task->resultPath,
+                                              _errObj)) {
             return false;
         }
     }
