@@ -50,10 +50,13 @@
 #include "ccontrol/TmpTableName.h"
 #include "ccontrol/ResultReceiver.h"
 #include "log/Logger.h"
+#include "proto/worker.pb.h"
+#include "proto/ProtoImporter.h"
 #include "qdisp/Executive.h"
 #include "qdisp/MessageStore.h"
 #include "qproc/QuerySession.h"
 #include "qproc/TaskMsgFactory2.h"
+#include "util/Callable.h"
 
 namespace lsst {
 namespace qserv {
@@ -76,6 +79,15 @@ public:
 private:
     qdisp::Executive::Ptr _executive;
     int _refNum;
+};
+
+class ProtoPrinter : public util::UnaryCallable<void, boost::shared_ptr<proto::TaskMsg> > {
+public:
+    ProtoPrinter() {}
+    virtual void operator()(boost::shared_ptr<proto::TaskMsg> m) {
+        std::cout << "Got taskmsg ok";
+    }
+
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -107,13 +119,23 @@ void UserQuery::submit() {
     qproc::TaskMsgFactory2 f(_sessionId);
     TmpTableName ttn(_sessionId, _qSession->getOriginal());
     std::ostringstream ss;
+    proto::ProtoImporter<proto::TaskMsg> pi;
+    int msgCount = 0;
+
     qproc::QuerySession::Iter i;
     qproc::QuerySession::Iter e = _qSession->cQueryEnd();
     // Writing query for each chunk
     for(i = _qSession->cQueryBegin(); i != e; ++i) {
         qproc::ChunkQuerySpec& cs = *i;
         std::string chunkResultName = ttn.make(cs.chunkId);
+        ++msgCount;
         f.serializeMsg(cs, chunkResultName, ss);
+        std::string msg = ss.str();
+
+        pi(msg.data(), msg.size());
+        if(pi.numAccepted() != msgCount) {
+            throw "Error serializing TaskMsg.";
+        }
 #if 1
         ResourceUnit ru;
         ru.setAsDbChunk(cs.db, cs.chunkId);

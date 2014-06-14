@@ -51,4 +51,4 @@ public:
     virtual void operator()(A1 taskMsg, A2 replyChannel) = 0;
 };
 }}} // lsst::qserv::wbase
-#endif // LSST_QSERV_WBASE_SENDCHANNEL_H
+#endif // LSST_QSERV_WBASE_MSGPROCESSOR_H

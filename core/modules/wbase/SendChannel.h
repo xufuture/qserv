@@ -38,9 +38,7 @@ public:
     virtual void send(char const* buf, int bufLen) = 0;
     
     virtual void sendError(std::string const& msg, int code) = 0; 
-    virtual void sendFile(int fd, Size fSize) {
-        throw "Unsupported"; 
-    }
+    virtual void sendFile(int fd, Size fSize) = 0;
     virtual void sendStream(char const* buf, int bufLen, bool last) {
         throw "unsupported streaming";
     }
