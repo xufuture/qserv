@@ -65,6 +65,14 @@ public:
                       << std::endl;
         }
     }
+    virtual void sendFile(int fd, Size fSize) {
+        Status s = ssiResponder.SetResponse(fSize, fd);
+        if(s != XrdSsiResponder::wasPosted) {
+            std::cerr << "DANGER: Couldn't post response file of length="
+                      << fSize << std::endl;
+        }
+
+    }
     SsiResponder& ssiResponder;
 };
 
@@ -106,6 +114,7 @@ void SsiResponder::enqueue(ResourceUnit const& ru, char* reqData, int reqSize) {
     ReplyChannel::Ptr rc(new ReplyChannel(*this));
     SsiProcessor::Ptr sp(new SsiProcessor(ru, _processor, rc));
 //    Importer::Acceptor imp(new Importer(sp));
+    std::cout << "Importing TaskMsg of size " << reqSize << std::endl;
     proto::ProtoImporter<proto::TaskMsg> pi(sp);
 
     pi(reqData, reqSize);

@@ -56,7 +56,7 @@ public:
     typedef Arg2 A2;
 
     virtual ~BinaryCallable() {}
-    virtual Ret operator()(Arg1 a1, Arg2 a2) = 0;
+    virtual Ret operator()(A1 a1, A2 a2) = 0;
 };
 
 }}} // lsst::qserv::util
