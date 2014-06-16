@@ -50,7 +50,14 @@ env.Default(env.Alias('configure'))
 # Reading config file
 #
 #########################
-config_file_name=os.path.join("qserv.conf")
+
+opts = SCons.Script.Variables("custom.py")
+opts.AddVariables(
+	(PathVariable('META_CONFIG', 'Qserv meta-configuration file', None, PathVariable.PathIsFile))
+)
+opts.Update(env)
+
+config_file_name = env['META_CONFIG']
 
 if not os.path.exists(config_file_name):
     logging.fatal("Your configuration file is missing: %s" % config_file_name)
@@ -136,7 +143,7 @@ script_dict = {
 
 def get_template_targets():
 
-    template_dir_path= os.path.join("templates", "server")
+    template_dir_path= os.path.join(config['qserv']['run_base_dir'],"templates", "server")
     target_lst = []
 
     if config['qserv']['node_type']=='mono':
@@ -152,7 +159,7 @@ def get_template_targets():
 
         if isinstance(src_node, SCons.Node.FS.File) :
 
-            logger.debug("Template SOURCE : %s, TARGET : %s" % (src_node, target_node))
+            logger.info("Template SOURCE : %s, TARGET : %s" % (src_node, target_node))
             env.Substfile(target_node, src_node, SUBST_DICT=script_dict)
             target_lst.append(target_node)
             # qserv-admin has no extension, Substfile can't manage it easily
