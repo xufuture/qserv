@@ -253,9 +253,8 @@ env.Alias("qserv", cmd)
 #
 ################################
 
-def reset_user_config():
-    src_dir=Dir('.').srcnode().abspath
-    config_file_name=os.path.join(src_dir, "templates", "client", "qserv.conf")
+def reset_user_config(qserv_run_dir):
+    config_file_name=os.path.join(qserv_run_dir, "templates", "client", "qserv.conf")
     homedir=os.path.expanduser("~")
     user_config_dir=os.path.join(homedir, ".lsst")
     user_config_file_name=os.path.join(user_config_dir, "qserv.conf")
@@ -266,7 +265,7 @@ def reset_user_config():
     env.Substfile( user_config_file_name, config_file_name, SUBST_DICT=script_dict)
     return [user_config_file_name]
     
-env.Alias("client", reset_user_config())
+env.Alias("client", reset_user_config(config['qserv']['run_base_dir']))
 
 
 #########################
