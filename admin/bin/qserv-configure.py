@@ -85,7 +85,7 @@ def main():
         sconstruct_file = os.path.join(template_config_dir, "SConstruct")
         cmd = ["scons", 
                 "-f {0}".format(sconstruct_file),
-                "METACONFIG={0}".format(args.meta_config_file)
+                "META_CONFIG={0}".format(args.meta_config_file)
                 ] 
         logging.info("Lauching configuration command {0}".format(cmd))
         commons.run_command(cmd)
