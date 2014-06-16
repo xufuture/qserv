@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-from lsst.qserv.admin import commons, logger
+from lsst.qserv.admin import configure, commons, logger
 from subprocess import check_output
 import fileinput
 import logging
 import os
 import argparse
 import shutil
-
+import ConfigParser
 
 def parseArgs():
     parser = argparse.ArgumentParser(
@@ -82,13 +82,25 @@ def main():
             print line.replace("run_base_dir =", "run_base_dir = " + args.qserv_run_dir),
 
     if 'position' in args.step_list: 
-        sconstruct_file = os.path.join(template_config_dir, "SConstruct")
-        cmd = ["scons", 
-                "-f {0}".format(sconstruct_file),
-                "META_CONFIG={0}".format(args.meta_config_file)
-                ] 
-        logging.info("Lauching configuration command {0}".format(cmd))
-        commons.run_command(cmd)
+
+        #########################
+        #
+        # Reading config file
+        #
+        #########################
+        try:
+            config = commons.read_config(args.meta_config_file)
+        except ConfigParser.NoOptionError, exc:
+            logging.fatal("An option is missing in your configuration file: %s" % exc)
+            sys.exit(1)
  
+        #####################################
+        #
+        # Defining main directory structure
+        #
+        #####################################
+        configure.check_root_dirs()
+        configure.check_root_symlinks() 
+
 if __name__ == '__main__':
     main()
