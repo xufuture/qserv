@@ -65,8 +65,11 @@ std::string const& UserQuery_getDominantDb(int session);
 /// @return number of stripes and substripes
 lsst::qserv::css::StripingParams UserQuery_getDbStriping(int session);
 
+/// Abort this user query immediately (system is shutting down now)
+void UserQuery_abort(int session);
+
 /// Add a chunk spec for execution
-void UserQuery_addChunk(int session, qproc::ChunkSpec const& cs );
+void UserQuery_addChunk(int session, qproc::ChunkSpec const& cs);
 
 /// Dispatch all chunk queries for this query
 void UserQuery_submit(int session);

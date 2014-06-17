@@ -149,11 +149,12 @@ Task::Task(Task::TaskMsgPtr t, std::string const& user_) {
 }
 
 Task::Task(Task::TaskMsgPtr t, boost::shared_ptr<wbase::SendChannel> sc) {
+    // Make msg copy.
+    msg.reset(new proto::TaskMsg(*t));
+    sendChannel = sc;
     hash = hashTaskMsg(*t);
     dbName = "q_" + hash;
     resultPath = wbase::hashToResultPath(hash); // Not needed
-    // Make msg copy.
-    msg.reset(new proto::TaskMsg(*t));
     if(t->has_user()) {
         user = t->user();
     } else {

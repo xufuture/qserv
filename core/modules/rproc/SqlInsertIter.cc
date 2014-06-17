@@ -295,7 +295,9 @@ void SqlInsertIter::_increment() {
         // Either we found an insert or there are no more packets.
     } else { // If fully buffered.
         ++_iter;
-        _lastUsed = (*_iter)[0].second;
+        if(_iter != _nullIter) {
+            _lastUsed = (*_iter)[0].second;
+        }
     }
 }
 

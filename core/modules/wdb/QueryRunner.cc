@@ -327,6 +327,7 @@ QueryRunner::_runTask(wcontrol::Task::Ptr t) {
         if(!success) return false;
         _pResult->addResultTable(resultTable);
     }
+    _log->info("about to dump table " + resultTable);
     if(success) {
         if(_task->sendChannel) {
             if(!_pResult->dumpToChannel(*_log, _user,

@@ -27,20 +27,37 @@
 // Third-party headers
 #include <boost/shared_ptr.hpp>
 
+// Qserv headers
+#include "util/Callable.h"
+
 namespace lsst {
 namespace qserv {
 namespace qdisp {
 
 class QueryReceiver {
 public:
+    typedef util::VoidCallable<void> CancelFunc;
+
     typedef boost::shared_ptr<QueryReceiver> Ptr;
     virtual ~QueryReceiver() {}
     virtual int bufferSize() const = 0;
     virtual char* buffer() = 0;
     virtual void flush(int bLen, bool last) = 0;
     virtual void errorFlush() = 0;
-    virtual bool finished() const = 0; 
+    virtual bool finished() const = 0;
     virtual std::ostream& print(std::ostream& os) const = 0;
+
+    virtual void registerCancel(boost::shared_ptr<CancelFunc> cancelFunc) {
+        _cancelFunc = cancelFunc;
+    }
+    void cancel() {
+        if(_cancelFunc) {
+            (*_cancelFunc)();
+        }
+    }
+protected:
+    boost::shared_ptr<CancelFunc> _cancelFunc;
+
 };
 
 }}} // namespace lsst::qserv::qdisp

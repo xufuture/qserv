@@ -29,6 +29,7 @@
 #include "css/Facade.h"
 #include "qdisp/Executive.h"
 #include "qproc/QuerySession.h"
+#include "rproc/TableMerger.h"
 
 namespace lsst {
 namespace qserv {
@@ -38,9 +39,11 @@ class UserQueryFactory::Impl {
 public:
     void readConfig(StringMap const& m);
     void initFacade(std::string const& cssTech, std::string const& cssConn);
+    void initMergerTemplate();
 
     qdisp::Executive::Config::Ptr executiveConfig;
     boost::shared_ptr<css::Facade> facade;
+    rproc::TableMergerConfig mergerConfigTemplate;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -61,6 +64,10 @@ UserQueryFactory::newUserQuery(std::string const& query,
     int sessionId = UserQuery_takeOwnership(uq);
     uq->_sessionId = sessionId;
     uq->_executive.reset(new qdisp::Executive(_impl->executiveConfig));
+    rproc::TableMergerConfig* mct
+        = new rproc::TableMergerConfig(_impl->mergerConfigTemplate);
+    mct->targetTable = resultTable;
+    uq->_mergerConfig.reset(mct);
     return sessionId;
 }
 
@@ -78,20 +85,20 @@ void UserQueryFactory::Impl::readConfig(StringMap const& m) {
         "frontend.scratch_path",
         "Error, no scratch path found. Using /tmp.",
         "/tmp");
+#endif
     // This should be overriden by the installer properly.
-    _resultDbSocket =  cm.get(
+    mergerConfigTemplate.socket =  cm.get(
         "resultdb.unix_socket",
         "Error, resultdb.unix_socket not found. Using /u1/local/mysql.sock.",
         "/u1/local/mysql.sock");
-    _resultDbUser =  cm.get(
+    mergerConfigTemplate.user =  cm.get(
         "resultdb.user",
         "Error, resultdb.user not found. Using qsmaster.",
         "qsmaster");
-    _resultDbDb =  cm.get(
+    mergerConfigTemplate.targetDb =  cm.get(
         "resultdb.db",
         "Error, resultdb.db not found. Using qservResult.",
         "qservResult");
-#endif
     std::string cssTech = cm.get(
         "css.technology",
         "Error, css.technology not found.",
@@ -108,7 +115,20 @@ void UserQueryFactory::Impl::readConfig(StringMap const& m) {
         "LSST");
     _qSession->setDefaultDb(defaultDb);
 #endif
+#if 0 // FIXMEFIXME
+    merger::TableMergerConfig cfg(_resultDbDb,     // cfg result db
+                                  resultTable,     // cfg resultname
+                                  m,               // merge fixup obj
+                                  _resultDbUser,   // result db credentials
+                                  _resultDbSocket, // result db credentials
+                                  mysqlBin,        // Obsolete
+                                  dropMem          // cfg
+                                  );
+
+#endif
+
 }
+
 void UserQueryFactory::Impl::initFacade(std::string const& cssTech,
                                         std::string const& cssConn) {
     if (cssTech == "zoo") {
@@ -127,7 +147,6 @@ void UserQueryFactory::Impl::initFacade(std::string const& cssTech,
 //        throw ConfigError("Invalid css technology, check config file.");
 // FIXME
     }
-
 }
 
 }}} // lsst::qserv::ccontrol

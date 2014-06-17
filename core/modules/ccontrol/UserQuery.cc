@@ -56,6 +56,7 @@
 #include "qdisp/MessageStore.h"
 #include "qproc/QuerySession.h"
 #include "qproc/TaskMsgFactory2.h"
+#include "rproc/TableMerger.h"
 #include "util/Callable.h"
 
 namespace lsst {
@@ -105,12 +106,19 @@ lsst::qserv::query::ConstraintVec UserQuery::getConstraints() const {
 std::string const& UserQuery::getDominantDb() const {
     return _qSession->getDominantDb();
 }
+
 lsst::qserv::css::StripingParams UserQuery::getDbStriping() const {
     return _qSession->getDbStriping();
 }
+
+void UserQuery::abort() {
+    _executive->abort();
+}
+
 void UserQuery::addChunk(qproc::ChunkSpec const& cs) {
     _qSession->addChunk(cs);
 }
+
 void UserQuery::submit() {
     _qSession->finalize();
     _setupMerger();
@@ -209,27 +217,12 @@ std::string UserQuery::getExecDesc() const {
 
 void UserQuery::_setupMerger() {
     // FIXME
-    //    std::string const& resultTable = qs.getResultTable();
-    //    merger::MergeFixup m = qs.makeMergeFixup();
-
+    _mergerConfig->mFixup = _qSession->makeMergeFixup();
+    _merger = boost::make_shared<rproc::TableMerger>(*_mergerConfig);
     // Can we configure the merger without involving settings
     // from the python layer? Historically, the Python layer was
     // needed to generate the merging SQL statements, but we are now
     // creating them without Python.
-    std::string mysqlBin="obsolete";
-    std::string dropMem;
-
-#if 0 // FIXMEFIXME
-    merger::TableMergerConfig cfg(_resultDbDb,     // cfg result db
-                                  resultTable,     // cfg resultname
-                                  m,               // merge fixup obj
-                                  _resultDbUser,   // result db credentials
-                                  _resultDbSocket, // result db credentials
-                                  mysqlBin,        // Obsolete
-                                  dropMem          // cfg
-                                  );
-    _merger = boost::make_shared<merger::TableMerger>(cfg);
-#endif
 }
 
 }}} // lsst::qserv::ccontrol

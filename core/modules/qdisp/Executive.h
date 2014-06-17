@@ -72,6 +72,7 @@ public:
 
 
     Executive(Config::Ptr c) : _config(*c) { _setup(); }
+    void abort();
     void add(int refNum,
              TransactionSpec const& t, std::string const& resultName);
     void add(int refNum, Spec const& s);
@@ -104,6 +105,7 @@ private:
     // Mutexes
     boost::mutex _receiversMutex;
     boost::condition_variable _receiversEmpty;
+    boost::mutex _requestsMutex;
 
 }; // class Executive
 }}} // namespace lsst::qserv::qdisp
