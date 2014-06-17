@@ -130,6 +130,7 @@ void UserQuery::submit() {
     proto::ProtoImporter<proto::TaskMsg> pi;
     int msgCount = 0;
 
+    assert(_merger);
     qproc::QuerySession::Iter i;
     qproc::QuerySession::Iter e = _qSession->cQueryEnd();
     // Writing query for each chunk
@@ -184,6 +185,7 @@ QueryState UserQuery::join() {
 #endif
     bool successful = _executive->join();
     if(successful) {
+        _merger->finalize();
         LOGGER_INF << "Joined everything (success)" << std::endl;
         return SUCCESS;
     } else {

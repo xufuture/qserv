@@ -542,8 +542,12 @@ class InbandQueryAction:
         if not self._emptyChunks:
             raise DataError("No empty chunks for db")
 
+        debugLimit=2
+        current=[]
         for chunkSpec in self._generateChunkSpec(self._intersectIter):
             UserQuery_addChunk(self.sessionId, chunkSpec)
+            current.append(chunkSpec)
+            if len(current) >= debugLimit: break ### DEBUGDEBUG REMOVE
 
 
     def _execAndJoin(self):
