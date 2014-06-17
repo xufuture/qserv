@@ -27,21 +27,39 @@
 // System headers
 #include <string>
 
+// Third-party headers
+#include <boost/shared_ptr.hpp>
+
+// Qserv headers
+#include "util/Callable.h"
+
+
 namespace lsst {
 namespace qserv {
 namespace wbase {
 
 class SendChannel {
 public:
+    typedef util::VoidCallable<void> ReleaseFunc;
+    typedef boost::shared_ptr<ReleaseFunc> ReleaseFuncPtr;
     typedef long long Size;
-    
+
     virtual void send(char const* buf, int bufLen) = 0;
-    
-    virtual void sendError(std::string const& msg, int code) = 0; 
+
+    virtual void sendError(std::string const& msg, int code) = 0;
     virtual void sendFile(int fd, Size fSize) = 0;
     virtual void sendStream(char const* buf, int bufLen, bool last) {
         throw "unsupported streaming";
     }
+
+    void setReleaseFunc(ReleaseFuncPtr r) { _release = r; }
+    void release() {
+        if(_release) {
+            (*_release)();
+        }
+    }
+protected:
+    ReleaseFuncPtr _release;
 };
 }}} // lsst::qserv::wbase
 #endif // LSST_QSERV_WBASE_SENDCHANNEL_H

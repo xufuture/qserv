@@ -67,8 +67,9 @@ void ResultReceiver::flush(int bLen, bool last) {
     // FIXME
     // Pass to table merger.
 //    _merger
-    std::string tableName;
-    assert(!tableName.empty());
+    LOGGER_INF << "Receiver flushing " << bLen << " bytes "
+               << (last ? " (last)\n" : " (more)\n");
+    assert(!_tableName.empty());
     off_t inputSize = _buffer - _actualBuffer.get() + bLen;
     off_t mergeSize = _merger->merge(_actualBuffer.get(), inputSize,
                                      _tableName);
@@ -109,7 +110,7 @@ bool ResultReceiver::finished() const {
 
 std::ostream& ResultReceiver::print(std::ostream& os) const {
     os << "ResultReceiver(" << _tableName << ", flushed="
-       << (_flushed ? "true" : "false");
+       << (_flushed ? "true)" : "false)") ;
     return os;
 
 #if 0

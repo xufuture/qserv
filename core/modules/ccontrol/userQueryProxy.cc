@@ -99,6 +99,11 @@ lsst::qserv::css::StripingParams UserQuery_getDbStriping(int session) {
     return uqManager.get(session)->getDbStriping();
 }
 
+/// Abort a running query
+void UserQuery_abort(int session) {
+    uqManager.get(session)->abort();
+}
+
 /// Add a chunk spec for execution
 void UserQuery_addChunk(int session, qproc::ChunkSpec const& cs) {
     uqManager.get(session)->addChunk(cs);

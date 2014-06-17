@@ -115,6 +115,27 @@ void Executive::add(int refNum, TransactionSpec const& t,
     add(refNum, s);
 }
 
+void Executive::abort() {
+    std::cout << "Trying to cancel all queries...\n";
+    std::vector<int> pending;
+    {
+        boost::lock_guard<boost::mutex> lock(_receiversMutex);
+        std::cout << "Loop cancel all queries...\n";
+        ReceiverMap::iterator i,e;
+        for(i=_receivers.begin(), e=_receivers.end(); i != e; ++i) {
+            i->second->cancel();
+            pending.push_back(i->first);
+        }
+        std::cout << "Loop cancel all queries...done\n";
+    }
+    { // Should be possible to convert this to a for_each call.
+        std::vector<int>::iterator i,e;
+        for(i=pending.begin(), e=pending.end(); i != e; ++i) {
+            _unTrack(*i);
+        }
+    }
+}
+
 void Executive::add(int refNum, Executive::Spec const& s) {
     bool trackOk =_track(refNum, s.receiver); // Remember so we can join.
     if(!trackOk) {
@@ -159,8 +180,7 @@ bool Executive::join() {
     // _merger.reset();
     LOGGER_INF << "Query exec finish. " << _requestCount << " dispatched." << std::endl;
 
-    throw "Executive::join() unimplemented.";
-    return false; // FIXME, unimplemented.
+    return true;
 }
 
 void Executive::remove(int refNum) {

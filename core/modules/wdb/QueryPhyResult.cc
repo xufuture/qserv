@@ -29,6 +29,9 @@
 #include <iterator>
 #include <sys/stat.h>
 
+// Third-party headers
+#include <boost/make_shared.hpp>
+
 // Local headers
 #include "sql/SqlErrorObject.h"
 #include "wbase/Base.h"
@@ -37,10 +40,28 @@
 #include "wlog/WLogger.h"
 #include "util/StringHash.h"
 
-
 namespace lsst {
 namespace qserv {
 namespace wdb {
+////////////////////////////////////////////////////////////////////////
+class FileCleanup : public wbase::SendChannel::ReleaseFunc {
+public:
+    FileCleanup(int fd_, std::string const& filename_)
+        : fd(fd_), filename(filename_) {}
+
+    virtual void operator()() {
+        ::close(fd);
+        ::unlink(filename.c_str());
+    }
+
+    static boost::shared_ptr<FileCleanup> newInstance(int fd,
+                                               std::string const& filename) {
+        return boost::make_shared<FileCleanup>(fd, filename);
+    }
+
+    int fd;
+    std::string filename;
+};
 
 ////////////////////////////////////////////////////////////////////////
 void QueryPhyResult::addResultTable(std::string const& t) {
@@ -97,19 +118,23 @@ bool QueryPhyResult::dumpToChannel(wlog::WLogger& log,
         return false;
     }
     int fd = ::open(dumpFile.c_str(), O_RDONLY);
-    if(fd == -1) { return false; }
+    if(fd == -1) {
+        errObj.setErrNo(errno);
+        return errObj.addErrMsg("Couldn't open result file " + dumpFile);
+    }
 
     struct stat s;
     if(-1 == ::fstat(fd, &s)) {
         ::close(fd);
-        return false;
+        errObj.setErrNo(errno);
+        return errObj.addErrMsg("Couldn't fstat result file " + dumpFile);
     }
     wbase::SendChannel::Size fSize = s.st_size;
 
     assert(sc);
     sc->sendFile(fd, fSize);
-    ::close(fd);
-    ::unlink(dumpFile.c_str());
+    sc->setReleaseFunc(FileCleanup::newInstance(fd, dumpFile));
+    // FIXME: when can the release function be called?
     return true;
 }
 

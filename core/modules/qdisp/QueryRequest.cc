@@ -17,13 +17,28 @@ inline void unprovisionSession(XrdSsiSession* session) {
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////
+// QueryRequest::Canceller
+////////////////////////////////////////////////////////////////////////
+class QueryRequest::Canceller : public util::VoidCallable<void> {
+public:
+    Canceller(QueryRequest& qr) : _queryRequest(qr) {}
+    virtual void operator()() {
+        _queryRequest.Finished(true); // Abort using XrdSsiRequest interface
+    }
+private:
+    QueryRequest& _queryRequest;
+};
+////////////////////////////////////////////////////////////////////////
+// QueryRequest
+////////////////////////////////////////////////////////////////////////
 QueryRequest::QueryRequest(XrdSsiSession* session,
                            std::string const& payload,
                            boost::shared_ptr<QueryReceiver> receiver)
     : _session(session),
       _payload(payload),
       _receiver(receiver) {
+    _registerSelfDestruct();
     std::cout << "New QueryRequest with payload(" << payload.size() << ")\n";
 }
 
@@ -67,6 +82,8 @@ bool QueryRequest::ProcessResponse(XrdSsiRespInfo const& rInfo, bool isOk) {
         throw BadResponseError("Out of range XrdSsiRespInfo.rType");
     }
     _resetBuffer();
+    std::cout << "GetResponseData with buffer of " << _bufferRemain << "\n";
+
     bool retrieveInitiated = GetResponseData(_cursor, _bufferRemain); // Step 6
     LOGGER_INF << "Initiated request "
                << (retrieveInitiated ? "ok" : "err")
@@ -85,7 +102,7 @@ bool QueryRequest::ProcessResponse(XrdSsiRespInfo const& rInfo, bool isOk) {
 
 }
 void QueryRequest::ProcessResponseData(char *buff, int blen, bool last) { // Step 7
-    std::cout << "ProcessResponse[data] with buff=";
+    std::cout << "ProcessResponse[data] with buflen=" << blen << std::endl;
     if(blen < 0) { // error, check errinfo object.
         int eCode;
         std::cout << " Got an error, eInfo=<" << eInfo.Get(eCode)
@@ -126,7 +143,7 @@ void QueryRequest::_errorFinish() {
     std::cout << "Error finish" << std::endl;;
     bool ok = Finished();
     if(!ok) std::cout << "Error cleaning up QueryRequest\n";
-    else std::cout << "Request::Finished() ok.\n";
+    else std::cout << "Request::Finished() with error (clean).\n";
     delete this; // ???
 }
 void QueryRequest::_finish() {
@@ -134,6 +151,11 @@ void QueryRequest::_finish() {
     if(!ok) std::cout << "Error with Finished()\n";
     else std::cout << "Finished() ok.\n";
     delete this; // ???
+}
+
+void QueryRequest::_registerSelfDestruct() {
+    boost::shared_ptr<Canceller> canceller(new Canceller(*this));
+    _receiver->registerCancel(canceller);
 }
 
 void QueryRequest::_resetBuffer() {

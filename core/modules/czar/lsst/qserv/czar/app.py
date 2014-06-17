@@ -99,6 +99,7 @@ from lsst.qserv.czar import getQueryStateString, getErrorDesc
 from lsst.qserv.czar import SUCCESS as QueryState_SUCCESS
 
 from lsst.qserv.czar import UserQueryFactory
+from lsst.qserv.czar import UserQuery_abort
 from lsst.qserv.czar import UserQuery_containsDb
 from lsst.qserv.czar import UserQuery_getConstraints
 from lsst.qserv.czar import UserQuery_getDominantDb
@@ -136,6 +137,16 @@ def listen():
     """Register debug() as a signal handler to SIGUSR1"""
     signal.signal(signal.SIGUSR1, debug)  # Register handler
 listen()
+
+invokedActions = set()
+def stopAll():
+    """Try to stop all InbandQueryActions in flight"""
+    deathQueue = [i for i in invokedActions]
+    for action in deathQueue:
+        action.abort()
+        invokedActions.discard(action)
+    pass
+
 
 
 ######################################################################
@@ -351,7 +362,11 @@ class InbandQueryAction:
 
     def invoke(self):
         """Begin execution of the query"""
-        self._execAndJoin()
+        invokedActions.add(self) # Put self on the list to allow aborting.
+        try:
+            self._execAndJoin()
+        finally:
+            invokedActions.remove(self)
         self._invokeLock.release()
 
     def getError(self):
@@ -372,6 +387,9 @@ class InbandQueryAction:
 
     def getIsValid(self):
         return self.isValid
+
+    def abort(self):
+        UserQuery_abort(self.sessionId)
 
     def _computeHash(self, bytes):
         return hashlib.md5(bytes).hexdigest()
