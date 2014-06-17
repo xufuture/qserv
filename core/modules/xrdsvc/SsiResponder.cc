@@ -70,6 +70,9 @@ public:
         if(s != XrdSsiResponder::wasPosted) {
             std::cerr << "DANGER: Couldn't post response file of length="
                       << fSize << std::endl;
+        } else if(s == XrdSsiResponder::notActive) {
+            std::cerr << "DANGER: Couldn't post response file of length="
+                      << fSize << " responder not active.\n";
         }
 
     }

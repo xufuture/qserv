@@ -27,6 +27,7 @@
 #include <exception>
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include "XrdSsi/XrdSsiRequest.hh"
 
 // Local headers
@@ -96,6 +97,7 @@ public:
 private:
     void _errorFinish();
     void _finish();
+    void _registerSelfDestruct();
     void _resetBuffer();
 
     XrdSsiSession* _session;
@@ -106,6 +108,8 @@ private:
     int _bufferRemain;
     std::string _payload;
     boost::shared_ptr<QueryReceiver> _receiver;
+    class Canceller;
+    friend class Canceller;
 }; // class QueryRequest
 
 std::ostream& operator<<(std::ostream& os, QueryRequest const& r);

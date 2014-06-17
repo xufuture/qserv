@@ -61,22 +61,25 @@ public:
     virtual bool finished() const;
     virtual std::ostream& print(std::ostream& os) const;
 
+    // Add a callback to be invoked when the receiver finishes processing
+    // a response from its request.
     void addFinishHook(util::UnaryCallable<void, bool>::Ptr f) {
         assert(!_finishHook);
         _finishHook = f;
     }
 
+
 private:
     boost::shared_ptr<rproc::TableMerger> _merger;
     std::string _tableName;
     util::UnaryCallable<void, bool>::Ptr _finishHook;
+    boost::shared_ptr<CancelFunc> _cancelFunc;
 
     int _bufferSize;
     int _actualSize;
     boost::scoped_array<char> _actualBuffer;
     char* _buffer;
     bool _flushed;
-
 };
 
 }}} // namespace lsst::qserv::ccontrol

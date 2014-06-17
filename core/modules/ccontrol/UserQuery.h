@@ -57,6 +57,7 @@ class QuerySession;
 }
 namespace rproc {
 class TableMerger;
+class TableMergerConfig;
 }}}
 
 namespace lsst {
@@ -78,6 +79,7 @@ public:
 
     std::string getExecDesc() const;
 
+    void abort(); //< Stop a query in progress (for immediate shutdowns)
     void addChunk(qproc::ChunkSpec const& cs);
     void submit();
     QueryState join();
@@ -101,6 +103,7 @@ private:
     boost::shared_ptr<qdisp::Executive> _executive;
     boost::shared_ptr<qdisp::MessageStore> _messageStore;
     boost::shared_ptr<qproc::QuerySession> _qSession;
+    boost::shared_ptr<rproc::TableMergerConfig> _mergerConfig;
     boost::shared_ptr<rproc::TableMerger> _merger;
     int _sessionId;
     int _sequence;
