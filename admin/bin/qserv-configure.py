@@ -14,11 +14,11 @@ def parseArgs():
             formatter_class=argparse.ArgumentDefaultsHelpFormatter
             )
 
-    # 
-    step_list = ['prepare','position']
+    #
+    step_list = ['init','run']
     step_option_values = step_list + ['all']
     parser.add_argument("-s", "--step", dest="step", choices=step_option_values,
-        default='all',
+        default='run',
         help="Qserv configurator install step : \n'" +
         "     " + step_option_values[0] + " : create a qserv_run_dir " +
         "directory which will contains configuration and execution data " +
@@ -49,7 +49,7 @@ def parseArgs():
     args = parser.parse_args()
 
     if args.step=='all':
-        args.step_list = step_list 
+        args.step_list = step_list
     else:
         args.step_list = [args.step]
 
@@ -72,16 +72,18 @@ def main():
                         "..")
                 )
 
-    if 'prepare' in args.step_list:
+    if 'init' in args.step_list:
         template_config_dir = os.path.join( qserv_dir, "admin")
 
-        logging.info("Initializing configuration from {0} to {1}".format(template_config_dir, args.qserv_run_dir))
+        logging.info("Initializing configuration from {0} to {1}"
+            .format(template_config_dir, args.qserv_run_dir))
+
         copy_and_overwrite(template_config_dir, args.qserv_run_dir)
 
-        for line in fileinput.input(args.meta_config_file, inplace = 1): 
+        for line in fileinput.input(args.meta_config_file, inplace = 1):
             print line.replace("run_base_dir =", "run_base_dir = " + args.qserv_run_dir),
 
-    if 'position' in args.step_list: 
+    if 'run' in args.step_list:
 
         #########################
         #
@@ -93,14 +95,23 @@ def main():
         except ConfigParser.NoOptionError, exc:
             logging.fatal("An option is missing in your configuration file: %s" % exc)
             sys.exit(1)
- 
+
         #####################################
         #
         # Defining main directory structure
         #
         #####################################
         configure.check_root_dirs()
-        configure.check_root_symlinks() 
+        configure.check_root_symlinks()
+
+        #####################################
+        #
+        # Templating
+        # filling Qserv services config files
+        # with qserv-build.conf values
+        #
+        #####################################
+        configure.apply_templates()
 
 if __name__ == '__main__':
     main()
