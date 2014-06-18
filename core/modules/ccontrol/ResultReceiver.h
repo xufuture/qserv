@@ -57,7 +57,7 @@ public:
     virtual int bufferSize() const;
     virtual char* buffer();
     virtual void flush(int bLen, bool last);
-    virtual void errorFlush();
+    virtual void errorFlush(std::string const& msg, int code);
     virtual bool finished() const;
     virtual std::ostream& print(std::ostream& os) const;
 
@@ -67,7 +67,7 @@ public:
         assert(!_finishHook);
         _finishHook = f;
     }
-
+    Error getError() const;
 
 private:
     boost::shared_ptr<rproc::TableMerger> _merger;
@@ -80,6 +80,7 @@ private:
     boost::scoped_array<char> _actualBuffer;
     char* _buffer;
     bool _flushed;
+    Error _error;
 };
 
 }}} // namespace lsst::qserv::ccontrol

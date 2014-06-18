@@ -220,6 +220,24 @@ void Executive::_unTrack(int refNum) {
     }
 }
 
+void Executive::_reapReceivers(boost::unique_lock<boost::mutex> const&) {
+    ReceiverMap::iterator i, e;
+    while(true) {
+        bool reaped = false;
+        for(i=_receivers.begin(), e=_receivers.end(); i != e; ++i) {
+            if(i->second->getError().msg.empty()) {
+                // FIXME do something with the error (msgcode log?)
+                _receivers.erase(i);
+                reaped = true;
+                break;
+            }
+        }
+        if(!reaped) {
+            break;
+        }
+    }
+}
+
 void Executive::_waitUntilEmpty() {
     boost::unique_lock<boost::mutex> lock(_receiversMutex);
     int lastCount = -1;
@@ -229,6 +247,7 @@ void Executive::_waitUntilEmpty() {
     //_printState(LOG_STRM(Debug));
     while(!_receivers.empty()) {
         count = _receivers.size();
+        _reapReceivers(lock);
         if(count != lastCount) {
             LOGGER_INF << "Still " << count << " in flight." << std::endl;
             count = lastCount;

@@ -43,7 +43,7 @@ namespace xrdsvc {
 // Step 4
 bool
 SsiSession::ProcessRequest(XrdSsiRequest* req, unsigned short timeout) {
-#if 1
+
     // Figure out what the request is.
     std::ostringstream os;
     os << "ProcessRequest, service=" << sessName;
@@ -84,31 +84,6 @@ SsiSession::ProcessRequest(XrdSsiRequest* req, unsigned short timeout) {
         return false;
     }
     return true;
-#else
-    char *reqData, *reqArgs = 0;
-    int   reqSize, fd, n;
-
-    reqData = req->GetRequest(reqSize);
-    std::ostringstream ss;
-    ss << "### " << reqSize <<" byte request: "
-       << std::string(reqData, reqSize) << std::endl;
-    std::cerr << ss.str();
-
-    bool wantToProcess = true;
-    // Thread spawned for this call
-    if(wantToProcess) {
-        // Qserv: put work on queue (probably session and responder together)
-        SsiResponder* resp = new SsiResponder();
-        resp->TakeRequest(req, this, resp); // Step 5
-        resp->doStuff(); // Trigger something to get work done.
-        // When can I delete MyResponder?
-        delete resp; // will this work?
-        return true;
-    } else {
-        //req->SetErrInfo(/* ... */);
-        return false;
-    }
-#endif
 }
 
 void

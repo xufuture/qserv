@@ -42,7 +42,7 @@ public:
     virtual int bufferSize() const { return 0; }
     virtual char* buffer() { return NULL; }
     virtual void flush(int bLen, bool last) {}
-    virtual void errorFlush() {}
+    virtual void errorFlush(std::string const&, int) {}
     virtual bool finished() const {return true; }
     std::ostream& print(std::ostream& os) const {
         return os << "MergeAdaper(...)"; }

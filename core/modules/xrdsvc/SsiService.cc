@@ -38,7 +38,7 @@
 #include "wlog/WLogger.h"
 #include "wpublish/ChunkInventory.h"
 #include "xrdfs/XrdName.h"
-#include "xrdsvc/SsiSession.h"
+#include "xrdsvc/SsiSession2.h"
 
 class XrdPosixCallBack; // Forward.
 
@@ -52,8 +52,8 @@ public:
     XrdSsiPrinter(XrdSsiLogger* log) : _ssiLog(log) {}
 
     virtual WLogger::Printer& operator()(char const* s) {
-        std::cerr << "Qserv " << s << std::endl;
-        //_ssiLog->Msgf("Qserv", s);
+        //std::cerr << "Qserv " << s << std::endl;
+        _ssiLog->Msgf("Qserv", s);
         return *this;
     }
     boost::shared_ptr<XrdSsiLogger> _ssiLog;
@@ -103,13 +103,13 @@ SsiService::Provision(XrdSsiService::Resource* r,
     os << "Got provision call where rName is:"
        << r->rName;
     _log->info(os.str()); // Check here.
-    std::cerr << "notice me!\n";
 
-    _session = new SsiSession(r->rName,
+    XrdSsiSession* session;
+    session = new SsiSession2(r->rName,
                               _chunkInventory->newValidator(),
                               _service->getProcessor(),
                               _log);
-    r->ProvisionDone(_session); // Step 3
+    r->ProvisionDone(session); // Step 3
     // client-side ProvisionDone()
     return true;
 }

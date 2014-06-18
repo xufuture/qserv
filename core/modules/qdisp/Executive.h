@@ -92,6 +92,7 @@ private:
     bool _track(int refNum, ReceiverPtr r);
     void _unTrack(int refNum);
     void _waitUntilEmpty();
+    void _reapReceivers(boost::unique_lock<boost::mutex> const& receiversLock);
 
     // for debugging
     void _printState(std::ostream& os);
