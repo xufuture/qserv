@@ -70,6 +70,7 @@ public:
     Error getError() const;
 
 private:
+    bool _appendAndMergeBuffer(int bLen);
     boost::shared_ptr<rproc::TableMerger> _merger;
     std::string _tableName;
     util::UnaryCallable<void, bool>::Ptr _finishHook;

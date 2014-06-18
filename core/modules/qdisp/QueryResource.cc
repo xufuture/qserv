@@ -24,7 +24,7 @@
 /**
   * @file
   *
-  * @brief QueryResource. An XrdSsiService::Resource 
+  * @brief QueryResource. An XrdSsiService::Resource
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -38,23 +38,32 @@
 #include "log/Logger.h"
 #include "qdisp/QueryRequest.h"
 #include "qdisp/QueryResource.h"
+#include "qdisp/QueryReceiver.h"
 
 namespace lsst {
 namespace qserv {
 namespace qdisp {
 
+/// May not throw exceptions because the calling code comes from
+/// xrootd land and will not catch any exceptions.
 void QueryResource::ProvisionDone(XrdSsiSession* s) { // Step 3
         LOGGER_INF << "Provision done\n";
         if(!s) {
             // Check eInfo in resource for error details
-            throw "Null XrdSsiSession* passed for QueryResource::ProvisionDone";
+            int code;
+            char const* msg = eInfo.Get(code);
+            LOGGER_ERR << "Error provisioning, msg=" << msg << " code="
+                       << code << "\n";
+            // FIXME code may be wrong.
+            _receiver->errorFlush(std::string(msg), code);
+            return;
         }
         _session = s;
         _request = new QueryRequest(s, _payload, _receiver);
         assert(_request);
         // Hand off the request and release ownership.
         bool requestSent = _session->ProcessRequest(_request);
-        if(requestSent) {       
+        if(requestSent) {
             _request = 0; // _session now has ownership
         } else {
             LOGGER_ERR << "Failed to send request " << *_request << std::endl;
@@ -62,7 +71,7 @@ void QueryResource::ProvisionDone(XrdSsiSession* s) { // Step 3
             _request = 0;
         }
 
-        // If we are not doing anything else with the session, 
+        // If we are not doing anything else with the session,
         // we can stop it after our requests are complete.
         delete this; // Delete ourselves, nobody needs this resource anymore.
     }
