@@ -218,7 +218,8 @@ std::string UserQuery::getExecDesc() const {
 }
 
 void UserQuery::_setupMerger() {
-    // FIXME
+    // FIXME: would like to re-do plumbing so TableMerger uses
+    // mergeStmt more directly
     _mergerConfig->mFixup = _qSession->makeMergeFixup();
     _merger = boost::make_shared<rproc::TableMerger>(*_mergerConfig);
     // Can we configure the merger without involving settings

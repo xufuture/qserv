@@ -54,7 +54,7 @@ public:
         BindRequest(rqstP,sessP,respP);
     }
     
-    void doStuff();
+//    void doStuff();
     void enqueue(ResourceUnit const& ru, char* reqData, int reqSize);
 
     class ReplyChannel;
