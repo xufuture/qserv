@@ -95,6 +95,8 @@ public:
     virtual void ProcessResponseData(char *buff, int blen, bool last);
 
 private:
+    bool _importStream();
+    bool _importError(std::string const& msg, int code);
     void _errorFinish();
     void _finish();
     void _registerSelfDestruct();
@@ -108,6 +110,7 @@ private:
     int _bufferRemain;
     std::string _payload;
     boost::shared_ptr<QueryReceiver> _receiver;
+    std::string _errorDesc;
     class Canceller;
     friend class Canceller;
 }; // class QueryRequest

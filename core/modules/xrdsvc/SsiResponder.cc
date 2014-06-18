@@ -134,14 +134,12 @@ void SsiResponder::enqueue(ResourceUnit const& ru, char* reqData, int reqSize) {
 #endif
     ReleaseRequestBuffer();
 }
-
+#if 0
 void SsiResponder::doStuff() {
-#if 1
     // TODO
     // Compute request and place it in the scheduler, then release the request buffer.
     // Make sure that request knows how to fire the response: place responding code into a callback so we can put it in the scheduler's task.
 
-#else
     // I don't need the request buffer anymore, so delete it.
     ReleaseRequestBuffer();
 
@@ -170,7 +168,7 @@ void SsiResponder::doStuff() {
         //SetResponse(XrdSsiStream)
 
     }
-#endif
 }
+#endif
 
 }}} // lsst::qserv::xrdsvc

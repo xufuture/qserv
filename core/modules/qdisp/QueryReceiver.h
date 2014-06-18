@@ -36,6 +36,11 @@ namespace qdisp {
 
 class QueryReceiver {
 public:
+    struct Error {
+        std::string msg;
+        int code;
+    };
+
     typedef util::VoidCallable<void> CancelFunc;
 
     typedef boost::shared_ptr<QueryReceiver> Ptr;
@@ -43,9 +48,11 @@ public:
     virtual int bufferSize() const = 0;
     virtual char* buffer() = 0;
     virtual void flush(int bLen, bool last) = 0;
-    virtual void errorFlush() = 0;
+    virtual void errorFlush(std::string const& msg, int code) = 0;
     virtual bool finished() const = 0;
     virtual std::ostream& print(std::ostream& os) const = 0;
+
+    Error getError() const { return Error(); };
 
     virtual void registerCancel(boost::shared_ptr<CancelFunc> cancelFunc) {
         _cancelFunc = cancelFunc;
@@ -55,6 +62,7 @@ public:
             (*_cancelFunc)();
         }
     }
+
 protected:
     boost::shared_ptr<CancelFunc> _cancelFunc;
 

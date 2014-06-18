@@ -76,8 +76,6 @@ private:
     void _setupResultPath();
     bool _setupScratchDb();
 
-    XrdSsiSession* _session;    
-
     boost::shared_ptr<wlog::WLogger> _log;
     boost::shared_ptr<wpublish::ChunkInventory> _chunkInventory;
     boost::shared_ptr<wcontrol::Service> _service;

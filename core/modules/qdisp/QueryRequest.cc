@@ -60,27 +60,37 @@ void QueryRequest::RelRequestBuffer() {
     _payload.clear();
 }
 // precondition: rInfo.rType != isNone
+// Must not throw exceptions: calling thread cannot trap them.
 bool QueryRequest::ProcessResponse(XrdSsiRespInfo const& rInfo, bool isOk) {
+    std::string errorDesc;
     if(!isOk) {
-        std::cout << "Request failed\n";
+        _receiver->errorFlush(std::string("Request failed"), -1);
         _errorFinish();
         return true;
     }
     std::cout << "Response type is " << rInfo.State() << std::endl;;
     switch(rInfo.rType) {
     case XrdSsiRespInfo::isNone: // All responses are non-null right now
-        throw BadResponseError("Unexpected XrdSsiRespInfo.rType == isNone");
-    case XrdSsiRespInfo::isData: // Local-only
-        throw BadResponseError("Unexpected XrdSsiRespInfo.rType == isData");
-    case XrdSsiRespInfo::isError: // isOk == true
-        throw BadResponseError("isOk == true, but XrdSsiRespInfo.rType == isError");
-    case XrdSsiRespInfo::isFile: // Local-only
-        throw BadResponseError("Unexpected XrdSsiRespInfo.rType == isFile");
-    case XrdSsiRespInfo::isStream: // All remote requests
+        errorDesc += "Unexpected XrdSsiRespInfo.rType == isNone";
         break;
+    case XrdSsiRespInfo::isData: // Local-only
+        errorDesc += "Unexpected XrdSsiRespInfo.rType == isData";
+        break;
+    case XrdSsiRespInfo::isError: // isOk == true
+        //errorDesc += "isOk == true, but XrdSsiRespInfo.rType == isError";
+        return _importError(std::string(rInfo.eMsg), rInfo.eNum);
+    case XrdSsiRespInfo::isFile: // Local-only
+        errorDesc += "Unexpected XrdSsiRespInfo.rType == isFile";
+        break;
+    case XrdSsiRespInfo::isStream: // All remote requests
+        return _importStream();
     default:
-        throw BadResponseError("Out of range XrdSsiRespInfo.rType");
+        errorDesc += "Out of range XrdSsiRespInfo.rType";
     }
+    return _importError(errorDesc, -1);
+}
+
+bool QueryRequest::_importStream() {
     _resetBuffer();
     std::cout << "GetResponseData with buffer of " << _bufferRemain << "\n";
 
@@ -90,24 +100,31 @@ bool QueryRequest::ProcessResponse(XrdSsiRespInfo const& rInfo, bool isOk) {
                << std::endl;
     if(!retrieveInitiated) {
         bool ok = Finished();
-        delete this;
+        // delete this; // Don't delete! need to stay alive for error.
+        // Not sure when to delete.
         if(ok) {
-            throw RequestError("Couldn't initiate result retr (clean)");
+            _errorDesc += "Couldn't initiate result retr (clean)";
         } else {
-            throw RequestError("Couldn't initiate result retr (UNCLEAN)");
+            _errorDesc += "Couldn't initiate result retr (UNCLEAN)";
         }
     } else {
         return true;
     }
-
 }
+
+bool QueryRequest::_importError(std::string const& msg, int code) {
+    _receiver->errorFlush(msg, code);
+    _errorFinish();
+    return true;
+}
+
 void QueryRequest::ProcessResponseData(char *buff, int blen, bool last) { // Step 7
     std::cout << "ProcessResponse[data] with buflen=" << blen << std::endl;
     if(blen < 0) { // error, check errinfo object.
         int eCode;
         std::cout << " Got an error, eInfo=<" << eInfo.Get(eCode)
              << ">" << std::endl;;
-        _receiver->errorFlush();
+        _receiver->errorFlush("Couldn't retrieve response data", eCode);
         _errorFinish();
         return;
     }
@@ -144,13 +161,13 @@ void QueryRequest::_errorFinish() {
     bool ok = Finished();
     if(!ok) std::cout << "Error cleaning up QueryRequest\n";
     else std::cout << "Request::Finished() with error (clean).\n";
-    delete this; // ???
+    //delete this; // ???
 }
 void QueryRequest::_finish() {
     bool ok = Finished();
     if(!ok) std::cout << "Error with Finished()\n";
     else std::cout << "Finished() ok.\n";
-    delete this; // ???
+    //delete this; // ???
 }
 
 void QueryRequest::_registerSelfDestruct() {

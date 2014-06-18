@@ -67,8 +67,10 @@ void ResultReceiver::flush(int bLen, bool last) {
     // FIXME
     // Pass to table merger.
 //    _merger
+
     LOGGER_INF << "Receiver flushing " << bLen << " bytes "
-               << (last ? " (last)\n" : " (more)\n");
+               << (last ? " (last)" : " (more)")
+               << " to table=" << _tableName << std::endl;
     assert(!_tableName.empty());
     off_t inputSize = _buffer - _actualBuffer.get() + bLen;
     off_t mergeSize = _merger->merge(_actualBuffer.get(), inputSize,
@@ -95,9 +97,11 @@ void ResultReceiver::flush(int bLen, bool last) {
     }
 }
 
-void ResultReceiver::errorFlush() {
+void ResultReceiver::errorFlush(std::string const& msg, int code) {
     // Might want more info from result service.
     // Do something about the error. FIXME.
+    _error.msg = msg;
+    _error.code = code;
     LOGGER_ERR << "Error receiving result." << std::endl;
     if(_finishHook) {
         (*_finishHook)(false);
