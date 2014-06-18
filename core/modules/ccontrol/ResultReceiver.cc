@@ -72,20 +72,14 @@ void ResultReceiver::flush(int bLen, bool last) {
                << (last ? " (last)" : " (more)")
                << " to table=" << _tableName << std::endl;
     assert(!_tableName.empty());
-    off_t inputSize = _buffer - _actualBuffer.get() + bLen;
-    off_t mergeSize = _merger->merge(_actualBuffer.get(), inputSize,
-                                     _tableName);
-    if((mergeSize > 0) && !last) { // Something got merged.
-        // Shift buffer contents to receive more.
-        char* unMerged = _actualBuffer.get() + mergeSize;
-        off_t unMergedSize = inputSize - mergeSize;
-        std::memmove(_actualBuffer.get(), unMerged, unMergedSize);
-        _buffer = _actualBuffer.get() + unMergedSize;
-        _bufferSize = _actualSize - unMergedSize;
-    } else if(mergeSize == 0) {
-        LOGGER_ERR << "No merge in input. Receive buffer too small? "
-                   << std::endl;
+    if(bLen == 0) {
+        // just end it.
+    } else if(bLen > 0) {
+        bool mergeOk = _appendAndMergeBuffer(bLen);
+    } else {
+        LOGGER_ERR << "Possible error: flush with negative length" << std::endl;
     }
+
     _flushed = true;
     if(last) {
         // Probably want to notify that we're done?
@@ -116,6 +110,28 @@ std::ostream& ResultReceiver::print(std::ostream& os) const {
     os << "ResultReceiver(" << _tableName << ", flushed="
        << (_flushed ? "true)" : "false)") ;
     return os;
+}
+bool ResultReceiver::_appendAndMergeBuffer(int bLen) {
+    off_t inputSize = _buffer - _actualBuffer.get() + bLen;
+    off_t mergeSize = _merger->merge(_actualBuffer.get(), inputSize,
+                                     _tableName);
+    if(mergeSize > 0) { // Something got merged.
+        // Shift buffer contents to receive more.
+        char* unMerged = _actualBuffer.get() + mergeSize;
+        off_t unMergedSize = inputSize - mergeSize;
+        std::memmove(_actualBuffer.get(), unMerged, unMergedSize);
+        _buffer = _actualBuffer.get() + unMergedSize;
+        _bufferSize = _actualSize - unMergedSize;
+        return true;
+    } else if(mergeSize == 0) {
+            LOGGER_ERR << "No merge in input. Receive buffer too small? "
+                       << std::endl;
+        return false;
+    } else {
+        LOGGER_ERR << "Die horribly, for TableMerger::merge() returned an impossible value" << std::endl;
+        throw "fatal";
+    }
+}
 
 #if 0
         boost::shared_ptr<rproc::TableMerger> _merger;
@@ -128,7 +144,7 @@ std::ostream& ResultReceiver::print(std::ostream& os) const {
     char* _buffer;
     bool _flushed;
 #endif
-}
+
 
 #if 0
     explicit TableMerger(TableMergerConfig const& c);
