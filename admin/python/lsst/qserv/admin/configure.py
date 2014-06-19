@@ -78,7 +78,7 @@ def check_root_symlinks():
                 if os.path.islink(default_dir):
                     os.unlink(default_dir)
                 else:
-                    log.critical("Please remove {0} and restart the configuration procedure".format(default_dir))
+                    log.fatal("Please remove {0} and restart the configuration procedure".format(default_dir))
                     sys.exit(1)
             _symlink(symlink_target, default_dir)
 
@@ -169,12 +169,17 @@ def apply_templates():
             target_file = os.path.join(dest_root, f)
 
             # creating cfg file from tpl
-            logger.info("Creating {0} from {1}".format(target_file, src_file))
+            logger.debug("Creating {0} from {1}".format(target_file, src_file))
             with open(src_file, "r") as tpl:
                 t = QservConfigTemplate(tpl.read())
 
                 out_cfg = t.safe_substitute(**params_dict)
-                print 'SUBSTITUTED:', t.safe_substitute(ZOOKEEPER_PORT='replacement')
+                for match in t.pattern.findall(t.template):
+                    name = match[1]
+                    if len(name) != 0 and not params_dict.has_key(name):
+                            logger.fatal("Template {0} in file {1}".format(name, src_file) + 
+                                " is not defined in configuration tool")
+                            sys.exit(1)
 
             dirname = os.path.dirname(target_file)
             if not os.path.exists(dirname):

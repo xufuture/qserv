@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
-from lsst.qserv.admin import configure, commons, logger
-from subprocess import check_output
+import argparse
+import ConfigParser
 import fileinput
+from lsst.qserv.admin import configure, commons, logger
 import logging
 import os
-import argparse
 import shutil
-import ConfigParser
+from subprocess import check_output
+import sys
 
 def parseArgs():
     parser = argparse.ArgumentParser(
@@ -15,7 +16,7 @@ def parseArgs():
             )
 
     #
-    step_list = ['init','run']
+    step_list = ['prep','run']
     step_option_values = step_list + ['all']
     parser.add_argument("-s", "--step", dest="step", choices=step_option_values,
         default='run',
@@ -72,7 +73,7 @@ def main():
                         "..")
                 )
 
-    if 'init' in args.step_list:
+    if 'prep' in args.step_list:
         template_config_dir = os.path.join( qserv_dir, "admin")
 
         logging.info("Initializing configuration from {0} to {1}"
@@ -112,6 +113,32 @@ def main():
         #
         #####################################
         configure.apply_templates()
+
+
+        #########################
+        #
+        # Configure services 
+        #
+        #########################
+        configuration_scripts_dir=os.path.join(config['qserv']['run_base_dir'],'tmp','configure')
+        component_list = ['mysql', 'xrootd', 'qserv-czar']
+
+        if config['qserv']['node_type'] in ['mono','worker']:
+           component_list.append('scisql')
+
+        for c in component_list:
+            script = os.path.join( configuration_scripts_dir, c+".sh")
+            commons.run_command(script)
+
+        shell = os.environ.get("EUPS_SHELL", "sh")
+        key = 'QSERV_RUN_DIR'
+        val = os.path.join(config['qserv']['run_base_dir'])
+        if shell in ("sh", "zsh",):
+                cmd = ["export", "%s=%s" % (key, val)]
+        elif shell in ("csh",):
+                cmd = ["setenv", "%s %s" % (key, val)]
+
+        commons.run_command(cmd)
 
 if __name__ == '__main__':
     main()

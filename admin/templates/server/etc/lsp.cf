@@ -1,7 +1,7 @@
 # Unified configuration for xrootd/cmsd for both manager and server instances
 # "if"-block separates manager-only and server-only configuration.
 
-# if %(regexp)s block.  Test whether the hostname matches the %(regexp)s,
+# if regexp block.  Test whether the hostname matches the regexp,
 # Example: tuson121 is the hostname of our manager node within our
 # allocation at LLNL.
 
@@ -34,8 +34,8 @@ all.role server
 xrootd.fslib %(QSERV_DIR)s/lib/libxrdfs.so
 ofs.osslib %(QSERV_DIR)s/lib/libxrdoss.so
 
-# Set %(pathname)s for file location resolution.
-# i.e., %(pathname)s/somefile will be exported in the xroot URL:
+# Set pathname for file location resolution.
+# i.e., pathname/somefile will be exported in the xroot URL:
 # xroot://manager:0000/somefile
 oss.localroot %(XROOTD_RUN_DIR)s
 
