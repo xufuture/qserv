@@ -1,5 +1,6 @@
 import commons
 from datetime import datetime
+from distutils.util import strtobool
 import logging
 import os
 import sys
@@ -103,12 +104,11 @@ def uninstall(target, source, env):
         else:
             shutil.rmtree(path)
 
-def apply_templates():
-
-    logger = logging.getLogger()
+def _get_template_params():
+    """ Compute templates parameters from configuration file
+    """
+    logger=logging.getLogger()
     config=commons.getConfig()
-
-    template_dir= os.path.join(config['qserv']['run_base_dir'],"templates", "server")
 
     if config['qserv']['node_type']=='mono':
         comment_mono_node = '#MONO-NODE# '
@@ -157,64 +157,91 @@ def apply_templates():
     'HOME': os.path.expanduser("~")
     }
 
+    logger.debug("Input parameters :\n {0}".format(params_dict))
+
+    return params_dict
+
+def _set_perms(file):
+    (path, basename) = os.path.split(file)
+    script_list = [
+        "xrootd.sh",
+        "mysql.sh",
+        "css.sh",
+        "scisql.sh",
+        "qserv-czar.sh"
+        ]
+    if (os.path.basename(path) == "bin" or
+        os.path.basename(path) == "init.d" or
+        basename in script_list):
+        os.chmod(file, 0760)
+    # all other files are configuration files
+    else:
+        os.chmod(file, 0660)
+
+def _apply_tpl(src_file, target_file):
+    """ Creating one configuration file from one template
+    """
+
+    logger = logging.getLogger()
+    logger.debug("Creating {0} from {1}".format(target_file, src_file))
+    params_dict = _get_template_params()
+
+    with open(src_file, "r") as tpl:
+        t = QservConfigTemplate(tpl.read())
+
+    out_cfg = t.safe_substitute(**params_dict)
+    for match in t.pattern.findall(t.template):
+        name = match[1]
+        if len(name) != 0 and not params_dict.has_key(name):
+            logger.fatal("Template \"{0}\" in file {1}".format(name, src_file) + 
+                " is not defined in configuration tool")
+            sys.exit(1)
+
+    dirname = os.path.dirname(target_file)
+    if not os.path.exists(dirname):
+        os.makedirs(os.path.dirname(target_file))
+    with open(target_file, "w") as cfg:
+        cfg.write(out_cfg)
+
+def apply_templates(template_root, dest_root):
+
+    logger = logging.getLogger()
+
     logger.info("Creating configuration using templates files")
 
     target_files=[]
-    for root, dirs, files in os.walk(template_dir):
-        os.path.normpath(template_dir)
-        suffix=root[len(template_dir)+1:]
-        dest_root=os.path.join(config['qserv']['run_base_dir'],suffix)
+    for root, dirs, files in os.walk(template_root):
+        os.path.normpath(template_root)
+        suffix=root[len(template_root)+1:]
+        dest_dir=os.path.join(dest_root, suffix)
         for f in files:
             src_file = os.path.join(root,f)
-            target_file = os.path.join(dest_root, f)
+            target_file = os.path.join(dest_dir, f)
 
-            # creating cfg file from tpl
-            logger.debug("Creating {0} from {1}".format(target_file, src_file))
-            with open(src_file, "r") as tpl:
-                t = QservConfigTemplate(tpl.read())
-
-                out_cfg = t.safe_substitute(**params_dict)
-                for match in t.pattern.findall(t.template):
-                    name = match[1]
-                    if len(name) != 0 and not params_dict.has_key(name):
-                            logger.fatal("Template {0} in file {1}".format(name, src_file) + 
-                                " is not defined in configuration tool")
-                            sys.exit(1)
-
-            dirname = os.path.dirname(target_file)
-            if not os.path.exists(dirname):
-                os.makedirs(os.path.dirname(target_file))
-            with open(target_file, "w") as cfg:
-                cfg.write(out_cfg)
+            _apply_tpl(src_file, target_file)
 
             # applying perms
-            path = os.path.dirname(target_file)
-            target_basename = os.path.basename(target_file)
-            if (os.path.basename(path) == "bin" or
-                os.path.basename(path) == "init.d" or
-                target_basename in [
-                "xrootd.sh",
-                "mysql.sh",
-                "css.sh",
-                "scisql.sh",
-                "qserv-czar.sh"
-                ]
-                ):
-                os.chmod(target_file, 0760)
-            # all other files are configuration files
-            else:
-                os.chmod(target_file, 0660)
+	    _set_perms(target_file)
 
     return True
 
+def user_yes_no_query(question):
+    sys.stdout.write('\n%s [y/n]\n' % question)
+    while True:
+        try:
+            return strtobool(raw_input().lower())
+        except ValueError:
+            sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
+
 class QservConfigTemplate(string.Template):
-    delimiter = '%('
+    delimiter = '{{'
     pattern = r'''
-    \%\((?:
-    (?P<escaped>\%\()|
-    (?P<named>[_A-Z][_A-Z0-9]*)\)s|
-    (?P<braced>[_A-Z][_A-Z0-9]*)\)s|
+    \{\{(?:
+    (?P<escaped>\{\{)|
+    (?P<named>[_a-z][_a-z0-9]*)\}\}|
+    (?P<braced>[_a-z][_a-z0-9]*)\}\}|
     (?P<invalid>)
     )
     '''
+
 

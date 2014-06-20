@@ -1,6 +1,6 @@
 #!/bin/sh
 
-QSERV_RUN_DIR=%(QSERV_RUN_DIR)s
+QSERV_RUN_DIR={{QSERV_RUN_DIR}}
 . ${QSERV_RUN_DIR}/bin/env.sh
 
 services_rev=`echo ${SERVICES} | tr ' ' '\n' | tac`

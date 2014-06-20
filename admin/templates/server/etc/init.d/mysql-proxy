@@ -19,14 +19,14 @@
 
 # Source functions library.
 # WARN : this may clean environment
-. %(QSERV_RUN_DIR)s/etc/init.d/qserv-functions
+. {{QSERV_RUN_DIR}}/etc/init.d/qserv-functions
 
-PATH=%(PATH)s
-QSERV_RUN_DIR=%(QSERV_RUN_DIR)s
-QSERV_PID_DIR=%(QSERV_PID_DIR)s
-QSERV_LOG_DIR=%(QSERV_LOG_DIR)s
-QSERV_UNIX_USER=%(QSERV_UNIX_USER)s
-QSERV_RPC_PORT=%(QSERV_RPC_PORT)s
+PATH={{PATH}}
+QSERV_RUN_DIR={{QSERV_RUN_DIR}}
+QSERV_PID_DIR={{QSERV_PID_DIR}}
+QSERV_LOG_DIR={{QSERV_LOG_DIR}}
+QSERV_UNIX_USER={{QSERV_UNIX_USER}}
+QSERV_RPC_PORT={{QSERV_RPC_PORT}}
 
 NAME="mysql-proxy"
 
