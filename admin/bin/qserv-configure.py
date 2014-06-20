@@ -28,7 +28,14 @@ def parseArgs():
         "configuration files with values from meta-config file qserv.conf"
         )
 
-    verbose_arg_values = ['INFO','DEBUG']
+    verbose_dict = {
+        'DEBUG'     : logging.DEBUG,
+        'INFO'      : logging.INFO,
+        'WARNING'   : logging.WARNING,
+        'ERROR'     : logging.ERROR,
+        'FATAL'   : logging.FATAL,
+    }
+    verbose_arg_values = verbose_dict.keys() 
     parser.add_argument("-v", "--verbose-level", dest="verbose_str", choices=verbose_arg_values,
         default='INFO',
         help="Verbosity level"
@@ -60,11 +67,6 @@ def parseArgs():
     else:
         args.step_list = [args.step]
 
-    verbose_dict = {
-        'DEBUG'     : logging.DEBUG,
-        'INFO'      : logging.INFO,
-        'WARNING'   : logging.WARNING,
-    }
     args.verbose_level = verbose_dict[args.verbose_str]
 
     return args
