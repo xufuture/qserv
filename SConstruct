@@ -71,16 +71,11 @@ python_admin = env.InstallPythonModule(target=env['python_prefix'], source=os.pa
 template_target = os.path.join(env['prefix'], "admin", "templates")
 env.RecursiveInstall(template_target, os.path.join("admin", "templates"))
 
-sitescons_target = os.path.join(env['prefix'], "admin", "site_scons")
-env.RecursiveInstall(sitescons_target, os.path.join("admin", "site_scons"))
-
 env.Alias("admin",
         [
         python_admin,
         template_target,
-        sitescons_target,
         adminbin_target,
-        env.Install(os.path.join(env['prefix'], "admin"), os.path.join("admin", "SConstruct"))
         ]
 )
 
