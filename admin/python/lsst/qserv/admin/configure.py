@@ -9,6 +9,10 @@ from twisted.python.procutils import which
 
 from lsst.qserv.admin import path
 
+COMPONENTS = ['mysql', 'xrootd', 'qserv-czar', 'scisql']
+STEP_RUN_LIST = ['read-meta-cfg', 'mkdirs', 'etc'] + COMPONENTS + ['client']
+STEP_LIST = ['prep'] + STEP_RUN_LIST
+
 def exists_and_is_writable(dir) :
     """
     Test if a dir exists. If no creates it, if yes checks if it is writeable.
