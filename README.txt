@@ -33,12 +33,13 @@ Installation :
 Configuration :
 ---------------
 
-  | cd $QSERV_DIR/admin
-  | # edit qserv.conf, which is the "mother" configuration file from which
-  | # configuration parameters will be deployed in all qserv services
-  | # configuration files/db
+Configuration is installed apart from Qserv software.
+
+  | # qserv-configure.py --help give additional informations 
+  | # configuration parameters will be deployed in all 
+  | # qserv services configuration files/db
   | # for a minimalist single node install just leave default
-  | scons
+  | qserv-configure.py 
 
 Integration tests :
 -------------------
