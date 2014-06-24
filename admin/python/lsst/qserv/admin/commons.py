@@ -129,9 +129,9 @@ def run_command(cmd_args, stdin_file=None, stdout_file=None, stderr_file=None, l
         (stdoutdata, stderrdata) = process.communicate()
 
         if stdoutdata != None and len(stdoutdata)>0:
-            logger.info("\tstdout : %s " % stdoutdata)
+            logger.info("\tstdout :\n--\n%s--" % stdoutdata)
         if stderrdata != None and len(stderrdata)>0:
-            logger.info("\tstderr : %s " % stderrdata)
+            logger.info("\tstderr :\n--\n%s--" % stderrdata)
 
         if process.returncode!=0 :
             logger.fatal("Error code returned by command : %s " % cmd_str)

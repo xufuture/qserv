@@ -16,8 +16,8 @@ function is_up {
 
 is_up &&
 {
-    echo "-- Service already running on ${MYSQLD_HOST}:${MYSQLD_PORT}"
-    echo "-- Please stop it and relaunch configuration procedure"
+    echo "WARN: A service is already running on MySQL socket : ${MYSQLD_HOST}:${MYSQLD_PORT}"
+    echo "WARN: Please stop it and relaunch configuration procedure"
     exit 1
 }
 
