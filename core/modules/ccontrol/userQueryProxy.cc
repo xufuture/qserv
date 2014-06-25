@@ -30,14 +30,14 @@
   * for use with this proxy. The query is parsed and prepared for
   * execution as much as possible, without knowing partition coverage.
   *
-  * 
+  *
   * UserQuery_getError(int session) // See if there are errors
   *
   * UserQuery_getConstraints(int session)  // Retrieve the detected
   * constraints so that we can apply them to see which chunks we
-  * need. (done in Python) 
+  * need. (done in Python)
   *
-  * UserQuery_addChunk(int session, ChunkSpec const& cs ) 
+  * UserQuery_addChunk(int session, ChunkSpec const& cs )
   * // add the computed chunks to the query
   *
   * UserQuery_submit(int session) // Trigger the dispatch of all chunk
@@ -97,6 +97,12 @@ std::string const& UserQuery_getDominantDb(int session) {
 /// @return number of stripes and substripes
 lsst::qserv::css::StripingParams UserQuery_getDbStriping(int session) {
     return uqManager.get(session)->getDbStriping();
+}
+
+/// @return a string describing the progress on the query at a chunk-by-chunk
+/// level. Userful for diagnosis when queries are squashed or return errors.
+std::string UserQuery_getExecDesc(int session) {
+    return uqManager.get(session)->getExecDesc();
 }
 
 /// Abort a running query

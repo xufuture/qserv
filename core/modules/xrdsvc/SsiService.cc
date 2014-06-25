@@ -85,6 +85,7 @@ SsiService::SsiService(XrdSsiLogger* log) {
     _configure();
     _initInventory();
     _setupResultPath();
+
     if(!_setupScratchDb()) {
         throw "Couldn't setup scratch db"; // TODO: exception
     }

@@ -49,12 +49,13 @@ namespace xrdc {
 namespace lsst {
 namespace qserv {
 namespace qdisp {
+class ExecStatus;
 class QueryReceiver;
 
 class BadResponseError : public std::exception {
 public:
-    BadResponseError(std::string const& s_) 
-        : std::exception(), 
+    BadResponseError(std::string const& s_)
+        : std::exception(),
           s("BadResponseError:" + s_) {}
     ~BadResponseError() throw() {}
     virtual char const* what() throw() {
@@ -65,7 +66,7 @@ public:
 class RequestError : public std::exception {
 public:
     RequestError(std::string const& s_)
-        : std::exception(), 
+        : std::exception(),
           s("QueryRequest error:" + s_) {}
     virtual ~RequestError() throw() {}
     virtual char const* what() throw() {
@@ -77,10 +78,11 @@ public:
 const int QueryRequest_receiveBufferSize = 1024*1024; // 1MB receive buffer
 
 class QueryRequest : public XrdSsiRequest {
-public:  
-    QueryRequest(XrdSsiSession* session, 
+public:
+    QueryRequest(XrdSsiSession* session,
                  std::string const& payload,
-                 boost::shared_ptr<QueryReceiver> receiver);
+                 boost::shared_ptr<QueryReceiver> receiver,
+                 ExecStatus& status);
 
     virtual ~QueryRequest();
 
@@ -110,6 +112,7 @@ private:
     int _bufferRemain;
     std::string _payload;
     boost::shared_ptr<QueryReceiver> _receiver;
+    ExecStatus& _status;
     std::string _errorDesc;
     class Canceller;
     friend class Canceller;

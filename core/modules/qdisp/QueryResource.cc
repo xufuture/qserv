@@ -36,6 +36,7 @@
 #include <sstream>
 
 #include "log/Logger.h"
+#include "qdisp/ExecStatus.h"
 #include "qdisp/QueryRequest.h"
 #include "qdisp/QueryResource.h"
 #include "qdisp/QueryReceiver.h"
@@ -54,18 +55,24 @@ void QueryResource::ProvisionDone(XrdSsiSession* s) { // Step 3
             char const* msg = eInfo.Get(code);
             LOGGER_ERR << "Error provisioning, msg=" << msg << " code="
                        << code << "\n";
+            _status.report(ExecStatus::PROVISION_NACK, code, std::string(msg));
             // FIXME code may be wrong.
             _receiver->errorFlush(std::string(msg), code);
             return;
         }
         _session = s;
-        _request = new QueryRequest(s, _payload, _receiver);
+        _request = new QueryRequest(s, _payload, _receiver, _status);
         assert(_request);
         // Hand off the request and release ownership.
+        _status.report(ExecStatus::REQUEST);
         bool requestSent = _session->ProcessRequest(_request);
+
         if(requestSent) {
             _request = 0; // _session now has ownership
         } else {
+            int code;
+            char const* msg = eInfo.Get(code);
+            _status.report(ExecStatus::REQUEST_ERROR, code, msg);
             LOGGER_ERR << "Failed to send request " << *_request << std::endl;
             delete _request;
             _request = 0;

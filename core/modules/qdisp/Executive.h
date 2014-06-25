@@ -26,6 +26,9 @@
 #ifndef LSST_QSERV_QDISP_EXECUTIVE_H
 #define LSST_QSERV_QDISP_EXECUTIVE_H
 
+// System headers
+#include <vector>
+
 // Third-party headers
 #include <boost/thread.hpp> // boost::mutex
 //#include "XrdPosix/XrdPosixCallBack.hh"
@@ -36,6 +39,7 @@
 #include "global/ResourceUnit.h"
 #include "global/stringTypes.h"
 #include "qdisp/TransactionSpec.h"
+#include "qdisp/ExecStatus.h"
 
 // Forward declarations
 class XrdSsiService;
@@ -50,6 +54,7 @@ namespace control {
 namespace lsst {
 namespace qserv {
 namespace qdisp {
+class MessageStore;
 class QueryReceiver;
 
 //////////////////////////////////////////////////////////////////////
@@ -58,6 +63,8 @@ class QueryReceiver;
 class Executive {
 public:
     typedef boost::shared_ptr<Executive> Ptr;
+    typedef std::map<int, ExecStatus::Ptr> StatusMap;
+
     struct Config {
         typedef boost::shared_ptr<Config> Ptr;
         Config(std::string const& serviceUrl_)
@@ -70,37 +77,37 @@ public:
         boost::shared_ptr<QueryReceiver> receiver;
     };
 
-
-    Executive(Config::Ptr c) : _config(*c) { _setup(); }
+    Executive(Config::Ptr c, boost::shared_ptr<MessageStore> ms);
     void abort();
     void add(int refNum,
              TransactionSpec const& t, std::string const& resultName);
     void add(int refNum, Spec const& s);
     bool join();
-    void remove(int refNum);
+    void markCompleted(int refNum, bool success);
     void requestSquash(int refNum);
 
-    // FIXME
-    std::string getProgressDesc() const { return std::string ("it's fine"); }
-
+    std::string getProgressDesc() const;
 
 private:
     typedef boost::shared_ptr<QueryReceiver> ReceiverPtr;
     typedef std::map<int, ReceiverPtr> ReceiverMap;
 
     void _setup();
+    ExecStatus& _insertNewStatus(int refNum, ResourceUnit const& r);
     bool _track(int refNum, ReceiverPtr r);
     void _unTrack(int refNum);
     void _waitUntilEmpty();
     void _reapReceivers(boost::unique_lock<boost::mutex> const& receiversLock);
+    void _squashAll(boost::unique_lock<boost::mutex> const& receiversLock);
 
     // for debugging
     void _printState(std::ostream& os);
 
-
     Config _config; // Personal copy of config
+    boost::shared_ptr<MessageStore> _messageStore;
     XrdSsiService* _service;
     ReceiverMap _receivers;
+    StatusMap _statuses;
     int _requestCount;
 
     // Mutexes

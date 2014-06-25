@@ -22,6 +22,9 @@
  */
 #include "ccontrol/UserQueryFactory.h"
 
+// System headers
+#include <stdlib.h>
+
 // Qserv headers
 #include "ccontrol/ConfigMap.h"
 #include "ccontrol/UserQuery.h"
@@ -48,6 +51,7 @@ public:
 
 ////////////////////////////////////////////////////////////////////////
 UserQueryFactory::UserQueryFactory(StringMap const& m) {
+    ::putenv((char*)"XRDDEBUG=1");
     _impl.reset(new Impl);
     assert(_impl);
     _impl->readConfig(m);
@@ -63,7 +67,9 @@ UserQueryFactory::newUserQuery(std::string const& query,
     UserQuery* uq = new UserQuery(qs);
     int sessionId = UserQuery_takeOwnership(uq);
     uq->_sessionId = sessionId;
-    uq->_executive.reset(new qdisp::Executive(_impl->executiveConfig));
+    uq->_executive.reset(new qdisp::Executive(
+                             _impl->executiveConfig,
+                             uq->_messageStore));
     rproc::TableMergerConfig* mct
         = new rproc::TableMergerConfig(_impl->mergerConfigTemplate);
     mct->targetTable = resultTable;
