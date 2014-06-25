@@ -71,7 +71,7 @@ public:
         : _executive(e), _refNum(refNum) {}
 
     virtual void operator()(bool success) {
-        _executive->remove(_refNum);
+        _executive->markCompleted(_refNum, success);
     }
 
     static Ptr newInstance(qdisp::Executive::Ptr e, int refNum) {

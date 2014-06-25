@@ -50,6 +50,7 @@ namespace xrdc {
 namespace lsst {
 namespace qserv {
 namespace qdisp {
+class ExecStatus;
 class QueryReceiver;
 class QueryRequest;
 
@@ -58,12 +59,14 @@ class QueryRequest;
 class QueryResource : public XrdSsiService::Resource {
 public:
     /// @param rPath resource path, e.g. /LSST/12312
-    QueryResource(std::string const& rPath, 
-                  std::string const& payload, 
-                  boost::shared_ptr<QueryReceiver> receiver)
+    QueryResource(std::string const& rPath,
+                  std::string const& payload,
+                  boost::shared_ptr<QueryReceiver> receiver,
+                  ExecStatus& status)
         : Resource(rPath.c_str()),
           _payload(payload),
-          _receiver(receiver) {
+          _receiver(receiver),
+          _status(status) {
     }
 
     virtual ~QueryResource() {}
@@ -74,6 +77,7 @@ public:
     QueryRequest* _request; // Owned temporarily, special deletion handling.
     std::string const _payload;
     boost::shared_ptr<QueryReceiver> _receiver;
+    ExecStatus& _status;
 };
 
 }}} // namespace lsst::qserv::qdisp
