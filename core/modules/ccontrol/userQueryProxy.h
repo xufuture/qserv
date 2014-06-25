@@ -65,6 +65,10 @@ std::string const& UserQuery_getDominantDb(int session);
 /// @return number of stripes and substripes
 lsst::qserv::css::StripingParams UserQuery_getDbStriping(int session);
 
+/// @return a string describing the progress on the query at a chunk-by-chunk
+/// level. Userful for diagnosis when queries are squashed or return errors.
+std::string UserQuery_getExecDesc(int session);
+
 /// Abort this user query immediately (system is shutting down now)
 void UserQuery_abort(int session);
 

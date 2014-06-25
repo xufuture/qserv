@@ -104,6 +104,7 @@ from lsst.qserv.czar import UserQuery_containsDb
 from lsst.qserv.czar import UserQuery_getConstraints
 from lsst.qserv.czar import UserQuery_getDominantDb
 from lsst.qserv.czar import UserQuery_getDbStriping
+from lsst.qserv.czar import UserQuery_getExecDesc
 from lsst.qserv.czar import UserQuery_getError
 from lsst.qserv.czar import UserQuery_addChunk
 from lsst.qserv.czar import UserQuery_submit
@@ -358,6 +359,8 @@ class InbandQueryAction:
         pass
 
     def _reportError(self, chunkId, code, message):
+        ## FIXME: Remove print stmt
+        logger.dbg("reporting", chunkId, code, message)
         queryMsgAddMsg(self.sessionId, chunkId, code, message)
 
     def invoke(self):
@@ -366,7 +369,7 @@ class InbandQueryAction:
         try:
             self._execAndJoin()
         finally:
-            invokedActions.remove(self)
+            invokedActions.discard(self)
         self._invokeLock.release()
 
     def getError(self):
@@ -552,6 +555,8 @@ class InbandQueryAction:
 
     def _execAndJoin(self):
         """Signal dispatch to C++ layer and block until execution completes"""
+        logger.threshold_dbg()
+
         lastTime = time.time()
         self._reportError(-1, msgCode.MSG_CHUNK_DISPATCH, "Dispatch Query.")
         if self.mode == "old":
@@ -569,7 +574,12 @@ class InbandQueryAction:
         logger.inf("Query exec (%s) took %f seconds" % (self.sessionId, elapsed))
 
         if s != QueryState_SUCCESS:
-            self._reportError(getErrorDesc(self.sessionId))
+            if self.mode == "old":
+                self._reportError(-1, -1,
+                                  getErrorDesc(self.sessionId))
+            else:
+                self._reportError(-1, -1,
+                                  UserQuery_getExecDesc(self.sessionId))
         logger.inf("Final state of all queries", getQueryStateString(s))
         # session should really be discarded here unconditionally,
         # but in the current design it is used in proxy.py, so it is

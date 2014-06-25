@@ -32,7 +32,7 @@ namespace lsst {
 namespace qserv {
 
 // ResourceUnit contains a name for an XrdSsi-resolvable resource unit.
-// Not sure this belongs in global, but czar, worker both need it. 
+// Not sure this belongs in global, but czar, worker both need it.
 // Other components may as well.
 class ResourceUnit {
 public:
@@ -64,7 +64,7 @@ public:
     void setAsCquery(std::string const& db, int chunk);
     void setAsCquery(std::string const& db);
     void setAsResult(std::string const& hashName);
-    
+
     // Optional specifiers may not be supported by XrdSsi
     // Add optional specifiers ?foo&bar=1&bar2=2
     void addKey(std::string const& key);

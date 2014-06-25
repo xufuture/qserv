@@ -32,12 +32,14 @@
 #include "qdisp/Executive.h"
 
 // System headers
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 
 // Third-party headers
 #include "XrdSsi/XrdSsiErrInfo.hh"
 #include "XrdSsi/XrdSsiService.hh" // Resource
+#include "XrdOuc/XrdOucTrace.hh"
 
 // #include "boost/date_time/posix_time/posix_time_types.hpp"
 // #include <boost/format.hpp>
@@ -49,10 +51,10 @@
 //#include "global/stringTypes.h"
 #include "global/ResourceUnit.h"
 #include "log/Logger.h"
-// #include "log/msgCode.h"
+#include "log/msgCode.h"
 // #include "rproc/TableMerger.h"
 // #include "qdisp/ChunkQuery.h"
-// #include "qdisp/MessageStore.h"
+#include "qdisp/MessageStore.h"
 #include "qdisp/MergeAdapter.h"
 #include "qdisp/QueryResource.h"
 // #include "qproc/QuerySession.h"
@@ -67,8 +69,25 @@ std::string figureOutError(XrdSsiErrInfo & e) {
     os <<  " Code=" << errCode;
     return os.str();
 }
+void populateState(lsst::qserv::qdisp::ExecStatus& es,
+                   lsst::qserv::qdisp::ExecStatus::State s,
+                   XrdSsiErrInfo& e) {
+    int code;
+    std::string desc(e.Get(code));
+    es.report(s, code, desc);
+}
 } // anonymous namespace
 
+// Declare to allow force-on XrdSsi tracing
+#define TRACE_ALL       0xffff
+#define TRACE_Debug     0x0001
+namespace XrdSsi {
+extern XrdOucTrace     Trace;
+}
+
+//#define LOGGER_INF std::cout
+//#define LOGGER_ERR std::cout
+//#define LOGGER_WRN std::cout
 namespace lsst {
 namespace qserv {
 namespace qdisp {
@@ -92,7 +111,19 @@ struct printMapSecond {
     bool first;
 };
 
+////////////////////////////////////////////////////////////////////////
+// class Executive implementation
+////////////////////////////////////////////////////////////////////////
+Executive::Executive(Config::Ptr c, boost::shared_ptr<MessageStore> ms)
+    : _config(*c),
+      _messageStore(ms) {
+    _setup();
+}
+
 void Executive::_setup() {
+
+    XrdSsi::Trace.What = TRACE_ALL | TRACE_Debug;
+
     XrdSsiErrInfo eInfo;
     _service = XrdSsiGetClientService(eInfo, _config.serviceUrl.c_str()); // Step 1
     if(!_service) figureOutError(eInfo);
@@ -102,7 +133,7 @@ void Executive::_setup() {
 
 void Executive::add(int refNum, TransactionSpec const& t,
                     std::string const& resultName) {
-    LOGGER_DBG << "EXECUTING Executive::add(TransactionSpec, "
+    LOGGER_INF << "EXECUTING Executive::add(TransactionSpec, "
                << resultName << ")" << std::endl;
     Spec s;
     s.resource = ResourceUnit(t.path);
@@ -116,17 +147,21 @@ void Executive::add(int refNum, TransactionSpec const& t,
 }
 
 void Executive::abort() {
-    std::cout << "Trying to cancel all queries...\n";
+    LOGGER_INF << "Trying to cancel all queries...\n";
     std::vector<int> pending;
     {
         boost::lock_guard<boost::mutex> lock(_receiversMutex);
-        std::cout << "Loop cancel all queries...\n";
+        std::ostringstream os;
+        os << "STATE=";
+        _printState(os);
+        LOGGER_INF << os.str() << std::endl
+                   << "Loop cancel all queries...\n";
         ReceiverMap::iterator i,e;
         for(i=_receivers.begin(), e=_receivers.end(); i != e; ++i) {
             i->second->cancel();
             pending.push_back(i->first);
         }
-        std::cout << "Loop cancel all queries...done\n";
+        LOGGER_INF << "Loop cancel all queries...done\n";
     }
     { // Should be possible to convert this to a for_each call.
         std::vector<int>::iterator i,e;
@@ -136,39 +171,35 @@ void Executive::abort() {
     }
 }
 
+// Add a spec to be executed. Not thread-safe.
 void Executive::add(int refNum, Executive::Spec const& s) {
     bool trackOk =_track(refNum, s.receiver); // Remember so we can join.
     if(!trackOk) {
-        std::cout << "Ignoring duplicate add(" << refNum << ")\n";
+        LOGGER_WRN << "Ignoring duplicate add(" << refNum << ")\n";
         return;
     }
+    ExecStatus& status = _insertNewStatus(refNum, s.resource);
+    ++_requestCount;
+    std::string msg = "Exec add pth=" + s.resource.path();
+    LOGGER_INF << msg << std::endl;
+    _messageStore->addMessage(s.resource.chunk(), log::MSG_MGR_ADD, msg);
+
     QueryResource* r = new QueryResource(s.resource.path(),
                                          s.request,
-                                         s.receiver);
-    std::cout << "Adding/provisioning " << s.resource.path() << std::endl;
+                                         s.receiver,
+                                         status);
+    status.report(ExecStatus::PROVISION);
     bool provisionOk = _service->Provision(r);  // 2
     if(!provisionOk) {
-        std::cout << "There was an error provisioning " << __FILE__ << __LINE__ << std::endl;;
-        figureOutError(r->eInfo);
+        LOGGER_ERR << "Resource provision error " << s.resource.path()
+                   << std::endl;
+        populateState(status, ExecStatus::PROVISION_ERROR, r->eInfo);
         _unTrack(refNum);
         delete r;
 
         // handle error
     }
-    std::cout << "Provision was ok\n";
-#if 0
-    {
-        boost::lock_guard<boost::mutex> lock(_queriesMutex);
-        _queries[id] = qs;
-        ++_queryCount;
-    }
-    std::string msg = std::string("Query Added: url=") + ts.path + ", savePath=" + ts.savePath;
-    getMessageStore()->addMessage(id, log::MSG_MGR_ADD, msg);
-    LOGGER_INF << "Added query id=" << id << " url=" << ts.path
-               << " with save " << ts.savePath << "\n";
-    qs.first->run();
-    return id;
-#endif
+    LOGGER_DBG << "Provision was ok\n";
 }
 
 bool Executive::join() {
@@ -178,28 +209,89 @@ bool Executive::join() {
     // Okay to merge. probably not the Executive's responsibility
     // _merger->finalize();
     // _merger.reset();
+    struct successF {
+        static bool f(Executive::StatusMap::value_type const& entry) {
+            ExecStatus const& es = *entry.second;
+            return es.state == ExecStatus::RESPONSE_DONE; } };
+    int sCount = std::count_if(_statuses.begin(), _statuses.end(), successF::f);
+
     LOGGER_INF << "Query exec finish. " << _requestCount << " dispatched." << std::endl;
 
-    return true;
+    return sCount == _requestCount;
 }
 
-void Executive::remove(int refNum) {
-    LOGGER_INF << "Executive::remove(" << refNum << ")\n";
+void Executive::markCompleted(int refNum, bool success) {
+    QueryReceiver::Error e;
+    LOGGER_INF << "Executive::markCompletion(" << refNum << ","
+               << success  << ")\n";
+    if(!success) {
+        boost::lock_guard<boost::mutex> lock(_receiversMutex);
+        ReceiverMap::iterator i = _receivers.find(refNum);
+        if(i != _receivers.end()) {
+            e = i->second->getError();
+        } else {
+            LOGGER_ERR << "Executive(" << (void*)this << ")"
+                       << "Failed to find tracked id="
+                       << refNum << " size=" << _receivers.size()
+                       << std::endl;
+            assert(false);
+        }
+        _statuses[refNum]->report(ExecStatus::RESULT_ERROR, 1);
+        LOGGER_ERR << "Executive: error executing refnum=" << refNum << "."
+                   << " code=" << e.code << " " << e.msg << std::endl;
+    }
     _unTrack(refNum);
-    LOGGER_INF << "FIXME: should check receiver for results\n";
+    if(!success) {
+        LOGGER_ERR << "Executive: requesting squash (cause refnum="
+                   << refNum << " with "
+                   << " code=" << e.code << " " << e.msg << std::endl;
+        abort(); // ask to abort
+    }
 }
 
 void Executive::requestSquash(int refNum) {
     LOGGER_ERR << "Executive::requestSquash() not implemented. Sorry.\n";
 }
 
+struct printMapEntry {
+    printMapEntry(std::ostream& os_, std::string const& sep_)
+        : os(os_), sep(sep_), first(true) {}
+    void operator()(Executive::StatusMap::value_type const& entry) {
+        if(!first) { os << sep; }
+        os << "Ref=" << entry.first << " ";
+        ExecStatus const& es = *entry.second;
+        os << es;
+        first = false;
+    }
+    std::ostream& os;
+    std::string const& sep;
+    bool first;
+};
+
+std::string Executive::getProgressDesc() const {
+    std::ostringstream os;
+    std::for_each(_statuses.begin(), _statuses.end(), printMapEntry(os, "\n"));
+    LOGGER_ERR << os.str() << std::endl;
+    return os.str();
+}
+
 ////////////////////////////////////////////////////////////////////////
 // class Executive (private)
 ////////////////////////////////////////////////////////////////////////
+ExecStatus& Executive::_insertNewStatus(int refNum,
+                                        ResourceUnit const& r) {
+    ExecStatus::Ptr es(new ExecStatus(r));
+    _statuses.insert(StatusMap::value_type(refNum, es));
+    return *es;
+}
+
 bool Executive::_track(int refNum, ReceiverPtr r) {
     assert(r);
     {
         boost::lock_guard<boost::mutex> lock(_receiversMutex);
+        // LOGGER_INF
+        LOGGER_DBG << "Executive (" << (void*)this << ") tracking  id="
+                   << refNum << std::endl;
         if(_receivers.find(refNum) == _receivers.end()) {
             _receivers[refNum] = r;
         } else {
@@ -210,13 +302,13 @@ bool Executive::_track(int refNum, ReceiverPtr r) {
 }
 
 void Executive::_unTrack(int refNum) {
-    {
-        boost::lock_guard<boost::mutex> lock(_receiversMutex);
-        ReceiverMap::iterator i = _receivers.find(refNum);
-        if(i != _receivers.end()) {
-            _receivers.erase(i);
-            if(_receivers.empty()) _receiversEmpty.notify_all();
-        }
+    boost::lock_guard<boost::mutex> lock(_receiversMutex);
+    ReceiverMap::iterator i = _receivers.find(refNum);
+    if(i != _receivers.end()) {
+        LOGGER_INF << "Executive (" << (void*)this << ") UNTRACKING  id="
+                   << refNum << std::endl;
+        _receivers.erase(i);
+        if(_receivers.empty()) _receiversEmpty.notify_all();
     }
 }
 
@@ -225,8 +317,11 @@ void Executive::_reapReceivers(boost::unique_lock<boost::mutex> const&) {
     while(true) {
         bool reaped = false;
         for(i=_receivers.begin(), e=_receivers.end(); i != e; ++i) {
-            if(i->second->getError().msg.empty()) {
+            if(!i->second->getError().msg.empty()) {
                 // FIXME do something with the error (msgcode log?)
+                LOGGER_INF << "Executive (" << (void*)this << ") REAPED  id="
+                   << i->first << std::endl;
+
                 _receivers.erase(i);
                 reaped = true;
                 break;
@@ -265,6 +360,7 @@ void Executive::_waitUntilEmpty() {
 void Executive::_printState(std::ostream& os) {
     std::for_each(_receivers.begin(), _receivers.end(),
                   printMapSecond<ReceiverMap::value_type>(os, "\n"));
+    os << std::endl << getProgressDesc() << std::endl;
 }
 
 #if 0
@@ -409,31 +505,6 @@ void AsyncQueryManager::finalizeQuery(int id,
 // thread call joinEverything, since that ensures that this object has
 // ceased activity and can recycle resources.
 // This is a performance optimization.
-void AsyncQueryManager::joinEverything() {
-    boost::unique_lock<boost::mutex> lock(_queriesMutex);
-    int lastCount = -1;
-    int count;
-    int moreDetailThreshold = 5;
-    int complainCount = 0;
-    _printState(LOG_STRM(Debug));
-    while(!_queries.empty()) {
-        count = _queries.size();
-        if(count != lastCount) {
-            LOGGER_INF << "Still " << count << " in flight." << std::endl;
-            count = lastCount;
-            ++complainCount;
-            if(complainCount > moreDetailThreshold) {
-                _printState(LOG_STRM(Warning));
-                complainCount = 0;
-            }
-        }
-        _queriesEmpty.timed_wait(lock, boost::posix_time::seconds(5));
-    }
-    _merger->finalize();
-    _merger.reset();
-    LOGGER_INF << "Query finish. " << _queryCount << " dispatched." << std::endl;
-}
-
 void AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,
                                       std::string const& tableName) {
     LOGGER_DBG << "EXECUTING AsyncQueryManager::_addNewResult(" << id
@@ -495,7 +566,6 @@ void AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize,
     }
 }
 
-
 void AsyncQueryManager::_squashExecution() {
     // Halt new query dispatches and cancel the ones in flight.
     // This attempts to save on resources and latency, once a query
@@ -531,66 +601,6 @@ void AsyncQueryManager::_squashExecution() {
 void AsyncQueryManager::_squashRemaining() {
     _squashExecution();  // Not sure if this is right. FIXME
 }
-
-#include "XrdSsi/XrdSsiService.hh" // Resource
-#include "XrdSsi/XrdSsiRequest.hh"
-#include "XrdSsi/XrdSsiService.hh" // Resource
-#include "XrdSsi/XrdSsiRequest.hh"
-
-class MyRequest : public XrdSsiRequest {
-public:
-    MyRequest(XrdSsiSession* session)
-        : _bufLen(1000),
-          _session(session) {
-        _buffer = new char[_bufLen];
-        cout << "new _buffer: " << _bufLen << endl;
-        _cursor = _buffer;
-        _bufRemain = _bufLen;
-        _requestDataSize = requestData1.size();
-        _requestData = new char[_requestDataSize];
-        cout << "new _requestData: " << _requestDataSize << endl;
-        memcpy(_requestData, requestData1.data(), _requestDataSize);
-
-    };
-    virtual ~MyRequest() {
-        _unprovisionSession();
-        if(_requestData) { delete[] _requestData; }
-        if(_buffer) { delete[] _buffer; }
-    }
-}; // class MyRequest
-
-class MyResource : public XrdSsiService::Resource {
-public:
-    MyResource() : Resource("/terrence") {
-    }
-    virtual ~MyResource() {}
-    void ProvisionDone(XrdSsiSession* so) { // Step 3
-        cout << "Provision done\n";
-        if(!so) {
-            // Check eInfo in resource for error details
-            throw "Null XrdSsiSession* passed for MyResource::ProvisionDone";
-        }
-        _session = so;
-        // do something with the session
-        makeRequest();
-        // If we are not doing anything else with the session,
-        // we can stop it after our requests are complete.
-        delete this; // Delete ourselves, nobody needs this resource anymore.
-    }
-    void makeRequest() {
-        MyRequest* req = new MyRequest(_session); // Step 4
-        cout << "new MyRequest: " << sizeof(MyRequest) << endl;
-        // _session takes ownership of the request.
-        bool requestSent = _session->ProcessRequest(req); // Step 4
-        if(!requestSent) {
-            cout << "ProcessRequest failed. deleting\n";
-            delete req; // ??
-            // handle error
-        }
-    }
-    XrdSsiSession* _session; // unowned, do not delete.
-};
-
 
 #endif
 }}} // namespace lsst::qserv::qdisp
