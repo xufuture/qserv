@@ -103,11 +103,20 @@ namespace ccontrol {
 int
 submitQuery(int session, TransactionSpec const& s,
             std::string const& resultName) {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING submitQuery(%1%, TransactionSpec s, %2%)"
+               % session % resultName);
+#else
     LOGGER_DBG << "EXECUTING submitQuery(" << session << ", TransactionSpec s, "
                << resultName << ")" << std::endl;
+#endif
     AsyncQueryManager& qm = getAsyncManager(session);
     qm.add(s, resultName);
+#ifdef NEWLOG
+    LOGF_DEBUG("Dispatcher added %1%" % s.chunkId);
+#else
     LOGGER_DBG << "Dispatcher added  " << s.chunkId << std::endl;
+#endif
     return 0;
 }
 
@@ -120,18 +129,30 @@ struct mergeStatus {
     void operator() (AsyncQueryManager::Result const& x) {
         if(!x.second.isSuccessful()) {
             if(shouldPrint || (firstN > 0)) {
+#ifdef NEWLOG
+                LOGF_INFO("Chunk %1% error " % x.first);
+                LOGF_INFO("open: %1% qWrite: %2% read: %3% lWrite: %4%"
+                          % x.second.open % x.second.queryWrite
+                          % x.second.read % x.second.localWrite);
+#else
                 LOGGER_INF << "Chunk " << x.first << " error " << std::endl
                            << "open: " << x.second.open
                            << " qWrite: " << x.second.queryWrite
                            << " read: " << x.second.read
                            << " lWrite: " << x.second.localWrite << std::endl;
+#endif
                 --firstN;
             }
             isSuccessful = false;
         } else {
             if(shouldPrint) {
+#ifdef NEWLOG
+                LOGF_INFO("Chunk %1% OK (%2%)\t"
+                          % x.first % x.second.localWrite);
+#else
                 LOGGER_INF << "Chunk " << x.first << " OK ("
                            << x.second.localWrite << ")\t";
+#endif
             }
         }
     }
@@ -194,6 +215,7 @@ getDbStriping(int session) {
 
 void
 addChunk(int session, qproc::ChunkSpec const& cs ) {
+#ifndef NEWLOG
 #if 0 // SWIG plumbing debug
     LOGGER_INF << "Received chunk=" << cs.chunkId << " ";
     typedef std::vector<int> Vect;
@@ -204,6 +226,7 @@ addChunk(int session, qproc::ChunkSpec const& cs ) {
          LOGGER_INF << *i;
     }
      LOGGER_INF << std::endl;
+#endif
 #endif
     AsyncQueryManager& qm = getAsyncManager(session);
     qproc::QuerySession& qs = qm.getQuerySession();
@@ -217,7 +240,11 @@ addChunk(int session, qproc::ChunkSpec const& cs ) {
 /// Submit the query.
 void
 submitQuery3(int session) {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING submitQuery3(%1%)" % session);
+#else
     LOGGER_DBG << "EXECUTING submitQuery3(" << session << ")" << std::endl;
+#endif
     // Using the QuerySession, generate query specs (text, db, chunkId) and then
     // create query messages and send them to the async query manager.
     AsyncQueryManager& qm = getAsyncManager(session);
@@ -242,8 +269,12 @@ submitQuery3(int session) {
         std::string path=qp.path();
         t.chunkId = cs.chunkId;
         t.query = ss.str();
+#ifdef NEWLOG
+        LOGF_INFO("Msg cid=%1% with size=%2%" % cs.chunkId % t.query.size());
+#else
         LOGGER_INF << "Msg cid=" << cs.chunkId << " with size="
                    << t.query.size() << std::endl;
+#endif
         t.bufferSize = 8192000;
         t.path = util::makeUrl(hp.c_str(), qp.path());
         t.savePath = makeSavePath(qm.getScratchPath(), session, cs.chunkId);
@@ -261,10 +292,18 @@ joinSession(int session) {
     std::for_each(d.begin(), d.end(), mergeStatus(successful));
 
     if(successful) {
+#ifdef NEWLOG
+        LOGF_INFO("Joined everything (success)");
+#else
         LOGGER_INF << "Joined everything (success)" << std::endl;
+#endif
         return SUCCESS;
     } else {
+#ifdef NEWLOG
+        LOGF_ERROR("Joined everything (failure!)");
+#else
         LOGGER_ERR << "Joined everything (failure!)" << std::endl;
+#endif
         return ERROR;
     }
 }
@@ -352,7 +391,11 @@ newSession(std::map<std::string,std::string> const& config) {
         boost::shared_ptr<AsyncQueryManager> m(new AsyncQueryManager(config));
         return getSessionManagerAsync().newSession(m);
     } catch(AsyncQueryManager::ConfigError& e) {
+#ifdef NEWLOG
+        LOGF_ERROR("Cannot create AsyncQueryManager, invalid config.");
+#else
         LOGGER_ERR << "Cannot create AsyncQueryManager, invalid config.";
+#endif
         return -1;
     }
 }
