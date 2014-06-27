@@ -78,14 +78,15 @@ public:
     };
 
     Executive(Config::Ptr c, boost::shared_ptr<MessageStore> ms);
-    void abort();
     void add(int refNum,
              TransactionSpec const& t, std::string const& resultName);
     void add(int refNum, Spec const& s);
     bool join();
     void markCompleted(int refNum, bool success);
     void requestSquash(int refNum);
+    void squash(); //< Squash everything. should we block?
 
+    int getNumInflight(); // non-const, requires a mutex.
     std::string getProgressDesc() const;
 
 private:
@@ -98,7 +99,8 @@ private:
     void _unTrack(int refNum);
     void _waitUntilEmpty();
     void _reapReceivers(boost::unique_lock<boost::mutex> const& receiversLock);
-    void _squashAll(boost::unique_lock<boost::mutex> const& receiversLock);
+    void _reportStatuses();
+    //void _squashAll(boost::unique_lock<boost::mutex> const& receiversLock);
 
     // for debugging
     void _printState(std::ostream& os);

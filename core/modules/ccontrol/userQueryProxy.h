@@ -69,9 +69,6 @@ lsst::qserv::css::StripingParams UserQuery_getDbStriping(int session);
 /// level. Userful for diagnosis when queries are squashed or return errors.
 std::string UserQuery_getExecDesc(int session);
 
-/// Abort this user query immediately (system is shutting down now)
-void UserQuery_abort(int session);
-
 /// Add a chunk spec for execution
 void UserQuery_addChunk(int session, qproc::ChunkSpec const& cs);
 
@@ -79,8 +76,10 @@ void UserQuery_addChunk(int session, qproc::ChunkSpec const& cs);
 void UserQuery_submit(int session);
 
 QueryState UserQuery_join(int session);
-//std::string const& UserQuery_getQueryStateString(QueryState const& qs);
-//std::string UserQuery_getErrorDesc(int session);
+
+/// Kill this user query immediately (system is shutting down now)
+void UserQuery_kill(int session);
+
 
 void UserQuery_discard(int session);
 

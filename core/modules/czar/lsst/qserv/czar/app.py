@@ -84,21 +84,25 @@ from lsst.qserv.czar import xrdReadToLocalFile, xrdOpenWriteReadSaveClose
 
 from lsst.qserv.czar import charArray_frompointer, charArray
 
-# Dispatcher
+# qdisp
+from lsst.qserv.czar import ChunkSpec
+# ccontrol
+from lsst.qserv.czar import getQueryStateString
+from lsst.qserv.czar import SUCCESS as QueryState_SUCCESS
+
+# Dispatcher (replaced by UserQuery system)
 from lsst.qserv.czar import newSession, discardSession
 from lsst.qserv.czar import setupQuery, getSessionError
-from lsst.qserv.czar import getConstraints, addChunk, ChunkSpec
+from lsst.qserv.czar import getConstraints, addChunk
 from lsst.qserv.czar import getDominantDb
 from lsst.qserv.czar import getDbStriping
 from lsst.qserv.czar import containsDb
 from lsst.qserv.czar import configureSessionMerger3, submitQuery3
-
 from lsst.qserv.czar import joinSession
 from lsst.qserv.czar import getQueryStateString, getErrorDesc
-from lsst.qserv.czar import SUCCESS as QueryState_SUCCESS
 
+# UserQuery
 from lsst.qserv.czar import UserQueryFactory
-from lsst.qserv.czar import UserQuery_abort
 from lsst.qserv.czar import UserQuery_containsDb
 from lsst.qserv.czar import UserQuery_getConstraints
 from lsst.qserv.czar import UserQuery_getDominantDb
@@ -108,6 +112,7 @@ from lsst.qserv.czar import UserQuery_getError
 from lsst.qserv.czar import UserQuery_addChunk
 from lsst.qserv.czar import UserQuery_submit
 from lsst.qserv.czar import UserQuery_join
+from lsst.qserv.czar import UserQuery_kill
 from lsst.qserv.czar import UserQuery_discard
 
 # Parser

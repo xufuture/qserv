@@ -81,7 +81,6 @@ SsiService::SsiService(XrdSsiLogger* log) {
         p(new XrdSsiPrinter(log));
     _log.reset(new lsst::qserv::wlog::WLogger(p));
     _log->info("SsiService starting..");
-    std::cerr << "EEEEE" << "service starting.\n";
     _configure();
     _initInventory();
     _setupResultPath();

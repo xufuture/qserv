@@ -45,8 +45,12 @@ public:
     typedef boost::shared_ptr<ExecStatus> Ptr;
     ExecStatus(ResourceUnit const& r) : resourceUnit(r) {}
 
+    // TODO: these shouldn't be exposed, and so shouldn't be user-level error
+    // codes, but maybe we can be clever and avoid an ugly remap/translation
+    // with msgCode.h. 1201-1289 (inclusive) are free and MSG_FINALIZED==2000
     enum State { UNKNOWN=0,
-                 PROVISION, PROVISION_ERROR, PROVISION_NACK,
+                 PROVISION=1201,
+                 PROVISION_ERROR, PROVISION_NACK,
                  PROVISION_OK, // ???
                  REQUEST, REQUEST_ERROR,
                  RESPONSE_READY, RESPONSE_ERROR,
@@ -54,7 +58,7 @@ public:
                  RESPONSE_DONE,
                  RESULT_ERROR,
                  MERGE_OK, // ???
-                 MERGE_ERROR, COMPLETE};
+                 MERGE_ERROR, COMPLETE=2000};
 
     inline void report(State s, int code=0, std::string const& desc=_empty) {
         stateTime = ::time(NULL);

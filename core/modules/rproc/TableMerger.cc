@@ -239,7 +239,8 @@ private:
 TableMerger::TableMerger(TableMergerConfig const& c)
     : _config(c),
       _sqlConfig(makeSqlConfig(c)),
-      _tableCount(0) {
+      _tableCount(0),
+      _isFinished(false) {
     _fixupTargetName();
     _loadCmd = (boost::format(_cmdBase)
 		% c.mySqlCmd % c.socket % c.user % c.targetDb).str();
@@ -279,6 +280,10 @@ bool TableMerger::merge(boost::shared_ptr<util::PacketBuffer> pb,
 }
 
 bool TableMerger::finalize() {
+    if(_isFinished) {
+        LOGGER_ERR << "TableMerger::finalize(), but _isFinished == true"
+                   << std::endl;
+    }
     if(_mergeTable != _config.targetTable) {
         std::string cleanup = (boost::format(_cleanupSql) % _mergeTable).str();
         std::string fixupSuffix = _config.mFixup.post + _buildOrderByLimit();
@@ -294,7 +299,12 @@ bool TableMerger::finalize() {
     }
     LOGGER_INF << "Merged " << _mergeTable << " into " << _config.targetTable
                << std::endl;
+    _isFinished = true;
     return true;
+}
+
+bool TableMerger::isFinished() const {
+    return _isFinished;
 }
 
 ////////////////////////////////////////////////////////////////////////
