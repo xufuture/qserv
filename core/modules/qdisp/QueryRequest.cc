@@ -177,7 +177,16 @@ void QueryRequest::ProcessResponseData(char *buff, int blen, bool last) { // Ste
         _bufferRemain = _bufferRemain - blen;
         // Consider flushing when _bufferRemain is small, but non-zero.
         if(_bufferRemain == 0) {
-            _receiver->flush(_bufferSize, last);
+            bool flushOk = _receiver->flush(_bufferSize, last);
+            if(flushOk) {
+                if(last) {
+                    _status.report(ExecStatus::COMPLETE);
+                } else {
+                    _status.report(ExecStatus::MERGE_OK);
+                }
+            } else {
+                _status.report(ExecStatus::MERGE_ERROR);
+            }
             _resetBuffer();
         }
         if(!last) {

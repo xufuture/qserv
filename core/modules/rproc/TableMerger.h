@@ -128,6 +128,8 @@ public:
     std::string getTargetTable() const {return _config.targetTable; }
 
     bool finalize();
+    bool isFinished() const;
+
 private:
     class CreateStmt;
     bool _applySql(std::string const& sql);
@@ -163,6 +165,7 @@ private:
     TableMergerError _error;
     long long _resultLimit;
     int _tableCount;
+    bool _isFinished;
     boost::mutex _countMutex;
     boost::mutex _popenMutex;
     boost::mutex _sqlMutex;

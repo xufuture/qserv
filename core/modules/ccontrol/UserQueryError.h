@@ -20,38 +20,28 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-
-#ifndef LSST_QSERV_QDISP_MERGEADAPTER_H
-#define LSST_QSERV_QDISP_MERGEADAPTER_H
+#ifndef LSST_QSERV_CCONTROL_USERQUERYERROR_H
+#define LSST_QSERV_CCONTROL_USERQUERYERROR_H
 
 // System headers
-// #include <list>
-// #include <string>
-
-// Third-party
-#include <boost/make_shared.hpp>
-
-#include "qdisp/QueryReceiver.h"
+#include <stdexcept>
 
 namespace lsst {
 namespace qserv {
-namespace qdisp {
+namespace ccontrol {
 
-class MergeAdapter : public QueryReceiver {
+/// AnalysisError is a trivial exception for query analys problems
+class UserQueryError : public std::runtime_error {
 public:
-    virtual int bufferSize() const { return 0; }
-    virtual char* buffer() { return NULL; }
-    virtual bool flush(int bLen, bool last) {return false;}
-    virtual void errorFlush(std::string const&, int) {}
-    virtual bool finished() const {return true; }
-    std::ostream& print(std::ostream& os) const {
-        return os << "MergeAdaper(...)"; }
-
-    static boost::shared_ptr<MergeAdapter> newInstance() {
-        return boost::make_shared<MergeAdapter>();
-    }
+    explicit UserQueryError(char const* msg) : std::runtime_error(msg) {}
+    explicit UserQueryError(std::string const& msg) : std::runtime_error(msg) {}
 };
 
-}}} // namespace lsst::qserv::qdisp
+class UserQueryBug : public UserQueryError {
+public:
+    explicit UserQueryBug(std::string const& msg)
+        : UserQueryError("Bug:" + msg) {}
+};
+}}} // namespace lsst::qserv::ccontrol
 
-#endif // LSST_QSERV_QDISP_MERGEADAPTER_H
+#endif // LSST_QSERV_CCONTROL_USERQUERYERROR_H

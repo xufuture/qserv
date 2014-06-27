@@ -76,13 +76,12 @@ public:
     lsst::qserv::query::ConstraintVec getConstraints() const;
     std::string const& getDominantDb() const;
     lsst::qserv::css::StripingParams getDbStriping() const;
-
     std::string getExecDesc() const;
 
-    void abort(); //< Stop a query in progress (for immediate shutdowns)
     void addChunk(qproc::ChunkSpec const& cs);
     void submit();
     QueryState join();
+    void kill(); //< Stop a query in progress (for immediate shutdowns)
     void discard(); //< Release resources related to user query
 
     // Exists only to help app.py with permission checking

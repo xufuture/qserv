@@ -106,8 +106,8 @@ std::string UserQuery_getExecDesc(int session) {
 }
 
 /// Abort a running query
-void UserQuery_abort(int session) {
-    uqManager.get(session)->abort();
+void UserQuery_kill(int session) {
+    uqManager.get(session)->kill();
 }
 
 /// Add a chunk spec for execution
@@ -117,7 +117,7 @@ void UserQuery_addChunk(int session, qproc::ChunkSpec const& cs) {
 
 /// Dispatch all chunk queries for this query
 void UserQuery_submit(int session) {
-    LOGGER_DBG << "EXECUTING submitQuery3(" << session << ")" << std::endl;
+    LOGGER_DBG << "EXECUTING UserQuery_submit(" << session << ")" << std::endl;
     uqManager.get(session)->submit();
 }
 
