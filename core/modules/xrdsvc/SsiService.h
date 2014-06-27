@@ -25,16 +25,10 @@
 #define LSST_QSERV_XRDSVC_SSISERVICE_H
 
 // Third-party headers
-//#include <boost/thread.hpp> // boost::mutex
 #include <boost/shared_ptr.hpp>
 #include "XrdSsi/XrdSsiService.hh"
 
 // Local headers
-//#include "util/Timer.h"
-//#include "xrdc/xrdfile.h"
-// #include "global/ResourceUnit.h"
-// #include "global/stringTypes.h"
-// #include "qdisp/TransactionSpec.h"
 
 // Forward declarations
 class XrdSsiLogger;

@@ -38,7 +38,7 @@
 #include "wlog/WLogger.h"
 #include "wpublish/ChunkInventory.h"
 #include "xrdfs/XrdName.h"
-#include "xrdsvc/SsiSession2.h"
+#include "xrdsvc/SsiSession.h"
 
 class XrdPosixCallBack; // Forward.
 
@@ -105,7 +105,7 @@ SsiService::Provision(XrdSsiService::Resource* r,
     _log->info(os.str()); // Check here.
 
     XrdSsiSession* session;
-    session = new SsiSession2(r->rName,
+    session = new SsiSession(r->rName,
                               _chunkInventory->newValidator(),
                               _service->getProcessor(),
                               _log);
