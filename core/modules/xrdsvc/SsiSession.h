@@ -23,8 +23,8 @@
 // class Executive is in charge of "executing" user query fragments on
 // a qserv cluster.
 
-#ifndef LSST_QSERV_XRDSVC_SSISESSION2_H
-#define LSST_QSERV_XRDSVC_SSISESSION2_H
+#ifndef LSST_QSERV_XRDSVC_SSISESSION_H
+#define LSST_QSERV_XRDSVC_SSISESSION_H
 
 // Third-party headers
 #include <boost/thread.hpp> // boost::mutex
@@ -49,11 +49,11 @@ namespace qserv {
 namespace xrdsvc {
 class SsiResponder;
 
-class SsiSession2 : public XrdSsiSession, public XrdSsiResponder {
+class SsiSession : public XrdSsiSession, public XrdSsiResponder {
 public:
     typedef boost::shared_ptr<ResourceUnit::Checker> ValidatorPtr;
 
-    SsiSession2(char const* sname,
+    SsiSession(char const* sname,
                ValidatorPtr validator,
                boost::shared_ptr<wbase::MsgProcessor> processor,
                boost::shared_ptr<wlog::WLogger> log)
@@ -64,7 +64,7 @@ public:
           _log(log)
         {}
 
-    virtual ~SsiSession2() {
+    virtual ~SsiSession() {
         // XrdSsiSession::sessName is unmanaged
         if(sessName) { ::free(sessName); sessName = 0; }
         // delete my own resources.

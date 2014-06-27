@@ -20,7 +20,7 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#include "xrdsvc/SsiSession2.h"
+#include "xrdsvc/SsiSession.h"
 
 // System headers
 #include <iostream>
@@ -45,39 +45,39 @@ namespace xrdsvc {
 typedef proto::ProtoImporter<proto::TaskMsg> Importer;
 typedef boost::shared_ptr<Importer> ImporterPtr;
 ////////////////////////////////////////////////////////////////////////
-// class SsiSession2::ReplyChannel
+// class SsiSession::ReplyChannel
 ////////////////////////////////////////////////////////////////////////
 
-class SsiSession2::ReplyChannel : public wbase::SendChannel {
+class SsiSession::ReplyChannel : public wbase::SendChannel {
 public:
     typedef XrdSsiResponder::Status Status;
     typedef boost::shared_ptr<ReplyChannel> Ptr;
 
-    ReplyChannel(SsiSession2& s) : ssiSession2(s) {}
+    ReplyChannel(SsiSession& s) : ssiSession(s) {}
 
     virtual void send(char const* buf, int bufLen) {
-        Status s = ssiSession2.SetResponse(buf, bufLen);
+        Status s = ssiSession.SetResponse(buf, bufLen);
         if(s != XrdSsiResponder::wasPosted) {
             std::ostringstream os;
             os << "DANGER: Couldn't post response of length="
                << bufLen << std::endl;
-            ssiSession2._log->error(os.str());
+            ssiSession._log->error(os.str());
         }
     }
 
     virtual void sendError(std::string const& msg, int code) {
-        Status s = ssiSession2.SetErrResponse(msg.c_str(), code);
+        Status s = ssiSession.SetErrResponse(msg.c_str(), code);
         if(s != XrdSsiResponder::wasPosted) {
             std::ostringstream os;
             os << "DANGER: Couldn't post error response " << msg
                << std::endl;
-            ssiSession2._log->error(os.str());
+            ssiSession._log->error(os.str());
         }
     }
     virtual void sendFile(int fd, Size fSize) {
         util::Timer t;
         t.start();
-        Status s = ssiSession2.SetResponse(fSize, fd);
+        Status s = ssiSession.SetResponse(fSize, fd);
         std::ostringstream os;
         if(s == XrdSsiResponder::wasPosted) {
             os << "file posted ok";
@@ -92,13 +92,13 @@ public:
             release();
             sendError("Internal error posting response file", 1);
         }
-        ssiSession2._log->error(os.str());
+        ssiSession._log->error(os.str());
         t.stop();
         os.str("");
         os << "sendFile took " << t.getElapsed() << " seconds";
-        ssiSession2._log->info(os.str());
+        ssiSession._log->info(os.str());
     }
-    SsiSession2& ssiSession2;
+    SsiSession& ssiSession;
 };
 ////////////////////////////////////////////////////////////////////////
 // class SsiProcessor
@@ -134,12 +134,12 @@ struct SsiProcessor : public Importer::Acceptor {
     boost::shared_ptr<wbase::SendChannel> sendChannel;
 };
 ////////////////////////////////////////////////////////////////////////
-// class SsiSession2
+// class SsiSession
 ////////////////////////////////////////////////////////////////////////
 
 // Step 4
 bool
-SsiSession2::ProcessRequest(XrdSsiRequest* req, unsigned short timeout) {
+SsiSession::ProcessRequest(XrdSsiRequest* req, unsigned short timeout) {
     util::Timer t;
     // Figure out what the request is.
     std::ostringstream os;
@@ -180,7 +180,7 @@ SsiSession2::ProcessRequest(XrdSsiRequest* req, unsigned short timeout) {
         enqueue(ru, reqData, reqSize);
         t.stop();
         os.str("");
-        os << "SsiSession2::enqueue took " << t.getElapsed() << " seconds";
+        os << "SsiSession::enqueue took " << t.getElapsed() << " seconds";
         _log->info(os.str());
 
         ReleaseRequestBuffer();
@@ -198,7 +198,7 @@ SsiSession2::ProcessRequest(XrdSsiRequest* req, unsigned short timeout) {
 }
 
 void
-SsiSession2::RequestFinished(XrdSsiRequest* req, XrdSsiRespInfo const& rinfo,
+SsiSession::RequestFinished(XrdSsiRequest* req, XrdSsiRespInfo const& rinfo,
                             bool cancel) { // Step 8
     // This call is sync (blocking).
     // client finished retrieving response, or cancelled.
@@ -221,13 +221,13 @@ SsiSession2::RequestFinished(XrdSsiRequest* req, XrdSsiRespInfo const& rinfo,
 }
 
 bool
-SsiSession2::Unprovision(bool forced) {
+SsiSession::Unprovision(bool forced) {
     // all requests guaranteed to be finished or cancelled.
     delete this;
     return true; // false if we can't unprovision now.
 }
 
-void SsiSession2::enqueue(ResourceUnit const& ru, char* reqData, int reqSize) {
+void SsiSession::enqueue(ResourceUnit const& ru, char* reqData, int reqSize) {
 
     // reqData has the entire request, so we can unpack it without waiting for
     // more data.
