@@ -56,7 +56,7 @@ public:
 
     virtual int bufferSize() const;
     virtual char* buffer();
-    virtual void flush(int bLen, bool last);
+    virtual bool flush(int bLen, bool last);
     virtual void errorFlush(std::string const& msg, int code);
     virtual bool finished() const;
     virtual std::ostream& print(std::ostream& os) const;

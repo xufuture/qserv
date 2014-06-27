@@ -62,22 +62,20 @@ char* ResultReceiver::buffer() {
     return _buffer;
 }
 
-void ResultReceiver::flush(int bLen, bool last) {
+bool ResultReceiver::flush(int bLen, bool last) {
     // Do something with the buffer.
-    // FIXME
-    // Pass to table merger.
-//    _merger
-
     LOGGER_INF << "Receiver flushing " << bLen << " bytes "
                << (last ? " (last)" : " (more)")
                << " to table=" << _tableName << std::endl;
     assert(!_tableName.empty());
+    bool mergeOk = false;
     if(bLen == 0) {
         // just end it.
     } else if(bLen > 0) {
-        bool mergeOk = _appendAndMergeBuffer(bLen);
+        mergeOk = _appendAndMergeBuffer(bLen);
     } else {
         LOGGER_ERR << "Possible error: flush with negative length" << std::endl;
+        return false;
     }
 
     _flushed = true;
@@ -89,6 +87,7 @@ void ResultReceiver::flush(int bLen, bool last) {
             (*_finishHook)(true);
         }
     }
+    return mergeOk;
 }
 
 void ResultReceiver::errorFlush(std::string const& msg, int code) {

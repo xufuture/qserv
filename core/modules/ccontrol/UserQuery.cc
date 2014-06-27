@@ -49,6 +49,7 @@
 // Qserv headers
 #include "ccontrol/TmpTableName.h"
 #include "ccontrol/ResultReceiver.h"
+#include "ccontrol/UserQueryError.h"
 #include "log/Logger.h"
 #include "proto/worker.pb.h"
 #include "proto/ProtoImporter.h"
@@ -111,8 +112,8 @@ lsst::qserv::css::StripingParams UserQuery::getDbStriping() const {
     return _qSession->getDbStriping();
 }
 
-void UserQuery::abort() {
-    _executive->abort();
+void UserQuery::kill() {
+    _executive->squash();
 }
 
 void UserQuery::addChunk(qproc::ChunkSpec const& cs) {
@@ -129,7 +130,10 @@ void UserQuery::submit() {
     std::ostringstream ss;
     proto::ProtoImporter<proto::TaskMsg> pi;
     int msgCount = 0;
-
+    LOGGER_INF << "UserQuery beginning submission\n" << std::flush;
+    LOGGER_DBG << std::flush;
+    LOGGER_WRN << std::flush;
+    LOGGER_ERR << std::flush;
     assert(_merger);
     qproc::QuerySession::Iter i;
     qproc::QuerySession::Iter e = _qSession->cQueryEnd();
@@ -143,7 +147,7 @@ void UserQuery::submit() {
 
         pi(msg.data(), msg.size());
         if(pi.numAccepted() != msgCount) {
-            throw "Error serializing TaskMsg.";
+            throw UserQueryBug("Error serializing TaskMsg.");
         }
 #if 1
         ResourceUnit ru;
@@ -195,9 +199,20 @@ QueryState UserQuery::join() {
 }
 
 void UserQuery::discard() {
-    // FIXME FIXME!!!
-    LOGGER_INF << "Unimplemented UserQuery::discard(). Please implement."
-               << std::endl;
+    // Make sure resources are released.
+    if(_executive && _executive->getNumInflight() > 0) { 
+        throw UserQueryError("Executive unfinished, cannot discard");
+    }
+    _executive.reset();
+    _messageStore.reset();
+    _qSession.reset(); // TODO: release some portions earlier
+    _mergerConfig.reset();
+    if(_merger && !_merger->isFinished()) {
+        throw UserQueryError("merger unfinished, cannot discard");
+    }
+    _merger.reset();
+
+    LOGGER_INF << "Discarded UserQuery(" << _sessionId << ")" << std::endl;
 }
 
 bool UserQuery::containsDb(std::string const& dbName) const {
@@ -208,9 +223,6 @@ UserQuery::UserQuery(boost::shared_ptr<qproc::QuerySession> qs)
     :  _messageStore(new qdisp::MessageStore()),
        _qSession(qs), _sequence(0) {
     // Some configuration done by factory: See UserQueryFactory
-    LOGGER_INF << "Unfinished UserQuery::UserQuery(...). Have a look."
-               << std::endl;
-    // FIXME FIXME!!!
 }
 
 std::string UserQuery::getExecDesc() const {

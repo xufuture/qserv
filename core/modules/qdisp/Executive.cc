@@ -134,41 +134,17 @@ void Executive::_setup() {
 void Executive::add(int refNum, TransactionSpec const& t,
                     std::string const& resultName) {
     LOGGER_INF << "EXECUTING Executive::add(TransactionSpec, "
-               << resultName << ")" << std::endl;
+               << resultName << ")" << std::endl << std::flush;
     Spec s;
     s.resource = ResourceUnit(t.path);
     if(s.resource.unitType() == ResourceUnit::CQUERY) {
         s.resource.setAsDbChunk(s.resource.db(), s.resource.chunk());
     }
     s.request = t.query;
-    // FIXME
+    // FIXME: finish this out if we want to do a hybrid
+    // old/new dispatch to new workers.
     s.receiver = MergeAdapter::newInstance(); //savePath, resultName);
     add(refNum, s);
-}
-
-void Executive::abort() {
-    LOGGER_INF << "Trying to cancel all queries...\n";
-    std::vector<int> pending;
-    {
-        boost::lock_guard<boost::mutex> lock(_receiversMutex);
-        std::ostringstream os;
-        os << "STATE=";
-        _printState(os);
-        LOGGER_INF << os.str() << std::endl
-                   << "Loop cancel all queries...\n";
-        ReceiverMap::iterator i,e;
-        for(i=_receivers.begin(), e=_receivers.end(); i != e; ++i) {
-            i->second->cancel();
-            pending.push_back(i->first);
-        }
-        LOGGER_INF << "Loop cancel all queries...done\n";
-    }
-    { // Should be possible to convert this to a for_each call.
-        std::vector<int>::iterator i,e;
-        for(i=pending.begin(), e=pending.end(); i != e; ++i) {
-            _unTrack(*i);
-        }
-    }
 }
 
 // Add a spec to be executed. Not thread-safe.
@@ -181,7 +157,7 @@ void Executive::add(int refNum, Executive::Spec const& s) {
     ExecStatus& status = _insertNewStatus(refNum, s.resource);
     ++_requestCount;
     std::string msg = "Exec add pth=" + s.resource.path();
-    LOGGER_INF << msg << std::endl;
+    LOGGER_INF << msg << std::endl << std::flush;
     _messageStore->addMessage(s.resource.chunk(), log::MSG_MGR_ADD, msg);
 
     QueryResource* r = new QueryResource(s.resource.path(),
@@ -207,8 +183,6 @@ bool Executive::join() {
     // Check to see if _receivers is empty, if not, then sleep on a condition.
     _waitUntilEmpty();
     // Okay to merge. probably not the Executive's responsibility
-    // _merger->finalize();
-    // _merger.reset();
     struct successF {
         static bool f(Executive::StatusMap::value_type const& entry) {
             ExecStatus const& es = *entry.second;
@@ -216,7 +190,7 @@ bool Executive::join() {
     int sCount = std::count_if(_statuses.begin(), _statuses.end(), successF::f);
 
     LOGGER_INF << "Query exec finish. " << _requestCount << " dispatched." << std::endl;
-
+    _reportStatuses();
     return sCount == _requestCount;
 }
 
@@ -245,12 +219,47 @@ void Executive::markCompleted(int refNum, bool success) {
         LOGGER_ERR << "Executive: requesting squash (cause refnum="
                    << refNum << " with "
                    << " code=" << e.code << " " << e.msg << std::endl;
-        abort(); // ask to abort
+        squash(); // ask to squash
     }
 }
 
 void Executive::requestSquash(int refNum) {
-    LOGGER_ERR << "Executive::requestSquash() not implemented. Sorry.\n";
+    boost::lock_guard<boost::mutex> lock(_receiversMutex);
+    ReceiverMap::iterator i = _receivers.find(refNum);
+    if(i != _receivers.end()) {
+        QueryReceiver::Error e = i->second->getError();
+        LOGGER_WRN << "Warning, requestSquash(" << refNum
+                   << "), but " << refNum << " has already failed ("
+                   << e.code << ", " << e.msg << ")."
+                   << std::endl;
+    } else {
+        i->second->cancel();
+    }
+}
+
+void Executive::squash() {
+    LOGGER_INF << "Trying to cancel all queries...\n";
+    std::vector<int> pending;
+    {
+        boost::lock_guard<boost::mutex> lock(_receiversMutex);
+        std::ostringstream os;
+        os << "STATE=";
+        _printState(os);
+        LOGGER_INF << os.str() << std::endl
+                   << "Loop cancel all queries...\n";
+        ReceiverMap::iterator i,e;
+        for(i=_receivers.begin(), e=_receivers.end(); i != e; ++i) {
+            i->second->cancel();
+            pending.push_back(i->first);
+        }
+        LOGGER_INF << "Loop cancel all queries...done\n";
+    }
+    { // Should be possible to convert this to a for_each call.
+        std::vector<int>::iterator i,e;
+        for(i=pending.begin(), e=pending.end(); i != e; ++i) {
+            _unTrack(*i);
+        }
+    }
 }
 
 struct printMapEntry {
@@ -267,6 +276,11 @@ struct printMapEntry {
     std::string const& sep;
     bool first;
 };
+
+int Executive::getNumInflight() {
+    boost::unique_lock<boost::mutex> lock(_receiversMutex);
+    return _receivers.size();
+}
 
 std::string Executive::getProgressDesc() const {
     std::ostringstream os;
@@ -318,10 +332,9 @@ void Executive::_reapReceivers(boost::unique_lock<boost::mutex> const&) {
         bool reaped = false;
         for(i=_receivers.begin(), e=_receivers.end(); i != e; ++i) {
             if(!i->second->getError().msg.empty()) {
-                // FIXME do something with the error (msgcode log?)
+                // Receiver should have logged the error to the messageStore
                 LOGGER_INF << "Executive (" << (void*)this << ") REAPED  id="
                    << i->first << std::endl;
-
                 _receivers.erase(i);
                 reaped = true;
                 break;
@@ -333,12 +346,29 @@ void Executive::_reapReceivers(boost::unique_lock<boost::mutex> const&) {
     }
 }
 
+void Executive::_reportStatuses() {
+    StatusMap::const_iterator i,e;
+    for(i=_statuses.begin(), e=_statuses.end(); i != e; ++i) {
+        ExecStatus const& es = *i->second;
+        std::ostringstream os;
+        os << ExecStatus::stateText(es.state)
+           << " " << es.stateCode;
+        if(!es.stateDesc.empty()) {
+            os << " " << es.stateDesc;
+        }
+        os << " " << es.stateTime;
+        _messageStore->addMessage(es.resourceUnit.chunk(),
+                                  es.state, os.str());
+    }
+}
+
 void Executive::_waitUntilEmpty() {
     boost::unique_lock<boost::mutex> lock(_receiversMutex);
     int lastCount = -1;
     int count;
     int moreDetailThreshold = 5;
     int complainCount = 0;
+    const boost::posix_time::seconds statePrintDelay(5);
     //_printState(LOG_STRM(Debug));
     while(!_receivers.empty()) {
         count = _receivers.size();
@@ -352,7 +382,7 @@ void Executive::_waitUntilEmpty() {
                 complainCount = 0;
             }
         }
-        _receiversEmpty.timed_wait(lock, boost::posix_time::seconds(5));
+        _receiversEmpty.timed_wait(lock, statePrintDelay);
     }
 }
 
@@ -363,245 +393,5 @@ void Executive::_printState(std::ostream& os) {
     os << std::endl << getProgressDesc() << std::endl;
 }
 
-#if 0
-class AsyncQueryManager::printQueryMapValue {
-public:
-    printQueryMapValue(std::ostream& os_) : os(os_) {}
-    void operator()(QueryMap::value_type const& qv) {
-        os << "Query with id=" << qv.first;
-        os << ": ";
-        if(qv.second.first) {
-            os << qv.second.first->getDesc();
-        } else {
-            os << "(NULL)";
-        }
-        os << ", " << qv.second.second << std::endl;
-    }
-    std::ostream& os;
-};
-
-class AsyncQueryManager::squashQuery {
-public:
-    squashQuery(boost::mutex& mutex_, QueryMap& queries_)
-        :mutex(mutex_), queries(queries_) {}
-    void operator()(QueryMap::value_type const& qv) {
-        boost::shared_ptr<qdisp::ChunkQuery> cq = qv.second.first;
-        if(!cq.get()) return;
-        {
-            boost::unique_lock<boost::mutex> lock(mutex);
-            QueryMap::iterator i = queries.find(qv.first);
-            if(i != queries.end()) {
-                cq = i->second.first; // Get the shared version.
-                if(!cq.get()) {
-                    //qv.second.first.reset(); // Erase ours too.
-                    return;
-                }
-                //idInProgress = i->first;
-            }
-        }
-        // Query may have been completed, and its memory freed,
-        // but still exist briefly before it is deleted from the map.
-        util::Timer t;
-        t.start();
-        cq->requestSquash();
-        t.stop();
-        LOGGER_INF << "qSquash " << t << std::endl;
-    }
-    boost::mutex& mutex;
-    QueryMap& queries;
-};
-
-////////////////////////////////////////////////////////////
-// AsyncQueryManager
-////////////////////////////////////////////////////////////
-
-void AsyncQueryManager::finalizeQuery(int id,
-                                      xrdc::XrdTransResult r,
-                                      bool aborted) {
-    std::stringstream ss;
-    util::Timer t1;
-    t1.start();
-    /// Finalize a query.
-    /// Note that all parameters should be copies and not const references.
-    /// We delete the ChunkQuery (the caller) here, so a ref would be invalid.
-    std::string dumpFile;
-    std::string tableName;
-    int dumpSize;
-    LOGGER_DBG << "finalizing. read=" << r.read << " and status is "
-               << (aborted ? "ABORTED" : "okay") << std::endl;
-    LOGGER_DBG << ((void*)this) << "Finalizing query (" << id << ")" << std::endl;
-    if((!aborted) && (r.open >= 0) && (r.queryWrite >= 0)
-       && (r.read >= 0)) {
-        util::Timer t2;
-        t2.start();
-        boost::shared_ptr<xrdc::PacketIter> resIter;
-        { // Lock scope for reading
-            boost::lock_guard<boost::mutex> lock(_queriesMutex);
-            QuerySpec& s = _queries[id];
-            // Set resIter equal to PacketIter associated with ChunkQuery.
-            resIter = s.first->getResultIter();
-            dumpFile = s.first->getSavePath();
-            dumpSize = s.first->getSaveSize();
-            tableName = s.second;
-            //assert(r.localWrite == dumpSize); // not valid when using iter
-            s.first.reset(); // clear out ChunkQuery.
-        }
-        // Lock-free merge
-        if(resIter) {
-            _addNewResult(id, resIter, tableName);
-        } else {
-            _addNewResult(id, dumpSize, dumpFile, tableName);
-        }
-        // Erase right before notifying.
-        t2.stop();
-        ss << id << " QmFinalizeMerge " << t2 << std::endl;
-        getMessageStore()->addMessage(id, log::MSG_MERGED, "Results Merged.");
-    } // end if
-    else {
-        util::Timer t2e;
-        t2e.start();
-        if(!aborted) {
-            _isExecFaulty = true;
-            LOGGER_INF << "Requesting squash " << id
-                       << " because open=" << r.open
-                       << " queryWrite=" << r.queryWrite
-                       << " read=" << r.read << std::endl;
-            _squashExecution();
-            LOGGER_INF << " Skipped merge (read failed for id="
-                       << id << ")" << std::endl;
-        }
-        t2e.stop();
-        ss << id << " QmFinalizeError " << t2e << std::endl;
-    }
-    util::Timer t3;
-    t3.start();
-    {
-        boost::lock_guard<boost::mutex> lock(_resultsMutex);
-        _results.push_back(Result(id,r));
-        if(aborted) ++_squashCount; // Borrow result mutex to protect counter.
-        { // Lock again to erase.
-            util::Timer t2e1;
-            t2e1.start();
-            boost::lock_guard<boost::mutex> lock(_queriesMutex);
-            _queries.erase(id);
-            if(_queries.empty()) _queriesEmpty.notify_all();
-            t2e1.stop();
-            ss << id << " QmFinalizeErase " << t2e1 << std::endl;
-            getMessageStore()->addMessage(id, log::MSG_ERASED,
-                                          "Query Resources Erased.");
-        }
-    }
-    t3.stop();
-    ss << id << " QmFinalizeResult " << t3 << std::endl;
-    LOGGER_DBG << (void*)this << " Done finalizing query (" << id << ")" << std::endl;
-    t1.stop();
-    ss << id << " QmFinalize " << t1 << std::endl;
-    LOGGER_INF << ss.str();
-    getMessageStore()->addMessage(id, log::MSG_FINALIZED, "Query Finalized.");
-}
-
-// FIXME: With squashing, we should be able to return the result earlier.
-// So, clients will call joinResult(), to get the result, and let a reaper
-// thread call joinEverything, since that ensures that this object has
-// ceased activity and can recycle resources.
-// This is a performance optimization.
-void AsyncQueryManager::_addNewResult(int id, PacIterPtr pacIter,
-                                      std::string const& tableName) {
-    LOGGER_DBG << "EXECUTING AsyncQueryManager::_addNewResult(" << id
-               << ", pacIter, " << tableName << ")" << std::endl;
-    bool mergeResult = _merger->merge(pacIter, tableName);
-    ssize_t sz = pacIter->getTotalSize();
-    {
-        boost::lock_guard<boost::mutex> lock(_totalSizeMutex);
-        _totalSize += sz;
-    }
-
-    if(_shouldLimitResult && (_totalSize > _resultLimit)) {
-        _squashRemaining();
-    }
-    if(!mergeResult) {
-        rproc::TableMergerError e = _merger->getError();
-        getMessageStore()->addMessage(id, e.errorCode != 0 ? -abs(e.errorCode) : -1,
-                                      "Failed to merge results.");
-        if(e.resultTooBig()) {
-            _squashRemaining();
-        }
-    }
-}
-
-void AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize,
-                                      std::string const& dumpFile,
-                                      std::string const& tableName) {
-    if(dumpSize < 0) {
-        throw std::invalid_argument("dumpSize < 0");
-    }
-    {
-        boost::lock_guard<boost::mutex> lock(_totalSizeMutex);
-        _totalSize += dumpSize;
-    }
-
-    if(_shouldLimitResult && (_totalSize > _resultLimit)) {
-        _squashRemaining();
-    }
-
-    if(dumpSize > 0) {
-        bool mergeResult = _merger->merge(dumpFile, tableName);
-        int res = unlink(dumpFile.c_str()); // Hurry and delete dump file.
-        if(0 != res) {
-            LOGGER_ERR << "Error removing dumpFile " << dumpFile
-                       << " errno=" << errno << std::endl;
-        }
-        if(!mergeResult) {
-            rproc::TableMergerError e = _merger->getError();
-            getMessageStore()->addMessage(id, e.errorCode != 0 ? -abs(e.errorCode) : -1,
-                                          "Failed to merge results.");
-            if(e.resultTooBig()) {
-                _squashRemaining();
-            }
-        }
-        LOGGER_DBG << "Merge of " << dumpFile << " into "
-                   << tableName
-                   << (mergeResult ? " OK----" : " FAIL====")
-                   << std::endl;
-    }
-}
-
-void AsyncQueryManager::_squashExecution() {
-    // Halt new query dispatches and cancel the ones in flight.
-    // This attempts to save on resources and latency, once a query
-    // fault is detected.
-
-    if(_isSquashed) return;
-    _isSquashed = true; // Mark before acquiring lock--faster.
-    LOGGER_DBG << "Squash requested by "<<(void*)this << std::endl;
-    util::Timer t;
-    // Squashing is dependent on network latency and remote worker
-    // responsiveness, so make a copy so others don't have to wait.
-    std::vector<std::pair<int, QuerySpec> > myQueries;
-    {
-        boost::unique_lock<boost::mutex> lock(_queriesMutex);
-        t.start();
-        myQueries.resize(_queries.size());
-        LOGGER_INF << "AsyncQM squashExec copy " <<  std::endl;
-        std::copy(_queries.begin(), _queries.end(), myQueries.begin());
-    }
-    LOGGER_INF << "AsyncQM squashQueued" << std::endl;
-    globalWriteQueue.cancelQueued(this);
-    LOGGER_INF << "AsyncQM squashExec iteration " <<  std::endl;
-    std::for_each(myQueries.begin(), myQueries.end(),
-                  squashQuery(_queriesMutex, _queries));
-    t.stop();
-    LOGGER_INF << "AsyncQM squashExec " << t << std::endl;
-    _isSquashed = true; // Ensure that flag wasn't trampled.
-
-    getMessageStore()->addMessage(-1, log::MSG_EXEC_SQUASHED,
-                                  "Query Execution Squashed.");
-}
-
-void AsyncQueryManager::_squashRemaining() {
-    _squashExecution();  // Not sure if this is right. FIXME
-}
-
-#endif
 }}} // namespace lsst::qserv::qdisp
 
