@@ -33,6 +33,7 @@
 #include "global/ResourceUnit.h"
 #include "proto/ProtoImporter.h"
 #include "proto/worker.pb.h"
+#include "util/Timer.h"
 #include "wbase/MsgProcessor.h"
 #include "wbase/SendChannel.h"
 #include "wlog/WLogger.h"
@@ -74,6 +75,8 @@ public:
         }
     }
     virtual void sendFile(int fd, Size fSize) {
+        util::Timer t;
+        t.start();
         Status s = ssiSession2.SetResponse(fSize, fd);
         std::ostringstream os;
         if(s == XrdSsiResponder::wasPosted) {
@@ -90,7 +93,10 @@ public:
             sendError("Internal error posting response file", 1);
         }
         ssiSession2._log->error(os.str());
-
+        t.stop();
+        os.str("");
+        os << "sendFile took " << t.getElapsed() << " seconds";
+        ssiSession2._log->info(os.str());
     }
     SsiSession2& ssiSession2;
 };
@@ -108,9 +114,14 @@ struct SsiProcessor : public Importer::Acceptor {
         : ru(ru_), msgProcessor(mp), sendChannel(sc) {}
 
     virtual void operator()(boost::shared_ptr<proto::TaskMsg> m) {
+        util::Timer t;
         if(m->has_db() && m->has_chunkid()
            && (ru.db() == m->db()) && (ru.chunk() == m->chunkid())) {
+            t.start();
             (*msgProcessor)(m, sendChannel);
+            t.stop();
+            std::cerr << "SsiProcessor msgProcessor call took "
+                      << t.getElapsed() << " seconds" << std::endl;
         } else {
             std::ostringstream os;
             os << "Mismatched db/chunk in msg on resource db="
@@ -129,15 +140,27 @@ struct SsiProcessor : public Importer::Acceptor {
 // Step 4
 bool
 SsiSession2::ProcessRequest(XrdSsiRequest* req, unsigned short timeout) {
+    util::Timer t;
     // Figure out what the request is.
     std::ostringstream os;
     os << "ProcessRequest, service=" << sessName;
     _log->info(os.str());
-
+    t.start();
     BindRequest(req, this); // Step 5
+    t.stop();
+    os.str("");
+    os << "BindRequest took " << t.getElapsed() << " seconds";
+    _log->info(os.str());
+
     char *reqData = 0;
     int   reqSize;
+    t.start();
     reqData = req->GetRequest(reqSize);
+    t.stop();
+    os.str("");
+    os << "GetRequest took " << t.getElapsed() << " seconds";
+    _log->info(os.str());
+
     os.str("");
     os << "### " << reqSize <<" byte request: "
        << std::string(reqData, reqSize);
@@ -153,7 +176,13 @@ SsiSession2::ProcessRequest(XrdSsiRequest* req, unsigned short timeout) {
             return false;
         }
 
+        t.start();
         enqueue(ru, reqData, reqSize);
+        t.stop();
+        os.str("");
+        os << "SsiSession2::enqueue took " << t.getElapsed() << " seconds";
+        _log->info(os.str());
+
         ReleaseRequestBuffer();
     } else {
         // Ignore this request.
@@ -222,78 +251,3 @@ void SsiSession2::enqueue(ResourceUnit const& ru, char* reqData, int reqSize) {
 }
 
 }}} // lsst::qserv::xrdsvc
-
-#if 0
-// Third-party headers
-#include <boost/thread.hpp> // boost::mutex
-#include "XrdSsi/XrdSsiResponder.hh"
-
-// Local headers
-#include "global/ResourceUnit.h"
-#include "wbase/Base.h"
-
-// Forward declarations
-// System headers
-#include <errno.h>
-#include <iostream>
-#include <string>
-
-// Third-party headers
-#include <boost/shared_ptr.hpp>
-
-// Qserv headers
-#include "global/ResourceUnit.h"
-#include "wbase/MsgProcessor.h"
-#include "wbase/SendChannel.h"
-
-namespace lsst {
-namespace qserv {
-namespace xrdsvc {
-
-SsiResponder::SsiResponder(boost::shared_ptr<wbase::MsgProcessor> processor)
-    :  XrdSsiResponder(this, (void *)11), // 11 = type for responder, not sure
-                                          // why we need it.
-       _processor(processor) {
-}
-
-void SsiResponder::doStuff() {
-#if 1
-    // TODO
-    // Compute request and place it in the scheduler, then release the request buffer.
-    // Make sure that request knows how to fire the response: place responding code into a callback so we can put it in the scheduler's task.
-
-#else
-    // I don't need the request buffer anymore, so delete it.
-    ReleaseRequestBuffer();
-
-    // action when it's my turn on the work queue
-    bool noError = true;
-    if(noError) {
-        // buf allocated by session obj.
-        char* b = (char*)response.data();
-        int blen = response.length();
-        stringstream ss;
-        ss << "Sending b=" << (void*)b << " len=" << blen << endl;
-        cerr << ss.str();
-        Status s = SetResponse(b, blen); // Step 6
-        ReleaseRequestBuffer(); // Release reqP
-        ss << "SetResponse returned ";
-        switch(s) {
-        case wasPosted: ss << "wasPosted"; break;
-        case notPosted: ss << "notPosted"; break;
-        case notActive: ss << "notActive"; break;
-        default: ss << "______"; break;
-        }
-        ss << endl;
-        cerr << ss.str();
-    } else {
-        //SetResponse(filedesc);
-        //SetResponse(XrdSsiStream)
-
-    }
-#endif
-}
-
-}}} // lsst::qserv::xrdsvc
-
-#endif
