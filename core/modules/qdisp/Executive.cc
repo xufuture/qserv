@@ -46,21 +46,14 @@
 // #include <boost/make_shared.hpp>
 
 // // Local headers
-// #include "ccontrol/ConfigMap.h"
-// #include "css/Facade.h"
-//#include "global/stringTypes.h"
 #include "global/ResourceUnit.h"
 #include "log/Logger.h"
 #include "log/msgCode.h"
-// #include "rproc/TableMerger.h"
-// #include "qdisp/ChunkQuery.h"
 #include "qdisp/MessageStore.h"
 #include "qdisp/MergeAdapter.h"
 #include "qdisp/QueryResource.h"
-// #include "qproc/QuerySession.h"
 // #include "util/Timer.h"
-// #include "util/WorkQueue.h"
-// #include "xrdc/PacketIter.h"
+
 namespace {
 std::string figureOutError(XrdSsiErrInfo & e) {
     std::ostringstream os;
@@ -386,11 +379,21 @@ void Executive::_waitUntilEmpty() {
     }
 }
 
+std::ostream& operator<<(std::ostream& os,
+                         Executive::StatusMap::value_type const& v) {
+    ExecStatus const& es = *(v.second);
+    os << v.first << ": " << es;
+    return os;
+}
+
 /// precondition: _receiversMutex is held by current thread.
 void Executive::_printState(std::ostream& os) {
     std::for_each(_receivers.begin(), _receivers.end(),
                   printMapSecond<ReceiverMap::value_type>(os, "\n"));
     os << std::endl << getProgressDesc() << std::endl;
+
+    std::copy(_statuses.begin(), _statuses.end(),
+              std::ostream_iterator<StatusMap::value_type>(os, "\n"));
 }
 
 }}} // namespace lsst::qserv::qdisp
