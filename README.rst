@@ -1,10 +1,12 @@
 Quick start guide
 =================
 
-.. note:: 
-  **For developers**, the install procedure described in README.txt doesn't install Qserv from your current git repository version, 
+.. note::
+  **For developers**, the install procedure described in README.txt doesn't install Qserv from your current git repository version,
   but from a previously packaged Qserv uploaded on Qserv distribution server.
   See :doc:`README-devel` in order to install Qserv from your current git repository version.
+
+.. _qserv_install_pre_requisites:
 
 Pre-requisites
 --------------
@@ -25,6 +27,8 @@ Install system dependencies
 Install eups
 ************
 
+See :ref:`qserv_install_pre_requisites`
+
 .. code-block:: bash
 
   # $INSTALL_DIR must be empty
@@ -41,8 +45,10 @@ Load LSST stack environment
   cd $INSTALL_DIR
   source loadLSST.sh
 
-Installation :
---------------
+.. _qserv_install:
+
+Qserv Installation :
+--------------------
 
 .. code-block:: bash
 
@@ -52,6 +58,8 @@ Installation :
   eups distrib install qserv_testdata -r http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
   setup qserv_testdata
 
+.. _qserv_config:
+
 Configuration :
 ---------------
 
@@ -59,11 +67,13 @@ Configuration is installed apart from Qserv software.
 
 .. code-block:: bash
 
-  # qserv-configure.py --help give additional informations 
-  # configuration parameters will be deployed in all 
+  # qserv-configure.py --help give additional informations
+  # configuration parameters will be deployed in all
   # qserv services configuration files/db
   # for a minimalist single node install just leave default
-  qserv-configure.py 
+  qserv-configure.py
+
+.. _qserv_integration_tests:
 
 Integration tests :
 -------------------

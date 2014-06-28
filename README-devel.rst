@@ -1,11 +1,44 @@
 Quick start guide for developpers
 =================================
 
+Pre-requisites
+--------------
+
+Follow classical install pre-requisites (see
+:ref:`qserv_install_pre_requisites`), and then install all Qserv eups
+dependencies by installing last Qserv release (see :ref:`qserv_install`), or manually :
+
+.. code-block:: bash
+
+  eups distrib install boost
+  eups distrib install db
+  eups distrib install swig
+  eups distrib install geom
+  eups distrib install mysqlpython
+  eups distrib install numpy
+  # use Qserv developement distribution server
+  export EUPS_PKGROOT=http://http://lsst-web.ncsa.illinois.edu/~fjammes/qserv/
+  eups distrib install antlr
+  eups distrib install kazoo
+  eups distrib install luaxmlrpc
+  eups distrib install mysqlproxy
+  eups distrib install protobuf
+  eups distrib install twisted
+  eups distrib install xrootd
+  eups distrib install zookeeper
+  # revert to LSST standard distribution server
+  export EUPS_PKGROOT=http://sw.lsstcorp.org/eupspkg
+
+.. note::
+
+  This is last Qserv release eups-dependencies list. You may
+  have to update this list if your own Qserv version doesn't rely on exactly the
+  same dependencies.
+
 Setup current Qserv version in eups :
 -------------------------------------
 
-Once Qserv is installed (see :doc:`README`), in order to install 
-your Qserv development version please use next commands,
+In order to install your Qserv development version please use next commands,
 
 .. code-block:: bash
 
@@ -24,7 +57,7 @@ your Qserv development version please use next commands,
   eups list qserv
   setup qserv $VERSION
 
-Then re-run configuration and test process, as described in :doc:`README`.
+Then re-run configuration and test process (see :ref:`qserv_config`).
 
 Updating test cases :
 ---------------------
