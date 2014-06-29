@@ -47,8 +47,8 @@ Load LSST stack environment
 
 .. _qserv_install:
 
-Qserv Installation :
---------------------
+Qserv Installation
+------------------
 
 .. code-block:: bash
 
@@ -60,8 +60,8 @@ Qserv Installation :
 
 .. _qserv_config:
 
-Configuration :
----------------
+Configuration
+-------------
 
 Configuration is installed apart from Qserv software.
 
@@ -75,8 +75,8 @@ Configuration is installed apart from Qserv software.
 
 .. _qserv_integration_tests:
 
-Integration tests :
--------------------
+Integration tests
+-----------------
 
 For a mono-node instance.
 
