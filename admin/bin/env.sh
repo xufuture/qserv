@@ -13,6 +13,7 @@ check_qserv_run_dir() {
         echo "INFO: Qserv execution directory unspecified, using default one : ${DEFAULT_QSERV_RUN_DIR}"
         echo "INFO: Qserv execution directory can be specified using -r option, or by running : "
         echo "INFO:    export QSERV_RUN_DIR=/qserv/run/dir/ "
+        echo "INFO: -r prevails over QSERV_RUN_DIR env variable"
         QSERV_RUN_DIR=${DEFAULT_QSERV_RUN_DIR}
     }
 

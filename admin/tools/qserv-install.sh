@@ -35,4 +35,4 @@ scons
 
 # Testing Qserv
 qserv-start.sh
-qserv-testdata.py
+qserv-test-integration.py

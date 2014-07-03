@@ -48,6 +48,6 @@ For a mono-node instance.
 
   | qserv-start.sh
   | # launch integration tests for all datasets
-  | qserv-testdata.py
+  | qserv-test-integration.py
   | # launch integration tests only for dataset n°01
   | qserv-benchmark.py --case=01 --load
