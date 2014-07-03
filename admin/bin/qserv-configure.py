@@ -17,13 +17,19 @@ def parseArgs():
     default_qserv_run_dir=os.path.join(os.path.expanduser("~"),"qserv-run",qserv_version)
 
     parser = argparse.ArgumentParser(
-            description='''Qserv configuration tool. it creates an execution
+            description='''Qserv configuration tool. Creates an execution
 directory (qserv_run_dir) which will contains configuration and execution
 data for a given Qserv instance. Default behaviour will configure a mono-node
-instance in ''' + default_qserv_run_dir,
+instance in ''' + default_qserv_run_dir + '''. IMPORTANT : --all MUST BE USED
+FOR A  SETUP FROM SCRATCH.''',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter
             )
 
+    parser.add_argument("-a", "--all", dest="all", action='store_true',
+            default=False,
+            help='''clean execution directory and then run all configuration
+steps'''
+            )
     # Defining option of each configuration step
     for step_name in configure.STEP_LIST:
         parser.add_argument(
@@ -35,11 +41,6 @@ instance in ''' + default_qserv_run_dir,
             help=configure.STEP_DOC[step_name]
             ) 
  
-    parser.add_argument("-a", "--all", dest="all", action='store_true',
-            default=False,
-            help="clean execution directory and then run all configuration steps"
-            )
-
     # Logging management
     verbose_dict = {
         'DEBUG'     : logging.DEBUG,
@@ -87,10 +88,23 @@ instance in ''' + default_qserv_run_dir,
 
     return args
 
-def copy_and_overwrite(from_path, to_path):
-    if os.path.exists(to_path):
-        shutil.rmtree(to_path)
-    shutil.copytree(from_path, to_path)
+def recursive_copy(src, dest, ignore=None):
+    if os.path.isdir(src):
+        if not os.path.isdir(dest):
+            os.makedirs(dest)
+        files = os.listdir(src)
+        if ignore is not None:
+            ignored = ignore(src, files)
+        else:
+            ignored = set()
+        for f in files:
+            if f not in ignored:
+                recursive_copy(os.path.join(src, f), 
+                                    os.path.join(dest, f), 
+                                    ignore)
+    else:
+        shutil.copyfile(src, dest)
+
 
 def main():
 
@@ -115,15 +129,17 @@ def main():
             .format(template_config_dir, args.qserv_run_dir)
         )
 
-        if not args.force :
-            if not configure.user_yes_no_query(
+        if os.path.exists(args.qserv_run_dir) and not args.force:
+            if configure.user_yes_no_query(
                 "WARNING : Do you want to erase all configuration" +
                 " data in {0} ?".format(args.qserv_run_dir)
             ):
+                shutil.rmtree(args.qserv_run_dir)
+            else:
                 logging.info("Stopping Qserv configuration, please specify an other configuration directory")
                 sys.exit(1)
         
-        copy_and_overwrite(template_config_dir, args.qserv_run_dir)
+        recursive_copy(template_config_dir, args.qserv_run_dir)
 
         for line in fileinput.input(args.meta_config_file, inplace = 1):
             print line.replace("run_base_dir =", "run_base_dir = " + args.qserv_run_dir),
@@ -187,7 +203,7 @@ def main():
 
             for c in components_to_configure:
                 script = os.path.join( configuration_scripts_dir, c+".sh")
-                commons.run_command(script)
+                commons.run_command([script])
 
         if 'client' in args.step_list:
             template_root = os.path.join(config['qserv']['run_base_dir'],"templates", "client")

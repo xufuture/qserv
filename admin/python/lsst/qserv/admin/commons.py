@@ -86,7 +86,7 @@ def run_command(cmd_args, stdin_file=None, stdout_file=None, stderr_file=None, l
     """
     logger = logging.getLogger()
 
-    cmd_str= " ".join(cmd_args)
+    cmd_str= ' '.join(cmd_args)
     logger.log(loglevel, "Running : {0}".format(cmd_str))
 
     sin = None
@@ -134,7 +134,7 @@ def run_command(cmd_args, stdin_file=None, stdout_file=None, stderr_file=None, l
             logger.info("\tstderr :\n--\n%s--" % stderrdata)
 
         if process.returncode!=0 :
-            logger.fatal("Error code returned by command : %s " % cmd_str)
+            logger.fatal("Error code returned by command : {0} ".format(cmd_str))
             sys.exit(1)
 
     except OSError as e:
