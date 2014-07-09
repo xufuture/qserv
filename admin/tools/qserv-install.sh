@@ -30,8 +30,7 @@ setup qserv_testdata ||
 
 
 # Configuring Qserv
-cd $QSERV_DIR/admin
-scons
+qserv-configure.py --all
 
 # Testing Qserv
 qserv-start.sh
