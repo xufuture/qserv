@@ -226,8 +226,10 @@ def main():
 
             if not is_symlink_correct:
                 if args.force or configure.user_yes_no_query(
-                    "WARNING : Do you want to update client configuration" +
-                    " currently pointing on {0}".format(os.path.realpath(cfg_link))
+                    ("Do you want to update user configuration file (currently pointing
+on {0}) for new run directory?"
+                        .format(os.path.realpath(cfg_link))
+                    )
                 ):
                     os.remove(cfg_link)
                     os.symlink(cfg_file, cfg_link)

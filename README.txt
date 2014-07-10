@@ -46,7 +46,12 @@ Integration tests :
 
 For a mono-node instance.
 
-  | qserv-start.sh
+.. note::
+
+  Default value for $QSERV_RUN_DIR is $HOME/qserv-run/$QSERV_VERSION,
+  with QSERV_VERSION provided by qserv-version.sh command.
+
+  | $QSERV_RUN_DIR/qserv-start.sh
   | # launch integration tests for all datasets
   | qserv-test-integration.py
   | # launch integration tests only for dataset n°01
