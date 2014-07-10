@@ -1,20 +1,8 @@
 #!/bin/sh
 
-TMP_PATH=$(which qserv-configure.py)
-QSERV_BIN_DIR=$(dirname $TMP_PATH)
-source ${QSERV_BIN_DIR}/env.sh
+QSERV_RUN_DIR=%(QSERV_RUN_DIR)s
 
-while getopts "hr:" option
-do
-    case $option in
-    h)
-        usage
-        ;;
-    r)
-        QSERV_RUN_DIR=${OPTARG}
-        ;;
-    esac
-done
+source ${QSERV_RUN_DIR}/bin/env.sh
 
 check_qserv_run_dir
 
