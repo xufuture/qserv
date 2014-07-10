@@ -129,8 +129,8 @@ def main():
             .format(template_config_dir, args.qserv_run_dir)
         )
 
-        if os.path.exists(args.qserv_run_dir) and not args.force:
-            if configure.user_yes_no_query(
+        if os.path.exists(args.qserv_run_dir):
+            if args.force or configure.user_yes_no_query(
                 "WARNING : Do you want to erase all configuration" +
                 " data in {0} ?".format(args.qserv_run_dir)
             ):
@@ -205,16 +205,38 @@ def main():
                 script = os.path.join( configuration_scripts_dir, c+".sh")
                 commons.run_command([script])
 
-        if 'client' in args.step_list:
-            template_root = os.path.join(config['qserv']['run_base_dir'],"templates", "client")
-            homedir = os.path.expanduser("~")
-            dest_root = os.path.join(homedir, ".lsst")
-            logging.info(
-                "Creating client configuration file in {0}".format(dest_root)
+        if configure.CLIENT in args.step_list:
+            template_file = os.path.join(
+                config['qserv']['run_base_dir'], "templates", "server", "etc", "qserv-client.conf"
             )
-            configure.apply_templates(
-                template_root,
-                dest_root
+            cfg_file = os.path.join(
+                config['qserv']['run_base_dir'], "etc", "qserv-client.conf"
+            )
+            configure.apply_tpl(
+                template_file,
+                cfg_file
+            )
+            logging.info(
+                "Client configuration file created : {0}".format(cfg_file)
+            )
+            homedir = os.path.expanduser("~")
+            cfg_link = os.path.join(homedir, ".lsst", "qserv.conf")
+
+            is_symlink_correct = os.path.exists(cfg_link) and os.path.samefile(cfg_link, cfg_file)
+
+            if not is_symlink_correct:
+                if args.force or configure.user_yes_no_query(
+                    "WARNING : Do you want to update client configuration" +
+                    " currently pointing on {0}".format(os.path.realpath(cfg_link))
+                ):
+                    os.remove(cfg_link)
+                    os.symlink(cfg_file, cfg_link)
+                else:
+                    logging.info("Client configuration unmodified.")
+                    sys.exit(1)
+
+            logging.info(
+                "Client configuration is now pointing to : {0}".format(cfg_file)
             )
 
 if __name__ == '__main__':

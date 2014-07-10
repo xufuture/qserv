@@ -204,7 +204,7 @@ def _set_perms(file):
     else:
         os.chmod(file, 0660)
 
-def _apply_tpl(src_file, target_file):
+def apply_tpl(src_file, target_file):
     """ Creating one configuration file from one template
     """
 
@@ -244,7 +244,7 @@ def apply_templates(template_root, dest_root):
             src_file = os.path.join(root,f)
             target_file = os.path.join(dest_dir, f)
 
-            _apply_tpl(src_file, target_file)
+            apply_tpl(src_file, target_file)
 
             # applying perms
 	    _set_perms(target_file)
