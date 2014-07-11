@@ -11,7 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-
+   admin/configuration
 
 Indices and tables
 ==================
