@@ -69,6 +69,8 @@ public:
             (*_release)();
         }
     }
+    static boost::shared_ptr<SendChannel> newNopChannel();
+
 protected:
     ReleaseFuncPtr _release;
 };

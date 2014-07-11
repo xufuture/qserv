@@ -68,7 +68,7 @@ public:
 
     bool squashByHash(std::string const& hash);
     bool accept(boost::shared_ptr<proto::TaskMsg> msg);
-    void newTaskAction(wcontrol::Task::Ptr task);
+    void newTaskAction(wbase::Task::Ptr task);
 
     virtual boost::shared_ptr<wbase::MsgProcessor> getProcessor();
 
@@ -76,13 +76,13 @@ public:
     class RunnerMgr;
     class Runner  {
     public:
-        Runner(RunnerMgr& rm, wcontrol::Task::Ptr firstTask);
+        Runner(RunnerMgr& rm, wbase::Task::Ptr firstTask);
         void poison();
         void operator()();
         std::string const& getHash() const { return _task->hash; }
     private:
         RunnerMgr& _rm;
-        wcontrol::Task::Ptr _task;
+        wbase::Task::Ptr _task;
         bool _isPoisoned;
         wlog::WLogger::Ptr _log;
     };
@@ -90,17 +90,17 @@ public:
     class RunnerMgr {
     public:
         RunnerMgr(ForemanImpl& f);
-        void registerRunner(Runner* r, wcontrol::Task::Ptr t);
-        boost::shared_ptr<wdb::QueryRunner> newQueryRunner(wcontrol::Task::Ptr t);
-        void reportComplete(wcontrol::Task::Ptr t);
-        void reportStart(wcontrol::Task::Ptr t);
+        void registerRunner(Runner* r, wbase::Task::Ptr t);
+        boost::shared_ptr<wdb::QueryRunner> newQueryRunner(wbase::Task::Ptr t);
+        void reportComplete(wbase::Task::Ptr t);
+        void reportStart(wbase::Task::Ptr t);
         void signalDeath(Runner* r);
-        wcontrol::Task::Ptr getNextTask(Runner* r, wcontrol::Task::Ptr previous);
+        wbase::Task::Ptr getNextTask(Runner* r, wbase::Task::Ptr previous);
         wlog::WLogger::Ptr getLog();
         bool squashByHash(std::string const& hash);
 
     private:
-        void _reportStartHelper(wcontrol::Task::Ptr t);
+        void _reportStartHelper(wbase::Task::Ptr t);
         class StartTaskF;
         ForemanImpl& _f;
         Foreman::TaskWatcher& _taskWatcher;
@@ -110,7 +110,7 @@ public:
 private:
     typedef std::deque<Runner*> RunnerDeque;
 
-    void _startRunner(wcontrol::Task::Ptr t);
+    void _startRunner(wbase::Task::Ptr t);
 
     boost::mutex _mutex;
     boost::mutex _runnersMutex;
@@ -119,7 +119,7 @@ private:
     boost::scoped_ptr<RunnerMgr> _rManager;
     wlog::WLogger::Ptr _log;
 
-    TaskQueuePtr _running;
+    wbase::TaskQueuePtr _running;
 };
 ////////////////////////////////////////////////////////////////////////
 // Foreman factory function
@@ -139,7 +139,7 @@ newForeman(Foreman::Scheduler::Ptr sched, wlog::WLogger::Ptr log) {
 class ForemanImpl::RunnerMgr::StartTaskF {
 public:
     StartTaskF(ForemanImpl& f) : _f(f) {}
-    void operator()(wcontrol::Task::Ptr t) {
+    void operator()(wbase::Task::Ptr t) {
         _f._startRunner(t);
     }
 private:
@@ -151,7 +151,7 @@ ForemanImpl::RunnerMgr::RunnerMgr(ForemanImpl& f)
 }
 
 void
-ForemanImpl::RunnerMgr::registerRunner(Runner* r, wcontrol::Task::Ptr t) {
+ForemanImpl::RunnerMgr::registerRunner(Runner* r, wbase::Task::Ptr t) {
     {
         boost::lock_guard<boost::mutex> lock(_f._runnersMutex);
         _f._runners.push_back(r);
@@ -164,14 +164,14 @@ ForemanImpl::RunnerMgr::registerRunner(Runner* r, wcontrol::Task::Ptr t) {
 }
 
 boost::shared_ptr<wdb::QueryRunner>
-ForemanImpl::RunnerMgr::newQueryRunner(wcontrol::Task::Ptr t) {
+ForemanImpl::RunnerMgr::newQueryRunner(wbase::Task::Ptr t) {
     wdb::QueryRunnerArg a(_f._log, t);
     boost::shared_ptr<wdb::QueryRunner> qr(new wdb::QueryRunner(a));
     return qr;
 }
 
 void
-ForemanImpl::RunnerMgr::reportComplete(wcontrol::Task::Ptr t) {
+ForemanImpl::RunnerMgr::reportComplete(wbase::Task::Ptr t) {
     {
         boost::lock_guard<boost::mutex> lock(_f._runnersMutex);
         bool popped = popFrom(*_f._running, t);
@@ -184,12 +184,12 @@ ForemanImpl::RunnerMgr::reportComplete(wcontrol::Task::Ptr t) {
 }
 
 void
-ForemanImpl::RunnerMgr::reportStart(wcontrol::Task::Ptr t) {
+ForemanImpl::RunnerMgr::reportStart(wbase::Task::Ptr t) {
    _reportStartHelper(t);
 }
 
 void
-ForemanImpl::RunnerMgr::_reportStartHelper(wcontrol::Task::Ptr t) {
+ForemanImpl::RunnerMgr::_reportStartHelper(wbase::Task::Ptr t) {
     {
         boost::lock_guard<boost::mutex> lock(_f._runnersMutex);
         _f._running->push_back(t);
@@ -213,12 +213,12 @@ void ForemanImpl::RunnerMgr::signalDeath(Runner* r) {
     }
 }
 
-wcontrol::Task::Ptr
-ForemanImpl::RunnerMgr::getNextTask(Runner* r, wcontrol::Task::Ptr previous) {
-    TaskQueuePtr tq;
+wbase::Task::Ptr
+ForemanImpl::RunnerMgr::getNextTask(Runner* r, wbase::Task::Ptr previous) {
+    wbase::TaskQueuePtr tq;
     tq = _f._scheduler->taskFinishAct(previous, _f._running);
     if(!tq.get()) {
-        return wcontrol::Task::Ptr();
+        return wbase::Task::Ptr();
     }
     if(tq->size() > 1) {
         std::for_each(tq->begin()+1, tq->end(), StartTaskF(_f));
@@ -260,7 +260,7 @@ bool ForemanImpl::RunnerMgr::squashByHash(std::string const& hash) {
 ////////////////////////////////////////////////////////////////////////
 // class ForemanImpl::Runner
 ////////////////////////////////////////////////////////////////////////
-ForemanImpl::Runner::Runner(RunnerMgr& rm, wcontrol::Task::Ptr firstTask)
+ForemanImpl::Runner::Runner(RunnerMgr& rm, wbase::Task::Ptr firstTask)
     : _rm(rm),
       _task(firstTask),
       _isPoisoned(false),
@@ -303,7 +303,7 @@ public:
 
     virtual void operator()(boost::shared_ptr<proto::TaskMsg> taskMsg,
                             boost::shared_ptr<wbase::SendChannel> replyChannel) {
-        wcontrol::Task::Ptr t(new wcontrol::Task(taskMsg, replyChannel));
+        wbase::Task::Ptr t(new wbase::Task(taskMsg, replyChannel));
         _foremanImpl.newTaskAction(t);
     }
     ForemanImpl& _foremanImpl;
@@ -313,7 +313,7 @@ public:
 ////////////////////////////////////////////////////////////////////////
 ForemanImpl::ForemanImpl(Scheduler::Ptr s,
                          wlog::WLogger::Ptr log)
-    : _scheduler(s), _running(new TaskQueue()) {
+    : _scheduler(s), _running(new wbase::TaskQueue()) {
     if(!log) {
         // Make basic logger.
         _log.reset(new wlog::WLogger());
@@ -330,7 +330,7 @@ ForemanImpl::~ForemanImpl() {
 }
 
 void
-ForemanImpl::_startRunner(wcontrol::Task::Ptr t) {
+ForemanImpl::_startRunner(wbase::Task::Ptr t) {
     // FIXME: Is this all that is needed?
     boost::thread(Runner(*_rManager, t));
 }
@@ -351,18 +351,18 @@ bool ForemanImpl::squashByHash(std::string const& hash) {
 
 bool
 ForemanImpl::accept(boost::shared_ptr<proto::TaskMsg> msg) {
-    wcontrol::Task::Ptr t(new wcontrol::Task(msg));
+    wbase::Task::Ptr t(new wbase::Task(msg));
     newTaskAction(t);
     return false; // FIXME
 }
 
-void ForemanImpl::newTaskAction(wcontrol::Task::Ptr task) {
+void ForemanImpl::newTaskAction(wbase::Task::Ptr task) {
     // Pass to scheduler.
     assert(_scheduler);
-    TaskQueuePtr newReady = _scheduler->newTaskAct(task, _running);
+    wbase::TaskQueuePtr newReady = _scheduler->newTaskAct(task, _running);
     // Perform only what the scheduler requests.
     if(newReady.get() && (newReady->size() > 0)) {
-        TaskQueue::iterator i = newReady->begin();
+        wbase::TaskQueue::iterator i = newReady->begin();
         for(; i != newReady->end(); ++i) {
             _startRunner(*i);
         }

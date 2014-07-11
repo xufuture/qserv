@@ -35,7 +35,7 @@ namespace sql {
 std::string formCreateTable(std::string const& table, sql::Schema const& s) {
     std::ostringstream os;
     os << "CREATE TABLE " << table << " (";
-    Schema::ColumnsIter b, i, e;
+    ColumnsIter b, i, e;
     for(i=b=s.columns.begin(), e=s.columns.end(); i != e; ++i) {
         if(i != b) {
             os << ",\n";

@@ -23,39 +23,337 @@
  /**
   * @file
   *
-  * @brief QueryRunner instances perform actual query execution on SQL
-  * databases using SqlConnection objects to interact with dbms
-  * instances.
+  * @brief QueryAction instances perform single-shot query execution with the
+  * result reflected in the db state or returned via a SendChannel. Works with
+  * new XrdSsi API.
   *
   * @author Daniel L. Wang, SLAC
   */
 
-#include "wdb/QueryRunner.h"
+#include "wdb/QueryAction.h"
 
 // System headers
-#include <cassert>
-#include <fcntl.h>
+// #include <fcntl.h>
 #include <iostream>
-#include <sys/stat.h>
+// #include <sys/stat.h>
 
-// Third-party headers
-#include <boost/regex.hpp>
+// // Third-party headers
+// #include <boost/regex.hpp>
+#include <mysql/mysql.h>
 
-// Local headers
-#include "global/constants.h"
-#include "mysql/mysql.h"
+// // Local headers
+// #include "global/constants.h"
+// #include "mysql/mysql.h"
 #include "proto/worker.pb.h"
-#include "sql/SqlConnection.h"
+#include "mysql/MySqlConfig.h"
+#include "mysql/MySqlConnection.h"
+#include "mysql/SchemaFactory.h"
 #include "sql/SqlErrorObject.h"
-#include "sql/SqlFragmenter.h"
-#include "wbase/Base.h"
+#include "sql/Schema.h"
+// #include "sql/SqlFragmenter.h"
+#include "wbase/SendChannel.h"
+#include "util/StringHash.h"
 #include "wconfig/Config.h"
-#include "wdb/QueryPhyResult.h"
-#include "wdb/QuerySql.h"
-#include "wdb/QuerySql_Batch.h"
+// #include "wdb/QueryPhyResult.h"
+// #include "wdb/QuerySql.h"
+// #include "wdb/QuerySql_Batch.h"
 #include "wlog/WLogger.h"
 
+namespace lsst {
+namespace qserv {
+namespace wdb {
+class QueryAction::Impl {
+public:
+    Impl(QueryActionArg const& a)
+        : _log(a.log),
+          _task(a.task),
+          _dbName(a.task->dbName),
+          _msg(a.task->msg),
+          _poisoned(false),
+          _sendChannel(a.task->sendChannel),
+          _user(a.task->user) {
+        int rc = mysql_thread_init();
+        assert(rc == 0);
+        assert(_msg);
+    }
 
+    ~Impl() { mysql_thread_end(); }
+
+    bool act();
+    void poison();
+private:
+    inline bool _initConnection() { 
+        mysql::MySqlConfig sc(wconfig::getConfig().getSqlConfig());
+        sc.username = _user.c_str(); // Override with czar-passed username.
+        _mysqlConn.reset(new mysql::MySqlConnection(sc, true));
+
+        if(!_mysqlConn->connect()) {
+            _log->info((Pformat("Cfg error! connect MySQL as %1% using %2%")
+                        % wconfig::getConfig().getString("mysqlSocket") % _user).str());
+            _addErrorMsg(-1, "Unable to connect to MySQL as " + _user);
+            return false;
+        }
+        return true;
+    }
+    inline void _checkDb() {
+        if(_msg->has_db()) { 
+            _dbName = _msg->db(); 
+            _log->warn("QueryAction overriding dbName with " + _dbName);
+        }
+    }
+    inline void _prepareId() {
+        // FIXME: This is historical. Is it needed?
+#if 0
+        _scriptId = t->dbName.substr(0, 6);
+        _log->info((Pformat("TIMING,%1%ScriptStart,%2%")
+                    % _scriptId % ::time(NULL)).str());
+#endif
+    }
+    inline int selectChunkId() {
+        if(_msg->has_chunkid()) { 
+            return _msg->chunkid(); 
+        }
+        return 1234567890;
+    }
+    bool _dispatchChannel();
+    MYSQL_RES* _primeResult(std::string const& query);
+    void _addErrorMsg(int errorCode, std::string const& errorMsg);
+    bool _fillRows(MYSQL_RES* result, int numFields);
+    void _fillSchema(MYSQL_RES* result);
+    void _initMsgs();
+    void _transmitResult();
+
+    boost::shared_ptr<wlog::WLogger> _log;
+    // sql::SqlErrorObject _errObj;
+    wbase::Task::Ptr _task;
+    std::string _dbName;
+    boost::shared_ptr<proto::TaskMsg> _msg;
+    bool _poisoned;
+    boost::shared_ptr<wbase::SendChannel> _sendChannel;
+    std::auto_ptr<mysql::MySqlConnection> _mysqlConn;
+    std::string _user;
+
+    typedef std::pair<int, std::string> IntString;
+    typedef std::vector<IntString> IntStringVector;
+    IntStringVector _errors;
+
+    boost::shared_ptr<proto::ProtoHeader> _protoHeader;
+    boost::shared_ptr<proto::Result> _result;
+    // boost::shared_ptr<wdb::QueryPhyResult> _pResult;
+    // wcontrol::Task::Ptr _task;
+    // std::string _scriptId;
+    // boost::shared_ptr<boost::mutex> _poisonedMutex;
+    // StringDeque _poisoned;
+};
+
+////////////////////////////////////////////////////////////////////////
+// QueryAction::Impl implementation
+////////////////////////////////////////////////////////////////////////
+bool QueryAction::Impl::act() {
+    char msg[] = "Exec in flight for Db = %1%, dump = %2%";
+    _log->info((Pformat(msg) % _task->dbName % _task->resultPath).str());
+    _checkDb();
+    bool connOk = _initConnection();
+    if(!connOk) { return false; }
+    _checkDb();
+
+//    int chunkId = _selectChunkId();
+
+    if(_msg->has_protocol()) {
+        switch(_msg->protocol()) {
+        case 1:
+            throw std::runtime_error("Expected protocol > 1 in TaskMsg");
+        case 2:
+            return _dispatchChannel();
+        default:
+            throw std::runtime_error("Invalid protocol in TaskMsg");
+        }
+    } else {
+        throw std::runtime_error("Expected protocol > 1 in TaskMsg");
+    }
+}
+
+MYSQL_RES* QueryAction::Impl::_primeResult(std::string const& query) {
+        bool queryOk = _mysqlConn->queryUnbuffered(query);
+        if(!queryOk) {
+            return NULL;
+        }
+        return _mysqlConn->getResult();
+#if 0
+            MYSQL_RES* result = mysql_use_result(&cursor);
+        MYSQL_RES* result = mysql_use_result(&cursor);
+        // call after mysql_store_result
+        //uint64_t rowcount = mysql_affected_rows(&cursor);        
+        if(result) { // rows?
+            Schema s = SchemaFactory::newFromResult(result);
+            std::cout << "Schema is " 
+                      << formCreateStatement("hello", s) << "\n";
+
+            std::cout << "will stream results.\n";
+        } else  { // mysql_store_result() returned nothing
+            if(mysql_field_count(&cursor) > 0) {
+                // mysql_store_result() should have returned data
+                std::cout <<  "Error getting records: " 
+                     << mysql_error(&cursor) << std::endl;
+            }
+        }
+#endif
+}
+
+void QueryAction::Impl::_addErrorMsg(int code, std::string const& msg) {
+    assert(_result);
+    _errors.push_back(IntString(code, msg));
+}
+
+void QueryAction::Impl::_initMsgs() {
+    _protoHeader.reset(new proto::ProtoHeader);
+    _result.reset(new proto::Result);
+}
+
+void QueryAction::Impl::_fillSchema(MYSQL_RES* result) {
+    sql::Schema s = mysql::SchemaFactory::newFromResult(result);
+    sql::ColSchemaVector::const_iterator i, e;
+    for(i=s.columns.begin(), e=s.columns.end(); i != e; ++i) {
+        proto::ColumnSchema* cs = _result->mutable_rowschema()->add_columnschema();
+        cs->set_name(i->name);
+        if(i->hasDefault) {
+            cs->set_defaultvalue(i->defaultValue);
+        }
+        cs->set_sqltype(i->colType.sqlType);
+        cs->set_mysqltype(i->colType.mysqlType);        
+    }
+}
+bool QueryAction::Impl::_fillRows(MYSQL_RES* result, int numFields) {
+    MYSQL_ROW row;
+    while ((row = mysql_fetch_row(result))) { 
+        proto::RowBundle* rawRow =_result->add_row();
+        for(int i=0; i < numFields; ++i) {
+            std::string* c = rawRow->add_column();
+            c->assign(row[i]);
+        }
+        std::cout << "row: ";
+        std::copy(row, row+numFields, 
+                  std::ostream_iterator<char*>(std::cout, ","));
+        std::cout << "\n";
+        // Each element needs to be mysql-sanitized
+
+    }
+    return true;
+}
+void QueryAction::Impl::_transmitResult() {
+    // FIXME: send errors too!
+    // Serialize result first, because we need the size and md5 for the header
+    std::string resultString;
+    _result->SerializeToString(&resultString);
+    
+    // Set header
+    _protoHeader->set_protocol(2); // protocol 2: row-by-row message
+    _protoHeader->set_size(resultString.size());
+    _protoHeader->set_md5(util::StringHash::getMd5(resultString.data(), 
+                                                   resultString.size()));
+    std::string protoHeaderString;
+    _protoHeader->SerializeToString(&protoHeaderString);
+
+    // Flush to channel.
+    _sendChannel->send(protoHeaderString.data(), protoHeaderString.size());
+    _sendChannel->send(resultString.data(), resultString.size());
+}
+
+bool QueryAction::Impl::_dispatchChannel() {
+    proto::TaskMsg& m = *_task->msg;
+    _initMsgs();
+    bool firstResult = true;
+    int numFields = -1;
+    if(m.fragment_size() < 1) {
+        throw std::runtime_error("No fragments to execute in TaskMsg");
+    }
+    for(int i=0; i < m.fragment_size(); ++i) {
+        wbase::Task::Fragment const& f(m.fragment(i));
+        // Use query fragment as-is, funnel results.
+        for(int qi=0, qe=f.query_size(); qi != qe; ++qi) {
+            MYSQL_RES* res = _primeResult(f.query(qi));
+            if(!res) {
+                // FIXME: report a sensible error that can be handled and returned to the user.
+                throw std::runtime_error("Couldn't get result");
+                return false;
+            }
+             if(firstResult) { 
+                _fillSchema(res);
+                firstResult = false;
+                numFields = mysql_num_fields(res);
+                std::cout << numFields << " fields per row\n";
+            }
+            // Now get rows...
+            if(!_fillRows(res, numFields)) {
+                break;
+            }
+            _mysqlConn->freeResult();
+        } // Each query in a fragment
+    } // Each fragment in a msg.
+    // Send results.
+    _transmitResult();
+    return true;
+#if 0
+        // Use SqlFragmenter to break up query portion into fragments.
+        // If protocol gives us a query sequence, we won't need to
+        // split fragments.
+        bool first = t->needsCreate && (i==0);
+        boost::shared_ptr<wdb::QuerySql> qSql(new QuerySql(defaultDb, chunkId,
+                                                           f,
+                                                           first,
+                                                           resultTable));
+
+        success = _runFragment(_sqlConn, *qSql);
+        if(!success) return false;
+        _pResult->addResultTable(resultTable);
+    }
+    _log->info("about to dump table " + resultTable);
+    if(success) {
+        if(_task->sendChannel) {
+            if(!_pResult->dumpToChannel(*_log, _user,
+                                        _task->sendChannel, _errObj)) {
+                return false;
+            }
+        } else if(!_pResult->performMysqldump(*_log,
+                                              _user,
+                                              _task->resultPath,
+                                              _errObj)) {
+            return false;
+        }
+    }
+    if (!_sqlConn.dropTable(_pResult->getCommaResultTables(), _errObj, false)) {
+        return false;
+    }
+    return true;
+    // Run a query.
+#endif
+}
+
+void QueryAction::Impl::poison() {
+    assert(false);
+}
+
+////////////////////////////////////////////////////////////////////////
+// QueryAction implementation
+////////////////////////////////////////////////////////////////////////
+QueryAction::QueryAction(QueryActionArg const& a) 
+    : _impl(new Impl(a)) {
+    
+}
+
+QueryAction::~QueryAction() {
+    // Nothing to do here? (doublecheck before merge)
+}
+
+bool QueryAction::operator()() {
+    return _impl->act();
+}
+
+void QueryAction::poison() {
+    _impl->poison();
+}
+}}} // lsst::qserv::wdb
+#if 0
 namespace {
 bool
 runBatch(boost::shared_ptr<lsst::qserv::wlog::WLogger> log,
@@ -80,7 +378,7 @@ runBatch(boost::shared_ptr<lsst::qserv::wlog::WLogger> log,
             } else if(checkAbort && (*checkAbort)()) {
                 log->error((Pformat("Aborting query by request (%1% complete).")
                             % batch.pos).str().c_str());
-                errObj.addErrMsg("Query poisoned by client request");
+                errObj.addErrorMsg("Query poisoned by client request");
                 batchAborted = true;
                 break;
             }
@@ -286,7 +584,7 @@ QueryRunner::_getErrorString() const {
   }
 */
 bool
-QueryRunner::_runTask(wbase::Task::Ptr t) {
+QueryRunner::_runTask(wcontrol::Task::Ptr t) {
     mysql::MySqlConfig sc(wconfig::getConfig().getSqlConfig());
     sc.username = _user.c_str(); // Override with czar-passed username.
     sql::SqlConnection _sqlConn(sc, true);
@@ -310,7 +608,7 @@ QueryRunner::_runTask(wbase::Task::Ptr t) {
     std::string defaultDb = "test";
     if(m.has_db()) { defaultDb = m.db(); }
     for(int i=0; i < m.fragment_size(); ++i) {
-        wbase::Task::Fragment const& f(m.fragment(i));
+        wcontrol::Task::Fragment const& f(m.fragment(i));
 
         if(f.has_resulttable()) { resultTable = f.resulttable(); }
         assert(!resultTable.empty());
@@ -472,3 +770,4 @@ dumpFileExists(std::string const& dumpFilename) {
 }
 
 }}} // namespace lsst::qserv::wdb
+#endif
