@@ -25,8 +25,8 @@
 // (over-the-wire) additional concrete info related to physical
 // execution conditions.
 /// @author Daniel L. Wang (danielw)
-#ifndef LSST_QSERV_WCONTROL_TASK_H
-#define LSST_QSERV_WCONTROL_TASK_H
+#ifndef LSST_QSERV_WBASE_TASK_H
+#define LSST_QSERV_WBASE_TASK_H
 
 // System headers
 #include <deque>
@@ -51,7 +51,7 @@ namespace proto {
 
 namespace lsst {
 namespace qserv {
-namespace wcontrol {
+namespace wbase {
 
 struct Task {
 public:
@@ -90,6 +90,6 @@ public:
 typedef std::deque<Task::Ptr> TaskQueue;
 typedef boost::shared_ptr<TaskQueue> TaskQueuePtr;
 
-}}} // namespace lsst::qserv::wcontrol
+}}} // namespace lsst::qserv::wbase
 
-#endif // LSST_QSERV_WCONTROL_TASK_H
+#endif // LSST_QSERV_WBASE_TASK_H

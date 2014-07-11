@@ -28,7 +28,7 @@
   * @author Daniel L. Wang, SLAC
   */
 
-#include "wcontrol/Task.h"
+#include "wbase/Task.h"
 
 // Third-party headers
 #include <boost/regex.hpp>
@@ -41,7 +41,7 @@
 
 namespace {
     void updateSubchunks(std::string const& s,
-                         lsst::qserv::wcontrol::Task::Fragment& f) {
+                         lsst::qserv::wbase::Task::Fragment& f) {
         // deprecated though...
         f.mutable_subchunks()->clear_id();
         std::stringstream ss;
@@ -58,7 +58,7 @@ namespace {
     }
 
     void updateResultTables(std::string const& script,
-                            lsst::qserv::wcontrol::Task::Fragment& f) {
+                            lsst::qserv::wbase::Task::Fragment& f) {
         f.clear_resulttable();
         // Find resultTable prefix
         char const prefix[] = "-- RESULTTABLES:";
@@ -97,7 +97,7 @@ namespace {
 
 namespace lsst {
 namespace qserv {
-namespace wcontrol {
+namespace wbase {
 
 // Task::ChunkEqual functor
 bool
@@ -178,4 +178,4 @@ std::ostream& operator<<(std::ostream& os, Task const& t) {
     }
     return os;
 }
-}}} // namespace lsst::qserv::wcontrol
+}}} // namespace lsst::qserv::wbase

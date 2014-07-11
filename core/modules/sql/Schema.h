@@ -23,7 +23,7 @@
 #ifndef LSST_QSERV_SQL_SCHEMA_H
 #define LSST_QSERV_SQL_SCHEMA_H
 // ColType, ColSchema, Schema definitions. They are dumb value classes
-// used to represent a SQL table schemata. 
+// used to represent a SQL table schemata.
 
 // System headers
 #include <ostream>
@@ -51,8 +51,9 @@ struct ColSchema {
     bool hasDefault;
     std::string defaultValue; // default value
     ColType colType;
-
 };
+typedef std::vector<ColSchema> ColSchemaVector;
+typedef ColSchemaVector::const_iterator ColumnsIter;
 
 inline std::ostream& operator<<(std::ostream& os, ColSchema const& cs) {
     os << "`" << cs.name << "` " << cs.colType;
@@ -63,8 +64,6 @@ inline std::ostream& operator<<(std::ostream& os, ColSchema const& cs) {
 }
 
 struct Schema {
-    typedef std::vector<ColSchema> ColSchemaVector;
-    typedef ColSchemaVector::const_iterator ColumnsIter;
     ColSchemaVector columns;
     // NOTE: not sure if we need ENGINE or KEY or INDEX directives
 };

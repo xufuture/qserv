@@ -8,6 +8,7 @@
 typedef unsigned long long uint64_t;
 
 using lsst::qserv::sql::Schema;
+using lsst::qserv::sql::ColumnsIter;
 using lsst::qserv::mysql::LocalInfile;
 using lsst::qserv::mysql::SchemaFactory;
 
@@ -21,7 +22,7 @@ public:
     }
 
     void connect() {
-        MYSQL* cur = mysql_real_connect(&cursor, 
+        MYSQL* cur = mysql_real_connect(&cursor,
                                         "localhost", // host
                                         "danielw", // user
                                         "", // pw
@@ -30,7 +31,7 @@ public:
                                         "/u1/local/mysql.sock", // socket
                                         0); // client flag
         if(!cur) {
-            std::cout << "Failed to connect to MySQL: Error: " 
+            std::cout << "Failed to connect to MySQL: Error: "
                       << mysql_error(cur) << std::endl;
             assert(cur);
         }
@@ -41,7 +42,7 @@ public:
 //   mysql_real_query(MYSQL*, char* query, int qlen) -> 0 success, nonzero error via mysql_error(mysql*)
         int result = mysql_real_query(&cursor, query.c_str(), query.size());
         if(result != 0) {
-            std::cout << "error executing " << query << "  " << mysql_error(&cursor) 
+            std::cout << "error executing " << query << "  " << mysql_error(&cursor)
                  << std::endl;
             return false;
         } else {
@@ -77,7 +78,7 @@ public:
     std::string formCreateStatement(std::string const& table, Schema const& s) {
         std::ostringstream os;
         os << "CREATE TABLE " << table << " (";
-        Schema::ColumnsIter b, i, e;
+        ColumnsIter b, i, e;
         for(i=b=s.columns.begin(), e=s.columns.end(); i != e; ++i) {
             if(i != b) {
                 os << ",\n";
@@ -87,10 +88,10 @@ public:
         os << ")";
         return os.str();
     }
-    std::string formInfileStatement(std::string const& table, 
+    std::string formInfileStatement(std::string const& table,
                                     std::string const& virtFile) {
         std::ostringstream os;
-        os << "LOAD DATA LOCAL INFILE '" << virtFile << "' INTO TABLE " 
+        os << "LOAD DATA LOCAL INFILE '" << virtFile << "' INTO TABLE "
            << table;
         return os.str();
     }
@@ -107,17 +108,17 @@ public:
 
         MYSQL_RES* result = mysql_store_result(&cursor);
         // call after mysql_store_result
-        uint64_t rowcount = mysql_affected_rows(&cursor); 
+        uint64_t rowcount = mysql_affected_rows(&cursor);
         std::cout << rowcount
              << " records found.\n";
 
         if(result) { // rows?
-            
+
             int num_fields = mysql_num_fields(result);
             std::cout << num_fields << " fields per row\n";
-            while ((row = mysql_fetch_row(result))) { 
+            while ((row = mysql_fetch_row(result))) {
                 std::cout << "row: ";
-                std::copy(row, row+num_fields, 
+                std::copy(row, row+num_fields,
                           std::ostream_iterator<char*>(std::cout, ","));
                 std::cout << "\n";
 
@@ -126,7 +127,7 @@ public:
         } else  { // mysql_store_result() returned nothing
             if(mysql_field_count(&cursor) > 0) {
                 // mysql_store_result() should have returned data
-                std::cout <<  "Error getting records: " 
+                std::cout <<  "Error getting records: "
                      << mysql_error(&cursor) << std::endl;
             }
         }
@@ -137,19 +138,19 @@ public:
 
         MYSQL_RES* result = mysql_use_result(&cursor);
         // call after mysql_store_result
-        //uint64_t rowcount = mysql_affected_rows(&cursor);        
+        //uint64_t rowcount = mysql_affected_rows(&cursor);
         if(result) { // rows?
             Schema s = SchemaFactory::newFromResult(result);
-            std::cout << "Schema is " 
+            std::cout << "Schema is "
                       << formCreateStatement("hello", s) << "\n";
 
             std::cout << "will stream results.\n";
             int num_fields = mysql_num_fields(result);
             std::cout << num_fields << " fields per row\n";
             // createTable(s);
-            while ((row = mysql_fetch_row(result))) { 
+            while ((row = mysql_fetch_row(result))) {
                 std::cout << "row: ";
-                std::copy(row, row+num_fields, 
+                std::copy(row, row+num_fields,
                           std::ostream_iterator<char*>(std::cout, ","));
                 std::cout << "\n";
                 // Each element needs to be mysql-sanitized
@@ -159,7 +160,7 @@ public:
         } else  { // mysql_store_result() returned nothing
             if(mysql_field_count(&cursor) > 0) {
                 // mysql_store_result() should have returned data
-                std::cout <<  "Error getting records: " 
+                std::cout <<  "Error getting records: "
                      << mysql_error(&cursor) << std::endl;
             }
         }
@@ -177,7 +178,7 @@ void play() {
 
 void playDouble() {
     Api aSrc; // Source: will execute "select ..."
-    aSrc.connect(); 
+    aSrc.connect();
     Api aDest; // Dest: will execute "create table..." and "load data infile..."
     aDest.connect();
     MYSQL_RES* res = aSrc.execStart("SELECT * FROM LSST.Object_3240");
@@ -190,7 +191,7 @@ void playDouble() {
 }
 void playRead() {
     Api aSrc; // Source: will execute "select ..."
-    aSrc.connect(); 
+    aSrc.connect();
     Api aDest; // Dest: will execute "create table..." and "load data infile..."
     aDest.connect();
     MYSQL_RES* res = aSrc.execStart("SELECT * FROM LSST.Object_3240");
@@ -198,13 +199,13 @@ void playRead() {
     mgr.attach(aDest.getMysql());
     std::string virtFile = mgr.prepareSrc(res);
     void* infileptr;
-    std::cout << "Init returned " 
+    std::cout << "Init returned "
               << LocalInfile::Mgr::local_infile_init(&infileptr, virtFile.c_str(), &mgr)
               << std::endl;
     int bufLen = 8192;
     char buf[bufLen];
     std::cout << "Read returned "
-              << LocalInfile::Mgr::local_infile_read(infileptr, buf, bufLen) 
+              << LocalInfile::Mgr::local_infile_read(infileptr, buf, bufLen)
               << std::endl;
 }
 int main(int,char**) {
@@ -223,4 +224,3 @@ int main(int,char**) {
     std::cout << "done\n";
     return 0;
 }
- 
