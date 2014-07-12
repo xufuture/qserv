@@ -82,7 +82,7 @@ public:
     bool act();
     void poison();
 private:
-    inline bool _initConnection() { 
+    inline bool _initConnection() {
         mysql::MySqlConfig sc(wconfig::getConfig().getSqlConfig());
         sc.username = _user.c_str(); // Override with czar-passed username.
         _mysqlConn.reset(new mysql::MySqlConnection(sc, true));
@@ -96,8 +96,8 @@ private:
         return true;
     }
     inline void _checkDb() {
-        if(_msg->has_db()) { 
-            _dbName = _msg->db(); 
+        if(_msg->has_db()) {
+            _dbName = _msg->db();
             _log->warn("QueryAction overriding dbName with " + _dbName);
         }
     }
@@ -110,8 +110,8 @@ private:
 #endif
     }
     inline int selectChunkId() {
-        if(_msg->has_chunkid()) { 
-            return _msg->chunkid(); 
+        if(_msg->has_chunkid()) {
+            return _msg->chunkid();
         }
         return 1234567890;
     }
@@ -183,17 +183,17 @@ MYSQL_RES* QueryAction::Impl::_primeResult(std::string const& query) {
             MYSQL_RES* result = mysql_use_result(&cursor);
         MYSQL_RES* result = mysql_use_result(&cursor);
         // call after mysql_store_result
-        //uint64_t rowcount = mysql_affected_rows(&cursor);        
+        //uint64_t rowcount = mysql_affected_rows(&cursor);
         if(result) { // rows?
             Schema s = SchemaFactory::newFromResult(result);
-            std::cout << "Schema is " 
+            std::cout << "Schema is "
                       << formCreateStatement("hello", s) << "\n";
 
             std::cout << "will stream results.\n";
         } else  { // mysql_store_result() returned nothing
             if(mysql_field_count(&cursor) > 0) {
                 // mysql_store_result() should have returned data
-                std::cout <<  "Error getting records: " 
+                std::cout <<  "Error getting records: "
                      << mysql_error(&cursor) << std::endl;
             }
         }
@@ -208,6 +208,9 @@ void QueryAction::Impl::_addErrorMsg(int code, std::string const& msg) {
 void QueryAction::Impl::_initMsgs() {
     _protoHeader.reset(new proto::ProtoHeader);
     _result.reset(new proto::Result);
+    if(_msg->has_session()) {
+        _result->set_session(_msg->session());
+    }
 }
 
 void QueryAction::Impl::_fillSchema(MYSQL_RES* result) {
@@ -220,19 +223,19 @@ void QueryAction::Impl::_fillSchema(MYSQL_RES* result) {
             cs->set_defaultvalue(i->defaultValue);
         }
         cs->set_sqltype(i->colType.sqlType);
-        cs->set_mysqltype(i->colType.mysqlType);        
+        cs->set_mysqltype(i->colType.mysqlType);
     }
 }
 bool QueryAction::Impl::_fillRows(MYSQL_RES* result, int numFields) {
     MYSQL_ROW row;
-    while ((row = mysql_fetch_row(result))) { 
+    while ((row = mysql_fetch_row(result))) {
         proto::RowBundle* rawRow =_result->add_row();
         for(int i=0; i < numFields; ++i) {
             std::string* c = rawRow->add_column();
             c->assign(row[i]);
         }
         std::cout << "row: ";
-        std::copy(row, row+numFields, 
+        std::copy(row, row+numFields,
                   std::ostream_iterator<char*>(std::cout, ","));
         std::cout << "\n";
         // Each element needs to be mysql-sanitized
@@ -244,19 +247,26 @@ void QueryAction::Impl::_transmitResult() {
     // FIXME: send errors too!
     // Serialize result first, because we need the size and md5 for the header
     std::string resultString;
+    _result->set_nextsize(0);
     _result->SerializeToString(&resultString);
-    
+
     // Set header
     _protoHeader->set_protocol(2); // protocol 2: row-by-row message
     _protoHeader->set_size(resultString.size());
-    _protoHeader->set_md5(util::StringHash::getMd5(resultString.data(), 
+    _protoHeader->set_md5(util::StringHash::getMd5(resultString.data(),
                                                    resultString.size()));
     std::string protoHeaderString;
     _protoHeader->SerializeToString(&protoHeaderString);
 
     // Flush to channel.
-    _sendChannel->send(protoHeaderString.data(), protoHeaderString.size());
-    _sendChannel->send(resultString.data(), resultString.size());
+    // Make sure protoheadeder size can be encoded in a byte.
+    assert(protoHeaderString.size() < 255);
+    unsigned char phSize = static_cast<unsigned char>(protoHeaderString.size());
+    _sendChannel->sendStream(reinterpret_cast<char const*>(&phSize), 1, false);
+    _sendChannel->sendStream(protoHeaderString.data(),
+                             protoHeaderString.size(), false);
+    _sendChannel->sendStream(resultString.data(),
+                             resultString.size(), true);
 }
 
 bool QueryAction::Impl::_dispatchChannel() {
@@ -277,7 +287,7 @@ bool QueryAction::Impl::_dispatchChannel() {
                 throw std::runtime_error("Couldn't get result");
                 return false;
             }
-             if(firstResult) { 
+             if(firstResult) {
                 _fillSchema(res);
                 firstResult = false;
                 numFields = mysql_num_fields(res);
@@ -336,9 +346,9 @@ void QueryAction::Impl::poison() {
 ////////////////////////////////////////////////////////////////////////
 // QueryAction implementation
 ////////////////////////////////////////////////////////////////////////
-QueryAction::QueryAction(QueryActionArg const& a) 
+QueryAction::QueryAction(QueryActionArg const& a)
     : _impl(new Impl(a)) {
-    
+
 }
 
 QueryAction::~QueryAction() {
