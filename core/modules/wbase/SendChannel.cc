@@ -24,6 +24,7 @@
 
 // System headers
 #include <iostream>
+#include <sstream>
 
 namespace lsst {
 namespace qserv {
@@ -54,4 +55,50 @@ public:
 boost::shared_ptr<SendChannel> SendChannel::newNopChannel() {
     return boost::shared_ptr<NopChannel>(new NopChannel);
 }
+class StringChannel : public SendChannel {
+public:
+    StringChannel(std::string& dest) : _dest(dest) {}
+
+    virtual void send(char const* buf, int bufLen) {
+        _dest.append(buf, bufLen);
+    }
+
+    virtual void sendError(std::string const& msg, int code) {
+        std::ostringstream os;
+        os << "(" << code << "," << msg << ")";
+        _dest.append(os.str());
+    }
+    virtual void sendFile(int fd, Size fSize) {
+        Size bytesRead = 0;
+        char buf[fSize];
+        Size remain = fSize;
+        while(remain > 0) {
+            Size frag = ::read(fd, buf, remain);
+            if(frag < 0) {
+                std::cout << "ERROR reading from fd during "
+                          << "StringChannel::sendFile(" << "," << fSize << ")";
+                break;
+            } else if(frag == 0) {
+                std::cout << "ERROR unexpected 0==read() during "
+                          << "StringChannel::sendFile(" << "," << fSize << ")";
+                break;
+            }
+            _dest.append(buf, frag);
+            remain -= frag;
+        }
+    }
+    virtual void sendStream(char const* buf, int bufLen, bool last) {
+        _dest.append(buf, bufLen);
+        std::cout << "StringChannel sendStream(" << (void*) buf
+                  << ", " << bufLen << ", "
+                  << (last ? "true" : "false") << ");\n";
+    }
+private:
+    std::string& _dest;
+};
+
+boost::shared_ptr<SendChannel> SendChannel::newStringChannel(std::string& d) {
+    return boost::shared_ptr<StringChannel>(new StringChannel(d));
+}
+
 }}} // namespace lsst::qserv::wbase

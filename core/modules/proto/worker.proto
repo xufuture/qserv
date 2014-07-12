@@ -82,7 +82,7 @@ message RowBundle {
 }
 
 message Result {    
-    required bool hasmore = 1; // Are there additional Result messages
+    required int32 nextsize = 1; // Are there additional Result messages
     optional int64 session = 2;
     required RowSchema rowschema = 3;    
     optional int32 errorcode = 4;
@@ -91,3 +91,9 @@ message Result {
 }
 /// Future: Serialize MySQL output into protobuf instead of using
 /// mysqldump.
+
+// Result protocol 2:
+// Byte 0: N = unsigned char size of ProtoHeader
+// Byte 1-N: ProtoHeader message
+// Byte N+1, extent = ProtoHeader.size, Result msg
+// (successive Result msgs indicated by size markers in previous Result msgs)
