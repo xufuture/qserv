@@ -34,7 +34,10 @@
 
 // Third-party headers
 #include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp> // Mutexes
 
+// Qserv headers
+#include "util/Callable.h"
 
 // Forward declarations
 namespace lsst {
@@ -85,7 +88,14 @@ public:
     char timestr[100]; ///< ::ctime_r(&t.entryTime, timestr)
     // Note that manpage spec of "26 bytes"  is insufficient
 
+    void poison();
+    void setPoison(boost::shared_ptr<util::VoidCallable<void> > poisonFunc);
     friend std::ostream& operator<<(std::ostream& os, Task const& t);
+
+private:
+    boost::mutex _mutex; // Used for handling poison
+    boost::shared_ptr<util::VoidCallable<void> > _poisonFunc;
+    bool _poisoned;
 };
 typedef std::deque<Task::Ptr> TaskQueue;
 typedef boost::shared_ptr<TaskQueue> TaskQueuePtr;

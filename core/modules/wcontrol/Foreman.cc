@@ -35,8 +35,10 @@
 #include <boost/thread.hpp>
 
 // Local headers
+#include "proto/worker.pb.h"
 #include "wbase/Base.h"
 #include "wbase/MsgProcessor.h"
+#include "wdb/QueryAction.h"
 #include "wdb/QueryRunner.h"
 #include "wlog/WLogger.h"
 #include "wsched/FifoScheduler.h"
@@ -80,11 +82,16 @@ public:
         void poison();
         void operator()();
         std::string const& getHash() const { return _task->hash; }
+
     private:
+        void _runWithDump();
+        void _runProtocol2();
         RunnerMgr& _rm;
         wbase::Task::Ptr _task;
         bool _isPoisoned;
         wlog::WLogger::Ptr _log;
+        boost::mutex* _actionMutex;
+        boost::shared_ptr<wdb::QueryAction> _action;
     };
     // For use by runners.
     class RunnerMgr {
@@ -92,6 +99,7 @@ public:
         RunnerMgr(ForemanImpl& f);
         void registerRunner(Runner* r, wbase::Task::Ptr t);
         boost::shared_ptr<wdb::QueryRunner> newQueryRunner(wbase::Task::Ptr t);
+        boost::shared_ptr<wdb::QueryAction> newQueryAction(wbase::Task::Ptr t);
         void reportComplete(wbase::Task::Ptr t);
         void reportStart(wbase::Task::Ptr t);
         void signalDeath(Runner* r);
@@ -163,6 +171,13 @@ ForemanImpl::RunnerMgr::registerRunner(Runner* r, wbase::Task::Ptr t) {
     _reportStartHelper(t);
 }
 
+boost::shared_ptr<wdb::QueryAction>
+ForemanImpl::RunnerMgr::newQueryAction(wbase::Task::Ptr t) {
+    wdb::QueryActionArg a(_f._log, t);
+    boost::shared_ptr<wdb::QueryAction> qa(new wdb::QueryAction(a));
+    return qa;
+}
+
 boost::shared_ptr<wdb::QueryRunner>
 ForemanImpl::RunnerMgr::newQueryRunner(wbase::Task::Ptr t) {
     wdb::QueryRunnerArg a(_f._log, t);
@@ -177,6 +192,7 @@ ForemanImpl::RunnerMgr::reportComplete(wbase::Task::Ptr t) {
         bool popped = popFrom(*_f._running, t);
         assert(popped);
     }
+
     std::ostringstream os;
     os << "Finished task " << *t;
     _f._log->debug(os.str());
@@ -269,19 +285,50 @@ ForemanImpl::Runner::Runner(RunnerMgr& rm, wbase::Task::Ptr firstTask)
 }
 
 void ForemanImpl::Runner::poison() {
+    // No safe way(within reason) to access _action in order to send it a
+    // poison() message.
+    // --can't use a mutex in a Runner, because Runner instances must be
+    // copyable to use boost::thread interface.
+    // -- can store mutex outside (e.g., in RunnerMgr or ForemanImpl), but
+    // managing its storage is a hassle.
+    // Probably not worth it because Runners probably won't be poisoned through
+    // this interface anyway--poison reqs will come through xrootd.
     _isPoisoned = true;
 }
 
-void ForemanImpl::Runner::operator()() {
+void ForemanImpl::Runner::_runWithDump() {
     boost::shared_ptr<wdb::QueryRunner> qr;
+    qr = _rm.newQueryRunner(_task);
+    qr->actOnce();
+}
+
+void ForemanImpl::Runner::_runProtocol2() {
+    boost::mutex mutex;
+    {
+        boost::lock_guard<boost::mutex> lock(mutex);
+        _actionMutex = &mutex;
+        _action = _rm.newQueryAction(_task);
+    }
+    (*_action)();
+    {
+        boost::lock_guard<boost::mutex> lock(mutex);
+        _action.reset();
+        _actionMutex = NULL;
+    }
+}
+
+void ForemanImpl::Runner::operator()() {
     _rm.registerRunner(this, _task);
     while(!_isPoisoned) {
-        // Run my task.
-        qr = _rm.newQueryRunner(_task);
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "Runner running " << *_task;
         _log->info(ss.str());
-        qr->actOnce();
+        proto::TaskMsg const& msg = *_task->msg;
+        if(msg.has_protocol() && msg.protocol() == 2) {
+            _runProtocol2();
+        } else {
+            _runWithDump();
+        }
         if(_isPoisoned) break;
         // Request new work from the manager
         // (mgr is a role of the foreman, who will check with the
@@ -299,12 +346,23 @@ void ForemanImpl::Runner::operator()() {
 ////////////////////////////////////////////////////////////////////////
 class ForemanImpl::Processor : public wbase::MsgProcessor {
 public:
+    class Cancel : public util::VoidCallable<void> {
+    public:
+        Cancel(wbase::Task& t) : _t(t) {}
+        virtual void operator()() {
+            _t.poison();
+        }
+        wbase::Task& _t;
+    };
     Processor(ForemanImpl& f) : _foremanImpl(f) {}
 
-    virtual void operator()(boost::shared_ptr<proto::TaskMsg> taskMsg,
-                            boost::shared_ptr<wbase::SendChannel> replyChannel) {
+    virtual boost::shared_ptr<util::VoidCallable<void> >
+    operator()(boost::shared_ptr<proto::TaskMsg> taskMsg,
+               boost::shared_ptr<wbase::SendChannel> replyChannel) {
+
         wbase::Task::Ptr t(new wbase::Task(taskMsg, replyChannel));
         _foremanImpl.newTaskAction(t);
+        return boost::shared_ptr<Cancel>(new Cancel(*t));
     }
     ForemanImpl& _foremanImpl;
 };
@@ -331,7 +389,6 @@ ForemanImpl::~ForemanImpl() {
 
 void
 ForemanImpl::_startRunner(wbase::Task::Ptr t) {
-    // FIXME: Is this all that is needed?
     boost::thread(Runner(*_rManager, t));
 }
 
@@ -353,7 +410,7 @@ bool
 ForemanImpl::accept(boost::shared_ptr<proto::TaskMsg> msg) {
     wbase::Task::Ptr t(new wbase::Task(msg));
     newTaskAction(t);
-    return false; // FIXME
+    return true;
 }
 
 void ForemanImpl::newTaskAction(wbase::Task::Ptr task) {
