@@ -25,6 +25,7 @@
 // System headers
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 namespace lsst {
 namespace qserv {
@@ -70,10 +71,10 @@ public:
     }
     virtual void sendFile(int fd, Size fSize) {
         Size bytesRead = 0;
-        char buf[fSize];
+        std::vector<char> buf(fSize);
         Size remain = fSize;
         while(remain > 0) {
-            Size frag = ::read(fd, buf, remain);
+            Size frag = ::read(fd, buf.data(), remain);
             if(frag < 0) {
                 std::cout << "ERROR reading from fd during "
                           << "StringChannel::sendFile(" << "," << fSize << ")";
@@ -83,7 +84,7 @@ public:
                           << "StringChannel::sendFile(" << "," << fSize << ")";
                 break;
             }
-            _dest.append(buf, frag);
+            _dest.append(buf.data(), frag);
             remain -= frag;
         }
     }

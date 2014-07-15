@@ -114,17 +114,23 @@ public:
 /// SendChannel
 struct SsiProcessor : public Importer::Acceptor {
     typedef boost::shared_ptr<SsiProcessor> Ptr;
+
     SsiProcessor(ResourceUnit const& ru_,
                  wbase::MsgProcessor::Ptr mp,
-                 boost::shared_ptr<wbase::SendChannel> sc)
-        : ru(ru_), msgProcessor(mp), sendChannel(sc) {}
+                 boost::shared_ptr<wbase::SendChannel> sc,
+                 std::vector<SsiSession::CancelFuncPtr>& cancellers_)
+        : ru(ru_),
+          msgProcessor(mp),
+          sendChannel(sc),
+          cancellers(cancellers_) {}
 
     virtual void operator()(boost::shared_ptr<proto::TaskMsg> m) {
         util::Timer t;
         if(m->has_db() && m->has_chunkid()
            && (ru.db() == m->db()) && (ru.chunk() == m->chunkid())) {
             t.start();
-            (*msgProcessor)(m, sendChannel);
+            SsiSession::CancelFuncPtr p = (*msgProcessor)(m, sendChannel);
+            cancellers.push_back(p);
             t.stop();
             std::cerr << "SsiProcessor msgProcessor call took "
                       << t.getElapsed() << " seconds" << std::endl;
@@ -135,9 +141,11 @@ struct SsiProcessor : public Importer::Acceptor {
             sendChannel->sendError(os.str().c_str(), EINVAL);
         }
     }
+
     ResourceUnit const& ru;
     wbase::MsgProcessor::Ptr msgProcessor;
     boost::shared_ptr<wbase::SendChannel> sendChannel;
+    std::vector<SsiSession::CancelFuncPtr>& cancellers;
 };
 ////////////////////////////////////////////////////////////////////////
 // class SsiSession
@@ -210,6 +218,14 @@ SsiSession::RequestFinished(XrdSsiRequest* req, XrdSsiRespInfo const& rinfo,
     // client finished retrieving response, or cancelled.
     // release response resources (e.g. buf)
 
+    if(cancel) {
+        // Do cancellation.
+        typedef std::vector<CancelFuncPtr>::iterator Iter;
+        for(Iter i=_cancellers.begin(), e=_cancellers.end(); i != e; ++i) {
+            assert(*i);
+            (**i)();
+        }
+    }
     // No buffers allocated, so don't need to free.
     // We can release/unlink the file now
     std::ostringstream os;
@@ -238,8 +254,7 @@ void SsiSession::enqueue(ResourceUnit const& ru, char* reqData, int reqSize) {
     // reqData has the entire request, so we can unpack it without waiting for
     // more data.
     ReplyChannel::Ptr rc(new ReplyChannel(*this));
-    SsiProcessor::Ptr sp(new SsiProcessor(ru, _processor, rc));
-
+    SsiProcessor::Ptr sp(new SsiProcessor(ru, _processor, rc, _cancellers));
     std::ostringstream os;
     os << "Importing TaskMsg of size " << reqSize;
     _log->info(os.str());

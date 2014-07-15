@@ -32,6 +32,7 @@
 // Local headers
 #include "proto/worker.pb.h"
 #include "proto/ProtoImporter.h"
+#include "util/StringHash.h"
 #include "wbase/SendChannel.h"
 #include "wbase/Task.h"
 #include "wdb/QueryAction.h"
@@ -43,6 +44,7 @@
 
 namespace test = boost::test_tools;
 namespace gio = google::protobuf::io;
+namespace util = lsst::qserv::util;
 
 using lsst::qserv::proto::ProtoHeader;
 using lsst::qserv::proto::ProtoImporter;
@@ -108,7 +110,9 @@ BOOST_AUTO_TEST_CASE(Output) {
     lsst::qserv::proto::Result result;
     BOOST_REQUIRE(ProtoImporter<Result>::setMsgFrom(result, cursor, remain));
     result.PrintDebugString();
-
+    std::string computedMd5 = util::StringHash::getMd5(cursor, remain);
+    BOOST_CHECK_EQUAL(ph.md5(), computedMd5);
+    BOOST_CHECK_EQUAL(aa.task->msg->session(), result.session());
 
 }
 

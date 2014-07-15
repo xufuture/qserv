@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2008-2014 LSST Corporation.
+ * Copyright 2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -64,24 +64,13 @@ namespace qserv {
 namespace wdb {
 class QueryAction::Impl {
 public:
-    Impl(QueryActionArg const& a)
-        : _log(a.log),
-          _task(a.task),
-          _dbName(a.task->dbName),
-          _msg(a.task->msg),
-          _poisoned(false),
-          _sendChannel(a.task->sendChannel),
-          _user(a.task->user) {
-        int rc = mysql_thread_init();
-        assert(rc == 0);
-        assert(_msg);
-    }
-
+    Impl(QueryActionArg const& a);
     ~Impl() { mysql_thread_end(); }
 
     bool act();
     void poison();
 private:
+    class Poisoner;
     inline bool _initConnection() {
         mysql::MySqlConfig sc(wconfig::getConfig().getSqlConfig());
         sc.username = _user.c_str(); // Override with czar-passed username.
@@ -146,9 +135,33 @@ private:
     // StringDeque _poisoned;
 };
 
+class QueryAction::Impl::Poisoner : public util::VoidCallable<void> {
+public:
+    Poisoner(Impl& i) : _i(i) {}
+    void operator()() {
+        _i.poison();
+    }
+    Impl& _i;
+};
+
 ////////////////////////////////////////////////////////////////////////
 // QueryAction::Impl implementation
 ////////////////////////////////////////////////////////////////////////
+QueryAction::Impl::Impl(QueryActionArg const& a)
+    : _log(a.log),
+      _task(a.task),
+      _dbName(a.task->dbName),
+      _msg(a.task->msg),
+      _poisoned(false),
+      _sendChannel(a.task->sendChannel),
+      _user(a.task->user) {
+    int rc = mysql_thread_init();
+    assert(rc == 0);
+    assert(_msg);
+    // Attach a poisoner that will use us.
+    _task->setPoison(boost::shared_ptr<Poisoner>(new Poisoner(*this)));
+}
+
 bool QueryAction::Impl::act() {
     char msg[] = "Exec in flight for Db = %1%, dump = %2%";
     _log->info((Pformat(msg) % _task->dbName % _task->resultPath).str());
@@ -287,12 +300,13 @@ bool QueryAction::Impl::_dispatchChannel() {
                 throw std::runtime_error("Couldn't get result");
                 return false;
             }
-             if(firstResult) {
+            if(firstResult) {
                 _fillSchema(res);
                 firstResult = false;
                 numFields = mysql_num_fields(res);
                 std::cout << numFields << " fields per row\n";
-            }
+            } // TODO: may want to confirm (cheaply) that
+            // successive queries have the same result schema.
             // Now get rows...
             if(!_fillRows(res, numFields)) {
                 break;
@@ -303,44 +317,10 @@ bool QueryAction::Impl::_dispatchChannel() {
     // Send results.
     _transmitResult();
     return true;
-#if 0
-        // Use SqlFragmenter to break up query portion into fragments.
-        // If protocol gives us a query sequence, we won't need to
-        // split fragments.
-        bool first = t->needsCreate && (i==0);
-        boost::shared_ptr<wdb::QuerySql> qSql(new QuerySql(defaultDb, chunkId,
-                                                           f,
-                                                           first,
-                                                           resultTable));
-
-        success = _runFragment(_sqlConn, *qSql);
-        if(!success) return false;
-        _pResult->addResultTable(resultTable);
-    }
-    _log->info("about to dump table " + resultTable);
-    if(success) {
-        if(_task->sendChannel) {
-            if(!_pResult->dumpToChannel(*_log, _user,
-                                        _task->sendChannel, _errObj)) {
-                return false;
-            }
-        } else if(!_pResult->performMysqldump(*_log,
-                                              _user,
-                                              _task->resultPath,
-                                              _errObj)) {
-            return false;
-        }
-    }
-    if (!_sqlConn.dropTable(_pResult->getCommaResultTables(), _errObj, false)) {
-        return false;
-    }
-    return true;
-    // Run a query.
-#endif
 }
 
 void QueryAction::Impl::poison() {
-    assert(false);
+    _log->error("Ignoring QueryAction::Impl::poision() call, unimplemented");
 }
 
 ////////////////////////////////////////////////////////////////////////

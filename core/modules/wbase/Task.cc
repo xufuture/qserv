@@ -32,6 +32,7 @@
 
 // Third-party headers
 #include <boost/regex.hpp>
+#include <boost/thread.hpp>
 
 // Local headers
 #include "proto/TaskMsgDigest.h"
@@ -135,6 +136,7 @@ Task::Task(wbase::ScriptMeta const& s, std::string const& user_) {
     needsCreate = false;
     msg = t;
     timestr[0] = '\0';
+    _poisoned = false;
 }
 
 Task::Task(Task::TaskMsgPtr t, std::string const& user_) {
@@ -146,6 +148,7 @@ Task::Task(Task::TaskMsgPtr t, std::string const& user_) {
     user = user_;
     needsCreate = true;
     timestr[0] = '\0';
+    _poisoned = false;
 }
 
 Task::Task(Task::TaskMsgPtr t, boost::shared_ptr<wbase::SendChannel> sc) {
@@ -162,6 +165,23 @@ Task::Task(Task::TaskMsgPtr t, boost::shared_ptr<wbase::SendChannel> sc) {
     }
     needsCreate = true; // Not needed
     timestr[0] = '\0';
+    _poisoned = false;
+}
+
+void Task::poison() {
+    boost::lock_guard<boost::mutex> lock(_mutex);
+    if(_poisonFunc) {
+        (*_poisonFunc)();
+    } else {
+        _poisoned = true;
+    }
+}
+void Task::setPoison(boost::shared_ptr<util::VoidCallable<void> > poisonFunc) {
+    boost::lock_guard<boost::mutex> lock(_mutex);
+    if(_poisoned) {
+        (*poisonFunc)();
+    }
+    _poisonFunc = poisonFunc;
 }
 
 std::ostream& operator<<(std::ostream& os, Task const& t) {
