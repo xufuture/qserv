@@ -20,25 +20,23 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_STRINGTYPES_H
-#define LSST_QSERV_STRINGTYPES_H
- /**
-  * @brief  Global string types
-  *
-  */
+#ifndef LSST_QSERV_RPROC_PROTOROWBUFFER_H
+#define LSST_QSERV_RPROC_PROTOROWBUFFER_H 
 
-#include <list>
-#include <map>
-#include <string>
-#include <vector>
+#include "mysql/RowBuffer.h"
+#include "proto/worker.pb.h"
 
 namespace lsst {
 namespace qserv {
-typedef std::map<std::string, std::string> StringMap;
-typedef std::map<std::string, StringMap> StringMapMap;
-typedef std::pair<std::string, std::string> StringPair;
-typedef std::list<StringPair> StringPairList;
-typedef std::list<std::string> StringList;
-typedef std::vector<std::string> StringVector;
-}}
-#endif // LSST_QSERV_STRINGTYPES_H
+namespace rproc {
+
+static mysql::RowBuffer::Ptr newProtoRowBuffer(proto::Result& r);
+
+}}} // namespace lsst::qserv::rproc
+
+// Local Variables:
+// mode:c++
+// comment-column:0
+// End:
+
+#endif // LSST_QSERV_RPROC_PROTOROWBUFFER_H 

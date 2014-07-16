@@ -20,25 +20,17 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_STRINGTYPES_H
-#define LSST_QSERV_STRINGTYPES_H
+#ifndef LSST_QSERV_INTTYPES_H
+#define LSST_QSERV_INTTYPES_H
  /**
-  * @brief  Global string types
+  * @brief  Global int types
   *
   */
 
-#include <list>
-#include <map>
-#include <string>
 #include <vector>
 
 namespace lsst {
 namespace qserv {
-typedef std::map<std::string, std::string> StringMap;
-typedef std::map<std::string, StringMap> StringMapMap;
-typedef std::pair<std::string, std::string> StringPair;
-typedef std::list<StringPair> StringPairList;
-typedef std::list<std::string> StringList;
-typedef std::vector<std::string> StringVector;
+typedef std::vector<int> IntVector;
 }}
-#endif // LSST_QSERV_STRINGTYPES_H
+#endif // LSST_QSERV_INTTYPES_H

@@ -31,6 +31,7 @@
 #include <string>
 
 // Third-party headers
+#include <boost/shared_ptr.hpp>
 #include <mysql/mysql.h>
 
 namespace lsst {
@@ -50,13 +51,13 @@ public:
     int read(char* buf, unsigned int bufLen);
     int getError(char* buf, unsigned int bufLen);
     inline bool isValid() const { return _result; }
-        
+
 private:
     char* _buffer;
     int _bufferSize;
     char* _leftover;
     unsigned _leftoverSize;
-    RowBuffer* _rowBuffer;
+    boost::shared_ptr<RowBuffer> _rowBuffer;
 
     std::string _filename;
     MYSQL_RES* _result;
@@ -76,11 +77,12 @@ public:
     void prepareSrc(std::string const& filename, MYSQL_RES* result);
     /// Prepare a local infile, using an auto-generated filename
     std::string prepareSrc(MYSQL_RES* result);
-    
+    std::string prepareSrc(boost::shared_ptr<RowBuffer> rowbuffer);
+
 
     // mysql_local_infile_handler interface ////////////////////////////////
     // These function pointers are needed to attach a handler
-    static int local_infile_init(void **ptr, const char *filename, 
+    static int local_infile_init(void **ptr, const char *filename,
                                  void *userdata);
     static int local_infile_read(void *ptr, char *buf, unsigned int buf_len);
     static void local_infile_end(void *ptr);
@@ -89,7 +91,7 @@ public:
                                   char *error_msg,
                                   unsigned int error_msg_len);
 
-private: 
+private:
     inline std::string _nextFilename() {
         std::ostringstream os;
         os << "virtualinfile_" << ++_seq;

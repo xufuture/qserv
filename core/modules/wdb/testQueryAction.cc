@@ -35,6 +35,7 @@
 #include "util/StringHash.h"
 #include "wbase/SendChannel.h"
 #include "wbase/Task.h"
+#include "wdb/ChunkResource.h"
 #include "wdb/QueryAction.h"
 #include "wlog/WLogger.h"
 
@@ -54,6 +55,8 @@ using lsst::qserv::proto::TaskMsg_Subchunk;
 using lsst::qserv::proto::TaskMsg_Fragment;
 
 using lsst::qserv::wbase::SendChannel;
+using lsst::qserv::wdb::ChunkResource;
+using lsst::qserv::wdb::ChunkResourceMgr;
 using lsst::qserv::wdb::QueryAction;
 using lsst::qserv::wdb::QueryActionArg;
 using lsst::qserv::wlog::WLogger;
@@ -75,7 +78,8 @@ struct Fixture {
         boost::shared_ptr<SendChannel> sc(SendChannel::newNopChannel());
         lsst::qserv::wbase::Task::Ptr t(new lsst::qserv::wbase::Task(msg, sc));
         boost::shared_ptr<WLogger> w(new WLogger(WLogger::Printer::newCout()));
-        QueryActionArg a(w, t);
+        boost::shared_ptr<ChunkResourceMgr> crm = ChunkResourceMgr::newFakeMgr();
+        QueryActionArg a(w, t, crm);
         return a;
     }
 };

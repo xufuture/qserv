@@ -171,6 +171,7 @@ bool QueryAction::Impl::act() {
     _checkDb();
 
 //    int chunkId = _selectChunkId();
+    // TODO: Prepare subchunks as necessary
 
     if(_msg->has_protocol()) {
         switch(_msg->protocol()) {
@@ -184,6 +185,7 @@ bool QueryAction::Impl::act() {
     } else {
         throw std::runtime_error("Expected protocol > 1 in TaskMsg");
     }
+    // Release subchunks
 }
 
 MYSQL_RES* QueryAction::Impl::_primeResult(std::string const& query) {
@@ -320,6 +322,7 @@ bool QueryAction::Impl::_dispatchChannel() {
 }
 
 void QueryAction::Impl::poison() {
+    // TODO: Figure out how to cancel a MySQL C-API call in-flight
     _log->error("Ignoring QueryAction::Impl::poision() call, unimplemented");
 }
 

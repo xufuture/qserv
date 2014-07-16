@@ -26,7 +26,15 @@
 // System headers
 #include <string>
 
+// Third-party headers
+#include <boost/shared_ptr.hpp>
 #include <mysql/mysql.h>
+
+namespace lsst {
+namespace qserv {
+namespace proto {
+class Result;
+}}}
 
 namespace lsst {
 namespace qserv {
@@ -60,23 +68,12 @@ struct Row {
 ////////////////////////////////////////////////////////////////////////
 class RowBuffer {
 public:
-    RowBuffer(MYSQL_RES* result);
-    unsigned fetch(char* buffer, unsigned bufLen);
-    unsigned int _addRow(Row r, char* cursor, int remaining);
-    bool _fetchRow(Row& r);
-    unsigned _fetchFromLargeRow(char* buffer, int bufLen);
-    void _initializeLargeRow(Row const& largeRow);
-private:
-    MYSQL_RES* _result;
-    bool _useLargeRow;
-    int _numFields;
+    typedef boost::shared_ptr<RowBuffer> Ptr;
 
-    // Large-row support
-    Row _largeRow;
-    int _fieldOffset;
+    virtual unsigned fetch(char* buffer, unsigned bufLen) = 0;
 
-    std::string _sep;
-    std::string _rowSep;
+    static Ptr newResRowBuffer(MYSQL_RES* result);
 };
+
 }}} // lsst::qserv::mysql
 #endif // LSST_QSERV_MYSQL_ROWBUFFER_H
