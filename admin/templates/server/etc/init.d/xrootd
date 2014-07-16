@@ -47,7 +47,7 @@ start_service() {
 	[ -x ${BINARY} ] || exit 5
 	[ -f ${XROOTD_CONFIG} ] || exit 6
 
-	xrootd_cmd="\"${BINARY} -c ${XROOTD_CONFIG} -l ${LOGFILE} -n ${XROOTD_INSTANCE_NAME} &\""
+	xrootd_cmd="\"${BINARY} -c ${XROOTD_CONFIG} -l ${LOGFILE} -n ${XROOTD_INSTANCE_NAME} -I v4 &\""
 	# here pid files will be created twice time : one by xrootd/cmsd and one by start()
 	# but it works
 	eval start -p ${pidfile} -l ${lockfile} ${prog} ${xrootd_cmd}
