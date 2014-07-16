@@ -33,6 +33,7 @@
 #include <mysql/mysql.h>
 
 // Qserv headers
+#include "proto/worker.pb.h"
 #include "sql/Schema.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -40,7 +41,7 @@
 ////////////////////////////////////////////////////////////////////////
 std::string const mysqlNull("\\N");
 // should be less than 0.5 * infileBufferSize
-int const largeRowThreshold = 500*1024; 
+int const largeRowThreshold = 500*1024;
 
 namespace lsst {
 namespace qserv {
@@ -50,7 +51,7 @@ namespace mysql {
 ////////////////////////////////////////////////////////////////////////
 inline unsigned updateEstRowSize(unsigned lastRowSize, Row const& r) {
     unsigned rowSize = r.minRowSize();
-    if(lastRowSize < rowSize) { 
+    if(lastRowSize < rowSize) {
         return rowSize;
     }
     return lastRowSize;
@@ -61,12 +62,12 @@ inline int addString(char* cursor, std::string const& s) {
     return sSize;
 }
 
-inline int escapeString(char* dest, char* src, int srcLength) {
+inline int escapeString(char* dest, char const* src, int srcLength) {
     //mysql_real_escape_string(_mysql, cursor, col, r.lengths[i]);
     assert(srcLength >= 0);
     assert(srcLength < std::numeric_limits<int>::max() / 2);
-    char* end = src + srcLength;
-    char* originalSrc = src;
+    char const* end = src + srcLength;
+    char const * originalSrc = src;
     while(src != end) {
         switch(*src) {
         case '\0': *dest++ = '\\'; *dest++ = '0'; break;
@@ -74,7 +75,7 @@ inline int escapeString(char* dest, char* src, int srcLength) {
         case '\n': *dest++ = '\\'; *dest++ = 'n'; break;
         case '\r': *dest++ = '\\'; *dest++ = 'r'; break;
         case '\t': *dest++ = '\\'; *dest++ = 't'; break;
-        case '\032': *dest++ = '\\'; *dest++ = 'Z'; break; 
+        case '\032': *dest++ = '\\'; *dest++ = 'Z'; break;
         default: *dest++ = *src; break;
             // Null (\N) is not treated by escaping in this context.
         }
@@ -86,7 +87,7 @@ inline int maxColFootprint(int columnLength, std::string const& sep) {
     const int overhead = 2 + sep.size(); // NULL decl + sep size
     return overhead + (2 * columnLength);
 }
-inline int addColumn(char* cursor, char* colData, int colSize) { 
+inline int addColumn(char* cursor, char* colData, int colSize) {
     int added = 0;
     if(colData) {
         // Sanitize field.
@@ -97,12 +98,30 @@ inline int addColumn(char* cursor, char* colData, int colSize) {
         added = addString(cursor, mysqlNull);
     }
     return added;
-}        
+}
 
-////////////////////////////////////////////////////////////////////////
-// RowBuffer Implementation
-////////////////////////////////////////////////////////////////////////
-RowBuffer::RowBuffer(MYSQL_RES* result)
+class ResRowBuffer : public RowBuffer {
+public:
+    ResRowBuffer(MYSQL_RES* result);
+    unsigned fetch(char* buffer, unsigned bufLen);
+    unsigned int _addRow(Row r, char* cursor, int remaining);
+    bool _fetchRow(Row& r);
+    unsigned _fetchFromLargeRow(char* buffer, int bufLen);
+    void _initializeLargeRow(Row const& largeRow);
+private:
+    MYSQL_RES* _result;
+    bool _useLargeRow;
+    int _numFields;
+
+    // Large-row support
+    Row _largeRow;
+    int _fieldOffset;
+
+    std::string _sep;
+    std::string _rowSep;
+};
+
+ResRowBuffer::ResRowBuffer(MYSQL_RES* result)
     : _result(result),
       _useLargeRow(false),
       _sep("\t"), _rowSep("\n") {
@@ -111,7 +130,7 @@ RowBuffer::RowBuffer(MYSQL_RES* result)
     _numFields = mysql_num_fields(result);
 //        cout << _numFields << " fields per row\n";
 }
-unsigned RowBuffer::fetch(char* buffer, unsigned bufLen) {
+unsigned ResRowBuffer::fetch(char* buffer, unsigned bufLen) {
     unsigned fetchSize = 0;
     unsigned estRowSize = 0;
     if(bufLen <= 0) {
@@ -132,25 +151,25 @@ unsigned RowBuffer::fetch(char* buffer, unsigned bufLen) {
         estRowSize = updateEstRowSize(estRowSize, r);
         if(estRowSize > static_cast<unsigned>(largeRowThreshold)) {
             _initializeLargeRow(r);
-            unsigned largeFetchSize = _fetchFromLargeRow(buffer + fetchSize, 
-                                                         bufLen - fetchSize); 
+            unsigned largeFetchSize = _fetchFromLargeRow(buffer + fetchSize,
+                                                         bufLen - fetchSize);
             return fetchSize + largeFetchSize;
         } else { // Small rows, use simpler row-at-a-time logic
-            unsigned rowFetch = _addRow(r, 
-                                        buffer + fetchSize, 
+            unsigned rowFetch = _addRow(r,
+                                        buffer + fetchSize,
                                         bufLen - fetchSize);
             if(rowFetch) {
                 break;
             }
             fetchSize += rowFetch;
             fetchSize += addString(buffer + fetchSize, _rowSep);
-            // Ensure 
+            // Ensure
         }
     }
     return fetchSize;
 }
 
-unsigned int RowBuffer::_addRow(Row r, char* cursor, int remaining) {
+unsigned int ResRowBuffer::_addRow(Row r, char* cursor, int remaining) {
     assert(remaining >= 0); // negative remaining is nonsensical
     char* original = cursor;
     unsigned sepSize = _sep.size();
@@ -162,7 +181,7 @@ unsigned int RowBuffer::_addRow(Row r, char* cursor, int remaining) {
         // Make buffer size in LocalInfile larger than largest
         // row.
         // largeRowThreshold should prevent this.
-        throw "Buffer too small for row"; 
+        throw "Buffer too small for row";
     }
 
     for(int i=0; i < r.numFields; ++i) {
@@ -176,7 +195,7 @@ unsigned int RowBuffer::_addRow(Row r, char* cursor, int remaining) {
 }
 
 
-bool RowBuffer::_fetchRow(Row& r) {
+bool ResRowBuffer::_fetchRow(Row& r) {
     MYSQL_ROW mysqlRow = mysql_fetch_row(_result);
     if(!mysqlRow) {
         return false;
@@ -188,36 +207,42 @@ bool RowBuffer::_fetchRow(Row& r) {
     return true;
 }
 
-unsigned RowBuffer::_fetchFromLargeRow(char* buffer, int bufLen) {
-    // Insert field-at-a-time, 
+unsigned ResRowBuffer::_fetchFromLargeRow(char* buffer, int bufLen) {
+    // Insert field-at-a-time,
     char* cursor = buffer;
     int remaining = bufLen;
 
     while(maxColFootprint(_largeRow.lengths[_fieldOffset], _sep) > remaining) {
-        int addLength = addColumn(cursor, 
-                                   _largeRow.row[_fieldOffset], 
+        int addLength = addColumn(cursor,
+                                   _largeRow.row[_fieldOffset],
                                    _largeRow.lengths[_fieldOffset]);
         cursor += addLength;
         remaining -= addLength;
         ++_fieldOffset;
         if(_fieldOffset >= _numFields) {
             if(!_fetchRow(_largeRow)) {
-                break; 
+                break;
                 // no more rows, return what we have
             }
             _fieldOffset = 0;
         }
-        // FIXME: unfinished           
-    } 
-    if(cursor == buffer) { // Were we able to put anything in?           
+        // FIXME: unfinished
+    }
+    if(cursor == buffer) { // Were we able to put anything in?
         throw "Buffer too small for single column!";
     }
     return bufLen - remaining;
 }
-void RowBuffer::_initializeLargeRow(Row const& largeRow) {
+void ResRowBuffer::_initializeLargeRow(Row const& largeRow) {
     _useLargeRow = true;
     _fetchRow(_largeRow);
     _fieldOffset = 0;
 }
 
+////////////////////////////////////////////////////////////////////////
+// RowBuffer Implementation
+////////////////////////////////////////////////////////////////////////
+boost::shared_ptr<RowBuffer> RowBuffer::newResRowBuffer(MYSQL_RES* result) {
+    return Ptr(new ResRowBuffer(result));
+}
 }}} // lsst::qserv::mysql

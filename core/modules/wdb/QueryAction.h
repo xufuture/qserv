@@ -46,6 +46,9 @@
 // Forward declarations
 namespace lsst {
 namespace qserv {
+namespace wdb {
+class ChunkResourceMgr;
+}
 namespace wlog {
     class WLogger;
 }}} // End of forward declarations
@@ -61,10 +64,12 @@ public:
     QueryActionArg() {}
 
     QueryActionArg(boost::shared_ptr<wlog::WLogger> log_,
-                   wbase::Task::Ptr task_) 
-        : log(log_), task(task_) { }
+                   wbase::Task::Ptr task_,
+                   boost::shared_ptr<ChunkResourceMgr> mgr_)
+        : log(log_), task(task_), mgr(mgr_) { }
     boost::shared_ptr<wlog::WLogger> log;
     wbase::Task::Ptr task;
+    boost::shared_ptr<ChunkResourceMgr> mgr;
 };
 ////////////////////////////////////////////////////////////////////////
 class QueryAction {

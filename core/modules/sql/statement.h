@@ -22,17 +22,36 @@
  */
 #ifndef LSST_QSERV_SQL_STATEMENT_H
 #define LSST_QSERV_SQL_STATEMENT_H
+
 // System headers
 #include <string>
+#include <vector>
+
+// Third-party headers
+#include <boost/shared_ptr.hpp>
 
 namespace lsst {
 namespace qserv {
 namespace sql {
 
-    class Schema; // Forward
+class Schema; // Forward
 
-    std::string formCreateTable(std::string const& table, sql::Schema const& s);
-    std::string formLoadInfile(std::string const& table, 
-                               std::string const& virtFile);
+std::string formCreateTable(std::string const& table, sql::Schema const& s);
+
+struct InsertColumn {
+    std::string column;
+    std::string hexColumn;
+};
+typedef std::vector<InsertColumn> InsertColumnVector;
+
+boost::shared_ptr<InsertColumnVector> newInsertColumnVector(Schema const& s);
+
+std::string formLoadInfile(std::string const& table,
+                           std::string const& virtFile);
+std::string formLoadInfile(std::string const& table,
+                           std::string const& virtFile,
+                           InsertColumnVector const& icv);
+
+
 }}} // namespace lsst::qserv::sql
 #endif // LSST_QSERV_SQL_STATEMENT_H

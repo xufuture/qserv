@@ -26,4 +26,7 @@ programs.append(p)
 p = env.Program(['testQueryAction.cc'] + deps, LIBS=findLibs(extDeps))
 programs.append(p)
 
+p = env.Program(['testChunkResource.cc'] + deps, LIBS=findLibs(extDeps))
+programs.append(p)
+
 Return('programs')

@@ -35,9 +35,12 @@
 #include <boost/thread.hpp>
 
 // Local headers
+#include "mysql/MySqlConfig.h"
 #include "proto/worker.pb.h"
 #include "wbase/Base.h"
 #include "wbase/MsgProcessor.h"
+#include "wconfig/Config.h"
+#include "wdb/ChunkResource.h"
 #include "wdb/QueryAction.h"
 #include "wdb/QueryRunner.h"
 #include "wlog/WLogger.h"
@@ -120,6 +123,7 @@ private:
 
     void _startRunner(wbase::Task::Ptr t);
 
+    boost::shared_ptr<wdb::ChunkResourceMgr> _chunkResourceMgr;
     boost::mutex _mutex;
     boost::mutex _runnersMutex;
     Scheduler::Ptr _scheduler;
@@ -173,7 +177,7 @@ ForemanImpl::RunnerMgr::registerRunner(Runner* r, wbase::Task::Ptr t) {
 
 boost::shared_ptr<wdb::QueryAction>
 ForemanImpl::RunnerMgr::newQueryAction(wbase::Task::Ptr t) {
-    wdb::QueryActionArg a(_f._log, t);
+    wdb::QueryActionArg a(_f._log, t, _f._chunkResourceMgr);
     boost::shared_ptr<wdb::QueryAction> qa(new wdb::QueryAction(a));
     return qa;
 }
@@ -379,6 +383,10 @@ ForemanImpl::ForemanImpl(Scheduler::Ptr s,
         _log.reset(new wlog::WLogger(log));
         _log->setPrefix("Foreman:");
     }
+    // Make the chunk resource mgr
+    mysql::MySqlConfig c(wconfig::getConfig().getSqlConfig());
+    _chunkResourceMgr = wdb::ChunkResourceMgr::newMgr(c);
+
     _rManager.reset(new RunnerMgr(*this));
     assert(s); // Cannot operate without scheduler.
 

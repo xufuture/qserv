@@ -46,6 +46,22 @@ std::string formCreateTable(std::string const& table, sql::Schema const& s) {
     return os.str();
 }
 
+boost::shared_ptr<InsertColumnVector> newInsertColumnVector(Schema const& s) {
+    boost::shared_ptr<InsertColumnVector> icv(new InsertColumnVector);
+    ColumnsIter b, i, e;
+    for(i=b=s.columns.begin(), e=s.columns.end(); i != e; ++i) {
+        InsertColumn ic;
+        ic.column = i->name;
+        if(i->colType.sqlType.find("BLOB") != std::string::npos) {
+            std::ostringstream os;
+            os << "blobtmp" << icv->size();
+            ic.hexColumn = os.str();
+        }
+        icv->push_back(ic);
+    }
+    return icv;
+}
+
 std::string formLoadInfile(std::string const& table, 
                            std::string const& virtFile) {
     std::ostringstream os;
@@ -54,5 +70,59 @@ std::string formLoadInfile(std::string const& table,
     return os.str();
 }
 
+inline bool needClause(InsertColumnVector const& icv) {
+    for(InsertColumnVector::const_iterator i=icv.begin(), e=icv.end();
+        i != e; ++i) {
+        if(!i->hexColumn.empty()) {
+            return true;
+        }
+    }
+    return false;
+}
+inline std::ostream& addSingleQuoted(std::ostream& os, std::string const& s) {
+    return os << "'" << s << "'";
+}
+std::string formLoadInfile(std::string const& table, 
+                           std::string const& virtFile, 
+                           InsertColumnVector const& icv) {
+
+    // Output should look something like this: 
+    // "LOAD DATA INFILE 'path.txt' 
+    // INTO  TABLE mytable (column1, column2, @hexColumn3) 
+    // SET column3=UNHEX(@hexColumn3);" 
+
+    // Check icv to see if we need to hex/unhex
+    if(!needClause(icv)) {
+        return formLoadInfile(table, virtFile); // Use simpler version
+    }
+    std::ostringstream os;
+    os << formLoadInfile(table, virtFile)
+       << " (";
+    // Input column list
+    InsertColumnVector setColumns;
+    InsertColumnVector::const_iterator i, b, e;
+    for(i=b=icv.begin(), e=icv.end(); i != e; ++i) {
+        if(i != b) {
+            os << ",";
+        }
+        if(!i->hexColumn.empty()) {
+            setColumns.push_back(*i);
+            os << "@" << i->hexColumn;
+        } else {
+            addSingleQuoted(os, i->column);
+        }
+    }
+    os << ") ";
+    // Fixup SET statements
+    for(i=b=setColumns.begin(), e=setColumns.end(); i != e; ++i) {
+        if(i != b) {
+            os << ", ";
+        }
+        os << "SET ";
+        addSingleQuoted(os, i->column);
+        os << "=UNHEX(" << "@" << i->hexColumn << ")";
+    }
+    return os.str();
+}
 }}} // namespace lsst::qserv::sql
 

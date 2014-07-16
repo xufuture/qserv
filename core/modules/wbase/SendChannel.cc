@@ -33,23 +33,27 @@ namespace wbase {
 
 class NopChannel : public SendChannel {
 public:
-    virtual void send(char const* buf, int bufLen) {
+    virtual bool send(char const* buf, int bufLen) {
         std::cout << "NopChannel send(" << (void*) buf
                   << ", " << bufLen << ");\n";
+        return true;
     }
 
-    virtual void sendError(std::string const& msg, int code) {
+    virtual bool sendError(std::string const& msg, int code) {
         std::cout << "NopChannel sendError(\"" << msg
                   << "\", " << code << ");\n";
+        return true;
     }
-    virtual void sendFile(int fd, Size fSize) {
+    virtual bool sendFile(int fd, Size fSize) {
         std::cout << "NopChannel sendFile(" << fd
                   << ", " << fSize << ");\n";
+        return true;
     }
-    virtual void sendStream(char const* buf, int bufLen, bool last) {
+    virtual bool sendStream(char const* buf, int bufLen, bool last) {
         std::cout << "NopChannel sendStream(" << (void*) buf
                   << ", " << bufLen << ", "
                   << (last ? "true" : "false") << ");\n";
+        return true;
     }
 };
 
@@ -60,16 +64,19 @@ class StringChannel : public SendChannel {
 public:
     StringChannel(std::string& dest) : _dest(dest) {}
 
-    virtual void send(char const* buf, int bufLen) {
+    virtual bool send(char const* buf, int bufLen) {
         _dest.append(buf, bufLen);
+        return true;
     }
 
-    virtual void sendError(std::string const& msg, int code) {
+    virtual bool sendError(std::string const& msg, int code) {
         std::ostringstream os;
         os << "(" << code << "," << msg << ")";
         _dest.append(os.str());
+        return true;
     }
-    virtual void sendFile(int fd, Size fSize) {
+
+    virtual bool sendFile(int fd, Size fSize) {
         Size bytesRead = 0;
         std::vector<char> buf(fSize);
         Size remain = fSize;
@@ -78,21 +85,24 @@ public:
             if(frag < 0) {
                 std::cout << "ERROR reading from fd during "
                           << "StringChannel::sendFile(" << "," << fSize << ")";
-                break;
+                return false;
             } else if(frag == 0) {
                 std::cout << "ERROR unexpected 0==read() during "
                           << "StringChannel::sendFile(" << "," << fSize << ")";
-                break;
+                return false;
             }
             _dest.append(buf.data(), frag);
             remain -= frag;
         }
+        return true;
     }
-    virtual void sendStream(char const* buf, int bufLen, bool last) {
+
+    virtual bool sendStream(char const* buf, int bufLen, bool last) {
         _dest.append(buf, bufLen);
         std::cout << "StringChannel sendStream(" << (void*) buf
                   << ", " << bufLen << ", "
                   << (last ? "true" : "false") << ");\n";
+        return true;
     }
 private:
     std::string& _dest;
