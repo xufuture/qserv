@@ -396,7 +396,7 @@ class InbandQueryAction:
         return self.isValid
 
     def abort(self):
-        UserQuery_abort(self.sessionId)
+        UserQuery_kill(self.sessionId)
 
     def _computeHash(self, bytes):
         return hashlib.md5(bytes).hexdigest()

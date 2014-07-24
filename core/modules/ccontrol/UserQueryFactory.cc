@@ -47,6 +47,7 @@ public:
     qdisp::Executive::Config::Ptr executiveConfig;
     boost::shared_ptr<css::Facade> facade;
     rproc::TableMergerConfig mergerConfigTemplate;
+    std::string defaultDb;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -62,6 +63,7 @@ UserQueryFactory::newUserQuery(std::string const& query,
                                std::string const& resultTable) {
     qproc::QuerySession::Ptr qs(new qproc::QuerySession(_impl->facade));
     qs->setResultTable(resultTable);
+    qs->setDefaultDb(_impl->defaultDb);
     qs->setQuery(query);
 
     UserQuery* uq = new UserQuery(qs);
@@ -114,14 +116,11 @@ void UserQueryFactory::Impl::readConfig(StringMap const& m) {
         "Error, css.connection not found.",
         "");
     initFacade(cssTech, cssConn);
-#if 0
-    std::string defaultDb = cm.get(
+    defaultDb = cm.get(
         "table.defaultdb",
         "Empty table.defaultdb. Using LSST",
         "LSST");
-    _qSession->setDefaultDb(defaultDb);
-#endif
-#if 0 // FIXMEFIXME
+#if 0 // TODO: Revisit during new result protocol/pipeline
     merger::TableMergerConfig cfg(_resultDbDb,     // cfg result db
                                   resultTable,     // cfg resultname
                                   m,               // merge fixup obj
