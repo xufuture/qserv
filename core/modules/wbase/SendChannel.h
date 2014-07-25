@@ -44,11 +44,11 @@ public:
     typedef boost::shared_ptr<ReleaseFunc> ReleaseFuncPtr;
     typedef long long Size;
 
-    virtual void send(char const* buf, int bufLen) = 0;
+    virtual bool send(char const* buf, int bufLen) = 0;
 
-    virtual void sendError(std::string const& msg, int code) = 0;
-    virtual void sendFile(int fd, Size fSize) = 0;
-    virtual void sendStream(char const* buf, int bufLen, bool last) {
+    virtual bool sendError(std::string const& msg, int code) = 0;
+    virtual bool sendFile(int fd, Size fSize) = 0;
+    virtual bool sendStream(char const* buf, int bufLen, bool last) {
         throw "unsupported streaming";
     }
 

@@ -132,9 +132,12 @@ bool QueryPhyResult::dumpToChannel(wlog::WLogger& log,
     wbase::SendChannel::Size fSize = s.st_size;
 
     assert(sc);
-    sc->sendFile(fd, fSize);
     sc->setReleaseFunc(FileCleanup::newInstance(fd, dumpFile));
-    // FIXME: when can the release function be called?
+    if(!sc->sendFile(fd, fSize)) {
+        // Error sending the result.
+        // Not sure we need to do anything differently, but make sure we clean
+        // things up.
+    }
     return true;
 }
 

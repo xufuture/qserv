@@ -261,7 +261,14 @@ off_t TableMerger::merge(char const* dumpBuffer, int dumpLength,
     SqlInsertIter sii(dumpBuffer, dumpLength, tableName, allowNull);
     bool successful = _importIter(sii, tableName);
     if(!successful) {
-        // FIXME
+        LOGGER_DBG << "UNSUCCESSFUL TableMerger::merge(buffer), " << tableName << ")" << std::endl;
+        _error.status = TableMergerError::IMPORT;
+        _error.errorCode = 0;
+        _error.description = "Unknown result import error.";
+        return 0;
+    } else if(sii.getLastUsed() == 0) {
+        // Tried to import, no errors, but didn't use anything from the buffer.
+        return 0;
     }
     off_t used = sii.getLastUsed() - dumpBuffer;
     return used;
@@ -473,7 +480,7 @@ bool TableMerger::_dropAndCreate(std::string const& tableName,
 }
 
 bool TableMerger::_importIter(SqlInsertIter& sii,
-                               std::string const& tableName) {
+                              std::string const& tableName) {
     LOGGER_DBG << "EXECUTING TableMerger::_importIter(sii, " << tableName << ")" << std::endl;
     int insertsCompleted = 0;
     // Search the buffer for the insert statement,
@@ -489,11 +496,18 @@ bool TableMerger::_importIter(SqlInsertIter& sii,
                        dropDbContext(_mergeTable, _config.targetDb),
                        dropQuote);
         if(!_applySql(q)) {
-            if(_error.resultTooBig()) {
+            if(!_error.resultTooBig()) {
                 std::stringstream errStrm;
-                errStrm << "Failed importing! " << tableName << " " << _error.description;
+                errStrm << "Failed importing! " << tableName << " "
+                        << _error.description << "(code="
+                        << _error.errorCode << ")";
                 LOGGER_ERR << errStrm.str() << std::endl;
-                throw errStrm.str();
+                throw std::runtime_error(errStrm.str());
+            } else {
+                std::stringstream errStrm;
+                errStrm << "Error importing to " << tableName << " "
+                        << _error.description << "(Result too big)";
+                LOGGER_ERR << errStrm.str() << std::endl;
             }
             return false;
         }
