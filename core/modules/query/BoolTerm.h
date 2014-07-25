@@ -93,6 +93,9 @@ public:
     virtual boost::shared_ptr<BoolTerm> copySyntax() const {
         return boost::shared_ptr<BoolTerm>(); }
 };
+
+std::ostream& operator<<(std::ostream& os, BoolTerm const& bt);
+
 /// OrTerm is a set of OR-connected BoolTerms
 class OrTerm : public BoolTerm {
 public:

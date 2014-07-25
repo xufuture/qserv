@@ -190,10 +190,17 @@ BoolTermFactory::newAndTerm(antlr::RefAST a) {
 query::BoolFactor::Ptr
 BoolTermFactory::newBoolFactor(antlr::RefAST a) {
 #if 0
+#ifdef NEWLOG
+    LOGF_INFO("bool factor:");
+#else
     LOGGER_INF << "bool factor:";
+#endif
     spacePrint sp(LOG_STRM(Info));
     forEachSibs(a, sp);
+#ifdef NEWLOG
+#else
     LOGGER_INF << std::endl;
+#endif
 #endif
     query::BoolFactor::Ptr bf(new query::BoolFactor());
     bfImport bfi(*this, *bf);
@@ -203,7 +210,11 @@ BoolTermFactory::newBoolFactor(antlr::RefAST a) {
 /// Construct an UnknownTerm(BoolTerm)
 query::UnknownTerm::Ptr
 BoolTermFactory::newUnknown(antlr::RefAST a) {
+#ifdef NEWLOG
+    LOGF_INFO("unknown term: %1%" % walkTreeString(a));
+#else
     LOGGER_INF << "unknown term:" << walkTreeString(a) << std::endl;
+#endif
     return query::UnknownTerm::Ptr(new query::UnknownTerm());
 }
 /// Construct an PassTerm
