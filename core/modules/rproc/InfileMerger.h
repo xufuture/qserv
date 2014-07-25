@@ -51,6 +51,9 @@ namespace qserv {
 namespace mysql {
     class MySqlConfig;
 }
+namespace qdisp {
+    class MessageStore;
+}
 namespace rproc {
     class SqlInsertIter;
 }
@@ -72,9 +75,14 @@ namespace rproc {
 /// struct InfileMergerError - value class for InfileMerger error code.
 struct InfileMergerError {
 public:
-    enum {NONE, HEADER_IMPORT, HEADER_OVERFLOW, 
+    enum {NONE=0, HEADER_IMPORT, HEADER_OVERFLOW,
           RESULT_IMPORT, RESULT_MD5, MYSQLOPEN, MERGEWRITE, TERMINATE,
+          CREATE_TABLE,
           MYSQLCONNECT, MYSQLEXEC} status;
+    InfileMergerError() {}
+    InfileMergerError(int code) : errorCode(code) {}
+    InfileMergerError(int code, char const* desc)
+        : errorCode(code), description(desc) {}
     int errorCode;
     std::string description;
     bool resultTooBig() const;
@@ -84,26 +92,22 @@ public:
 class InfileMergerConfig {
 public:
     InfileMergerConfig() {}
-    InfileMergerConfig(std::string targetDb_, std::string targetTable_,
+    InfileMergerConfig(boost::shared_ptr<qdisp::MessageStore> messageStore_,
+                       std::string targetDb_, std::string targetTable_,
                       MergeFixup const& mFixup_,
-                      std::string user_, std::string socket_,
-                      std::string mySqlCmd_, std::string dropMem_)
-        :  targetDb(targetDb_),  targetTable(targetTable_),
-           mFixup(mFixup_), user(user_),  socket(socket_), mySqlCmd(mySqlCmd_),
-           dropMem()
+                      std::string user_, std::string socket_)
+        :  messageStore(messageStore_),
+           targetDb(targetDb_),  targetTable(targetTable_),
+           mFixup(mFixup_), user(user_)
     {
-        if(dropMem_.size() > 0) {
-            dropMem = true;
-        }
     }
 
+    boost::shared_ptr<qdisp::MessageStore> messageStore;
     std::string targetDb; // for final result, and imported result
     std::string targetTable;
     MergeFixup mFixup;
     std::string user;
     std::string socket;
-    std::string mySqlCmd;
-    bool dropMem;
 };
 
 /// class InfileMerger : A class that performs merging of subquery
@@ -161,15 +165,23 @@ private:
 
     std::string _mergeTable;
     InfileMergerError _error;
+#if 0
     long long _resultLimit;
-    int _tableCount;
-    bool _isFinished;
+
     boost::mutex _countMutex;
     boost::mutex _popenMutex;
+#endif
+    int _tableCount;
+    bool _isFinished;
+    boost::mutex _createTableMutex;
     boost::mutex _sqlMutex;
 
     class Msgs;
     std::auto_ptr<Msgs> _msgs;
+    class Mgr;
+    std::auto_ptr<Mgr> _mgr;
+
+    bool _needCreateTable;
     bool _needHeader;
 };
 

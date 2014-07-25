@@ -352,11 +352,11 @@ class ForemanImpl::Processor : public wbase::MsgProcessor {
 public:
     class Cancel : public util::VoidCallable<void> {
     public:
-        Cancel(wbase::Task& t) : _t(t) {}
+        Cancel(wbase::Task::Ptr t) : _t(t) {}
         virtual void operator()() {
-            _t.poison();
+            _t->poison();
         }
-        wbase::Task& _t;
+        wbase::Task::Ptr _t;
     };
     Processor(ForemanImpl& f) : _foremanImpl(f) {}
 
@@ -366,7 +366,7 @@ public:
 
         wbase::Task::Ptr t(new wbase::Task(taskMsg, replyChannel));
         _foremanImpl.newTaskAction(t);
-        return boost::shared_ptr<Cancel>(new Cancel(*t));
+        return boost::shared_ptr<Cancel>(new Cancel(t));
     }
     ForemanImpl& _foremanImpl;
 };

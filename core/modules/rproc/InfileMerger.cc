@@ -48,8 +48,11 @@
 
 // Local headers
 #include "log/Logger.h"
+#include "mysql/LocalInfile.h"
+#include "mysql/MySqlConnection.h"
 #include "proto/worker.pb.h"
 #include "proto/ProtoImporter.h"
+#include "rproc/ProtoRowBuffer.h"
 #include "rproc/SqlInsertIter.h"
 #include "sql/Schema.h"
 #include "sql/SqlConnection.h"
@@ -86,64 +89,7 @@ boost::shared_ptr<MySqlConfig> makeSqlConfig(InfileMergerConfig const& c) {
     sc->socket = c.socket;
     return sc;
 }
-// In-place string replacement that pads to minimize string copying.
-// Non-space characters surrounding original substring are assumed to be
-// quotes and are retained.
-void inplaceReplace(std::string& s, std::string const& old,
-                    std::string const& replacement,
-                    bool dropQuote) {
-    std::string::size_type pos = s.find(old);
-    char quoteChar = s[pos-1];
-    std::string rplc = replacement;
-    std::string::size_type rplcSize = old.size();;
-    if((quoteChar != ' ') && (quoteChar == s[pos + rplcSize])) {
-        if(!dropQuote) {
-            rplc = quoteChar + rplc + quoteChar;
-        }
-        rplcSize += 2;
-        --pos;
-    }
-    if(rplc.size() < rplcSize) { // do padding for in-place
-        rplc += std::string(rplcSize - rplc.size(), ' ');
-    }
-    //LOGGER_DBG << "rplc " << rplc << " old=" << s.substr(pos-1, rplcSize+2) << std::endl;
-    s.replace(pos, rplcSize, rplc);
-    //LOGGER_DBG << "newnew: " << s.substr(pos-5, rplcSize+10) << std::endl;
-    return;
-}
 
-std::string extractReplacedCreateStmt(char const* s, ::off_t size,
-                                      std::string const& oldTable,
-                                      std::string const& newTable,
-                                      bool dropQuote) {
-
-    LOGGER_DBG << "EXECUTING TableMerger::extractReplacedCreateStmt()" << std::endl;
-
-    boost::regex createExp("(CREATE TABLE )(`?)(" + oldTable + ")(`?)( ?[^;]+?;)");
-    std::string newForm;
-    if(dropQuote) {
-        newForm = "\\1" + newTable + "\\5";
-    } else {
-        newForm = "\\1\\2" + newTable + "\\4\\5";
-    }
-    std::string out;
-    std::stringstream ss;
-    std::ostream_iterator<char,char> oi(ss);
-    regex_replace(oi, s, s+size, createExp, newForm,
-                  boost::match_default | boost::format_perl
-                  | boost::format_no_copy | boost::format_first_only);
-    out = ss.str();
-    return out;
-}
-
-std::string dropDbContext(std::string const& tableName,
-                          std::string const& context) {
-    std::string contextDot = context + ".";
-    if(tableName.substr(0,contextDot.size()) == contextDot) {
-        return tableName.substr(contextDot.size());
-    }
-    return tableName;
-}
 
 } // anonymous namespace
 
@@ -160,90 +106,15 @@ std::string const InfileMerger::_insertSql("INSERT INTO %s SELECT * FROM %s;");
 std::string const InfileMerger::_cleanupSql("DROP TABLE IF EXISTS %s;");
 std::string const InfileMerger::_cmdBase("%1% --socket=%2% -u %3% %4%");
 ////////////////////////////////////////////////////////////////////////
-// InfileeMergerError
+// InfileMergerError
 ////////////////////////////////////////////////////////////////////////
 bool InfileMergerError::resultTooBig() const {
     return (status == MYSQLEXEC) && (errorCode == 1114);
 }
 
-#if 0
 ////////////////////////////////////////////////////////////////////////
-// CreateStmt : helper class for extracting create statements
-// from the dump.
+// InfileMerger::Msgs
 ////////////////////////////////////////////////////////////////////////
-class TableMerger::CreateStmt {
-public:
-    CreateStmt(PacketBufferPtr pb,
-               std::string const& table,
-               std::string const& targetDb,
-               std::string const& targetTable)
-        : _pacBuffer(pb),
-          _table(table) {
-        _setup(targetDb, targetTable);
-    }
-
-    CreateStmt(char const* buf, std::size_t size,
-               std::string const& table,
-               std::string const& targetDb,
-               std::string const& targetTable)
-        : _buf(buf), _size(size),
-          _table(table) {
-        _setup(targetDb, targetTable);
-    }
-
-    std::string const& getTable() const { return _table; }
-
-    std::string getStmt() {
-        if(_pacBuffer) {
-            return _makeStmt(_pacBuffer);
-        } else {
-            assert(_buf);
-            return _makeStmt(_buf, _size);
-        }
-    }
-private:
-    void _setup(std::string const& targetDb, std::string const& targetTable) {
-        _dropQuote = (std::string::npos != targetTable.find("."));
-        _realTarget = dropDbContext(targetTable, targetDb);
-    }
-
-    std::string _makeStmt(PacketBufferPtr pb) {
-        // Perform the (patched) CREATE TABLE, then process as an INSERT.
-        std::string createSql;
-        while(true) {
-//            ::off_t sz = (*pb)->second;
-            createSql = extractReplacedCreateStmt((*pb)->first,
-                                                  (*pb)->second,
-                                                  _table,
-                                                  _realTarget,
-                                                  _dropQuote);
-            if(!createSql.empty()) {
-                break;
-            }
-            // Extend, since we didn't find the CREATE statement.
-            if(!pb->incrementExtend()) {
-                errno = ENOTRECOVERABLE;
-                throw "Create statement not found.";
-            }
-        }
-        return createSql;
-    }
-    std::string _makeStmt(char const* buf, std::size_t size) {
-        return extractReplacedCreateStmt(buf, size,
-                                         _table,
-                                         _realTarget,
-                                         _dropQuote);
-    }
-    PacketBufferPtr _pacBuffer;
-    char const* _buf;
-    std::size_t _size;
-    std::string _table;
-    bool _dropQuote;
-    std::string _realTarget;
-};
-
-
-#endif
 class InfileMerger::Msgs {
 public:
     lsst::qserv::proto::ProtoHeader protoHeader;
@@ -251,16 +122,104 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////
-// public
+// InfileMerger::Mgr
+////////////////////////////////////////////////////////////////////////
+class InfileMerger::Mgr {
+public:
+    class Action;
+    friend class Action;
+
+    Mgr(MySqlConfig const& config);
+
+    /// Takes ownership of msgs.
+    Action newAction(std::string const& table, std::auto_ptr<Msgs> msgs);
+    bool applyMysql(std::string const& query);
+
+    void signalDone() {
+        boost::lock_guard<boost::mutex> lock(_inflightMutex);
+        --_numInflight;
+    }
+
+private:
+    inline void _incrementInflight() {
+        boost::lock_guard<boost::mutex> lock(_inflightMutex);
+        ++_numInflight;
+    }
+
+    mysql::MySqlConnection _mysqlConn;
+    lsst::qserv::mysql::LocalInfile::Mgr _infileMgr;
+    boost::mutex _inflightMutex;
+    boost::mutex _mysqlMutex;
+    int _numInflight;
+};
+
+class InfileMerger::Mgr::Action {
+public:
+    Action(Mgr& mgr,
+           std::auto_ptr<Msgs> msgs,
+           std::string const& table, std::string const& virtFile)
+        : _mgr(mgr), _msgs(msgs), _table(table), _virtFile(virtFile) {
+    }
+    Action(Mgr& mgr, std::auto_ptr<Msgs> msgs, std::string const& table)
+        : _mgr(mgr), _msgs(msgs), _table(table) {
+        _virtFile = mgr._infileMgr.prepareSrc(rproc::newProtoRowBuffer(msgs->result));
+        mgr._incrementInflight();
+    }
+    void operator()() {
+        // load data infile.
+        std::string infileStatement = sql::formLoadInfile(_table, _virtFile);
+        bool result = _mgr.applyMysql(infileStatement);
+        assert(result);
+        // TODO: do something with the result so we can catch errors.
+    }
+    Mgr& _mgr;
+    std::auto_ptr<Msgs> _msgs;
+    std::string _table;
+    std::string _virtFile;
+};
+
+////////////////////////////////////////////////////////////////////////
+// InfileMerger::Mgr implementation
+////////////////////////////////////////////////////////////////////////
+InfileMerger::Mgr::Mgr(MySqlConfig const& config)
+    : _mysqlConn(config, true),
+      _numInflight(0) {
+    if(_mysqlConn.connect()) {
+        _infileMgr.attach(_mysqlConn.getMySql());
+    } else {
+        throw InfileMergerError(InfileMergerError::MYSQLCONNECT);
+    }
+}
+
+bool InfileMerger::Mgr::applyMysql(std::string const& query) {
+    boost::lock_guard<boost::mutex> lock(_mysqlMutex);
+    if(!_mysqlConn.connected()) {
+        return false; // should have connected during Mgr construction
+        // Maybe we should reconnect?
+    }
+    bool result = _mysqlConn.queryUnbuffered(query);
+    if(result) {
+        _mysqlConn.getResult(); // ignore result for now
+        _mysqlConn.freeResult();
+    }
+    return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+// InfileMerger public
 ////////////////////////////////////////////////////////////////////////
 InfileMerger::InfileMerger(InfileMergerConfig const& c)
     : _config(c),
+      _sqlConfig(makeSqlConfig(c)),
       _tableCount(0),
       _isFinished(false),
-      _msgs(new Msgs) {
+      _msgs(new Msgs),
+      _mgr(new Mgr(*_sqlConfig)),
+      _needCreateTable(true) {
+    _error.errorCode = InfileMergerError::NONE;
 
-#if 0
     _fixupTargetName();
+#if 0
     _loadCmd = (boost::format(_cmdBase)
 		% c.mySqlCmd % c.socket % c.user % c.targetDb).str();
 #endif
@@ -273,11 +232,12 @@ int InfileMerger::_fetchHeader(char const* buffer, int length) {
     char const* cursor = buffer + 1;
     int remain = length - 1;
 
-    if(!ProtoImporter<ProtoHeader>::setMsgFrom(_msgs->protoHeader, 
+    if(!ProtoImporter<ProtoHeader>::setMsgFrom(_msgs->protoHeader,
                                                cursor, phSize)) {
         _error.errorCode = InfileMergerError::HEADER_IMPORT;
         _error.description = "Error decoding proto header";
-        throw _error;
+        // This is only a real error if there are no more bytes.
+        return 0;
     }
     cursor += phSize; // Advance to Result msg
     remain -= phSize;
@@ -288,18 +248,21 @@ int InfileMerger::_fetchHeader(char const* buffer, int length) {
     }
     // Now decode Result msg
     int resultSize = _msgs->protoHeader.size();
-    if(!ProtoImporter<proto::Result>::setMsgFrom(_msgs->result, 
+    if(!ProtoImporter<proto::Result>::setMsgFrom(_msgs->result,
                                                  cursor, resultSize)) {
         _error.errorCode = InfileMergerError::RESULT_IMPORT;
         _error.description = "Error decoding result msg";
         throw _error;
     }
-        
-    _msgs->result.PrintDebugString();
+
+    //_msgs->result.PrintDebugString(); // wait a second.
     // doublecheck session
     _msgs->result.session(); // TODO
     _setupTable();
-    _setupRow();
+    if(_error.errorCode) {
+        return -1;
+    }
+
     std::string computedMd5 = util::StringHash::getMd5(cursor, resultSize);
     if(_msgs->protoHeader.md5() != computedMd5) {
         _error.description = "Result message MD5 mismatch";
@@ -309,19 +272,31 @@ int InfileMerger::_fetchHeader(char const* buffer, int length) {
     _needHeader = false;
     // Setup infile properties
     // Spawn thread to handle infile processing
+    Mgr::Action a(*_mgr, _msgs, _mergeTable);
+    boost::thread *t = new boost::thread(a);
+    t->join();
+    delete t;
+    // FIXME: if we spawn a separate thread, we need to save it if we're going to continue before it completes.
+
+    assert(!_msgs.get()); // Ownership should have transferred.
+
+//    _thread = new boost::thread(_mgr.newAction(_mgr, _msgs, _mergeTable));
+
     return 0;
 }
 int InfileMerger::_waitPacket(char const* buffer, int length) {
-    
     // process buffer into rows, as much as possible, saving leftover.
     // consume buffer into rows, and flag return for file handler.
+
     return 0; // FIXME
-    
+
 }
 
-void InfileMerger::_setupTable() { 
+void InfileMerger::_setupTable() {
     // Create table, using schema
-    if( true) {// FIXME
+    boost::lock_guard<boost::mutex> lock(_createTableMutex);
+
+    if(_needCreateTable) {
         // create schema
         proto::RowSchema const& rs = _msgs->result.rowschema();
         sql::Schema s;
@@ -329,37 +304,52 @@ void InfileMerger::_setupTable() {
             proto::ColumnSchema const& cs = rs.columnschema(i);
             sql::ColSchema scs;
             scs.name = cs.name();
-            if(cs.has_defaultvalue()) {
+            if(cs.hasdefault()) {
                 scs.defaultValue = cs.defaultvalue();
                 scs.hasDefault = true;
+            } else {
+                scs.hasDefault = false;
             }
             if(cs.has_mysqltype()) {
                 scs.colType.mysqlType = cs.mysqltype();
             }
             scs.colType.sqlType = cs.sqltype();
-            
+
             s.columns.push_back(scs);
         }
         std::string createStmt = sql::formCreateTable(_mergeTable, s);
-        sql::SqlErrorObject seo;
-        sql::SqlResults sr;
-        if(!_sqlConn->runQuery(createStmt, sr, seo)) {
-            // Check error object
-        } 
-     }
+        LOGGER_DBG << "InfileMerger create table:" << createStmt << std::endl;
 
+        if(!_applySqlLocal(createStmt)) {
+            _error.errorCode = InfileMergerError::CREATE_TABLE;
+            _error.description = "Error creating table (" + _mergeTable + ")";
+            _isFinished = true; // Cannot continue.
+            return;
+        }
+        _needCreateTable = false;
+    } else {
+        // Do nothing, table already created.
+    }
 }
-void InfileMerger::_setupRow() { 
+void InfileMerger::_setupRow() {
+    /// Setup infile to merge.
     // ???
 }
 off_t InfileMerger::merge(char const* dumpBuffer, int dumpLength,
                          std::string const& tableName) {
+    if(_error.errorCode) { // Do not attempt when in an error state.
+        return -1;
+    }
     LOGGER_DBG << "EXECUTING InfileMerger::merge(packetbuffer, " << tableName << ")" << std::endl;
     char const* buffer;
     int length;
     // Now buffer is big enough, start processing.
     if(_needHeader) {
         int hSize = _fetchHeader(dumpBuffer, dumpLength);
+        if(hSize == 0) {
+            // Buffer not big enough.
+            return 0;
+        }
         buffer = dumpBuffer + hSize;
         length = dumpLength - hSize;
         _waitPacket(buffer, length);
@@ -412,10 +402,50 @@ bool InfileMerger::finalize() {
 bool InfileMerger::isFinished() const {
     return _isFinished;
 }
-#if 0
+
+bool InfileMerger::_applySqlLocal(std::string const& sql) {
+    boost::lock_guard<boost::mutex> m(_sqlMutex);
+    sql::SqlErrorObject errObj;
+    if(!_sqlConn.get()) {
+        _sqlConn.reset(new sql::SqlConnection(*_sqlConfig, true));
+        if(!_sqlConn->connectToDb(errObj)) {
+            _error.status = InfileMergerError::MYSQLCONNECT;
+            _error.errorCode = errObj.errNo();
+            _error.description = "Error connecting to db. " + errObj.printErrMsg();
+            _sqlConn.reset();
+            return false;
+        } else {
+            LOGGER_INF << "TableMerger " << (void*) this
+                       << " connected to db." << std::endl;
+        }
+    }
+    if(!_sqlConn->runQuery(sql, errObj)) {
+        _error.status = InfileMergerError::MYSQLEXEC;
+        _error.errorCode = errObj.errNo();
+        _error.description = "Error applying sql. " + errObj.printErrMsg();
+        return false;
+    }
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////
 // private
 ////////////////////////////////////////////////////////////////////////
+void InfileMerger::_fixupTargetName() {
+    if(_config.targetTable.empty()) {
+        assert(!_config.targetDb.empty());
+        _config.targetTable = (boost::format("%1%.result_%2%")
+                               % _config.targetDb % getTimeStampId()).str();
+    }
+
+    if(_config.mFixup.needsFixup) {
+        // Set merging temporary if needed.
+        _mergeTable = _config.targetTable + "_m";
+    } else {
+        _mergeTable = _config.targetTable;
+    }
+}
+#if 0
 bool TableMerger::_applySql(std::string const& sql) {
     return _applySqlLocal(sql); //try local impl now.
     FILE* fp;
@@ -455,30 +485,6 @@ bool TableMerger::_applySql(std::string const& sql) {
     return true;
 }
 
-bool TableMerger::_applySqlLocal(std::string const& sql) {
-    boost::lock_guard<boost::mutex> m(_sqlMutex);
-    sql::SqlErrorObject errObj;
-    if(!_sqlConn.get()) {
-        _sqlConn.reset(new sql::SqlConnection(*_sqlConfig, true));
-        if(!_sqlConn->connectToDb(errObj)) {
-            _error.status = TableMergerError::MYSQLCONNECT;
-            _error.errorCode = errObj.errNo();
-            _error.description = "Error connecting to db. " + errObj.printErrMsg();
-            _sqlConn.reset();
-            return false;
-        } else {
-            LOGGER_INF << "TableMerger " << (void*) this
-                       << " connected to db." << std::endl;
-        }
-    }
-    if(!_sqlConn->runQuery(sql, errObj)) {
-        _error.status = TableMergerError::MYSQLEXEC;
-        _error.errorCode = errObj.errNo();
-        _error.description = "Error applying sql. " + errObj.printErrMsg();
-        return false;
-    }
-    return true;
-}
 
 std::string TableMerger::_buildMergeSql(std::string const& tableName,
                                         bool create) {
@@ -516,21 +522,6 @@ bool TableMerger::_createTableIfNotExists(TableMerger::CreateStmt& cs) {
             --_tableCount; // We failed merging the table.
             return false;
         }
-    }
-}
-
-void TableMerger::_fixupTargetName() {
-    if(_config.targetTable.empty()) {
-        assert(!_config.targetDb.empty());
-        _config.targetTable = (boost::format("%1%.result_%2%")
-                               % _config.targetDb % getTimeStampId()).str();
-    }
-
-    if(_config.mFixup.needsFixup) {
-        // Set merging temporary if needed.
-        _mergeTable = _config.targetTable + "_m";
-    } else {
-        _mergeTable = _config.targetTable;
     }
 }
 

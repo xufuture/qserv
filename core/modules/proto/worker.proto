@@ -70,21 +70,24 @@ message ProtoHeader {
 
 message ColumnSchema {
     optional string name = 1; // Optional to allow type-only transmission
-    optional bytes defaultvalue = 2;
-    required string sqltype = 3;
-    optional int32 mysqltype = 4;     
+    required bool hasdefault = 2; // unambiguious flag--
+    // has_defaultvalue() often tests true even after clear_defaultvalue()
+    optional bytes defaultvalue = 3;
+    required string sqltype = 4;
+    optional int32 mysqltype = 5;
 }
 message RowSchema {
     repeated ColumnSchema columnschema = 1;
 }
-message RowBundle {    
-    repeated bytes column = 1; // bytes to allow BLOB encoding    
+message RowBundle {
+    repeated bytes column = 1; // bytes to allow BLOB encoding
+    repeated bool isnull = 2; // Flag to allow sending nulls.
 }
 
-message Result {    
+message Result {
     required int32 nextsize = 1; // Are there additional Result messages
     optional int64 session = 2;
-    required RowSchema rowschema = 3;    
+    required RowSchema rowschema = 3;
     optional int32 errorcode = 4;
     optional string errormsg = 5;
     repeated RowBundle row = 6;
