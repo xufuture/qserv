@@ -55,26 +55,30 @@ public:
 
     ReplyChannel(SsiSession& s) : ssiSession(s) {}
 
-    virtual void send(char const* buf, int bufLen) {
+    virtual bool send(char const* buf, int bufLen) {
         Status s = ssiSession.SetResponse(buf, bufLen);
         if(s != XrdSsiResponder::wasPosted) {
             std::ostringstream os;
             os << "DANGER: Couldn't post response of length="
                << bufLen << std::endl;
             ssiSession._log->error(os.str());
+            return false;
         }
+        return true;
     }
 
-    virtual void sendError(std::string const& msg, int code) {
+    virtual bool sendError(std::string const& msg, int code) {
         Status s = ssiSession.SetErrResponse(msg.c_str(), code);
         if(s != XrdSsiResponder::wasPosted) {
             std::ostringstream os;
             os << "DANGER: Couldn't post error response " << msg
                << std::endl;
             ssiSession._log->error(os.str());
+            return false;
         }
+        return true;
     }
-    virtual void sendFile(int fd, Size fSize) {
+    virtual bool sendFile(int fd, Size fSize) {
         util::Timer t;
         t.start();
         Status s = ssiSession.SetResponse(fSize, fd);
@@ -91,12 +95,14 @@ public:
             }
             release();
             sendError("Internal error posting response file", 1);
+            return false; // sendError handles everything else.
         }
         ssiSession._log->error(os.str());
         t.stop();
         os.str("");
         os << "sendFile took " << t.getElapsed() << " seconds";
         ssiSession._log->info(os.str());
+        return true;
     }
     SsiSession& ssiSession;
 };
