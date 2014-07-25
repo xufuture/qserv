@@ -98,9 +98,17 @@ void inplaceReplace(std::string& s, std::string const& old,
     if(rplc.size() < rplcSize) { // do padding for in-place
         rplc += std::string(rplcSize - rplc.size(), ' ');
     }
+#ifdef NEWLOG
+    //LOGF_DEBUG("rplc %1% old=%2%" % rplc % s.substr(pos-1, rplcSize+2));
+#else
     //LOGGER_DBG << "rplc " << rplc << " old=" << s.substr(pos-1, rplcSize+2) << std::endl;
+#endif
     s.replace(pos, rplcSize, rplc);
+#ifdef NEWLOG
+    //LOGF_DEBUG("newnew: %1%" % s.substr(pos-5, rplcSize+10));
+#else
     //LOGGER_DBG << "newnew: " << s.substr(pos-5, rplcSize+10) << std::endl;
+#endif
     return;
 }
 
@@ -108,8 +116,11 @@ std::string extractReplacedCreateStmt(char const* s, ::off_t size,
                                       std::string const& oldTable,
                                       std::string const& newTable,
                                       bool dropQuote) {
-
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING TableMerger::extractReplacedCreateStmt()");
+#else
     LOGGER_DBG << "EXECUTING TableMerger::extractReplacedCreateStmt()" << std::endl;
+#endif
 
     boost::regex createExp("(CREATE TABLE )(`?)(" + oldTable + ")(`?)( ?[^;]+?;)");
     std::string newForm;
@@ -176,10 +187,18 @@ bool TableMerger::merge(std::string const& dumpFile,
 
 bool TableMerger::merge(PacketIterPtr pacIter,
                         std::string const& tableName) {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING TableMerger::merge(pacIter, %1%)" % tableName);
+#else
     LOGGER_DBG << "EXECUTING TableMerger::merge(pacIter, " << tableName << ")" << std::endl;
+#endif
     bool allowNull = false;
     {
+#ifdef NEWLOG
+        LOGF_DEBUG("Importing %1%" % tableName);
+#else
         LOGGER_DBG << "Importing " << tableName << std::endl;
+#endif
         boost::lock_guard<boost::mutex> g(_countMutex);
         ++_tableCount;
         if(_tableCount == 1) {
@@ -208,11 +227,19 @@ bool TableMerger::finalize() {
                            % _config.mFixup.select
                            % _mergeTable
                            % fixupSuffix).str() + cleanup;
+#ifdef NEWLOG
+        LOGF_INFO("Merging w/%1%" % sql);
+#else
         LOGGER_INF << "Merging w/" << sql << std::endl;
+#endif
         return _applySql(sql);
     }
+#ifdef NEWLOG
+    LOGF_INFO("Merged %1% into %2%" % _mergeTable % _config.targetTable);
+#else
     LOGGER_INF << "Merged " << _mergeTable << " into " << _config.targetTable
                << std::endl;
+#endif
     return true;
 }
 
@@ -270,8 +297,12 @@ bool TableMerger::_applySqlLocal(std::string const& sql) {
             _sqlConn.reset();
             return false;
         } else {
+#ifdef NEWLOG
+            LOGF_INFO("TableMerger %1% connected to db." % (void*) this);
+#else
             LOGGER_INF << "TableMerger " << (void*) this
                        << " connected to db." << std::endl;
+#endif
         }
     }
     if(!_sqlConn->runQuery(sql, errObj)) {
@@ -347,7 +378,11 @@ bool TableMerger::merge2(std::string const& dumpFile,
     ::off_t size = m->getSize();
     bool allowNull = false;
     {
+#ifdef NEWLOG
+        LOGF_DEBUG("Importing %1%" % tableName);
+#else
         LOGGER_DBG << "Importing " << tableName << std::endl;
+#endif
         boost::lock_guard<boost::mutex> g(_countMutex);
         ++_tableCount;
         if(_tableCount == 1) {
@@ -419,18 +454,30 @@ bool TableMerger::_dropAndCreate(std::string const& tableName,
             createSql.erase(pos, memSpec.size());
         }
     }
+#ifdef NEWLOG
+    LOGF_DEBUG("CREATE-----%1%" % _mergeTable);
+#else
     LOGGER_DBG << "CREATE-----" << _mergeTable << std::endl;
+#endif
     return _applySql(dropSql + createSql);
 }
 
 bool TableMerger::_importIter(SqlInsertIter& sii,
                               std::string const& tableName) {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING TableMerger::_importIter(sii, %1%)" % tableName);
+#else
     LOGGER_DBG << "EXECUTING TableMerger::_importIter(sii, " << tableName << ")" << std::endl;
+#endif
     int insertsCompleted = 0;
     // Search the buffer for the insert statement,
     // patch it (and future occurrences for the old table name,
     // and merge directly.
+#ifdef NEWLOG
+    LOGF_DEBUG("MERGE INTO-----%1%" % _mergeTable);
+#else
     LOGGER_DBG << "MERGE INTO-----" << _mergeTable << std::endl;
+#endif
     for(; !sii.isDone(); ++sii) {
         char const* stmtBegin = sii->first;
         std::size_t stmtSize = sii->second - stmtBegin;
@@ -443,14 +490,18 @@ bool TableMerger::_importIter(SqlInsertIter& sii,
             if(_error.resultTooBig()) {
                 std::stringstream errStrm;
                 errStrm << "Failed importing! " << tableName << " " << _error.description;
+#ifdef NEWLOG
+                LOGF_ERROR("%1%" % errStrm.str());
+#else
                 LOGGER_ERR << errStrm.str() << std::endl;
+#endif
                 throw errStrm.str();
             }
             return false;
         }
         ++insertsCompleted;
     }
-    return true; //
+    return true;
 }
 
 bool TableMerger::_importBufferInsert(char const* buf, std::size_t size,
@@ -467,15 +518,24 @@ bool TableMerger::_slowImport(std::string const& dumpFile,
     std::string sql;
     _importResult(dumpFile);
     {
+#ifdef NEWLOG
+        LOGF_DEBUG("Importing %1%" % tableName);
+#else
         LOGGER_DBG << "Importing " << tableName << std::endl;
+#endif
         boost::lock_guard<boost::mutex> g(_countMutex);
         ++_tableCount;
         if(_tableCount == 1) {
             sql = _buildMergeSql(tableName, true);
             isOk = _applySql(sql);
             if(!isOk) {
+#ifdef NEWLOG
+                LOGF_ERROR("Failed importing! %1% %2%"
+                           % tableName % _error.description);
+#else
                 LOGGER_ERR << "Failed importing! " << tableName
                            << " " << _error.description << std::endl;
+#endif
                 --_tableCount; // We failed merging the table.
             }
 	    return isOk; // must happen first.

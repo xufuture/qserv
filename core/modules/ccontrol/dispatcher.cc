@@ -215,17 +215,34 @@ getDbStriping(int session) {
 
 void
 addChunk(int session, qproc::ChunkSpec const& cs ) {
-#ifndef NEWLOG
 #if 0 // SWIG plumbing debug
+#ifdef NEWLOG
+    typedef std::vector<int> Vect;
+    int count=0;
+    if (LOG_CHECK_INFO()) {
+        LOGF_INFO("Received chunk=%1% " % cs.chunkId);
+        std::stringstream ss;
+        for(Vect::const_iterator i = cs.subChunks.begin();
+            i != cs.subChunks.end(); ++i) {
+            if(++count > 1) {
+                ss << ", ";
+            }
+            ss << *i;
+        }
+        LOG_INFO("%1%" % ss.str());
+    }
+#else
     LOGGER_INF << "Received chunk=" << cs.chunkId << " ";
     typedef std::vector<int> Vect;
     int count=0;
     for(Vect::const_iterator i = cs.subChunks.begin();
         i != cs.subChunks.end(); ++i) {
-        if(++count > 1) LOGGER_INF << ", ";
-         LOGGER_INF << *i;
+        if(++count > 1) {
+            LOGGER_INF << ", ";
+        }
+        LOGGER_INF << *i;
     }
-     LOGGER_INF << std::endl;
+    LOGGER_INF << std::endl;
 #endif
 #endif
     AsyncQueryManager& qm = getAsyncManager(session);

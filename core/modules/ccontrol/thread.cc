@@ -290,12 +290,12 @@ void Manager::run() {
 #ifdef NEWLOG
             LOGF_INFO("%1% Done reaping, %2% still flying, completion rate=%3%"
                       % thisReap % reapSize
-                      % (1.0+thisSize - reapSize)*1.0/(1.0+thisReap - lastReap));
+                      % ((1.0+thisSize - reapSize)*1.0/(1.0+thisReap - lastReap)));
 #else
             LOGGER_INF << thisReap << " Done reaping, " << reapSize
-                      << " still flying, completion rate="
-                      << (1.0+thisSize - reapSize)*1.0/(1.0+thisReap - lastReap)
-                      << "\n"  ;
+                       << " still flying, completion rate="
+                       << (1.0+thisSize - reapSize)*1.0/(1.0+thisReap - lastReap)
+                       << "\n"  ;
 #endif
         }
         if(_threads.size() > 1000) break; // DEBUG early exit.
@@ -438,7 +438,7 @@ void QueryManager::joinEverything() {
         _tryJoinAll();
         time(&now);
 #ifdef NEWLOG
-        LOGF_INFO("Joinloop took:%1%" % now-last);
+        LOGF_INFO("Joinloop took:%1%" % (now-last));
 #else
         LOGGER_INF << "Joinloop took:" << now-last << std::endl;
 #endif

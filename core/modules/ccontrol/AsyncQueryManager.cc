@@ -38,6 +38,7 @@
 
 // System headers
 #include <iostream>
+#include <sstream>
 
 // Third-party headers
 #include "boost/date_time/posix_time/posix_time_types.hpp"
@@ -288,7 +289,7 @@ void AsyncQueryManager::finalizeQuery(int id,
     t1.stop();
     ss << id << " QmFinalize " << t1 << std::endl;
 #ifdef NEWLOG
-    LOGF_INFO(ss.str());
+    LOGF_INFO("%1%" % ss.str());
 #else
     LOGGER_INF << ss.str();
 #endif
@@ -306,7 +307,15 @@ void AsyncQueryManager::joinEverything() {
     int count;
     int moreDetailThreshold = 5;
     int complainCount = 0;
+#ifdef NEWLOG
+    if (LOG_CHECK_DEBUG()) {
+        std::stringstream ss;
+        _printState(ss);
+        LOGF_INFO("%1%" % ss.str());
+    }
+#else
     _printState(LOG_STRM(Debug));
+#endif
     while(!_queries.empty()) {
         count = _queries.size();
         if(count != lastCount) {
@@ -318,7 +327,15 @@ void AsyncQueryManager::joinEverything() {
             count = lastCount;
             ++complainCount;
             if(complainCount > moreDetailThreshold) {
+#ifdef NEWLOG
+                if (LOG_CHECK_WARN()) {
+                    std::stringstream ss;
+                    _printState(ss);
+                    LOGF_INFO("%1%" % ss.str());
+                }
+#else
                 _printState(LOG_STRM(Warning));
+#endif
                 complainCount = 0;
             }
         }
@@ -404,11 +421,10 @@ inline std::string getConfigElement(std::map<std::string,
         return i->second;
     } else {
 #ifdef NEWLOG
-        LOGF_ERROR(errorMsg);
+        LOGF_ERROR("%1%" % errorMsg);
 #else
         LOGGER_ERR << errorMsg << std::endl;
 #endif
-
         return defaultValue;
     }
 }
@@ -591,9 +607,9 @@ void AsyncQueryManager::_squashExecution() {
         t.start();
         myQueries.resize(_queries.size());
 #ifdef NEWLOG
-        LOGF_INFO("AsyncQM squashExec copy ");
+        LOGF_INFO("AsyncQM squashExec copy");
 #else
-        LOGGER_INF << "AsyncQM squashExec copy " <<  std::endl;
+        LOGGER_INF << "AsyncQM squashExec copy" <<  std::endl;
 #endif
         std::copy(_queries.begin(), _queries.end(), myQueries.begin());
     }
@@ -604,15 +620,15 @@ void AsyncQueryManager::_squashExecution() {
 #endif
     globalWriteQueue.cancelQueued(this);
 #ifdef NEWLOG
-    LOGF_INFO("AsyncQM squashExec iteration ");
+    LOGF_INFO("AsyncQM squashExec iteration");
 #else
-    LOGGER_INF << "AsyncQM squashExec iteration " <<  std::endl;
+    LOGGER_INF << "AsyncQM squashExec iteration" <<  std::endl;
 #endif
     std::for_each(myQueries.begin(), myQueries.end(),
                   squashQuery(_queriesMutex, _queries));
     t.stop();
 #ifdef NEWLOG
-    LOGF_INFO("AsyncQM squashExec ");
+    LOGF_INFO("AsyncQM squashExec %1%" % t);
 #else
     LOGGER_INF << "AsyncQM squashExec " << t << std::endl;
 #endif
