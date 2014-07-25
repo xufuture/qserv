@@ -242,6 +242,22 @@ int Facade::getChunkLevel(string const& dbName, string const& tableName) const {
     return 0;
 }
 
+/** Returns the name of the director table for the given table if there
+  * is one and an empty string otherwise. Throws an exception if the database
+  * or table does not exist.
+  */
+string
+Facade::getDirTable(string const& dbName, string const& tableName) const {
+    LOGGER_INF << "*** Facade::getDirTable(" << dbName << ", " << tableName
+               << ")" << endl;
+    _throwIfNotDbTbExists(dbName, tableName);
+    string p = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName +
+                    "/partitioning/dirTable";
+    string ret = _kvI->get(p, "");
+    LOGGER_INF << "Facade::getDirTable, returning: " << ret << endl;
+    return ret;
+}
+
 /** Returns the name of the director column for the given table if there
   * is one and an empty string otherwise. Throws an exception if the database
   * or table does not exist.
@@ -290,12 +306,13 @@ Facade::getDbStriping(string const& dbName) const {
     _throwIfNotDbExists(dbName);
     StripingParams striping;
     string v = _kvI->get(_prefix + "/DBS/" + dbName + "/partitioningId", "");
-    if (v == "") {
+    if (v.empty()) {
         return striping;
     }
     string p = _prefix + "/PARTITIONING/_" + v + "/";
     striping.stripes = _getIntValue(p+"nStripes", 0);
     striping.subStripes = _getIntValue(p+"nSubStripes", 0);
+    striping.partitioningId = boost::lexical_cast<int>(v);
     return striping;
 }
 

@@ -37,7 +37,6 @@ subChunks: 1
 
 # Name of the table that is a "director" table.
 # It can be name of the current table, or other table
-# If there is no director table, use current table name
 dirTable: <tableName>
 
 
