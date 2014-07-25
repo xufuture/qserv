@@ -65,7 +65,12 @@ namespace wdb {
 class QueryAction::Impl {
 public:
     Impl(QueryActionArg const& a);
-    ~Impl() { mysql_thread_end(); }
+    ~Impl() {
+        if(_task) { // Detach poisoner
+            _task->setPoison(boost::shared_ptr<util::VoidCallable<void> >());
+        }
+        mysql_thread_end();
+    }
 
     bool act();
     void poison();
@@ -216,7 +221,6 @@ MYSQL_RES* QueryAction::Impl::_primeResult(std::string const& query) {
 }
 
 void QueryAction::Impl::_addErrorMsg(int code, std::string const& msg) {
-    assert(_result);
     _errors.push_back(IntString(code, msg));
 }
 
@@ -235,7 +239,14 @@ void QueryAction::Impl::_fillSchema(MYSQL_RES* result) {
         proto::ColumnSchema* cs = _result->mutable_rowschema()->add_columnschema();
         cs->set_name(i->name);
         if(i->hasDefault) {
+            cs->set_hasdefault(true);
             cs->set_defaultvalue(i->defaultValue);
+            std::ostringstream os;
+            os << i->name << " has default.";
+            _log->info(os.str());
+        } else {
+            cs->set_hasdefault(false);
+            cs->clear_defaultvalue();
         }
         cs->set_sqltype(i->colType.sqlType);
         cs->set_mysqltype(i->colType.mysqlType);
@@ -246,8 +257,13 @@ bool QueryAction::Impl::_fillRows(MYSQL_RES* result, int numFields) {
     while ((row = mysql_fetch_row(result))) {
         proto::RowBundle* rawRow =_result->add_row();
         for(int i=0; i < numFields; ++i) {
-            std::string* c = rawRow->add_column();
-            c->assign(row[i]);
+            if(row[i]) {
+                rawRow->add_column(row[i]);
+                rawRow->add_isnull(false);
+            } else {
+                rawRow->add_column();
+                rawRow->add_isnull(true);
+            }
         }
         std::cout << "row: ";
         std::copy(row, row+numFields,

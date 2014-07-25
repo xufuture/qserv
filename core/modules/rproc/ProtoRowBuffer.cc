@@ -184,14 +184,19 @@ void ProtoRowBuffer::_initCurrentRow() {
             row += _colSep;
             rowSize += _colSep.size();
         }
-        
-        std::string colValue = rb.column(ci);
-        std::vector<char> colBuf(2 * colValue.size());
-        rowSize += colBuf.size();
-        int valSize = escapeString(&colBuf[0], colValue.data(), colValue.size());
-        row += "'";
-        row.append(&colBuf[0], valSize);
-        row += "'";
+
+        if(!rb.isnull(ci)) {
+            std::string colValue = rb.column(ci);
+            std::vector<char> colBuf(2 * colValue.size());
+            rowSize += colBuf.size();
+            int valSize = escapeString(&colBuf[0], colValue.data(), colValue.size());
+            row += "'";
+            row.append(&colBuf[0], valSize);
+            row += "'";
+        } else {
+            row += "\\N";
+            rowSize += 2;
+        }
     }
     _currentRow.reserve(rowSize*2);
     _currentRow.resize(rowSize);

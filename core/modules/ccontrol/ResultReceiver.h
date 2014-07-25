@@ -38,6 +38,7 @@
 // Forward decl
 namespace lsst {
 namespace qserv {
+class MsgReceiver;
 namespace rproc {
   class InfileMerger;
   class TableMerger;
@@ -50,11 +51,14 @@ namespace ccontrol {
 /// See QueryReceiver API for basic documentation
 class ResultReceiver : public qdisp::QueryReceiver {
 public:
+    /// @param msgReceiver Message code receiver
     /// @param merger downstream merge acceptor
     /// @param tableName target table for incoming data
-    ResultReceiver(boost::shared_ptr<rproc::TableMerger> merger,
+    ResultReceiver(boost::shared_ptr<MsgReceiver> msgReceiver,
+                   boost::shared_ptr<rproc::TableMerger> merger,
                    std::string const& tableName);
-    ResultReceiver(boost::shared_ptr<rproc::InfileMerger> merger,
+    ResultReceiver(boost::shared_ptr<MsgReceiver> msgReceiver,
+                   boost::shared_ptr<rproc::InfileMerger> merger,
                    std::string const& tableName);
     virtual ~ResultReceiver() {}
 
@@ -76,8 +80,9 @@ private:
     /// (helper) merge buffer and shift contents depending on merge size.
     bool _appendAndMergeBuffer(int bLen);
 
+    boost::shared_ptr<MsgReceiver> _msgReceiver; //< Message code receiver
     boost::shared_ptr<rproc::TableMerger> _merger; //< Target merging delegate
-    boost::shared_ptr<rproc::InfileMerger> _infileMerger;
+    boost::shared_ptr<rproc::InfileMerger> _infileMerger; //< Merging delegate
     std::string _tableName; //< Target table name
 
     /// Invoked at receiver completion

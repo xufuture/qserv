@@ -21,7 +21,7 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 #ifndef LSST_QSERV_RPROC_PROTOROWBUFFER_H
-#define LSST_QSERV_RPROC_PROTOROWBUFFER_H 
+#define LSST_QSERV_RPROC_PROTOROWBUFFER_H
 
 #include "mysql/RowBuffer.h"
 #include "proto/worker.pb.h"
@@ -30,7 +30,7 @@ namespace lsst {
 namespace qserv {
 namespace rproc {
 
-static mysql::RowBuffer::Ptr newProtoRowBuffer(proto::Result& r);
+mysql::RowBuffer::Ptr newProtoRowBuffer(proto::Result& r);
 
 }}} // namespace lsst::qserv::rproc
 
@@ -39,4 +39,4 @@ static mysql::RowBuffer::Ptr newProtoRowBuffer(proto::Result& r);
 // comment-column:0
 // End:
 
-#endif // LSST_QSERV_RPROC_PROTOROWBUFFER_H 
+#endif // LSST_QSERV_RPROC_PROTOROWBUFFER_H

@@ -70,10 +70,10 @@ private:
     void _enqueueTask(wbase::Task::Ptr incoming);
     bool _integrityHelper();
 
+    int _maxRunning;
     ChunkDiskList _disks;
     boost::shared_ptr<wlog::WLogger> _logger;
     boost::mutex _mutex;
-    int _maxRunning;
 };
 
 }}} // namespace lsst::qserv::wsched
