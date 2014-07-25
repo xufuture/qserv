@@ -158,13 +158,15 @@ template<typename Sink>
 std::streamsize Logger::SeverityFilter::write(Sink& dest, const char* s, std::streamsize n) {
     if (_loggerPtr->getSeverity() >= _loggerPtr->getSeverityThreshold()) {
         std::streamsize z;
-        for (z = 0; z < n; ++z) {
-            if (!boost::iostreams::put(dest, s[z]))
-                break;
-        }
-        return z;
-    } else
-        return n;
+	for (z = 0; z < n; ++z) {
+	    if (!boost::iostreams::put(dest, s[z])) {
+	        break;
+	    }
+	}
+	return z;
+    } else {
+      return n;
+    }
 }
 
 Logger::LogFilter::LogFilter(Logger* loggerPtr) : boost::iostreams::line_filter() {
