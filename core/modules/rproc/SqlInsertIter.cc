@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2008-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -119,9 +119,13 @@ SqlInsertIter::SqlInsertIter(xrdc::PacketIter::Ptr p,
     // slide the unmatched to the beginning, memcpy the packetIter
     // data into our buffer, and setup the regex match again.
     // Continue.
-    //
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING SqlInsertIter(PacketIter::Ptr, %1%, %2%)"
+               % tableName % allowNull);
+#else
     LOGGER_DBG << "EXECUTING SqlInsertIter(PacketIter::Ptr, " << tableName <<
                   ", " << allowNull << ")" << std::endl;
+#endif
     assert(!(*p).isDone());
     _pBufStart = 0;
     _pBufEnd = (*p)->second;
@@ -139,12 +143,19 @@ SqlInsertIter::SqlInsertIter(xrdc::PacketIter::Ptr p,
                                     buf + _pBufEnd,
                                     _blockMatch, lockInsertExpr);
         if(found) {
+#ifdef NEWLOG
+            LOGF_DEBUG("Matched Lock statement within SqlInsertIter");
+#else
             LOGGER_DBG << "Matched Lock statement within SqlInsertIter" << std::endl;
+#endif
             break;
         } else {
+#ifdef NEWLOG
+            LOGF_DEBUG("Did not match Lock statement within SqlInsertIter");
+#else
             LOGGER_DBG << "Did not match Lock statement within SqlInsertIter" << std::endl;
+#endif
         }
-
         //Add next fragment, if available.
         if(!_incrementFragment()) {
             // Verify presence of Lock statement.
@@ -182,8 +193,13 @@ bool SqlInsertIter::_incrementFragment() {
     BufOff needSize = v.second + keepSize;
     if(needSize > (_pBufSize - _pBufEnd)) {
         if(needSize > _pBufSize) {
+#ifdef NEWLOG
+            LOGF_DEBUG("%1% is too small. sqliter Realloc to %2%"
+                       % _pBufSize % needSize);
+#else
             LOGGER_DBG << _pBufSize << " is too small" << std::endl
                        << "sqliter Realloc to " << needSize << std::endl;
+#endif
             void* res = realloc(_pBuffer, needSize);
             if (!res) {
                 errno = ENOMEM;

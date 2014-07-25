@@ -78,19 +78,32 @@ KvInterfaceImplZoo::~KvInterfaceImplZoo() {
     try {
         int rc = zookeeper_close(_zh);
         if ( rc != ZOK ) {
+#ifdef NEWLOG
+            LOGF_ERROR("*** ~KvInterfaceImplZoo: zookeeper error %1% when closing connection."
+                     % rc);
+#else
             LOGGER_ERR << "*** ~KvInterfaceImplZoo - zookeeper error " << rc
                        << "when closing connection" << endl;
+#endif
         }
     } catch (...) {
+#ifdef NEWLOG
+        LOGF_ERROR("*** ~KvInterfaceImplZoo: zookeeper exception when closing connection.");
+#else
         LOGGER_ERR << "*** ~KvInterfaceImplZoo - zookeeper exception "
                    << "when closing connection" << endl;
+#endif
     }
 }
 
 void
 KvInterfaceImplZoo::create(string const& key, string const& value) {
+#ifdef NEWLOG
+    LOGF_INFO("*** KvInterfaceImplZoo::create(%1%, %2%)" % key % value);
+#else
     LOGGER_INF << "*** KvInterfaceImplZoo::create(), " << key << " --> "
                << value << endl;
+#endif
     char buffer[512];
     int rc = zoo_create(_zh, key.c_str(), value.c_str(), value.length(),
                         &ZOO_OPEN_ACL_UNSAFE, 0, buffer, sizeof(buffer)-1);
@@ -101,23 +114,41 @@ KvInterfaceImplZoo::create(string const& key, string const& value) {
 
 bool
 KvInterfaceImplZoo::exists(string const& key) {
-    LOGGER_INF << "*** KvInterfaceImplZoo::exist(), key: " << key << endl;
     struct Stat stat;
     memset(&stat, 0, sizeof(Stat));
     int rc = zoo_exists(_zh, key.c_str(), 0,  &stat);
     if (rc==ZOK) {
+#ifdef NEWLOG
+        LOGF_INFO("*** KvInterfaceImplZoo::exists(%1%): yes" % key);
+#else
+        LOGGER_INF << "*** KvInterfaceImplZoo::exists("
+                   << key << "): yes" << endl;
+#endif
         return true;
     }
     if (rc==ZNONODE) {
+#ifdef NEWLOG
+        LOGF_INFO("*** KvInterfaceImplZoo::exists(%1%): no" % key);
+#else
+        LOGGER_INF << "*** KvInterfaceImplZoo::exists("
+                   << key << "): no" << endl;
+#endif
         return false;
     }
+#ifdef NEWLOG
+    LOGF_ERROR("got error from zookeeper: %1%" % rc);
+#endif
     _throwZooFailure(rc, "exists", key);
     return false;
 }
 
 string
 KvInterfaceImplZoo::get(string const& key) {
+#ifdef NEWLOG
+    LOGF_INFO("*** KvInterfaceImplZoo::get(%1%)" % key);
+#else
     LOGGER_INF << "*** KvInterfaceImplZoo::get(), key: " << key << endl;
+#endif
     char buffer[512];
     int bufLen = static_cast<int>(sizeof(buffer));
     memset(buffer, 0, bufLen);
@@ -127,13 +158,16 @@ KvInterfaceImplZoo::get(string const& key) {
     if (rc!=ZOK) {
         _throwZooFailure(rc, "get", key);
     }
+#ifdef NEWLOG
+    LOGF_INFO("*** got: %1%" % buffer);
+#else
     LOGGER_INF << "*** got: '" << buffer << "'" << endl;
+#endif
     return string(buffer);
 }
 
 string
 KvInterfaceImplZoo::get(string const& key, string const& defaultValue) {
-    LOGGER_INF << "*** KvInterfaceImplZoo::get2(), key: " << key << endl;
     char buffer[512];
     int bufLen = static_cast<int>(sizeof(buffer));
     memset(buffer, 0, bufLen);
@@ -142,30 +176,59 @@ KvInterfaceImplZoo::get(string const& key, string const& defaultValue) {
     int rc = zoo_get(_zh, key.c_str(), 0, buffer, &bufLen, &stat);
     if (rc!=ZOK) {
         if (rc==ZNONODE) {
+#ifdef NEWLOG
+            LOGF_INFO("*** KvInterfaceImplZoo::get(%1%, %2%), returns default."
+                      % key % defaultValue);
+#else
+            LOGGER_INF << "*** KvInterfaceImplZoo::get2(), key: " << key << endl;
+#endif
             return defaultValue;
         } else {
             _throwZooFailure(rc, "get", key);
         }
     }
+#ifdef NEWLOG
+    LOGF_INFO("*** KvInterfaceImplZoo::get(%1%, %2%), returns '%3%'."
+              % key % defaultValue % buffer);
+#else
     LOGGER_INF << "*** got: '" << buffer << "'" << endl;
+#endif
     return string(buffer);
 }
 
 vector<string>
 KvInterfaceImplZoo::getChildren(string const& key) {
+#ifdef NEWLOG
+    LOGF_INFO("*** KvInterfaceImplZoo::getChildren(), key: %1%" % key);
+#else
     LOGGER_INF << "*** KvInterfaceImplZoo::getChildren(), key: " << key << endl;
+#endif
     struct String_vector strings;
     memset(&strings, 0, sizeof(strings));
     int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
     if (rc!=ZOK) {
+#ifdef NEWLOG
+        LOGF_INFO("*** KvInterfaceImplZoo::getChildren(%1%), got zoo failure %2%." % key % rc);
+#else
+        LOGGER_INF << "*** KvInterfaceImplZoo::getChildren(" << key << "), "
+                   << "zoo failure " << rc << endl;
+#endif
         _throwZooFailure(rc, "getChildren", key);
     }
+#ifdef NEWLOG
+    LOGF_INFO(" got %1% children" % strings.count);
+#else
     LOGGER_INF << "got " << strings.count << " children" << endl;
+#endif
     vector<string> v;
     try {
         int i;
         for (i=0 ; i<strings.count ; i++) {
+#ifdef NEWLOG
+            LOGF_INFO("   %1%: %2%" % (i+1) % strings.data[i]);
+#else
             LOGGER_INF << "   " << i+1 << ": " << strings.data[i] << endl;
+#endif
             v.push_back(strings.data[i]);
         }
         deallocate_String_vector(&strings);
@@ -177,11 +240,21 @@ KvInterfaceImplZoo::getChildren(string const& key) {
 
 void
 KvInterfaceImplZoo::deleteKey(string const& key) {
-    LOGGER_INF << "*** KvInterfaceImplZoo::deleteKey, key: " << key << endl;
     int rc = zoo_delete(_zh, key.c_str(), -1);
     if (rc!=ZOK) {
+#ifdef NEWLOG
+        LOGF_INFO("*** KvInterfaceImplZoo::deleteKey(%1%) - zoo failure %2%." % key % rc)
+#else
+        LOGGER_INF << "*** KvInterfaceImplMZoo::deleteKey("
+                   << key << ") - zoo failure " << rc << endl;
+#endif
         _throwZooFailure(rc, "deleteKey", key);
     }
+#ifdef NEWLOG
+    LOGF_INFO("Key '%1%' deleted." % key);
+#else
+    LOGGER_INF << "Key '" << key << "' deleted." << endl;
+#endif
 }
 
 /**
@@ -194,21 +267,41 @@ KvInterfaceImplZoo::_throwZooFailure(int rc, string const& fName,
                                      string const& key) {
     string ffName = "*** css::KvInterfaceImplZoo::" + fName + "(). ";
     if (rc==ZNONODE) {
+#ifdef NEWLOG
+        LOGF_INFO("%1%, key '%2%' does not exist." % ffName % key);
+#else
         LOGGER_INF << ffName << "Key '" << key << "' does not exist." << endl;
+#endif
         throw (key);
     } else if (rc==ZCONNECTIONLOSS) {
+#ifdef NEWLOG
+        LOGF_INFO("%1% Can't connect to zookeeper." % ffName);
+#else
         LOGGER_INF << ffName << "Can't connect to zookeeper." << endl;
+#endif
         throw ConnError();
     } else if (rc==ZNOAUTH) {
+#ifdef NEWLOG
+        LOGF_INFO("%1% Zookeeper authorization failure." % ffName);
+#else
         LOGGER_INF << ffName << "Zookeeper authorization failure." << endl;
+#endif
         throw AuthError();
     } else if (rc==ZBADARGUMENTS) {
+#ifdef NEWLOG
+        LOGF_INFO("%1% Invalid key passed to zookeeper." % ffName);
+#else
         LOGGER_INF << ffName << "Invalid key passed to zookeeper." << endl;
+#endif
         throw NoSuchKey(key);
     }
     ostringstream s;
     s << ffName << "Zookeeper error #" << rc << ". Key: '" << key << "'.";
+#ifdef NEWLOG
+    LOGF_INFO("%1% Zookeeper error #%2%. Key: '%3%'" % ffName % rc % key);
+#else
     LOGGER_INF << s.str() << endl;
+#endif
     throw CssError(s.str());
 }
 

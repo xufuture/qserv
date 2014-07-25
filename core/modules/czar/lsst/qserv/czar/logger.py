@@ -2,7 +2,7 @@
 
 # 
 # LSST Data Management System
-# Copyright 2008, 2009, 2010 LSST Corporation.
+# Copyright 2008-2014 LSST Corporation.
 # 
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -25,15 +25,17 @@
 # logger.py : A module with a logging interface that utilizes SWIG
 # enabled Logger class.
 
-# Package imports
-from lsst.qserv.czar import logger_threshold
-from lsst.qserv.czar import logger
-
-# Import new logging module
-import lsst.log as newlog
-
 # Toggles new, log4cxx-based logging on/off for Qserv's Python-layer
-NEWLOG = False
+NEWLOG = True
+
+# Package imports
+if NEWLOG:
+    # Import new logging module
+    import lsst.log as newlog
+else:
+    from lsst.qserv.czar import logger_threshold
+    from lsst.qserv.czar import logger
+
 
 def threshold_dbg():
     if NEWLOG:
@@ -59,10 +61,10 @@ def threshold_err():
     else:
         logger_threshold(3)
 
-def newlog_msg(level, *args):
-    newlog.log("", level, ' '.join(map(str, args)), depth=4)
+def newlog_msg(level, args):
+    newlog.log("", level, '%s', ' '.join(map(str, args)), depth=3)
 
-def log_msg(level, *args):
+def log_msg(level, args):
     logger(level, ' '.join(map(str, args)))
 
 def dbg(*args):

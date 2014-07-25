@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2008-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -61,16 +61,24 @@ namespace {
         buf[0] = '\0';
         char * s = ::strerror_r(err, buf, sizeof(buf));
         buf[sizeof(buf) - 1] = '\0';
+#ifdef NEWLOG
+        LOGF_INFO("%1%: %2% %3%" % desc % num % (s ? s : ""));
+#else
         LOGGER_INF << desc << ": " << num << " " << (s ? s : "") << std::endl;
+#endif
     }
 
     int closeFd(int fd,
                 std::string const& desc,
                 std::string const& comment,
                 std::string const& comment2) {
+#ifdef NEWLOG
+        LOGF_INFO("Close (%1%) of %2% %3%" % desc % fd % comment);
+#else
         LOGGER_INF << (std::string() + "Close (" + desc + ") of "
                       + boost::lexical_cast<std::string>(fd)  + " "
                       + comment) << std::endl;
+#endif
         int res = xrdc::xrdClose(fd);
         if (res != 0) {
             errnoComplain(("Faulty close " + comment2).c_str(), fd, errno);
@@ -90,7 +98,11 @@ public:
     {}
     virtual ~WriteCallable() {}
     virtual void operator()() {
+#ifdef NEWLOG
+        LOGF_DEBUG("EXECUTING ChunkQuery::WriteCallable::operator()()");
+#else
         LOGGER_DBG << "EXECUTING ChunkQuery::WriteCallable::operator()()" << std::endl;
+#endif
         try {
             // Use blocking calls to prevent implicit thread creation by
             // XrdClient
@@ -143,7 +155,11 @@ public:
     {}
     virtual ~ReadCallable() {} // Must halt current operation.
     virtual void operator()() {
+#ifdef NEWLOG
+        LOGF_DEBUG("EXECUTING ChunkQuery::ReadCallable::operator()()");
+#else
         LOGGER_DBG << "EXECUTING ChunkQuery::ReadCallable::operator()()" << std::endl;
+#endif
         try {
             // Use blocking reads to prevent implicit thread creation by
             // XrdClient
@@ -152,14 +168,27 @@ public:
             _isRunning = true;
             int result = xrdc::xrdOpen(_cq._resultUrl.c_str(), O_RDONLY);
             if(result == -1 ) {
+#ifdef NEWLOG
+                LOGF_WARN("XRD open returned error.");
+#else
                 LOGGER_WRN << "XRD open returned error." << std::endl;
+#endif
                 if(errno == EINPROGRESS) {
+#ifdef NEWLOG
+                    LOGF_ERROR("Synchronous open returned EINPROGRESS!!!! %1%"
+                               % _cq._spec.chunkId);
+#else
                     LOGGER_ERR << "Synchronous open returned EINPROGRESS!!!! "
                                << _cq._spec.chunkId
                                << std::endl;
+#endif
                 }
                 _cq._attempts += 1;
+#ifdef NEWLOG
+                LOGF_WARN("ChunkQuery attempts =%1%" % _cq._attempts);
+#else
                 LOGGER_WRN << "ChunkQuery attempts =" << _cq._attempts << std::endl;
+#endif
                 if (_cq._attempts < _cq.MAX_ATTEMPTS) {
                     _cq._state = WRITE_QUEUE;
                     _cq._manager->addToWriteQueue(new WriteCallable(_cq));
@@ -213,7 +242,11 @@ char const* ChunkQuery::getWaitStateStr(WaitState s) {
 }
 
 void ChunkQuery::Complete(int Result) {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING ChunkQuery::Complete(%1%)" % Result);
+#else
     LOGGER_DBG << "EXECUTING ChunkQuery::Complete(" << Result << ")" << std::endl;
+#endif
     // Prevent multiple Complete() callbacks from stacking.
     boost::shared_ptr<boost::mutex> m(_completeMutexP);
     boost::lock_guard<boost::mutex> lock(*m);
@@ -247,10 +280,15 @@ void ChunkQuery::Complete(int Result) {
 
         if(Result < 0) { // error?
             _result.read = Result;
+#ifdef NEWLOG
+            LOGF_WARN("Problem reading result: open returned %1% for chunk=%2% with url=%3%"
+                      % _result.read % _spec.chunkId % _resultUrl);
+#else
             LOGGER_WRN << "Problem reading result: open returned "
                        << _result.read << " for chunk=" << _spec.chunkId
                        << " with url=" << _resultUrl
                        << std::endl;
+#endif
             isReallyComplete = true;
             _state = COMPLETE;
         } else {
@@ -267,7 +305,11 @@ void ChunkQuery::Complete(int Result) {
         _state = CORRUPT;
     }
     if(isReallyComplete) { _notifyManager(); }
+#ifdef NEWLOG
+    LOGF_INFO(ss.str());
+#else
     LOGGER_INF << ss.str();
+#endif
 }
 
 ChunkQuery::ChunkQuery(ccontrol::TransactionSpec const& t, int id,
@@ -292,16 +334,28 @@ ChunkQuery::ChunkQuery(ccontrol::TransactionSpec const& t, int id,
 }
 
 ChunkQuery::~ChunkQuery() {
+#ifdef NEWLOG
+    LOGF_DEBUG("ChunkQuery (%1%, %2%): Goodbye!" % _id % _hash);
+#else
     LOGGER_DBG << "ChunkQuery (" << _id << ", " << _hash
                << "): Goodbye!" << std::endl;
+#endif
 }
 
 void ChunkQuery::run() {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING ChunkQuery::run()");
+#else
     LOGGER_DBG << "EXECUTING ChunkQuery::run()" << std::endl;
+#endif
     // This lock ensures that the remaining ChunkQuery::Complete() calls
     // do not proceed until this initial step completes.
     boost::unique_lock<boost::mutex> lock(_mutex);
+#ifdef NEWLOG
+    LOGF_INFO("Opening %1%" % _spec.path);
+#else
     LOGGER_INF << "Opening " << _spec.path << "\n";
+#endif
     _writeOpenTimer.start();
 #if 0
     int result = 0;
@@ -316,14 +370,23 @@ void ChunkQuery::run() {
     }
     if(result != -EINPROGRESS) {
         // don't continue, set result with the error.
+#ifdef NEWLOG
+        LOGF_ERROR("Not EINPROGRESS (%1%), should not continue with %2%"
+                   % result % _spec.path);
+#else
         LOGGER_ERR << "Not EINPROGRESS (" << result
                    << "), should not continue with "
                    << _spec.path << "\n";
+#endif
         _result.open = result;
         _state = COMPLETE;
         _notifyManager(); // manager should delete me.
     } else {
+#ifdef NEWLOG
+        LOGF_INFO("Waiting for %1%" % _spec.path);
+#else
         LOGGER_INF << "Waiting for " << _spec.path << "\n";
+#endif
     }
 #elif 1
     _state = WRITE_QUEUE;
@@ -383,7 +446,11 @@ ChunkQuery::getResultIter() {
 }
 
 void ChunkQuery::requestSquash() {
+#ifdef NEWLOG
+    LOGF_DEBUG("Squash requested for (%1%, %2%)" % _id % _hash);
+#else
     LOGGER_DBG << "Squash requested for (" << _id << ", " << _hash << ")" << std::endl;
+#endif
     _shouldSquash = true;
     switch(_state) {
     case WRITE_QUEUE: // Write is queued...
@@ -414,15 +481,24 @@ void ChunkQuery::requestSquash() {
     case CORRUPT:
     default:
         // Something's screwed up.
+#ifdef NEWLOG
+        LOGF_ERROR("ChunkQuery squash failure. Bad state=%1%"
+                   %  getWaitStateStr(_state));
+#else
         LOGGER_ERR << "ChunkQuery squash failure. Bad state="
                    << getWaitStateStr(_state) << std::endl;
+#endif
         // Not sure what we can do.
         break;
     }
 }
 
 void ChunkQuery::_squashAtCallback(int result) {
+#ifdef NEWLOG
+    LOGF_DEBUG("Squashing at callback (%1%, %2%)" % _id % _hash);
+#else
     LOGGER_DBG << "Squashing at callback (" << _id << ", " << _hash << ")" << std::endl;
+#endif
     // squash this query so that it stops running.
     std::stringstream ss;
     bool badState = false;
@@ -479,20 +555,34 @@ void ChunkQuery::_squashAtCallback(int result) {
     _state = ABORTED;
     _notifyManager();
     if(badState) {
+#ifdef NEWLOG
+        LOGF_ERROR("Unexpected state at squashing. Expecting READ_OPEN or WRITE_OPEN, got:%1%"
+                 % getDesc());
+#else
         LOGGER_ERR << "Unexpected state at squashing. Expecting READ_OPEN "
                    << "or WRITE_OPEN, got:" << getDesc() << std::endl;
+#endif
     }
 }
 
 bool ChunkQuery::_openForRead(std::string const& url) {
     _state = READ_OPEN;
+#ifdef NEWLOG
+    LOGF_DEBUG("opening async read to %1%" %url);
+#else
     LOGGER_DBG << "opening async read to " << url << "\n";
+#endif
     _readOpenTimer.start();
     _result.read = xrdc::xrdOpenAsync(url.c_str(), O_RDONLY, this);
+#ifdef NEWLOG
+    LOGF_DEBUG("Async read for %1% got %2% --> %3%" % _hash % _result.read %
+               ((_result.read == -EINPROGRESS) ? "ASYNC OK" : "fail?"));
+#else
     LOGGER_DBG << "Async read for " << _hash << " got " << _result.read
                << " --> "
                << ((_result.read == -EINPROGRESS) ? "ASYNC OK" : "fail?")
                << std::endl;
+#endif
     return _result.read == -EINPROGRESS; // -EINPROGRESS is successful.
 }
 
@@ -551,11 +641,19 @@ void ChunkQuery::_sendQuery(int fd) {
         _state=COMPLETE;
         _notifyManager();
     }
+#ifdef NEWLOG
+    LOGF_INFO(ss.str());
+#else
     LOGGER_INF << ss.str();
+#endif
 }
 
 void ChunkQuery::_readResultsDefer(int fd) {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING ChunkQuery::_readResultsDefer(%1%)" % fd);
+#else
     LOGGER_DBG << "EXECUTING ChunkQuery::_readResultsDefer(" << fd << ")" << std::endl;
+#endif
     int const fragmentSize = 4*1024*1024; // 4MB fragment size (param?)
     // Should limit cumulative result size for merging.  Now is a
     // good time. Configurable, with default=1G?
@@ -568,7 +666,11 @@ void ChunkQuery::_readResultsDefer(int fd) {
     _state = COMPLETE;
     _manager->getMessageStore()->addMessage(_id, log::MSG_XRD_READ,
                                             "Results Read.");
+#ifdef NEWLOG
+    LOGF_INFO("%1% ReadResults defer" % _hash);
+#else
     LOGGER_INF << _hash << " ReadResults defer " << std::endl;
+#endif
     _notifyManager();
 }
 
@@ -583,17 +685,30 @@ void ChunkQuery::_readResults(int fd) {
                              &_shouldSquash, &(_result.localWrite),
                              &(_result.read));
     _readTimer.stop();
+#ifdef NEWLOG
+    LOGF_INFO("%1% ReadResults %2%" % _hash % _readTimer);
+#else
     LOGGER_INF << _hash << " ReadResults " << _readTimer << std::endl;
+#endif
     _readCloseTimer.start();
     int res = xrdc::xrdClose(fd);
     _readCloseTimer.stop();
+#ifdef NEWLOG
+    LOGF_INFO("%1% ReadClose %2%" % _hash % _readTimer);
+#else
     LOGGER_INF << _hash << " ReadClose " << _readTimer << std::endl;
+#endif
     if(res != 0) {
         errnoComplain("Error closing after result read", fd, errno);
     }
+#ifdef NEWLOG
+    LOGF_INFO("%1% %2% -- wrote %3% read %4%"
+              % _spec.chunkId % _hash % _result.localWrite % _result.read);
+#else
     LOGGER_INF << _spec.chunkId << " "
                << _hash << " -- wrote " << _result.localWrite
                << " read " << _result.read << std::endl;
+#endif
     _state = COMPLETE;
     _notifyManager(); // This is a successful completion.
 }
@@ -602,7 +717,11 @@ void ChunkQuery::_notifyManager() {
     bool aborted = (_state==ABORTED)
         || _shouldSquash
         || (_result.queryWrite < 0);
+#ifdef NEWLOG
+    LOGF_DEBUG("cqnotify %1% %2%" % _id % (void*) _manager);
+#else
     LOGGER_DBG << "cqnotify " << _id  << " " << (void*) _manager << std::endl;
+#endif
     _manager->finalizeQuery(_id, _result, aborted);
 }
 
@@ -611,8 +730,12 @@ void ChunkQuery::_unlinkResult(std::string const& url) {
     // FIXME: decide how to handle error here.
     if(res == -1) {
         res = errno;
+#ifdef NEWLOG
+        LOGF_DEBUG("ChunkQuery abort error: unlink gave errno = %1%" % res);
+#else
         LOGGER_ERR << "ChunkQuery abort error: unlink gave errno = "
                    << res << std::endl;
+#endif
     }
 }
 

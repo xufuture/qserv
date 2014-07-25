@@ -101,7 +101,11 @@ KvInterfaceImplMem::KvInterfaceImplMem(std::istream& mapStream) {
     //    if (itrM->second != "") {
     //        val = itrM->second;
     //    }
+    //#ifdef NEWLOG
+    //    LOGF_INFO("%1%\t%2%" % itrM->first % val);
+    //#else
     //    LOGGER_INF << itrM->first << "\t" << val << endl;
+    //#endif
     //}
 }
 
@@ -110,8 +114,12 @@ KvInterfaceImplMem::~KvInterfaceImplMem() {
 
 void
 KvInterfaceImplMem::create(string const& key, string const& value) {
+#ifdef NEWLOG
+    LOGF_INFO("*** KvInterfaceImplMem::create(%1%, %2%)" % key % value);
+#else
     LOGGER_INF << "*** KvInterfaceImplMem::create(), " << key << " --> "
                << value << endl;
+#endif
     if (exists(key)) {
         throw NoSuchKey(key);
     }
@@ -121,68 +129,125 @@ KvInterfaceImplMem::create(string const& key, string const& value) {
 bool
 KvInterfaceImplMem::exists(string const& key) {
     bool ret = _kvMap.find(key) != _kvMap.end();
+#ifdef NEWLOG
+    LOGF_INFO("*** KvInterfaceImplMem::exists(%1%): %2%"
+              % key % (ret?"YES":"NO"));
+#else
     LOGGER_INF << "*** KvInterfaceImplMem::exists(), key: " << key
                << ": " << ret << endl;
+#endif
     return ret;
 }
 
 string
 KvInterfaceImplMem::get(string const& key) {
+#ifdef NEWLOG
+    LOGF_INFO("*** KvInterfaceImplMem::get(%1%)" % key);
+#else
     LOGGER_INF << "*** KvInterfaceImplMem::get(), key: " << key << endl;
+#endif
     if ( ! exists(key) ) {
         throw NoSuchKey(key);
     }
     string s = _kvMap[key];
+#ifdef NEWLOG
+    LOGF_INFO("*** got: %1%" % s);
+#else
     LOGGER_INF << "*** got: '" << s << "'" << endl;
+#endif
     return s;
 }
 
 string
 KvInterfaceImplMem::get(string const& key, string const& defaultValue) {
-    LOGGER_INF << "*** KvInterfaceImplMem::get2(), key: " << key << endl;
     if ( ! exists(key) ) {
+#ifdef NEWLOG
+        LOGF_INFO("*** KvInterfaceImplMem::get(%1%, %2%), returns default."
+                  % key % defaultValue);
+#else
+        LOGGER_INF << "*** KvInterfaceImplMem::get2(), key: " << key << endl;
+#endif
         return defaultValue;
     }
     string s = _kvMap[key];
+#ifdef NEWLOG
+    LOGF_INFO("*** KvInterfaceImplMem::get(%1%, %2%), returns '%3%'."
+              % key % defaultValue % s);
+#else
     LOGGER_INF << "*** got: '" << s << "'" << endl;
+#endif
     return s;
 }
 
 vector<string>
 KvInterfaceImplMem::getChildren(string const& key) {
-    LOGGER_INF << "*** KvInterfaceImplMem::getChildren(), key: " << key << endl;
     if ( ! exists(key) ) {
+#ifdef NEWLOG
+        LOGF_INFO("*** KvInterfaceImplMem::getChildren(%1%), key not found." % key);
+#else
+        LOGGER_INF << "*** KvInterfaceImplMem::getChildren(" << key << "), "
+                   << "key not found." << endl;
+#endif
         throw NoSuchKey(key);
     }
     vector<string> retV;
     map<string, string>::const_iterator itrM;
     for (itrM=_kvMap.begin() ; itrM!=_kvMap.end() ; itrM++) {
         string fullKey = itrM->first;
+#ifdef NEWLOG
+        LOGF_INFO("fullKey: %1%" % fullKey);
+#else
         LOGGER_INF << "fullKey: " << fullKey << endl;
+#endif
         if (boost::starts_with(fullKey, key+"/")) {
             string theChild = fullKey.substr(key.length()+1);
             if (theChild.size() > 0) {
+#ifdef NEWLOG
+                LOGF_INFO("child: %1%" % theChild);
+#else
                 LOGGER_INF << "child: " << theChild << endl;
+#endif
                 retV.push_back(theChild);
             }
         }
     }
+#ifdef NEWLOG
+    LOGF_INFO("got: %1% children:" % retV.size());
+#else
     LOGGER_INF << "got " << retV.size() << " children:" << endl;
+#endif
     vector<string>::const_iterator itrV;
     for (itrV=retV.begin(); itrV!=retV.end() ; itrV++) {
+#ifdef NEWLOG
+        LOGF_INFO("'%1%', " % *itrV);
+#else
         LOGGER_INF << "'" << *itrV << "', ";
+#endif
     }
+#ifdef NEWLOG
+#else
     LOGGER_INF << endl;
+#endif
     return retV;
 }
 
 void
 KvInterfaceImplMem::deleteKey(string const& key) {
-    LOGGER_INF << "*** KvInterfaceImplMem::deleteKey, key: " << key << endl;
     if ( ! exists(key) ) {
+#ifdef NEWLOG
+        LOGF_INFO("*** KvInterfaceImplMem::deleteKey(%1%) - key not found." % key)
+#else
+        LOGGER_INF << "*** KvInterfaceImplMem::deleteKey("
+                   << key << ") - key not found." << endl;
+#endif
         throw NoSuchKey(key);
     }
     _kvMap.erase(key);
+#ifdef NEWLOG
+    LOGF_INFO("Key '%1%' deleted." % key);
+#else
+    LOGGER_INF << "Key '" << key << "' deleted." << endl;
+#endif
 }
 
 }}} // namespace lsst::qserv::css

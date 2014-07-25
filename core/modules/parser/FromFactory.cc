@@ -95,13 +95,21 @@ public:
         RefAST current;
         RefAST nextCache;
         Iter operator++(int) {
+#ifdef NEWLOG
+            //LOGF_INFO("advancingX..: %1%" % current->getText());
+#else
             //LOGGER_INF << "advancingX..: " << current->getText() << std::endl;
+#endif
             Iter tmp = *this;
             ++*this;
             return tmp;
         }
         Iter& operator++() {
+#ifdef NEWLOG
+            //LOGF_INFO("advancing..: %1%" % current->getText());
+#else
             //LOGGER_INF << "advancing..: " << current->getText() << std::endl;
+#endif
             Check c;
             if(nextCache.get()) {
                 current = nextCache;
@@ -263,8 +271,13 @@ public:
             next();
             break;
         default:
+#ifdef NEWLOG
+            // LOGF_INFO("next type is:%1% and text is:%2%"
+            //           % _cursor->getType % _cursor->getText());
+#else
             // LOGGER_INF << "next type is:" << _cursor->getType()
-            //           << " and text is:" << _cursor->getText() << std::endl;
+            //            << " and text is:" << _cursor->getText() << std::endl;
+#endif
             break;
         }
     }
@@ -559,10 +572,18 @@ FromFactory::_import(antlr::RefAST a) {
     boost::shared_ptr<query::TableRefList> r(new query::TableRefList());
     _list.reset(new query::FromList(r));
 
+#ifdef NEWLOG
+    // LOGF_INFO("FROM starts with: %1% (%2%)" % a->getText() % a->getType());
+#else
     // LOGGER_INF << "FROM starts with: " << a->getText()
-    //           << " (" << a->getType() << ")" << std::endl;
+    //            << " (" << a->getType() << ")" << std::endl;
+#endif
     std::stringstream ss;
-    //LOGGER_INF << "FROM indented: " << walkIndentedString(a) << std::endl;
+#ifdef NEWLOG
+    // LOGF_INFO("FROM indented: %1%" % walkIndentedString(a));
+#else
+    // LOGGER_INF << "FROM indented: " << walkIndentedString(a) << std::endl;
+#endif
     assert(_bFactory);
     for(RefGenerator refGen(a, _aliases, *_bFactory);
         !refGen.isDone();
@@ -572,7 +593,13 @@ FromFactory::_import(antlr::RefAST a) {
         _list->_tableRefs->push_back(p);
     }
     std::string s(ss.str());
-    if(s.size() > 0) { LOGGER_INF << s << std::endl; }
+    if(s.size() > 0) {
+#ifdef NEWLOG
+        LOGF_INFO(s);
+#else
+        LOGGER_INF << s << std::endl;
+#endif
+    }
 }
 
 }}} // namespace lsst::qserv::parser
