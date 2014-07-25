@@ -76,6 +76,8 @@ public:
                                               std::string const& tableName) const;
     int getChunkLevel(std::string const& dbName,
                       std::string const& tableName) const;
+    std::string getDirTable(std::string const& dbName,
+                            std::string const& tableName) const;
     std::string getDirColName(std::string const& dbName,
                               std::string const& tableName) const;
     std::vector<std::string> getSecIndexColNames(std::string const& dbName,
