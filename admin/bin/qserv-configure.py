@@ -46,13 +46,14 @@ FOR A  SETUP FROM SCRATCH.''',
         'INFO'      : logging.INFO,
         'WARNING'   : logging.WARNING,
         'ERROR'     : logging.ERROR,
-        'FATAL'   : logging.FATAL,
+        'FATAL'     : logging.FATAL,
     }
     verbose_arg_values = verbose_dict.keys()
-    parser.add_argument("-v", "--verbose-level", dest="verbose_str", choices=verbose_arg_values,
-        default='INFO',
-        help="verbosity level"
-        )
+    parser.add_argument("-v", "--verbose-level", dest="verbose_str",
+            choices=verbose_arg_values,
+            default='INFO',
+            help="verbosity level"
+            )
 
     # forcing options which may ask user confirmation
     parser.add_argument("-f", "--force", dest="force", action='store_true',
