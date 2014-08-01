@@ -2,7 +2,7 @@
 
 # 
 # LSST Data Management System
-# Copyright 2008, 2009, 2010 LSST Corporation.
+# Copyright 2008-2014 LSST Corporation.
 # 
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -40,6 +40,8 @@ from lsst.qserv.czar import client
 from lsst.qserv.czar import config
 from lsst.qserv.czar import indexing
 
+import lsst.log as newlog
+
 def runParserTest():
     """Invokes the test cases in the lsst.qserv.czar.testparser module
     """
@@ -52,7 +54,6 @@ def runNamedTest(name):
     suite.addTest(TestAppFunctions('test'+name))
     unittest.TextTestRunner(verbosity=2).run(suite)
     pass
-                  
 
 def resetTables():
     p = app.Persistence()
@@ -63,8 +64,6 @@ def resetTables():
 def makeIndexes():
     indexing.makeQservIndexes()
     pass
-
-
 
 def main():    
     parser = OptionParser()
@@ -97,6 +96,22 @@ def main():
         config.load()
     print "Configuration:"
     config.printTo(sys.stdout)
+
+    # Configure logging
+        #----- note this section should be done in Fabrice's script
+    runDir = "/usr/local/home/becla/qservDev/qserv-run/"
+    log4jFPath = "%s/etc/log4cxx.log4j" % runDir
+    contents = """
+log4j.rootLogger=DEBUG, QLogger
+log4j.appender.QLogger=org.apache.log4j.ConsoleAppender
+log4j.appender.QLogger.layout=org.apache.log4j.PatternLayout
+log4j.appender.QLogger.layout.ConversionPattern=NEWLOG! %d [%t] %-5p %c{2} %M (%F:%L) - %m%n
+"""
+    log4jF = open(log4jFPath, 'w')
+    log4jF.write(contents)
+    log4jF.close()
+        #----- end of section that should be done in Fabrice's script
+    newlog.configure(log4jFPath)
 
     if options.test == True:
         runParserTest()

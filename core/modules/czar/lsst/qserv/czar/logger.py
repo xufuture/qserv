@@ -33,7 +33,7 @@ from lsst.qserv.czar import logger
 import lsst.log as newlog
 
 # Toggles new, log4cxx-based logging on/off for Qserv's Python-layer
-NEWLOG = False
+NEWLOG = True
 
 def threshold_dbg():
     if NEWLOG:

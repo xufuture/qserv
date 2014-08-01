@@ -201,7 +201,13 @@ void SelectStmt::_print() {
     print(LOG_STRM(Info), "groupby", _groupBy);
     print(LOG_STRM(Info), "having", _having);
     print(LOG_STRM(Info), "orderby", _orderBy);
-    if(_limit != -1) { LOGGER_INF << " LIMIT " << _limit; }
+    if(_limit != -1) {
+#ifdef NEWLOG
+        LOGF_INFO(" LIMIT");
+#else
+        LOGGER_INF << " LIMIT " << _limit;
+#endif
+    }
 }
 
 std::string SelectStmt::_generateDbg() {

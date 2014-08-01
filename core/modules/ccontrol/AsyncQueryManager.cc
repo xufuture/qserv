@@ -408,7 +408,6 @@ inline std::string getConfigElement(std::map<std::string,
 #else
         LOGGER_ERR << errorMsg << std::endl;
 #endif
-
         return defaultValue;
     }
 }

@@ -217,15 +217,29 @@ void
 addChunk(int session, qproc::ChunkSpec const& cs ) {
 #ifndef NEWLOG
 #if 0 // SWIG plumbing debug
+#ifdef NEWLOG
+    LOGF_INFO("Received chunk=%1% " % cs.chunkId);
+#else
     LOGGER_INF << "Received chunk=" << cs.chunkId << " ";
+#endif
     typedef std::vector<int> Vect;
     int count=0;
     for(Vect::const_iterator i = cs.subChunks.begin();
         i != cs.subChunks.end(); ++i) {
-        if(++count > 1) LOGGER_INF << ", ";
-         LOGGER_INF << *i;
+        if(++count > 1) {
+#ifdef NEWLOG
+            LOGF_INFO(", ");
+#else
+            LOGGER_INF << ", ";
+#endif
+        }
+#ifdef NEWLOG
+        LOGF_INFO(*i);
+#else
+        LOGGER_INF << *i;
+#endif
     }
-     LOGGER_INF << std::endl;
+    LOGGER_INF << std::endl;
 #endif
 #endif
     AsyncQueryManager& qm = getAsyncManager(session);

@@ -65,8 +65,12 @@ public:
         : _tableAlias(t), _tableAliasReverse(r) {}
     void operator()(std::string const& alias,
                     std::string const& db, std::string const& table) {
+#ifdef NEWLOG
+        // LOGF_INFO("set: %1%->%2%.%3%" % alias % db % table);
+#else
         // LOGGER_INF << "set: " << alias << "->"
         //           << db << "." << table << std::endl;
+#endif
         _tableAlias.set(db, table, alias);
         _tableAliasReverse.set(db, table, alias);
     }
@@ -156,7 +160,11 @@ public:
                 throw std::logic_error("Bad ValueExpr::FactorOps");
             }
             query::ValueFactor& t = *i->factor;
-            //LOGGER_INF << "fixing factor: " << *vep << std::endl;
+#ifdef NEWLOG
+            // LOGF_INFO("fixing factor: %1%" % *vep);
+#else
+            // LOGGER_INF << "fixing factor: " << *vep << std::endl;
+#endif
             switch(t.getType()) {
             case query::ValueFactor::COLUMNREF:
                 // check columnref.
@@ -174,7 +182,11 @@ public:
             case query::ValueFactor::CONST:
                 break; // Constants don't need patching.
             default:
+#ifdef NEWLOG
+                LOGF_WARN("Unhandled ValueFactor:%1%" % t);
+#else
                 LOGGER_WRN << "Unhandled ValueFactor:" << t << std::endl;
+#endif
                 break;
             }
         }
@@ -206,7 +218,11 @@ private:
 
     inline std::string _getAlias(std::string const& db,
                                  std::string const& table) {
-        //LOGGER_INF << "lookup: " << db << "." << table << std::endl;
+#ifdef NEWLOG
+        // LOGF_INFO("lookup: %1%.%2%" % db % table);
+#else
+        // LOGGER_INF << "lookup: " << db << "." << table << std::endl;
+#endif
         return _tableAliasReverse.get(db, table);
     }
 
@@ -373,7 +389,11 @@ int TablePlugin::_rewriteTables(qana::SelectStmtList& outList,
     // the logical plugin stage so that real table refs should only
     // exist in the from-list.
     query::FromList& fList = in.getFromList();
-    //    LOGGER_INF << "orig fromlist " << fList.getGenerated() << std::endl;
+#ifdef NEWLOG
+    // LOGF_INFO("orig fromlist %1%" % fList.getGenerated());
+#else
+    // LOGGER_INF << "orig fromlist " << fList.getGenerated() << std::endl;
+#endif
 
     // TODO: Better join handling by leveraging JOIN...ON syntax.
     // Before rewriting, compute the need for chunking and subchunking
@@ -429,10 +449,14 @@ int TablePlugin::_rewriteTables(qana::SelectStmtList& outList,
     return added;
 }
 
-    bool testIfSecondary(query::BoolTerm& t) {
+bool testIfSecondary(query::BoolTerm& t) {
     // FIXME: Look for secondary key in the bool term.
+#ifdef NEWLOG
+    LOGF_INFO("Testing "); // FIXME!!!
+#else
     LOGGER_INF << "Testing ";
     t.putStream(LOG_STRM(Info)) << std::endl;
+#endif
     return false;
 }
 

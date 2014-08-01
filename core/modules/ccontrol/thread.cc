@@ -293,9 +293,9 @@ void Manager::run() {
                       % (1.0+thisSize - reapSize)*1.0/(1.0+thisReap - lastReap));
 #else
             LOGGER_INF << thisReap << " Done reaping, " << reapSize
-                      << " still flying, completion rate="
-                      << (1.0+thisSize - reapSize)*1.0/(1.0+thisReap - lastReap)
-                      << "\n"  ;
+                       << " still flying, completion rate="
+                       << (1.0+thisSize - reapSize)*1.0/(1.0+thisReap - lastReap)
+                       << "\n"  ;
 #endif
         }
         if(_threads.size() > 1000) break; // DEBUG early exit.
