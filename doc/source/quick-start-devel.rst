@@ -1,8 +1,8 @@
-Quick start guide for developpers :
-===================================
+Quick start guide for developpers
+=================================
 
-Setup current Qserv version in eups :
--------------------------------------
+Setup current Qserv version in eups
+-----------------------------------
 
 Once Qserv is installed (cf. README.txt), in order to install your Qserv development version please use next commands,
 
@@ -23,8 +23,8 @@ Once Qserv is installed (cf. README.txt), in order to install your Qserv develop
 
 Then re-run configuration and test process, as described in README.txt.
 
-Updating test cases :
----------------------
+Updating test cases
+-------------------
 
 If you want to modify tests datasets, please clone Qserv test data repository :
   | cd ~/src/

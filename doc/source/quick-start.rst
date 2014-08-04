@@ -1,10 +1,13 @@
-Quick start guide :
-===================
+Quick start guide
+=================
 
 **NOTE FOR DEVELOPERS** : The install procedure described in README.txt doesn't install Qserv from your current git repository version, but from a previously packaged Qserv uploaded on Qserv distribution server. See **README-devel.txt** in order to install Qserv from your current git repository version.
 
+Pre-requisites
+--------------
+
 Installing dependencies
------------------------
++++++++++++++++++++++++
 
   | # Install system dependencies :
   | # for Scientific Linux 6
@@ -12,11 +15,11 @@ Installing dependencies
   | # for Debian
   | sudo admin/bootstrap/qserv-install-debian-wheezy.sh
   | # for Ubuntu
-  | sudo admin/bootstrap/qserv-install-ubuntu-13.10.sh
+  | sudo admin/bootstrap/qserv-install-ubuntu-14.04.sh
 
 
-Installation :
---------------
+Installation
+------------
 
   | # $INSTALL_DIR must be empty
   | cd $INSTALL_DIR
@@ -30,8 +33,8 @@ Installation :
   | eups distrib install qserv_testdata -r http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
   | setup qserv_testdata
 
-Configuration :
----------------
+Configuration
+-------------
 
 Configuration is installed apart from Qserv software.
 
@@ -41,8 +44,8 @@ Configuration is installed apart from Qserv software.
   | # for a minimalist single node install just leave default
   | qserv-configure.py --all
 
-Integration tests :
--------------------
+Integration tests
+-----------------
 
 For a mono-node instance.
 
