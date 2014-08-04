@@ -11,16 +11,16 @@ Goals
 
 Qserv installation procedure consists of next steps :
 
-- download, build and install using eups,
-- configuration.
+- download, build and install Qserv using eups,
+- configure Qserv.
 
-The goal is to have a modular procedure in order to ease evolution and maintenance.
-That's why Qserv configuration procedure must be as independant as possible of other steps, and of eups.
+The goal is to have a modular procedure in order to ease future evolutions and maintenance.
+That's why Qserv configuration procedure must be as independant as possible of eups and other steps eups.
 
 Approach
 ========
 
-eups install directory must only contains immutable data like binaries.
+eups install directory must only contains immutable data like, for example, binaries.
 That's why Qserv configuration tool create a separate directory which contains :
 
 - configuration files and data,
@@ -28,18 +28,18 @@ That's why Qserv configuration tool create a separate directory which contains :
 - business data (i.e. sky data),
 
 Thereafter, this directory will be called QSERV_RUN_DIR.
-This will allow to switch Qserv version (using eups for example), without having to re-configure Qserv from scratch.
-The configuration tool is written in pure-python and offer many options in order to be very flexible. Neverthelles it doesn't relies on LSST standards as it seems nothing is yet provided for configuration.
-The default procedure aims to be straightforward, so that new users can't quickly get a standard mono-node Qserv configuration. 
+This method will allow to switch Qserv version (using eups for example), without having to re-configure Qserv from scratch.
+The configuration tool is written in pure-python and offers many options in order to be very flexible. Nevertheless it doesn't relies on LSST standards (it seems nothing is yet provided for configuration).
+The default procedure aims to be straightforward, so that new users can quickly set up a standard mono-node Qserv configuration. 
 
 Features
 ========
 
-- create services configuration files in QSERV_RUN_DIR/etc/qserv.conf using a meta-configuration file in QSERV_RUN_DIR/qserv.conf 
-- runs mysql, scisql and xrootd configuration scripts
-- create client configuration
-- default procedure doesn't remove QSERV_RUN_DIR but only update it
-- a -all option allow to create QSERV_RUN_DIR from scratch (
+- creates services configuration files in QSERV_RUN_DIR/etc/qserv.conf using a meta-configuration file in QSERV_RUN_DIR/qserv.conf, 
+- runs mysql, scisql and xrootd configuration scripts,
+- creates client configuration,
+- default procedure doesn't remove QSERV_RUN_DIR but only update it,
+- '-all' option allow to create QSERV_RUN_DIR from scratch.
 
 Tickets completed
 =================
@@ -49,6 +49,8 @@ Tickets completed
 
 Prospects
 =========
+
+This procedure should also be able to configure a multi-node instance, see https://jira.lsstcorp.org/browse/DM-595
 
 Migration
 =========
