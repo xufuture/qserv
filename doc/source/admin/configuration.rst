@@ -1,22 +1,24 @@
-=================================
-Qserv configuration architecture
-=================================
+#####################
+Software architecture
+#####################
 
------
+***********************
+Configuration procedure
+***********************
+
 Goals
------
+=====
 
-Qserv installation procedure consist of next steps :
+Qserv installation procedure consists of next steps :
 
 - download, build and install using eups,
 - configuration.
 
-The goal is to have a modular procedure in order to allow ease evolution and maintenance.
+The goal is to have a modular procedure in order to ease evolution and maintenance.
 That's why Qserv configuration procedure must be as independant as possible of other steps, and of eups.
 
---------
 Approach
---------
+========
 
 eups install directory must only contains immutable data like binaries.
 That's why Qserv configuration tool create a separate directory which contains :
@@ -30,9 +32,8 @@ This will allow to switch Qserv version (using eups for example), without having
 The configuration tool is written in pure-python and offer many options in order to be very flexible. Neverthelles it doesn't relies on LSST standards as it seems nothing is yet provided for configuration.
 The default procedure aims to be straightforward, so that new users can't quickly get a standard mono-node Qserv configuration. 
 
---------
 Features
---------
+========
 
 - create services configuration files in QSERV_RUN_DIR/etc/qserv.conf using a meta-configuration file in QSERV_RUN_DIR/qserv.conf 
 - runs mysql, scisql and xrootd configuration scripts
@@ -40,19 +41,17 @@ Features
 - default procedure doesn't remove QSERV_RUN_DIR but only update it
 - a -all option allow to create QSERV_RUN_DIR from scratch (
 
------------------
 Tickets completed
------------------
+=================
 
 - https://jira.lsstcorp.org/browse/DM-622
 - https://jira.lsstcorp.org/browse/DM-930
 
----------
 Prospects
----------
+=========
 
 Migration
-*********
+=========
 
 see https://jira.lsstcorp.org/browse/DM-895
 
@@ -60,7 +59,7 @@ see https://jira.lsstcorp.org/browse/DM-895
 - create a migration procedure
 
 Output
-******
+======
 
 see https://jira.lsstcorp.org/browse/DM-954
 
