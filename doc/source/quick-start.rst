@@ -46,7 +46,7 @@ Installation
 Configuration
 *************
 
-Configuration is installed apart from Qserv software.
+Configuration data are installed apart from Qserv software.
 
 .. code-block:: bash
 
