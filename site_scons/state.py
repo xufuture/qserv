@@ -108,12 +108,12 @@ def _initLog():
     log.verbose = SCons.Script.GetOption('verbose')
     log.traceback = SCons.Script.GetOption('traceback')
 
-def _initVariables(src_dir):
-    
+def _initVariables():
+
     log.info("Initializing variables and looking for build dependencies")
     opts = SCons.Script.Variables("custom.py")
     opts.AddVariables(
-            (PathVariable('build_dir', 'Qserv build dir', os.path.join(src_dir,'build'), PathVariable.PathIsDirCreate)),
+            (PathVariable('build_dir', 'Qserv build dir', os.path.join( src_dir, 'build'), PathVariable.PathIsDirCreate)),
             (EnumVariable('debug', 'debug gcc output and symbols', 'yes', allowed_values=('yes', 'no'))),
             (PathVariable('PROTOC', 'protoc binary path', _getBinPath('protoc',"Looking for protoc compiler"), PathVariable.PathIsFile)),
             # antlr is named runantlr on Ubuntu 13.10 and Debian Wheezy
@@ -167,22 +167,21 @@ def _initVariables(src_dir):
     SCons.Script.Help(opts.GenerateHelpText(env))
 
 
-def _initEnvironment(src_dir):
+def _initEnvironment():
     """Construction and basic setup of the state.env variable."""
 
-    global env
-    env = Environment(tools=['default', 'textfile', 'pymod', 'recinstall', 'swig_scanner'])
-
-    _initVariables(src_dir)
-
+    env.Tool('default')
+    env.Tool('textfile')
+    env.Tool('recinstall')
+    env.Tool('swig_scanner')
     env.Tool('protoc')
     env.Tool('antlr')
-
     if env['debug'] == 'yes':
         log.info("Debug build flag (-g) requested.")
         env.Append(CCFLAGS = ['-g'])
     # Increase compiler strictness
     env.Append(CCFLAGS=['-pedantic', '-Wall', '-Wno-long-long'])
+
 
 
 # TODO : where to save this file ?
@@ -209,9 +208,17 @@ def _saveState():
     except Exception, e:
         log.warn("Unexpected exception in _saveState: %s" % e)
 
-def init(src_dir):
+def init():
+
+    global env
+    env = Environment(tools=['default', 'textfile', 'pymod'])
     _initOptions()
     _initLog()
-    _initEnvironment(src_dir)
 #    _saveState()
 ## @endcond
+
+def initBuild(src_dir):
+    _initEnvironment()
+    _initVariables(src_dir)
+
+
