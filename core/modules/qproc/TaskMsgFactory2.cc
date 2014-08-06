@@ -144,7 +144,7 @@ TaskMsgFactory2::Impl::makeMsg(ChunkQuerySpec const& s,
         }
     } else {
 
-        LOGGER_DBG << "TaskMsgFactory2::Impl::makeMsg() : no fragment " << std::endl;
+        LOGGER_DBG << "TaskMsgFactory2::Impl::makeMsg() : no nextFragment " << std::endl;
 	for(unsigned int t=0;t<(s.queries).size();t++){
 	    LOGGER_DBG << (s.queries).at(t) << std::endl;
 	}
