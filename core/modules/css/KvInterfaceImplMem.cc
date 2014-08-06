@@ -130,7 +130,7 @@ bool
 KvInterfaceImplMem::exists(string const& key) {
     bool ret = _kvMap.find(key) != _kvMap.end();
 #ifdef NEWLOG
-    LOGF_INFO("*** KvInterfaceImplMem::exists(%1%): %2%" 
+    LOGF_INFO("*** KvInterfaceImplMem::exists(%1%): %2%"
               % key % (ret?"YES":"NO"));
 #else
     LOGGER_INF << "*** KvInterfaceImplMem::exists(), key: " << key
@@ -143,7 +143,7 @@ string
 KvInterfaceImplMem::get(string const& key) {
 #ifdef NEWLOG
     LOGF_INFO("*** KvInterfaceImplMem::get(%1%)" % key);
-#else    
+#else
     LOGGER_INF << "*** KvInterfaceImplMem::get(), key: " << key << endl;
 #endif
     if ( ! exists(key) ) {
@@ -171,7 +171,7 @@ KvInterfaceImplMem::get(string const& key, string const& defaultValue) {
     }
     string s = _kvMap[key];
 #ifdef NEWLOG
-    LOGF_INFO("*** KvInterfaceImplMem::get(%1%, %2%), returns '%3%'." 
+    LOGF_INFO("*** KvInterfaceImplMem::get(%1%, %2%), returns '%3%'."
               % key % defaultValue % s);
 #else
     LOGGER_INF << "*** got: '" << s << "'" << endl;
@@ -204,7 +204,7 @@ KvInterfaceImplMem::getChildren(string const& key) {
             if (theChild.size() > 0) {
 #ifdef NEWLOG
                 LOGF_INFO("child: %1%" % theChild);
-#else                
+#else
                 LOGGER_INF << "child: " << theChild << endl;
 #endif
                 retV.push_back(theChild);
@@ -237,7 +237,7 @@ KvInterfaceImplMem::deleteKey(string const& key) {
 #ifdef NEWLOG
         LOGF_INFO("*** KvInterfaceImplMem::deleteKey(%1%) - key not found." % key)
 #else
-        LOGGER_INF << "*** KvInterfaceImplMem::deleteKey(" 
+        LOGGER_INF << "*** KvInterfaceImplMem::deleteKey("
                    << key << ") - key not found." << endl;
 #endif
         throw NoSuchKey(key);

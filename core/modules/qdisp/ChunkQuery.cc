@@ -176,7 +176,7 @@ public:
 #endif
                 if(errno == EINPROGRESS) {
 #ifdef NEWLOG
-                    LOGF_ERROR("Synchronous open returned EINPROGRESS!!!! %1%" 
+                    LOGF_ERROR("Synchronous open returned EINPROGRESS!!!! %1%"
                                % _cq._spec.chunkId);
 #else
                     LOGGER_ERR << "Synchronous open returned EINPROGRESS!!!! "
@@ -284,7 +284,7 @@ void ChunkQuery::Complete(int Result) {
 #ifdef NEWLOG
             LOGF_WARN("Problem reading result: open returned %1% for chunk=%2% with url=%3%"
                       % _result.read % _spec.chunkId % _resultUrl);
-#else                 
+#else
             LOGGER_WRN << "Problem reading result: open returned "
                        << _result.read << " for chunk=" << _spec.chunkId
                        << " with url=" << _resultUrl
@@ -465,7 +465,7 @@ void ChunkQuery::requestSquash() {
         // Do nothing. After write completes, it will check the squash flag.
         break;
     case READ_QUEUE:
-
+        // Assume job will be cleared from its queue.
         break;
     case READ_OPEN:
         // Squash with an unlink() call to the result file.
@@ -576,7 +576,7 @@ bool ChunkQuery::_openForRead(std::string const& url) {
     _readOpenTimer.start();
     _result.read = xrdc::xrdOpenAsync(url.c_str(), O_RDONLY, this);
 #ifdef NEWLOG
-    LOGF_DEBUG("Async read for %1% got %2% --> %3%" % _hash % _result.read % 
+    LOGF_DEBUG("Async read for %1% got %2% --> %3%" % _hash % _result.read %
                ((_result.read == -EINPROGRESS) ? "ASYNC OK" : "fail?"));
 #else
     LOGGER_DBG << "Async read for " << _hash << " got " << _result.read
@@ -703,7 +703,7 @@ void ChunkQuery::_readResults(int fd) {
         errnoComplain("Error closing after result read", fd, errno);
     }
 #ifdef NEWLOG
-    LOGF_INFO("%1% %2% -- wrote %3% read %4%" 
+    LOGF_INFO("%1% %2% -- wrote %3% read %4%"
               % _spec.chunkId % _hash % _result.localWrite % _result.read);
 #else
     LOGGER_INF << _spec.chunkId << " "

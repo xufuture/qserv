@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2008-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -161,12 +161,12 @@ template<typename Sink>
 std::streamsize Logger::SeverityFilter::write(Sink& dest, const char* s, std::streamsize n) {
     if (_loggerPtr->getSeverity() >= _loggerPtr->getSeverityThreshold()) {
         std::streamsize z;
-	for (z = 0; z < n; ++z) {
-	    if (!boost::iostreams::put(dest, s[z])) {
-	        break;
-	    }
-	}
-	return z;
+        for (z = 0; z < n; ++z) {
+            if (!boost::iostreams::put(dest, s[z])) {
+                break;
+            }
+        }
+        return z;
     } else {
       return n;
     }
@@ -212,6 +212,5 @@ std::string Logger::LogFilter::getSeverity() {
 }
 
 }}} // namespace lsst::qserv::log
-
 
 #endif // NEWLOG

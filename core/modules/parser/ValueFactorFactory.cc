@@ -172,7 +172,7 @@ ValueFactorFactory::_newColumnFactor(antlr::RefAST t) {
         return vt;
     case SqlSQL2TokenTypes::FUNCTION_SPEC:
 #ifdef NEWLOG
-        // LOGF_INFO("col child (fct): %1% %2%" 
+        // LOGF_INFO("col child (fct): %1% %2%"
         //           % child->getType() % child->getText());
 #else
         // LOGGER_INF << "col child (fct): " << child->getType() << " "

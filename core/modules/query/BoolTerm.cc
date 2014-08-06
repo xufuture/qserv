@@ -32,7 +32,7 @@
 
 // System headers
 #include <algorithm>
-#include <iterator> 
+#include <iterator>
 #include <stdexcept>
 
 // Local headers

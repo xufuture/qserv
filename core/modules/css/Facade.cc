@@ -154,7 +154,7 @@ Facade::tableIsChunked(string const& dbName, string const& tableName) const {
     _throwIfNotDbTbExists(dbName, tableName);
     bool ret = _tableIsChunked(dbName, tableName);
 #ifdef NEWLOG
-    LOGF_INFO("Table %1%.%2% %3% chunked" 
+    LOGF_INFO("Table %1%.%2% %3% chunked"
               % dbName % tableName % (ret?"is":"is not"));
 #else
     LOGGER_INF << "Table" << dbName << "." << tableName << " "
@@ -176,7 +176,7 @@ Facade::tableIsSubChunked(string const& dbName,
     _throwIfNotDbTbExists(dbName, tableName);
     bool ret = _tableIsSubChunked(dbName, tableName);
 #ifdef NEWLOG
-    LOGF_INFO("Table %1%.%2% %3% subChunked" 
+    LOGF_INFO("Table %1%.%2% %3% subChunked"
               % dbName % tableName % (ret?"is":"is not"));
 #else
     LOGGER_INF << "Table" << dbName << "." << tableName << " "
@@ -491,7 +491,7 @@ Facade::_tableIsSubChunked(string const& dbName,
     string retS = _kvI->get(p, "0");
     bool retV = (retS == "1");
 #ifdef NEWLOG
-    LOGF_INFO("*** %1%.%2% %3 chunked." 
+    LOGF_INFO("*** %1%.%2% %3 chunked."
               % dbName % tableName % (retV?"is":"is NOT"));
 #else
     LOGGER_INF << "*** " << dbName << "." << tableName << " "

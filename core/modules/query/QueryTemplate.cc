@@ -214,7 +214,7 @@ QueryTemplate::optimize() {
     em.pack();
     _entries.swap(em._entries);
 #ifdef NEWLOG
-    //LOGF_DEBUG("merged %1% entries to %2%" 
+    //LOGF_DEBUG("merged %1% entries to %2%"
     //           % _entries.size() % em._entries.size());
     //LOGF_DEBUG("was: %1%" % outputString(_elements));
     //LOGF_DEBUG("now: %1%" % outputString(em._entries));

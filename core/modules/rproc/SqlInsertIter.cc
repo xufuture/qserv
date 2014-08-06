@@ -120,7 +120,7 @@ SqlInsertIter::SqlInsertIter(xrdc::PacketIter::Ptr p,
     // data into our buffer, and setup the regex match again.
     // Continue.
 #ifdef NEWLOG
-    LOGF_DEBUG("EXECUTING SqlInsertIter(PacketIter::Ptr, %1%, %2%)" 
+    LOGF_DEBUG("EXECUTING SqlInsertIter(PacketIter::Ptr, %1%, %2%)"
                % tableName % allowNull);
 #else
     LOGGER_DBG << "EXECUTING SqlInsertIter(PacketIter::Ptr, " << tableName <<
@@ -194,7 +194,7 @@ bool SqlInsertIter::_incrementFragment() {
     if(needSize > (_pBufSize - _pBufEnd)) {
         if(needSize > _pBufSize) {
 #ifdef NEWLOG
-            LOGF_DEBUG("%1% is too small. sqliter Realloc to %2%" 
+            LOGF_DEBUG("%1% is too small. sqliter Realloc to %2%"
                        % _pBufSize % needSize);
 #else
             LOGGER_DBG << _pBufSize << " is too small" << std::endl

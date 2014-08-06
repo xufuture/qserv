@@ -121,7 +121,7 @@ KvInterfaceImplZoo::exists(string const& key) {
 #ifdef NEWLOG
         LOGF_INFO("*** KvInterfaceImplZoo::exists(%1%): yes" % key);
 #else
-        LOGGER_INF << "*** KvInterfaceImplZoo::exists(" 
+        LOGGER_INF << "*** KvInterfaceImplZoo::exists("
                    << key << "): yes" << endl;
 #endif
         return true;
@@ -130,7 +130,7 @@ KvInterfaceImplZoo::exists(string const& key) {
 #ifdef NEWLOG
         LOGF_INFO("*** KvInterfaceImplZoo::exists(%1%): no" % key);
 #else
-        LOGGER_INF << "*** KvInterfaceImplZoo::exists(" 
+        LOGGER_INF << "*** KvInterfaceImplZoo::exists("
                    << key << "): no" << endl;
 #endif
         return false;
@@ -143,7 +143,7 @@ string
 KvInterfaceImplZoo::get(string const& key) {
 #ifdef NEWLOG
     LOGF_INFO("*** KvInterfaceImplZoo::get(%1%)" % key);
-#else    
+#else
     LOGGER_INF << "*** KvInterfaceImplZoo::get(), key: " << key << endl;
 #endif
     char buffer[512];
@@ -185,7 +185,7 @@ KvInterfaceImplZoo::get(string const& key, string const& defaultValue) {
         }
     }
 #ifdef NEWLOG
-    LOGF_INFO("*** KvInterfaceImplZoo::get(%1%, %2%), returns '%3%'." 
+    LOGF_INFO("*** KvInterfaceImplZoo::get(%1%, %2%), returns '%3%'."
               % key % defaultValue % buffer);
 #else
     LOGGER_INF << "*** got: '" << buffer << "'" << endl;
@@ -242,7 +242,7 @@ KvInterfaceImplZoo::deleteKey(string const& key) {
 #ifdef NEWLOG
         LOGF_INFO("*** KvInterfaceImplZoo::deleteKey(%1%) - zoo failure %2%." % key % rc)
 #else
-        LOGGER_INF << "*** KvInterfaceImplMZoo::deleteKey(" 
+        LOGGER_INF << "*** KvInterfaceImplMZoo::deleteKey("
                    << key << ") - zoo failure " << rc << endl;
 #endif
         _throwZooFailure(rc, "deleteKey", key);

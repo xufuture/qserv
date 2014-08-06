@@ -50,7 +50,7 @@ MmapFile::~MmapFile() {
     if(_buf) {
         if(-1 == ::munmap(_buf, _fstat.st_size)) {
 #ifdef NEWLOG
-            // LOGF_ERROR("Munmap failed (%1%, %2%). Memory corruption likely." 
+            // LOGF_ERROR("Munmap failed (%1%, %2%). Memory corruption likely."
             //            % (void*)_buf % _fstat.st_size);
 #else
             // LOGGER_ERR << "Munmap failed (" << (void*)_buf

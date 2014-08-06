@@ -530,7 +530,7 @@ bool TableMerger::_slowImport(std::string const& dumpFile,
             isOk = _applySql(sql);
             if(!isOk) {
 #ifdef NEWLOG
-                LOGF_ERROR("Failed importing! %1% %2%" 
+                LOGF_ERROR("Failed importing! %1% %2%"
                            % tableName % _error.description);
 #else
                 LOGGER_ERR << "Failed importing! " << tableName

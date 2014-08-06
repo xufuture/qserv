@@ -40,7 +40,7 @@ public:
     virtual void operator()(antlr::RefAST a, antlr::RefAST b,
                             antlr::RefAST c, antlr::RefAST d) {
 #ifdef NEWLOG
-        LOGF_INFO("col _%1%_ _%2%_ _%3%_ _%4_" % tokenText(a) 
+        LOGF_INFO("col _%1%_ _%2%_ _%3%_ _%4_" % tokenText(a)
                   % tokenText(b) % tokenText(c) % tokenText(d));
 #else
         LOGGER_INF << "col _" << tokenText(a)
@@ -59,7 +59,7 @@ public:
     virtual void operator()(antlr::RefAST a, antlr::RefAST b,
                             antlr::RefAST c)  {
 #ifdef NEWLOG
-        LOGF_INFO("qualname %1% %2% %3% " % tokenText(a) 
+        LOGF_INFO("qualname %1% %2% %3% " % tokenText(a)
                   % tokenText(b) % tokenText(c));
 #else
         LOGGER_INF << "qualname " << tokenText(a)
@@ -91,7 +91,7 @@ public:
     virtual void operator()(antlr::RefAST a) {
         antlr::RefAST bound = parser::getLastSibling(a);
 #ifdef NEWLOG
-        LOGF_INFO("SelectList %1%--From %2% to %3%" 
+        LOGF_INFO("SelectList %1%--From %2% to %3%"
                   % walkTreeString(a) % a % bound);
 #else
         LOGGER_INF << "SelectList " << walkTreeString(a)
