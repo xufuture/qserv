@@ -74,7 +74,7 @@ namespace {
                 std::string const& comment2) {
 #ifdef NEWLOG
         LOGF_INFO("Close (%1%) of %2% %3%" % desc
-                  % boost::lexical_cast<std::string(fd) % comment);
+                  % boost::lexical_cast<std::string>(fd) % comment);
 #else
         LOGGER_INF << (std::string() + "Close (" + desc + ") of "
                       + boost::lexical_cast<std::string>(fd)  + " "

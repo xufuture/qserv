@@ -519,7 +519,7 @@ bool TableMerger::_slowImport(std::string const& dumpFile,
     _importResult(dumpFile);
     {
 #ifdef NEWLOG
-        LOG_DBG("Importing %1%" % tableName);
+        LOGF_DEBUG("Importing %1%" % tableName);
 #else
         LOGGER_DBG << "Importing " << tableName << std::endl;
 #endif

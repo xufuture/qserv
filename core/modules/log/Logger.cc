@@ -24,6 +24,9 @@
 
 #include "log/Logger.h"
 
+#ifndef NEWLOG
+
+
 namespace {
 
 /// Sink class responsible for synchronization.
@@ -209,3 +212,6 @@ std::string Logger::LogFilter::getSeverity() {
 }
 
 }}} // namespace lsst::qserv::log
+
+
+#endif // NEWLOG

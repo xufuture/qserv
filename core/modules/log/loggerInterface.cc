@@ -31,6 +31,8 @@
 // Local headers
 #include "log/Logger.h"
 
+#ifndef NEWLOG
+
 namespace lsst {
 namespace qserv {
 namespace log {
@@ -48,3 +50,5 @@ logger(int severity, std::string const& s) {
 }
 
 }}} // namespace lsst::qserv::log
+
+#endif // NEWLOG

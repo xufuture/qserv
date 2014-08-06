@@ -452,7 +452,8 @@ int TablePlugin::_rewriteTables(qana::SelectStmtList& outList,
 bool testIfSecondary(query::BoolTerm& t) {
     // FIXME: Look for secondary key in the bool term.
 #ifdef NEWLOG
-    LOGF_INFO("Testing "); // FIXME!!!
+    LOGF_INFO("Testing ");
+    // LOGGING FIXME
 #else
     LOGGER_INF << "Testing ";
     t.putStream(LOG_STRM(Info)) << std::endl;

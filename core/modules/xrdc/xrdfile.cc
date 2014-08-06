@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2008-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -66,15 +66,23 @@ namespace xrdc {
 
 int xrdOpen(const char *path, int oflag) {
     static int fakeDes=50;
+#ifdef NEWLOG
+    LOGF_DEBUG("xrd openfile %1% returning (%2%)" % path % fakeDes);
+#else
     LOGGER_DBG << "xrd openfile " << path << " returning ("
                << fakeDes << ")" << std::endl;
+#endif
     return fakeDes;
 }
 
 long long xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     static char fakeResults[] = "This is totally fake.";
     int len=strlen(fakeResults);
+#ifdef NEWLOG
+    LOGF_DEBUG("xrd read %1%: faked" % fildes);
+#else
     LOGGER_DBG << "xrd read " << fildes << ": faked" << std::endl;
+#endif
     if(nbyte > static_cast<unsigned long long>(len)) {
         nbyte = len+1;
     }
@@ -86,13 +94,21 @@ long long xrdWrite(int fildes, const void *buf,
                    unsigned long long nbyte) {
     std::string s;
     s.assign(static_cast<const char*>(buf), nbyte);
+#ifdef NEWLOG
+    LOGF_DEBUG("xrd write (%1%) \"%2%\"" % fildes % s);
+#else
     LOGGER_DBG << "xrd write (" <<  fildes << ") \""
-              << s << std::endl;
+               << s << std::endl;
+#endif
     return nbyte;
 }
 
 int xrdClose(int fildes) {
+#ifdef NEWLOG
+    LOGF_DEBUG("xrd close (%1%)" % fildes);
+#else
     LOGGER_DBG << "xrd close (" << fildes << ")" << std::endl;
+#endif
     return 0; // Always pretend to succeed.
 }
 
@@ -157,17 +173,28 @@ namespace {
     }
 }
 
+
+// LOGGING FIXME
+#ifdef NEWLOG
+#define LOGHACK1 LOGF_INFO(" %1% %2% in flight" % name % extra);
+#define LOGHACK2 LOGF_INFO(" %1% s) %2% %3% finished" % t.getElapsed() % name % extra);
+#else
+#define LOGHACK1 LOGGER_INF << ' ' << name << ' ' << extra << " in flight\n";
+#define LOGHACK2 LOGGER_INF << " (" << t.getElapsed() << " s) " \
+               << name << ' ' << extra << " finished\n";
+#endif
+
+
 #if QSM_PROFILE_XRD
 #   define QSM_TIMESTART(name, extra) \
     Timer t; \
     t.start(); \
     Timer::write(LOG_STRM(Info), t.startTime); \
-    LOGGER_INF << ' ' << name << ' ' << extra << " in flight\n";
+    LOGHACK1
 #   define QSM_TIMESTOP(name, extra) \
     t.stop(); \
     Timer::write(LOG_STRM(Info), t.stopTime); \
-    LOGGER_INF << " (" << t.getElapsed() << " s) " \
-               << name << ' ' << extra << " finished\n";
+    LOGHACK2
 #else // Turn off xrd call timing
 #   define QSM_TIMESTART(name, path)
 #   define QSM_TIMESTOP(name, path)
@@ -185,12 +212,20 @@ int xrdOpen(const char *path, int oflag) {
     if (oflag == O_RDONLY) {
         int coinToss = rand()%5;
         if (coinToss == 0) {
+#ifdef NEWLOG
+            LOGF_WARN("YOU ARE UNLUCKY (coin=%1%), SABOTAGING XRD OPEN!!!!" % coinToss);
+#else
             LOGGER_WRN << "YOU ARE UNLUCKY (coin=" << coinToss
                        << "), SABOTAGING XRD OPEN!!!!" << std::endl;
+#endif
             return -1;
         } else {
+#ifdef NEWLOG
+            LOGF_WARN("YOU DODGED A BULLET (coin=%1%), NO SABOTAGE THIS TIME!!" % coinToss);
+#else
             LOGGER_WRN << "YOU DODGED A BULLET (coin=" << coinToss
                        << "), NO SABOTAGE THIS TIME!!" << std::endl;
+#endif
         }
     }
     /*************************************************/
@@ -201,7 +236,11 @@ int xrdOpen(const char *path, int oflag) {
      * chunk-level failure recovery.)
      * ***********************************************************/
     if (oflag == O_RDONLY) {
+#ifdef NEWLOG
+        LOGF_WARN("SLEEPING FOR 10 SECONDS");
+#else
         LOGGER_WRN << "SLEEPING FOR 10 SECONDS" << std::endl;
+#endif
         boost::this_thread::sleep(boost::posix_time::seconds(10));
     }
     /*************************************************/
@@ -209,10 +248,18 @@ int xrdOpen(const char *path, int oflag) {
     char const* abbrev = path;
     while((abbrev[0] != '\0') && *abbrev++ != '/');
     QSM_TIMESTART("Open", abbrev);
+#ifdef NEWLOG
+    LOGF_DEBUG("CALLING XrdPosixXrootd::Open(path =%1%, oflag =%2%)" % path % oflag);
+#else
     LOGGER_DBG << "CALLING XrdPosixXrootd::Open(path =" << path << ", oflag ="
                << oflag << ")" << std::endl;
+#endif
     int res = XrdPosixXrootd::Open(path,oflag);
+#ifdef NEWLOG
+    LOGF_DEBUG("XrdPosixXrootd::Open() returned %1%" % res);
+#else
     LOGGER_DBG << "XrdPosixXrootd::Open() returned " << res << std::endl;
+#endif
     QSM_TIMESTOP("Open", abbrev);
     return res;
 }
@@ -223,7 +270,11 @@ int xrdOpenAsync(const char* path, int oflag, XrdPosixCallBack *cbP) {
     while((abbrev[0] != '\0') && *abbrev++ != '/');
     while((abbrev[0] != '\0') && *abbrev++ != '/');
     QSM_TIMESTART("OpenAsy", abbrev);
+#ifdef NEWLOG
+    LOGF_DEBUG("CALLING XrdPosixXrootd::Open()");
+#else
     LOGGER_DBG << "CALLING XrdPosixXrootd::Open()" << std::endl;
+#endif
     int res = XrdPosixXrootd::Open(path, oflag, 0, cbP);
     // not sure what to do with mode, so set to 0 right now.
     QSM_TIMESTOP("OpenAsy", abbrev);
@@ -232,11 +283,19 @@ int xrdOpenAsync(const char* path, int oflag, XrdPosixCallBack *cbP) {
 }
 
 long long xrdRead(int fildes, void *buf, unsigned long long nbyte) {
+#ifdef NEWLOG
+    LOGF_DEBUG("xrd trying to read (%1%) nbyte %2% bytes" % fildes % nbyte);
+#else
     LOGGER_DBG << "xrd trying to read (" <<  fildes << ") "
                << nbyte << " bytes" << std::endl;
+#endif
     QSM_TIMESTART("Read", fildes);
     long long readCount;
+#ifdef NEWLOG
+    LOGF_DEBUG("CALLING XrdPosixXrootd::Read()");
+#else
     LOGGER_DBG << "CALLING XrdPosixXrootd::Read()" << std::endl;
+#endif
     readCount = XrdPosixXrootd::Read(fildes, buf, nbyte);
     QSM_TIMESTOP("Read", fildes);
 
@@ -244,7 +303,11 @@ long long xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     /*************************************************
      * TEST FAILURE MODE: Reading query result fails.
      * ***********************************************/
+#ifdef NEWLOG
+    LOGF_WARN("SABOTAGING XRD READ!!!!");
+#else
     LOGGER_WRN << "SABOTAGING XRD READ!!!!" << std::endl;
+#endif
     readCount = -1;
     /*************************************************/
 #endif
@@ -253,10 +316,19 @@ long long xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     /*************************************************
      * TEST FAILURE MODE: Fuzz testing - simulate incomplete results.
      * ***********************************************/
+#ifdef NEWLOG
+    LOGF_WARN("SABOTAGING XRD READ!!!!");
+    LOGF_WARN("XrdPosixXrootd::Read() returned: %1%" % readCount);
+#else
     LOGGER_WRN << "SABOTAGING XRD READ!!!!" << std::endl;
     LOGGER_WRN << "XrdPosixXrootd::Read() returned: " << readCount << std::endl;
+#endif
     readCount = rand()%readCount;
+#ifdef NEWLOG
+    LOGF_WARN("Set readCount = %1%" % readCount);
+#else
     LOGGER_WRN << "Set readCount = " << readCount << std::endl;
+#endif
     /*************************************************/
 #endif
 
@@ -264,8 +336,13 @@ long long xrdRead(int fildes, void *buf, unsigned long long nbyte) {
     /*************************************************
      * TEST FAILURE MODE: Fuzz testing - simulate corrupted byte.
      * ***********************************************/
+#ifdef NEWLOG
+    LOGF_WARN("SABOTAGING XRD READ!!!!");
+    LOGF_WARN("XrdPosixXrootd::Read() returned: %1%" % readCount);
+#else
     LOGGER_WRN << "SABOTAGING XRD READ!!!!" << std::endl;
     LOGGER_WRN << "XrdPosixXrootd::Read() returned: " << readCount << std::endl;
+#endif
     int position = rand()%readCount;
     char value = (char)(rand()%256);
     *((char *)buf + position) = value;
@@ -278,10 +355,18 @@ long long xrdRead(int fildes, void *buf, unsigned long long nbyte) {
      * ***********************************************/
     int coinToss = rand()%10;
     if (coinToss == 0) {
+#ifdef NEWLOG
+        LOGF_WARN("YOU ARE UNLUCKY, SABOTAGING XRD READ!!!!");
+#else
         LOGGER_WRN << "YOU ARE UNLUCKY, SABOTAGING XRD READ!!!!" << std::endl;
+#endif
         readCount = -1;
     } else {
+#ifdef NEWLOG
+        LOGF_WARN("YOU DODGED A BULLET, NO SABOTAGE THIS TIME!!");
+#else
         LOGGER_WRN << "YOU DODGED A BULLET, NO SABOTAGE THIS TIME!!" << std::endl;
+#endif
     }
     /*************************************************/
 #endif
@@ -298,10 +383,18 @@ long long xrdWrite(int fildes, const void *buf,
                    unsigned long long nbyte) {
     std::string s;
     s.assign(static_cast<const char*>(buf), nbyte);
+#ifdef NEWLOG
+    LOGF_DEBUG("xrd write (%1%) ) \"%2%\"" % fildes % s);
+#else
     LOGGER_DBG << "xrd write (" <<  fildes << ") \""
                << s << "\"" << std::endl;
+#endif
     QSM_TIMESTART("Write", fildes);
+#ifdef NEWLOG
+    LOGF_DEBUG("CALLING XrdPosixXrootd::Write()");
+#else
     LOGGER_DBG << "CALLING XrdPosixXrootd::Write()" << std::endl;
+#endif
     long long res = XrdPosixXrootd::Write(fildes, buf, nbyte);
     QSM_TIMESTOP("Write", fildes);
 
@@ -309,7 +402,11 @@ long long xrdWrite(int fildes, const void *buf,
     /*************************************************
      * TEST FAILURE MODE: Writing query result fails.
      * ***********************************************/
+#ifdef NEWLOG
+    LOGF_WARN("SABOTAGING XRD WRITE!!!!");
+#else
     LOGGER_WRN << "SABOTAGING XRD WRITE!!!!" << std::endl;
+#endif
     res = -1;
     /*************************************************/
 #endif
@@ -324,14 +421,22 @@ long long xrdWrite(int fildes, const void *buf,
 
 int xrdClose(int fildes) {
     QSM_TIMESTART("Close", fildes);
+#ifdef NEWLOG
+    LOGF_DEBUG("CALLING XrdPosixXrootd::Close()");
+#else
     LOGGER_DBG << "CALLING XrdPosixXrootd::Close()" << std::endl;
+#endif
     int result = XrdPosixXrootd::Close(fildes);
     QSM_TIMESTOP("Close", fildes);
     return result;
 }
 
 long long xrdLseekSet(int fildes, unsigned long long offset) {
+#ifdef NEWLOG
+    LOGF_DEBUG("CALLING XrdPosixXrootd::Lseek()");
+#else
     LOGGER_DBG << "CALLING XrdPosixXrootd::Lseek()" << std::endl;
+#endif
     return XrdPosixXrootd::Lseek(fildes, offset, SEEK_SET);
 }
 
@@ -345,7 +450,11 @@ std::string xrdGetEndpoint(int fildes) {
     // "the max you will ever need is 264 bytes"
     const int maxSize=265;
     char buffer[maxSize];
+#ifdef NEWLOG
+    LOGF_DEBUG("CALLING XrdPosixXrootd::endPoint()");
+#else
     LOGGER_DBG << "CALLING XrdPosixXrootd::endPoint()" << std::endl;
+#endif
     int port = XrdPosixXrootd::endPoint(fildes, buffer, maxSize);
     if(port > 0) { // valid port?
         return std::string(buffer);
@@ -391,7 +500,11 @@ void xrdReadToLocalFile(int fildes, int fragmentSize,
                              S_IRUSR|S_IWUSR);
     if(localFileDesc == -1) {
         while(errno == -EMFILE) {
+#ifdef NEWLOG
+            LOGF_WARN("EMFILE while trying to write locally.");
+#else
             LOGGER_WRN << "EMFILE while trying to write locally." << std::endl;
+#endif
             sleep(1);
             localFileDesc = open(filename,
                                  O_CREAT|O_WRONLY|O_TRUNC,
@@ -432,8 +545,12 @@ void xrdReadToLocalFile(int fildes, int fragmentSize,
     if(localFileDesc != -1) {
         int res = close(localFileDesc);
         if((res == -1) && (writeRes >= 0)) {
+#ifdef NEWLOG
+            LOGF_ERROR("Bad local close for descriptor %1%" % localFileDesc);
+#else
             LOGGER_ERR << "Bad local close for descriptor " << localFileDesc
                        << std::endl;
+#endif
             writeRes = -errno;
         } else {
             writeRes = bytesWritten; // Update successful result.

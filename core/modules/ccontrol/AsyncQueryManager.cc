@@ -306,7 +306,11 @@ void AsyncQueryManager::joinEverything() {
     int count;
     int moreDetailThreshold = 5;
     int complainCount = 0;
+#ifdef NEWLOG
+    // LOGGING FIXME
+#else
     _printState(LOG_STRM(Debug));
+#endif
     while(!_queries.empty()) {
         count = _queries.size();
         if(count != lastCount) {
@@ -318,7 +322,11 @@ void AsyncQueryManager::joinEverything() {
             count = lastCount;
             ++complainCount;
             if(complainCount > moreDetailThreshold) {
+#ifdef NEWLOG
+                // LOGGING FIXME
+#else
                 _printState(LOG_STRM(Warning));
+#endif
                 complainCount = 0;
             }
         }

@@ -445,7 +445,11 @@ bool
 Facade::_containsTable(string const& dbName, string const& tableName) const {
     string p = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName;
     bool ret = _kvI->exists(p);
+#ifdef NEWLOG
+    LOGF_INFO("*** containsTable returns: %1%" % ret)
+#else
     LOGGER_INF << "*** containsTable returns: " << ret << endl;
+#endif
     return ret;
 }
 

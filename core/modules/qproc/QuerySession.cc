@@ -64,8 +64,12 @@ namespace qserv {
 namespace qproc {
 
 void printConstraints(query::ConstraintVector const& cv) {
+#ifdef NEWLOG
+    // LOGGING FIXME
+#else
     std::copy(cv.begin(), cv.end(),
               std::ostream_iterator<query::Constraint>(LOG_STRM(Info), ","));
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -348,8 +352,12 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
 #else
         LOGGER_DBG << "QuerySession::_buildChunkQueries() : subchunks :";
 #endif
+#ifdef NEWLOG
+        // LOGGING FIXME
+#else
         std::copy(sList.begin(), sList.end(),
-                  std::ostream_iterator<ChunkSpecSingle>(LOG_STRM(Debug), ",")); // FIXME
+                  std::ostream_iterator<ChunkSpecSingle>(LOG_STRM(Debug), ","));
+#endif
 #ifdef NEWLOG
 #else
         LOGGER_DBG << std::endl;

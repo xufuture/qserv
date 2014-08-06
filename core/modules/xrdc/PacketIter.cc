@@ -77,8 +77,12 @@ PacketIter::~PacketIter() {
 }
 
 bool PacketIter::incrementExtend() {
+#ifdef NEWLOG
+    LOGF_DEBUG("packetiter Realloc to %1%" % (_current.second + _fragSize));
+#else
     LOGGER_DBG << "packetiter Realloc to "
                << _current.second + _fragSize << std::endl;
+#endif
     void* ptr = ::realloc(_current.first, _current.second + _fragSize);
     if(!ptr) {
         errno = ENOMEM;

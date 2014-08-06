@@ -165,7 +165,11 @@ public:
     FromWhereH() {}
     virtual ~FromWhereH() {}
     virtual void operator()(antlr::RefAST fw) {
+#ifdef NEWLOG
+        // LOGGING FIXME
+#else
         printDigraph("fromwhere", LOG_STRM(Info), fw);
+#endif
     }
 };
 ////////////////////////////////////////////////////////////////////////
@@ -248,8 +252,12 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     // #endif
     // }
     std::copy(pg.begin(), pg.end(), std::back_inserter(params));
+#ifdef NEWLOG
+    // LOGGING FIXME
+#else
     std::copy(params.begin(), params.end(),
               std::ostream_iterator<std::string>(LOG_STRM(Info),", "));
+#endif
     if(!_clause->_restrs) {
         throw std::logic_error("Invalid WhereClause._restrs");
     }

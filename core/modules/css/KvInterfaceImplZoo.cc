@@ -195,7 +195,11 @@ KvInterfaceImplZoo::get(string const& key, string const& defaultValue) {
 
 vector<string>
 KvInterfaceImplZoo::getChildren(string const& key) {
+#ifdef NEWLOG
+    LOGF_INFO("*** KvInterfaceImplZoo::getChildren(), key: %1%" % key);
+#else
     LOGGER_INF << "*** KvInterfaceImplZoo::getChildren(), key: " << key << endl;
+#endif
     struct String_vector strings;
     memset(&strings, 0, sizeof(strings));
     int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
@@ -217,7 +221,11 @@ KvInterfaceImplZoo::getChildren(string const& key) {
     try {
         int i;
         for (i=0 ; i<strings.count ; i++) {
+#ifdef NEWLOG
+            LOGF_INFO("   %1%: %2%" % (i+1) % strings.data[i]);
+#else
             LOGGER_INF << "   " << i+1 << ": " << strings.data[i] << endl;
+#endif
             v.push_back(strings.data[i]);
         }
         deallocate_String_vector(&strings);

@@ -131,7 +131,7 @@ KvInterfaceImplMem::exists(string const& key) {
     bool ret = _kvMap.find(key) != _kvMap.end();
 #ifdef NEWLOG
     LOGF_INFO("*** KvInterfaceImplMem::exists(%1%): %2%" 
-              % key % (ret?"YES":"NO");
+              % key % (ret?"YES":"NO"));
 #else
     LOGGER_INF << "*** KvInterfaceImplMem::exists(), key: " << key
                << ": " << ret << endl;
