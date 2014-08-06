@@ -39,7 +39,10 @@
 namespace lsst {
 namespace qserv {
 namespace ccontrol {
-int const ResultReceiver_bufferSize = 128*1024;
+// Buffer needs to be big enough to hold largest (in bytes) sql statement from
+// worker mysqldump. 128kB not enough. Probably want as big as
+// max_allowed_packet on mysqld/mysqlclient
+int const ResultReceiver_bufferSize = 2*1024*1024; // 2 megabytes.
 
 ResultReceiver::ResultReceiver(boost::shared_ptr<rproc::TableMerger> merger,
                                std::string const& tableName)
@@ -124,6 +127,9 @@ bool ResultReceiver::_appendAndMergeBuffer(int bLen) {
         return true;
     } else if(mergeSize == 0) {
             LOGGER_ERR << "No merge in input. Receive buffer too small? "
+                       << "Tried to merge " << inputSize
+                       << " bytes, fresh=" << bLen
+                       << " actualsize=" << _actualSize
                        << std::endl;
         return false;
     } else {
