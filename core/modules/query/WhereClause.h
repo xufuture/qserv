@@ -70,9 +70,8 @@ public:
     boost::shared_ptr<QsRestrictor::List const> getRestrs() const {
         return _restrs;
     }
-    boost::shared_ptr<BoolTerm const> getRootTerm() const {
-        return _tree;
-    }
+    boost::shared_ptr<BoolTerm const> getRootTerm() const { return _tree; }
+    boost::shared_ptr<BoolTerm> getRootTerm() { return _tree; }
     boost::shared_ptr<ColumnRef::List const> getColumnRefs() const;
     boost::shared_ptr<AndTerm> getRootAndTerm();
 
