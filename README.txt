@@ -1,9 +1,22 @@
-Qserv official documentation is located here :
+Qserv documentation
+*******************
 
-If you need to generate the documentation for current Qserv version please install python-sphinx package 
-and then run commands below in current directory :
+Previous releases
+=================
 
-  cd doc
-  make html
+See http://lsst-web.ncsa.illinois.edu/~fjammes/qserv-doc/
 
-Documentation will be then available in doc/build/html/index.html
+Current version
+===============
+
+You can generate the documentation for this Qserv development version following next procedure : 
+
+- install "python-sphinx" package (run "easy_install -U sphinx" to get sphinx last version)
+- run "scons doc"
+- full documentation will be then available in doc/build/
+- quick-start-devel.txt contains information on how to install this Qserv
+  version in the eups stack. RECOMMENDED FOR DEVELOPPERS.
+- quick-start.txt will contains information on how to install last Qserv release,
+  this is unstable as the release which is compliant with this Qserv version
+  may not have been packaged yet.
+
