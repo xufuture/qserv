@@ -491,7 +491,7 @@ Facade::_tableIsSubChunked(string const& dbName,
     string retS = _kvI->get(p, "0");
     bool retV = (retS == "1");
 #ifdef NEWLOG
-    LOGF_INFO("*** %1%.%2% %3 chunked."
+    LOGF_INFO("*** %1%.%2% %3 subChunked."
               % dbName % tableName % (retV?"is":"is NOT"));
 #else
     LOGGER_INF << "*** " << dbName << "." << tableName << " "

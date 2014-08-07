@@ -79,7 +79,7 @@ shProducts = { "xrdfs" : {'mods' : """proto xrdfs
                                          sql util xrdc
                                          obsolete proto
                                          qana qdisp qproc""".split(),
-                             'libs' : """ssl crypto antlr
+                             'libs' : """ssl crypto antlr log
                                       mysqlclient_r protobuf
                                       XrdPosix XrdPosixPreload XrdUtils
                                       boost_regex boost_thread boost_system

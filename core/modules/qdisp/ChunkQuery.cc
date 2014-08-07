@@ -73,8 +73,7 @@ namespace {
                 std::string const& comment,
                 std::string const& comment2) {
 #ifdef NEWLOG
-        LOGF_INFO("Close (%1%) of %2% %3%" % desc
-                  % boost::lexical_cast<std::string>(fd) % comment);
+        LOGF_INFO("Close (%1%) of %2% %3%" % desc % fd % comment);
 #else
         LOGGER_INF << (std::string() + "Close (" + desc + ") of "
                       + boost::lexical_cast<std::string>(fd)  + " "
@@ -372,8 +371,8 @@ void ChunkQuery::run() {
     if(result != -EINPROGRESS) {
         // don't continue, set result with the error.
 #ifdef NEWLOG
-        LOGF_ERROR("Not EINPROGRESS (%1), should not continue with %2%"
-                   % result, _spec.path);
+        LOGF_ERROR("Not EINPROGRESS (%1%), should not continue with %2%"
+                   % result % _spec.path);
 #else
         LOGGER_ERR << "Not EINPROGRESS (" << result
                    << "), should not continue with "

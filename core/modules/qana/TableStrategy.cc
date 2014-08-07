@@ -351,7 +351,7 @@ boost::shared_ptr<qana::QueryMapping> TableStrategy::exportMapping() {
     boost::shared_ptr<qana::QueryMapping> qm(new qana::QueryMapping());
 
 #ifdef NEWLOG
-    LOGF_DEBUG("%1%: _impl->chunkLevel %2%" % __FILE__ % _impl->chunkLevel);
+    LOGF_DEBUG("_impl->chunkLevel %1%" % _impl->chunkLevel);
 #else
     LOGGER_DBG << __FILE__ ": _impl->chunkLevel : "
                << _impl->chunkLevel << std::endl;
@@ -361,7 +361,7 @@ boost::shared_ptr<qana::QueryMapping> TableStrategy::exportMapping() {
         break;
     case 1:
 #ifdef NEWLOG
-        LOGF_DEBUG("%1% : calling addChunkMap()" % __FILE__);
+        LOGF_DEBUG("calling addChunkMap()");
 #else
         LOGGER_DBG << __FILE__ ": calling  addChunkMap()"
                    << std::endl;
@@ -370,7 +370,7 @@ boost::shared_ptr<qana::QueryMapping> TableStrategy::exportMapping() {
         break;
     case 2:
 #ifdef NEWLOG
-        LOGF_DEBUG("%1%: calling addSubChunkMap()");
+        LOGF_DEBUG("calling addSubChunkMap()");
 #else
         LOGGER_DBG << __FILE__": calling  addSubChunkMap()"
                    << std::endl;

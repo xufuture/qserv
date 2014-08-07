@@ -38,6 +38,7 @@
 
 // System headers
 #include <iostream>
+#include <strstream>
 
 // Third-party headers
 #include "boost/date_time/posix_time/posix_time_types.hpp"
@@ -307,7 +308,11 @@ void AsyncQueryManager::joinEverything() {
     int moreDetailThreshold = 5;
     int complainCount = 0;
 #ifdef NEWLOG
-    // LOGGING FIXME
+    if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_DEBUG)) {
+        std::strstream ss;
+        _printState(ss);
+        LOGF_INFO(ss.str());
+    }
 #else
     _printState(LOG_STRM(Debug));
 #endif
@@ -323,7 +328,11 @@ void AsyncQueryManager::joinEverything() {
             ++complainCount;
             if(complainCount > moreDetailThreshold) {
 #ifdef NEWLOG
-                // LOGGING FIXME
+                if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_WARN)) {
+                    std::strstream ss;
+                    _printState(ss);
+                    LOGF_INFO(ss.str());
+                }
 #else
                 _printState(LOG_STRM(Warning));
 #endif

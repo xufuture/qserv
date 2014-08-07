@@ -174,14 +174,13 @@ namespace {
 }
 
 
-// LOGGING FIXME
 #ifdef NEWLOG
 #define LOGHACK1 LOGF_INFO(" %1% %2% in flight" % name % extra);
 #define LOGHACK2 LOGF_INFO(" %1% s) %2% %3% finished" % t.getElapsed() % name % extra);
 #else
 #define LOGHACK1 LOGGER_INF << ' ' << name << ' ' << extra << " in flight\n";
 #define LOGHACK2 LOGGER_INF << " (" << t.getElapsed() << " s) " \
-               << name << ' ' << extra << " finished\n";
+                            << name << ' ' << extra << " finished\n";
 #endif
 
 

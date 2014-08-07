@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
+#include <strstream>
 
 // Third-party headers
 #include <antlr/NoViableAltException.hpp>
@@ -65,7 +66,12 @@ namespace qproc {
 
 void printConstraints(query::ConstraintVector const& cv) {
 #ifdef NEWLOG
-    // LOGGING FIXME
+    if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
+        std::strstream ss;
+        std::copy(cv.begin(), cv.end(),
+                  std::ostream_iterator<query::Constraint>(ss, ","));
+        LOGF_INFO(ss.str());
+    }
 #else
     std::copy(cv.begin(), cv.end(),
               std::ostream_iterator<query::Constraint>(LOG_STRM(Info), ","));
@@ -353,7 +359,12 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
         LOGGER_DBG << "QuerySession::_buildChunkQueries() : subchunks :";
 #endif
 #ifdef NEWLOG
-        // LOGGING FIXME
+        if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
+            std::strstream ss;
+            std::copy(sList.begin(), sList.end(),
+                      std::ostream_iterator<ChunkSpecSingle>(ss, ","));
+            LOGF_INFO(ss.str());
+        }
 #else
         std::copy(sList.begin(), sList.end(),
                   std::ostream_iterator<ChunkSpecSingle>(LOG_STRM(Debug), ","));

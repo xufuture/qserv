@@ -34,7 +34,8 @@
 #include "parser/WhereFactory.h"
 
 // System headers
-#include<iterator>
+#include <iterator>
+#include <strstream>
 
 // Local headers
 #include "log/Logger.h"
@@ -166,7 +167,11 @@ public:
     virtual ~FromWhereH() {}
     virtual void operator()(antlr::RefAST fw) {
 #ifdef NEWLOG
-        // LOGGING FIXME
+        if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
+            std::strstream ss;
+            printDigraph("fromwhere", ss, fw);
+            LOGF_INFO("fromwhere %1%" % ss.str());
+        }
 #else
         printDigraph("fromwhere", LOG_STRM(Info), fw);
 #endif
@@ -253,7 +258,12 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     // }
     std::copy(pg.begin(), pg.end(), std::back_inserter(params));
 #ifdef NEWLOG
-    // LOGGING FIXME
+    if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
+        std::strstream ss;
+        std::copy(params.begin(), params.end(),
+                  std::ostream_iterator<std::string>(ss, ", "));
+        LOGF_INFO(ss.str());
+    }
 #else
     std::copy(params.begin(), params.end(),
               std::ostream_iterator<std::string>(LOG_STRM(Info),", "));

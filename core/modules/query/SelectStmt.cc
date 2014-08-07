@@ -196,7 +196,12 @@ inline OS& generate(OS& os, char const label[], boost::shared_ptr<T> t) {
 void SelectStmt::_print() {
     //_selectList->getColumnRefList()->printRefs();
 #ifdef NEWLOG
-    // LOGGING FIXME
+    LOGF_INFO("from %1%" % _fromList);
+    LOGF_INFO("select %1%" % _selectList);
+    LOGF_INFO("where %1%" % _whereClause);
+    LOGF_INFO("groupby %1%" % _groupBy);
+    LOGF_INFO("having %1%" % _having);
+    LOGF_INFO("orderby %1%" % _orderBy);
 #else
     print(LOG_STRM(Info), "from", _fromList);
     print(LOG_STRM(Info), "select", _selectList);
@@ -207,7 +212,7 @@ void SelectStmt::_print() {
 #endif
     if(_limit != -1) {
 #ifdef NEWLOG
-        LOGF_INFO(" LIMIT");
+        LOGF_INFO(" LIMIT %1%" % _limit);
 #else
         LOGGER_INF << " LIMIT " << _limit;
 #endif
