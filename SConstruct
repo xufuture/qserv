@@ -13,7 +13,8 @@ from SCons.Script import Mkdir, Chmod, Copy, WhereIs
 import shutil
 import state
 
-state.init()
+src_dir = Dir('.').srcnode().abspath
+state.init(src_dir)
 env = state.env
 
 #########################
@@ -45,7 +46,7 @@ env.Alias("install",
 # Build documentation 
 #
 ################################
-doc = env.Command("build-doc", [], "cd doc && make html")
+doc = env.Command("build-doc", [], "cd doc && PATH={0} bash build.sh".format(os.getenv("PATH")))
 env.Alias("doc", doc)
 
 # documentation generation must be possible even if build
@@ -59,8 +60,7 @@ else:
 # Init build environment 
 #
 ################################
-    src_dir = Dir('.').srcnode().abspath
-    state.initBuild(src_dir)
+    state.initBuild()
 
 ################################
 #
