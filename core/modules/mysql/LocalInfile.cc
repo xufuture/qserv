@@ -33,7 +33,7 @@
 
 // Qserv headers
 #include "mysql/RowBuffer.h"
-      
+
 namespace lsst {
 namespace qserv {
 namespace mysql {
@@ -42,9 +42,9 @@ namespace mysql {
 // LocalInfile implementation
 ////////////////////////////////////////////////////////////////////////
 int const infileBufferSize = 1024*1024; // 1M buffer
+
 LocalInfile::LocalInfile(char const* filename, MYSQL_RES* result)
-    : _filename(filename),
-      _result(result) {
+    : _filename(filename) {
     // Should have buffer >= sizeof(single row)
     const int defaultBuffer = infileBufferSize;
     _buffer = new char[defaultBuffer];
@@ -53,6 +53,19 @@ LocalInfile::LocalInfile(char const* filename, MYSQL_RES* result)
     _leftoverSize = 0;
     assert(result);
     _rowBuffer = RowBuffer::newResRowBuffer(result);
+}
+
+LocalInfile::LocalInfile(char const* filename,
+                         boost::shared_ptr<RowBuffer> rowBuffer)
+    : _filename(filename),
+      _rowBuffer(rowBuffer) {
+    // Should have buffer >= sizeof(single row)
+    const int defaultBuffer = infileBufferSize;
+    _buffer = new char[defaultBuffer];
+    _bufferSize = defaultBuffer;
+    _leftover = 0;
+    _leftoverSize = 0;
+    assert(_rowBuffer);
 }
 
 LocalInfile::~LocalInfile() {
@@ -118,12 +131,18 @@ void LocalInfile::Mgr::detachReset(MYSQL* mysql) {
 }
 
 void LocalInfile::Mgr::prepareSrc(std::string const& filename, MYSQL_RES* result) {
-    _map[filename] = result;
+    _map[filename] = RowBuffer::newResRowBuffer(result);
 }
 
 std::string LocalInfile::Mgr::prepareSrc(MYSQL_RES* result) {
     std::string f = _nextFilename();
-    _map[f] = result;
+    _map[f] = RowBuffer::newResRowBuffer(result);
+    return f;
+}
+
+std::string LocalInfile::Mgr::prepareSrc(boost::shared_ptr<RowBuffer> rowBuffer) {
+    std::string f = _nextFilename();
+    _map[f] = rowBuffer;
     return f;
 }
 
@@ -133,9 +152,9 @@ int LocalInfile::Mgr::local_infile_init(void **ptr, const char *filename, void *
     assert(userdata);
     //cout << "New infile:" << filename << "\n";
     LocalInfile::Mgr* m = static_cast<LocalInfile::Mgr*>(userdata);
-    MYSQL_RES* r = m->get(std::string(filename));
-    assert(r);
-    LocalInfile* lf = new LocalInfile(filename, r);
+    boost::shared_ptr<RowBuffer> rb= m->get(std::string(filename));
+    assert(rb);
+    LocalInfile* lf = new LocalInfile(filename, rb);
     *ptr = lf;
     if(!lf->isValid()) {
         return 1;
@@ -161,4 +180,3 @@ int LocalInfile::Mgr::local_infile_error(void *ptr,
 }
 
 }}} // namespace lsst::qserv::mysql
-
