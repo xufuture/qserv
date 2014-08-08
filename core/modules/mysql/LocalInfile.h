@@ -47,20 +47,20 @@ public:
     class Mgr; // Helper for attaching to MYSQL*
 
     LocalInfile(char const* filename, MYSQL_RES* result);
+    LocalInfile(char const* filename, boost::shared_ptr<RowBuffer> rowBuffer);
     ~LocalInfile();
     int read(char* buf, unsigned int bufLen);
     int getError(char* buf, unsigned int bufLen);
-    inline bool isValid() const { return _result; }
+    inline bool isValid() const { return _rowBuffer; }
 
 private:
     char* _buffer;
     int _bufferSize;
     char* _leftover;
     unsigned _leftoverSize;
+    std::string _filename;
     boost::shared_ptr<RowBuffer> _rowBuffer;
 
-    std::string _filename;
-    MYSQL_RES* _result;
 };
 
 /// Do not inherit. Used in mysql_set_local_infile_handler
@@ -98,15 +98,15 @@ private:
         return os.str();
     }
 
-    inline MYSQL_RES* get(std::string const& s) {
-        ResMap::iterator i = _map.find(s);
-        if(i == _map.end()) { return 0; }
+    inline boost::shared_ptr<RowBuffer> get(std::string const& s) {
+        RowBufferMap::iterator i = _map.find(s);
+        if(i == _map.end()) { return boost::shared_ptr<RowBuffer>(); }
         return i->second;
     }
 
     int _seq;
-    typedef std::map<std::string, MYSQL_RES*> ResMap;
-    ResMap _map;
+    typedef std::map<std::string, boost::shared_ptr<RowBuffer> > RowBufferMap;
+    RowBufferMap _map;
 };
 
 }}} // namespace lsst::qserv::mysql
