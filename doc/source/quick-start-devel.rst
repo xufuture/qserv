@@ -1,8 +1,8 @@
 .. _quick-start-devel:
 
-#################################
-Quick start guide for developpers
-#################################
+################################
+Quick start guide for developers
+################################
 
 ***********************************
 Setup current Qserv version in eups
@@ -27,7 +27,7 @@ Once Qserv is installed (see :ref:`quick-start`), please use next commands in or
    eups list qserv
    setup qserv $VERSION
 
-Then re-run configuration and test process, as described in README.txt.
+Then re-run configuration and test process, as described in :ref:`quick-start`.
 
 *******************
 Updating test cases
