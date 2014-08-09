@@ -467,7 +467,7 @@ Facade::_tableIsChunked(string const& dbName, string const& tableName) const{
                tableName + "/partitioning";
     bool ret = _kvI->exists(p);
 #ifdef NEWLOG
-    LOGF_INFO("*** %1%.%2% %3 chunked." % dbName % tableName % (ret?"is":"is NOT"));
+    LOGF_INFO("*** %1%.%2% %3% chunked." % dbName % tableName % (ret?"is":"is NOT"));
 #else
     LOGGER_INF << "*** " << dbName << "." << tableName << " "
                << (ret?"is":"is NOT") << " chunked." << endl;
@@ -491,7 +491,7 @@ Facade::_tableIsSubChunked(string const& dbName,
     string retS = _kvI->get(p, "0");
     bool retV = (retS == "1");
 #ifdef NEWLOG
-    LOGF_INFO("*** %1%.%2% %3 subChunked."
+    LOGF_INFO("*** %1%.%2% %3% subChunked."
               % dbName % tableName % (retV?"is":"is NOT"));
 #else
     LOGGER_INF << "*** " << dbName << "." << tableName << " "

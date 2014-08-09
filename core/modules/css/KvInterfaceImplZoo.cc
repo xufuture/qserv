@@ -135,6 +135,9 @@ KvInterfaceImplZoo::exists(string const& key) {
 #endif
         return false;
     }
+#ifdef NEWLOG
+    LOGF_ERROR("got error from zookeeper: %1%" % rc);
+#endif
     _throwZooFailure(rc, "exists", key);
     return false;
 }
