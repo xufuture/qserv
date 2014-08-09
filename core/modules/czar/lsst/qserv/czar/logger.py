@@ -25,15 +25,17 @@
 # logger.py : A module with a logging interface that utilizes SWIG
 # enabled Logger class.
 
-# Package imports
-from lsst.qserv.czar import logger_threshold
-from lsst.qserv.czar import logger
-
-# Import new logging module
-import lsst.log as newlog
-
 # Toggles new, log4cxx-based logging on/off for Qserv's Python-layer
 NEWLOG = True
+
+# Package imports
+if NEWLOG:
+    # Import new logging module
+    import lsst.log as newlog
+else:
+    from lsst.qserv.czar import logger_threshold
+    from lsst.qserv.czar import logger
+
 
 def threshold_dbg():
     if NEWLOG:
