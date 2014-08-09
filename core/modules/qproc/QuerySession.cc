@@ -144,7 +144,6 @@ boost::shared_ptr<query::ConstraintVector> QuerySession::getConstraints() const 
     } else {
         //LOGGER_INF << "No constraints." << std::endl;
     }
-    // No constraint vector
     return cv;
 }
 

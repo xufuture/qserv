@@ -423,7 +423,7 @@ class InbandQueryAction:
             self._prepareMerger()
         else: ## self.mode == "new"
             factory = UserQueryFactory(cfg)
-            print "Setting sessionId"
+            logger.dbg("Setting sessionId")
             self.sessionId = factory.newUserQuery(self.queryStr,
                                                   self._resultName)
             errorMsg = UserQuery_getError(self.sessionId)
@@ -549,6 +549,8 @@ class InbandQueryAction:
         if not self._emptyChunks:
             raise DataError("No empty chunks for db")
 
+        ## UserQuery rejects non-dummy chunks when chunking is not needed
+        ## on partitioned tables.
         debugLimit=2
         current=[]
         for chunkSpec in self._generateChunkSpec(self._intersectIter):
