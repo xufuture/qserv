@@ -51,8 +51,6 @@ void appendColumnRefs(string const& column,
         return;
     }
     string const _;
-    // Note: basic exception safety is provided so long as no vector
-    // reallocation is necessary.
     refs.push_back(make_shared<ColumnRef>(_, _, column));
     if (!tableAlias.empty()) {
         // If a table alias has been introduced, then it is an error to
@@ -67,6 +65,10 @@ void appendColumnRefs(string const& column,
 }
 
 } // unnamed namespace
+
+
+string const TableInfo::CHUNK_TAG("%CC%");
+string const TableInfo::SUBCHUNK_TAG("%SS%");
 
 vector<ColumnRefConstPtr> const DirTableInfo::makeColumnRefs(
     string const& tableAlias) const

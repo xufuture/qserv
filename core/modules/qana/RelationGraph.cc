@@ -21,7 +21,7 @@
  */
 
 /// \file
-/// \brief Implementation of query validation/rewriting.
+/// \brief Implementation of parallel query validation/rewriting.
 
 #include "RelationGraph.h"
 
@@ -685,7 +685,8 @@ void RelationGraph::_join(JoinRef::Type joinType,
 /// table reference.
 RelationGraph::RelationGraph(TableRef& tr,
                              TableInfo const* info,
-                             double overlap)
+                             double overlap) :
+    _query(0)
 {
     typedef vector<ColumnRefConstPtr>::const_iterator Iter;
 
@@ -729,7 +730,8 @@ RelationGraph::RelationGraph(TableRef& tr,
 RelationGraph::RelationGraph(QueryContext const& ctx,
                              TableRef::Ptr const& tr,
                              double overlap,
-                             TableInfoPool& pool)
+                             TableInfoPool& pool) :
+    _query(0)
 {
     if (!tr) {
         throw logic_error("Parser/query analysis bug: NULL TableRef pointer "
@@ -852,6 +854,7 @@ void resetVertices(list<Vertex>& vertices)
 
 } // unnamed namespace
 
+
 /// `_validate` searches for a graph traversal that proves the input query
 /// is evaluable.
 bool RelationGraph::_validate(double overlap)
@@ -876,7 +879,8 @@ bool RelationGraph::_validate(double overlap)
 
 RelationGraph::RelationGraph(QueryContext const& ctx,
                              SelectStmt& stmt,
-                             TableInfoPool& pool)
+                             TableInfoPool& pool) :
+    _query(&stmt)
 {
     // Check that at least one thing is being selected.
     if (!stmt.getSelectList().getValueExprList() ||
@@ -908,9 +912,93 @@ RelationGraph::RelationGraph(QueryContext const& ctx,
     }
     if (!_validate(overlap)) {
         throw QueryNotEvaluableError(
-            "Query cannot be evaluated using worker-local data");
+            "Query involves partitioned table joins that Qserv does not "
+            "know how to evaluate using only partition-local data");
     }
     swap(g);
+}
+
+void RelationGraph::rewrite(SelectStmtList& outputs,
+                            QueryMapping& mapping)
+{
+    typedef list<Vertex>::iterator ListIter;
+    typedef vector<Vertex*>::iterator VecIter;
+
+    if (!_query) {
+        return;
+    }
+    if (empty()) {
+        // The input query only involves replicated tables -
+        // there is nothing to do.
+        outputs.push_back(_query->clone());
+        return;
+    }
+    mapping.insertChunkEntry(TableInfo::CHUNK_TAG);
+    // Find directors for which overlap is required. At the same time, rewrite
+    // all table references as their corresponding chunk templates.
+    vector<Vertex*> overlapRefs;
+    for (ListIter i = _vertices.begin(), e = _vertices.end(); i != e; ++i) {
+        i->rewriteAsChunkTemplate();
+        if (i->overlap > 0.0) {
+            overlapRefs.push_back(&(*i));
+        }
+    }
+    if (overlapRefs.empty()) {
+        // There is no need for sub-chunking, so leave it off for now.
+        //
+        // Note though that it is not clear that leaving it turned off is
+        // better (faster), especially since another query participating in a
+        // shared scan over a particular director might require overlap,
+        // meaning that creating/loading sub-chunk tables is essentially free.
+        //
+        // Also, if the graph contains a spatial edge that is a bridge (which
+        // would have to have an angular separation threshold of zero) then this
+        // strategy can require the evaluation of full chunk-chunk table cross
+        // products. Though zero-distance near neighbor queries don't seem to be
+        // of much use in practice, they are a vector for DOS attacks, so
+        // perhaps we should reconsider.
+        outputs.push_back(_query->clone());
+        return;
+    }
+    if (overlapRefs.size() > MAX_TABLE_REFS_WITH_OVERLAP) {
+        throw QueryNotEvaluableError("Query contains too many table "
+                                     "references that require overlap");
+    }
+    // At least one table requires overlap, so sub-chunking must be turned on.
+    mapping.insertChunkEntry(TableInfo::SUBCHUNK_TAG);
+    // Rewrite director table references not requiring overlap as their
+    // corresponding sub-chunk templates, and record the names of all
+    // sub-chunked tables.
+    for (ListIter i = _vertices.begin(), e = _vertices.end(); i != e; ++i) {
+        if (i->info->kind == TableInfo::DIRECTOR) {
+            if (i->overlap == 0.0) {
+                i->rewriteAsSubChunkTemplate();
+            }
+            mapping.insertSubChunkTable(i->info->table);
+        }
+    }
+    unsigned n = static_cast<unsigned>(overlapRefs.size());
+    unsigned numPermutations = 1 << n;
+    // Each director requiring overlap must be rewritten as both a sub-chunk
+    // template and an overlap sub-chunk template. There are 2ⁿ different
+    // template permutations for n directors requiring overlap; generate them
+    // all.
+    for (unsigned p = 0; p < numPermutations; ++p) {
+        for (unsigned i = 0; i < n; ++i) {
+            if ((p & (1 << i)) != 0) {
+                overlapRefs[i]->rewriteAsOverlapTemplate();
+            } else {
+                overlapRefs[i]->rewriteAsSubChunkTemplate();
+            }
+        }
+        // Given the use of shared_ptr by the IR classes, we could shallow
+        // copy everything except the FromList as an optimization. But the
+        // implication is that code which mutates a SelectStmt would not be
+        // able to assume that it is mutating just the SelectStmt being
+        // operated on. If the IR classes were copy-on-write, this wouldn't
+        // be an issue, but they are not, so stick to safe waters for now.
+        outputs.push_back(_query->clone());
+    }
 }
 
 }}} // namespace lsst::qserv::qana

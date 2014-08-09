@@ -81,6 +81,13 @@ typedef boost::shared_ptr<query::ColumnRef const> ColumnRefConstPtr;
 /// replicated tables, which are omitted because they are uninteresting for
 /// query analysis.
 struct TableInfo {
+    /// `CHUNK_TAG` is a pattern that is replaced with a chunk number
+    /// when generating concrete query text from a template.
+    static std::string const CHUNK_TAG;
+    /// `SUBCHUNK_TAG` is a pattern that is replaced with a subchunk number
+    /// when generating concrete query text from a template.
+    static std::string const SUBCHUNK_TAG;
+
     enum Kind { DIRECTOR = 0, CHILD, MATCH, NUM_KINDS };
 
     std::string const database;
@@ -97,6 +104,19 @@ struct TableInfo {
         std::string const& tableAlias) const
     {
         return std::vector<ColumnRefConstPtr>();
+    }
+
+    std::string const getSubChunkDb() const {
+        return "Subchunks_" + database + CHUNK_TAG;
+    }
+    std::string const getChunkTemplate() const {
+        return table + "_" + CHUNK_TAG;
+    }
+    std::string const getSubChunkTemplate() const {
+        return table + "_" + CHUNK_TAG + "_" + SUBCHUNK_TAG;
+    }
+    std::string const getOverlapTemplate() const {
+        return table + "FullOverlap_" + CHUNK_TAG + "_" + SUBCHUNK_TAG;
     }
 };
 

@@ -106,7 +106,6 @@ TableInfo const* TableInfoPool::get(query::QueryContext const& ctx,
             throw InvalidTableError("Match table " + db_ + "." + table +
                                     " relates two director tables with"
                                     " different partitionings!");
-
         }
         _insert(p.get());
         return p.release();
