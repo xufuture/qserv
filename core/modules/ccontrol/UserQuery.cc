@@ -50,6 +50,7 @@
 #include "ccontrol/TmpTableName.h"
 #include "ccontrol/ResultReceiver.h"
 #include "ccontrol/UserQueryError.h"
+#include "global/constants.h"
 #include "log/Logger.h"
 #include "proto/worker.pb.h"
 #include "proto/ProtoImporter.h"
@@ -101,6 +102,9 @@ std::string const& UserQuery::getError() const {
 
 // Consider exposing querySession to userQueryProxy
 
+/// For valid constraints: see lsst.qserv.czar.spatial
+/// Region factory must handle or explicitly ignore all constraints.
+/// Most constraints generated in QsRestrictor
 lsst::qserv::query::ConstraintVec UserQuery::getConstraints() const {
     return _qSession->getConstraints();
 }
@@ -117,7 +121,11 @@ void UserQuery::kill() {
 }
 
 void UserQuery::addChunk(qproc::ChunkSpec const& cs) {
-    _qSession->addChunk(cs);
+    // If this is not a chunked query, only accept the dummy chunk.
+    // This should collapse out when chunk geometry coverage is moved from Python to C++.
+    if(_qSession->hasChunks() || cs.chunkId == DUMMY_CHUNK) {
+        _qSession->addChunk(cs);
+    }
 }
 
 void UserQuery::submit() {
