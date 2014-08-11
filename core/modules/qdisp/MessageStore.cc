@@ -46,7 +46,7 @@ void MessageStore::addMessage(int chunkId, int code, std::string const& descript
 #ifdef NEWLOG
         LOGF_ERROR("Msg: %1% %2% %3%" % chunkId % code % description);
 #else
-        LOGGER_ERR << "Msg: " << chunkId << " " << code << " " << description << std::endl;;
+        LOGGER_ERR << "Msg: " << chunkId << " " << code << " " << description << std::endl;
 #endif
     } else {
 #ifdef NEWLOG
