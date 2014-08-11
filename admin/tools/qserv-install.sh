@@ -20,7 +20,6 @@ OPTIONS:
 EOF
 }
 
-
 while getopts ":r:i:v:h" o; do
         case "$o" in
         r)
