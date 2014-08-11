@@ -5,8 +5,9 @@
 STACK_DIR=$HOME/stack
 NEWINSTALL_URL=http://sw.lsstcorp.org/eupspkg/newinstall.sh
 DISTSERVER_URL=http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
-#REF=u.fjammes.DM-622-g0d03590e30
+REF=master-ga1c1526733
 
+chmod -R 755 $STACK_DIR &&
 rm -rf $STACK_DIR &&
 mkdir $STACK_DIR &&
 cd $STACK_DIR ||
@@ -51,7 +52,8 @@ echo
 echo "Configuring Qserv"
 echo "================="
 echo
-qserv-configure.py --all ||
+cd $QSERV_DIR/admin &&
+qserv-configure --all ||
 {
     echo "Unable to configure Qserv as a mono-node instance"
     exit 1
