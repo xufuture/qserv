@@ -125,7 +125,8 @@ def _initVariables(src_dir):
             (PathVariable('LUA_DIR', 'lua install dir', _findPrefixFromBin('LUA_DIR', "lua"), PathVariable.PathIsDir)),
             (PathVariable('ZOOKEEPER_DIR', 'zookeeper install dir', _findPrefixFromBin('ZOOKEEPER_DIR', "zkEnv.sh"), PathVariable.PathIsDir)),
             (PathVariable('python_relative_prefix', 'qserv install directory for python modules, relative to prefix', os.path.join("lib", "python"), PathVariable.PathIsDirCreate)),
-            ('PYTHONPATH', 'pythonpath', os.getenv("PYTHONPATH"))
+            ('PYTHONPATH', 'pythonpath', os.getenv("PYTHONPATH")),
+            ('RPATH', 'rpath-link, used when a shared library require an other', os.getenv("LD_LIBRARY_PATH"))
             )
     opts.Update(env)
 
