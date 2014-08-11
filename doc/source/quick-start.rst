@@ -9,7 +9,8 @@ Quick start guide
    *FOR DEVELOPERS*: The procedure below installs a Qserv release published on Qserv distribution server. 
    Please see :ref:`quick-start-devel` in order to install Qserv from your current git repository version.
 
- .. _quick-start_pre-requisites:
+.. _quick-start-pre-requisites:
+
 **************
 Pre-requisites
 **************
