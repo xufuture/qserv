@@ -3,17 +3,28 @@ Import("env")
 Import("libProducts")
 Import("defaultTgts")
 Import('findLibs')
+Import('cacheObjs')
+
 import glob
 import itertools
 
+def imposeStaticObj(f):
+    if str(f).endswith(".cc"):
+        return env.StaticObject(f)[0]
+    else:
+        return f
+
 def getDerived(m):
-    if m in defaultTgts: return defaultTgts[m]
-    else: return libProducts[m]
+    if m in defaultTgts:
+        return map(imposeStaticObj, defaultTgts[m])
+    else:
+        return map(imposeStaticObj, libProducts[m])
+
 
 programs = []
 
 # deps on other modules
-modDeps = """log proto rproc mysql sql util xrdc""".split()
+modDeps = """global log proto query rproc mysql sql util xrdc""".split()
 
 deps = itertools.chain(*map(getDerived, modDeps))
 deps = map(lambda i:i, deps) # un-chain

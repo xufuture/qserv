@@ -81,7 +81,7 @@ UserQueryFactory::newUserQuery(std::string const& query,
 
     rproc::InfileMergerConfig* ict
         = new rproc::InfileMergerConfig(_impl->infileMergerConfigTemplate);
-    mct->targetTable = resultTable;
+    ict->targetTable = resultTable;
 #if 0
     uq->_mergerConfig.reset(mct);
 #else
