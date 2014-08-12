@@ -3,12 +3,36 @@
 # Standard LSST install procedure
 
 STACK_DIR=$HOME/stack
-NEWINSTALL_URL=http://sw.lsstcorp.org/eupspkg/newinstall.sh
-DISTSERVER_URL=http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
-REF=master-ga1c1526733
+#REF=master-ga1c1526733
 
-chmod -R 755 $STACK_DIR &&
-rm -rf $STACK_DIR &&
+######################
+#
+# WITH NETWORK ACCESS
+#
+######################
+# TODO remove and manage below
+#NEWINSTALL_URL=http://sw.lsstcorp.org/eupspkg/newinstall.sh
+#EUPS_PKGROOT_QSERV=http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
+
+########################
+#
+# WITHOUT NETWORK ACCESS
+#
+########################
+EUPS_PKGROOT=${EUPS_PKGROOT:-"http://sw.lsstcorp.org/eupspkg"}
+# TODO if newinstall doesn't start with protocol:// add file://
+NEWINSTALL_URL="file://${EUPS_PKGROOT}/newinstall.sh"
+EUPS_PKGROOT_QSERV=${EUPS_PKGROOT_QSERV:-"http://lsst-web.ncsa.illinois.edu/~fjammes/qserv"}
+
+if [ -d ${STACK_DIR} ]; then
+    chmod -R 755 $STACK_DIR &&
+    rm -rf $STACK_DIR ||
+    {
+        echo "Unable to remove install directory previous content : ${STACK_DIR}"
+        exit 1
+    }
+    
+fi
 mkdir $STACK_DIR &&
 cd $STACK_DIR ||
 {
@@ -31,7 +55,7 @@ echo
 echo "Installing Qserv"
 echo "================"
 echo
-time eups distrib install qserv ${REF} -r ${DISTSERVER_URL} &&
+time eups distrib install qserv ${REF} -r ${EUPS_PKGROOT_QSERV} &&
 setup qserv ||
 {
     echo "Unable to install Qserv"
@@ -41,7 +65,7 @@ echo
 echo "Installing Qserv integration tests datasets"
 echo "==========================================="
 echo
-time eups distrib install qserv_testdata -r ${DISTSERVER_URL} &&
+time eups distrib install qserv_testdata -r ${EUPS_PKGROOT_QSERV} &&
 setup qserv_testdata ||
 {
     echo "Unable to install Qserv test datasets"
