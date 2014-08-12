@@ -50,7 +50,6 @@ if [ -d ${STACK_DIR} ]; then
         echo "Unable to remove install directory previous content : ${STACK_DIR}"
         exit 1
     }
-
 fi
 mkdir $STACK_DIR &&
 cd $STACK_DIR ||
@@ -95,7 +94,7 @@ echo
 echo "Installing Qserv"
 echo "================"
 echo
-time eups distrib install qserv ${VERSION} &&
+time eups distrib install qserv ${REF} -r ${EUPS_PKGROOT_QSERV} &&
 setup qserv ||
 {
     echo "Unable to install Qserv"
@@ -105,7 +104,7 @@ echo
 echo "Installing Qserv integration tests datasets"
 echo "==========================================="
 echo
-time eups distrib install qserv_testdata &&
+time eups distrib install qserv_testdata -r ${EUPS_PKGROOT_QSERV} &&
 setup qserv_testdata ||
 {
     echo "Unable to install Qserv test datasets"
