@@ -37,7 +37,7 @@ Installation
    # script below will ask some questionsr. Unless you know what you're doing,
    # and you need a fine tuned setup, please answer 'yes' everywhere.
    bash newinstall.sh
-   source loadLSST.sh
+   . loadLSST.sh
    eups distrib install qserv -r http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
    setup qserv
    # only if you want to run integration tests on a mono-node instance :
