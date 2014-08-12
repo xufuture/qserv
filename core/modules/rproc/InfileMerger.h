@@ -54,6 +54,9 @@ namespace mysql {
 namespace qdisp {
     class MessageStore;
 }
+namespace query {
+    class SelectStmt;
+}
 namespace rproc {
     class SqlInsertIter;
 }
@@ -93,19 +96,20 @@ class InfileMergerConfig {
 public:
     InfileMergerConfig() {}
     InfileMergerConfig(boost::shared_ptr<qdisp::MessageStore> messageStore_,
-                       std::string targetDb_, std::string targetTable_,
-                      MergeFixup const& mFixup_,
-                      std::string user_, std::string socket_)
+                       std::string const& targetDb_,
+                       std::string const& targetTable_,
+                       boost::shared_ptr<query::SelectStmt> mergeStmt_,
+                       std::string const& user_, std::string const& socket_)
         :  messageStore(messageStore_),
            targetDb(targetDb_),  targetTable(targetTable_),
-           mFixup(mFixup_), user(user_)
+           mergeStmt(mergeStmt_), user(user_), socket(socket_)
     {
     }
 
     boost::shared_ptr<qdisp::MessageStore> messageStore;
     std::string targetDb; // for final result, and imported result
     std::string targetTable;
-    MergeFixup mFixup;
+    boost::shared_ptr<query::SelectStmt> mergeStmt;
     std::string user;
     std::string socket;
 };
@@ -165,19 +169,13 @@ private:
 
     std::string _mergeTable;
     InfileMergerError _error;
-#if 0
-    long long _resultLimit;
-
-    boost::mutex _countMutex;
-    boost::mutex _popenMutex;
-#endif
     int _tableCount;
     bool _isFinished;
     boost::mutex _createTableMutex;
     boost::mutex _sqlMutex;
 
     class Msgs;
-    std::auto_ptr<Msgs> _msgs;
+    boost::shared_ptr<Msgs> _msgs;
     class Mgr;
     std::auto_ptr<Mgr> _mgr;
 

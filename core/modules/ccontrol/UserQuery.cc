@@ -280,7 +280,7 @@ void UserQuery::_setupMerger() {
     _mergerConfig->mFixup = _qSession->makeMergeFixup();
     _merger = boost::make_shared<rproc::TableMerger>(*_mergerConfig);
 #else // Infile merger.
-    _infileMergerConfig->mFixup = _qSession->makeMergeFixup();
+    _infileMergerConfig->mergeStmt = _qSession->getMergeStmt();
     _infileMerger = boost::make_shared<rproc::InfileMerger>(*_infileMergerConfig);
 #endif
 }
