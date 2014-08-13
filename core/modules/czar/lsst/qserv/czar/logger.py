@@ -61,10 +61,10 @@ def threshold_err():
     else:
         logger_threshold(3)
 
-def newlog_msg(level, *args):
-    newlog.log("", level, ' '.join(map(str, args)), depth=4)
+def newlog_msg(level, args):
+    newlog.log("", level, '%s', ' '.join(map(str, args)), depth=3)
 
-def log_msg(level, *args):
+def log_msg(level, args):
     logger(level, ' '.join(map(str, args)))
 
 def dbg(*args):
