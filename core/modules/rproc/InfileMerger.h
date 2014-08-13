@@ -132,9 +132,10 @@ public:
     bool isFinished() const;
 
 private:
+    class Msgs;
     int _fetchHeader(char const* buffer, int length);
     int _waitPacket(char const* buffer, int length);
-    void _setupTable();
+    void _setupTable(Msgs const& msgs);
     void _setupRow();
 
     class CreateStmt;
@@ -174,8 +175,6 @@ private:
     boost::mutex _createTableMutex;
     boost::mutex _sqlMutex;
 
-    class Msgs;
-    boost::shared_ptr<Msgs> _msgs;
     class Mgr;
     std::auto_ptr<Mgr> _mgr;
 
