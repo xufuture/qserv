@@ -32,6 +32,7 @@
 import unittest
 from optparse import OptionParser
 import sys
+import ConfigParser
 
 from lsst.qserv.czar.appTest import TestAppFunctions
 from lsst.qserv.czar import server
@@ -98,20 +99,14 @@ def main():
     config.printTo(sys.stdout)
 
     # Configure logging
-        #----- note this section should be done in Fabrice's script
-    runDir = "/usr/local/home/becla/qservDev/qserv-run/"
-    log4jFPath = "%s/etc/log4cxx.log4j" % runDir
-    contents = """
-log4j.rootLogger=DEBUG, QLogger
-log4j.appender.QLogger=org.apache.log4j.ConsoleAppender
-log4j.appender.QLogger.layout=org.apache.log4j.PatternLayout
-log4j.appender.QLogger.layout.ConversionPattern=NEWLOG! %d [%t] %-5p %c{2} %M (%F:%L) - %m%n
-"""
-    log4jF = open(log4jFPath, 'w')
-    log4jF.write(contents)
-    log4jF.close()
-        #----- end of section that should be done in Fabrice's script
-    newlog.configure(log4jFPath)
+    try:
+        logConfig = config.config.get('log', 'logConfig')
+    except ConfigParser.Error:
+        logConfig = None
+    if logConfig:
+        newlog.configure(logConfig)
+    else:
+        newlog.configure()
 
     if options.test == True:
         runParserTest()
