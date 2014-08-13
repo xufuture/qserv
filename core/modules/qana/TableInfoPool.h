@@ -30,15 +30,20 @@
 #include <string>
 #include <vector>
 
+// Forward declarations
 namespace lsst {
 namespace qserv {
-
 namespace query {
-class QueryContext;
+    class QueryContext;
 }
-
 namespace qana {
-struct TableInfo;
+    struct TableInfo;
+}}}
+
+
+namespace lsst {
+namespace qserv {
+namespace qana {
 
 /// `TableInfoPool` is a pool of pointers to owned, immutable `TableInfo`
 /// objects. Clients that obtain all `TableInfo` pointers from the same pool
@@ -49,6 +54,7 @@ struct TableInfo;
 /// `TableInfoPool` is not currently thread-safe.
 class TableInfoPool {
 public:
+    TableInfoPool() {}
     ~TableInfoPool();
 
     /// `get` returns a pointer to metadata for the given table, or null if

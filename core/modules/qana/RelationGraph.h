@@ -365,8 +365,8 @@
 ///
 /// Because the time and space complexity of our query rewriting/execution
 /// strategy is exponential in the number of table references requiring
-/// overlap, we impose a strict limit on the maximum number of table
-/// references per query that are allowed to require overlap.
+/// overlap, we impose a strict limit on the maximum number of such
+/// references.
 
 #ifndef LSST_QSERV_QANA_RELATIONGRAPH_H
 #define LSST_QSERV_QANA_RELATIONGRAPH_H
@@ -383,17 +383,25 @@
 
 // Local headers
 #include "ColumnVertexMap.h"
-#include "QueryMapping.h"
 #include "TableInfo.h"
-#include "TableInfoPool.h"
 
 #include "query/BoolTerm.h"
-#include "query/ColumnRef.h"
 #include "query/JoinRef.h"
 #include "query/JoinSpec.h"
-#include "query/QueryContext.h"
-#include "query/SelectStmt.h"
 #include "query/TableRef.h"
+
+// Forward declarations
+namespace lsst {
+namespace qserv {
+namespace query {
+    class ColumnRef;
+    class QueryContext;
+    class SelectStmt;
+}
+namespace qana {
+    class QueryMapping;
+    class TableInfoPool;
+}}}
 
 
 namespace lsst {

@@ -26,16 +26,22 @@
 // System headers
 #include <stdexcept>
 
+// Local headers
+#include "AnalysisError.h"
+
+
 namespace lsst {
 namespace qserv {
 namespace qana {
 
 /// `QueryNotEvaluableError` is thrown for queries that are syntactically
 /// valid, but not evaluable by Qserv.
-class QueryNotEvaluableError : public std::runtime_error {
+class QueryNotEvaluableError : public AnalysisError {
 public:
-    explicit QueryNotEvaluableError(std::string const & what) :
-        std::runtime_error(what) {}
+    explicit QueryNotEvaluableError(std::string const& what) :
+        AnalysisError(what) {}
+    explicit QueryNotEvaluableError(char const* what) :
+        AnalysisError(what) {}
 };
 
 }}} // namespace lsst::qserv::qana

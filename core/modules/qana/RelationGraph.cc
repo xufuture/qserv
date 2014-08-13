@@ -32,13 +32,17 @@
 
 // Local headers
 #include "QueryNotEvaluableError.h"
+#include "TableInfoPool.h"
 
 #include "parser/SqlSQL2Parser.hpp" // (generated) SqlSQL2TokenTypes
+#include "query/ColumnRef.h"
 #include "query/FromList.h"
 #include "query/FuncExpr.h"
 #include "query/Predicate.h"
+#include "query/QueryContext.h"
 #include "query/QueryTemplate.h"
 #include "query/SelectList.h"
+#include "query/SelectStmt.h"
 #include "query/ValueExpr.h"
 #include "query/ValueFactor.h"
 #include "query/WhereClause.h"
@@ -183,8 +187,9 @@ void verifyJoin(JoinRef::Type joinType,
                     "NATURAL or have an ON or USING clause.");
             }
             break;
-        case JoinRef::INNER: // fallthrough
-        case JoinRef::LEFT:  // fallthrough
+        case JoinRef::DEFAULT: // fallthrough
+        case JoinRef::INNER:   // fallthrough
+        case JoinRef::LEFT:    // fallthrough
         case JoinRef::RIGHT:
             if (natural && joinSpec) {
                 throw logic_error(
@@ -871,10 +876,13 @@ bool RelationGraph::_validate(double overlap)
             }
         }
     }
-    // If there were no traversal starting points, then the input query
-    // involves a single match table, and can be evaluated. Otherwise, it
-    // is not evaluable.
-    return numStarts == 0;
+    if (numStarts == 0) {
+        // If the input query involves only replicated tables, or just a
+        // single match table, it can be evaluated. If it involves more than
+        // one match table, its relation graph must be disconnected.
+        return _vertices.empty() || _vertices.size() == 2;
+    }
+    return false;
 }
 
 RelationGraph::RelationGraph(QueryContext const& ctx,
@@ -910,7 +918,7 @@ RelationGraph::RelationGraph(QueryContext const& ctx,
         g._makeWhereEqEdges(where);
         g._makeSpEdges(where, overlap);
     }
-    if (!_validate(overlap)) {
+    if (!g._validate(overlap)) {
         throw QueryNotEvaluableError(
             "Query involves partitioned table joins that Qserv does not "
             "know how to evaluate using only partition-local data");
@@ -965,7 +973,7 @@ void RelationGraph::rewrite(SelectStmtList& outputs,
                                      "references that require overlap");
     }
     // At least one table requires overlap, so sub-chunking must be turned on.
-    mapping.insertChunkEntry(TableInfo::SUBCHUNK_TAG);
+    mapping.insertSubChunkEntry(TableInfo::SUBCHUNK_TAG);
     // Rewrite director table references not requiring overlap as their
     // corresponding sub-chunk templates, and record the names of all
     // sub-chunked tables.

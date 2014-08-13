@@ -66,8 +66,12 @@
 // Third-party headers
 #include <boost/shared_ptr.hpp>
 
-// Local headers
-#include "query/ColumnRef.h"
+// Forward declarations
+namespace lsst {
+namespace qserv {
+namespace query {
+    class ColumnRef;
+}}}
 
 
 namespace lsst {
@@ -107,7 +111,7 @@ struct TableInfo {
     }
 
     std::string const getSubChunkDb() const {
-        return "Subchunks_" + database + CHUNK_TAG;
+        return "Subchunks_" + database + "_" + CHUNK_TAG;
     }
     std::string const getChunkTemplate() const {
         return table + "_" + CHUNK_TAG;

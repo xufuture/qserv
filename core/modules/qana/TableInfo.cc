@@ -28,6 +28,9 @@
 // Third-party headers
 #include <boost/make_shared.hpp>
 
+// Local headers
+#include "query/ColumnRef.h"
+
 namespace lsst {
 namespace qserv {
 namespace qana {

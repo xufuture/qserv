@@ -21,25 +21,37 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-/**
-  * @file
-  *
-  * @brief TablePlugin implementation. TablePlugin replaces user query
-  * table names with substitutable names and maintains a list of
-  * tables that need to be substituted.
-  *
-  * @author Daniel L. Wang, SLAC
-  */
+/// \file
+/// \brief TablePlugin implementation.
+///
+/// TablePlugin modifies the parsed query to assign an alias to all the table
+/// references in the query from-list. It then rewrites all column references
+/// (e.g. in the where clause) to use the appropriate aliases. This allows
+/// changing a table reference in a query without editing anything except the
+/// from-clause.
+///
+/// During the concrete query planning phase, TablePlugin determines whether
+/// each query proposed for parallel (worker-side) execution is actually
+/// parallelizable and how this should be done - that is, it determines whether
+/// or not sub-chunking should be used and which director table(s) to use
+/// overlap for. Finally, it rewrites table references to use name patterns
+/// into which (sub-)chunk numbers can be substituted. This act of substitution
+/// is the final step in generating the queries sent out to workers.
+///
+/// \author Daniel L. Wang, SLAC
+
 // No public interface (no TablePlugin.h)
 
 // System headers
 #include <string>
 
 // Local headers
+#include "QueryMapping.h"
+#include "QueryPlugin.h"
+#include "RelationGraph.h"
+#include "TableInfoPool.h"
+
 #include "log/Logger.h"
-#include "qana/QueryMapping.h"
-#include "qana/QueryPlugin.h"
-#include "qana/TableStrategy.h"
 #include "query/FromList.h"
 #include "query/FuncExpr.h"
 #include "query/GroupByClause.h"
@@ -366,100 +378,21 @@ TablePlugin::applyLogical(query::SelectStmt& stmt,
 
 void
 TablePlugin::applyPhysical(QueryPlugin::Plan& p,
-                           query::QueryContext& context) {
-    // Verify that there is at least one ValueExpr in the select list.
-    query::SelectList& oList = p.stmtOriginal.getSelectList();
-    boost::shared_ptr<query::ValueExprList> vlist;
-    vlist = oList.getValueExprList();
-    if(!vlist) {
-        throw std::logic_error("Invalid stmtOriginal.SelectList");
+                           query::QueryContext& context)
+{
+    TableInfoPool pool;
+    if (!context.queryMapping) {
+        context.queryMapping.reset(new QueryMapping());
     }
-    p.dominantDb = _dominantDb;
-
     // Process each entry in the parallel select statement set.
     typedef SelectStmtList::iterator Iter;
     SelectStmtList newList;
     for(Iter i=p.stmtParallel.begin(), e=p.stmtParallel.end(); i != e; ++i) {
-        if (_rewriteTables(newList, **i, context, p.queryMapping) == 0) {
-            newList.push_back(*i);
-        }
+        RelationGraph g(context, **i, pool);
+        g.rewrite(newList, *context.queryMapping);
     }
+    p.dominantDb = _dominantDb;
     p.stmtParallel.swap(newList);
-}
-
-/// Patch the FromList tables in an input SelectStmt.
-/// Or, if a query split is involved (to operate using overlap
-/// tables), place new SelectStmts in the outList instead of patching
-/// the existing SelectStmt.
-/// This allows the caller to forgo excess SelectStmt manipulation by
-/// reusing the existing SelectStmt in the common case where overlap
-/// tables are not needed.
-/// @return the number of statements added to the outList.
-int TablePlugin::_rewriteTables(SelectStmtList& outList,
-                                query::SelectStmt& in,
-                                query::QueryContext& context,
-                                boost::shared_ptr<qana::QueryMapping>& mapping) {
-    int added = 0;
-    // Idea: Rewrite table names in from-list of the parallel
-    // query. This is sufficient because table aliases were added in
-    // the logical plugin stage so that real table refs should only
-    // exist in the from-list.
-    query::FromList& fList = in.getFromList();
-    //    LOGGER_INF << "orig fromlist " << fList.getGenerated() << std::endl;
-
-    // TODO: Better join handling by leveraging JOIN...ON syntax.
-    // Before rewriting, compute the need for chunking and subchunking
-    // based entirely on the FROM list. Queries that involve chunked
-    // tables are necessarily chunked. Subchunking is inferred when
-    // two chunked tables are joined (often the same table) and not on
-    // a common key (key-equi-join). This check yields the decision:
-    // ** for each table:
-    //   availability of chunking and overlap
-    //   desired chunking-level, with/without overlap
-    // The QueryMapping abstraction provides a symbolic mapping so
-    // that a later query generation stage can generate queries from
-    // templatable queries a list of partition tuples.
-
-    // In order for this to work while preserving join syntax, we
-    // probably need to change the model. Previously, we did:
-    // 1. Ingest a flattened sequence of tables.
-    // 2. Look them up.
-    // 3. (decide on subchunking)
-    // 4. Create the new FromList entirely from the sequence.
-    // We can ingest in a way that allows step 4 to create not from
-    // scratch, but by doing a filter-copy of the original FromList,
-    // and replacing each table ref one at a time.  This preserves the
-    // structure. It might be desirable to alter the structure as an
-    // optimization, but this can come later.
-    TableStrategy ts(fList, context);
-    int permutationCount = ts.getPermutationCount();
-    if(permutationCount > 1) {
-        for(int i=0; i < permutationCount; ++i) {
-            boost::shared_ptr<query::SelectStmt> stmt = in.clone();
-            query::TableRefListPtr trl =
-                ts.getPermutation(i, fList.getTableRefList());
-            query::FromList::Ptr f(new query::FromList(trl));
-            stmt->setFromList(f);
-            outList.push_back(stmt);
-            ++added;
-        }
-    } else {
-        ts.setToPermutation(0, fList.getTableRefList());
-    }
-    qana::QueryMapping::Ptr qm = ts.exportMapping();
-    // Now add/merge the mapping to the Plan
-    if(!mapping.get()) {
-        mapping = qm;
-    } else {
-        mapping->update(*qm);
-    }
-    // Query generation needs to be sensitive to this.
-    // If no subchunks are needed,
-
-    //
-    // For each tableref, modify to replace tablename with
-    // substitutable.
-    return added;
 }
 
 }}} // namespace lsst::qserv::qana
