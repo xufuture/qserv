@@ -41,7 +41,7 @@
 ////////////////////////////////////////////////////////////////////////
 std::string const mysqlNull("\\N");
 // should be less than 0.5 * infileBufferSize
-int const largeRowThreshold = 500*1024; 
+int const largeRowThreshold = 500*1024;
 
 namespace lsst {
 namespace qserv {
@@ -63,7 +63,7 @@ inline int escapeString(char* dest, char const* src, int srcLength) {
         case '\n': *dest++ = '\\'; *dest++ = 'n'; break;
         case '\r': *dest++ = '\\'; *dest++ = 'r'; break;
         case '\t': *dest++ = '\\'; *dest++ = 't'; break;
-        case '\032': *dest++ = '\\'; *dest++ = 'Z'; break; 
+        case '\032': *dest++ = '\\'; *dest++ = 'Z'; break;
         default: *dest++ = *src; break;
             // Null (\N) is not treated by escaping in this context.
         }
@@ -72,6 +72,18 @@ inline int escapeString(char* dest, char const* src, int srcLength) {
     return src - originalSrc;
 }
 
+template <typename T>
+inline int copyColumn(T& dest, std::string const& rawColumn) {
+    //      std::string colValue = rb.column(ci);
+    std::vector<char> colBuf(2 * rawColumn.size());
+    int valSize = escapeString(&colBuf[0],
+                           rawColumn.data(), rawColumn.size());
+    dest.push_back('\'');
+    dest.insert(dest.end(),
+                colBuf.begin(), colBuf.begin() + valSize);
+    dest.push_back('\'');
+    return 2 + valSize;
+}
 ////////////////////////////////////////////////////////////////////////
 // ProtoRowBuffer
 ////////////////////////////////////////////////////////////////////////
@@ -83,8 +95,26 @@ private:
     void _initCurrentRow();
     void _initSchema();
     void _readNextRow();
+    template <typename T>
+    int _copyRowBundle(T& dest, proto::RowBundle const& rb) {
+        int sizeBefore = dest.size();
+        for(int ci=0, ce=rb.column_size(); ci != ce; ++ci) {
+            if(ci != 0) {
+                dest.insert(dest.end(), _colSep.begin(), _colSep.end());
+            }
+
+            if(!rb.isnull(ci)) {
+                copyColumn(dest, rb.column(ci));
+            } else {
+                dest.insert(dest.end(), _nullToken.begin(), _nullToken.end() );
+            }
+        }
+        return dest.size() - sizeBefore;
+    }
+
     std::string _colSep;
     std::string _rowSep;
+    std::string _nullToken;
     proto::Result& _result;
 
     sql::Schema _schema;
@@ -92,16 +122,21 @@ private:
     int _rowTotal;
     std::vector<char> _currentRow;
 };
+
 ProtoRowBuffer::ProtoRowBuffer(proto::Result& res)
-    : _colSep(","),
+    : _colSep("\t"),
       _rowSep("\n"),
+      _nullToken("\\N"),
       _result(res),
       _rowIdx(0),
       _rowTotal(res.row_size()),
       _currentRow(0) {
     _initSchema();
-    _initCurrentRow();
+    if(_result.row_size() > 0) {
+        _initCurrentRow();
+    }
 }
+
 unsigned ProtoRowBuffer::fetch(char* buffer, unsigned bufLen) {
     unsigned fetched = 0;
     if(bufLen <= _currentRow.size()) {
@@ -115,13 +150,14 @@ unsigned ProtoRowBuffer::fetch(char* buffer, unsigned bufLen) {
             _currentRow.clear();
         } else if(_rowIdx >= _rowTotal) {
             return 0; // Nothing to fetch, then.
-        }        
+        }
     }
     if(_currentRow.size() == 0) {
         _readNextRow();
     }
     return fetched;
 }
+
 void ProtoRowBuffer::_initSchema() {
     _schema.columns.clear();
     proto::RowSchema const& prs = _result.rowschema();
@@ -140,7 +176,7 @@ void ProtoRowBuffer::_initSchema() {
             cs.colType.mysqlType = pcs.mysqltype();
         }
         _schema.columns.push_back(cs);
-    }        
+    }
 }
 
 void ProtoRowBuffer::_readNextRow() {
@@ -149,58 +185,16 @@ void ProtoRowBuffer::_readNextRow() {
         return;
     }
     _currentRow.clear();
-    proto::RowBundle const& rb = _result.row(_rowIdx);
-    for(int ci=0, ce=rb.column_size(); ci != ce; ++ci) {
-        if(ci != 0) {
-            _currentRow.insert(_currentRow.end(),
-                               _colSep.begin(), _colSep.end());
-        }
-        
-        std::string colValue = rb.column(ci);
-        std::vector<char> colBuf(2 * colValue.size());
-        int valSize = escapeString(&colBuf[0], colValue.data(), colValue.size());
-        _currentRow.push_back('\'');
-        _currentRow.insert(_currentRow.end(), 
-                           colBuf.begin(), colBuf.begin() + valSize);
-        _currentRow.push_back('\'');
-    }
     // Row separator
     _currentRow.insert(_currentRow.end(), _rowSep.begin(), _rowSep.end());
-
-
+    _copyRowBundle(_currentRow, _result.row(_rowIdx));
 }
+
 //    for(int i=0, e=_result.row_size(); i != e; ++i);
 void ProtoRowBuffer::_initCurrentRow() {
-    if(_rowIdx >= _rowTotal) {
-        // FIXME: Bail out.
-        throw std::runtime_error("Unimplemented");
-    }
-    // Count row length
-    std::string row;
-    int rowSize = 0;
-    proto::RowBundle const& rb = _result.row(_rowIdx);
-    for(int ci=0, ce=rb.column_size(); ci != ce; ++ci) {
-        if(ci != 0) {
-            row += _colSep;
-            rowSize += _colSep.size();
-        }
-
-        if(!rb.isnull(ci)) {
-            std::string colValue = rb.column(ci);
-            std::vector<char> colBuf(2 * colValue.size());
-            rowSize += colBuf.size();
-            int valSize = escapeString(&colBuf[0], colValue.data(), colValue.size());
-            row += "'";
-            row.append(&colBuf[0], valSize);
-            row += "'";
-        } else {
-            row += "\\N";
-            rowSize += 2;
-        }
-    }
-    _currentRow.reserve(rowSize*2);
-    _currentRow.resize(rowSize);
-    memcpy(&_currentRow[0], row.data(), row.size());    
+    // Copy row and reserve 2x size.
+    int rowSize = _copyRowBundle(_currentRow, _result.row(_rowIdx));
+    _currentRow.reserve(rowSize*2); // for future usage
 }
 
 ////////////////////////////////////////////////////////////////////////

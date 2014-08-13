@@ -66,11 +66,11 @@ boost::shared_ptr<InsertColumnVector> newInsertColumnVector(Schema const& s) {
     return icv;
 }
 
-std::string formLoadInfile(std::string const& table, 
+std::string formLoadInfile(std::string const& table,
                            std::string const& virtFile) {
     std::ostringstream os;
-    os << "LOAD DATA LOCAL INFILE '" << virtFile << "' INTO TABLE " 
-       << table;
+    os << "LOAD DATA LOCAL INFILE '" << virtFile << "' INTO TABLE "
+       << table << " FIELDS ENCLOSED BY '\\\''";
     return os.str();
 }
 
@@ -86,14 +86,14 @@ inline bool needClause(InsertColumnVector const& icv) {
 inline std::ostream& addSingleQuoted(std::ostream& os, std::string const& s) {
     return os << "'" << s << "'";
 }
-std::string formLoadInfile(std::string const& table, 
-                           std::string const& virtFile, 
+std::string formLoadInfile(std::string const& table,
+                           std::string const& virtFile,
                            InsertColumnVector const& icv) {
 
-    // Output should look something like this: 
-    // "LOAD DATA INFILE 'path.txt' 
-    // INTO  TABLE mytable (column1, column2, @hexColumn3) 
-    // SET column3=UNHEX(@hexColumn3);" 
+    // Output should look something like this:
+    // "LOAD DATA INFILE 'path.txt'
+    // INTO  TABLE mytable (column1, column2, @hexColumn3)
+    // SET column3=UNHEX(@hexColumn3);"
 
     // Check icv to see if we need to hex/unhex
     if(!needClause(icv)) {
@@ -129,4 +129,3 @@ std::string formLoadInfile(std::string const& table,
     return os.str();
 }
 }}} // namespace lsst::qserv::sql
-

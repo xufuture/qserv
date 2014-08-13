@@ -208,13 +208,15 @@ InfileMerger::InfileMerger(InfileMergerConfig const& c)
       _sqlConfig(makeSqlConfig(c)),
       _tableCount(0),
       _isFinished(false),
-      _msgs(new Msgs),
       _mgr(new Mgr(*_sqlConfig)),
       _needCreateTable(true),
       _needHeader(true) {
 
     _error.errorCode = InfileMergerError::NONE;
     _fixupTargetName();
+    if(_config.mergeStmt) {
+        _config.mergeStmt->setFromListAsTable(_mergeTable);
+    }
 }
 
 int InfileMerger::_fetchHeader(char const* buffer, int length) {
@@ -223,8 +225,9 @@ int InfileMerger::_fetchHeader(char const* buffer, int length) {
     // Advance cursor to point after length
     char const* cursor = buffer + 1;
     int remain = length - 1;
+    boost::shared_ptr<InfileMerger::Msgs> msgs(new InfileMerger::Msgs);
 
-    if(!ProtoImporter<ProtoHeader>::setMsgFrom(_msgs->protoHeader,
+    if(!ProtoImporter<ProtoHeader>::setMsgFrom(msgs->protoHeader,
                                                cursor, phSize)) {
         _error.errorCode = InfileMergerError::HEADER_IMPORT;
         _error.description = "Error decoding proto header";
@@ -233,15 +236,17 @@ int InfileMerger::_fetchHeader(char const* buffer, int length) {
     }
     cursor += phSize; // Advance to Result msg
     remain -= phSize;
-    if(remain < _msgs->protoHeader.size()) {
+    if(remain < msgs->protoHeader.size()) {
         // TODO: want to handle bigger messages.
         _error.description = "Buffer too small for result msg, increase buffer size in InfileMerger";
         _error.errorCode = InfileMergerError::HEADER_OVERFLOW;
         return 0;
     }
     // Now decode Result msg
-    int resultSize = _msgs->protoHeader.size();
-    if(!ProtoImporter<proto::Result>::setMsgFrom(_msgs->result,
+    int resultSize = msgs->protoHeader.size();
+    LOGGER_INF << "Importing result msg size=" << msgs->protoHeader.size();
+
+    if(!ProtoImporter<proto::Result>::setMsgFrom(msgs->result,
                                                  cursor, resultSize)) {
         _error.errorCode = InfileMergerError::RESULT_IMPORT;
         _error.description = "Error decoding result msg";
@@ -250,14 +255,18 @@ int InfileMerger::_fetchHeader(char const* buffer, int length) {
     remain -= resultSize;
     //_msgs->result.PrintDebugString(); // wait a second.
     // doublecheck session
-    _msgs->result.session(); // TODO
-    _setupTable();
+    msgs->result.session(); // TODO
+    _setupTable(*msgs);
     if(_error.errorCode) {
         return -1;
     }
-
+    // Check for the no-row condition
+    if(msgs->result.row_size() == 0) {
+        // Nothing further, don't bother importing.
+        return length;
+    }
     std::string computedMd5 = util::StringHash::getMd5(cursor, resultSize);
-    if(_msgs->protoHeader.md5() != computedMd5) {
+    if(msgs->protoHeader.md5() != computedMd5) {
         _error.description = "Result message MD5 mismatch";
         _error.errorCode = InfileMergerError::RESULT_MD5;
         return 0;
@@ -265,14 +274,16 @@ int InfileMerger::_fetchHeader(char const* buffer, int length) {
     _needHeader = false;
     // Setup infile properties
     // Spawn thread to handle infile processing
-    Mgr::Action a(*_mgr, _msgs, _mergeTable);
-    _msgs.reset();
+    Mgr::Action a(*_mgr, msgs, _mergeTable);
+    msgs.reset();
     boost::thread *t = new boost::thread(a);
+    LOGGER_INF << "Started infile thread " << (void*) t << std::endl;
     t->join();
     delete t;
+    LOGGER_INF << "Joined infile thread " << (void*) t << std::endl;
     // FIXME: if we spawn a separate thread, we need to save it if we're going to continue before it completes.
 
-    assert(!_msgs.get()); // Ownership should have transferred.
+    assert(!msgs.get()); // Ownership should have transferred.
 
 //    _thread = new boost::thread(_mgr.newAction(_mgr, _msgs, _mergeTable));
 
@@ -286,13 +297,13 @@ int InfileMerger::_waitPacket(char const* buffer, int length) {
 
 }
 
-void InfileMerger::_setupTable() {
+void InfileMerger::_setupTable(InfileMerger::Msgs const& msgs) {
     // Create table, using schema
     boost::lock_guard<boost::mutex> lock(_createTableMutex);
 
     if(_needCreateTable) {
         // create schema
-        proto::RowSchema const& rs = _msgs->result.rowschema();
+        proto::RowSchema const& rs = msgs.result.rowschema();
         sql::Schema s;
         for(int i=0, e=rs.columnschema_size(); i != e; ++i) {
             proto::ColumnSchema const& cs = rs.columnschema(i);
@@ -361,17 +372,23 @@ bool InfileMerger::finalize() {
     }
     if(_mergeTable != _config.targetTable) {
         // Aggregation needed: Do the aggregation.
-        std::string mergeSql = _config.mergeStmt->getTemplate().generate();
-        LOGGER_INF << "Merging w/" << mergeSql << std::endl;
-        finalizeOk = _applySqlLocal(mergeSql);
+        std::string mergeSelect = _config.mergeStmt->getTemplate().generate();
+        std::string createMerge = "CREATE TABLE " + _config.targetTable
+            + " " + mergeSelect;
+        LOGGER_INF << "Merging w/" << createMerge << std::endl;
+        finalizeOk = _applySqlLocal(createMerge);
 
         // Cleanup merge table.
         sql::SqlErrorObject eObj;
         // Don't report failure on not exist
         LOGGER_INF << "Cleaning up " << _mergeTable << std::endl;
+#if 1
         bool cleanupOk = _sqlConn->dropTable(_mergeTable, eObj,
                                              false,
                                              _config.targetDb);
+#else
+        bool cleanupOk = true;
+#endif
         if(!cleanupOk) {
             LOGGER_INF << "Failure cleaning up table "
                        << _mergeTable << std::endl;
@@ -429,49 +446,4 @@ void InfileMerger::_fixupTargetName() {
         _mergeTable = _config.targetTable;
     }
 }
-
-#if 0
-std::string TableMerger::_buildMergeSql(std::string const& tableName,
-                                        bool create) {
-    std::string cleanup = (boost::format(_cleanupSql) % tableName).str();
-
-    if(create) {
-        return (boost::format(_dropSql) % _mergeTable).str()
-            + (boost::format(_createSql) % _mergeTable
-               % tableName).str() + cleanup;
-    } else {
-        return (boost::format(_insertSql) %  _mergeTable
-                % tableName).str() + cleanup;
-    }
-}
-
-std::string TableMerger::_buildOrderByLimit() {
-    std::stringstream ss;
-    if(!_config.mFixup.orderBy.empty()) {
-        ss << "ORDER BY " << _config.mFixup.orderBy;
-    }
-    if(_config.mFixup.limit != -1) {
-        if(!_config.mFixup.orderBy.empty()) { ss << " "; }
-        ss << "LIMIT " << _config.mFixup.limit;
-    }
-    return ss.str();
-}
-
-
-bool TableMerger::_dropAndCreate(std::string const& tableName,
-                                 std::string createSql) {
-
-    std::string dropSql = "DROP TABLE IF EXISTS " + tableName + ";";
-    if(_config.dropMem) {
-        std::string const memSpec = "ENGINE=MEMORY";
-        std::string::size_type pos = createSql.find(memSpec);
-        if(pos != std::string::npos) {
-            createSql.erase(pos, memSpec.size());
-        }
-    }
-    LOGGER_DBG << "CREATE-----" << _mergeTable << std::endl;
-    return _applySql(dropSql + createSql);
-}
-
-#endif
 }}} // namespace lsst::qserv::rproc
