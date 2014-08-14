@@ -418,6 +418,7 @@ bool TableMerger::_createTableIfNotExists(TableMerger::CreateStmt& cs) {
             return false;
         }
     }
+    return true;
 }
 
 void TableMerger::_fixupTargetName() {

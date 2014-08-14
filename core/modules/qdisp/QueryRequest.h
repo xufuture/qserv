@@ -32,7 +32,7 @@
 
 // Local headers
 //#include "ccontrol/transaction.h"
-//#include "util/Timer.h"
+#include "util/Callable.h"
 //#include "xrdc/xrdfile.h"
 
 // Forward declarations
@@ -82,6 +82,7 @@ public:
     QueryRequest(XrdSsiSession* session,
                  std::string const& payload,
                  boost::shared_ptr<QueryReceiver> receiver,
+                 boost::shared_ptr<util::VoidCallable<void> > retryFunc,
                  ExecStatus& status);
 
     virtual ~QueryRequest();
@@ -112,6 +113,7 @@ private:
     int _bufferRemain;
     std::string _payload;
     boost::shared_ptr<QueryReceiver> _receiver;
+    boost::shared_ptr<util::VoidCallable<void> > _retryFunc;
     ExecStatus& _status;
     std::string _errorDesc;
     class Canceller;

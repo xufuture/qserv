@@ -113,17 +113,6 @@ Executive::Executive(Config::Ptr c, boost::shared_ptr<MessageStore> ms)
     _setup();
 }
 
-void Executive::_setup() {
-
-    XrdSsi::Trace.What = TRACE_ALL | TRACE_Debug;
-
-    XrdSsiErrInfo eInfo;
-    _service = XrdSsiGetClientService(eInfo, _config.serviceUrl.c_str()); // Step 1
-    if(!_service) figureOutError(eInfo);
-    assert(_service);
-    _requestCount = 0;
-}
-
 void Executive::add(int refNum, TransactionSpec const& t,
                     std::string const& resultName) {
     LOGGER_INF << "EXECUTING Executive::add(TransactionSpec, "
@@ -140,8 +129,38 @@ void Executive::add(int refNum, TransactionSpec const& t,
     add(refNum, s);
 }
 
+class Executive::DispatchAction : public util::VoidCallable<void> {
+public:
+    typedef boost::shared_ptr<DispatchAction> Ptr;
+    DispatchAction(Executive& executive,
+                   int refNum,
+                   std::string const& path,
+                   std::string const& payload,
+                   boost::shared_ptr<QueryReceiver> receiver,
+                   ExecStatus& status)
+        : _executive(executive), _refNum(refNum), _path(path),
+          _payload(payload), _receiver(receiver), _status(status) {
+    }
+    virtual ~DispatchAction() {}
+    virtual void operator()() {
+        if(_receiver->reset()) { // Must be able to reset receiver state
+            _executive._dispatchQuery(_refNum, _path, _payload,
+                                      _receiver, _status);
+        } else { // Do nothing-- can't retry.
+        }
+    }
+private:
+    Executive& _executive;
+    int _refNum;
+    std::string const _path;
+    std::string const _payload;
+    boost::shared_ptr<QueryReceiver> _receiver;
+    ExecStatus& _status; //< Reference back to exec status
+};
+
 // Add a spec to be executed. Not thread-safe.
 void Executive::add(int refNum, Executive::Spec const& s) {
+
     bool trackOk =_track(refNum, s.receiver); // Remember so we can join.
     if(!trackOk) {
         LOGGER_WRN << "Ignoring duplicate add(" << refNum << ")\n";
@@ -152,23 +171,13 @@ void Executive::add(int refNum, Executive::Spec const& s) {
     std::string msg = "Exec add pth=" + s.resource.path();
     LOGGER_INF << msg << std::endl << std::flush;
     _messageStore->addMessage(s.resource.chunk(), log::MSG_MGR_ADD, msg);
+    boost::shared_ptr<util::VoidCallable<void> > retryFunc; // FIXME
 
-    QueryResource* r = new QueryResource(s.resource.path(),
-                                         s.request,
-                                         s.receiver,
-                                         status);
-    status.report(ExecStatus::PROVISION);
-    bool provisionOk = _service->Provision(r);  // 2
-    if(!provisionOk) {
-        LOGGER_ERR << "Resource provision error " << s.resource.path()
-                   << std::endl;
-        populateState(status, ExecStatus::PROVISION_ERROR, r->eInfo);
-        _unTrack(refNum);
-        delete r;
-
-        // handle error
-    }
-    LOGGER_DBG << "Provision was ok\n";
+    _dispatchQuery(refNum,
+                   s.resource.path(),
+                   s.request,
+                   s.receiver,
+                   status);
 }
 
 bool Executive::join() {
@@ -285,6 +294,59 @@ std::string Executive::getProgressDesc() const {
 ////////////////////////////////////////////////////////////////////////
 // class Executive (private)
 ////////////////////////////////////////////////////////////////////////
+void Executive::_dispatchQuery(int refNum,
+                              std::string const& path,
+                              std::string const& payload,
+                              boost::shared_ptr<QueryReceiver> receiver,
+                              ExecStatus& status) {
+    boost::shared_ptr<DispatchAction> retryFunc;
+    if(_shouldRetry(refNum)) { // limit retries for each request.
+        retryFunc.reset(new DispatchAction(*this, refNum,
+                                           path, payload, receiver,
+                                           status));
+    }
+    QueryResource* r = new QueryResource(path,
+                                         payload,
+                                         receiver,
+                                         retryFunc,
+                                         status);
+    status.report(ExecStatus::PROVISION);
+    bool provisionOk = _service->Provision(r);  // 2
+    if(!provisionOk) {
+        LOGGER_ERR << "Resource provision error " << path
+                   << std::endl;
+        populateState(status, ExecStatus::PROVISION_ERROR, r->eInfo);
+        _unTrack(refNum);
+            delete r;
+            // handle error
+    }
+    LOGGER_DBG << "Provision was ok\n";
+}
+
+void Executive::_setup() {
+    XrdSsi::Trace.What = TRACE_ALL | TRACE_Debug;
+
+    XrdSsiErrInfo eInfo;
+    _service = XrdSsiGetClientService(eInfo, _config.serviceUrl.c_str()); // Step 1
+    if(!_service) figureOutError(eInfo);
+    assert(_service);
+    _requestCount = 0;
+}
+
+bool Executive::_shouldRetry(int refNum) {
+    const int MAX_RETRY = 5;
+    boost::lock_guard<boost::mutex> lock(_retryMutex);
+    IntIntMap::iterator i = _retryMap.find(refNum);
+    if(i == _retryMap.end()) {
+        _retryMap[refNum] = 1;
+    } else if(i->second < MAX_RETRY) {
+        _retryMap[refNum] = 1 + i->second;
+    } else {
+        return false;
+    }
+    return true;
+}
+
 ExecStatus& Executive::_insertNewStatus(int refNum,
                                         ResourceUnit const& r) {
     ExecStatus::Ptr es(new ExecStatus(r));

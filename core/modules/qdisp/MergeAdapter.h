@@ -44,6 +44,7 @@ public:
     virtual bool flush(int bLen, bool last) {return false;}
     virtual void errorFlush(std::string const&, int) {}
     virtual bool finished() const {return true; }
+    virtual bool reset() {return false; }
     std::ostream& print(std::ostream& os) const {
         return os << "MergeAdaper(...)"; }
 

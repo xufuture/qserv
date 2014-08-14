@@ -61,7 +61,8 @@ void QueryResource::ProvisionDone(XrdSsiSession* s) { // Step 3
             return;
         }
         _session = s;
-        _request = new QueryRequest(s, _payload, _receiver, _status);
+        _request = new QueryRequest(s, _payload, _receiver,
+                                    _retryFunc, _status);
         assert(_request);
         // Hand off the request and release ownership.
         _status.report(ExecStatus::REQUEST);
@@ -76,6 +77,11 @@ void QueryResource::ProvisionDone(XrdSsiSession* s) { // Step 3
             LOGGER_ERR << "Failed to send request " << *_request << std::endl;
             delete _request;
             _request = 0;
+            // Retry the request.
+            // TODO: should be more selective about retrying a query.
+            if(_retryFunc) {
+                (*_retryFunc)();
+            }
         }
 
         // If we are not doing anything else with the session,

@@ -49,6 +49,7 @@ public:
     virtual bool flush(int bLen, bool last) = 0;
     virtual void errorFlush(std::string const& msg, int code) = 0;
     virtual bool finished() const = 0;
+    virtual bool reset() = 0; //< Reset the state that a request can be retried.
     virtual std::ostream& print(std::ostream& os) const = 0;
 
     Error getError() const { return Error(); };

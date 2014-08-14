@@ -48,12 +48,13 @@ ResultReceiver::ResultReceiver(boost::shared_ptr<rproc::TableMerger> merger,
                                std::string const& tableName)
     : _merger(merger), _tableName(tableName),
       _actualSize(ResultReceiver_bufferSize),
-      _flushed(false) {
+      _flushed(false), _dirty(false) {
     // Consider allocating buffer lazily, at first invocation of buffer()
     _actualBuffer.reset(new char[_actualSize]);
     assert(_actualBuffer);
     _buffer = _actualBuffer.get();
     _bufferSize = _actualSize;
+
 }
 
 int ResultReceiver::bufferSize() const {
@@ -76,6 +77,9 @@ bool ResultReceiver::flush(int bLen, bool last) {
         // just end it.
     } else if(bLen > 0) {
         mergeOk = _appendAndMergeBuffer(bLen);
+        if(mergeOk) {
+            _dirty = true;
+        }
     } else {
         LOGGER_ERR << "Possible error: flush with negative length" << std::endl;
         return false;
@@ -106,6 +110,20 @@ void ResultReceiver::errorFlush(std::string const& msg, int code) {
 
 bool ResultReceiver::finished() const {
     return _flushed;
+}
+
+bool ResultReceiver::reset() {
+    // If we've pushed any bits to the merger successfully, we have to undo them
+    // to reset to a fresh state. For now, we will just fail if we've already
+    // begun merging. If we implement the ability to retract a partial result
+    // merge, then we can use it and do something better.
+    if(_dirty) {
+        return false; // Can't reset if we have already pushed state.
+    }
+    // Forget about anything we've put in the buffer so far.
+    _buffer = _actualBuffer.get();
+    _bufferSize = _actualSize;
+    return true;
 }
 
 std::ostream& ResultReceiver::print(std::ostream& os) const {

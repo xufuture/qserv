@@ -32,9 +32,7 @@
 #include "XrdSsi/XrdSsiService.hh" // Resource
 
 // Local headers
-//#include "ccontrol/transaction.h"
-//#include "util/Timer.h"
-//#include "xrdc/xrdfile.h"
+#include "util/Callable.h"
 
 // Forward declarations
 namespace lsst {
@@ -59,13 +57,19 @@ class QueryRequest;
 class QueryResource : public XrdSsiService::Resource {
 public:
     /// @param rPath resource path, e.g. /LSST/12312
+    /// @param payload serialized protobuf request message
+    /// @param receiver result receiver
+    /// @param retryFunc high-level retry function.
+    /// @param status reference to update the current execution status
     QueryResource(std::string const& rPath,
                   std::string const& payload,
                   boost::shared_ptr<QueryReceiver> receiver,
+                  boost::shared_ptr<util::VoidCallable<void> > retryFunc,
                   ExecStatus& status)
         : Resource(rPath.c_str()),
           _payload(payload),
           _receiver(receiver),
+          _retryFunc(retryFunc),
           _status(status) {
     }
 
@@ -77,6 +81,7 @@ public:
     QueryRequest* _request; // Owned temporarily, special deletion handling.
     std::string const _payload;
     boost::shared_ptr<QueryReceiver> _receiver;
+    boost::shared_ptr<util::VoidCallable<void> > _retryFunc;
     ExecStatus& _status;
 };
 

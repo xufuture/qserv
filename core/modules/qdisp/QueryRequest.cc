@@ -68,6 +68,7 @@ private:
 QueryRequest::QueryRequest(XrdSsiSession* session,
                            std::string const& payload,
                            boost::shared_ptr<QueryReceiver> receiver,
+                           boost::shared_ptr<util::VoidCallable<void> > retryFunc,
                            ExecStatus& status)
     : _session(session),
       _payload(payload),
@@ -139,6 +140,9 @@ bool QueryRequest::_importStream() {
     if(!retrieveInitiated) {
         _status.report(ExecStatus::RESPONSE_DATA_ERROR);
         bool ok = Finished();
+        if(_retryFunc) { // Retry.
+            (*_retryFunc)();
+        }
         // delete this; // Don't delete! need to stay alive for error.
         // Not sure when to delete.
         if(ok) {
@@ -214,6 +218,9 @@ void QueryRequest::_errorFinish() {
     bool ok = Finished();
     if(!ok) { LOGGER_ERR << "Error cleaning up QueryRequest\n"; }
     else { LOGGER_INF << "Request::Finished() with error (clean).\n"; }
+    if(_retryFunc) {
+        (*_retryFunc)();
+    }
 }
 
 void QueryRequest::_finish() {

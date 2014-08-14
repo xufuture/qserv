@@ -59,6 +59,7 @@ public:
     virtual bool flush(int bLen, bool last);
     virtual void errorFlush(std::string const& msg, int code);
     virtual bool finished() const;
+    virtual bool reset();
     virtual std::ostream& print(std::ostream& os) const;
 
     // Add a callback to be invoked when the receiver finishes processing
@@ -81,6 +82,7 @@ private:
     boost::scoped_array<char> _actualBuffer;
     char* _buffer;
     bool _flushed;
+    bool _dirty;
     Error _error;
 };
 

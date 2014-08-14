@@ -93,7 +93,16 @@ private:
     typedef boost::shared_ptr<QueryReceiver> ReceiverPtr;
     typedef std::map<int, ReceiverPtr> ReceiverMap;
 
+    class DispatchAction;
+    friend class DispatchAction;
+    void _dispatchQuery(int refNum,
+                       std::string const& path,
+                       std::string const& payload,
+                       boost::shared_ptr<QueryReceiver> receiver,
+                       ExecStatus& status);
+
     void _setup();
+    bool _shouldRetry(int refNum);
     ExecStatus& _insertNewStatus(int refNum, ResourceUnit const& r);
     bool _track(int refNum, ReceiverPtr r);
     void _unTrack(int refNum);
@@ -117,6 +126,9 @@ private:
     boost::condition_variable _receiversEmpty;
     boost::mutex _requestsMutex;
 
+    boost::mutex _retryMutex;
+    typedef std::map<int,int> IntIntMap;
+    IntIntMap _retryMap;
 }; // class Executive
 }}} // namespace lsst::qserv::qdisp
 
