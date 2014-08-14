@@ -259,7 +259,7 @@
 ///
 /// 3. For each edge e incident to vertex v, infer the overlap oᵤ required
 ///    for vertex u reachable from v via e. If oᵤ is greater than the
-///    partition overlap, ignore u. Otherwise, set the required overlap for
+///    available overlap, ignore u. Otherwise, set the required overlap for
 ///    u to the minimum of oᵤ and its current required overlap. If oᵤ was
 ///    smaller than the previous required overlap and u is not already in Q,
 ///    insert u into Q. oᵤ is determined from oᵥ based on the kinds of tables

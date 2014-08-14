@@ -93,13 +93,17 @@ public:
     /// `splice` transfers the entries of `m` to this map, emptying `m`.
     /// If `m` contains a column reference `c` that is already in this map,
     /// then `c` is marked ambiguous unless `c` is an unqualified reference,
-    /// in which case behavior depends on the `natural` flag argument:
+    /// in which case behavior depends on the `natural` flag argument and
+    /// whether or not `c` is a member of `cols` (a vector of column names):
     ///
-    /// - If `natural` is false, `c` is marked as ambiguous.
-    /// - If `natural` is true, table references for `c` from both maps are
-    ///   concatenated unless `c` is already ambiguous in either map, in which
-    ///   case an exception is thrown.
-    void splice(ColumnVertexMap& m, bool natural);
+    /// - If `natural` is false and `c` is not a member of `cols`,
+    ///   then `c` is marked as ambiguous.
+    /// - Otherwise, table references for `c` from both maps are concatenated
+    ///   unless `c` is already ambiguous in either map, in which case an
+    ///   exception is thrown.
+    void splice(ColumnVertexMap& m,
+                bool natural,
+                std::vector<std::string> const& cols);
 
     /// `computeCommonColumns` returns all unqualified column names that are
     /// common to this map and `m`. If any such column is ambiguous in either

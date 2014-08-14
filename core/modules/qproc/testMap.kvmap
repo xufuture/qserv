@@ -47,7 +47,11 @@
 /DBS/LSST/TABLES/SimRefObject	READY
 /DBS/LSST/TABLES/SimRefObject/compression	0
 /DBS/LSST/TABLES/SimRefObject/partitioning	\N
-/DBS/LSST/TABLES/SimRefObject/partitioning/subChunks	0
+/DBS/LSST/TABLES/SimRefObject/partitioning/dirColName	refObjectId
+/DBS/LSST/TABLES/SimRefObject/partitioning/dirTable	SimRefObject
+/DBS/LSST/TABLES/SimRefObject/partitioning/latColName	refDecl
+/DBS/LSST/TABLES/SimRefObject/partitioning/lonColName	refRa
+/DBS/LSST/TABLES/SimRefObject/partitioning/subChunks	1
 /DBS/LSST/TABLES/SimRefObject/uuid	47717b3c-1ce0-4bbf-96fb-9110affd4bca
 /DBS/LSST/TABLES/Source	READY
 /DBS/LSST/TABLES/Source/compression	0
@@ -58,6 +62,13 @@
 /DBS/LSST/TABLES/Source/partitioning/lonColName	raObjectTest
 /DBS/LSST/TABLES/Source/partitioning/subChunks	0
 /DBS/LSST/TABLES/Source/uuid	8e8d30f0-845c-4c51-9443-5c276d82de56
+/DBS/LSST/TABLES/Source2	READY
+/DBS/LSST/TABLES/Source2/compression	0
+/DBS/LSST/TABLES/Source2/partitioning	\N
+/DBS/LSST/TABLES/Source2/partitioning/dirColName	objectIdObjTest
+/DBS/LSST/TABLES/Source2/partitioning/dirTable	Object
+/DBS/LSST/TABLES/Source2/partitioning/subChunks	0
+/DBS/LSST/TABLES/Source2/uuid	bff12efe-231d-486e-aef4-ae40c3c00eb7
 /DBS/LSST/uuid	0b86527e-f72f-4e1d-9da7-878d4ba0e308
 /DBS/rplante_PT1_2_u_pt12prod_im3000_qserv	READY
 /DBS/rplante_PT1_2_u_pt12prod_im3000_qserv/LOCK	\N

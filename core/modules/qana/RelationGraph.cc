@@ -659,11 +659,13 @@ void RelationGraph::_join(JoinRef::Type joinType,
         return;
     }
     size_t numEdges = 0;
+    vector<string> usingCols;
     if (natural) {
         numEdges += _makeNaturalEqEdges(joinType, g);
     } else if (joinSpec && joinSpec->getUsing()) {
         ColumnRef const& c = *joinSpec->getUsing();
         numEdges += _makeUsingEqEdges(c, joinType, g);
+        usingCols.push_back(c.column);
     } else if (joinSpec && joinSpec->getOn()) {
         numEdges += _makeOnEqEdges(joinSpec->getOn(), joinType, g);
     }
@@ -679,7 +681,7 @@ void RelationGraph::_join(JoinRef::Type joinType,
     }
     // Splice g into this graph.
     _vertices.splice(_vertices.end(), g._vertices);
-    _map.splice(g._map, natural);
+    _map.splice(g._map, natural, usingCols);
     // Add spatial edges
     if (!isOuterJoin(joinType) && joinSpec && joinSpec->getOn()) {
         _makeSpEdges(joinSpec->getOn(), overlap);
@@ -725,7 +727,8 @@ RelationGraph::RelationGraph(TableRef& tr,
         }
         ColumnVertexMap m1(_vertices.front(), begin, middle);
         ColumnVertexMap m2(_vertices.back(), middle, end);
-        m1.splice(m2, false);
+        vector<string> _;
+        m1.splice(m2, false, _);
         _map.swap(m1);
     }
 }
@@ -824,7 +827,7 @@ void traverse(Vertex* v, double const partitionOverlap)
             if (e->isSpatial()) {
                 requiredOverlap += e->angSep;
             }
-            if (requiredOverlap < availableOverlap &&
+            if (requiredOverlap <= availableOverlap &&
                 requiredOverlap < prevRequiredOverlap) {
                 // update overlap for u and add it into the processing queue
                 u->overlap = requiredOverlap;
@@ -947,7 +950,7 @@ void RelationGraph::rewrite(SelectStmtList& outputs,
     vector<Vertex*> overlapRefs;
     for (ListIter i = _vertices.begin(), e = _vertices.end(); i != e; ++i) {
         i->rewriteAsChunkTemplate();
-        if (i->overlap > 0.0) {
+        if (i->info->kind == TableInfo::DIRECTOR && i->overlap > 0.0) {
             overlapRefs.push_back(&(*i));
         }
     }

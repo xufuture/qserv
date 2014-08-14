@@ -68,7 +68,9 @@ vector<Vertex*> const& ColumnVertexMap::find(ColumnRef const& c) const
     return p.first->vertices;
 }
 
-void ColumnVertexMap::splice(ColumnVertexMap& m, bool natural)
+void ColumnVertexMap::splice(ColumnVertexMap& m,
+                             bool natural,
+                             vector<string> const& cols)
 {
     typedef vector<Entry>::iterator Iter;
     vector<Entry>::size_type s = _entries.size();
@@ -87,16 +89,17 @@ void ColumnVertexMap::splice(ColumnVertexMap& m, bool natural)
     if (!_entries.empty()) {
         ColumnRefEq eq;
         Iter o = _entries.begin(), i = o, e = _entries.end();
+        vector<string>::const_iterator cb = cols.begin(), ce = cols.end();
         while (++i != e) {
             if (eq(*o, *i)) {
-                if (!o->cr->table.empty() || !natural) {
+                if (!o->cr->table.empty() ||
+                    (!natural && std::find(cb, ce, o->cr->column) == ce)) {
                     // duplicate is a qualified column reference
-                    // or is not a natural join column
+                    // or is not a natural join or using column
                     o->vertices.clear();
                 } else if (o->vertices.empty() || i->vertices.empty()) {
                     throw QueryNotEvaluableError(
-                        "Natural join column " + o->cr->column +
-                        " is ambiguous");
+                        "Join column " + o->cr->column + " is ambiguous");
                 } else {
                     // concatenate table references for natural join column
                     o->vertices.insert(o->vertices.end(),
@@ -129,7 +132,7 @@ vector<string> const ColumnVertexMap::computeCommonCols(
                 // unqualified column reference
                 if (i->vertices.empty() || j->vertices.empty()) {
                     throw QueryNotEvaluableError(
-                        "Natural join column " + i->cr->column +
+                        "Join column " + i->cr->column +
                         " is ambiguous");
                 }
                 cols.push_back(i->cr->column);
