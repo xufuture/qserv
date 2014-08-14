@@ -191,7 +191,7 @@ query::BoolFactor::Ptr
 BoolTermFactory::newBoolFactor(antlr::RefAST a) {
 #if 0
 #ifdef NEWLOG
-    if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
+    if (LOG_CHECK_INFO()) {
         std::stringstream ss;
         spacePrint sp(ss);
         forEachSibs(a, sp);

@@ -167,7 +167,7 @@ public:
     virtual ~FromWhereH() {}
     virtual void operator()(antlr::RefAST fw) {
 #ifdef NEWLOG
-        if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
+        if (LOG_CHECK_INFO()) {
             std::stringstream ss;
             printDigraph("fromwhere", ss, fw);
             LOGF_INFO("fromwhere %1%" % ss.str());
@@ -237,11 +237,6 @@ WhereFactory::_import(antlr::RefAST a) {
 void
 WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     std::string r(a->getText()); // e.g. qserv_areaspec_box
-#ifdef NEWLOG
-    LOGF_INFO("Addin from %1% : " % r);
-#else
-    LOGGER_INF << "Adding from " << r << " : ";
-#endif
     ParamGenerator pg(a->getNextSibling());
 
     query::QsRestrictor::Ptr restr(new query::QsRestrictor());
@@ -258,13 +253,14 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     // }
     std::copy(pg.begin(), pg.end(), std::back_inserter(params));
 #ifdef NEWLOG
-    if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
+    if (LOG_CHECK_INFO()) {
         std::stringstream ss;
         std::copy(params.begin(), params.end(),
                   std::ostream_iterator<std::string>(ss, ", "));
-        LOGF_INFO("%1%" % ss.str());
+        LOGF_INFO("Adding from %1%: %2%" % r % ss.str());
     }
 #else
+    LOGGER_INF << "Adding from " << r << " : ";
     std::copy(params.begin(), params.end(),
               std::ostream_iterator<std::string>(LOG_STRM(Info),", "));
 #endif

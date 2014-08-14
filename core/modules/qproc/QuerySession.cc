@@ -66,7 +66,7 @@ namespace qproc {
 
 void printConstraints(query::ConstraintVector const& cv) {
 #ifdef NEWLOG
-    if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
+    if (LOG_CHECK_INFO()) {
         std::stringstream ss;
         std::copy(cv.begin(), cv.end(),
                   std::ostream_iterator<query::Constraint>(ss, ","));
@@ -347,14 +347,9 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
             q.push_back(_context->queryMapping->apply(s, *i));
         }
     } else { // subchunked:
-#ifdef NEWLOG
-        LOGF_INFO("subchunked");
-#else
-        LOGGER_INF << "QuerySession::_buildChunkQueries() : subchunked" << std::endl;
-#endif
         ChunkSpecSingle::List sList = ChunkSpecSingle::makeList(s);
 #ifdef NEWLOG
-        if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
+        if (LOG_CHECK_INFO()) {
             std::stringstream ss;
             std::copy(sList.begin(), sList.end(),
                       std::ostream_iterator<ChunkSpecSingle>(ss, ","));
@@ -364,9 +359,6 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
         LOGGER_DBG << "QuerySession::_buildChunkQueries() : subchunks :";
         std::copy(sList.begin(), sList.end(),
                   std::ostream_iterator<ChunkSpecSingle>(LOG_STRM(Debug), ","));
-#endif
-#ifdef NEWLOG
-#else
         LOGGER_DBG << std::endl;
 #endif
         typedef ChunkSpecSingle::List::const_iterator ChunkIter;

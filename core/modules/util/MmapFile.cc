@@ -62,7 +62,7 @@ MmapFile::~MmapFile() {
     }
     if(_fd > 0) {
         if(-1 == close(_fd)) {
-#ifdef NEWLOW
+#ifdef NEWLOG
             // LOGF_WARN("Warning, broken close of %1% (fd=%2%)" % _filename % _fd);
 #else
             // LOGGER_WRN << "Warning, broken close of " << _filename

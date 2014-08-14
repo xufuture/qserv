@@ -219,7 +219,7 @@ addChunk(int session, qproc::ChunkSpec const& cs ) {
 #ifdef NEWLOG
     typedef std::vector<int> Vect;
     int count=0;
-    if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
+    if (LOG_CHECK_INFO()) {
         LOGF_INFO("Received chunk=%1% " % cs.chunkId);
         std::stringstream ss;
         for(Vect::const_iterator i = cs.subChunks.begin();

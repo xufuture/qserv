@@ -212,20 +212,20 @@ KvInterfaceImplMem::getChildren(string const& key) {
         }
     }
 #ifdef NEWLOG
-    LOGF_INFO("got: %1% children:" % retV.size());
+    if (LOG_CHECK_INFO()) {
+        vector<string>::const_iterator itrV;
+        std::stringstream ss;
+        for (itrV=retV.begin(); itrV!=retV.end() ; itrV++) {
+            ss << *itrV;
+        }
+        LOGF_INFO("got: %1% children: %2%" % retV.size() % ss.str());
+    }
 #else
     LOGGER_INF << "got " << retV.size() << " children:" << endl;
-#endif
     vector<string>::const_iterator itrV;
     for (itrV=retV.begin(); itrV!=retV.end() ; itrV++) {
-#ifdef NEWLOG
-        LOGF_INFO("'%1%', " % *itrV);
-#else
         LOGGER_INF << "'" << *itrV << "', ";
-#endif
     }
-#ifdef NEWLOG
-#else
     LOGGER_INF << endl;
 #endif
     return retV;

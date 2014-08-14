@@ -40,7 +40,7 @@ public:
     virtual void operator()(antlr::RefAST a, antlr::RefAST b,
                             antlr::RefAST c, antlr::RefAST d) {
 #ifdef NEWLOG
-        LOGF_INFO("col _%1%_ _%2%_ _%3%_ _%4_" % tokenText(a)
+        LOGF_INFO("col _%1%_ _%2%_ _%3%_ _%4%_" % tokenText(a)
                   % tokenText(b) % tokenText(c) % tokenText(d));
 #else
         LOGGER_INF << "col _" << tokenText(a)

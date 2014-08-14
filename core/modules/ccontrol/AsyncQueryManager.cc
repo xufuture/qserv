@@ -308,7 +308,7 @@ void AsyncQueryManager::joinEverything() {
     int moreDetailThreshold = 5;
     int complainCount = 0;
 #ifdef NEWLOG
-    if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_DEBUG)) {
+    if (LOG_CHECK_DEBUG()) {
         std::stringstream ss;
         _printState(ss);
         LOGF_INFO("%1%" % ss.str());
@@ -328,7 +328,7 @@ void AsyncQueryManager::joinEverything() {
             ++complainCount;
             if(complainCount > moreDetailThreshold) {
 #ifdef NEWLOG
-                if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_WARN)) {
+                if (LOG_CHECK_WARN()) {
                     std::stringstream ss;
                     _printState(ss);
                     LOGF_INFO("%1%" % ss.str());
