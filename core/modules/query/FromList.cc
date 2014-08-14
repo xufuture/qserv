@@ -121,7 +121,7 @@ FromList::clone() const {
     newL->_tableRefs.reset(new TableRefList());
 
     for(Iter i=_tableRefs->begin(), e=_tableRefs->end(); i != e; ++ i) {
-        newL->_tableRefs->push_back(*i);
+        newL->_tableRefs->push_back((*i)->clone());
     }
     return newL;
 }
