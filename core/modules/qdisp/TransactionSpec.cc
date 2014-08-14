@@ -28,12 +28,6 @@
 #include <fstream>
 #include <sys/mman.h>
 
-// Third-party headers
-//#include <boost/format.hpp>
-
-// Local headers
-//#include "log/Logger.h"
-
 namespace {
 int seekMagic(int start, char* buffer, int term) {
     // Find magic sequence

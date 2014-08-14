@@ -41,10 +41,6 @@
 #include "XrdSsi/XrdSsiService.hh" // Resource
 #include "XrdOuc/XrdOucTrace.hh"
 
-// #include "boost/date_time/posix_time/posix_time_types.hpp"
-// #include <boost/format.hpp>
-// #include <boost/make_shared.hpp>
-
 // // Local headers
 #include "global/ResourceUnit.h"
 #include "log/Logger.h"
@@ -52,7 +48,6 @@
 #include "qdisp/MessageStore.h"
 #include "qdisp/MergeAdapter.h"
 #include "qdisp/QueryResource.h"
-// #include "util/Timer.h"
 
 namespace {
 std::string figureOutError(XrdSsiErrInfo & e) {
@@ -158,7 +153,7 @@ private:
     ExecStatus& _status; //< Reference back to exec status
 };
 
-// Add a spec to be executed. Not thread-safe.
+/// Add a spec to be executed. Not thread-safe.
 void Executive::add(int refNum, Executive::Spec const& s) {
 
     bool trackOk =_track(refNum, s.receiver); // Remember so we can join.
@@ -358,7 +353,7 @@ bool Executive::_track(int refNum, ReceiverPtr r) {
     assert(r);
     {
         boost::lock_guard<boost::mutex> lock(_receiversMutex);
-        // LOGGER_INF
+
         LOGGER_DBG << "Executive (" << (void*)this << ") tracking  id="
                    << refNum << std::endl;
         if(_receivers.find(refNum) == _receivers.end()) {

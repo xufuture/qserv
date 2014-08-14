@@ -24,10 +24,6 @@
 #ifndef LSST_QSERV_QDISP_MERGEADAPTER_H
 #define LSST_QSERV_QDISP_MERGEADAPTER_H
 
-// System headers
-// #include <list>
-// #include <string>
-
 // Third-party
 #include <boost/make_shared.hpp>
 
@@ -54,5 +50,4 @@ public:
 };
 
 }}} // namespace lsst::qserv::qdisp
-
 #endif // LSST_QSERV_QDISP_MERGEADAPTER_H

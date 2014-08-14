@@ -103,8 +103,7 @@ long long xrdLseekSet(int fildes, off_t offset) {
 }}} // namespace lsst::qserv::xrdc
 
 #else // Not faked: choose the real XrdPosix implementation.
-
-//extern XrdPosixLinkage Xunix; // test removal for new client
+// extern XrdPosixLinkage Xunix; // Enable for old POSIX-file-style dispatch
 
 namespace {
 

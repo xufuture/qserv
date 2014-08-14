@@ -23,24 +23,39 @@
 /**
   * @file
   *
-  * @brief SWIG-exported interface to dispatching queries.
+  * @brief Interface for managing the execution of user queries, that is,
+  * queries as they are submitted by the user. The generation of smaller
+  * chunk-level queries is handled here or by delegate classes.
+  *
   * Basic usage:
   *
-  * newSession() // Init a new session
+  * After constructing a UserQuery object with the UserQueryFactory...
   *
-  * setupQuery(int session, std::string const& query) // setup the session with
-  * a query. This triggers a parse.
+  * getConstraints() -- retrieve constraints of the user query to be passed to
+  * spatial region selection code in another layer.
   *
-  * getSessionError(int session) // See if there are errors
+  * getDominantDb() -- retrieve the "dominantDb", that is, the database whose
+  * partitioning will be used for chunking and dispatch.
   *
-  * getConstraints(int session)  // Retrieve the detected constraints so that we
-  * can apply them to see which chunks we need. (done in Python)
+  * getDbStriping() -- retrieve the striping parameters of the dominantDb.
   *
-  * addChunk(int session, lsst::qserv::qproc::ChunkSpec const& cs ) // add the
-  * computed chunks to the query
+  * getError() -- See if there are errors
   *
-  * submitQuery3(int session) // Trigger the dispatch of all chunk queries for
-  * the session.
+  * getExecDesc() -- see how execution is progressing
+  *
+  * addChunk() -- Add a chunk number (and subchunks, as appropriate) to be
+  * dispatched during submit(). The czar uses getConstraints and getDbStriping
+  * to query a region selector over a chunk number generator and an emptychunks
+  * list to compute the relevant chunk numbers.
+  *
+  * submit() -- send the query (in generated fragments) to the cluster for
+  * execution.
+  *
+  * join() -- block until query execution is complete (or encounters errors)
+  *
+  * kill() -- stop a query in progress
+  *
+  * discard() -- release resources for this query.
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -157,7 +172,7 @@ void UserQuery::submit() {
         if(pi.numAccepted() != msgCount) {
             throw UserQueryBug("Error serializing TaskMsg.");
         }
-#if 1
+
         ResourceUnit ru;
         ru.setAsDbChunk(cs.db, cs.chunkId);
         boost::shared_ptr<ResultReceiver> rr;
@@ -168,33 +183,11 @@ void UserQuery::submit() {
                                      ss.str(),
                                      rr };
         _executive->add(refNum, s);
-#else
-        TransactionSpec t;
-        obsolete::QservPath qp;
-        qp.setAsCquery(cs.db, cs.chunkId);
-        std::string path=qp.path();
-        t.chunkId = cs.chunkId;
-        t.msg = ss.str();
-        LOGGER_INF << "Msg cid=" << cs.chunkId << " with size="
-                   << t.query.size() << std::endl;
-        t.bufferSize = 8192000;
-        t.path = util::makeUrl(hp.c_str(), qp.path());
-        t.savePath = makeSavePath(qm.getScratchPath(), session, cs.chunkId);
-        qm.add(t, chunkResultName);
-#endif
         ss.str(""); // reset stream
 
     }
 }
 QueryState UserQuery::join() {
-#if 0
-    AsyncQueryManager& qm = getAsyncManager(session);
-    qm.joinEverything();
-    AsyncQueryManager::ResultDeque const& d = qm.getFinalState();
-    bool successful;
-    std::for_each(d.begin(), d.end(), mergeStatus(successful));
-
-#endif
     bool successful = _executive->join();
     if(successful) {
         _merger->finalize();
@@ -208,7 +201,7 @@ QueryState UserQuery::join() {
 
 void UserQuery::discard() {
     // Make sure resources are released.
-    if(_executive && _executive->getNumInflight() > 0) { 
+    if(_executive && _executive->getNumInflight() > 0) {
         throw UserQueryError("Executive unfinished, cannot discard");
     }
     _executive.reset();

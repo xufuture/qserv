@@ -49,10 +49,6 @@
 #include "ccontrol/SessionManager.h"
 #include "ccontrol/userQueryProxy.h"
 
-// System headers
-//#include <fstream>
-//#include <sstream>
-
 // Local headers
 #include "ccontrol/MissingUserQuery.h"
 #include "ccontrol/UserQuery.h"

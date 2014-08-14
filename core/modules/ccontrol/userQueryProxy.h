@@ -35,14 +35,10 @@
 #include <string>
 
 // Local headers
-/* #include "control/transaction.h" */
 #include "ccontrol/QueryState.h"
 #include "css/StripingParams.h"
-/* #include "merger/TableMerger.h" */
 #include "qproc/ChunkSpec.h"
 #include "query/Constraint.h"
-/* #include "util/common.h" */
-/* #include "xrdc/xrdfile.h" */
 
 namespace lsst {
 namespace qserv {
@@ -80,7 +76,7 @@ QueryState UserQuery_join(int session);
 /// Kill this user query immediately (system is shutting down now)
 void UserQuery_kill(int session);
 
-
+/// Release resources held for this user query
 void UserQuery_discard(int session);
 
 /// @return sessionId

@@ -88,12 +88,6 @@ void UserQueryFactory::Impl::readConfig(StringMap const& m) {
         "WARNING! No xrootd spec. Using localhost:1094",
         "localhost:1094");
     executiveConfig.reset(new qdisp::Executive::Config(serviceUrl));
-#if 0
-    _scratchPath =  cm.get(
-        "frontend.scratch_path",
-        "Error, no scratch path found. Using /tmp.",
-        "/tmp");
-#endif
     // This should be overriden by the installer properly.
     mergerConfigTemplate.socket =  cm.get(
         "resultdb.unix_socket",

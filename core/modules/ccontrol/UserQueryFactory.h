@@ -21,8 +21,8 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_CONTROL_USERQUERYFACTORY_H
-#define LSST_QSERV_CONTROL_USERQUERYFACTORY_H
+#ifndef LSST_QSERV_CCONTROL_USERQUERYFACTORY_H
+#define LSST_QSERV_CCONTROL_USERQUERYFACTORY_H
 /**
   * @file
   *
@@ -36,13 +36,7 @@
 #include <boost/utility.hpp>
 
 // Local headers
-/* #include "control/transaction.h" */
-/* #include "css/StripingParams.h" */
-/* #include "merger/TableMerger.h" */
-/* #include "query/Constraint.h" */
 #include "global/stringTypes.h"
-/* #include "xrdc/xrdfile.h" */
-
 
 namespace lsst {
 namespace qserv {
@@ -63,4 +57,4 @@ private:
 
 }}} // namespace lsst::qserv:control
 
-#endif // LSST_QSERV_CONTROL_USERQUERYFACTORY_H
+#endif // LSST_QSERV_CCONTROL_USERQUERYFACTORY_H

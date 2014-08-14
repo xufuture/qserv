@@ -30,7 +30,7 @@ namespace lsst {
 namespace qserv {
 namespace ccontrol {
 
-/// AnalysisError is a trivial exception for query analys problems
+/// UserQueryError is a trivial exception for query problems (analysis or execution).
 class UserQueryError : public std::runtime_error {
 public:
     explicit UserQueryError(char const* msg) : std::runtime_error(msg) {}

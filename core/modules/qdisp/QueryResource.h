@@ -27,27 +27,16 @@
 #include <string>
 
 // Third-party headers
-//#include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include "XrdSsi/XrdSsiService.hh" // Resource
 
 // Local headers
 #include "util/Callable.h"
 
-// Forward declarations
-namespace lsst {
-namespace qserv {
-namespace ccontrol {
-//    class AsyncQueryManager;
-}
-namespace xrdc {
-//    class PacketIter;
-}}} // End of forward declarations
-
-
 namespace lsst {
 namespace qserv {
 namespace qdisp {
+// Local forward declarations
 class ExecStatus;
 class QueryReceiver;
 class QueryRequest;

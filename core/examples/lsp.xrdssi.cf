@@ -24,8 +24,9 @@ else
 # Use server mode
 all.role server
 
-# Use qserv worker filesystem plugin
-xrootd.fslib libxrdfs.so
+# Use XrdSsi plugin, then qserv worker as xrdssi plugin
+xrootd.fslib libXrdSsi.so
+ssi.svclib libxrdsvc.so
 
 # Use qserv worker oss plugin (export path handling)
 ofs.osslib libxrdoss.so

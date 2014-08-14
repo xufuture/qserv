@@ -26,15 +26,8 @@
 #include <cstring> // For memmove()
 
 // Qserv headers
-// #include "ccontrol/ConfigMap.h"
-// #include "ccontrol/UserQuery.h"
-// #include "ccontrol/userQueryProxy.h"
-// #include "css/Facade.h"
 #include "log/Logger.h"
-// #include "qdisp/Executive.h"
-// #include "qproc/QuerySession.h"
 #include "rproc/TableMerger.h"
-// #include "util/PacketBuffer.h"
 
 namespace lsst {
 namespace qserv {
@@ -155,34 +148,5 @@ bool ResultReceiver::_appendAndMergeBuffer(int bLen) {
         throw "fatal";
     }
 }
-
-#if 0
-        boost::shared_ptr<rproc::TableMerger> _merger;
-    std::string _tableName;
-    util::UnaryCallable<void, bool>::Ptr _finishHook;
-
-    int _bufferSize;
-    int _actualSize;
-    boost::scoped_array<char> _actualBuffer;
-    char* _buffer;
-    bool _flushed;
-#endif
-
-
-#if 0
-    explicit TableMerger(TableMergerConfig const& c);
-
-    bool merge(std::string const& dumpFile, std::string const& tableName);
-    bool merge2(std::string const& dumpFile, std::string const& tableName);
-
-    // Fragmented merger
-//    bool merge(PacketIterPtr pacIter, std::string const& tableName);
-    bool merge(PacketBuffer::Ptr pacIter, std::string const& tableName);
-
-    TableMergerError const& getError() const { return _error; }
-    std::string getTargetTable() const {return _config.targetTable; }
-
-    bool finalize();
-#endif
 
 }}} // lsst::qserv::ccontrol

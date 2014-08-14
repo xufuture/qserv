@@ -25,7 +25,6 @@
 #define LSST_QSERV_CCONTROL_RESULTRECEIVER_H
 
 // System headers
-// #include <list>
 #include <string>
 
 // Third-party

@@ -36,14 +36,10 @@
 #include <boost/utility.hpp>
 
 // Local headers
-/* #include "control/transaction.h" */
 #include "ccontrol/QueryState.h"
 #include "css/StripingParams.h"
-/* #include "merger/TableMerger.h" */
 #include "qproc/ChunkSpec.h"
 #include "query/Constraint.h"
-/* #include "util/common.h" */
-/* #include "xrdc/xrdfile.h" */
 
 // Forward decl
 namespace lsst {

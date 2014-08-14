@@ -31,11 +31,8 @@
 
 // Third-party headers
 #include <boost/thread.hpp> // boost::mutex
-//#include "XrdPosix/XrdPosixCallBack.hh"
 
 // Local headers
-//#include "util/Timer.h"
-//#include "xrdc/xrdfile.h"
 #include "global/ResourceUnit.h"
 #include "global/stringTypes.h"
 #include "qdisp/TransactionSpec.h"
@@ -109,7 +106,6 @@ private:
     void _waitUntilEmpty();
     void _reapReceivers(boost::unique_lock<boost::mutex> const& receiversLock);
     void _reportStatuses();
-    //void _squashAll(boost::unique_lock<boost::mutex> const& receiversLock);
 
     // for debugging
     void _printState(std::ostream& os);
