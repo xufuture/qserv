@@ -595,7 +595,7 @@ FromFactory::_import(antlr::RefAST a) {
     std::string s(ss.str());
     if(s.size() > 0) {
 #ifdef NEWLOG
-        LOGF_INFO(s);
+        LOGF_INFO("%1%" % s);
 #else
         LOGGER_INF << s << std::endl;
 #endif

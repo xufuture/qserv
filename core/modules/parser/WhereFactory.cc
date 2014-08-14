@@ -35,7 +35,7 @@
 
 // System headers
 #include <iterator>
-#include <strstream>
+#include <sstream>
 
 // Local headers
 #include "log/Logger.h"
@@ -168,7 +168,7 @@ public:
     virtual void operator()(antlr::RefAST fw) {
 #ifdef NEWLOG
         if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
-            std::strstream ss;
+            std::stringstream ss;
             printDigraph("fromwhere", ss, fw);
             LOGF_INFO("fromwhere %1%" % ss.str());
         }
@@ -259,10 +259,10 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     std::copy(pg.begin(), pg.end(), std::back_inserter(params));
 #ifdef NEWLOG
     if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
-        std::strstream ss;
+        std::stringstream ss;
         std::copy(params.begin(), params.end(),
                   std::ostream_iterator<std::string>(ss, ", "));
-        LOGF_INFO(ss.str());
+        LOGF_INFO("%1%" % ss.str());
     }
 #else
     std::copy(params.begin(), params.end(),

@@ -129,7 +129,7 @@ TaskMsgFactory2::Impl::makeMsg(ChunkQuerySpec const& s,
         ChunkQuerySpec const* sPtr = &s;
         while(sPtr) {
 #ifdef NEWLOG
-            LOGF_DEBUG("TaskMsgFactory2::Impl::makeMsg() : nextFragment");
+            LOGF_DEBUG("nextFragment");
 #else
             LOGGER_DBG << "TaskMsgFactory2::Impl::makeMsg() : nextFragment " << std::endl;
 #endif
@@ -150,13 +150,13 @@ TaskMsgFactory2::Impl::makeMsg(ChunkQuerySpec const& s,
         }
     } else {
 #ifdef NEWLOG
-        LOGF_DEBUG("TaskMsgFactory2::Impl::makeMsg() : no fragment");
+        LOGF_DEBUG("no fragment");
 #else
         LOGGER_DBG << "TaskMsgFactory2::Impl::makeMsg() : no fragment " << std::endl;
 #endif
 	for(unsigned int t=0;t<(s.queries).size();t++){
 #ifdef NEWLOG
-	    LOGF_DEBUG((s.queries).at(t));
+	    LOGF_DEBUG("%1%" % (s.queries).at(t));
 #else
 	    LOGGER_DBG << (s.queries).at(t) << std::endl;
 #endif

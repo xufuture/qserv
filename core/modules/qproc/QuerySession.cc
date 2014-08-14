@@ -36,8 +36,8 @@
 // System headers
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
-#include <strstream>
 
 // Third-party headers
 #include <antlr/NoViableAltException.hpp>
@@ -67,10 +67,10 @@ namespace qproc {
 void printConstraints(query::ConstraintVector const& cv) {
 #ifdef NEWLOG
     if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
-        std::strstream ss;
+        std::stringstream ss;
         std::copy(cv.begin(), cv.end(),
                   std::ostream_iterator<query::Constraint>(ss, ","));
-        LOGF_INFO(ss.str());
+        LOGF_INFO("%1%" % ss.str());
     }
 #else
     std::copy(cv.begin(), cv.end(),
@@ -339,7 +339,7 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
     }
     if(!queryMapping.hasSubChunks()) { // Non-subchunked?
 #ifdef NEWLOG
-        LOGF_INFO("QuerySession::_buildChunkQueries() : Non-subchunked");
+        LOGF_INFO("Non-subchunked");
 #else
         LOGGER_INF << "QuerySession::_buildChunkQueries() : Non-subchunked" << std::endl;
 #endif
@@ -348,24 +348,20 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
         }
     } else { // subchunked:
 #ifdef NEWLOG
-        LOGF_INFO("QuerySession::_buildChunkQueries() : subchunked ");
+        LOGF_INFO("subchunked");
 #else
-        LOGGER_INF << "QuerySession::_buildChunkQueries() : subchunked " << std::endl;
+        LOGGER_INF << "QuerySession::_buildChunkQueries() : subchunked" << std::endl;
 #endif
         ChunkSpecSingle::List sList = ChunkSpecSingle::makeList(s);
 #ifdef NEWLOG
-        LOGF_DEBUG("QuerySession::_buildChunkQueries() : subchunks :");
-#else
-        LOGGER_DBG << "QuerySession::_buildChunkQueries() : subchunks :";
-#endif
-#ifdef NEWLOG
         if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
-            std::strstream ss;
+            std::stringstream ss;
             std::copy(sList.begin(), sList.end(),
                       std::ostream_iterator<ChunkSpecSingle>(ss, ","));
-            LOGF_INFO(ss.str());
+            LOGF_INFO("subchunks: %1%" % ss.str());
         }
 #else
+        LOGGER_DBG << "QuerySession::_buildChunkQueries() : subchunks :";
         std::copy(sList.begin(), sList.end(),
                   std::ostream_iterator<ChunkSpecSingle>(LOG_STRM(Debug), ","));
 #endif
@@ -377,8 +373,7 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
         for(ChunkIter i=sList.begin(), e=sList.end(); i != e; ++i) {
             for(TlistIter j=tlist.begin(), je=tlist.end(); j != je; ++j) {
 #ifdef NEWLOG
-                LOGF_DEBUG("QuerySession::_buildChunkQueries() : adding query %1%"
-                           % _context->queryMapping->apply(*i, *j));
+                LOGF_DEBUG("adding query %1%" % _context->queryMapping->apply(*i, *j));
 #else
                 LOGGER_DBG << "QuerySession::_buildChunkQueries() : adding query "
                            << _context->queryMapping->apply(*i, *j) << std::endl;
@@ -388,7 +383,7 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
         }
     }
 #ifdef NEWLOG
-    LOGF_DEBUG("QuerySession::_buildChunkQueries() : returning  queries : ");
+    LOGF_DEBUG("returning  queries: ");
 #else
     LOGGER_DBG << "QuerySession::_buildChunkQueries() : returning  queries : " << std::endl;
 #endif

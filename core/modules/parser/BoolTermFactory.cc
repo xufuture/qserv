@@ -191,14 +191,16 @@ query::BoolFactor::Ptr
 BoolTermFactory::newBoolFactor(antlr::RefAST a) {
 #if 0
 #ifdef NEWLOG
-    LOGF_INFO("bool factor:");
+    if (LOG_CHECK_LVL(LOG_DEFAULT_NAME(), LOG_LVL_INFO)) {
+        std::stringstream ss;
+        spacePrint sp(ss);
+        forEachSibs(a, sp);
+        LOGF_INFO("bool factor: %1%" % ss.str());
+    }
 #else
     LOGGER_INF << "bool factor:";
-#endif
     spacePrint sp(LOG_STRM(Info));
     forEachSibs(a, sp);
-#ifdef NEWLOG
-#else
     LOGGER_INF << std::endl;
 #endif
 #endif

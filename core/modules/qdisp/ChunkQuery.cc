@@ -306,7 +306,7 @@ void ChunkQuery::Complete(int Result) {
     }
     if(isReallyComplete) { _notifyManager(); }
 #ifdef NEWLOG
-    LOGF_INFO(ss.str());
+    LOGF_INFO("%1%" % ss.str());
 #else
     LOGGER_INF << ss.str();
 #endif
@@ -642,7 +642,7 @@ void ChunkQuery::_sendQuery(int fd) {
         _notifyManager();
     }
 #ifdef NEWLOG
-    LOGF_INFO(ss.str());
+    LOGF_INFO("%1%" % ss.str());
 #else
     LOGGER_INF << ss.str();
 #endif

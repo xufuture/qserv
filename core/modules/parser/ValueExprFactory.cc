@@ -61,7 +61,7 @@ boost::shared_ptr<query::ValueExpr>
 ValueExprFactory::newExpr(antlr::RefAST a) {
     boost::shared_ptr<query::ValueExpr> expr(new query::ValueExpr);
 #ifdef NEWLOG
-    // LOGF_INFO(walkIndentedString(a));
+    // LOGF_INFO("%1%" % walkIndentedString(a));
 #else
     // LOGGER_INF << walkIndentedString(a) << std::endl;
 #endif

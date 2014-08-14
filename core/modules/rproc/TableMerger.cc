@@ -491,7 +491,7 @@ bool TableMerger::_importIter(SqlInsertIter& sii,
                 std::stringstream errStrm;
                 errStrm << "Failed importing! " << tableName << " " << _error.description;
 #ifdef NEWLOG
-                LOGF_ERROR(errStrm.str());
+                LOGF_ERROR("%1%" % errStrm.str());
 #else
                 LOGGER_ERR << errStrm.str() << std::endl;
 #endif
