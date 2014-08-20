@@ -87,7 +87,6 @@ time bash newinstall.sh ||
     echo "ERROR : newinstall.sh failed"
     exit 1
 }
-echo "XXXXXXXXXXXXXXXx"
 source loadLSST.sh
 
 echo
