@@ -53,24 +53,20 @@
 #include "query/ValueExpr.h"
 #include "query/WhereClause.h"
 
-using std::string;
-using std::vector;
-using boost::shared_ptr;
-using boost::dynamic_pointer_cast;
 
 namespace { // File-scope helpers
-    string const UDF_PREFIX = "scisql_";
+    std::string const UDF_PREFIX = "scisql_";
 } // anonymous
 
 namespace lsst {
 namespace qserv {
 namespace qana {
 
-typedef std::pair<string, string> StringPair;
+typedef std::pair<std::string, std::string> StringPair;
 
-shared_ptr<query::ColumnRef>
+boost::shared_ptr<query::ColumnRef>
 resolveAsColumnRef(query::QueryContext& context, query::ValueExprPtr vexpr) {
-    shared_ptr<query::ColumnRef> cr = vexpr->copyAsColumnRef();
+    boost::shared_ptr<query::ColumnRef> cr = vexpr->copyAsColumnRef();
     if(!cr) {
         return cr;
     }
@@ -82,7 +78,8 @@ resolveAsColumnRef(query::QueryContext& context, query::ValueExprPtr vexpr) {
 
 /// @return true if cr represents a valid secondary index column.
 bool
-lookupSecIndex(query::QueryContext& context, shared_ptr<query::ColumnRef> cr) {
+lookupSecIndex(query::QueryContext& context,
+               boost::shared_ptr<query::ColumnRef> cr) {
     // Match cr as a column ref against the secondary index column for a
     // database's partitioning strategy.
     if((!cr) || !context.cssFacade) { return false; }
@@ -94,12 +91,12 @@ lookupSecIndex(query::QueryContext& context, shared_ptr<query::ColumnRef> cr) {
     if (cr->column.empty()) {
         return false;
     }
-    vector<string> sics = context.cssFacade->getSecIndexColNames(
+    std::vector<std::string> sics = context.cssFacade->getSecIndexColNames(
         cr->db, cr->table);
     return std::find(sics.begin(), sics.end(), cr->column) != sics.end();
 }
 
-query::PassTerm::Ptr newPass(string const& s) {
+query::PassTerm::Ptr newPass(std::string const& s) {
     query::PassTerm::Ptr p(new query::PassTerm);
     p->_text = s;
     return p;
@@ -112,16 +109,16 @@ query::PassListTerm::Ptr newPassList(C& c) {
 }
 
 query::InPredicate::Ptr
-newInPred(string const& aliasTable,
-          string const& secIndexColumn,
-          vector<string> const& params) {
+newInPred(std::string const& aliasTable,
+          std::string const& secIndexColumn,
+          std::vector<std::string> const& params) {
     query::InPredicate::Ptr p(new query::InPredicate());
-    shared_ptr<query::ColumnRef> cr(
+    boost::shared_ptr<query::ColumnRef> cr(
                new query::ColumnRef("", aliasTable, secIndexColumn));
     p->value =
         query::ValueExpr::newSimple(query::ValueFactor::newColumnRefFactor(cr));
 
-    typedef vector<string>::const_iterator Iter;
+    typedef std::vector<std::string>::const_iterator Iter;
     for(Iter i=params.begin(), e=params.end(); i != e; ++i) {
         query::ValueExprPtr vep;
         vep = query::ValueExpr::newSimple(query::ValueFactor::newConstFactor(*i));
@@ -132,10 +129,10 @@ newInPred(string const& aliasTable,
 
 template <typename C>
 query::FuncExpr::Ptr newFuncExpr(char const fName[],
-                                 string const& tableAlias,
+                                 std::string const& tableAlias,
                                  StringPair const& chunkColumns,
                                  C& c) {
-    typedef shared_ptr<query::ColumnRef> CrPtr;
+    typedef boost::shared_ptr<query::ColumnRef> CrPtr;
     query::FuncExpr::Ptr fe(new query::FuncExpr);
     fe->name = UDF_PREFIX + fName;
     fe->params.push_back(
@@ -154,16 +151,16 @@ query::FuncExpr::Ptr newFuncExpr(char const fName[],
 }
 
 struct RestrictorEntry {
-    RestrictorEntry(string const& alias_,
+    RestrictorEntry(std::string const& alias_,
                  StringPair const& chunkColumns_,
-                 string const& secIndexColumn_)
+                 std::string const& secIndexColumn_)
         : alias(alias_),
           chunkColumns(chunkColumns_),
           secIndexColumn(secIndexColumn_)
         {}
-    string alias;
+    std::string alias;
     StringPair chunkColumns;
-    string secIndexColumn;
+    std::string secIndexColumn;
 };
 typedef std::deque<RestrictorEntry> RestrictorEntries;
 class getTable : public query::TableRef::Func {
@@ -181,8 +178,8 @@ public:
         (*this)(*t);
     }
     virtual void operator()(query::TableRef& t) {
-        string const& db = t.getDb();
-        string const& table = t.getTable();
+        std::string const& db = t.getDb();
+        std::string const& table = t.getTable();
 
         if(db.empty()
            || !_cssFacade.containsDb(db)
@@ -194,13 +191,13 @@ public:
             return; // Do nothing for non-chunked tables
         }
         // Now save an entry for WHERE clause processing.
-        string alias = t.getAlias();
+        std::string alias = t.getAlias();
         if(alias.empty()) {
             // For now, only accept aliased tablerefs (should have
             // been done earlier)
             throw qana::AnalysisBug("Unexpected unaliased table reference");
         }
-        vector<string> pCols = _cssFacade.getPartitionCols(db, table);
+        std::vector<std::string> pCols = _cssFacade.getPartitionCols(db, table);
         RestrictorEntry se(alias,
                            StringPair(pCols[0], pCols[1]),
                            pCols[2]);
@@ -224,7 +221,7 @@ public:
 class QservRestrictorPlugin : public QueryPlugin {
 public:
     // Types
-    typedef shared_ptr<QservRestrictorPlugin> Ptr;
+    typedef boost::shared_ptr<QservRestrictorPlugin> Ptr;
     class Restriction;
 
     virtual ~QservRestrictorPlugin() {}
@@ -236,18 +233,18 @@ public:
 
 private:
     query::BoolTerm::Ptr
-        _makeCondition(shared_ptr<query::QsRestrictor> const restr,
+        _makeCondition(boost::shared_ptr<query::QsRestrictor> const restr,
                        RestrictorEntry const& restrictorEntry);
-    shared_ptr<query::QsRestrictor::List>
+    boost::shared_ptr<query::QsRestrictor::List>
         _getSecIndexPreds(query::QueryContext&,
                           query::AndTerm::Ptr);
     query::QsRestrictor::Ptr
         _newSecIndexRestrictor(query::QueryContext& context,
-                               shared_ptr<query::ColumnRef> cr,
+                               boost::shared_ptr<query::ColumnRef> cr,
                                query::ValueExprList& vList);
     query::QsRestrictor::Ptr
         _newSecIndexRestrictor(query::QueryContext& context,
-                               shared_ptr<query::CompPredicate> cp);
+                               boost::shared_ptr<query::CompPredicate> cp);
     query::QsRestrictor::Ptr
         _convertObjectId(query::QueryContext& context,
                          query::QsRestrictor const& original);
@@ -268,12 +265,12 @@ public:
         return (*_generator)(e);
     }
 
-    // string getUdfCallString(string const& tName,
+    // std::string getUdfCallString(std::string const& tName,
     //                              StringMap const& tableConfig) const {
     //     if(_generator.get()) {
     //         return (*_generator)(tName, tableConfig);
     //     }
-    //     return string();
+    //     return std::string();
     // }
     class Generator {
     public:
@@ -293,7 +290,7 @@ private:
             terms.push_back(newInPred(e.alias, e.secIndexColumn, params));
             return newFactor;
         }
-        vector<string> params;
+        std::vector<std::string> params;
     };
 
     class AreaGenerator : public Generator {
@@ -312,7 +309,7 @@ private:
             query::BoolFactor::Ptr newFactor(new query::BoolFactor);
             query::BfTerm::PtrList& terms = newFactor->_terms;
             query::CompPredicate::Ptr cp(new query::CompPredicate());
-            shared_ptr<query::FuncExpr> fe =
+            boost::shared_ptr<query::FuncExpr> fe =
                 newFuncExpr(fName, e.alias, e.chunkColumns, params);
             cp->left =
                 query::ValueExpr::newSimple(query::ValueFactor::newFuncFactor(fe));
@@ -353,9 +350,9 @@ private:
             throw qana::AnalysisBug("Unmatched restriction spec: " + _name);
         }
     }
-    string _name;
-    vector<double> _params;
-    shared_ptr<Generator> _generator;
+    std::string _name;
+    std::vector<double> _params;
+    boost::shared_ptr<Generator> _generator;
 };
 
 
@@ -365,11 +362,11 @@ private:
 class QservRestrictorPluginFactory : public QueryPlugin::Factory {
 public:
     // Types
-    typedef shared_ptr<QservRestrictorPluginFactory> Ptr;
+    typedef boost::shared_ptr<QservRestrictorPluginFactory> Ptr;
     QservRestrictorPluginFactory() {}
     virtual ~QservRestrictorPluginFactory() {}
 
-    virtual string getName() const { return "QservRestrictor"; }
+    virtual std::string getName() const { return "QservRestrictor"; }
     virtual QueryPlugin::Ptr newInstance() {
         return QueryPlugin::Ptr(new QservRestrictorPlugin());
     }
@@ -414,9 +411,9 @@ QservRestrictorPlugin::applyLogical(query::SelectStmt& stmt,
     // Prepare to patch the WHERE clause
     query::WhereClause& wc = stmt.getWhereClause();
 
-    shared_ptr<query::QsRestrictor::List const> rListP = wc.getRestrs();
+    boost::shared_ptr<query::QsRestrictor::List const> rListP = wc.getRestrs();
     query::AndTerm::Ptr originalAnd(wc.getRootAndTerm());
-    shared_ptr<query::QsRestrictor::List> secIndexPreds =
+    boost::shared_ptr<query::QsRestrictor::List> secIndexPreds =
         _getSecIndexPreds(context, originalAnd);
     query::AndTerm::Ptr newTerm;
     // Now handle the explicit restrictors
@@ -470,14 +467,14 @@ QservRestrictorPlugin::applyPhysical(QueryPlugin::Plan& p,
 
 query::BoolTerm::Ptr
 QservRestrictorPlugin::_makeCondition(
-             shared_ptr<query::QsRestrictor> const restr,
+             boost::shared_ptr<query::QsRestrictor> const restr,
              RestrictorEntry const& restrictorEntry) {
     Restriction r(*restr);
     return r.generate(restrictorEntry);
 }
 
 inline void
-addPred(shared_ptr<query::QsRestrictor::List>& preds,
+addPred(boost::shared_ptr<query::QsRestrictor::List>& preds,
         query::QsRestrictor::Ptr p) {
     if(p) {
         if(!preds) {
@@ -487,12 +484,12 @@ addPred(shared_ptr<query::QsRestrictor::List>& preds,
     }
 }
 
-shared_ptr<query::QsRestrictor::List>
+boost::shared_ptr<query::QsRestrictor::List>
 QservRestrictorPlugin::_getSecIndexPreds(query::QueryContext& context,
                                          query::AndTerm::Ptr p) {
     typedef query::BoolTerm::PtrList::iterator TermIter;
     typedef query::BfTerm::PtrList::iterator BfIter;
-    shared_ptr<query::QsRestrictor::List> secIndexPreds;
+    boost::shared_ptr<query::QsRestrictor::List> secIndexPreds;
 
     if(!p) return secIndexPreds;
 
@@ -503,9 +500,9 @@ QservRestrictorPlugin::_getSecIndexPreds(query::QueryContext& context,
             b != factor->_terms.end();
             ++b) {
             query::InPredicate::Ptr ip =
-                dynamic_pointer_cast<query::InPredicate>(*b);
+                boost::dynamic_pointer_cast<query::InPredicate>(*b);
             if(ip) {
-                shared_ptr<query::ColumnRef> cr
+                boost::shared_ptr<query::ColumnRef> cr
                     = resolveAsColumnRef(context, ip->value);
                 if(cr && lookupSecIndex(context, cr)) {
                     query::QsRestrictor::Ptr p =
@@ -514,7 +511,7 @@ QservRestrictorPlugin::_getSecIndexPreds(query::QueryContext& context,
                 }
             } else {
                 query::CompPredicate::Ptr cp =
-                    dynamic_pointer_cast<query::CompPredicate>(*b);
+                    boost::dynamic_pointer_cast<query::CompPredicate>(*b);
                 if(cp) {
                     query::QsRestrictor::Ptr p = _newSecIndexRestrictor(context, cp);
                     addPred(secIndexPreds, p);
@@ -538,16 +535,18 @@ struct validateLiteral {
 };
 
 struct extractLiteral {
-    inline string operator()(query::ValueExprPtr p) {
+    inline std::string operator()(query::ValueExprPtr p) {
         return p->copyAsLiteral();
     }
 };
 /// @return a new QsRestrictor from the column ref and the set of
 /// specified values or NULL if one of the values is a non-literal.
 query::QsRestrictor::Ptr
-QservRestrictorPlugin::_newSecIndexRestrictor(query::QueryContext& context,
-                                              shared_ptr<query::ColumnRef> cr,
-                                              query::ValueExprList& vList) {
+QservRestrictorPlugin::_newSecIndexRestrictor(
+    query::QueryContext& context,
+    boost::shared_ptr<query::ColumnRef> cr,
+    query::ValueExprList& vList)
+{
     // Extract the literals, bailing out if we see a non-literal
     bool isValid = true;
     std::for_each(vList.begin(), vList.end(), validateLiteral(isValid));
@@ -571,10 +570,11 @@ QservRestrictorPlugin::_newSecIndexRestrictor(query::QueryContext& context,
 /// @return a new QsRestrictor from a CompPredicate
 query::QsRestrictor::Ptr
 QservRestrictorPlugin::_newSecIndexRestrictor(
-                                  query::QueryContext& context,
-                                  shared_ptr<query::CompPredicate> cp) {
+    query::QueryContext& context,
+    boost::shared_ptr<query::CompPredicate> cp)
+{
     query::QsRestrictor::Ptr p;
-    shared_ptr<query::ColumnRef> secIndex =
+    boost::shared_ptr<query::ColumnRef> secIndex =
         resolveAsColumnRef(context, cp->left);
     int op = cp->op;
     query::ValueExprPtr literalValue = cp->right;
@@ -595,7 +595,7 @@ QservRestrictorPlugin::_newSecIndexRestrictor(
     validateLiteral vl(isValid);
     vl(literalValue);
     if(!isValid) { return p; } // No secondary index. Leave alone.
-    std::list<shared_ptr<query::ValueExpr> > cands;
+    std::list<boost::shared_ptr<query::ValueExpr> > cands;
     cands.push_back(literalValue);
     return _newSecIndexRestrictor(context, secIndex, cands);
 }
@@ -618,7 +618,7 @@ QservRestrictorPlugin::_convertObjectId(query::QueryContext& context,
     }
     // TODO: The qserv_objectId hint/restrictor should be removed.
     // For now, assume that "objectId" refers to the director column.
-    string dirColumn = context.cssFacade->getDirColName(
+    std::string dirColumn = context.cssFacade->getDirColName(
         context.dominantDb, context.anonymousTable);
     p->_params.push_back(dirColumn);
     std::copy(original._params.begin(), original._params.end(),

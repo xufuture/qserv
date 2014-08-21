@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /*
  * LSST Data Management System
  * Copyright 2014 LSST Corporation.
@@ -22,9 +23,6 @@
 
 #ifndef LSST_QSERV_QANA_QUERYNOTEVALUABLEERROR_H
 #define LSST_QSERV_QANA_QUERYNOTEVALUABLEERROR_H
-
-// System headers
-#include <stdexcept>
 
 // Local headers
 #include "AnalysisError.h"

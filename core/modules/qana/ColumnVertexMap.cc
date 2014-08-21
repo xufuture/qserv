@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /*
  * LSST Data Management System
  * Copyright 2014 LSST Corporation.
@@ -40,27 +41,23 @@ namespace lsst {
 namespace qserv {
 namespace qana {
 
-using std::string;
-using std::vector;
-using query::ColumnRef;
-using query::QueryTemplate;
-
 ColumnVertexMap::ColumnVertexMap(Vertex& v) {
-    vector<ColumnRefConstPtr> c = v.info->makeColumnRefs(v.tr.getAlias());
+    std::vector<ColumnRefConstPtr> c = v.info->makeColumnRefs(v.tr.getAlias());
     _init(v, c.begin(), c.end());
 }
 
-vector<Vertex*> const& ColumnVertexMap::find(ColumnRef const& c) const
+std::vector<Vertex*> const& ColumnVertexMap::find(
+    query::ColumnRef const& c) const
 {
-    typedef vector<Entry>::const_iterator Iter;
-    vector<Vertex*> static const NONE;
+    typedef std::vector<Entry>::const_iterator Iter;
+    std::vector<Vertex*> static const NONE;
 
     std::pair<Iter,Iter> p = std::equal_range(
         _entries.begin(), _entries.end(), c, ColumnRefLt());
     if (p.first == p.second) {
         return NONE;
     } else if (p.first->vertices.empty()) {
-        QueryTemplate qt;
+        query::QueryTemplate qt;
         c.renderTo(qt);
         throw QueryNotEvaluableError("Column reference " + qt.generate() +
                                      " is ambiguous");
@@ -70,15 +67,17 @@ vector<Vertex*> const& ColumnVertexMap::find(ColumnRef const& c) const
 
 void ColumnVertexMap::splice(ColumnVertexMap& m,
                              bool natural,
-                             vector<string> const& cols)
+                             std::vector<std::string> const& cols)
 {
-    typedef vector<Entry>::iterator Iter;
-    vector<Entry>::size_type s = _entries.size();
+    typedef std::vector<Entry>::iterator EntryIter;
+    typedef std::vector<std::string>::const_iterator StringIter;
+
+    std::vector<Entry>::size_type s = _entries.size();
     // Reserve required space up front, then swap default constructed
     // entries with entries from m.
     _entries.resize(s + m._entries.size());
-    Iter middle = _entries.begin() + s;
-    for (Iter i = m._entries.begin(), e = m._entries.end(), o = middle;
+    EntryIter middle = _entries.begin() + s;
+    for (EntryIter i = m._entries.begin(), e = m._entries.end(), o = middle;
          i != e; ++i, ++o) {
         o->swap(*i);
     }
@@ -88,8 +87,8 @@ void ColumnVertexMap::splice(ColumnVertexMap& m,
     // Remove duplicate column references
     if (!_entries.empty()) {
         ColumnRefEq eq;
-        Iter o = _entries.begin(), i = o, e = _entries.end();
-        vector<string>::const_iterator cb = cols.begin(), ce = cols.end();
+        EntryIter o = _entries.begin(), i = o, e = _entries.end();
+        StringIter cb = cols.begin(), ce = cols.end();
         while (++i != e) {
             if (eq(*o, *i)) {
                 if (!o->cr->table.empty() ||
@@ -114,14 +113,14 @@ void ColumnVertexMap::splice(ColumnVertexMap& m,
     }
 }
 
-vector<string> const ColumnVertexMap::computeCommonCols(
+std::vector<std::string> const ColumnVertexMap::computeCommonColumns(
     ColumnVertexMap const& m) const
 {
-    typedef vector<Entry>::const_iterator Iter;
-    vector<string> cols;
+    typedef std::vector<Entry>::const_iterator EntryIter;
+    std::vector<std::string> cols;
     ColumnRefLt lt;
-    Iter i = _entries.begin(), iend = _entries.end();
-    Iter j = m._entries.begin(), jend = m._entries.end();
+    EntryIter i = _entries.begin(), iend = _entries.end();
+    EntryIter j = m._entries.begin(), jend = m._entries.end();
     while (i != iend && j != jend) {
         if (lt(*i, *j)) {
             ++i;

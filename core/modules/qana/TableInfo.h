@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /*
  * LSST Data Management System
  * Copyright 2014 LSST Corporation.
@@ -19,6 +20,9 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
+
+#ifndef LSST_QSERV_QANA_TABLEINFO_H
+#define LSST_QSERV_QANA_TABLEINFO_H
 
 /// \file
 /// \brief Table metadata classes
@@ -54,9 +58,6 @@
 /// of both `a` and `b`. A match can relate director table rows `a` and `b`
 /// from different chunks so long as `a` falls into the overlap of the
 /// chunk containing `b` (and vice versa).
-
-#ifndef LSST_QSERV_QANA_TABLEINFO_H
-#define LSST_QSERV_QANA_TABLEINFO_H
 
 // System headers
 #include <stdint.h>

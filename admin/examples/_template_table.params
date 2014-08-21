@@ -19,7 +19,8 @@ schemaFile: /full/path/to/the/schema/file
 compression: 0
 
 
-# Match tables relate two "director" tables and require special handling. Allowed values: 0, 1
+# Match tables relate two "director" tables and require special handling.
+# Allowed values: 0 (the default), 1
 match: 0
 # The name of the first "director" table involved in a match. Required if match = 1.
 #dirTable1: <tableName>
@@ -35,8 +36,10 @@ match: 0
 # Is this table subchunked? Allowed values: 0, 1
 subChunks: 1
 
-# Name of the table that is a "director" table.
-# It can be name of the current table, or other table
+# Name of the "director" table for this table. It can be the name of the
+# current table, or another table. If this parameter is unspecified or empty,
+# and the current table is not a match table, then the current table is assumed
+# to be a "director".
 dirTable: <tableName>
 
 
@@ -47,5 +50,5 @@ latColName: <decl col name>
 lonColName: <ra col name>
 
 
-# name of the column used to join with the director table.
+# Name of the column used to join with the director table.
 dirColName: <columnName>

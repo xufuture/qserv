@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /*
  * LSST Data Management System
  * Copyright 2014 LSST Corporation.
@@ -20,11 +21,11 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-/// \file
-/// \brief A class for resolving column references to table references
-
 #ifndef LSST_QSERV_QANA_COLUMNVERTEXMAP_H
 #define LSST_QSERV_QANA_COLUMNVERTEXMAP_H
+
+/// \file
+/// \brief A class for resolving column references to table references
 
 // System headers
 #include <algorithm>
@@ -108,7 +109,7 @@ public:
     /// `computeCommonColumns` returns all unqualified column names that are
     /// common to this map and `m`. If any such column is ambiguous in either
     /// map, an exception is thrown.
-    std::vector<std::string> const computeCommonCols(
+    std::vector<std::string> const computeCommonColumns(
         ColumnVertexMap const& m) const;
 
 private:

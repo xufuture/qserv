@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /*
  * LSST Data Management System
  * Copyright 2014 LSST Corporation.
@@ -42,12 +43,6 @@ namespace lsst {
 namespace qserv {
 namespace qana {
 
-using std::auto_ptr;
-using std::pair;
-using std::string;
-using std::vector;
-
-
 TableInfoPool::~TableInfoPool() {
     // Delete all table metadata objects in the pool
     for (Pool::iterator i = _pool.begin(), e = _pool.end(); i != e; ++i) {
@@ -55,22 +50,22 @@ TableInfoPool::~TableInfoPool() {
     }
 }
 
-TableInfo const* TableInfoPool::get(string const& db,
-                                    string const& table) const
+TableInfo const* TableInfoPool::get(std::string const& db,
+                                    std::string const& table) const
 {
     // Note that t.kind is irrelevant to the search,
     // and is set to an arbitrary value.
     TableInfo t(db, table, TableInfo::DIRECTOR);
-    pair<Pool::const_iterator, Pool::const_iterator> p =
+    std::pair<Pool::const_iterator, Pool::const_iterator> p =
         std::equal_range(_pool.begin(), _pool.end(), &t, TableInfoLt());
     return (p.first == p.second) ? 0 : *p.first;
 }
 
 TableInfo const* TableInfoPool::get(query::QueryContext const& ctx,
-                                    string const& db,
-                                    string const& table)
+                                    std::string const& db,
+                                    std::string const& table)
 {
-    string const& db_ = db.empty() ? ctx.defaultDb : db;
+    std::string const& db_ = db.empty() ? ctx.defaultDb : db;
     TableInfo const* t = get(db_, table);
     if (t) {
         return t;
@@ -84,7 +79,7 @@ TableInfo const* TableInfoPool::get(query::QueryContext const& ctx,
     // match table
     if (f.isMatchTable(db_, table)) {
         css::MatchTableParams m = f.getMatchTableParams(db_, table);
-        auto_ptr<MatchTableInfo> p(new MatchTableInfo(db_, table));
+        std::auto_ptr<MatchTableInfo> p(new MatchTableInfo(db_, table));
         p->director.first = dynamic_cast<DirTableInfo const*>(
             get(ctx, db_, m.dirTable1));
         p->director.second = dynamic_cast<DirTableInfo const*>(
@@ -110,15 +105,15 @@ TableInfo const* TableInfoPool::get(query::QueryContext const& ctx,
         _insert(p.get());
         return p.release();
     }
-    string dirTable = f.getDirTable(db_, table);
+    std::string dirTable = f.getDirTable(db_, table);
     // director table
     if (dirTable.empty() || dirTable == table) {
         if (chunkLevel != 2) {
             throw InvalidTableError(db_ + "." + table + " is a director "
                                     "table, but cannot be sub-chunked!");
         }
-        auto_ptr<DirTableInfo> p(new DirTableInfo(db_, table));
-        vector<string> v = f.getPartitionCols(db, table);
+        std::auto_ptr<DirTableInfo> p(new DirTableInfo(db_, table));
+        std::vector<std::string> v = f.getPartitionCols(db, table);
         if (v.size() != 3 ||
             v[0].empty() || v[1].empty() || v[2].empty() ||
             v[0] == v[1] || v[1] == v[2] || v[0] == v[2]) {
@@ -139,7 +134,7 @@ TableInfo const* TableInfoPool::get(query::QueryContext const& ctx,
         throw InvalidTableError(db_ + "." + table + " is a child"
                                 " table, but can be sub-chunked!");
     }
-    auto_ptr<ChildTableInfo> p(new ChildTableInfo(db_, table));
+    std::auto_ptr<ChildTableInfo> p(new ChildTableInfo(db_, table));
     p->director = dynamic_cast<DirTableInfo const*>(
         get(ctx, db_, f.getDirTable(db_, table)));
     if (!p->director) {

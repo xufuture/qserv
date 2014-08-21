@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /*
  * LSST Data Management System
  * Copyright 2014 LSST Corporation.
@@ -20,11 +21,11 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-/// \file
-/// \brief A class for creating and pooling table metadata objects.
-
 #ifndef LSST_QSERV_QANA_TABLEINFOPOOL_H
 #define LSST_QSERV_QANA_TABLEINFOPOOL_H
+
+/// \file
+/// \brief A class for creating and pooling table metadata objects.
 
 // System headers
 #include <string>

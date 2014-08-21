@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /*
  * LSST Data Management System
  * Copyright 2014 LSST Corporation.
@@ -19,6 +20,9 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
+
+#ifndef LSST_QSERV_QANA_RELATIONGRAPH_H
+#define LSST_QSERV_QANA_RELATIONGRAPH_H
 
 /// \file
 /// \brief A data structure used for parallel query validation and rewriting.
@@ -367,9 +371,6 @@
 /// strategy is exponential in the number of table references requiring
 /// overlap, we impose a strict limit on the maximum number of such
 /// references.
-
-#ifndef LSST_QSERV_QANA_RELATIONGRAPH_H
-#define LSST_QSERV_QANA_RELATIONGRAPH_H
 
 // System headers
 #include <limits>

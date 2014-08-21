@@ -14,7 +14,7 @@
 /DBS/LSST/TABLES	\N
 /DBS/LSST/TABLES/Object	READY
 /DBS/LSST/TABLES/Object/compression	0
-/DBS/LSST/TABLES/Object/isRefMatch	0
+/DBS/LSST/TABLES/Object/match	0
 /DBS/LSST/TABLES/Object/partitioning	\N
 /DBS/LSST/TABLES/Object/partitioning/dirColName	objectIdObjTest
 /DBS/LSST/TABLES/Object/partitioning/dirTable	Object
@@ -23,7 +23,7 @@
 /DBS/LSST/TABLES/Object/partitioning/subChunks	1
 /DBS/LSST/TABLES/Source	READY
 /DBS/LSST/TABLES/Source/compression	0
-/DBS/LSST/TABLES/Source/isRefMatch	0
+/DBS/LSST/TABLES/Source/match	0
 /DBS/LSST/TABLES/Source/partitioning	\N
 /DBS/LSST/TABLES/Source/partitioning/dirColName	objectIdSourceTest
 /DBS/LSST/TABLES/Source/partitioning/dirTable	Object

@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /*
  * LSST Data Management System
  * Copyright 2014 LSST Corporation.
@@ -52,15 +53,6 @@ namespace lsst {
 namespace qserv {
 namespace qana {
 
-using std::list;
-using std::logic_error;
-using std::min;
-using std::numeric_limits;
-using std::string;
-using std::vector;
-
-using boost::dynamic_pointer_cast;
-
 using query::AndTerm;
 using query::BoolFactor;
 using query::BoolTerm;
@@ -85,7 +77,7 @@ using query::ValueFactorPtr;
 // Vertex implementation
 
 void Vertex::insert(Edge const& e) {
-    typedef vector<Edge>::iterator Iter;
+    typedef std::vector<Edge>::iterator Iter;
     Iter i = std::lower_bound(edges.begin(), edges.end(), e);
     if (i == edges.end() || *i != e) {
         edges.insert(i, e);
@@ -98,10 +90,10 @@ void Vertex::insert(Edge const& e) {
         bool se = e.isSpatial();
         if (si || se) {
             if (si && se) {
-                i->angSep = min(e.angSep, i->angSep);
+                i->angSep = std::min(e.angSep, i->angSep);
             } else {
                 // director self-join
-                i->angSep = numeric_limits<double>::quiet_NaN();
+                i->angSep = std::numeric_limits<double>::quiet_NaN();
             }
         }
     }
@@ -144,16 +136,16 @@ ColumnRef::Ptr getColumnRef(ValueExprPtr const& ve) {
 /// have been rewritten to use a table alias).
 void verifyColumnRef(ColumnRef const& c) {
     if (c.column.empty()) {
-        throw logic_error(
+        throw std::logic_error(
             "Parser/query analysis bug: "
             "ColumnRef with an empty column name.");
     } else if (!c.db.empty()) {
         if (c.table.empty()) {
-            throw logic_error(
+            throw std::logic_error(
                 "Parser/query analysis bug: ColumnRef has an empty "
                 "table/alias name but a non-empty database name.");
         }
-        throw logic_error(
+        throw std::logic_error(
             "Query analysis bug: the db.table portion of a fully "
             "qualified column name was not replaced with an alias.");
     }
@@ -182,7 +174,7 @@ void verifyJoin(JoinRef::Type joinType,
                 "FULL OUTER JOIN queries are not currently supported.");
         case JoinRef::CROSS:
             if (natural || joinSpec) {
-                throw logic_error(
+                throw std::logic_error(
                     "Parser/query analysis bug: a CROSS JOIN cannot be "
                     "NATURAL or have an ON or USING clause.");
             }
@@ -192,13 +184,13 @@ void verifyJoin(JoinRef::Type joinType,
         case JoinRef::LEFT:    // fallthrough
         case JoinRef::RIGHT:
             if (natural && joinSpec) {
-                throw logic_error(
+                throw std::logic_error(
                     "Parser/query analysis bug: a JOIN cannot be NATURAL "
                     "and have an ON or USING clause.");
             }
             break;
         default:
-            throw logic_error(
+            throw std::logic_error(
                 "Parser/query analysis bug: unrecognized join type.");
     }
 }
@@ -207,8 +199,8 @@ void verifyJoin(JoinRef::Type joinType,
 /// from the table reference in `a` and `cb` from `b` is admissible, and
 /// creates corresponding `Edge` objects if so. The number of edges created,
 /// 0 or 1, is returned.
-size_t makeEqEdge(string const& ca,
-                  string const& cb,
+size_t makeEqEdge(std::string const& ca,
+                  std::string const& cb,
                   JoinRef::Type jt,
                   Vertex* a,
                   Vertex* b)
@@ -283,8 +275,8 @@ size_t makeEqEdge(string const& ca,
     }
     if (admissible) {
         // Add a pair of edges, a → b and b → a.
-        a->insert(Edge(b, numeric_limits<double>::quiet_NaN()));
-        b->insert(Edge(a, numeric_limits<double>::quiet_NaN()));
+        a->insert(Edge(b, std::numeric_limits<double>::quiet_NaN()));
+        b->insert(Edge(a, std::numeric_limits<double>::quiet_NaN()));
     }
     return admissible;
 }
@@ -293,17 +285,17 @@ size_t makeEqEdge(string const& ca,
 /// value expression if there is one, and NaN otherwise.
 double getNumericConst(ValueExprPtr const& ve) {
     if (!ve || ve->getFactorOps().size() != 1) {
-        return numeric_limits<double>::quiet_NaN();
+        return std::numeric_limits<double>::quiet_NaN();
     }
     ValueFactorPtr vf = ve->getFactorOps().front().factor;
     if (!vf || vf->getType() != ValueFactor::CONST) {
-        return numeric_limits<double>::quiet_NaN();
+        return std::numeric_limits<double>::quiet_NaN();
     }
     char *e = NULL;
     double a = std::strtod(vf->getTableStar().c_str(), &e);
     if (e == vf->getTableStar().c_str()) {
         // conversion error - non-numeric constant
-        return numeric_limits<double>::quiet_NaN();
+        return std::numeric_limits<double>::quiet_NaN();
     }
     return a;
 }
@@ -340,7 +332,7 @@ size_t RelationGraph::_makeOnEqEdges(BoolTerm::Ptr on,
 {
     size_t numEdges = 0;
     on = findAndTerm(on);
-    AndTerm::Ptr a = dynamic_pointer_cast<AndTerm>(on);
+    AndTerm::Ptr a = boost::dynamic_pointer_cast<AndTerm>(on);
     if (a) {
         // Recurse to the children.
         typedef BoolTerm::PtrList::const_iterator BtIter;
@@ -350,12 +342,12 @@ size_t RelationGraph::_makeOnEqEdges(BoolTerm::Ptr on,
         return numEdges;
     }
     // Look for a BoolFactor containing a single CompPredicate.
-    BoolFactor::Ptr bf = dynamic_pointer_cast<BoolFactor>(on);
+    BoolFactor::Ptr bf = boost::dynamic_pointer_cast<BoolFactor>(on);
     if (!bf || bf->_terms.size() != 1) {
         return 0;
     }
     CompPredicate::Ptr cp =
-        dynamic_pointer_cast<CompPredicate>(bf->_terms.front());
+        boost::dynamic_pointer_cast<CompPredicate>(bf->_terms.front());
     if (!cp || cp->op != SqlSQL2TokenTypes::EQUALS_OP) {
         return 0;
     }
@@ -368,10 +360,10 @@ size_t RelationGraph::_makeOnEqEdges(BoolTerm::Ptr on,
     verifyColumnRef(*l);
     verifyColumnRef(*r);
     // Lookup column references in graphs being joined together
-    vector<Vertex*> const& al = _map.find(*l);
-    vector<Vertex*> const& bl = g._map.find(*l);
-    vector<Vertex*> const& ar = _map.find(*r);
-    vector<Vertex*> const& br = g._map.find(*r);
+    std::vector<Vertex*> const& al = _map.find(*l);
+    std::vector<Vertex*> const& bl = g._map.find(*l);
+    std::vector<Vertex*> const& ar = _map.find(*r);
+    std::vector<Vertex*> const& br = g._map.find(*r);
     if ((!al.empty() && !bl.empty()) || (!ar.empty() && !br.empty())) {
         // At least one column reference was found in both graphs
         QueryTemplate qt;
@@ -404,9 +396,9 @@ size_t RelationGraph::_makeOnEqEdges(BoolTerm::Ptr on,
             return 0;
         }
     }
-    vector<Vertex*> const& v1 = al.empty() ? bl : al;
-    vector<Vertex*> const& v2 = ar.empty() ? br : ar;
-    typedef vector<Vertex*>::const_iterator VertIter;
+    std::vector<Vertex*> const& v1 = al.empty() ? bl : al;
+    std::vector<Vertex*> const& v2 = ar.empty() ? br : ar;
+    typedef std::vector<Vertex*>::const_iterator VertIter;
     for (VertIter i1 = v1.begin(), e1 = v1.end(); i1 != e1; ++i1) {
         for (VertIter i2 = v2.begin(), e2 = v2.end(); i2 != e2; ++i2) {
             numEdges += makeEqEdge(l->column, r->column, jt, *i1, *i2);
@@ -421,16 +413,16 @@ size_t RelationGraph::_makeOnEqEdges(BoolTerm::Ptr on,
 size_t RelationGraph::_makeNaturalEqEdges(JoinRef::Type jt,
                                           RelationGraph& g)
 {
-    typedef vector<string>::const_iterator ColIter;
-    typedef vector<Vertex*>::const_iterator VertIter;
+    typedef std::vector<std::string>::const_iterator ColIter;
+    typedef std::vector<Vertex*>::const_iterator VertIter;
 
-    vector<string> const cols = _map.computeCommonCols(g._map);
-    string const _;
+    std::vector<std::string> const cols = _map.computeCommonColumns(g._map);
+    std::string const _;
     size_t numEdges = 0;
     for (ColIter c = cols.begin(), e = cols.end(); c != e; ++c) {
         ColumnRef const cr(_, _, *c);
-        vector<Vertex*> const& v1 = _map.find(cr);
-        vector<Vertex*> const& v2 = g._map.find(cr);
+        std::vector<Vertex*> const& v1 = _map.find(cr);
+        std::vector<Vertex*> const& v2 = g._map.find(cr);
         for (VertIter i1 = v1.begin(), e1 = v1.end(); i1 != e1; ++i1) {
             for (VertIter i2 = v2.begin(), e2 = v2.end(); i2 != e2; ++i2) {
                 numEdges += makeEqEdge(*c, *c, jt, *i1, *i2);
@@ -447,14 +439,14 @@ size_t RelationGraph::_makeUsingEqEdges(ColumnRef const& c,
                                         JoinRef::Type jt,
                                         RelationGraph& g)
 {
-    typedef vector<Vertex*>::const_iterator VertIter;
+    typedef std::vector<Vertex*>::const_iterator VertIter;
 
     if (!c.db.empty() || !c.table.empty()) {
         throw QueryNotEvaluableError(
             "USING clause contains qualified column name");
     }
-    vector<Vertex*> const& v1 = _map.find(c);
-    vector<Vertex*> const& v2 = g._map.find(c);
+    std::vector<Vertex*> const& v1 = _map.find(c);
+    std::vector<Vertex*> const& v2 = g._map.find(c);
     size_t numEdges = 0;
     for (VertIter i1 = v1.begin(), e1 = v1.end(); i1 != e1; ++i1) {
         for (VertIter i2 = v2.begin(), e2 = v2.end(); i2 != e2; ++i2) {
@@ -471,7 +463,7 @@ size_t RelationGraph::_makeWhereEqEdges(BoolTerm::Ptr where)
 {
     size_t numEdges = 0;
     where = findAndTerm(where);
-    AndTerm::Ptr a = dynamic_pointer_cast<AndTerm>(where);
+    AndTerm::Ptr a = boost::dynamic_pointer_cast<AndTerm>(where);
     if (a) {
         // Recurse to the children.
         typedef BoolTerm::PtrList::const_iterator BtIter;
@@ -481,12 +473,12 @@ size_t RelationGraph::_makeWhereEqEdges(BoolTerm::Ptr where)
         return numEdges;
     }
     // Look for a BoolFactor containing a single CompPredicate.
-    BoolFactor::Ptr bf = dynamic_pointer_cast<BoolFactor>(where);
+    BoolFactor::Ptr bf = boost::dynamic_pointer_cast<BoolFactor>(where);
     if (!bf || bf->_terms.size() != 1) {
         return 0;
     }
     CompPredicate::Ptr cp =
-        dynamic_pointer_cast<CompPredicate>(bf->_terms.front());
+        boost::dynamic_pointer_cast<CompPredicate>(bf->_terms.front());
     if (!cp || cp->op != SqlSQL2TokenTypes::EQUALS_OP) {
         return 0;
     }
@@ -499,10 +491,10 @@ size_t RelationGraph::_makeWhereEqEdges(BoolTerm::Ptr where)
     // Verify and lookup column references
     verifyColumnRef(*l);
     verifyColumnRef(*r);
-    vector<Vertex*> const& v1 = _map.find(*l);
-    vector<Vertex*> const& v2 = _map.find(*r);
+    std::vector<Vertex*> const& v1 = _map.find(*l);
+    std::vector<Vertex*> const& v2 = _map.find(*r);
     // Create admissible edges
-    typedef vector<Vertex*>::const_iterator VertIter;
+    typedef std::vector<Vertex*>::const_iterator VertIter;
     for (VertIter i1 = v1.begin(), e1 = v1.end(); i1 != e1; ++i1) {
         for (VertIter i2 = v2.begin(), e2 = v2.end(); i2 != e2; ++i2) {
             numEdges += makeEqEdge(
@@ -520,7 +512,7 @@ size_t RelationGraph::_makeSpEdges(BoolTerm::Ptr term,
 {
     size_t numEdges = 0;
     term = findAndTerm(term);
-    AndTerm::Ptr a = dynamic_pointer_cast<AndTerm>(term);
+    AndTerm::Ptr a = boost::dynamic_pointer_cast<AndTerm>(term);
     if (a) {
         // Recurse to the children.
         typedef BoolTerm::PtrList::const_iterator BtIter;
@@ -530,19 +522,19 @@ size_t RelationGraph::_makeSpEdges(BoolTerm::Ptr term,
         return numEdges;
     }
     // Look for a BoolFactor containing a single CompPredicate.
-    BoolFactor::Ptr bf = dynamic_pointer_cast<BoolFactor>(term);
+    BoolFactor::Ptr bf = boost::dynamic_pointer_cast<BoolFactor>(term);
     if (!bf || bf->_terms.size() != 1) {
         return 0;
     }
     CompPredicate::Ptr cp =
-        dynamic_pointer_cast<CompPredicate>(bf->_terms.front());
+        boost::dynamic_pointer_cast<CompPredicate>(bf->_terms.front());
     if (!cp) {
         return 0;
     }
     // Try to extract a scisql_angSep() call and a numeric constant
     // from the comparison predicate.
     FuncExpr::Ptr fe;
-    double x = numeric_limits<double>::quiet_NaN();
+    double x = std::numeric_limits<double>::quiet_NaN();
     switch (cp->op) {
         case SqlSQL2TokenTypes::LESS_THAN_OP: // fallthrough
         case SqlSQL2TokenTypes::LESS_THAN_OR_EQUALS_OP:
@@ -583,7 +575,7 @@ size_t RelationGraph::_makeSpEdges(BoolTerm::Ptr term,
             // Argument i is not a column reference
             return 0;
         }
-        vector<Vertex*> const& vv = _map.find(*cr[i]);
+        std::vector<Vertex*> const& vv = _map.find(*cr[i]);
         if (vv.empty()) {
             // Column reference not found
             return 0;
@@ -627,7 +619,8 @@ void RelationGraph::_join(JoinRef::Type joinType,
                           RelationGraph& g)
 {
     if (this == &g) {
-        throw logic_error("A RelationGraph cannot be join()ed with itself.");
+        throw std::logic_error(
+            "A RelationGraph cannot be join()ed with itself.");
     }
     verifyJoin(joinType, natural, joinSpec);
     // Deal with replicated relations
@@ -659,7 +652,7 @@ void RelationGraph::_join(JoinRef::Type joinType,
         return;
     }
     size_t numEdges = 0;
-    vector<string> usingCols;
+    std::vector<std::string> usingCols;
     if (natural) {
         numEdges += _makeNaturalEqEdges(joinType, g);
     } else if (joinSpec && joinSpec->getUsing()) {
@@ -695,7 +688,7 @@ RelationGraph::RelationGraph(TableRef& tr,
                              double overlap) :
     _query(0)
 {
-    typedef vector<ColumnRefConstPtr>::const_iterator Iter;
+    typedef std::vector<ColumnRefConstPtr>::const_iterator Iter;
 
     if (!info) {
         return;
@@ -715,7 +708,8 @@ RelationGraph::RelationGraph(TableRef& tr,
         _vertices.front().insert(Edge(&_vertices.back(), overlap));
         _vertices.back().insert(Edge(&_vertices.front(), overlap));
         // Split column references for the match table reference across vertices.
-        vector<ColumnRefConstPtr> refs = info->makeColumnRefs(tr.getAlias());
+        std::vector<ColumnRefConstPtr> refs =
+            info->makeColumnRefs(tr.getAlias());
         std::sort(refs.begin(), refs.end(), ColumnRefLt());
         Iter begin = refs.begin();
         Iter middle = begin;
@@ -727,7 +721,7 @@ RelationGraph::RelationGraph(TableRef& tr,
         }
         ColumnVertexMap m1(_vertices.front(), begin, middle);
         ColumnVertexMap m2(_vertices.back(), middle, end);
-        vector<string> _;
+        std::vector<std::string> _;
         m1.splice(m2, false, _);
         _map.swap(m1);
     }
@@ -742,8 +736,9 @@ RelationGraph::RelationGraph(QueryContext const& ctx,
     _query(0)
 {
     if (!tr) {
-        throw logic_error("Parser/query analysis bug: NULL TableRef pointer "
-                          "passed to RelationGraph constructor.");
+        throw std::logic_error(
+            "Parser/query analysis bug: NULL TableRef pointer "
+            "passed to RelationGraph constructor.");
     }
     // Create a graph with at most one vertex using the left table
     // in a join sequence.
@@ -807,7 +802,7 @@ struct VertexQueue {
 
 void traverse(Vertex* v, double const partitionOverlap)
 {
-    typedef vector<Edge>::const_iterator Iter;
+    typedef std::vector<Edge>::const_iterator Iter;
 
     VertexQueue q;
     if (v) {
@@ -840,9 +835,9 @@ void traverse(Vertex* v, double const partitionOverlap)
 }
 
 /// `isEvaluable` returns `true` if no graph vertex requires infinite overlap.
-bool isEvaluable(list<Vertex> const& vertices)
+bool isEvaluable(std::list<Vertex> const& vertices)
 {
-    typedef list<Vertex>::const_iterator Iter;
+    typedef std::list<Vertex>::const_iterator Iter;
     for (Iter v = vertices.begin(), e = vertices.end(); v != e; ++v) {
         if ((boost::math::isinf)(v->overlap)) {
             return false;
@@ -852,11 +847,11 @@ bool isEvaluable(list<Vertex> const& vertices)
 }
 
 /// `resetVertices` sets the required overlap of all graph vertices to ∞.
-void resetVertices(list<Vertex>& vertices)
+void resetVertices(std::list<Vertex>& vertices)
 {
-    typedef list<Vertex>::iterator Iter;
+    typedef std::list<Vertex>::iterator Iter;
     for (Iter v = vertices.begin(), e = vertices.end(); v != e; ++v) {
-        v->overlap = numeric_limits<double>::infinity();
+        v->overlap = std::numeric_limits<double>::infinity();
     }
 }
 
@@ -867,7 +862,7 @@ void resetVertices(list<Vertex>& vertices)
 /// is evaluable.
 bool RelationGraph::_validate(double overlap)
 {
-    typedef list<Vertex>::iterator Iter;
+    typedef std::list<Vertex>::iterator Iter;
     size_t numStarts = 0;
     for (Iter i = _vertices.begin(), e = _vertices.end(); i != e; ++i) {
         if (i->info->kind != TableInfo::MATCH) {
@@ -932,8 +927,8 @@ RelationGraph::RelationGraph(QueryContext const& ctx,
 void RelationGraph::rewrite(SelectStmtList& outputs,
                             QueryMapping& mapping)
 {
-    typedef list<Vertex>::iterator ListIter;
-    typedef vector<Vertex*>::iterator VecIter;
+    typedef std::list<Vertex>::iterator ListIter;
+    typedef std::vector<Vertex*>::iterator VecIter;
 
     if (!_query) {
         return;
@@ -947,7 +942,7 @@ void RelationGraph::rewrite(SelectStmtList& outputs,
     mapping.insertChunkEntry(TableInfo::CHUNK_TAG);
     // Find directors for which overlap is required. At the same time, rewrite
     // all table references as their corresponding chunk templates.
-    vector<Vertex*> overlapRefs;
+    std::vector<Vertex*> overlapRefs;
     for (ListIter i = _vertices.begin(), e = _vertices.end(); i != e; ++i) {
         i->rewriteAsChunkTemplate();
         if (i->info->kind == TableInfo::DIRECTOR && i->overlap > 0.0) {

@@ -1,3 +1,4 @@
+// -*- LSST-C++ -*-
 /*
  * LSST Data Management System
  * Copyright 2014 LSST Corporation.
@@ -35,34 +36,32 @@ namespace lsst {
 namespace qserv {
 namespace qana {
 
-using std::string;
-using std::vector;
-using boost::make_shared;
-using query::ColumnRef;
-
 namespace {
 
 /// `appendColumnRefs` appends all possible references to the given
 /// column to `columnRefs`. At most 3 references are appended.
-void appendColumnRefs(string const& column,
-                      string const& database,
-                      string const& table,
-                      string const& tableAlias,
-                      vector<ColumnRefConstPtr>& refs)
+void appendColumnRefs(std::string const& column,
+                      std::string const& database,
+                      std::string const& table,
+                      std::string const& tableAlias,
+                      std::vector<ColumnRefConstPtr>& refs)
 {
     if (column.empty()) {
         return;
     }
-    string const _;
-    refs.push_back(make_shared<ColumnRef>(_, _, column));
+    std::string const _;
+    refs.push_back(boost::make_shared<query::ColumnRef>(_, _, column));
     if (!tableAlias.empty()) {
         // If a table alias has been introduced, then it is an error to
         // refer to a column using table.column or db.table.column
-        refs.push_back(make_shared<ColumnRef>(_, tableAlias, column));
+        refs.push_back(
+            boost::make_shared<query::ColumnRef>(_, tableAlias, column));
     } else if (!table.empty()) {
-        refs.push_back(make_shared<ColumnRef>(_, table, column));
+        refs.push_back(
+            boost::make_shared<query::ColumnRef>(_, table, column));
         if (!database.empty()) {
-            refs.push_back(make_shared<ColumnRef>(database, table, column));
+            refs.push_back(
+                boost::make_shared<query::ColumnRef>(database, table, column));
         }
     }
 }
@@ -70,13 +69,13 @@ void appendColumnRefs(string const& column,
 } // unnamed namespace
 
 
-string const TableInfo::CHUNK_TAG("%CC%");
-string const TableInfo::SUBCHUNK_TAG("%SS%");
+std::string const TableInfo::CHUNK_TAG("%CC%");
+std::string const TableInfo::SUBCHUNK_TAG("%SS%");
 
-vector<ColumnRefConstPtr> const DirTableInfo::makeColumnRefs(
-    string const& tableAlias) const
+std::vector<ColumnRefConstPtr> const DirTableInfo::makeColumnRefs(
+    std::string const& tableAlias) const
 {
-    vector<ColumnRefConstPtr> refs;
+    std::vector<ColumnRefConstPtr> refs;
     refs.reserve(9);
     appendColumnRefs(pk, database, table, tableAlias, refs);
     appendColumnRefs(lon, database, table, tableAlias, refs);
@@ -84,19 +83,19 @@ vector<ColumnRefConstPtr> const DirTableInfo::makeColumnRefs(
     return refs;
 }
 
-vector<ColumnRefConstPtr> const ChildTableInfo::makeColumnRefs(
-    string const& tableAlias) const
+std::vector<ColumnRefConstPtr> const ChildTableInfo::makeColumnRefs(
+    std::string const& tableAlias) const
 {
-    vector<ColumnRefConstPtr> refs;
+    std::vector<ColumnRefConstPtr> refs;
     refs.reserve(3);
     appendColumnRefs(fk, database, table, tableAlias, refs);
     return refs;
 }
 
-vector<ColumnRefConstPtr> const MatchTableInfo::makeColumnRefs(
-    string const& tableAlias) const
+std::vector<ColumnRefConstPtr> const MatchTableInfo::makeColumnRefs(
+    std::string const& tableAlias) const
 {
-    vector<ColumnRefConstPtr> refs;
+    std::vector<ColumnRefConstPtr> refs;
     refs.reserve(6);
     appendColumnRefs(fk.first, database, table, tableAlias, refs);
     appendColumnRefs(fk.second, database, table, tableAlias, refs);

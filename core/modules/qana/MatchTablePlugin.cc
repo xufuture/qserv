@@ -47,8 +47,6 @@
 #include "query/ValueFactor.h"
 #include "query/WhereClause.h"
 
-using boost::make_shared;
-using boost::shared_ptr;
 using lsst::qserv::query::BoolFactor;
 using lsst::qserv::query::BoolTermFactor;
 using lsst::qserv::query::ColumnRef;
@@ -71,16 +69,16 @@ namespace qana {
 ///
 /// Recall that a match table provides a spatially constrained N-to-M mapping
 /// between two director-tables via their primary keys. The partitioner
-/// assigns a row from a match table to a sub-chunk S whenever either matched
+/// assigns a row from a match table to a chunk S whenever either matched
 /// entity belongs to S. Therefore, if the two matched entities lie in
-/// different sub-chunks, a copy of the corresponding match will be stored in
-/// two sub-chunks. The partitioner also stores partitioning flags F for each
+/// different chunks, a copy of the corresponding match will be stored in
+/// two chunks. The partitioner also stores partitioning flags F for each
 /// output row as follows:
 ///
-/// - Bit 0 (the LSB of F), is set if the sub-chunk of the first entity in the
-///   match is equal to the sub-chunk of the row.
-/// - Bit 1 is set if the sub-chunk of the second entity is equal to the
-///   sub-chunk of the row.
+/// - Bit 0 (the LSB of F), is set if the chunk of the first entity in the
+///   match is equal to the chunk containing the row.
+/// - Bit 1 is set if the chunk of the second entity is equal to the
+///   chunk containing the row.
 ///
 /// So, if rows with a non-null first-entity reference and partitioning flags
 /// set to 2 are removed, then duplicates introduced by the partitioner will
@@ -118,7 +116,7 @@ public:
         return "MatchTable";
     }
     virtual QueryPlugin::Ptr newInstance() {
-        return QueryPlugin::Ptr(new MatchTablePlugin());
+        return boost::make_shared<MatchTablePlugin>();
     }
 };
 
@@ -127,8 +125,8 @@ public:
 namespace {
     struct registerPlugin {
         registerPlugin() {
-            MatchTablePluginFactory::Ptr f(new MatchTablePluginFactory());
-            QueryPlugin::registerClass(f);
+            QueryPlugin::registerClass(
+                 boost::make_shared<MatchTablePluginFactory>());
         }
     };
 
@@ -158,36 +156,39 @@ void MatchTablePlugin::applyLogical(query::SelectStmt& stmt,
     // are possible.
     //
     // First, create IR nodes for "dirCol1 IS NULL".
-    shared_ptr<NullPredicate> nullPred = make_shared<NullPredicate>();
+    boost::shared_ptr<NullPredicate> nullPred =
+        boost::make_shared<NullPredicate>();
     nullPred->hasNot = false;
     nullPred->value = ValueExpr::newSimple(ValueFactor::newColumnRefFactor(
-        make_shared<ColumnRef>("", "", mt.dirColName1)));
+        boost::make_shared<ColumnRef>("", "", mt.dirColName1)));
     // Then create IR nodes for "flagCol<>2".
-    shared_ptr<CompPredicate> compPred = make_shared<CompPredicate>();
+    boost::shared_ptr<CompPredicate> compPred =
+        boost::make_shared<CompPredicate>();
     compPred->left = ValueExpr::newSimple(ValueFactor::newColumnRefFactor(
-        make_shared<ColumnRef>("", "", mt.flagColName)));
+        boost::make_shared<ColumnRef>("", "", mt.flagColName)));
     compPred->op = SqlSQL2TokenTypes::NOT_EQUALS_OP;
     compPred->right = ValueExpr::newSimple(ValueFactor::newConstFactor("2"));
     // Create BoolFactors for each Predicate node.
-    shared_ptr<BoolFactor> bf1 = make_shared<BoolFactor>();
+    boost::shared_ptr<BoolFactor> bf1 = boost::make_shared<BoolFactor>();
     bf1->_terms.push_back(nullPred);
-    shared_ptr<BoolFactor> bf2 = make_shared<BoolFactor>();
+    boost::shared_ptr<BoolFactor> bf2 = boost::make_shared<BoolFactor>();
     bf2->_terms.push_back(compPred);
     // OR together the BoolFactors created above and place
     // inside a BoolTermFactor.
-    shared_ptr<OrTerm> bfs = make_shared<OrTerm>();
+    boost::shared_ptr<OrTerm> bfs = boost::make_shared<OrTerm>();
     bfs->_terms.push_back(bf1);
     bfs->_terms.push_back(bf2);
-    shared_ptr<BoolTermFactor> btf = make_shared<BoolTermFactor>();
+    boost::shared_ptr<BoolTermFactor> btf =
+        boost::make_shared<BoolTermFactor>();
     btf->_term = bfs;
     // Create PassTerm objects for parentheses.
     // TODO: remove this after DM-737 is resolved.
-    shared_ptr<PassTerm> openParen = make_shared<PassTerm>();
+    boost::shared_ptr<PassTerm> openParen = boost::make_shared<PassTerm>();
     openParen->_text = "(";
-    shared_ptr<PassTerm> closeParen = make_shared<PassTerm>();
+    boost::shared_ptr<PassTerm> closeParen = boost::make_shared<PassTerm>();
     closeParen->_text = ")";
     // Wrap everything up in a BoolFactor
-    shared_ptr<BoolFactor> filter = make_shared<BoolFactor>();
+    boost::shared_ptr<BoolFactor> filter = boost::make_shared<BoolFactor>();
     filter->_terms.push_back(openParen);
     filter->_terms.push_back(btf);
     filter->_terms.push_back(closeParen);
@@ -195,7 +196,8 @@ void MatchTablePlugin::applyLogical(query::SelectStmt& stmt,
     if (stmt.hasWhereClause()) {
         stmt.getWhereClause().prependAndTerm(filter);
     } else {
-        shared_ptr<WhereClause> where = make_shared<WhereClause>();
+        boost::shared_ptr<WhereClause> where =
+            boost::make_shared<WhereClause>();
         where->prependAndTerm(filter);
         stmt.setWhereClause(where);
     }
