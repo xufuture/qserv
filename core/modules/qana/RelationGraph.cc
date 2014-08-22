@@ -82,7 +82,7 @@ void Vertex::insert(Edge const& e) {
     if (i == edges.end() || *i != e) {
         edges.insert(i, e);
     } else {
-        // e is a necessarily a duplicate of *i, unless both are
+        // e is necessarily a duplicate of *i, unless both are
         // director → director edges. In that case, if both edges are spatial,
         // retain the smaller angular constraint. Otherwise, retain the
         // non-spatial edge.
@@ -740,8 +740,7 @@ RelationGraph::RelationGraph(QueryContext const& ctx,
             "Parser/query analysis bug: NULL TableRef pointer "
             "passed to RelationGraph constructor.");
     }
-    // Create a graph with at most one vertex using the left table
-    // in a join sequence.
+    // Create a graph for the left-most table in a join sequence.
     RelationGraph g(*tr, pool.get(ctx, tr->getDb(), tr->getTable()), overlap);
     // Process remaining tables in the JOIN sequence. Note that joins are
     // left-associative in the absence of parentheses, i.e. "A JOIN B JOIN C"

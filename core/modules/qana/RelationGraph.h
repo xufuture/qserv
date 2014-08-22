@@ -115,10 +115,11 @@
 ///         WHERE scisql_angSep(a.ra, a.dec, b.ra, b.dec) < 0.001 AND
 ///               a.objectId != b.objectId;
 ///
-/// Finally, the example is a CROSS JOIN that can easily be transformed
-/// to an INNER JOIN by changing the WHERE clause to an ON clause. But what of
-/// outer joins? FULL OUTER JOIN is not supported by MySQL, so that leaves
-/// the question of what to do with:
+/// Finally, the example could just as easily have used an INNER JOIN with
+/// an ON clause, instead of the abbreviated JOIN syntax and WHERE clause.
+///
+/// What of outer joins? FULL OUTER JOIN is not supported by MySQL, so that
+/// leaves the question of what to do with:
 ///
 ///     SELECT a.*, b.*
 ///         FROM Object AS a LEFT OUTER JOIN
