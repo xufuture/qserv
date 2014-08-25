@@ -4,7 +4,8 @@
 # rebuild lsst qserv qserv_testdata
 # publish -t current -b bXX lsst qserv qserv_testdata
 
-DISTSERVER_ROOT=/space/data-qserv/qserv-dist
+PUBLIC_HTML=/lsst/home/fjammes/public_html/qserv-offline
+DISTSERVER_ROOT=/lsst/home/fjammes/src/lsstsw-offline/distserver
 EUPS_PKGROOT="${DISTSERVER_ROOT}/production"
 
 EUPS_VERSION=${EUPS_VERSION:-1.5.0}
@@ -25,7 +26,8 @@ git_update_bare() {
 
     if [ ! -d ${product} ]; then
         echo "Cloning ${giturl}"
-        git clone --bare ${giturl} && retval=0
+        git clone --bare ${giturl} ||
+        git remote add origin  ${giturl} && retval=0
     else
         echo "Updating ${giturl}"
         cd ${product}
@@ -85,16 +87,16 @@ mv newinstall.sh ${EUPS_PKGROOT}
 
 
 if ! git_update_bare ${EUPS_GITREPO}; then
-    echo "Unable to synchronize with next git repository : $url"
+    echo "Unable to synchronize with next git repository : ${EUPS_GITREPO}"
     exit 1
 fi
 
 EUPS_TARURL="file://${DISTSERVER_ROOT}/$EUPS_TARBALL"
 EUPS_GITREPO="${DISTSERVER_ROOT}/eups.git"
 
-tar zcvf ${DISTSERVER_ROOT} qserv-offline-distserver.tar.gz
+TOP_DIR=$(basename ${DISTSERVER_ROOT})
+tar zcvf ${PUBLIC_HTML}/qserv-offline-distserver.tar.gz -C ${DISTSERVER_ROOT}/.. ${TOP_DIR}
 
 echo "export EUPS_PKGROOT=${EUPS_PKGROOT}"
 echo "export EUPS_TARURL=${EUPS_TARURL}"
 echo "export EUPS_GIT_REPO=${EUPS_GITREPO}"
-echo "export LOCAL_GIT_REPOS=${GIT_REPOS}"
