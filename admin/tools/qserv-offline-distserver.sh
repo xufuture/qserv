@@ -4,7 +4,8 @@
 # rebuild lsst qserv qserv_testdata
 # publish -t current -b bXX lsst qserv qserv_testdata
 
-DISTSERVER_ROOT=${HOME}/distserver
+PUBLIC_HTML=/lsst/home/fjammes/public_html/qserv-offline
+DISTSERVER_ROOT=/lsst/home/fjammes/src/lsstsw-offline/distserver
 EUPS_PKGROOT="${DISTSERVER_ROOT}/production"
 PUBLIC_HTML=/lsst/home/fjammes/public_html/qserv-offline
 
@@ -96,7 +97,7 @@ echo
 echo "Creating Qserv offline distserver tarball"
 echo "========================================="
 echo
-TOP_DIR=$(basename ${DISTSERVER_ROOT})
+TOP_DIR=`basename ${DISTSERVER_ROOT}`
 TARBALL=${PUBLIC_HTML}/qserv-offline-distserver.tar.gz
 tar zcvf ${TARBALL} -C ${DISTSERVER_ROOT}/.. ${TOP_DIR} ||
 {
