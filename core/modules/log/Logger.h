@@ -28,6 +28,18 @@
 #ifndef LSST_QSERV_LOG_LOGGER_H
 #define LSST_QSERV_LOG_LOGGER_H
 
+
+#define NEWLOG
+
+
+
+
+#ifdef NEWLOG
+
+#include "lsst/log/Log.h"
+
+#else // everything below is for the old logging -----------------------------------
+
 // These directives are for convenience.
 #define LOG_STRM(level) lsst::qserv::log::Logger::Instance(lsst::qserv::log::Logger::level)
 #define LOGGER(level) if (lsst::qserv::log::Logger::level >= \
@@ -89,5 +101,7 @@ private:
 };
 
 }}} // namespace lsst::qserv::log
+
+#endif // NEWLOG
 
 #endif // LSST_QSERV_LOG_LOGGER_H

@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2013 LSST Corporation.
+ * Copyright 2013-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -31,6 +31,8 @@
 // Local headers
 #include "log/Logger.h"
 
+#ifndef NEWLOG
+
 namespace lsst {
 namespace qserv {
 namespace log {
@@ -38,7 +40,7 @@ namespace log {
 void
 logger_threshold(int severity) {
     Logger::Instance().setSeverityThreshold(
-                   static_cast<Logger::Severity>(severity));
+        static_cast<Logger::Severity>(severity));
 }
 
 void
@@ -48,3 +50,5 @@ logger(int severity, std::string const& s) {
 }
 
 }}} // namespace lsst::qserv::log
+
+#endif // NEWLOG

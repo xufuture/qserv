@@ -182,9 +182,12 @@ SelectListFactory::getProduct() {
 
 void
 SelectListFactory::_import(RefAST selectRoot) {
-    //    LOGGER_INF << "Type of selectRoot is "
-    //              << selectRoot->getType() << std::endl;
-
+#ifdef NEWLOG
+    // LOGF_INFO("Type of selectRoot is %1%" % selectRoot->getType());
+#else
+    // LOGGER_INF << "Type of selectRoot is "
+    //            << selectRoot->getType() << std::endl;
+#endif
     for(; selectRoot.get();
         selectRoot = selectRoot->getNextSibling()) {
         RefAST child = selectRoot->getFirstChild();
@@ -216,8 +219,12 @@ SelectListFactory::_import(RefAST selectRoot) {
 void
 SelectListFactory::_addSelectColumn(RefAST expr) {
     // Figure out what type of value expr, and create it properly.
+#ifdef NEWLOG
+    // LOGF_INFO("SelectCol Type of:%1% (%2%)" % expr->getText() % expr->getType());
+#else
     // LOGGER_INF << "SelectCol Type of:" << expr->getText()
     //           << "(" << expr->getType() << ")" << std::endl;
+#endif
     if(!expr.get()) {
         throw std::invalid_argument("Attempted _addSelectColumn(NULL)");
     }
@@ -228,7 +235,11 @@ SelectListFactory::_addSelectColumn(RefAST expr) {
     if(!child.get()) {
         throw ParseException("Missing VALUE_EXP child", expr);
     }
-    //    LOGGER_INF << "child is " << child->getType() << std::endl;
+#ifdef NEWLOG
+    // LOGF_INFO("child is %1%" % child->getType());
+#else
+    // LOGGER_INF << "child is " << child->getType() << std::endl;
+#endif
     ValueExprPtr ve = _vFactory->newExpr(child);
 
     // Annotate if alias found.
@@ -255,7 +266,11 @@ SelectListFactory::_addSelectStar(RefAST child) {
             throw ParseException("Missing name node.", child);
         }
         tableName = tokenText(table);
+#ifdef NEWLOG
+        LOGF_INFO("table ref'd for *: %1%" % tableName);
+#else
         LOGGER_INF << "table ref'd for *: " << tableName << std::endl;
+#endif
     }
     vt = query::ValueFactor::newStarFactor(tableName);
     _valueExprList->push_back(query::ValueExpr::newSimple(vt));

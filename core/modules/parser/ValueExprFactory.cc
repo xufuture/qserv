@@ -60,13 +60,21 @@ ValueExprFactory::ValueExprFactory(boost::shared_ptr<ColumnRefNodeMap> cMap)
 boost::shared_ptr<query::ValueExpr>
 ValueExprFactory::newExpr(antlr::RefAST a) {
     boost::shared_ptr<query::ValueExpr> expr(new query::ValueExpr);
-    //LOGGER_INF << walkIndentedString(a) << std::endl;
+#ifdef NEWLOG
+    // LOGF_INFO("%1%" % walkIndentedString(a));
+#else
+    // LOGGER_INF << walkIndentedString(a) << std::endl;
+#endif
     while(a.get()) {
         query::ValueExpr::FactorOp newFactorOp;
         RefAST op = a->getNextSibling();
         newFactorOp.factor = _valueFactorFactory->newFactor(a);
         if(op.get()) { // No more ops?
-            //LOGGER_INF << "expected op: " << tokenText(op) << std::endl;
+#ifdef NEWLOG
+            // LOGF_INFO("expected op: %1%" tokenText(op));
+#else
+            // LOGGER_INF << "expected op: " << tokenText(op) << std::endl;
+#endif
             int eType = op->getType();
             switch(eType) {
             case SqlSQL2TokenTypes::PLUS_SIGN:

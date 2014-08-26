@@ -191,9 +191,24 @@ SqlInsertIter::SqlInsertIter(util::PacketBuffer::Ptr p,
     // slide the unmatched to the beginning, memcpy the packetIter
     // data into our buffer, and setup the regex match again.
     // Continue.
-    //
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING SqlInsertIter(PacketIter::Ptr, %1%, %2%)"
+               % tableName % allowNull);
+#else
     LOGGER_DBG << "EXECUTING SqlInsertIter(PacketIter::Ptr, " << tableName <<
                   ", " << allowNull << ")" << std::endl;
+<<<<<<< HEAD
+=======
+#endif
+    assert(!(*p).isDone());
+    _pBufStart = 0;
+    _pBufEnd = (*p)->second;
+    _pBufSize = 2 * _pBufEnd; // Size to 2x first fragment size
+    // (which may be bigger than average)
+    _pBuffer = static_cast<char*>(malloc(_pBufSize));
+
+    memcpy(_pBuffer,(*p)->first, _pBufEnd);
+>>>>>>> Migrated qserv to the new logging system, still with ifdefs
     boost::regex lockInsertExpr(makeLockInsertOpenRegex(tableName));
     boost::regex lockExpr(makeLockOpenRegex(tableName));
     bool found = false;
@@ -203,12 +218,19 @@ SqlInsertIter::SqlInsertIter(util::PacketBuffer::Ptr p,
         char const* bufEnd = _bufferMgr->getEnd();
         found = boost::regex_search(buf, bufEnd, _blockMatch, lockInsertExpr);
         if(found) {
+#ifdef NEWLOG
+            LOGF_DEBUG("Matched Lock statement within SqlInsertIter");
+#else
             LOGGER_DBG << "Matched Lock statement within SqlInsertIter" << std::endl;
+#endif
             break;
         } else {
+#ifdef NEWLOG
+            LOGF_DEBUG("Did not match Lock statement within SqlInsertIter");
+#else
             LOGGER_DBG << "Did not match Lock statement within SqlInsertIter" << std::endl;
+#endif
         }
-
         //Add next fragment, if available.
         if(!_bufferMgr->incrementFragment()) {
             // Verify presence of Lock statement.
@@ -232,8 +254,43 @@ SqlInsertIter::SqlInsertIter(util::PacketBuffer::Ptr p,
 SqlInsertIter::~SqlInsertIter() {
 }
 
+<<<<<<< HEAD
 void SqlInsertIter::_resetMgrIter() {
     _iter = Iter(_bufferMgr->getStart(), _bufferMgr->getEnd(), _insExpr);
+=======
+bool SqlInsertIter::_incrementFragment() {
+    // Advance iterator.
+    ++(*_pacIterP);
+    if(_pacIterP->isDone()) return false; // Any more?
+    xrdc::PacketIter::Value v = **_pacIterP;
+    // Make sure there is room in the buffer
+    BufOff keepSize = _pBufEnd - _pBufStart;
+    BufOff needSize = v.second + keepSize;
+    if(needSize > (_pBufSize - _pBufEnd)) {
+        if(needSize > _pBufSize) {
+#ifdef NEWLOG
+            LOGF_DEBUG("%1% is too small. sqliter Realloc to %2%"
+                       % _pBufSize % needSize);
+#else
+            LOGGER_DBG << _pBufSize << " is too small" << std::endl
+                       << "sqliter Realloc to " << needSize << std::endl;
+#endif
+            void* res = realloc(_pBuffer, needSize);
+            if (!res) {
+                errno = ENOMEM;
+                throw "Failed to realloc for SqlInsertIter.";
+            }
+            _pBufSize = needSize;
+            _pBuffer = static_cast<char*>(res);
+        }
+        memmove(_pBuffer, _pBuffer+_pBufStart, keepSize);
+        _pBufEnd = keepSize;
+        _pBufStart = 0;
+    }
+    memcpy(_pBuffer + _pBufEnd, v.first, v.second);
+    _pBufEnd += v.second;
+    return true;
+>>>>>>> Migrated qserv to the new logging system, still with ifdefs
 }
 
 void SqlInsertIter::_initRegex(std::string const& tableName) {

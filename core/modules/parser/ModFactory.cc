@@ -75,8 +75,11 @@ class ModFactory::OrderByH : public VoidOneRefFunc {
 public:
     OrderByH(ModFactory& mf) : _mf(mf) {}
     virtual void operator()(antlr::RefAST n) {
-        // Log this.
+#ifdef NEWLOG
+        //LOGF_INFO("Importing Orderby:%1%" % walkIndentedString(n));
+#else
         //LOGGER_INF << "Importing Orderby:" << walkIndentedString(n) << std::endl;
+#endif
         _mf._importOrderBy(n);
     }
 private:
@@ -127,7 +130,11 @@ void ModFactory::attachTo(SqlSQL2Parser& p) {
 
 void ModFactory::_importLimit(antlr::RefAST a) {
     // Limit always has an int.
+#ifdef NEWLOG
+    LOGF_INFO("Limit got %1%" % walkTreeString(a));
+#else
     LOGGER_INF << "Limit got " << walkTreeString(a) << std::endl;
+#endif
     if(!a.get()) {
         throw std::invalid_argument("Cannot _importLimit(NULL)");
     }
@@ -138,7 +145,11 @@ void ModFactory::_importLimit(antlr::RefAST a) {
 void ModFactory::_importOrderBy(antlr::RefAST a) {
     _orderBy.reset(new query::OrderByClause());
     // ORDER BY takes a column ref (expression)
+#ifdef NEWLOG
+    //LOGF_INFO("orderby got %1%" % walkTreeString(a));
+#else
     //LOGGER_INF << "orderby got " << walkTreeString(a) << std::endl;
+#endif
     if(!a.get()) {
         throw std::invalid_argument("Cannot _importOrderBy(NULL)");
     }
@@ -148,8 +159,12 @@ void ModFactory::_importOrderBy(antlr::RefAST a) {
             continue;
         }
         if(a->getType() != SqlSQL2TokenTypes::SORT_SPEC) {
+#ifdef NEWLOG
+            LOGF_ERROR("Orderby expected sort spec and got %1%" % a->getText());
+#else
             LOGGER_ERR << "Orderby expected sort spec and got " << a->getText()
                        << std::endl;
+#endif
             throw std::logic_error("Expected SORT_SPEC token)");
         }
         RefAST key = a->getFirstChild();
@@ -192,7 +207,11 @@ void ModFactory::_importOrderBy(antlr::RefAST a) {
 void ModFactory::_importGroupBy(antlr::RefAST a) {
     _groupBy = boost::make_shared<query::GroupByClause>();
     // GROUP BY takes a column reference (expression?)
+#ifdef NEWLOG
+    //LOGF_INFO("groupby got %1%" % walkTreeString(a));
+#else
     //LOGGER_INF << "groupby got " << walkTreeString(a) << std::endl;
+#endif
     if(!a.get()) {
         throw std::invalid_argument("Cannot _importGroupBy(NULL)");
     }
@@ -232,7 +251,11 @@ void ModFactory::_importHaving(antlr::RefAST a) {
     if(!a.get()) {
         throw std::invalid_argument("Cannot _importHaving(NULL)");
     }
+#ifdef NEWLOG
+    //LOGF_INFO("having got %1%" % walkTreeString(a));
+#else
     //LOGGER_INF << "having got " << walkTreeString(a) << std::endl;
+#endif
     // For now, we will silently traverse and recognize but ignore.
 
     // TODO:
@@ -254,7 +277,11 @@ void ModFactory::_importHaving(antlr::RefAST a) {
     _having->_tree.reset(); // NULL-out. Unhandled syntax.
 
     // FIXME: Log this at the WARNING level
+#ifdef NEWLOG
+    LOGF_WARN("Parse warning: HAVING clause unhandled.");
+#else
     LOGGER_WRN << "Parse warning: HAVING clause unhandled." << std::endl;
+#endif
 }
 
 }}} // namespace lsst::qserv::parser

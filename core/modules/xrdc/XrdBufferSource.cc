@@ -90,9 +90,15 @@ void XrdBufferSource::increment(util::PacketBuffer& p) {
 }
 
 bool XrdBufferSource::incrementExtend(util::PacketBuffer& p) {
+#ifdef NEWLOG
+    LOGF_DEBUG("XrdBufferSource Realloc to %1%" %
+               (_occupiedSize + _fragSize));
+#else
     LOGGER_DBG << "XrdBufferSource Realloc to "
                << _occupiedSize + _fragSize << std::endl;
+#endif
     void* ptr = ::realloc(_buffer, _occupiedSize + _fragSize);
+ifdefs:core/modules/xrdc/PacketIter.cc
     if(!ptr) {
         errno = ENOMEM;
         throw "Failed to realloc for XrdBufferSource.";
