@@ -1,13 +1,23 @@
 #!/bin/sh
 
+set -e
+
 # First, with lsstsw tools : 
 # rebuild lsst qserv qserv_testdata
 # publish -t current -b bXX lsst qserv qserv_testdata
 
+#############################
+# CUSTOMIZE NEXT PARAMETERS :
+#############################
+
 DISTSERVER_ROOT=${HOME}/distserver
-EUPS_PKGROOT="${DISTSERVER_ROOT}/production"
+# above directory must be published via a webserver
 PUBLIC_HTML=/lsst/home/fjammes/public_html/qserv-offline
 
+#############################
+
+DIR=$(cd "$(dirname "$0")"; pwd -P)
+EUPS_PKGROOT="${DISTSERVER_ROOT}/production"
 EUPS_VERSION=1.5.0
 EUPS_TARBALL="$EUPS_VERSION.tar.gz"
 EUPS_TARURL="https://github.com/RobertLuptonTheGood/eups/archive/$EUPS_TARBALL"
@@ -93,6 +103,12 @@ EUPS_TARURL="file://${DISTSERVER_ROOT}/$EUPS_TARBALL"
 EUPS_GITREPO="${DISTSERVER_ROOT}/eups.git"
 
 echo
+echo "Adding Qserv install script"
+echo "==========================="
+echo
+cp ${DIR}/qserv-install.sh ${DISTSERVER_ROOT}
+
+echo
 echo "Creating Qserv offline distserver tarball"
 echo "========================================="
 echo
@@ -104,7 +120,6 @@ tar zcvf ${TARBALL} -C ${DISTSERVER_ROOT}/.. ${TOP_DIR} ||
     exit 1
 }
 
-echo "export DISTSERVER_ROOT=${DISTSERVER_ROOT}"
-echo "export EUPS_PKGROOT=${EUPS_PKGROOT}"
-echo "export EUPS_TARURL=${EUPS_TARURL}"
-echo "export EUPS_GIT_REPO=${EUPS_GITREPO}"
+echo "Offline distribution server archive creation SUCCESSFUL"
+echo "DISTSERVER_ROOT=${DISTSERVER_ROOT}"
+echo "TARBALL=${TARBALL}"
