@@ -1,30 +1,48 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # Standard LSST install procedure
+set -e
+DIR=$(cd "$(dirname "$0")"; pwd -P)
+# . $DIR/../etc/settings.cfg.sh
 
-STACK_DIR=$HOME/stack
-#REF=master-ga1c1526733
+usage()
+{
+cat << EOF
+usage: $0 [-r <path/to/local/distserver>] [-i <path/to/install/dir>] [-v <version>] 
 
-######################
-#
-# WITH NETWORK ACCESS
-#
-######################
-# TODO remove and manage below
-#NEWINSTALL_URL=http://sw.lsstcorp.org/eupspkg/newinstall.sh
-#EUPS_PKGROOT_QSERV=http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
+This script install Qserv according to LSST packaging standards.
 
-########################
-#
-# WITHOUT NETWORK ACCESS
-#
-########################
-# TODO remove ~fjammes distserver
-# EUPS_PKGROOT=${EUPS_PKGROOT:-"http://sw.lsstcorp.org/eupspkg"}
-# TODO if newinstall doesn't start with protocol:// add file://
-NEWINSTALL_URL="file://${EUPS_PKGROOT}/newinstall.sh"
+OPTIONS:
+   -h      Show this message
+   -r      Local distribution server root directory 
+   -i      Install directory : MANDATORY
+   -v      Version to instll 
+EOF
+}
 
-EUPS_PKGROOT_QSERV=${EUPS_PKGROOT:-"http://lsst-web.ncsa.illinois.edu/~fjammes/qserv"}
+
+while getopts ":r:i:v:h" o; do
+        case "$o" in
+        r)
+                LOCAL_DISTSERVER_ROOT="${OPTARG}"
+                ;;
+        i)
+                STACK_DIR="${OPTARG}"
+                ;;
+        v)
+                VERSION="${OPTARG}"
+                ;;
+        h)
+                usage
+                ;;
+        esac
+done
+
+if [[ -z ${STACK_DIR} ]]
+then
+     usage
+     exit 1
+fi
 
 if [ -d ${STACK_DIR} ]; then
     chmod -R 755 $STACK_DIR &&
@@ -33,7 +51,7 @@ if [ -d ${STACK_DIR} ]; then
         echo "Unable to remove install directory previous content : ${STACK_DIR}"
         exit 1
     }
-    
+
 fi
 mkdir $STACK_DIR &&
 cd $STACK_DIR ||
@@ -45,6 +63,21 @@ echo
 echo "Installing LSST stack"
 echo "====================="
 echo
+
+if [ -n ${LOCAL_DISTSERVER_ROOT} ]; then
+    echo
+    echo "Offline mode"
+    echo "============"
+    echo
+    export EUPS_PKGROOT="${LOCAL_DISTSERVER_ROOT}/production"
+    NEWINSTALL_URL="file://${EUPS_PKGROOT}/newinstall.sh"
+    export EUPS_TARURL=file://${LOCAL_DISTSERVER_ROOT}/1.5.0.tar.gz
+    export EUPS_GIT_REPO=${LOCAL_DISTSERVER_ROOT}/eups.git
+else
+    export EUPS_PKGROOT="http://sw.lsstcorp.org/eupspkg|http://lsst-web.ncsa.illinois.edu/~fjammes/qserv"
+    NEWINSTALL_URL="http://sw.lsstcorp.org/eupspkg/newinstall.sh"
+fi
+
 curl -O ${NEWINSTALL_URL} ||
 {
     echo "Unable to download from ${NEWINSTALL_URL}"
@@ -53,16 +86,17 @@ curl -O ${NEWINSTALL_URL} ||
 
 time bash newinstall.sh ||
 {
-    echo "newinstall.sh failed"
+    echo "ERROR : newinstall.sh failed"
     exit 1
 }
+echo "XXXXXXXXXXXXXXXx"
 source loadLSST.sh
 
 echo
 echo "Installing Qserv"
 echo "================"
 echo
-time eups distrib install qserv ${REF} -r ${EUPS_PKGROOT_QSERV} &&
+time eups distrib install qserv ${VERSION} &&
 setup qserv ||
 {
     echo "Unable to install Qserv"
@@ -72,7 +106,7 @@ echo
 echo "Installing Qserv integration tests datasets"
 echo "==========================================="
 echo
-time eups distrib install qserv_testdata -r ${EUPS_PKGROOT_QSERV} &&
+time eups distrib install qserv_testdata &&
 setup qserv_testdata ||
 {
     echo "Unable to install Qserv test datasets"
@@ -122,4 +156,3 @@ qserv-stop.sh ||
     echo "Unable to stop Qserv"
     exit 1
 }
-
