@@ -11,8 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   quick-start 
-   quick-start-devel
+   install/installation
    admin/administration-reference
    acknowledgement
 
