@@ -4,16 +4,14 @@
 # rebuild lsst qserv qserv_testdata
 # publish -t current -b bXX lsst qserv qserv_testdata
 
-PUBLIC_HTML=/lsst/home/fjammes/public_html/qserv-offline
-DISTSERVER_ROOT=/lsst/home/fjammes/src/lsstsw-offline/distserver
+DISTSERVER_ROOT=${HOME}/distserver
 EUPS_PKGROOT="${DISTSERVER_ROOT}/production"
+PUBLIC_HTML=/lsst/home/fjammes/public_html/qserv-offline
 
-EUPS_VERSION=${EUPS_VERSION:-1.5.0}
+EUPS_VERSION=1.5.0
 EUPS_TARBALL="$EUPS_VERSION.tar.gz"
 EUPS_TARURL="https://github.com/RobertLuptonTheGood/eups/archive/$EUPS_TARBALL"
-
 EUPS_GITREPO="https://github.com/RobertLuptonTheGood/eups.git"
-
 
 git_update_bare() {
     if [ -z "$1" ]; then
@@ -94,9 +92,19 @@ fi
 EUPS_TARURL="file://${DISTSERVER_ROOT}/$EUPS_TARBALL"
 EUPS_GITREPO="${DISTSERVER_ROOT}/eups.git"
 
+echo
+echo "Creating Qserv offline distserver tarball"
+echo "========================================="
+echo
 TOP_DIR=$(basename ${DISTSERVER_ROOT})
-tar zcvf ${PUBLIC_HTML}/qserv-offline-distserver.tar.gz -C ${DISTSERVER_ROOT}/.. ${TOP_DIR}
+TARBALL=${PUBLIC_HTML}/qserv-offline-distserver.tar.gz
+tar zcvf ${TARBALL} -C ${DISTSERVER_ROOT}/.. ${TOP_DIR} ||
+{
+    echo "Unable to create ${TARBALL}"
+    exit 1
+}
 
+echo "export DISTSERVER_ROOT=${DISTSERVER_ROOT}"
 echo "export EUPS_PKGROOT=${EUPS_PKGROOT}"
 echo "export EUPS_TARURL=${EUPS_TARURL}"
 echo "export EUPS_GIT_REPO=${EUPS_GITREPO}"
