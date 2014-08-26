@@ -4,8 +4,7 @@
 # rebuild lsst qserv qserv_testdata
 # publish -t current -b bXX lsst qserv qserv_testdata
 
-PUBLIC_HTML=/lsst/home/fjammes/public_html/qserv-offline
-DISTSERVER_ROOT=/lsst/home/fjammes/src/lsstsw-offline/distserver
+DISTSERVER_ROOT=${HOME}/distserver
 EUPS_PKGROOT="${DISTSERVER_ROOT}/production"
 PUBLIC_HTML=/lsst/home/fjammes/public_html/qserv-offline
 
