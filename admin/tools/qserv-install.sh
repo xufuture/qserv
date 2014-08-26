@@ -87,13 +87,14 @@ time bash newinstall.sh ||
     echo "ERROR : newinstall.sh failed"
     exit 1
 }
+echo "XXXXXXXXXXXXXXXx"
 source loadLSST.sh
 
 echo
 echo "Installing Qserv"
 echo "================"
 echo
-time eups distrib install qserv ${REF} -r ${EUPS_PKGROOT_QSERV} &&
+time eups distrib install qserv ${VERSION} &&
 setup qserv ||
 {
     echo "Unable to install Qserv"
@@ -103,7 +104,7 @@ echo
 echo "Installing Qserv integration tests datasets"
 echo "==========================================="
 echo
-time eups distrib install qserv_testdata -r ${EUPS_PKGROOT_QSERV} &&
+time eups distrib install qserv_testdata &&
 setup qserv_testdata ||
 {
     echo "Unable to install Qserv test datasets"
