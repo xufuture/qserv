@@ -15,6 +15,8 @@ Quick start guide
 Pre-requisites
 **************
 
+.. _quick-start-pre-requisites-system-deps:
+
 Install system dependencies
 ===========================
 
