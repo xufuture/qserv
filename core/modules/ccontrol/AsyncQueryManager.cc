@@ -332,7 +332,7 @@ void AsyncQueryManager::joinEverything() {
                 if (LOG_CHECK_WARN()) {
                     std::stringstream ss;
                     _printState(ss);
-                    LOGF_INFO("%1%" % ss.str());
+                    LOGF_WARN("%1%" % ss.str());
                 }
 #else
                 _printState(LOG_STRM(Warning));
