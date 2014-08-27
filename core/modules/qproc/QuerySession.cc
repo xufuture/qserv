@@ -381,7 +381,7 @@ std::vector<std::string> QuerySession::_buildChunkQueries(ChunkSpec const& s) co
 #endif
     for(unsigned int t=0;t<q.size();t++){
 #ifdef NEWLOG
-        LOGF_DEBUG(q.at(t));
+        LOGF_DEBUG("%1%" % q.at(t));
 #else
         LOGGER_DBG << q.at(t) << std::endl;
 #endif

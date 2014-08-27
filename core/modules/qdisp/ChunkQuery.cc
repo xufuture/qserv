@@ -656,6 +656,7 @@ void ChunkQuery::_readResultsDefer(int fd) {
     LOGF_DEBUG("EXECUTING ChunkQuery::_readResultsDefer(%1%)" % fd);
 #else
     LOGGER_DBG << "EXECUTING ChunkQuery::_readResultsDefer(" << fd << ")" << std::endl;
+#endif
     // Now read.
     // Ready to read: notify the manager, who will request the result buffer.
     _xrdFd = fd;

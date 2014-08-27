@@ -259,9 +259,12 @@ public:
             t1.start();
             t.chunkLevel = cssFacade->getChunkLevel(t.db, t.prePatchTable);
             t1.stop();
+#ifdef NEWLOG
+            LOGF_INFO("Facade getChunkLevel() elapsed: %1%" % t1.getElapsed());
+#else
             LOGGER_INF << "Facade getChunkLevel() elapsed: "
                        << t1.getElapsed() << std::endl;
-
+#endif
             if(t.chunkLevel == -1) {
                 t.allowed = false; // No chunk level found: missing/illegal.
                 throw InvalidTableException(t.db, t.prePatchTable);

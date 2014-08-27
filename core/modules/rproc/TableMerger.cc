@@ -264,7 +264,11 @@ bool TableMerger::merge(std::string const& dumpFile,
 
 off_t TableMerger::merge(char const* dumpBuffer, int dumpLength,
                          std::string const& tableName) {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING TableMerger::merge(packetbuffer, %1%)" % tableName);
+#else
     LOGGER_DBG << "EXECUTING TableMerger::merge(packetbuffer, " << tableName << ")" << std::endl;
+#endif
     bool allowNull = true;
     CreateStmt cs(dumpBuffer, dumpLength, tableName,
                   _config.targetDb, _mergeTable);
@@ -272,7 +276,11 @@ off_t TableMerger::merge(char const* dumpBuffer, int dumpLength,
     SqlInsertIter sii(dumpBuffer, dumpLength, tableName, allowNull);
     bool successful = _importIter(sii, tableName);
     if(!successful) {
+#ifdef NEWLOG
+        LOGF_DEBUG("UNSUCCESSFUL TableMerger::merge(buffer), %1%)" % tableName);
+#else
         LOGGER_DBG << "UNSUCCESSFUL TableMerger::merge(buffer), " << tableName << ")" << std::endl;
+#endif
         _error.status = TableMergerError::IMPORT;
         _error.errorCode = 0;
         _error.description = "Unknown result import error.";
@@ -295,30 +303,6 @@ bool TableMerger::merge(boost::shared_ptr<util::PacketBuffer> pb,
     bool allowNull = false;
     CreateStmt cs(pb, tableName, _config.targetDb, _mergeTable);
     _createTableIfNotExists(cs);
-#ifdef NEWLOG
-    LOGF_DEBUG("EXECUTING TableMerger::merge(pacIter, %1%)" % tableName);
-#else
-    LOGGER_DBG << "EXECUTING TableMerger::merge(pacIter, " << tableName << ")" << std::endl;
-#endif
-    bool allowNull = false;
-    {
-#ifdef NEWLOG
-        LOGF_DEBUG("Importing %1%" % tableName);
-#else
-        LOGGER_DBG << "Importing " << tableName << std::endl;
-#endif
-        boost::lock_guard<boost::mutex> g(_countMutex);
-        ++_tableCount;
-        if(_tableCount == 1) {
-            bool isOk = _importBufferCreate(pacIter, tableName);
-            if(!isOk) {
-                --_tableCount; // We failed merging the table.
-                return false;
-            }
-            allowNull = true;
-        }
-    }
->>>>>>> Migrated qserv to the new logging system, still with ifdefs
     // No locking needed if not first, after updating the counter.
     // Once the table is created, everyone should insert.
     SqlInsertIter sii(pb, tableName, allowNull);
@@ -327,8 +311,12 @@ bool TableMerger::merge(boost::shared_ptr<util::PacketBuffer> pb,
 
 bool TableMerger::finalize() {
     if(_isFinished) {
+#ifdef NEWLOG
+        LOGF_ERROR("TableMerger::finalize(), but _isFinished == true");
+#else
         LOGGER_ERR << "TableMerger::finalize(), but _isFinished == true"
                    << std::endl;
+#endif
     }
     if(_mergeTable != _config.targetTable) {
         std::string cleanup = (boost::format(_cleanupSql) % _mergeTable).str();
@@ -459,7 +447,11 @@ std::string TableMerger::_buildOrderByLimit() {
 }
 
 bool TableMerger::_createTableIfNotExists(TableMerger::CreateStmt& cs) {
+#ifdef NEWLOG
+    LOGF_DEBUG("Importing %1%" % cs.getTable());
+#else
     LOGGER_DBG << "Importing " << cs.getTable() << std::endl;
+#endif
     boost::lock_guard<boost::mutex> g(_countMutex);
     ++_tableCount;
     if(_tableCount == 1) {
@@ -565,7 +557,11 @@ bool TableMerger::_importIter(SqlInsertIter& sii,
                 errStrm << "Failed importing! " << tableName << " "
                         << _error.description << "(code="
                         << _error.errorCode << ")";
+#ifdef NEWLOG
+                LOGF_ERROR("%1%" % errStrm.str());
+#else
                 LOGGER_ERR << errStrm.str() << std::endl;
+#endif
                 throw std::runtime_error(errStrm.str());
             } else {
                 std::stringstream errStrm;
@@ -590,8 +586,13 @@ bool TableMerger::_importBufferInsert(char const* buf, std::size_t size,
     SqlInsertIter sii(buf, size, tableName, allowNull);
     bool successful = _importIter(sii, tableName);
     if(!successful) {
+#ifdef NEWLOG
+        LOGF_ERROR("Error importing to %1% buffer of size=%2%" % 
+                   tableName % size);
+#else
         LOGGER_ERR << "Error importing to " << tableName
                    << " buffer of size=" << size << std::endl;
+#endif
         return false;
     }
     return true;
