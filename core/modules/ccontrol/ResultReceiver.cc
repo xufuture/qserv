@@ -62,9 +62,14 @@ char* ResultReceiver::buffer() {
 
 bool ResultReceiver::flush(int bLen, bool last) {
     // Do something with the buffer.
+#ifdef NEWLOG
+    LOGF_INFO("Receiver flushing %1% bytes (%2%) to table=%3%" %
+              bLen % (last ? "last" : "more") % _tableName);
+#else
     LOGGER_INF << "Receiver flushing " << bLen << " bytes "
                << (last ? " (last)" : " (more)")
                << " to table=" << _tableName << std::endl;
+#endif
     assert(!_tableName.empty());
     bool mergeOk = false;
     if(bLen == 0) {
@@ -75,15 +80,23 @@ bool ResultReceiver::flush(int bLen, bool last) {
             _dirty = true;
         }
     } else {
+#ifdef NEWLOG
+        LOGF_ERROR("Possible error: flush with negative length");
+#else
         LOGGER_ERR << "Possible error: flush with negative length" << std::endl;
+#endif
         return false;
     }
 
     _flushed = true;
     if(last) {
         // Probably want to notify that we're done?
+#ifdef NEWLOG
+        LOGF_INFO("Flushed last for tableName=%1%" % _tableName);
+#else
         LOGGER_INF << " Flushed last for tableName="
                    << _tableName << std::endl;
+#endif
         if(_finishHook) {
             (*_finishHook)(true);
         }
@@ -96,7 +109,11 @@ void ResultReceiver::errorFlush(std::string const& msg, int code) {
     // Do something about the error. FIXME.
     _error.msg = msg;
     _error.code = code;
+#ifdef NEWLOG
+    LOGF_ERROR("Error receiving result.");
+#else
     LOGGER_ERR << "Error receiving result." << std::endl;
+#endif
     if(_finishHook) {
         (*_finishHook)(false);
     }
@@ -144,14 +161,22 @@ bool ResultReceiver::_appendAndMergeBuffer(int bLen) {
         _bufferSize = _actualSize - unMergedSize;
         return true;
     } else if(mergeSize == 0) {
-            LOGGER_ERR << "No merge in input. Receive buffer too small? "
-                       << "Tried to merge " << inputSize
-                       << " bytes, fresh=" << bLen
-                       << " actualsize=" << _actualSize
-                       << std::endl;
+#ifdef NEWLOG
+        LOGF_ERROR("No merge in input. Receive buffer too small? Tried to merge %1% bytes, fresh=%2% actualsize=%3%" % inputSize % bLen % _actualSize);
+#else
+        LOGGER_ERR << "No merge in input. Receive buffer too small? "
+                   << "Tried to merge " << inputSize
+                   << " bytes, fresh=" << bLen
+                   << " actualsize=" << _actualSize
+                   << std::endl;
+#endif
         return false;
     } else {
+#ifdef NEWLOG
+        LOGF_ERROR("Die horribly, for TableMerger::merge() returned an impossible value");
+#else
         LOGGER_ERR << "Die horribly, for TableMerger::merge() returned an impossible value" << std::endl;
+#endif
         throw std::runtime_error("Impossible return value from merge()");
     }
 }
