@@ -19,7 +19,7 @@ git_update_bare() {
         exit 1
     fi
     local giturl=$1
-    local product=$(basename ${giturl})
+    local product=`basename ${giturl}`
     local retval=1
 
     if [ ! -d ${product} ]; then
@@ -76,6 +76,7 @@ if [ ! -d ${EUPS_PKGROOT} ]; then
 fi
 
 # newinstall.sh in EUPS_PKGROOT is obsolete
+# TODO package latest version of newinstall.sh in lsstsw
 echo
 echo "Downloading LSST stack install script"
 echo "====================================="
