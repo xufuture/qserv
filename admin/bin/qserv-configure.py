@@ -195,8 +195,8 @@ def main():
             logging.info("Running configuration scripts")
             configuration_scripts_dir = os.path.join(run_base_dir, 'tmp', 'configure')
 
-            if not config['qserv']['node_type'] in ['mono', 'worker']:
-                logging.info("Service isn't a worker or a mono-node instance : not configuring SciSQL")
+            if config['qserv']['node_type'] not in ['mono', 'worker']:
+                logging.info("Service isn't a worker or a mono-node instance : not configuring sciSQL")
                 components_to_configure.remove('scisql')
 
             for comp in components_to_configure:
@@ -220,7 +220,7 @@ def main():
             homedir = os.path.expanduser("~")
             cfg_link = os.path.join(homedir, ".lsst", "qserv.conf")
 
-            if os.lstat(cfg_link):
+            if os.path.isfile(cfg_link) and os.lstat(cfg_link):
                 
                 try:
                     is_symlink_correct = os.path.samefile(cfg_link, cfg_file)
@@ -251,7 +251,7 @@ def main():
                 os.symlink(cfg_file, cfg_link)
 
             logging.info(
-                "Client configuration is now pointing to : {0}".format(cfg_file)
+                "{0} is now pointing to : {1}".format(cfg_link, cfg_file)
             )
 
 if __name__ == '__main__':
