@@ -106,7 +106,7 @@ echo
 echo "Adding Qserv install script"
 echo "==========================="
 echo
-cp ${DIR}/admin/tools/qserv-install.sh ${DISTSERVER_ROOT}
+cp ${DIR}/qserv-install.sh ${DISTSERVER_ROOT}
 
 echo
 echo "Creating Qserv offline distserver tarball"
