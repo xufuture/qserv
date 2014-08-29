@@ -1,15 +1,23 @@
 #!/bin/sh
 
+set -e
+
 # First, with lsstsw tools : 
 # rebuild lsst qserv qserv_testdata
 # publish -t current -b bXX lsst qserv qserv_testdata
 
-DIR=$(cd "$(dirname "$0")"; pwd -P)
+#############################
+# CUSTOMIZE NEXT PARAMETERS :
+#############################
 
 DISTSERVER_ROOT=${HOME}/distserver
-EUPS_PKGROOT="${DISTSERVER_ROOT}/production"
+# above directory must be published via a webserver
 PUBLIC_HTML=/lsst/home/fjammes/public_html/qserv-offline
 
+#############################
+
+DIR=$(cd "$(dirname "$0")"; pwd -P)
+EUPS_PKGROOT="${DISTSERVER_ROOT}/production"
 EUPS_VERSION=1.5.0
 EUPS_TARBALL="$EUPS_VERSION.tar.gz"
 EUPS_TARURL="https://github.com/RobertLuptonTheGood/eups/archive/$EUPS_TARBALL"

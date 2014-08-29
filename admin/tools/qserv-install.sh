@@ -144,7 +144,7 @@ echo "Starting Qserv"
 echo "=============="
 echo
 CFG_VERSION=`qserv-version.sh`
-${HOME}/qserv-run/${CFG_VERSION}/qserv-start.sh ||
+${HOME}/qserv-run/${CFG_VERSION}/bin/qserv-start.sh ||
 {
     echo "Unable to start Qserv"
     exit 1
@@ -164,7 +164,7 @@ echo
 echo "Stopping Qserv"
 echo "=============="
 echo
-${HOME}/qserv-run/${CFG_VERSION}/qserv-stop.sh ||
+${HOME}/qserv-run/${CFG_VERSION}/bin/qserv-stop.sh ||
 {
     echo "Unable to stop Qserv"
     exit 1

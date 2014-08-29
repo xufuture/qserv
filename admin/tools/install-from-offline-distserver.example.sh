@@ -3,12 +3,11 @@
 set -e
 set -x
 
-QSERV_SRC_DIR=~fjammes/src/qserv
-OFFLINE_DISTSERVER=~fjammes/distserver
-INSTALL_DIR=/data/qserv/stack
+OFFLINE_DISTSERVER_DIR=shared/dir/available/to/all/nodes
+INSTALL_DIR=root/directory/where/qserv/stack/will/be/installed
 
+# CAUTION : remove previous configuration data
 rm -rf ~/qserv-run
-chmod -R 777 ${INSTALL_DIR}
-bash ${QSERV_SRC_DIR}/admin/tools/qserv-install.sh -r ${OFFLINE_DISTSERVER} -i
-${INSTALL_DIR}
+# CAUTION : previous install will be removed
+bash ${OFFLINE_DISTSERVER_DIR}/qserv-install.sh -r ${OFFLINE_DISTSERVER_DIR} -i ${INSTALL_DIR}
 
