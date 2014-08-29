@@ -4,6 +4,8 @@
 # rebuild lsst qserv qserv_testdata
 # publish -t current -b bXX lsst qserv qserv_testdata
 
+DIR=$(cd "$(dirname "$0")"; pwd -P)
+
 DISTSERVER_ROOT=${HOME}/distserver
 EUPS_PKGROOT="${DISTSERVER_ROOT}/production"
 PUBLIC_HTML=/lsst/home/fjammes/public_html/qserv-offline
@@ -91,6 +93,12 @@ fi
 
 EUPS_TARURL="file://${DISTSERVER_ROOT}/$EUPS_TARBALL"
 EUPS_GITREPO="${DISTSERVER_ROOT}/eups.git"
+
+echo
+echo "Adding Qserv install script"
+echo "==========================="
+echo
+cp ${DIR}/admin/tools/qserv-install.sh ${DISTSERVER_ROOT}
 
 echo
 echo "Creating Qserv offline distserver tarball"
