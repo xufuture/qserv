@@ -120,7 +120,6 @@ tar zcvf ${TARBALL} -C ${DISTSERVER_ROOT}/.. ${TOP_DIR} ||
     exit 1
 }
 
-echo "export DISTSERVER_ROOT=${DISTSERVER_ROOT}"
-echo "export EUPS_PKGROOT=${EUPS_PKGROOT}"
-echo "export EUPS_TARURL=${EUPS_TARURL}"
-echo "export EUPS_GIT_REPO=${EUPS_GITREPO}"
+echo "Offline distribution server archive creation SUCCESSFUL"
+echo "DISTSERVER_ROOT=${DISTSERVER_ROOT}"
+echo "TARBALL=${TARBALL}"
