@@ -246,8 +246,16 @@ def main():
                 # might need to create directory first
                 try:
                     os.makedirs(os.path.join(homedir, ".lsst"))
+		    logging.debug("Creating client configuration directory : ~/.lsst")
                 except os.error:
                     pass
+
+                try:
+		    os.remove(cfg_link)
+		    logging.debug("Removing broken symbolic link : {0}".format(cfg_link))
+                except os.error:
+                    pass
+
                 os.symlink(cfg_file, cfg_link)
 
             logging.info(
