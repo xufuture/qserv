@@ -23,7 +23,7 @@ Download distribution server data
 Please run next scripts under **non-root user account**.
 This step needs to be done on a machine with internet access.
 
-.. literalinclude:: ../../../admin/tools/prepare-offline-distserver.example.sh
+.. literalinclude:: ../../../admin/tools/prepare-install-from-offline-distserver.example.sh
    :language: bash
    :emphasize-lines: 15-
    :linenos:
@@ -54,34 +54,42 @@ First, please install `lsstsw` :
 
 .. code-block:: bash
 
-   WORK_DIR=dir/where/lsstsw/build/tool/will/be/installed
-   cd ${WORK_DIR}
+   SRC_DIR=dir/where/lsstsw/build/tool/will/be/installed
+   cd ${SRC_DIR}
    git clone git://git.lsstcorp.org/LSST/DMS/devenv/lsstsw.git
    cd lsstsw
    ./bin/deploy
 
-Then, source `lsstsw` environment :
+Then edit `${SRC_DIR}/lsstsw/etc/settings.cfg.sh` :
+
+.. literalinclude:: ../_static/lsstsw/etc/settings.cfg.sh.diff
+   :language: bash
+
+Then, source `lsstsw` environment : 
 
 .. code-block:: bash
+   :emphasize-lines: 8 
 
+   cat > setup.sh <<EOF
    # package mode will embed source code in each eupspkg package
    export EUPSPKG_SOURCE=package
-   export LSSTSW=${WORK_DIR}/lsstsw
-   export EUPS_PATH=$LSSTSW/stack
-   . $LSSTSW/bin/setup.sh
+   export LSSTSW=${SRC_DIR}/lsstsw
+   export EUPS_PATH=\${LSSTSW}/stack
+   . \${LSSTSW}/bin/setup.sh
+   EOF
+   source setup.sh
 
 Then rebuild Qserv distribution :
 
 .. code-block:: bash
 
-   source setup.sh
    rebuild git
    setup git 1.8.5.2 
    rebuild -r 9.2 git lsst qserv qserv_testdata
    # bXXX is the build id and is available at the bottom of rebuild command standard output
    publish -b bXXX -t current git lsst qserv qserv_testdata
 
-And then adapt and run next script :download:`qserv-offline-distserver.sh <../../../admin/tools/qserv-offline-distserver.sh>` to prepare the offline distserver archive and copy it to the webserver.
+And then adapt and run next script :download:`qserv-package-offline-distserver.sh <../../../admin/tools/qserv-package-offline-distserver.sh>` to prepare the offline distserver archive and copy it to the webserver.
 
 Testing
 =======
