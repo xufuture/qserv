@@ -6,18 +6,23 @@ set -e
 # rebuild lsst qserv qserv_testdata
 # publish -t current -b bXX lsst qserv qserv_testdata
 
-#############################
-# CUSTOMIZE NEXT PARAMETERS :
-#############################
+############################
+# CUSTOMIZE NEXT PARAMETER :
+############################
 
-DISTSERVER_ROOT=${HOME}/src/lsstsw/distserver
 # above directory must be published via a webserver
 PUBLIC_HTML=${HOME}/qserv-www
 
 #############################
 
-DIR=$(cd "$(dirname "$0")"; pwd -P)
-EUPS_PKGROOT="${DISTSERVER_ROOT}/production"
+if [[ -z ${LSSTSW} ]]; then
+    echo "ERROR : Please setup lsstsw tools before running this script"
+    exit 1
+fi
+
+source ${LSSTSW}/etc/settings.cfg.sh
+DISTSERVER_ROOT=${LSSTSW}/distserver
+
 EUPS_VERSION=1.5.0
 EUPS_TARBALL="$EUPS_VERSION.tar.gz"
 EUPS_TARURL="https://github.com/RobertLuptonTheGood/eups/archive/$EUPS_TARBALL"
@@ -106,10 +111,7 @@ echo
 echo "Adding Qserv install script"
 echo "==========================="
 echo
-(
-    source ${LSSTSW}/etc/settings.cfg.sh
-    cp ${BUILDDIR}/qserv/admin/tools/qserv-install.sh ${DISTSERVER_ROOT}
-)
+cp ${BUILDDIR}/qserv/admin/tools/qserv-install.sh ${DISTSERVER_ROOT}
 
 echo
 echo "Creating Qserv offline distserver tarball"
