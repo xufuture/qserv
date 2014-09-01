@@ -10,9 +10,9 @@ set -e
 # CUSTOMIZE NEXT PARAMETERS :
 #############################
 
-DISTSERVER_ROOT=${HOME}/distserver
+DISTSERVER_ROOT=${HOME}/src/lsstsw/distserver
 # above directory must be published via a webserver
-PUBLIC_HTML=/lsst/home/fjammes/public_html/qserv-offline
+PUBLIC_HTML=${HOME}/qserv-www
 
 #############################
 
@@ -21,7 +21,7 @@ EUPS_PKGROOT="${DISTSERVER_ROOT}/production"
 EUPS_VERSION=1.5.0
 EUPS_TARBALL="$EUPS_VERSION.tar.gz"
 EUPS_TARURL="https://github.com/RobertLuptonTheGood/eups/archive/$EUPS_TARBALL"
-EUPS_GITREPO="https://github.com/RobertLuptonTheGood/eups.git"
+EUPS_GITREPO="git://github.com/RobertLuptonTheGood/eups.git"
 
 git_update_bare() {
     if [ -z "$1" ]; then
@@ -106,7 +106,10 @@ echo
 echo "Adding Qserv install script"
 echo "==========================="
 echo
-cp ${DIR}/qserv-install.sh ${DISTSERVER_ROOT}
+(
+    source ${LSSTSW}/etc/settings.cfg.sh
+    cp ${BUILDDIR}/qserv/admin/tools/qserv-install.sh ${DISTSERVER_ROOT}
+)
 
 echo
 echo "Creating Qserv offline distserver tarball"
@@ -114,6 +117,7 @@ echo "========================================="
 echo
 TOP_DIR=`basename ${DISTSERVER_ROOT}`
 TARBALL=${PUBLIC_HTML}/qserv-offline-distserver.tar.gz
+mkdir -p ${PUBLIC_HTML}
 tar zcvf ${TARBALL} -C ${DISTSERVER_ROOT}/.. ${TOP_DIR} ||
 {
     echo "Unable to create ${TARBALL}"
