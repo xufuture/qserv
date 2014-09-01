@@ -38,7 +38,7 @@ Installation
 Install LSST stack
 ==================
 
-First, log in with a **non-root user account**.
+First, log in with a **non-root user account**, and run LSST standard install procedure :
 
 .. code-block:: bash
 
