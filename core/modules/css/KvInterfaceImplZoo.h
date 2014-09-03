@@ -48,7 +48,7 @@ namespace css {
 
 class KvInterfaceImplZoo : public KvInterface {
 public:
-    KvInterfaceImplZoo(std::string const& connInfo);
+    KvInterfaceImplZoo(std::string const& connInfo, int timeout);
     virtual ~KvInterfaceImplZoo();
 
     virtual void create(std::string const& key, std::string const& value);
@@ -60,10 +60,14 @@ public:
     virtual void deleteKey(std::string const& key);
 
 private:
+    void _doConnect();
+    void _verifyConnection();
     void _throwZooFailure(int, std::string const& fName, std::string const& key);
 
 private:
     zhandle_t *_zh; // zhookeeper handle
+    const std::string _connInfo;
+    int _timeout;
 };
 
 }}} // namespace lsst::qserv::css

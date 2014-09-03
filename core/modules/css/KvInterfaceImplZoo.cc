@@ -65,13 +65,13 @@ namespace css {
  * Initialize the interface.
  *
  * @param connInfo connection information
+ * @param timeout  connection timeout in msec
  */
-KvInterfaceImplZoo::KvInterfaceImplZoo(string const& connInfo) {
+KvInterfaceImplZoo::KvInterfaceImplZoo(string const& connInfo, int timeout)
+    : _connInfo(connInfo),
+      _timeout(timeout) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
-    _zh = zookeeper_init(connInfo.c_str(), 0, 10000, 0, 0, 0);
-    if ( !_zh ) {
-        throw ConnError();
-    }
+    _doConnect();
 }
 
 KvInterfaceImplZoo::~KvInterfaceImplZoo() {
@@ -92,6 +92,7 @@ KvInterfaceImplZoo::create(string const& key, string const& value) {
     LOGGER_INF << "*** KvInterfaceImplZoo::create(), " << key << " --> "
                << value << endl;
     char buffer[512];
+    _verifyConnection();
     int rc = zoo_create(_zh, key.c_str(), value.c_str(), value.length(),
                         &ZOO_OPEN_ACL_UNSAFE, 0, buffer, sizeof(buffer)-1);
     if (rc!=ZOK) {
@@ -104,6 +105,7 @@ KvInterfaceImplZoo::exists(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::exist(), key: " << key << endl;
     struct Stat stat;
     memset(&stat, 0, sizeof(Stat));
+    _verifyConnection();
     int rc = zoo_exists(_zh, key.c_str(), 0,  &stat);
     if (rc==ZOK) {
         return true;
@@ -123,6 +125,7 @@ KvInterfaceImplZoo::get(string const& key) {
     memset(buffer, 0, bufLen);
     struct Stat stat;
     memset(&stat, 0, sizeof(Stat));
+    _verifyConnection();
     int rc = zoo_get(_zh, key.c_str(), 0, buffer, &bufLen, &stat);
     if (rc!=ZOK) {
         _throwZooFailure(rc, "get", key);
@@ -139,6 +142,7 @@ KvInterfaceImplZoo::get(string const& key, string const& defaultValue) {
     memset(buffer, 0, bufLen);
     struct Stat stat;
     memset(&stat, 0, sizeof(Stat));
+    _verifyConnection();
     int rc = zoo_get(_zh, key.c_str(), 0, buffer, &bufLen, &stat);
     if (rc!=ZOK) {
         if (rc==ZNONODE) {
@@ -156,6 +160,7 @@ KvInterfaceImplZoo::getChildren(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::getChildren(), key: " << key << endl;
     struct String_vector strings;
     memset(&strings, 0, sizeof(strings));
+    _verifyConnection();
     int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
     if (rc!=ZOK) {
         _throwZooFailure(rc, "getChildren", key);
@@ -178,9 +183,50 @@ KvInterfaceImplZoo::getChildren(string const& key) {
 void
 KvInterfaceImplZoo::deleteKey(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::deleteKey, key: " << key << endl;
+    _verifyConnection();
     int rc = zoo_delete(_zh, key.c_str(), -1);
     if (rc!=ZOK) {
         _throwZooFailure(rc, "deleteKey", key);
+    }
+}
+
+void
+KvInterfaceImplZoo::_doConnect() {
+    LOGGER_INF << "Connecting to zookeeper. " << _connInfo << ", " << _timeout
+               << endl;
+    _zh = zookeeper_init(_connInfo.c_str(), 0, _timeout, 0, 0, 0);
+    if ( !_zh ) {
+        throw ConnError();
+    }
+}
+
+void
+KvInterfaceImplZoo::_verifyConnection() {
+    // Just return if connection ok, reconnect if session expired, otherwise just
+    // throw an exception, maybe one day will do some fancier recovery.
+    LOGGER_INF << "########## VERIFYING CONNECTION" << endl;
+    const int state(zoo_state(_zh));
+    if (state == ZOO_CONNECTED_STATE) {
+        LOGGER_INF << "########## Connection all good" << endl;
+    } else if (state == ZOO_EXPIRED_SESSION_STATE) {
+        LOGGER_INF << "########## Reconnecting (expired session)" << endl;
+        _timeout = _timeout * 2;
+        _doConnect();
+    } else if (state == ZOO_AUTH_FAILED_STATE) {
+        LOGGER_ERR << "########## Connection problem (auth failed)" << endl;
+        throw AuthError();
+    } else if (state == ZOO_CONNECTING_STATE) {
+        LOGGER_INF << "########## Connection all good (connecting state)" << endl;
+        //LOGGER_ERR << "########## Connection problem (connecting state)" << endl;
+        //throw ConnError();
+    } else if (state == ZOO_ASSOCIATING_STATE) {
+        LOGGER_INF << "########## Connection all good (associating state)" << endl;
+        //LOGGER_ERR << "########## Connection problem (associating state)" << endl;
+        //throw ConnError();
+    } else {
+        LOGGER_ERR << "########## Connection problem (" << state << ")" << endl;
+        _timeout = _timeout * 2;
+        _doConnect();
     }
 }
 
