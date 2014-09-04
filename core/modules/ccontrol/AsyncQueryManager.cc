@@ -391,12 +391,12 @@ void AsyncQueryManager::_readConfig(std::map<std::string,
 
 void AsyncQueryManager::_initFacade(std::string const& cssTech,
                                     std::string const& cssConn,
-                                    int timeout) {
+                                    int timeout_msec) {
     if (cssTech == "zoo") {
         LOGGER_INF << "Initializing zookeeper-based css, with "
-                   << cssConn << ", " << timeout << std::endl;
+                   << cssConn << ", " << timeout_msec << std::endl;
         boost::shared_ptr<css::Facade> cssFPtr(
-            css::FacadeFactory::createZooFacade(cssConn, timeout));
+            css::FacadeFactory::createZooFacade(cssConn, timeout_msec));
         _qSession.reset(new qproc::QuerySession(cssFPtr));
     } else if (cssTech == "mem") {
         LOGGER_INF << "Initializing memory-based css, with "

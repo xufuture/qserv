@@ -56,10 +56,26 @@ using std::ostringstream;
 using std::string;
 using std::vector;
 
+
+namespace {
+    typedef struct WatcherContext {
+    public:
+        WatcherContext() { isConnected = false; }
+        bool isConnected;
+    } watchctx_t;
+
+    static void
+    ConnectionWatcher(zhandle_t *, int type, int state,
+                      const char *path, void*v) {
+        watchctx_t *ctx = (watchctx_t*) v;
+        ctx->isConnected = (state == ZOO_CONNECTED_STATE);
+    }
+} // annonymous namespace
+
+
 namespace lsst {
 namespace qserv {
 namespace css {
-
 
 /**
  * Initialize the interface.
@@ -67,9 +83,9 @@ namespace css {
  * @param connInfo connection information
  * @param timeout  connection timeout in msec
  */
-KvInterfaceImplZoo::KvInterfaceImplZoo(string const& connInfo, int timeout)
+KvInterfaceImplZoo::KvInterfaceImplZoo(string const& connInfo, int timeout_msec)
     : _connInfo(connInfo),
-      _timeout(timeout) {
+      _timeout(timeout_msec) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
     _doConnect();
 }
@@ -92,7 +108,6 @@ KvInterfaceImplZoo::create(string const& key, string const& value) {
     LOGGER_INF << "*** KvInterfaceImplZoo::create(), " << key << " --> "
                << value << endl;
     char buffer[512];
-    _verifyConnection();
     int rc = zoo_create(_zh, key.c_str(), value.c_str(), value.length(),
                         &ZOO_OPEN_ACL_UNSAFE, 0, buffer, sizeof(buffer)-1);
     if (rc!=ZOK) {
@@ -105,7 +120,6 @@ KvInterfaceImplZoo::exists(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::exist(), key: " << key << endl;
     struct Stat stat;
     memset(&stat, 0, sizeof(Stat));
-    _verifyConnection();
     int rc = zoo_exists(_zh, key.c_str(), 0,  &stat);
     if (rc==ZOK) {
         return true;
@@ -125,7 +139,6 @@ KvInterfaceImplZoo::get(string const& key) {
     memset(buffer, 0, bufLen);
     struct Stat stat;
     memset(&stat, 0, sizeof(Stat));
-    _verifyConnection();
     int rc = zoo_get(_zh, key.c_str(), 0, buffer, &bufLen, &stat);
     if (rc!=ZOK) {
         _throwZooFailure(rc, "get", key);
@@ -142,7 +155,6 @@ KvInterfaceImplZoo::get(string const& key, string const& defaultValue) {
     memset(buffer, 0, bufLen);
     struct Stat stat;
     memset(&stat, 0, sizeof(Stat));
-    _verifyConnection();
     int rc = zoo_get(_zh, key.c_str(), 0, buffer, &bufLen, &stat);
     if (rc!=ZOK) {
         if (rc==ZNONODE) {
@@ -160,7 +172,6 @@ KvInterfaceImplZoo::getChildren(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::getChildren(), key: " << key << endl;
     struct String_vector strings;
     memset(&strings, 0, sizeof(strings));
-    _verifyConnection();
     int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
     if (rc!=ZOK) {
         _throwZooFailure(rc, "getChildren", key);
@@ -183,7 +194,6 @@ KvInterfaceImplZoo::getChildren(string const& key) {
 void
 KvInterfaceImplZoo::deleteKey(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::deleteKey, key: " << key << endl;
-    _verifyConnection();
     int rc = zoo_delete(_zh, key.c_str(), -1);
     if (rc!=ZOK) {
         _throwZooFailure(rc, "deleteKey", key);
@@ -194,39 +204,26 @@ void
 KvInterfaceImplZoo::_doConnect() {
     LOGGER_INF << "Connecting to zookeeper. " << _connInfo << ", " << _timeout
                << endl;
-    _zh = zookeeper_init(_connInfo.c_str(), 0, _timeout, 0, 0, 0);
-    if ( !_zh ) {
-        throw ConnError();
-    }
-}
+    watchctx_t ctx;
+    _zh = zookeeper_init(_connInfo.c_str(), ConnectionWatcher, _timeout, 0, &ctx, 0);
 
-void
-KvInterfaceImplZoo::_verifyConnection() {
-    // Just return if connection ok, reconnect if session expired, otherwise just
-    // throw an exception, maybe one day will do some fancier recovery.
-    LOGGER_INF << "########## VERIFYING CONNECTION" << endl;
-    const int state(zoo_state(_zh));
-    if (state == ZOO_CONNECTED_STATE) {
-        LOGGER_INF << "########## Connection all good" << endl;
-    } else if (state == ZOO_EXPIRED_SESSION_STATE) {
-        LOGGER_INF << "########## Reconnecting (expired session)" << endl;
-        _timeout = _timeout * 2;
-        _doConnect();
-    } else if (state == ZOO_AUTH_FAILED_STATE) {
-        LOGGER_ERR << "########## Connection problem (auth failed)" << endl;
-        throw AuthError();
-    } else if (state == ZOO_CONNECTING_STATE) {
-        LOGGER_INF << "########## Connection all good (connecting state)" << endl;
-        //LOGGER_ERR << "########## Connection problem (connecting state)" << endl;
-        //throw ConnError();
-    } else if (state == ZOO_ASSOCIATING_STATE) {
-        LOGGER_INF << "########## Connection all good (associating state)" << endl;
-        //LOGGER_ERR << "########## Connection problem (associating state)" << endl;
-        //throw ConnError();
-    } else {
-        LOGGER_ERR << "########## Connection problem (" << state << ")" << endl;
-        _timeout = _timeout * 2;
-        _doConnect();
+    // wait up to _timeout time in short increments
+    int waitT = 10;                  // wait 10 microsec at a time
+    int reptN = 1000*_timeout/waitT; // 1000x because _timeout is in milisec, need microsec
+    while (reptN-- > 0) {
+        if (ctx.isConnected) {
+            LOGGER_INF << "Connected" << endl;
+            return;
+        }
+        usleep(waitT);
+    }
+    if ( !_zh ) {
+        throw ConnError("Invalid handle");
+    }
+    if (zoo_state(_zh) != ZOO_CONNECTED_STATE) {
+        ostringstream s;
+        s << "Invalid state: " << zoo_state(_zh);
+        throw ConnError(s.str());
     }
 }
 
@@ -242,6 +239,9 @@ KvInterfaceImplZoo::_throwZooFailure(int rc, string const& fName,
     if (rc==ZNONODE) {
         LOGGER_INF << ffName << "Key '" << key << "' does not exist." << endl;
         throw (key);
+    } else if (rc==ZNODEEXISTS) {
+        LOGGER_INF << ffName << "Node already exists." << endl;
+        throw NodeExistsError(key);
     } else if (rc==ZCONNECTIONLOSS) {
         LOGGER_INF << ffName << "Can't connect to zookeeper." << endl;
         throw ConnError();

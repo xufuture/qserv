@@ -43,7 +43,7 @@ class UserQueryFactory::Impl {
 public:
     void readConfig(StringMap const& m);
     void initFacade(std::string const& cssTech, std::string const& cssConn,
-                    int timeout);
+                    int timeout_msec);
     void initMergerTemplate();
 
     qdisp::Executive::Config::Ptr executiveConfig;
@@ -136,11 +136,11 @@ void UserQueryFactory::Impl::readConfig(StringMap const& m) {
 
 void UserQueryFactory::Impl::initFacade(std::string const& cssTech,
                                         std::string const& cssConn,
-                                        int timeout) {
+                                        int timeout_msec) {
     if (cssTech == "zoo") {
         LOGGER_INF << "Initializing zookeeper-based css, with "
-                   << cssConn << ", " << timeout << std::endl;
-        facade = css::FacadeFactory::createZooFacade(cssConn, timeout);
+                   << cssConn << ", " << timeout_msec << std::endl;
+        facade = css::FacadeFactory::createZooFacade(cssConn, timeout_msec);
 //        _qSession.reset(new qproc::QuerySession(cssFPtr));
     } else if (cssTech == "mem") {
         LOGGER_INF << "Initializing memory-based css, with "

@@ -79,8 +79,8 @@ public:
     StripingParams getDbStriping(std::string const& dbName) const;
 
 private:
-    Facade(std::string const& connInfo, int timeout);
-    Facade(std::string const& connInfo, int timeout, std::string const& prefix);
+    Facade(std::string const& connInfo, int timeout_msec);
+    Facade(std::string const& connInfo, int timeout_msec, std::string const& prefix);
     Facade(std::istream& mapStream);
 
     void _throwIfNotDbExists(std::string const& dbName) const;
@@ -106,12 +106,12 @@ private:
 class FacadeFactory {
 public:
     static boost::shared_ptr<Facade> createZooFacade(std::string const& connInfo,
-                                                     int timeout);
+                                                     int timeout_msec);
     static boost::shared_ptr<Facade> createMemFacade(std::string const& mapPath);
     static boost::shared_ptr<Facade> createMemFacade(std::istream& mapStream);
     static boost::shared_ptr<Facade> createZooTestFacade(
                                                      std::string const& connInfo,
-                                                     int timeout,
+                                                     int timeout_msec,
                                                      std::string const& prefix);
 };
 

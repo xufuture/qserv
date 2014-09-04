@@ -140,7 +140,7 @@ private:
     }
     void _readConfig(std::map<std::string,std::string> const& cfg);
     void _initFacade(std::string const& cssTech, std::string const& cssConn,
-                     int timeout);
+                     int timeout_msec);
     void _printState(std::ostream& os);
     void _addNewResult(int id, ssize_t dumpSize, std::string const& dumpFile,
                        std::string const& tableName);

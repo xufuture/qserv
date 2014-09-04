@@ -64,8 +64,8 @@ namespace css {
   *                 a Zookeeper server.
   * @param timeout  connection timeout in msec.
   */
-Facade::Facade(string const& connInfo, int timeout) {
-    _kvI = new KvInterfaceImplZoo(connInfo, timeout);
+Facade::Facade(string const& connInfo, int timeout_msec) {
+    _kvI = new KvInterfaceImplZoo(connInfo, timeout_msec);
 }
 
 /**
@@ -77,9 +77,9 @@ Facade::Facade(string const& connInfo, int timeout) {
   *                 a Zookeeper server.
   * @param prefix, for testing, to avoid polluting production setup
   */
-Facade::Facade(string const& connInfo, int timeout, string const& prefix) :
+Facade::Facade(string const& connInfo, int timeout_msec, string const& prefix) :
     _prefix(prefix) {
-    _kvI = new KvInterfaceImplZoo(connInfo, timeout);
+    _kvI = new KvInterfaceImplZoo(connInfo, timeout_msec);
 }
 
 /**
@@ -404,8 +404,8 @@ Facade::_tableIsSubChunked(string const& dbName,
 }
 
 boost::shared_ptr<Facade>
-FacadeFactory::createZooFacade(string const& connInfo, int timeout) {
-    boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(connInfo, timeout));
+FacadeFactory::createZooFacade(string const& connInfo, int timeout_msec) {
+    boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(connInfo, timeout_msec));
     return cssFPtr;
 }
 
@@ -426,10 +426,10 @@ FacadeFactory::createMemFacade(std::istream& mapStream) {
 
 boost::shared_ptr<Facade>
 FacadeFactory::createZooTestFacade(string const& connInfo,
-                                   int timeout,
+                                   int timeout_msec,
                                    string const& prefix) {
     boost::shared_ptr<css::Facade> cssFPtr(
-                                      new css::Facade(connInfo, timeout, prefix));
+                        new css::Facade(connInfo, timeout_msec, prefix));
     return cssFPtr;
 }
 
