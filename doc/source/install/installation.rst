@@ -7,4 +7,5 @@ Installation
 
    quick-start
    quick-start-devel
-   offline 
+   internet-free
+   package-internet-free-distserver 

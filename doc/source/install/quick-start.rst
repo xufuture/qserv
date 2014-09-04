@@ -42,10 +42,11 @@ First, log in with a **non-root user account**.
 
 .. code-block:: bash
 
+   EUPS_PKGROOT=http://sw.lsstcorp.org/eupspkg
    INSTALL_DIR=root/directory/where/qserv/stack/will/be/installed
    # e.g. ~qserv, please note that $INSTALL_DIR must be empty
    cd $INSTALL_DIR
-   curl -O http://sw.lsstcorp.org/eupspkg/newinstall.sh
+   curl -O ${EUPS_PKGROOT}/newinstall.sh
    # script below will ask some questionsr. Unless you know what you're doing,
    # and you need a fine tuned setup, please answer 'yes' everywhere.
    bash newinstall.sh

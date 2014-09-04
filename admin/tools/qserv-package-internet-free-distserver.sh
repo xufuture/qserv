@@ -114,11 +114,11 @@ echo
 cp ${BUILDDIR}/qserv/admin/tools/qserv-install.sh ${DISTSERVER_ROOT}
 
 echo
-echo "Creating Qserv offline distserver tarball"
+echo "Creating Qserv internet-free distserver tarball"
 echo "========================================="
 echo
 TOP_DIR=`basename ${DISTSERVER_ROOT}`
-TARBALL=${PUBLIC_HTML}/qserv-offline-distserver.tar.gz
+TARBALL=${PUBLIC_HTML}/qserv-internet-free-distserver.tar.gz
 mkdir -p ${PUBLIC_HTML}
 tar zcvf ${TARBALL} -C ${DISTSERVER_ROOT}/.. ${TOP_DIR} ||
 {
