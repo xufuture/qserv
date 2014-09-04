@@ -1,15 +1,10 @@
-####################
-Offline installation
-####################
+##########################
+Internet-free installation
+##########################
 
 Cluster often doesn't provide internet access for security reasons, that's why
 it is possible to install Qserv on machines without internet access.
 Qserv distribution offers an archive containing distribution server data which can copied on a distributed file system and used by internet-free servers in order to rebuild Qserv from source.
-
-.. note::
-
-   Please note that this high-level documentation is dedicated to system administrators and eups beginners.
-   If you want to have a more fine-grained management of your install please see and adjust :ref:`quick-start-install-qserv` and :ref:`quick-start-devel-setup-qserv`. 
 
 **************
 Pre-requisites
@@ -39,16 +34,27 @@ Installation
 
 During next steps :
 
-* only the read-only access to `OFFLINE_DISTSERVER_DIR` is needed, **Internet access is no longer required**,
+* only the read-only access to `INTERNET_FREE_DISTSERVER_DIR` is needed, **Internet access is no longer required**,
 * use the **non-root user account** which will run Qserv,
 * if you install Qserv on a cluster, perform next operations on each node.
 
+
+
+You can then follow standard Qserv install procedure (Start here : :ref:`quick-start-install-lsst-stack`), except that you have to specify eups to use the local distribution server.
+**This must be done twice** :
+
+- before installing LSST stack (See :ref:`quick-start-install-lsst-stack`), replace `NEWINSTALL_URL` value with :
+
 .. code-block:: bash
 
-   # OPTIONAL : if python 2.7 isn't available, installing Anaconda may be a solution : 
-   ${OFFLINE_DISTSERVER_DIR}/Anaconda-1.8.0-Linux-x86_64.sh 
+   NEWINSTALL_URL=${INTERNET_FREE_DISTSERVER_DIR}
 
-.. literalinclude:: ../../../admin/tools/install-from-internet-free-distserver.example.sh
-   :language: bash 
-   :emphasize-lines: 11-
-   :linenos:
+- before installing Qserv (See :ref:`quick-start-install-qserv`), replace `EUPS_PKGROOT` value with :
+
+.. code-block:: bash
+
+   # `. loadLSST.sh` instruction updates EUPS_PKGROOT value, that's why you need to correct it 
+   # before installing Qserv
+   export EUPS_PKGROOT=${INTERNET_FREE_DISTSERVER_DIR}
+
+  
