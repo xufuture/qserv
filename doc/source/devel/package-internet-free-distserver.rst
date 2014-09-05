@@ -1,6 +1,6 @@
-##############################################################
-Advanced HOW-TO : package an internet-free distribution server
-##############################################################
+############################################
+Package an internet-free distribution server
+############################################
 
 This step will allow Qserv packagers to prepare Qserv internet-free distserver archive and put it on a web-server. This step needs to be done on a machine with internet access and which provides write access to a web-server repository.
 
