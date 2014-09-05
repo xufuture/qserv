@@ -135,11 +135,6 @@ def _get_template_params():
     else:
         comment_mono_node = ''
 
-    if 'testdata_dir' in config['qserv']:
-        testdata_dir = config['qserv']['testdata_dir']
-    else:
-        testdata_dir = os.environ.get('QSERV_TESTDATA_DIR')
-
     params_dict = {
     'COMMENT_MONO_NODE' : comment_mono_node,
     'PATH': os.environ.get('PATH'),
@@ -152,7 +147,6 @@ def _get_template_params():
     'QSERV_UNIX_USER': os.getlogin(),
     'QSERV_LOG_DIR': config['qserv']['log_dir'],
     'QSERV_PID_DIR': os.path.join(config['qserv']['run_base_dir'], "var", "run"),
-    'QSERV_TESTDATA_DIR': testdata_dir,
     'QSERV_RPC_PORT': config['qserv']['rpc_port'],
     'QSERV_USER': config['qserv']['user'],
     'QSERV_LUA_SHARE': os.path.join(config['lua']['base_dir'], "share", "lua", "5.1"),
