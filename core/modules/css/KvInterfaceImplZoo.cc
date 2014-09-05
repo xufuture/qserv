@@ -65,10 +65,10 @@ namespace {
     } watchctx_t;
 
     static void
-    ConnectionWatcher(zhandle_t *, int type, int state,
+    connectionWatcher(zhandle_t *, int type, int state,
                       const char *path, void*v) {
-        watchctx_t *ctx = (watchctx_t*) v;
-        ctx->isConnected = (state == ZOO_CONNECTED_STATE);
+        watchctx_t *ctx = static_cast<watchctx_t*>(v);
+        ctx->isConnected = (state==ZOO_CONNECTED_STATE);
     }
 } // annonymous namespace
 
@@ -80,8 +80,8 @@ namespace css {
 /**
  * Initialize the interface.
  *
- * @param connInfo connection information
- * @param timeout  connection timeout in msec
+ * @param connInfo      connection information
+ * @param timeout_msec  connection timeout in msec
  */
 KvInterfaceImplZoo::KvInterfaceImplZoo(string const& connInfo, int timeout_msec)
     : _connInfo(connInfo),
@@ -205,7 +205,7 @@ KvInterfaceImplZoo::_doConnect() {
     LOGGER_INF << "Connecting to zookeeper. " << _connInfo << ", " << _timeout
                << endl;
     watchctx_t ctx;
-    _zh = zookeeper_init(_connInfo.c_str(), ConnectionWatcher, _timeout, 0, &ctx, 0);
+    _zh = zookeeper_init(_connInfo.c_str(), connectionWatcher, _timeout, 0, &ctx, 0);
 
     // wait up to _timeout time in short increments
     int waitT = 10;                  // wait 10 microsec at a time
