@@ -13,6 +13,7 @@ Contents:
 
    install/installation
    admin/administration-reference
+   devel/development-reference
    acknowledgement
 
 Indices and tables
