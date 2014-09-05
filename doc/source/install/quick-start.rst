@@ -42,11 +42,13 @@ First, log in with a **non-root user account**.
 
 .. code-block:: bash
 
+   NEWINSTALL_URL=http://sw.lsstcorp.org/pkgs/
+   export EUPS_PKGROOT=${NEWINSTALL_URL}
    INSTALL_DIR=root/directory/where/qserv/stack/will/be/installed
    # e.g. ~qserv, please note that $INSTALL_DIR must be empty
    cd $INSTALL_DIR
-   curl -O http://sw.lsstcorp.org/eupspkg/newinstall.sh
-   # script below will ask some questionsr. Unless you know what you're doing,
+   curl -O ${NEWINSTALL_URL}/newinstall.sh
+   # script below will ask some questions. Unless you know what you're doing,
    # and you need a fine tuned setup, please answer 'yes' everywhere.
    bash newinstall.sh
    . loadLSST.sh
@@ -60,11 +62,12 @@ Then below, please set ``RELEASE`` to "|release|" to install explicitly this rel
 
 .. code-block:: bash
 
+   export EUPS_PKGROOT=http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
    # loadLSST.sh must have been sourced before running this (see above)
-   eups distrib install qserv $RELEASE --repository=http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
+   eups distrib install qserv $RELEASE
    setup qserv $RELEASE
    # only if you want to run integration tests on a mono-node instance :
-   eups distrib install qserv_testdata 2014_06.0 --repository=http://lsst-web.ncsa.illinois.edu/~fjammes/qserv
+   eups distrib install qserv_testdata 2014_06.0
    setup qserv_testdata
 
 .. _quick-start-configuration:
