@@ -108,24 +108,36 @@ KvInterfaceImplZoo::create(string const& key, string const& value) {
     LOGGER_INF << "*** KvInterfaceImplZoo::create(), " << key << " --> "
                << value << endl;
     char buffer[512];
-    int rc = zoo_create(_zh, key.c_str(), value.c_str(), value.length(),
+    int rc=ZINVALIDSTATE, nAttempts=0;
+    while (nAttempts++<2) {
+        rc = zoo_create(_zh, key.c_str(), value.c_str(), value.length(),
                         &ZOO_OPEN_ACL_UNSAFE, 0, buffer, sizeof(buffer)-1);
-    if (rc!=ZOK) {
-        _throwZooFailure(rc, "create", key);
+        if (rc==ZOK) {
+            return;
+        }
+        LOGGER_WRN << "zoo_create failed (err:" << rc << "), "
+                   << "attempting to reconnect" << endl;
+        _doConnect();
     }
+    _throwZooFailure(rc, "create", key);
 }
 
 bool
 KvInterfaceImplZoo::exists(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::exist(), key: " << key << endl;
     struct Stat stat;
-    memset(&stat, 0, sizeof(Stat));
-    int rc = zoo_exists(_zh, key.c_str(), 0,  &stat);
-    if (rc==ZOK) {
-        return true;
-    }
-    if (rc==ZNONODE) {
-        return false;
+    int rc=ZINVALIDSTATE, nAttempts=0;
+    while (nAttempts++<2) {
+        memset(&stat, 0, sizeof(Stat));
+        rc = zoo_exists(_zh, key.c_str(), 0,  &stat);
+        if (rc==ZOK) {
+            return true;
+        } else if (rc==ZNONODE) {
+            return false;
+        }
+        LOGGER_WRN << "zoo_exists failed (err:" << rc << "), "
+                   << "attempting to reconnect" << endl;
+        _doConnect();
     }
     _throwZooFailure(rc, "exists", key);
     return false;
@@ -136,15 +148,22 @@ KvInterfaceImplZoo::get(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::get(), key: " << key << endl;
     char buffer[512];
     int bufLen = static_cast<int>(sizeof(buffer));
-    memset(buffer, 0, bufLen);
     struct Stat stat;
-    memset(&stat, 0, sizeof(Stat));
-    int rc = zoo_get(_zh, key.c_str(), 0, buffer, &bufLen, &stat);
-    if (rc!=ZOK) {
-        _throwZooFailure(rc, "get", key);
+    int rc=ZINVALIDSTATE, nAttempts=0;
+    while (nAttempts++<2) {
+        memset(buffer, 0, bufLen);
+        memset(&stat, 0, sizeof(Stat));
+        rc = zoo_get(_zh, key.c_str(), 0, buffer, &bufLen, &stat);
+        if (rc==ZOK) {
+            LOGGER_INF << "*** got: '" << buffer << "'" << endl;
+            return string(buffer);
+        }
+        LOGGER_WRN << "zoo_get failed (err:" << rc << "), "
+                   << "attempting to reconnect" << endl;
+        _doConnect();
     }
-    LOGGER_INF << "*** got: '" << buffer << "'" << endl;
-    return string(buffer);
+    _throwZooFailure(rc, "get", key);
+    return "";
 }
 
 string
@@ -152,52 +171,73 @@ KvInterfaceImplZoo::get(string const& key, string const& defaultValue) {
     LOGGER_INF << "*** KvInterfaceImplZoo::get2(), key: " << key << endl;
     char buffer[512];
     int bufLen = static_cast<int>(sizeof(buffer));
-    memset(buffer, 0, bufLen);
     struct Stat stat;
-    memset(&stat, 0, sizeof(Stat));
-    int rc = zoo_get(_zh, key.c_str(), 0, buffer, &bufLen, &stat);
-    if (rc!=ZOK) {
+    int rc=ZINVALIDSTATE, nAttempts=0;
+    while (nAttempts++<2) {
+        memset(buffer, 0, bufLen);
+        memset(&stat, 0, sizeof(Stat));
+        rc = zoo_get(_zh, key.c_str(), 0, buffer, &bufLen, &stat);
         if (rc==ZNONODE) {
+            LOGGER_INF << "*** returning default value: '"
+                       << defaultValue << "'" << endl;
             return defaultValue;
-        } else {
-            _throwZooFailure(rc, "get", key);
+        } else if (rc==ZOK) {
+            LOGGER_INF << "*** got: '" << buffer << "'" << endl;
+            return string(buffer);
         }
+        LOGGER_WRN << "zoo_get2 failed (err:" << rc << "), "
+                   << "attempting to reconnect" << endl;
+        _doConnect();
     }
-    LOGGER_INF << "*** got: '" << buffer << "'" << endl;
-    return string(buffer);
+    _throwZooFailure(rc, "get", key);
+    return "";
 }
 
 vector<string>
 KvInterfaceImplZoo::getChildren(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::getChildren(), key: " << key << endl;
     struct String_vector strings;
-    memset(&strings, 0, sizeof(strings));
-    int rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
-    if (rc!=ZOK) {
-        _throwZooFailure(rc, "getChildren", key);
-    }
-    LOGGER_INF << "got " << strings.count << " children" << endl;
     vector<string> v;
-    try {
-        int i;
-        for (i=0 ; i<strings.count ; i++) {
-            LOGGER_INF << "   " << i+1 << ": " << strings.data[i] << endl;
-            v.push_back(strings.data[i]);
+    int rc=ZINVALIDSTATE, nAttempts=0;
+    while (nAttempts++<2) {
+        memset(&strings, 0, sizeof(strings));
+        rc = zoo_get_children(_zh, key.c_str(), 0, &strings);
+        if (rc==ZOK) {
+            LOGGER_INF << "got " << strings.count << " children" << endl;
+            try {
+                int i;
+                for (i=0 ; i<strings.count ; i++) {
+                    LOGGER_INF << "   " << i+1 << ": " << strings.data[i] << endl;
+                    v.push_back(strings.data[i]);
+                }
+                deallocate_String_vector(&strings);
+            } catch (const std::bad_alloc& ba) {
+                deallocate_String_vector(&strings);
+            }
+            return v;
         }
-        deallocate_String_vector(&strings);
-    } catch (const std::bad_alloc& ba) {
-        deallocate_String_vector(&strings);
+        LOGGER_WRN << "zoo_get_children failed (err:" << rc << "), "
+                   << "attempting to reconnect" << endl;
+        _doConnect();
     }
+    _throwZooFailure(rc, "getChildren", key);
     return v;
 }
 
 void
 KvInterfaceImplZoo::deleteKey(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::deleteKey, key: " << key << endl;
-    int rc = zoo_delete(_zh, key.c_str(), -1);
-    if (rc!=ZOK) {
-        _throwZooFailure(rc, "deleteKey", key);
+    int rc=ZINVALIDSTATE, nAttempts=0;
+    while (nAttempts++<2) {
+        rc = zoo_delete(_zh, key.c_str(), -1);
+        if (rc==ZOK) {
+            return;
+        }
+        LOGGER_WRN << "zoo_delete failed (err:" << rc << "), "
+                   << "attempting to reconnect" << endl;
+        _doConnect();
     }
+    _throwZooFailure(rc, "deleteKey", key);
 }
 
 void
