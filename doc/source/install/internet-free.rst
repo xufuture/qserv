@@ -13,15 +13,14 @@ Pre-requisites
 Install system dependencies
 ===========================
 
-This step needs to be done on each machine of the cluster.
-Here you may need to set-up a local apt or yum repository, or download manually all the system dependencies packages.
-See :ref:`quick-start-pre-requisites-system-deps`
+You will need one machine with Internet access. It will need write access to a shared file system visiblefrom the offline cluster.
+
+All system dependencies need to be installed on all nodes in the cluster. See :ref:`quick-start-pre-requisites-system-deps`
 
 Download distribution server data
 =================================
 
-Please run next scripts under **non-root user account**.
-This step needs to be done on a machine **with Internet access**.
+Run the following scripts as **non-root user** on the machine **with Internet access**.
 
 .. literalinclude:: ../../../admin/tools/prepare-install-from-internet-free-distserver.example.sh
    :language: bash
@@ -32,22 +31,24 @@ This step needs to be done on a machine **with Internet access**.
 Installation
 ************
 
-During next steps :
+Run the following command on each node in the cluster, use the **non-root user account** which will run Qserv.
 
-* only the read-only access to `INTERNET_FREE_DISTSERVER_DIR` is needed, **Internet access is no longer required**,
-* use the **non-root user account** which will run Qserv,
-* if you install Qserv on a cluster, perform next operations on each node.
+.. code-block:: bash
+
+   # OPTIONAL : if python 2.7 isn't available, install Anaconda : 
+   ${INTERNET_FREE_DISTSERVER_DIR}/Anaconda-1.8.0-Linux-x86_64.sh 
 
 
 
-You can then follow standard Qserv install procedure (Start here : :ref:`quick-start-install-lsst-stack`), except that you have to specify eups to use the local distribution server.
-**This must be done twice** :
+You can then **apply customizations below** to standard Qserv install procedure (Start here : :ref:`quick-start-install-lsst-stack`) :
 
 - before installing LSST stack (See :ref:`quick-start-install-lsst-stack`), replace `NEWINSTALL_URL` value with :
 
 .. code-block:: bash
 
    NEWINSTALL_URL=${INTERNET_FREE_DISTSERVER_DIR}
+
+- `newinstall.sh` script will ask you two questions, answer "yes" to the first one (i.e. install git with eups), and and "no" to the second (i.e. don't install anaconda with eups).
 
 - before installing Qserv (See :ref:`quick-start-install-qserv`), replace `EUPS_PKGROOT` value with :
 

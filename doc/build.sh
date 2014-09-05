@@ -31,4 +31,4 @@ make html &&
 make text &&
 cd .. &&
 ln --symbolic --force doc/build/text/install/quick-start.txt && 
-ln --symbolic --force doc/build/text/install/quick-start-devel.txt  
+ln --symbolic --force doc/build/text/devel/quick-start-devel.txt  
