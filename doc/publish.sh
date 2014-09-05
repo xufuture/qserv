@@ -29,10 +29,11 @@
 
 # eval `ssh-agent -s`
 # ssh-add ~/.ssh/id_rsa_lsst
+DIR=$(cd "$(dirname "$0")"; pwd -P)
 
 REMOTE_HOST=lsst-dev.ncsa.illinois.edu
 #VERSION=$(pkgautoversion)
-VERSION=$(qserv-version.sh)
+VERSION=`${DIR}/../admin/bin/qserv-version.sh`
 rsync -ave ssh  doc/build/html/* ${REMOTE_HOST}:public_html/qserv-doc/${VERSION}
 ssh ${REMOTE_HOST} "ln -sf ${VERSION}/toplevel.html public_html/qserv-doc/index.html; ln -sf ${VERSION}/_static public_html/qserv-doc/_static"
 # alternate solution :

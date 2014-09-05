@@ -14,7 +14,7 @@ This script install Qserv according to LSST packaging standards.
 OPTIONS:
    -h      Show this message and exit
    -r      Local distribution server root directory, 
-           used in offline mode
+           used in internet-free mode
    -i      Install directory : MANDATORY
    -v      Qserv version to install 
 EOF
@@ -97,7 +97,7 @@ time bash newinstall.sh ||
 EUPS_PKGROOT_QSERV=${EUPS_PKGROOT}
 
 # TODO : warn loadLSST.sh append http://sw.lsstcorp.org/eupspkg to
-# EUPS_PKGROOT, this isn't compliant with offline mode
+# EUPS_PKGROOT, this isn't compliant with internet-free mode
 # TODO : if first url in EUPS_PKGROOT isn't available eups fails without
 # trying next ones
 . ${STACK_DIR}/loadLSST.sh ||
