@@ -30,8 +30,8 @@
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_KVINTERFACE_IMPL_MEM_H
-#define LSST_QSERV_KVINTERFACE_IMPL_MEM_H
+#ifndef LSST_QSERV_CSS_KVINTERFACEIMPLMEM_H
+#define LSST_QSERV_CSS_KVINTERFACEIMPLMEM_H
 
 // System headers
 #include <map>
@@ -66,4 +66,4 @@ private:
 
 }}} // namespace lsst::qserv::css
 
-#endif // LSST_QSERV_CSS_INTERFACE_IMPL_MEM_H
+#endif // LSST_QSERV_CSS_INTERFACEIMPLMEM_H

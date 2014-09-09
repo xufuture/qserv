@@ -29,8 +29,8 @@
   * @Author Jacek Becla, SLAC
   */
 
-#ifndef LSST_QSERV_CSS_INTERFACE_H
-#define LSST_QSERV_CSS_INTERFACE_H
+#ifndef LSST_QSERV_CSS_KVINTERFACE_H
+#define LSST_QSERV_CSS_KVINTERFACE_H
 
 // System headers
 #include <string>
@@ -90,4 +90,4 @@ protected:
 
 }}} // namespace lsst::qserv::css
 
-#endif // LSST_QSERV_CSS_INTERFACE_H
+#endif // LSST_QSERV_CSS_KVINTERFACE_H
