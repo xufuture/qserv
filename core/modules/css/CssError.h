@@ -106,6 +106,16 @@ public:
         : CssError("Node '" + nodeName +"' already exists.") {}
 };
 
+/**
+ * Specialized run-time error: can't allocate memory to get data for a given key.
+ */
+class BadAllocError : public CssError {
+public:
+    BadAllocError(std::string const& nodeName, std::string const& sizeTried)
+        : CssError("Can't allocate memory to get data for node '" + nodeName +"'"
+                   + ", tried allocating up to " + sizeTried + " bytes.") {}
+};
+
 }}} // namespace lsst::qserv::css
 
 #endif // LSST_QSERV_CSSERROR_H

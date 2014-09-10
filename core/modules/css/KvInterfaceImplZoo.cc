@@ -64,6 +64,53 @@ namespace {
         bool *isConnected = static_cast<bool*>(v);
         *isConnected = (state==ZOO_CONNECTED_STATE);
     }
+
+    class Buffer {
+    public:
+        // reasonable defaults: size=64, incrLimit=5: 64, 1K, 16K, 256K, 4M, 64M
+        Buffer(unsigned int size, int incrLimit)
+            : _size(size),
+              _incrCount(0),
+              _incrLimit(incrLimit) {
+            allocateBuffer();
+        }
+        ~Buffer() { deallocateBuffer(); }
+        char* data() const { return _buffer; }
+        std::string const dataAsString() const { return string(_buffer); }
+        int length() const { return _size; }
+
+        void incrSize(std::string const& key) {
+            if (++_incrCount > _incrLimit) {
+                std::stringstream os;
+                os << _size;
+                throw lsst::qserv::css::BadAllocError(key, os.str());
+            }
+            std::cout << "Increasing size: " << _size << " --> " << _size*16
+                      << std::endl;
+            _size *= 16;
+            deallocateBuffer();
+            allocateBuffer();
+        }
+
+    private:
+        void allocateBuffer() {
+            assert(_size>0 and _size<1024*1024*1024);
+            _buffer = new char[_size];
+            memset(_buffer, 0, _size);
+            std::cout << "allocated " << _size << std::endl;
+        }
+        void deallocateBuffer() {
+            delete [] _buffer;
+            _buffer = 0;
+        }
+        // private members
+        char* _buffer;
+        int _size;
+        int _incrCount;
+        int _incrLimit;
+};
+
+
 } // annonymous namespace
 
 
@@ -78,7 +125,8 @@ namespace css {
  * @param timeout_msec  connection timeout in msec
  */
 KvInterfaceImplZoo::KvInterfaceImplZoo(string const& connInfo, int timeout_msec)
-    : _connInfo(connInfo),
+    : _zh(0),
+      _connInfo(connInfo),
       _timeout(timeout_msec) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
     _doConnect();
@@ -130,17 +178,22 @@ KvInterfaceImplZoo::exists(string const& key) {
 string
 KvInterfaceImplZoo::get(string const& key) {
     LOGGER_INF << "*** KvInterfaceImplZoo::get(), key: " << key << endl;
-    char buffer[512];
-    int bufLen = static_cast<int>(sizeof(buffer));
+    Buffer buffer(64, 5);
     struct Stat stat;
     int rc=ZINVALIDSTATE, nAttempts=0;
     while (nAttempts++<2) {
-        memset(buffer, 0, bufLen);
         memset(&stat, 0, sizeof(Stat));
-        rc = zoo_get(_zh, key.data(), 0, buffer, &bufLen, &stat);
+        int rsvLen = buffer.length();
+        rc = zoo_get(_zh, key.data(), 0, buffer.data(), &rsvLen, &stat);
+        LOGGER_INF << "got rc: " << rc << ", size: " << rsvLen << endl;
         if (rc==ZOK) {
-            LOGGER_INF << "*** got: '" << buffer << "'" << endl;
-            return string(buffer);
+            if (rsvLen >= buffer.length()) {
+                buffer.incrSize(key);
+                nAttempts--;
+                continue;
+            }
+            LOGGER_INF << "got: '" << buffer.data() << "'" << endl;
+            return buffer.dataAsString();
         }
         LOGGER_WRN << "zoo_get failed (err:" << rc << "), "
                    << "attempting to reconnect" << endl;
@@ -153,21 +206,25 @@ KvInterfaceImplZoo::get(string const& key) {
 string
 KvInterfaceImplZoo::get(string const& key, string const& defaultValue) {
     LOGGER_INF << "*** KvInterfaceImplZoo::get2(), key: " << key << endl;
-    char buffer[512];
-    int bufLen = static_cast<int>(sizeof(buffer));
+    Buffer buffer(64, 5);
     struct Stat stat;
     int rc=ZINVALIDSTATE, nAttempts=0;
     while (nAttempts++<2) {
-        memset(buffer, 0, bufLen);
         memset(&stat, 0, sizeof(Stat));
-        rc = zoo_get(_zh, key.data(), 0, buffer, &bufLen, &stat);
+        int rsvLen = buffer.length();
+        rc = zoo_get(_zh, key.data(), 0, buffer.data(), &rsvLen, &stat);
+        if (rsvLen >= buffer.length()) {
+            buffer.incrSize(key);
+            nAttempts--;
+            continue;
+        }
         if (rc==ZNONODE) {
             LOGGER_INF << "*** returning default value: '"
                        << defaultValue << "'" << endl;
             return defaultValue;
         } else if (rc==ZOK) {
-            LOGGER_INF << "*** got: '" << buffer << "'" << endl;
-            return string(buffer);
+            LOGGER_INF << "*** got: '" << buffer.data() << "'" << endl;
+            return buffer.dataAsString();
         }
         LOGGER_WRN << "zoo_get2 failed (err:" << rc << "), "
                    << "attempting to reconnect" << endl;
