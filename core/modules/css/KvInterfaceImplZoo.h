@@ -61,6 +61,7 @@ public:
 
 private:
     void _doConnect();
+    void _disconnect();
     void _throwZooFailure(int, std::string const& fName, std::string const& key);
 
 private:
