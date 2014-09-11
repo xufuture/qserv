@@ -56,12 +56,29 @@ using std::vector;
 
 
 namespace {
-    bool isConnected = false;
+    // the map stores information about connection to zoo (for each thread)
+    std::map<boost::thread::id, bool> isConnectedMap;
+    boost::mutex mapMutex;
+
+    bool
+    checkIsConnected(boost::thread::id tId) {
+        boost::mutex::scoped_lock scoped_lock(mapMutex);
+        return isConnectedMap[tId];
+    }
+
+    void addToMapIfNeeded(boost::thread::id tId) {
+        boost::mutex::scoped_lock scoped_lock(mapMutex);
+        if ( isConnectedMap.count(tId) == 0 ) {
+            LOGGER_INF << "tid=" << tId << " adding to map" << endl;
+            isConnectedMap[tId] = 0;
+        }
+    }
 
     static void
     connectionWatcher(zhandle_t *, int type, int state,
                       const char *path, void*v) {
-        bool *isConnected = static_cast<bool*>(v);
+        boost::mutex::scoped_lock scoped_lock(mapMutex);
+        bool* isConnected = static_cast<bool*>(v);
         *isConnected = (state==ZOO_CONNECTED_STATE);
     }
 
@@ -85,8 +102,7 @@ namespace {
                 os << _size;
                 throw lsst::qserv::css::BadAllocError(key, os.str());
             }
-            std::cout << "Increasing size: " << _size << " --> " << _size*16
-                      << std::endl;
+            std::cout << "Increasing size: " << _size << "-->" << _size*16 << endl;
             _size *= 16;
             deallocateBuffer();
             allocateBuffer();
@@ -97,7 +113,7 @@ namespace {
             assert(_size>0 and _size<1024*1024*1024);
             _data = new char[_size];
             memset(_data, 0, _size);
-            std::cout << "allocated " << _size << std::endl;
+            std::cout << "allocated " << _size << endl;
         }
         void deallocateBuffer() {
             delete [] _data;
@@ -258,14 +274,16 @@ KvInterfaceImplZoo::_doConnect() {
     if ( !_zh ) {
         _disconnect();
     }
+    boost::thread::id tId = boost::this_thread::get_id();
+    addToMapIfNeeded(tId);
     _zh = zookeeper_init(_connInfo.data(), connectionWatcher, _timeout,
-                         0, &isConnected, 0);
+                         0, &isConnectedMap[tId], 0);
 
     // wait up to _timeout time in short increments
     int waitT = 10;                  // wait 10 microsec at a time
     int reptN = 1000*_timeout/waitT; // 1000x because _timeout in mili, need micro
     while (reptN-- > 0) {
-        if (isConnected) {
+        if (checkIsConnected(tId)) {
             LOGGER_INF << "Connected" << endl;
             return;
         }
