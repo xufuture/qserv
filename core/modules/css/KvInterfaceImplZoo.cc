@@ -190,7 +190,9 @@ KvInterfaceImplZoo::exists(string const& key) {
 }
 
 string
-KvInterfaceImplZoo::get(string const& key, string const& defaultValue) {
+KvInterfaceImplZoo::_get(string const& key,
+                         string const& defaultValue,
+                         bool throwIfKeyNotFound) {
     LOGGER_INF << "*** KvInterfaceImplZoo::get(), key: " << key << endl;
     Buffer buffer(64, 5);
     struct Stat stat;
@@ -199,21 +201,21 @@ KvInterfaceImplZoo::get(string const& key, string const& defaultValue) {
         memset(&stat, 0, sizeof(Stat));
         int rsvLen = buffer.size();
         rc = zoo_get(_zh, key.data(), 0, buffer.data(), &rsvLen, &stat);
-        LOGGER_INF << "got rc: " << rc << ", size: " << rsvLen << endl;
+        LOGGER_INF << "Got rc: " << rc << ", size: " << rsvLen << endl;
         if (rc==ZOK) {
             if (rsvLen >= buffer.size()) {
                 buffer.incrSize(key);
                 nAttempts--;
                 continue;
             }
-            LOGGER_INF << "got: '" << buffer.data() << "'" << endl;
+            LOGGER_INF << "Got: '" << buffer.data() << "'" << endl;
             return buffer.dataAsString();
         }
         if (rc==ZNONODE) {
-            if (defaultValue.empty()) {
-                throw NodeExistsError(key);
+            if (throwIfKeyNotFound) {
+                throw NoSuchKey(key);
             }
-            LOGGER_INF << "returning default value: '"
+            LOGGER_INF << "Returning default value: '"
                        << defaultValue << "'" << endl;
             return defaultValue;
         }

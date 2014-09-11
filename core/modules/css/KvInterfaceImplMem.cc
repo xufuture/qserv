@@ -127,13 +127,15 @@ KvInterfaceImplMem::exists(string const& key) {
 }
 
 string
-KvInterfaceImplMem::get(string const& key, string const& defaultValue) {
-    LOGGER_INF << "*** KvInterfaceImplMem::get2(), key: " << key << endl;
+KvInterfaceImplMem::_get(string const& key,
+                         string const& defaultValue,
+                         bool throwIfKeyNotFound) {
+    LOGGER_INF << "*** KvInterfaceImplMem::get(), key: " << key << endl;
     if ( !exists(key) ) {
-        if ( !defaultValue.empty() ) {
-            return defaultValue;
+        if (throwIfKeyNotFound) {
+            throw NoSuchKey(key);
         }
-        throw NoSuchKey(key);
+        return defaultValue;
     }
     string s = _kvMap[key];
     LOGGER_INF << "*** got: '" << s << "'" << endl;
