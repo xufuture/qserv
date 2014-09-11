@@ -327,8 +327,8 @@ KvInterfaceImplZoo::_throwZooFailure(int rc, string const& fName,
         LOGGER_INF << ffName << "Key '" << key << "' does not exist." << endl;
         throw (key);
     } else if (rc==ZNODEEXISTS) {
-        LOGGER_INF << ffName << "Node already exists." << endl;
-        throw NodeExistsError(key);
+        LOGGER_INF << ffName << "Key '" << key << "' already exists." << endl;
+        throw KeyExistsError(key);
     } else if (rc==ZCONNECTIONLOSS) {
         LOGGER_INF << ffName << "Can't connect to zookeeper." << endl;
         throw ConnError();

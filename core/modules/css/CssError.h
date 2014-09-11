@@ -98,12 +98,12 @@ public:
 };
 
 /**
- * Specialized run-time error: node exists.
+ * Specialized run-time error: key exists.
  */
-class NodeExistsError : public CssError {
+class KeyExistsError : public CssError {
 public:
-    NodeExistsError(std::string const& nodeName)
-        : CssError("Node '" + nodeName +"' already exists.") {}
+    KeyExistsError(std::string const& key)
+        : CssError("Key '" + key +"' already exists.") {}
 };
 
 /**
@@ -111,8 +111,8 @@ public:
  */
 class BadAllocError : public CssError {
 public:
-    BadAllocError(std::string const& nodeName, std::string const& sizeTried)
-        : CssError("Can't allocate memory to get data for node '" + nodeName +"'"
+    BadAllocError(std::string const& key, std::string const& sizeTried)
+        : CssError("Can't allocate memory to get data for key'" + key +"'"
                    + ", tried allocating up to " + sizeTried + " bytes.") {}
 };
 
