@@ -57,19 +57,13 @@ public:
     virtual bool exists(std::string const& key) = 0;
 
     /**
-     * Returns value for a given key.
-     * Throws CssRunTimeError if the key does not exist (or if any other problem,
-     * e.g., a connection error is detected).
-     */
-    virtual std::string get(std::string const& key) = 0;
-
-    /**
-     * Returns value for a given key, defaultValue if the key does not exist.
+     * Returns value for a given key, defaultValue if the key does not exist
+     * and the defaultValue is specified.
      * Throws CssRunTimeError if there are any other problems, e.g., a connection
      * error is detected).
      */
     virtual std::string get(std::string const& key,
-                            std::string const& defaultValue) = 0;
+                            std::string const& defaultValue=std::string()) = 0;
 
     /**
      * Returns children (vector of strings) for a given key.
