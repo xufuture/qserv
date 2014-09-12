@@ -522,7 +522,7 @@ class InbandQueryAction:
         pass
 
     def _computeConstraintsAsHints(self):
-        """Retrieve discovered constraints from the query and 
+        """Retrieve discovered constraints from the query and
         evaluate chunk coverage against them."""
         constraints = UserQuery_getConstraints(self.sessionId)
         logger.dbg("Getting constraints", constraints, "size=",

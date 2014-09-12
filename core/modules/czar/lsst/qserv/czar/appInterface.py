@@ -165,7 +165,7 @@ class AppInterface:
             r += "%-20s : %s\n" %(k, v.func_doc)
         r += "</pre>\n"
         return r
-    
+
     def check(self, taskId):
         "Check status of query or task. Params: "
         a = app.CheckAction(self.tracker, taskId)

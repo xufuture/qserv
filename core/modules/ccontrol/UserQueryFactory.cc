@@ -45,7 +45,7 @@ namespace ccontrol {
 class UserQueryFactory::Impl {
 public:
     void readConfig(StringMap const& m); /// Import config from caller
-    void initFacade(std::string const& cssTech, std::string const& cssConn); 
+    void initFacade(std::string const& cssTech, std::string const& cssConn);
     void initMergerTemplate(); /// Construct template config for merger
 
     /// State shared between UserQueries

@@ -30,6 +30,7 @@
 
 // Third-party headers
 #include <boost/shared_ptr.hpp>
+#include <boost/utility.hpp>
 #include <mysql/mysql.h>
 
 namespace lsst {
@@ -63,10 +64,10 @@ public:
     ~LocalInfile();
 
     /// Read up to bufLen bytes of infile contents into buf.
-    /// @return number of bytes filled. 
+    /// @return number of bytes filled.
     /// Filling less than bufLen does not necessarily indicate
-    /// EOF. Returning 0 bytes filled indicates EOF. 
-    int read(char* buf, unsigned int bufLen); 
+    /// EOF. Returning 0 bytes filled indicates EOF.
+    int read(char* buf, unsigned int bufLen);
     /// Fill a buffer with an NULL-terminated text error description.
     /// @return an error code if available
     int getError(char* buf, unsigned int bufLen);
@@ -106,7 +107,7 @@ public:
     /// Prepare a local infile from a MYSQL_RES* and link it to an
     /// auto-generated filename. A RowBuffer object is constructed and
     /// used internally.
-    /// @return generated filename 
+    /// @return generated filename
     std::string prepareSrc(MYSQL_RES* result);
 
     /// Prepare a local infile from a RowBuffer and link it to an
