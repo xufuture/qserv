@@ -41,6 +41,9 @@
 // Third-party headers
 #include <boost/algorithm/string/predicate.hpp> // string iequal
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "query/FromList.h"
 #include "query/GroupByClause.h"
@@ -48,7 +51,6 @@
 #include "query/OrderByClause.h"
 #include "query/SelectList.h"
 #include "query/WhereClause.h"
-#include "log/Logger.h"
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -196,13 +198,15 @@ inline OS& generate(OS& os, char const label[], boost::shared_ptr<T> t) {
 
 void SelectStmt::_print() {
     //_selectList->getColumnRefList()->printRefs();
-    print(LOG_STRM(Info), "from", _fromList);
-    print(LOG_STRM(Info), "select", _selectList);
-    print(LOG_STRM(Info), "where", _whereClause);
-    print(LOG_STRM(Info), "groupby", _groupBy);
-    print(LOG_STRM(Info), "having", _having);
-    print(LOG_STRM(Info), "orderby", _orderBy);
-    if(_limit != -1) { LOGGER_INF << " LIMIT " << _limit; }
+    LOGF_INFO("from %1%" % _fromList);
+    LOGF_INFO("select %1%" % _selectList);
+    LOGF_INFO("where %1%" % _whereClause);
+    LOGF_INFO("groupby %1%" % _groupBy);
+    LOGF_INFO("having %1%" % _having);
+    LOGF_INFO("orderby %1%" % _orderBy);
+    if(_limit != -1) {
+        LOGF_INFO(" LIMIT %1%" % _limit);
+    }
 }
 
 std::string SelectStmt::_generateDbg() {

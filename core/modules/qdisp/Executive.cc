@@ -42,9 +42,11 @@
 #include "XrdSsi/XrdSsiService.hh" // Resource
 #include "XrdOuc/XrdOucTrace.hh"
 
-// // Local headers
+// LSST headers
+#include "lsst/log/Log.h"
+
+// Local headers
 #include "global/ResourceUnit.h"
-#include "log/Logger.h"
 #include "log/msgCode.h"
 #include "qdisp/MessageStore.h"
 #include "qdisp/MergeAdapter.h"
@@ -74,9 +76,6 @@ namespace XrdSsi {
 extern XrdOucTrace     Trace;
 }
 
-//#define LOGGER_INF std::cout
-//#define LOGGER_ERR std::cout
-//#define LOGGER_WRN std::cout
 namespace lsst {
 namespace qserv {
 namespace qdisp {
@@ -111,8 +110,8 @@ Executive::Executive(Config::Ptr c, boost::shared_ptr<MessageStore> ms)
 
 void Executive::add(int refNum, TransactionSpec const& t,
                     std::string const& resultName) {
-    LOGGER_INF << "EXECUTING Executive::add(TransactionSpec, "
-               << resultName << ")" << std::endl << std::flush;
+    LOGF_INFO("EXECUTING Executive::add(TransactionSpec, %1%)" % 
+              resultName);
     Spec s;
     s.resource = ResourceUnit(t.path);
     if(s.resource.unitType() == ResourceUnit::CQUERY) {
@@ -159,13 +158,13 @@ void Executive::add(int refNum, Executive::Spec const& s) {
 
     bool trackOk =_track(refNum, s.receiver); // Remember so we can join.
     if(!trackOk) {
-        LOGGER_WRN << "Ignoring duplicate add(" << refNum << ")\n";
+        LOGF_WARN("Ignoring duplicate add(%1%)" % refNum);
         return;
     }
     ExecStatus& status = _insertNewStatus(refNum, s.resource);
     ++_requestCount;
     std::string msg = "Exec add pth=" + s.resource.path();
-    LOGGER_INF << msg << std::endl << std::flush;
+    LOGF_INFO("%1%" % msg);
     _messageStore->addMessage(s.resource.chunk(), log::MSG_MGR_ADD, msg);
     boost::shared_ptr<util::VoidCallable<void> > retryFunc; // FIXME
 
@@ -187,36 +186,31 @@ bool Executive::join() {
             return es.state == ExecStatus::RESPONSE_DONE; } };
     int sCount = std::count_if(_statuses.begin(), _statuses.end(), successF::f);
 
-    LOGGER_INF << "Query exec finish. " << _requestCount << " dispatched." << std::endl;
+    LOGF_INFO("Query exec finish. %1% dispatched." % _requestCount);
     _reportStatuses();
     return sCount == _requestCount;
 }
 
 void Executive::markCompleted(int refNum, bool success) {
     QueryReceiver::Error e;
-    LOGGER_INF << "Executive::markCompletion(" << refNum << ","
-               << success  << ")\n";
+    LOGF_INFO("Executive::markCompletion(%1%,%2%)" % refNum % success);
     if(!success) {
         boost::lock_guard<boost::mutex> lock(_receiversMutex);
         ReceiverMap::iterator i = _receivers.find(refNum);
         if(i != _receivers.end()) {
             e = i->second->getError();
         } else {
-            LOGGER_ERR << "Executive(" << (void*)this << ")"
-                       << "Failed to find tracked id="
-                       << refNum << " size=" << _receivers.size()
-                       << std::endl;
+            LOGF_ERROR("Executive(%1%) failed to find tracked id=%2% size=%3%" %
+                       (void*)this % refNum % _receivers.size());
             assert(i != _receivers.end());
         }
         _statuses[refNum]->report(ExecStatus::RESULT_ERROR, 1);
-        LOGGER_ERR << "Executive: error executing refnum=" << refNum << "."
-                   << " code=" << e.code << " " << e.msg << std::endl;
+        LOGF_ERROR("Executive: error executing refnum=%1%. Code=%2% %3%" %
+                   refNum % e.code % e.msg);
     }
     _unTrack(refNum);
     if(!success) {
-        LOGGER_ERR << "Executive: requesting squash (cause refnum="
-                   << refNum << " with "
-                   << " code=" << e.code << " " << e.msg << std::endl;
+        LOGF_ERROR("Executive: requesting squash (cause refnum=%1% with code=%2% %3%)" % refNum % e.code % e.msg);
         squash(); // ask to squash
     }
 }
@@ -226,31 +220,27 @@ void Executive::requestSquash(int refNum) {
     ReceiverMap::iterator i = _receivers.find(refNum);
     if(i != _receivers.end()) {
         QueryReceiver::Error e = i->second->getError();
-        LOGGER_WRN << "Warning, requestSquash(" << refNum
-                   << "), but " << refNum << " has already failed ("
-                   << e.code << ", " << e.msg << ")."
-                   << std::endl;
+        LOGF_WARN("Warning, requestSquash(%1%), but %2% has already failed (%3%, %4%)." % refNum % refNum % e.code % e.msg);
     } else {
         i->second->cancel();
     }
 }
 
 void Executive::squash() {
-    LOGGER_INF << "Trying to cancel all queries...\n";
+    LOGF_INFO("Trying to cancel all queries...");
     std::vector<int> pending;
     {
         boost::lock_guard<boost::mutex> lock(_receiversMutex);
         std::ostringstream os;
         os << "STATE=";
         _printState(os);
-        LOGGER_INF << os.str() << std::endl
-                   << "Loop cancel all queries...\n";
+        LOGF_INFO("%1%\nLoop cancel all queries..." % os.str());
         ReceiverMap::iterator i,e;
         for(i=_receivers.begin(), e=_receivers.end(); i != e; ++i) {
             i->second->cancel();
             pending.push_back(i->first);
         }
-        LOGGER_INF << "Loop cancel all queries...done\n";
+        LOGF_INFO("Loop cancel all queries...done");
     }
     { // Should be possible to convert this to a for_each call.
         std::vector<int>::iterator i,e;
@@ -283,7 +273,7 @@ int Executive::getNumInflight() {
 std::string Executive::getProgressDesc() const {
     std::ostringstream os;
     std::for_each(_statuses.begin(), _statuses.end(), printMapEntry(os, "\n"));
-    LOGGER_ERR << os.str() << std::endl;
+    LOGF_ERROR("%1%" % os.str());
     return os.str();
 }
 
@@ -309,14 +299,13 @@ void Executive::_dispatchQuery(int refNum,
     status.report(ExecStatus::PROVISION);
     bool provisionOk = _service->Provision(r);  // 2
     if(!provisionOk) {
-        LOGGER_ERR << "Resource provision error " << path
-                   << std::endl;
+        LOGF_ERROR("Resource provision error %1%" % path);
         populateState(status, ExecStatus::PROVISION_ERROR, r->eInfo);
         _unTrack(refNum);
             delete r;
             // handle error
     }
-    LOGGER_DBG << "Provision was ok\n";
+    LOGF_DEBUG("Provision was ok");
 }
 
 void Executive::_setup() {
@@ -354,9 +343,7 @@ bool Executive::_track(int refNum, ReceiverPtr r) {
     assert(r);
     {
         boost::lock_guard<boost::mutex> lock(_receiversMutex);
-
-        LOGGER_DBG << "Executive (" << (void*)this << ") tracking  id="
-                   << refNum << std::endl;
+        LOGF_DEBUG("Executive (%1%) tracking id=%2%" % (void*)this % refNum);
         if(_receivers.find(refNum) == _receivers.end()) {
             _receivers[refNum] = r;
         } else {
@@ -370,8 +357,7 @@ void Executive::_unTrack(int refNum) {
     boost::lock_guard<boost::mutex> lock(_receiversMutex);
     ReceiverMap::iterator i = _receivers.find(refNum);
     if(i != _receivers.end()) {
-        LOGGER_INF << "Executive (" << (void*)this << ") UNTRACKING  id="
-                   << refNum << std::endl;
+        LOGF_INFO("Executive (%1%) UNTRACKING id=%2%" % (void*)this % refNum);
         _receivers.erase(i);
         if(_receivers.empty()) _receiversEmpty.notify_all();
     }
@@ -384,8 +370,7 @@ void Executive::_reapReceivers(boost::unique_lock<boost::mutex> const&) {
         for(i=_receivers.begin(), e=_receivers.end(); i != e; ++i) {
             if(!i->second->getError().msg.empty()) {
                 // Receiver should have logged the error to the messageStore
-                LOGGER_INF << "Executive (" << (void*)this << ") REAPED  id="
-                   << i->first << std::endl;
+                LOGF_INFO("Executive (%1%) REAPED id=%2%" % (void*)this % i->first);
                 _receivers.erase(i);
                 reaped = true;
                 break;
@@ -425,11 +410,15 @@ void Executive::_waitUntilEmpty() {
         count = _receivers.size();
         _reapReceivers(lock);
         if(count != lastCount) {
-            LOGGER_INF << "Still " << count << " in flight." << std::endl;
+            LOGF_INFO("Still %1% in flight." % count);
             count = lastCount;
             ++complainCount;
             if(complainCount > moreDetailThreshold) {
-                _printState(LOG_STRM(Warning));
+                if (LOG_CHECK_WARN()) {
+                    std::stringstream ss;
+                    _printState(ss);
+                    LOGF_WARN("%1%" % ss.str());
+                }
                 complainCount = 0;
             }
         }

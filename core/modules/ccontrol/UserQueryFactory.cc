@@ -26,6 +26,9 @@
 #include <cassert>
 #include <stdlib.h>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Qserv headers
 #include "ccontrol/ConfigMap.h"
 #include "ccontrol/UserQuery.h"
@@ -138,18 +141,16 @@ void UserQueryFactory::Impl::initFacade(std::string const& cssTech,
                                         std::string const& cssConn,
                                         int timeout_msec) {
     if (cssTech == "zoo") {
-        LOGGER_INF << "Initializing zookeeper-based css, with "
-                   << cssConn << ", " << timeout_msec << std::endl;
+        LOGF_INFO("Initializing zookeeper-based css, with %1%, %2%msec"
+                  % cssConn % timeout_msec);
         facade = css::FacadeFactory::createZooFacade(cssConn, timeout_msec);
 //        _qSession.reset(new qproc::QuerySession(cssFPtr));
     } else if (cssTech == "mem") {
-        LOGGER_INF << "Initializing memory-based css, with "
-                   << cssConn << std::endl;
+        LOGF_INFO("Initializing memory-based css, with %1%" % cssConn);
         facade = css::FacadeFactory::createMemFacade(cssConn);
 //        _qSession.reset(new qproc::QuerySession(cssFPtr));
     } else {
-        LOGGER_ERR << "Unable to determine css technology, check config file."
-                   << std::endl;
+        LOGF_ERROR("Unable to determine css technology, check config file.");
 //        throw ConfigError("Invalid css technology, check config file.");
 // FIXME
     }

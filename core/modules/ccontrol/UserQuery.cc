@@ -64,12 +64,14 @@
 // System headers
 #include <cassert>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Qserv headers
 #include "ccontrol/TmpTableName.h"
 #include "ccontrol/ResultReceiver.h"
 #include "ccontrol/UserQueryError.h"
 #include "global/constants.h"
-#include "log/Logger.h"
 #include "proto/worker.pb.h"
 #include "proto/ProtoImporter.h"
 #include "qdisp/Executive.h"
@@ -157,10 +159,7 @@ void UserQuery::submit() {
     std::ostringstream ss;
     proto::ProtoImporter<proto::TaskMsg> pi;
     int msgCount = 0;
-    LOGGER_INF << "UserQuery beginning submission\n" << std::flush;
-    LOGGER_DBG << std::flush;
-    LOGGER_WRN << std::flush;
-    LOGGER_ERR << std::flush;
+    LOGF_INFO("UserQuery beginning submission");
     assert(_merger);
     qproc::QuerySession::Iter i;
     qproc::QuerySession::Iter e = _qSession->cQueryEnd();
@@ -195,10 +194,10 @@ QueryState UserQuery::join() {
     bool successful = _executive->join();
     if(successful) {
         _merger->finalize();
-        LOGGER_INF << "Joined everything (success)" << std::endl;
+        LOGF_INFO("Joined everything (success)");
         return SUCCESS;
     } else {
-        LOGGER_ERR << "Joined everything (failure!)" << std::endl;
+        LOGF_ERROR("Joined everything (failure!)");
         return ERROR;
     }
 }
@@ -216,8 +215,7 @@ void UserQuery::discard() {
         throw UserQueryError("merger unfinished, cannot discard");
     }
     _merger.reset();
-
-    LOGGER_INF << "Discarded UserQuery(" << _sessionId << ")" << std::endl;
+    LOGF_INFO("Discarded UserQuery(%1%)" % _sessionId);
 }
 
 bool UserQuery::containsDb(std::string const& dbName) const {

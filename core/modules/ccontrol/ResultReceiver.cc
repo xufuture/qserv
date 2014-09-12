@@ -27,8 +27,10 @@
 #include <cstring> // For memmove()
 #include <stdexcept>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Qserv headers
-#include "log/Logger.h"
 #include "rproc/TableMerger.h"
 
 namespace lsst {
@@ -62,9 +64,8 @@ char* ResultReceiver::buffer() {
 
 bool ResultReceiver::flush(int bLen, bool last) {
     // Do something with the buffer.
-    LOGGER_INF << "Receiver flushing " << bLen << " bytes "
-               << (last ? " (last)" : " (more)")
-               << " to table=" << _tableName << std::endl;
+    LOGF_INFO("Receiver flushing %1% bytes (%2%) to table=%3%" %
+              bLen % (last ? "last" : "more") % _tableName);
     assert(!_tableName.empty());
     bool mergeOk = false;
     if(bLen == 0) {
@@ -75,15 +76,14 @@ bool ResultReceiver::flush(int bLen, bool last) {
             _dirty = true;
         }
     } else {
-        LOGGER_ERR << "Possible error: flush with negative length" << std::endl;
+        LOGF_ERROR("Possible error: flush with negative length");
         return false;
     }
 
     _flushed = true;
     if(last) {
         // Probably want to notify that we're done?
-        LOGGER_INF << " Flushed last for tableName="
-                   << _tableName << std::endl;
+        LOGF_INFO("Flushed last for tableName=%1%" % _tableName);
         if(_finishHook) {
             (*_finishHook)(true);
         }
@@ -96,7 +96,7 @@ void ResultReceiver::errorFlush(std::string const& msg, int code) {
     // Do something about the error. FIXME.
     _error.msg = msg;
     _error.code = code;
-    LOGGER_ERR << "Error receiving result." << std::endl;
+    LOGF_ERROR("Error receiving result.");
     if(_finishHook) {
         (*_finishHook)(false);
     }
@@ -144,14 +144,10 @@ bool ResultReceiver::_appendAndMergeBuffer(int bLen) {
         _bufferSize = _actualSize - unMergedSize;
         return true;
     } else if(mergeSize == 0) {
-            LOGGER_ERR << "No merge in input. Receive buffer too small? "
-                       << "Tried to merge " << inputSize
-                       << " bytes, fresh=" << bLen
-                       << " actualsize=" << _actualSize
-                       << std::endl;
+        LOGF_ERROR("No merge in input. Receive buffer too small? Tried to merge %1% bytes, fresh=%2% actualsize=%3%" % inputSize % bLen % _actualSize);
         return false;
     } else {
-        LOGGER_ERR << "Die horribly, for TableMerger::merge() returned an impossible value" << std::endl;
+        LOGF_ERROR("Die horribly, for TableMerger::merge() returned an impossible value");
         throw std::runtime_error("Impossible return value from merge()");
     }
 }

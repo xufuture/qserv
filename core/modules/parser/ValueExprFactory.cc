@@ -30,8 +30,10 @@
 
 #include "parser/ValueExprFactory.h"
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "parser/ValueFactorFactory.h"
 #include "parser/ColumnRefH.h"
 #include "query/ValueExpr.h" // For ValueExpr, FuncExpr
@@ -60,13 +62,13 @@ ValueExprFactory::ValueExprFactory(boost::shared_ptr<ColumnRefNodeMap> cMap)
 boost::shared_ptr<query::ValueExpr>
 ValueExprFactory::newExpr(antlr::RefAST a) {
     boost::shared_ptr<query::ValueExpr> expr(new query::ValueExpr);
-    //LOGGER_INF << walkIndentedString(a) << std::endl;
+    // LOGF_INFO("%1%" % walkIndentedString(a));
     while(a.get()) {
         query::ValueExpr::FactorOp newFactorOp;
         RefAST op = a->getNextSibling();
         newFactorOp.factor = _valueFactorFactory->newFactor(a);
         if(op.get()) { // No more ops?
-            //LOGGER_INF << "expected op: " << tokenText(op) << std::endl;
+            // LOGF_INFO("expected op: %1%" tokenText(op));
             int eType = op->getType();
             switch(eType) {
             case SqlSQL2TokenTypes::PLUS_SIGN:
