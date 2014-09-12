@@ -80,8 +80,12 @@ public:
         : _tableAlias(t), _tableAliasReverse(r) {}
     void operator()(std::string const& alias,
                     std::string const& db, std::string const& table) {
+#ifdef NEWLOG
+        // LOGF_INFO("set: %1%->%2%.%3%" % alias % db % table);
+#else
         // LOGGER_INF << "set: " << alias << "->"
         //           << db << "." << table << std::endl;
+#endif
         _tableAlias.set(db, table, alias);
         _tableAliasReverse.set(db, table, alias);
     }
@@ -170,7 +174,11 @@ public:
                 throw std::logic_error("Bad ValueExpr::FactorOps");
             }
             query::ValueFactor& t = *i->factor;
-            //LOGGER_INF << "fixing factor: " << *vep << std::endl;
+#ifdef NEWLOG
+            // LOGF_INFO("fixing factor: %1%" % *vep);
+#else
+            // LOGGER_INF << "fixing factor: " << *vep << std::endl;
+#endif
             switch(t.getType()) {
             case query::ValueFactor::COLUMNREF:
                 // check columnref.
@@ -188,7 +196,11 @@ public:
             case query::ValueFactor::CONST:
                 break; // Constants don't need patching.
             default:
+#ifdef NEWLOG
+                LOGF_WARN("Unhandled ValueFactor:%1%" % t);
+#else
                 LOGGER_WRN << "Unhandled ValueFactor:" << t << std::endl;
+#endif
                 break;
             }
         }

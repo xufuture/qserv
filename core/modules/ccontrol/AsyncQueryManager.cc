@@ -39,6 +39,7 @@
 // System headers
 #include <cassert>
 #include <iostream>
+#include <sstream>
 
 // Third-party headers
 #include "boost/date_time/posix_time/posix_time_types.hpp"
@@ -137,7 +138,11 @@ public:
         t.start();
         cq->requestSquash();
         t.stop();
+#ifdef NEWLOG
+        LOGF_INFO("qSquash %1%" % t);
+#else
         LOGGER_INF << "qSquash " << t << std::endl;
+#endif
     }
     boost::mutex& mutex;
     QueryMap& queries;
@@ -148,8 +153,13 @@ public:
 ////////////////////////////////////////////////////////////
 int AsyncQueryManager::add(qdisp::TransactionSpec const& t,
                            std::string const& resultName) {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING AsyncQueryManager::add(TransactionSpec, %1%)"
+               % resultName);
+#else
     LOGGER_DBG << "EXECUTING AsyncQueryManager::add(TransactionSpec, "
                << resultName << ")" << std::endl;
+#endif
     int id = t.chunkId;
     // Use chunkId as id, and assume that it will be unique for the
     // AsyncQueryManager instance.
@@ -172,8 +182,13 @@ int AsyncQueryManager::add(qdisp::TransactionSpec const& t,
     }
     std::string msg = std::string("Query Added: url=") + ts.path + ", savePath=" + ts.savePath;
     getMessageStore()->addMessage(id, log::MSG_MGR_ADD, msg);
+#ifdef NEWLOG
+    LOGF_INFO("Added query id=%1% url=%2% with save %3%"
+              % id % ts.path % ts.savePath);
+#else
     LOGGER_INF << "Added query id=" << id << " url=" << ts.path
                << " with save " << ts.savePath << "\n";
+#endif
     qs.first->run();
     return id;
 }
@@ -190,9 +205,15 @@ void AsyncQueryManager::finalizeQuery(int id,
     std::string dumpFile;
     std::string tableName;
     int dumpSize;
+#ifdef NEWLOG
+    LOGF_DEBUG("finalizing. read=%1% and status is %2%"
+               % r.read % (aborted ? "ABORTED" : "okay"));
+    LOGF_DEBUG("%1% Finalizing query (%2%)" % ((void*)this) % id);
+#else
     LOGGER_DBG << "finalizing. read=" << r.read << " and status is "
                << (aborted ? "ABORTED" : "okay") << std::endl;
     LOGGER_DBG << ((void*)this) << "Finalizing query (" << id << ")" << std::endl;
+#endif
     if((!aborted) && (r.open >= 0) && (r.queryWrite >= 0)
        && (r.read >= 0)) {
         util::Timer t2;
@@ -221,13 +242,22 @@ void AsyncQueryManager::finalizeQuery(int id,
         t2e.start();
         if(!aborted) {
             _isExecFaulty = true;
+#ifdef NEWLOG
+            LOGF_INFO("Requesting squash %1% because open=%2% queryWrite=%3% read=%4%"
+                      % id % r.open % r.queryWrite % r.read);
+#else
             LOGGER_INF << "Requesting squash " << id
                        << " because open=" << r.open
                        << " queryWrite=" << r.queryWrite
                        << " read=" << r.read << std::endl;
+#endif
             _squashExecution();
+#ifdef NEWLOG
+            LOGF_INFO("Skipped merge (read failed for id=%1%)" % id);
+#else
             LOGGER_INF << " Skipped merge (read failed for id="
                        << id << ")" << std::endl;
+#endif
         }
         t2e.stop();
         ss << id << " QmFinalizeError " << t2e << std::endl;
@@ -252,10 +282,18 @@ void AsyncQueryManager::finalizeQuery(int id,
     }
     t3.stop();
     ss << id << " QmFinalizeResult " << t3 << std::endl;
+#ifdef NEWLOG
+    LOGF_DEBUG("%1% Done finalizing query (%2%)" % (void*)this % id);
+#else
     LOGGER_DBG << (void*)this << " Done finalizing query (" << id << ")" << std::endl;
+#endif
     t1.stop();
     ss << id << " QmFinalize " << t1 << std::endl;
+#ifdef NEWLOG
+    LOGF_INFO("%1%" % ss.str());
+#else
     LOGGER_INF << ss.str();
+#endif
     getMessageStore()->addMessage(id, log::MSG_FINALIZED, "Query Finalized.");
 }
 
@@ -270,15 +308,35 @@ void AsyncQueryManager::joinEverything() {
     int count;
     int moreDetailThreshold = 5;
     int complainCount = 0;
+#ifdef NEWLOG
+    if (LOG_CHECK_DEBUG()) {
+        std::stringstream ss;
+        _printState(ss);
+        LOGF_INFO("%1%" % ss.str());
+    }
+#else
     _printState(LOG_STRM(Debug));
+#endif
     while(!_queries.empty()) {
         count = _queries.size();
         if(count != lastCount) {
+#ifdef NEWLOG
+            LOGF_INFO("Still %1% in flight." % count);
+#else
             LOGGER_INF << "Still " << count << " in flight." << std::endl;
+#endif
             count = lastCount;
             ++complainCount;
             if(complainCount > moreDetailThreshold) {
+#ifdef NEWLOG
+                if (LOG_CHECK_WARN()) {
+                    std::stringstream ss;
+                    _printState(ss);
+                    LOGF_WARN("%1%" % ss.str());
+                }
+#else
                 _printState(LOG_STRM(Warning));
+#endif
                 complainCount = 0;
             }
         }
@@ -286,7 +344,11 @@ void AsyncQueryManager::joinEverything() {
     }
     _merger->finalize();
     _merger.reset();
+#ifdef NEWLOG
+    LOGF_INFO("Query finish. %1% dispatched." % _queryCount);
+#else
     LOGGER_INF << "Query finish. " << _queryCount << " dispatched." << std::endl;
+#endif
 }
 
 void AsyncQueryManager::configureMerger(rproc::TableMergerConfig const& c) {
@@ -393,20 +455,33 @@ void AsyncQueryManager::_initFacade(std::string const& cssTech,
                                     std::string const& cssConn,
                                     int timeout_msec) {
     if (cssTech == "zoo") {
-        LOGGER_INF << "Initializing zookeeper-based css, with "
-                   << cssConn << ", " << timeout_msec << std::endl;
+#ifdef NEWLOG
+        LOGF_INFO("Initializing zookeeper-based css, %1% %2%msec" % 
+                  cssConn % timeout_msec);
+#else
+        LOGGER_INF << "Initializing zookeeper-based css, " << cssConn 
+                   << ", " << timeout_msec << "msec" << std::endl;
+#endif
         boost::shared_ptr<css::Facade> cssFPtr(
             css::FacadeFactory::createZooFacade(cssConn, timeout_msec));
         _qSession.reset(new qproc::QuerySession(cssFPtr));
     } else if (cssTech == "mem") {
+#ifdef NEWLOG
+        LOGF_INFO("Initializing memory-based css, with %1%" % cssConn);
+#else
         LOGGER_INF << "Initializing memory-based css, with "
                    << cssConn << std::endl;
+#endif
         boost::shared_ptr<css::Facade> cssFPtr(
             css::FacadeFactory::createMemFacade(cssConn));
         _qSession.reset(new qproc::QuerySession(cssFPtr));
     } else {
+#ifdef NEWLOG
+        LOGF_ERROR("Unable to determine css technology, check config file.");
+#else
         LOGGER_ERR << "Unable to determine css technology, check config file."
                    << std::endl;
+#endif
         throw ConfigError("Invalid css technology, check config file.");
     }
 }
@@ -414,8 +489,13 @@ void AsyncQueryManager::_initFacade(std::string const& cssTech,
 void AsyncQueryManager::_addNewResult(int id,
                                       boost::shared_ptr<util::PacketBuffer> pb,
                                       std::string const& tableName) {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING AsyncQueryManager::_addNewResult(%1%, pacIter, %2%)"
+               % id % tableName);
+#else
     LOGGER_DBG << "EXECUTING AsyncQueryManager::_addNewResult(" << id
                << ", packetbuffer, " << tableName << ")" << std::endl;
+#endif
     bool mergeResult = _merger->merge(pb, tableName);
     ssize_t sz = pb->getTotalSize();
     {
@@ -455,8 +535,13 @@ void AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize,
         bool mergeResult = _merger->merge(dumpFile, tableName);
         int res = unlink(dumpFile.c_str()); // Hurry and delete dump file.
         if(0 != res) {
+#ifdef NEWLOG
+            LOGF_ERROR("Error removing dumpFile %1% errno=%2%"
+                       % dumpFile % errno);
+#else
             LOGGER_ERR << "Error removing dumpFile " << dumpFile
                        << " errno=" << errno << std::endl;
+#endif
         }
         if(!mergeResult) {
             rproc::TableMergerError e = _merger->getError();
@@ -466,10 +551,15 @@ void AsyncQueryManager::_addNewResult(int id, ssize_t dumpSize,
                 _squashRemaining();
             }
         }
+#ifdef NEWLOG
+        LOGF_DEBUG("Merge of %1% into %2% %3%" % dumpFile % tableName
+                   % (mergeResult ? " OK----" : " FAIL===="));
+#else
         LOGGER_DBG << "Merge of " << dumpFile << " into "
                    << tableName
                    << (mergeResult ? " OK----" : " FAIL====")
                    << std::endl;
+#endif
     }
 }
 
@@ -485,7 +575,11 @@ void AsyncQueryManager::_squashExecution() {
 
     if(_isSquashed) return;
     _isSquashed = true; // Mark before acquiring lock--faster.
+#ifdef NEWLOG
+    LOGF_DEBUG("Squash requested by %1%" % (void*)this);
+#else
     LOGGER_DBG << "Squash requested by "<<(void*)this << std::endl;
+#endif
     util::Timer t;
     // Squashing is dependent on network latency and remote worker
     // responsiveness, so make a copy so others don't have to wait.
@@ -494,16 +588,32 @@ void AsyncQueryManager::_squashExecution() {
         boost::unique_lock<boost::mutex> lock(_queriesMutex);
         t.start();
         myQueries.resize(_queries.size());
-        LOGGER_INF << "AsyncQM squashExec copy " <<  std::endl;
+#ifdef NEWLOG
+        LOGF_INFO("AsyncQM squashExec copy");
+#else
+        LOGGER_INF << "AsyncQM squashExec copy" <<  std::endl;
+#endif
         std::copy(_queries.begin(), _queries.end(), myQueries.begin());
     }
+#ifdef NEWLOG
+    LOGF_INFO("AsyncQM squashQueued");
+#else
     LOGGER_INF << "AsyncQM squashQueued" << std::endl;
+#endif
     globalWriteQueue.cancelQueued(this);
-    LOGGER_INF << "AsyncQM squashExec iteration " <<  std::endl;
+#ifdef NEWLOG
+    LOGF_INFO("AsyncQM squashExec iteration");
+#else
+    LOGGER_INF << "AsyncQM squashExec iteration" <<  std::endl;
+#endif
     std::for_each(myQueries.begin(), myQueries.end(),
                   squashQuery(_queriesMutex, _queries));
     t.stop();
+#ifdef NEWLOG
+    LOGF_INFO("AsyncQM squashExec %1%" % t);
+#else
     LOGGER_INF << "AsyncQM squashExec " << t << std::endl;
+#endif
     _isSquashed = true; // Ensure that flag wasn't trampled.
 
     getMessageStore()->addMessage(-1, log::MSG_EXEC_SQUASHED,

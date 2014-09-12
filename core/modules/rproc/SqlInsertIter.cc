@@ -129,8 +129,13 @@ public:
         BufOff needSize = v.second + keepSize;
         if(needSize > (bufSize - offEnd)) {
             if(needSize > bufSize) {
+#ifdef NEWLOG
+                LOGF_DEBUG("%1% is too small. sqliter Realloc to %2%" %
+                           bufSize % needSize);
+#else
                 LOGGER_DBG << bufSize << " is too small" << std::endl
                            << "sqliter Realloc to " << needSize << std::endl;
+#endif
                 void* res = realloc(buffer, needSize);
                 if (!res) {
                     errno = ENOMEM;
@@ -191,9 +196,13 @@ SqlInsertIter::SqlInsertIter(util::PacketBuffer::Ptr p,
     // slide the unmatched to the beginning, memcpy the packetIter
     // data into our buffer, and setup the regex match again.
     // Continue.
-    //
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING SqlInsertIter(PacketIter::Ptr, %1%, %2%)"
+               % tableName % allowNull);
+#else
     LOGGER_DBG << "EXECUTING SqlInsertIter(PacketIter::Ptr, " << tableName <<
                   ", " << allowNull << ")" << std::endl;
+#endif
     boost::regex lockInsertExpr(makeLockInsertOpenRegex(tableName));
     boost::regex lockExpr(makeLockOpenRegex(tableName));
     bool found = false;
@@ -203,12 +212,19 @@ SqlInsertIter::SqlInsertIter(util::PacketBuffer::Ptr p,
         char const* bufEnd = _bufferMgr->getEnd();
         found = boost::regex_search(buf, bufEnd, _blockMatch, lockInsertExpr);
         if(found) {
+#ifdef NEWLOG
+            LOGF_DEBUG("Matched Lock statement within SqlInsertIter");
+#else
             LOGGER_DBG << "Matched Lock statement within SqlInsertIter" << std::endl;
+#endif
             break;
         } else {
+#ifdef NEWLOG
+            LOGF_DEBUG("Did not match Lock statement within SqlInsertIter");
+#else
             LOGGER_DBG << "Did not match Lock statement within SqlInsertIter" << std::endl;
+#endif
         }
-
         //Add next fragment, if available.
         if(!_bufferMgr->incrementFragment()) {
             // Verify presence of Lock statement.

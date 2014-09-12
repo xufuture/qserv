@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2008, 2009, 2010 LSST Corporation.
+ * Copyright 2008-2014 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -23,6 +23,9 @@
 // See Logger.h
 
 #include "log/Logger.h"
+
+#ifndef NEWLOG
+
 
 namespace {
 
@@ -159,12 +162,14 @@ std::streamsize Logger::SeverityFilter::write(Sink& dest, const char* s, std::st
     if (_loggerPtr->getSeverity() >= _loggerPtr->getSeverityThreshold()) {
         std::streamsize z;
         for (z = 0; z < n; ++z) {
-            if (!boost::iostreams::put(dest, s[z]))
+            if (!boost::iostreams::put(dest, s[z])) {
                 break;
+            }
         }
         return z;
-    } else
-        return n;
+    } else {
+      return n;
+    }
 }
 
 Logger::LogFilter::LogFilter(Logger* loggerPtr) : boost::iostreams::line_filter() {
@@ -207,3 +212,5 @@ std::string Logger::LogFilter::getSeverity() {
 }
 
 }}} // namespace lsst::qserv::log
+
+#endif // NEWLOG
