@@ -54,6 +54,7 @@
 #include "wbase/SendChannel.h"
 #include "util/StringHash.h"
 #include "wconfig/Config.h"
+#include "wdb/ChunkResource.h"
 // #include "wdb/QueryPhyResult.h"
 // #include "wdb/QuerySql.h"
 // #include "wdb/QuerySql_Batch.h"
@@ -120,6 +121,7 @@ private:
     boost::shared_ptr<wlog::WLogger> _log;
     // sql::SqlErrorObject _errObj;
     wbase::Task::Ptr _task;
+    boost::shared_ptr<ChunkResourceMgr> _chunkResourceMgr;
     std::string _dbName;
     boost::shared_ptr<proto::TaskMsg> _msg;
     bool _poisoned;
@@ -155,6 +157,7 @@ public:
 QueryAction::Impl::Impl(QueryActionArg const& a)
     : _log(a.log),
       _task(a.task),
+      _chunkResourceMgr(a.mgr),
       _dbName(a.task->dbName),
       _msg(a.task->msg),
       _poisoned(false),
@@ -174,9 +177,6 @@ bool QueryAction::Impl::act() {
     bool connOk = _initConnection();
     if(!connOk) { return false; }
     _checkDb();
-
-//    int chunkId = _selectChunkId();
-    // TODO: Prepare subchunks as necessary
 
     if(_msg->has_protocol()) {
         switch(_msg->protocol()) {
@@ -302,6 +302,37 @@ void QueryAction::Impl::_transmitResult() {
                              resultString.size(), true);
 }
 
+typedef std::vector<ChunkResource> ChunkResourceBatch;
+class ChunkResourceRequest {
+public:
+    ChunkResourceRequest(boost::shared_ptr<ChunkResourceMgr> mgr,
+                         proto::TaskMsg const& msg)
+        : _mgr(mgr), _msg(msg) {}
+
+    ChunkResource getResourceFragment(int i) {
+        wbase::Task::Fragment const& f(_msg.fragment(i));
+        if(!f.has_subchunks()) {
+            StringVector tables(_msg.scantables().begin(),
+                                _msg.scantables().end());
+            assert(_msg.has_db());
+            return _mgr->acquire(_msg.db(), _msg.chunkid(), tables);
+        }
+
+        std::string db;
+        proto::TaskMsg_Subchunk const& sc = f.subchunks();
+        StringVector tables(sc.table().begin(),
+                            sc.table().end());
+        IntVector subchunks(sc.id().begin(), sc.id().end());
+        if(sc.has_database()) { db = sc.database(); }
+        else { db = _msg.db(); }
+        return _mgr->acquire(db, _msg.chunkid(), tables, subchunks);
+
+    }
+private:
+    boost::shared_ptr<ChunkResourceMgr> _mgr;
+    proto::TaskMsg const& _msg;
+};
+
 bool QueryAction::Impl::_dispatchChannel() {
     proto::TaskMsg& m = *_task->msg;
     _initMsgs();
@@ -310,8 +341,11 @@ bool QueryAction::Impl::_dispatchChannel() {
     if(m.fragment_size() < 1) {
         throw std::runtime_error("No fragments to execute in TaskMsg");
     }
+    ChunkResourceRequest req(_chunkResourceMgr, m);
+
     for(int i=0; i < m.fragment_size(); ++i) {
         wbase::Task::Fragment const& f(m.fragment(i));
+        ChunkResource cr(req.getResourceFragment(i));
         // Use query fragment as-is, funnel results.
         for(int qi=0, qe=f.query_size(); qi != qe; ++qi) {
             MYSQL_RES* res = _primeResult(f.query(qi));
