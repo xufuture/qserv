@@ -113,7 +113,11 @@ void UserQuery_addChunk(int session, qproc::ChunkSpec const& cs) {
 
 /// Dispatch all chunk queries for this query
 void UserQuery_submit(int session) {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING UserQuery_submit(%1%)" % session);
+#else
     LOGGER_DBG << "EXECUTING UserQuery_submit(" << session << ")" << std::endl;
+#endif
     uqManager.get(session)->submit();
 }
 
@@ -137,7 +141,11 @@ int UserQuery_takeOwnership(UserQuery* uq) {
 }
 
 bool UserQuery_containsDb(int session, std::string const& dbName) {
+#ifdef NEWLOG
+    LOGF_DEBUG("EXECUTING submitQuery3(%1%)" % session);
+#else
     LOGGER_DBG << "EXECUTING submitQuery3(" << session << ")" << std::endl;
+#endif
     return uqManager.get(session)->containsDb(dbName);
 }
 

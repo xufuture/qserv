@@ -120,8 +120,12 @@ ScanTablePlugin::applyFinal(query::QueryContext& context) {
     int const scanThreshold = 2;
     if(context.chunkCount < scanThreshold) {
         context.scanTables.clear();
+#ifdef NEWLOG
+        LOGF_INFO("Squash scan tables: <%1% chunks." % scanThreshold);
+#else
         LOGGER_INF << "Squash scan tables: <" << scanThreshold
                    << " chunks." << std::endl;
+#endif
     }
 }
 
@@ -242,17 +246,29 @@ ScanTablePlugin::_findScanTables(query::SelectStmt& stmt,
     // plugin's applyFinal
     if(hasSelectColumnRef || hasSelectStar) {
         if(hasSecondaryKey) {
+#ifdef NEWLOG
+            LOGF_INFO("**** Not a scan ****");
+#else
             LOGGER_INF << "**** Not a scan ****" << std::endl;
+#endif
             // Not a scan? Leave scanTables alone
         } else {
+#ifdef NEWLOG
+            LOGF_INFO("**** SCAN (column ref, non-spatial-idx)****");
+#else
             LOGGER_INF << "**** SCAN (column ref, non-spatial-idx)****" << std::endl;
+#endif
             // Scan tables = all partitioned tables
             scanTables = filterPartitioned(stmt.getFromList().getTableRefList());
         }
     } else if(hasWhereColumnRef) {
         // No column ref in SELECT, still a scan for non-trivial WHERE
         // count(*): still a scan with a non-trivial where.
+#ifdef NEWLOG
+        LOGF_INFO("**** SCAN (filter) ****");
+#else
         LOGGER_INF << "**** SCAN (filter) ****" << std::endl;
+#endif
         scanTables = filterPartitioned(stmt.getFromList().getTableRefList());
     }
     return scanTables;

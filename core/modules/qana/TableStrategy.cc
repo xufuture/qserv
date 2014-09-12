@@ -259,9 +259,12 @@ public:
             t1.start();
             t.chunkLevel = cssFacade->getChunkLevel(t.db, t.prePatchTable);
             t1.stop();
+#ifdef NEWLOG
+            LOGF_INFO("Facade getChunkLevel() elapsed: %1%" % t1.getElapsed());
+#else
             LOGGER_INF << "Facade getChunkLevel() elapsed: "
                        << t1.getElapsed() << std::endl;
-
+#endif
             if(t.chunkLevel == -1) {
                 t.allowed = false; // No chunk level found: missing/illegal.
                 throw InvalidTableException(t.db, t.prePatchTable);
@@ -357,19 +360,31 @@ TableStrategy::TableStrategy(query::FromList const& f,
 boost::shared_ptr<qana::QueryMapping> TableStrategy::exportMapping() {
     boost::shared_ptr<qana::QueryMapping> qm(new qana::QueryMapping());
 
+#ifdef NEWLOG
+    LOGF_DEBUG("_impl->chunkLevel %1%" % _impl->chunkLevel);
+#else
     LOGGER_DBG << __FILE__ ": _impl->chunkLevel : "
                << _impl->chunkLevel << std::endl;
+#endif
     switch(_impl->chunkLevel) {
     case 0:
         break;
     case 1:
+#ifdef NEWLOG
+        LOGF_DEBUG("calling addChunkMap()");
+#else
         LOGGER_DBG << __FILE__ ": calling  addChunkMap()"
                    << std::endl;
+#endif
         qm->insertChunkEntry(CHUNKTAG);
         break;
     case 2:
+#ifdef NEWLOG
+        LOGF_DEBUG("calling addSubChunkMap()");
+#else
         LOGGER_DBG << __FILE__": calling  addSubChunkMap()"
                    << std::endl;
+#endif
         qm->insertChunkEntry(CHUNKTAG);
         qm->insertSubChunkEntry(SUBCHUNKTAG);
         updateMappingFromTuples(*qm, _impl->tuples);
@@ -392,8 +407,12 @@ int TableStrategy::getPermutationCount() const {
         permutations *= i->tables.size();
     }
     if(permutations > 2) {
-        LOGGER_ERR << "ERROR! permutations > 2 (=" << permutations
-<< ")" << std::endl;
+#ifdef NEWLOG
+        LOGF_ERROR("ERROR! permutations > 2 (=%1%)" % permutations);
+#else
+        LOGGER_ERR << "ERROR! permutations > 2 (=" 
+                   << permutations << ")" << std::endl;
+#endif
         throw std::logic_error("Support for permuations > 2 is unimplemented");
     }
     return permutations;
@@ -432,8 +451,13 @@ void TableStrategy::_import(query::FromList const& f) {
     std::for_each(_impl->tuples.begin(), _impl->tuples.end(), ucl);
 
     _impl->chunkLevel = TableNamer::patchTuples(_impl->tuples);
+#ifdef NEWLOG
+    LOGF_DEBUG("TableStrategy::_import() : _impl->chunkLevel : %1%"
+               % _impl->chunkLevel);
+#else
     LOGGER_DBG << "TableStrategy::_import() : _impl->chunkLevel : "
                << _impl->chunkLevel << std::endl;
+#endif
     if(!_impl->context.cssFacade) {
         throw std::logic_error("Missing context.cssFacade");
     }
