@@ -62,6 +62,7 @@ using query::FuncExpr;
 using query::JoinRef;
 using query::JoinRefList;
 using query::JoinSpec;
+using query::OrTerm;
 using query::QueryContext;
 using query::QueryTemplate;
 using query::SelectStmt;
@@ -78,23 +79,41 @@ using query::ValueFactorPtr;
 
 void Vertex::insert(Edge const& e) {
     typedef std::vector<Edge>::iterator Iter;
+    // Look for an existing edge incident to the same vertex as e using
+    // binary search.
     Iter i = std::lower_bound(edges.begin(), edges.end(), e);
     if (i == edges.end() || *i != e) {
+        // There isn't one, so insert e into edges, making sure to maintain
+        // the sortedness of edges.
         edges.insert(i, e);
     } else {
-        // e is necessarily a duplicate of *i, unless both are
-        // director → director edges. In that case, if both edges are spatial,
-        // retain the smaller angular constraint. Otherwise, retain the
-        // non-spatial edge.
+        // There is one. Keeping both edges around isn't useful for the query
+        // vvalidation algorithm, so we look at both e and the existing edge,
+        // and retain the one that results in the smallest required overlap
+        // increase when traversed by the query validation algorithm.
         bool si = i->isSpatial();
         bool se = e.isSpatial();
-        if (si || se) {
-            if (si && se) {
-                i->angSep = std::min(e.angSep, i->angSep);
-            } else {
-                // director self-join
-                i->angSep = std::numeric_limits<double>::quiet_NaN();
-            }
+        if (si && se) {
+            // Both edges are spatial - retain the one with the smaller angular
+            // separation threshold.
+            i->angSep = std::min(e.angSep, i->angSep);
+        } else {
+            // Either both edges are non-spatial (and identical), or we
+            // have both a spatial constraint and an equality predicate.
+            // Spatial edges are only admissible between director tables,
+            // and equality predicates between different directors are not
+            // admissible. So, a couple sample queries that can lead to this
+            // corner are:
+            //
+            // SELECT ... FROM Object AS o1 INNER JOIN Object AS o2 ON
+            //     scisql_angSep(o1.ra, o1.decl, o2.ra, o2.decl) < 0.1 AND
+            //     o1.objectId = o2.objectId;
+            //
+            // or
+            //
+            // SELECT ... FROM Object AS o, Source AS s WHERE
+            //     o.objectId = s.objectId AND o.objectId = s.objectId;
+            i->angSep = std::numeric_limits<double>::quiet_NaN();
         }
     }
 }
@@ -105,17 +124,27 @@ void Vertex::insert(Edge const& e) {
 
 namespace {
 
-bool isOuterJoin(JoinRef::Type jt) {
-    return jt == JoinRef::LEFT || jt == JoinRef::RIGHT || jt == JoinRef::FULL;
+/// `findFirstNonTrivialChild` returns the first node in `tree` that is not an
+/// AndTerm or OrTerm with a single child. The return value can be an AndTerm
+/// or OrTerm with multiple children, a BoolFactor, or an UnknownTerm, and may
+/// just be the input tree.
+BoolTerm::Ptr findFirstNonTrivialChild(BoolTerm::Ptr tree) {
+    while (true) {
+        AndTerm* at = dynamic_cast<AndTerm *>(tree.get());
+        OrTerm* ot = dynamic_cast<OrTerm *>(tree.get());
+        if (at && at->_terms.size() == 1) {
+            tree = at->_terms.front();
+        } else if (ot && ot->_terms.size() == 1) {
+            tree = ot->_terms.front();
+        } else {
+            break;
+        }
+    }
+    return tree;
 }
 
-JoinRef::Type commute(JoinRef::Type jt) {
-    if (jt == JoinRef::LEFT) {
-        return JoinRef::RIGHT;
-    } else if (jt == JoinRef::RIGHT) {
-        return JoinRef::LEFT;
-    }
-    return jt;
+bool isOuterJoin(JoinRef::Type jt) {
+    return jt == JoinRef::LEFT || jt == JoinRef::RIGHT || jt == JoinRef::FULL;
 }
 
 /// `getColumnRef` returns the ColumnRef in `ve` if there is one.
@@ -195,90 +224,29 @@ void verifyJoin(JoinRef::Type joinType,
     }
 }
 
-/// `makeEqEdge` checks whether an equality predicate involving column `ca`
+/// `addEqEdge` checks whether an equality predicate involving column `ca`
 /// from the table reference in `a` and `cb` from `b` is admissible, and
-/// creates corresponding `Edge` objects if so. The number of edges created,
-/// 0 or 1, is returned.
-size_t makeEqEdge(std::string const& ca,
-                  std::string const& cb,
-                  JoinRef::Type jt,
-                  Vertex* a,
-                  Vertex* b)
+/// adds corresponding `Edge` objects to each vertex if so. The number of
+/// edges added, 0 or 1, is returned.
+size_t addEqEdge(std::string const& ca,
+                 std::string const& cb,
+                 bool outer,
+                 Vertex* a,
+                 Vertex* b)
 {
     if (a == b) {
+        // Loops are useless for query analysis.
         return 0;
     }
-    bool admissible = false;
-    // Check whether the equality predicate is admissible.
-    switch (Edge::classify(*a, *b)) {
-        case Edge::DIRECTOR_DIRECTOR:
-        {
-            DirTableInfo const* da = dynamic_cast<DirTableInfo const*>(a->info);
-            DirTableInfo const* db = dynamic_cast<DirTableInfo const*>(b->info);
-            if (da == db) {
-                // The directors are the same (self-join).
-                admissible = true;
-            }
-            break;
-        }
-        case Edge::DIRECTOR_CHILD:
-        {
-            DirTableInfo const* d = dynamic_cast<DirTableInfo const*>(a->info);
-            ChildTableInfo const* c = dynamic_cast<ChildTableInfo const*>(b->info);
-            if (d == c->director) {
-                // Child's director table is the director being joined with
-                admissible = true;
-            }
-            break;
-        }
-        case Edge::DIRECTOR_MATCH:
-        {
-            DirTableInfo const* d = dynamic_cast<DirTableInfo const*>(a->info);
-            MatchTableInfo const* m = dynamic_cast<MatchTableInfo const*>(b->info);
-            if ((m->director.first == d && m->fk.first == cb) ||
-                (m->director.second == d && m->fk.second == cb)) {
-                // Director is the same as the corresponding match table director
-                admissible = !isOuterJoin(jt);
-            }
-            break;
-        }
-        case Edge::CHILD_CHILD:
-        {
-            ChildTableInfo const* c1 = dynamic_cast<ChildTableInfo const*>(a->info);
-            ChildTableInfo const* c2 = dynamic_cast<ChildTableInfo const*>(b->info);
-            if (c1->director == c2->director) {
-                // Both child tables have the same director
-                admissible = true;
-            }
-            break;
-        }
-        case Edge::CHILD_MATCH:
-        {
-            ChildTableInfo const* c = dynamic_cast<ChildTableInfo const*>(a->info);
-            DirTableInfo const* d = c->director;
-            MatchTableInfo const* m = dynamic_cast<MatchTableInfo const*>(b->info);
-            if ((m->director.first == d && m->fk.first == cb) ||
-                (m->director.second == d && m->fk.second == cb)) {
-                // Child's director is the same as the corresponding match table director
-                admissible = !isOuterJoin(jt);
-            }
-            break;
-        }
-        case Edge::MATCH_MATCH: // fallthrough
-        default:
-            break;
-        case Edge::CHILD_DIRECTOR: // fallthrough
-        case Edge::MATCH_DIRECTOR: // fallthrough
-        case Edge::MATCH_CHILD:
-            // Swap vertices and recurse to avoid code stutter.
-            return makeEqEdge(cb, ca, commute(jt), b, a);
-    }
-    if (admissible) {
-        // Add a pair of edges, a → b and b → a.
+    TableInfo const& ta = *(a->info);
+    TableInfo const& tb = *(b->info);
+    if (ta.isEqPredAdmissible(tb, ca, cb, outer)) {
+        // Add a pair of Edge objects, a → b and b → a.
         a->insert(Edge(b, std::numeric_limits<double>::quiet_NaN()));
         b->insert(Edge(a, std::numeric_limits<double>::quiet_NaN()));
+        return 1;
     }
-    return admissible;
+    return 0;
 }
 
 /// `getNumericConst` returns the numeric constant embedded in the given
@@ -319,63 +287,78 @@ FuncExpr::Ptr getAngSepFunc(ValueExprPtr const& ve) {
     return fe;
 }
 
-} // unnamed namespace
-
-
-/// `_makeOnEqEdges` creates a graph edge for each admissible top-level
-/// equality predicate extracted from the ON clause of the join between table
-/// references in this graph and `g`. The number of admissible predicates is
-/// returned.
-size_t RelationGraph::_makeOnEqEdges(BoolTerm::Ptr on,
-                                     JoinRef::Type jt,
-                                     RelationGraph& g)
+/// `getEqColumnRefs` returns the pair of column references in the equality
+/// predicate embedded in the given boolean factori. If that is not what
+/// the given boolean term corresponds to, a pair of nulls is returned instead.
+std::pair<ColumnRef::Ptr, ColumnRef::Ptr> const getEqColumnRefs(
+    BoolTerm::Ptr const& bt)
 {
-    size_t numEdges = 0;
-    on = findAndTerm(on);
-    AndTerm::Ptr a = boost::dynamic_pointer_cast<AndTerm>(on);
-    if (a) {
-        // Recurse to the children.
-        typedef BoolTerm::PtrList::const_iterator BtIter;
-        for (BtIter i = a->_terms.begin(), e = a->_terms.end(); i != e; ++i) {
-            numEdges += _makeOnEqEdges(*i, jt, g);
-        }
-        return numEdges;
-    }
+    std::pair<ColumnRef::Ptr, ColumnRef::Ptr> p;
     // Look for a BoolFactor containing a single CompPredicate.
-    BoolFactor::Ptr bf = boost::dynamic_pointer_cast<BoolFactor>(on);
+    BoolFactor::Ptr bf = boost::dynamic_pointer_cast<BoolFactor>(bt);
     if (!bf || bf->_terms.size() != 1) {
-        return 0;
+        return p;
     }
     CompPredicate::Ptr cp =
         boost::dynamic_pointer_cast<CompPredicate>(bf->_terms.front());
     if (!cp || cp->op != SqlSQL2TokenTypes::EQUALS_OP) {
-        return 0;
+        return p;
     }
     // Extract column references (if they exist)
     ColumnRef::Ptr l = getColumnRef(cp->left);
     ColumnRef::Ptr r = getColumnRef(cp->right);
     if (!l || !r) {
-        return 0;
+        return p;
     }
     verifyColumnRef(*l);
     verifyColumnRef(*r);
+    return std::make_pair(l, r);
+}
+
+} // unnamed namespace
+
+
+/// `_addOnEqEdges` adds a graph edge for each admissible top-level equality
+/// predicate extracted from the ON clause of the join between table references
+/// in this graph and `g`. The number of admissible predicates is returned.
+size_t RelationGraph::_addOnEqEdges(BoolTerm::Ptr on,
+                                    bool outer,
+                                    RelationGraph& g)
+{
+    size_t numEdges = 0;
+    on = findFirstNonTrivialChild(on);
+    AndTerm::Ptr at = boost::dynamic_pointer_cast<AndTerm>(on);
+    if (at) {
+        // Recurse to the children.
+        typedef BoolTerm::PtrList::const_iterator BtIter;
+        for (BtIter i = at->_terms.begin(), e = at->_terms.end(); i != e; ++i) {
+            numEdges += _addOnEqEdges(*i, outer, g);
+        }
+        return numEdges;
+    }
+    std::pair<ColumnRef::Ptr, ColumnRef::Ptr> c = getEqColumnRefs(on);
+    if (!c.first) {
+        // on is not an equality predicate between two column references
+        return 0;
+    }
     // Lookup column references in graphs being joined together
-    std::vector<Vertex*> const& al = _map.find(*l);
-    std::vector<Vertex*> const& bl = g._map.find(*l);
-    std::vector<Vertex*> const& ar = _map.find(*r);
-    std::vector<Vertex*> const& br = g._map.find(*r);
-    if ((!al.empty() && !bl.empty()) || (!ar.empty() && !br.empty())) {
+    std::vector<Vertex*> const& a1 = _map.find(*c.first);
+    std::vector<Vertex*> const& b1 = g._map.find(*c.first);
+    std::vector<Vertex*> const& a2 = _map.find(*c.second);
+    std::vector<Vertex*> const& b2 = g._map.find(*c.second);
+    if ((!a1.empty() && !b1.empty()) || (!a2.empty() && !b2.empty())) {
         // At least one column reference was found in both graphs
         QueryTemplate qt;
-        (al.empty() ? r : l)->renderTo(qt);
+        if (a1.empty()) { c.first->renderTo(qt); }
+        else { c.second->renderTo(qt); }
         throw QueryNotEvaluableError("Column reference " + qt.generate() +
                                      " is ambiguous");
     }
-    if ((al.empty() && bl.empty()) || (ar.empty() && br.empty())) {
+    if ((a1.empty() && b1.empty()) || (a2.empty() && b2.empty())) {
         // At least one column reference wasn't found
         return 0;
     }
-    if ((!al.empty() && !ar.empty()) || (!bl.empty() && !br.empty())) {
+    if ((!a1.empty() && !a2.empty()) || (!b1.empty() && !b2.empty())) {
         // Both column references were found in the same graph. The predicate
         // cannot be used for partition inference if it comes from the ON
         // clause of an outer join. To see why, consider the following query:
@@ -392,52 +375,62 @@ size_t RelationGraph::_makeOnEqEdges(BoolTerm::Ptr on,
         // results will satisfy A.id = B.id OR B.id IS NULL, and checking
         // whether or not a row r from A matches any rows in B only requires
         // looking at rows from B that have the same partition as r.
-        if (isOuterJoin(jt)) {
+        if (outer) {
             return 0;
         }
     }
-    std::vector<Vertex*> const& v1 = al.empty() ? bl : al;
-    std::vector<Vertex*> const& v2 = ar.empty() ? br : ar;
+    // Both column references were found in different graphs, or they were
+    // found in the same graph but the equality predicate was not extracted
+    // from the ON clause of an outer join.
+    //
+    // Get the list of vertices that each column reference maps to, and add
+    // edges between each possible vertex pair.
+    std::vector<Vertex*> const& v1 = a1.empty() ? b1 : a1;
+    std::vector<Vertex*> const& v2 = a2.empty() ? b2 : a2;
     typedef std::vector<Vertex*>::const_iterator VertIter;
     for (VertIter i1 = v1.begin(), e1 = v1.end(); i1 != e1; ++i1) {
         for (VertIter i2 = v2.begin(), e2 = v2.end(); i2 != e2; ++i2) {
-            numEdges += makeEqEdge(l->column, r->column, jt, *i1, *i2);
+            numEdges += addEqEdge(
+                c.first->column, c.second->column, outer, *i1, *i2);
         }
     }
     return numEdges;
 }
 
-/// `_makeNaturalEqEdges` constructs an edge for each (implicit) admissible
-/// equality predicate in the natural join between table references from this
-/// graph and `g`. The number of admissible predicates is returned.
-size_t RelationGraph::_makeNaturalEqEdges(JoinRef::Type jt,
-                                          RelationGraph& g)
+/// `_addNaturalEqEdges` adds an edge for each (implicit) admissible equality
+/// predicate in the natural join between table references from this graph and
+/// `g`. The number of admissible predicates is returned.
+size_t RelationGraph::_addNaturalEqEdges(bool outer, RelationGraph& g)
 {
     typedef std::vector<std::string>::const_iterator ColIter;
     typedef std::vector<Vertex*>::const_iterator VertIter;
 
+    // Find interesting unqualified column names that are shared between
+    // the vertices of both this graph and g.
     std::vector<std::string> const cols = _map.computeCommonColumns(g._map);
-    std::string const _;
+    std::string const _; // an empty string
     size_t numEdges = 0;
     for (ColIter c = cols.begin(), e = cols.end(); c != e; ++c) {
+        // Lookup the vertices for each shared column, and add edges between
+        // each possible vertex pair.
         ColumnRef const cr(_, _, *c);
         std::vector<Vertex*> const& v1 = _map.find(cr);
         std::vector<Vertex*> const& v2 = g._map.find(cr);
         for (VertIter i1 = v1.begin(), e1 = v1.end(); i1 != e1; ++i1) {
             for (VertIter i2 = v2.begin(), e2 = v2.end(); i2 != e2; ++i2) {
-                numEdges += makeEqEdge(*c, *c, jt, *i1, *i2);
+                numEdges += addEqEdge(*c, *c, outer, *i1, *i2);
             }
         }
     }
     return numEdges;
 }
 
-/// `_makeUsingEqEdges` constructs an edge for each admissible equality
-/// predicate implied by the USING clause of a join between table references
-/// from this graph and `g`. The number of admissible predicates is returned.
-size_t RelationGraph::_makeUsingEqEdges(ColumnRef const& c,
-                                        JoinRef::Type jt,
-                                        RelationGraph& g)
+/// `_addUsingEqEdges` adds an edge for each admissible equality predicate
+/// implied by the USING clause of a join between table references from this
+/// graph and `g`. The number of admissible predicates is returned.
+size_t RelationGraph::_addUsingEqEdges(ColumnRef const& c,
+                                       bool outer,
+                                       RelationGraph& g)
 {
     typedef std::vector<Vertex*>::const_iterator VertIter;
 
@@ -445,84 +438,72 @@ size_t RelationGraph::_makeUsingEqEdges(ColumnRef const& c,
         throw QueryNotEvaluableError(
             "USING clause contains qualified column name");
     }
+    // Lookup the vertices for the unqualified column reference in both graphs,
+    // and add edges for each possible vertex pair.
     std::vector<Vertex*> const& v1 = _map.find(c);
     std::vector<Vertex*> const& v2 = g._map.find(c);
     size_t numEdges = 0;
     for (VertIter i1 = v1.begin(), e1 = v1.end(); i1 != e1; ++i1) {
         for (VertIter i2 = v2.begin(), e2 = v2.end(); i2 != e2; ++i2) {
-            numEdges += makeEqEdge(c.column, c.column, jt, *i1, *i2);
+            numEdges += addEqEdge(c.column, c.column, outer, *i1, *i2);
         }
     }
     return numEdges;
 }
 
-/// `_makeWhereEqEdges` creates a graph edge for each admissible top-level
+/// `_addWhereEqEdges` creates a graph edge for each admissible top-level
 /// equality predicate extracted from the WHERE clause of a query. The number
 /// of admissible predicates is returned.
-size_t RelationGraph::_makeWhereEqEdges(BoolTerm::Ptr where)
+size_t RelationGraph::_addWhereEqEdges(BoolTerm::Ptr where)
 {
     size_t numEdges = 0;
-    where = findAndTerm(where);
-    AndTerm::Ptr a = boost::dynamic_pointer_cast<AndTerm>(where);
-    if (a) {
+    where = findFirstNonTrivialChild(where);
+    AndTerm::Ptr at = boost::dynamic_pointer_cast<AndTerm>(where);
+    if (at) {
         // Recurse to the children.
         typedef BoolTerm::PtrList::const_iterator BtIter;
-        for (BtIter i = a->_terms.begin(), e = a->_terms.end(); i != e; ++i) {
-            numEdges += _makeWhereEqEdges(*i);
+        for (BtIter i = at->_terms.begin(), e = at->_terms.end(); i != e; ++i) {
+            numEdges += _addWhereEqEdges(*i);
         }
         return numEdges;
     }
-    // Look for a BoolFactor containing a single CompPredicate.
-    BoolFactor::Ptr bf = boost::dynamic_pointer_cast<BoolFactor>(where);
-    if (!bf || bf->_terms.size() != 1) {
+    std::pair<ColumnRef::Ptr, ColumnRef::Ptr> c = getEqColumnRefs(where);
+    if (!c.first) {
+        // where is not an equality predicate between two column references
         return 0;
     }
-    CompPredicate::Ptr cp =
-        boost::dynamic_pointer_cast<CompPredicate>(bf->_terms.front());
-    if (!cp || cp->op != SqlSQL2TokenTypes::EQUALS_OP) {
-        return 0;
-    }
-    // Extract column references (if they exist)
-    ColumnRef::Ptr l = getColumnRef(cp->left);
-    ColumnRef::Ptr r = getColumnRef(cp->right);
-    if (!l || !r) {
-        return 0;
-    }
-    // Verify and lookup column references
-    verifyColumnRef(*l);
-    verifyColumnRef(*r);
-    std::vector<Vertex*> const& v1 = _map.find(*l);
-    std::vector<Vertex*> const& v2 = _map.find(*r);
-    // Create admissible edges
+    // Lookup the vertices for each column reference,
+    // and add edges for each possible vertex pair.
+    std::vector<Vertex*> const& v1 = _map.find(*c.first);
+    std::vector<Vertex*> const& v2 = _map.find(*c.second);
     typedef std::vector<Vertex*>::const_iterator VertIter;
     for (VertIter i1 = v1.begin(), e1 = v1.end(); i1 != e1; ++i1) {
         for (VertIter i2 = v2.begin(), e2 = v2.end(); i2 != e2; ++i2) {
-            numEdges += makeEqEdge(
-                l->column, r->column, JoinRef::INNER, *i1, *i2);
+            numEdges += addEqEdge(
+                c.first->column, c.second->column, false, *i1, *i2);
         }
     }
     return numEdges;
 }
 
-/// `_makeSpEdges` creates a graph edge for each admissible top-level spatial
+/// `_addSpEdges` creates a graph edge for each admissible top-level spatial
 /// predicate extracted from the given boolean term. The number of admissible
 /// predicates is returned.
-size_t RelationGraph::_makeSpEdges(BoolTerm::Ptr term,
-                                   double overlap)
+size_t RelationGraph::_addSpEdges(BoolTerm::Ptr bt, double overlap)
 {
     size_t numEdges = 0;
-    term = findAndTerm(term);
-    AndTerm::Ptr a = boost::dynamic_pointer_cast<AndTerm>(term);
-    if (a) {
+    bt = findFirstNonTrivialChild(bt);
+    AndTerm::Ptr at = boost::dynamic_pointer_cast<AndTerm>(bt);
+    if (at) {
         // Recurse to the children.
         typedef BoolTerm::PtrList::const_iterator BtIter;
-        for (BtIter i = a->_terms.begin(), e = a->_terms.end(); i != e; ++i) {
-            numEdges += _makeSpEdges(*i, overlap);
+        for (BtIter i = at->_terms.begin(), e = at->_terms.end(); i != e; ++i) {
+            numEdges += _addSpEdges(*i, overlap);
         }
         return numEdges;
     }
     // Look for a BoolFactor containing a single CompPredicate.
-    BoolFactor::Ptr bf = boost::dynamic_pointer_cast<BoolFactor>(term);
+    BoolFactor::Ptr bf = boost::dynamic_pointer_cast<BoolFactor>(bt);
     if (!bf || bf->_terms.size() != 1) {
         return 0;
     }
@@ -576,8 +557,8 @@ size_t RelationGraph::_makeSpEdges(BoolTerm::Ptr term,
             return 0;
         }
         std::vector<Vertex*> const& vv = _map.find(*cr[i]);
-        if (vv.empty()) {
-            // Column reference not found
+        if (vv.size() != 1) {
+            // Column reference not found, or references multiple vertices.
             return 0;
         }
         v[i] = vv.front();
@@ -594,7 +575,7 @@ size_t RelationGraph::_makeSpEdges(BoolTerm::Ptr term,
     if (!d1 || !d2) {
         return 0;
     }
-    // Check that the arguments are the director's spatial columns
+    // Check that the arguments map to the proper director spatial columns
     if (cr[0]->column != d1->lon || cr[1]->column != d1->lat ||
         cr[2]->column != d2->lon || cr[3]->column != d2->lat) {
         return 0;
@@ -609,10 +590,10 @@ size_t RelationGraph::_makeSpEdges(BoolTerm::Ptr term,
     return 1;
 }
 
-/// `join` splices the relation graph `g` into this one, adding edges
+/// `_fuse` fuses the relation graph `g` into this one, adding edges
 /// for all admissible join predicates extracted from the given join
 /// parameters. `g` is emptied as a result.
-void RelationGraph::_join(JoinRef::Type joinType,
+void RelationGraph::_fuse(JoinRef::Type joinType,
                           bool natural,
                           JoinSpec::Ptr const& joinSpec,
                           double overlap,
@@ -623,46 +604,47 @@ void RelationGraph::_join(JoinRef::Type joinType,
             "A RelationGraph cannot be join()ed with itself.");
     }
     verifyJoin(joinType, natural, joinSpec);
-    // Deal with replicated relations
+    // Deal with unpartitioned relations
     if (empty()) {
         if (g.empty()) {
-            // Arbitrary joins are allowed between replicated relations,
+            // Arbitrary joins are allowed between unpartitioned relations,
             // and there is no need to store any information about them.
             return;
         }
-        // In general, "A LEFT JOIN B" is not evaluable if A is replicated and
-        // B is partitioned. While there are specific cases that do work (e.g.
-        // "A LEFT JOIN B ON FALSE"), the effort to detect them does noe seem
-        // worthwhile.
+        // In general, "A LEFT JOIN B" is not evaluable if A is unpartitioned
+        // and B is partitioned. While there are specific cases that do work
+        // (e.g. "A LEFT JOIN B ON FALSE"), the effort to detect them does not
+        // seem worthwhile.
         if (joinType == JoinRef::LEFT) {
             throw QueryNotEvaluableError(
-                "Query contains a LEFT JOIN between replicated and "
+                "Query contains a LEFT JOIN between unpartitioned and "
                 "partitioned tables.");
         }
         swap(g);
         return;
     } else if (g.empty()) {
         // In general, "A RIGHT JOIN B" is not evaluable if A is partitioned
-        // and B is replicated.
+        // and B is unpartitioned.
         if (joinType == JoinRef::RIGHT) {
             throw QueryNotEvaluableError(
                 "Query contains a RIGHT JOIN between partitioned and "
-                "replicated tables.");
+                "unpartitioned tables.");
         }
         return;
     }
+    bool const outer = isOuterJoin(joinType);
     size_t numEdges = 0;
     std::vector<std::string> usingCols;
     if (natural) {
-        numEdges += _makeNaturalEqEdges(joinType, g);
+        numEdges += _addNaturalEqEdges(outer, g);
     } else if (joinSpec && joinSpec->getUsing()) {
         ColumnRef const& c = *joinSpec->getUsing();
-        numEdges += _makeUsingEqEdges(c, joinType, g);
+        numEdges += _addUsingEqEdges(c, outer, g);
         usingCols.push_back(c.column);
     } else if (joinSpec && joinSpec->getOn()) {
-        numEdges += _makeOnEqEdges(joinSpec->getOn(), joinType, g);
+        numEdges += _addOnEqEdges(joinSpec->getOn(), outer, g);
     }
-    if (isOuterJoin(joinType) && numEdges == 0) {
+    if (outer && numEdges == 0) {
         // For outer joins, require the presence of at least one admissible
         // join predicate. Doing this means that determining whether or not
         // a row from the left and/or right relation of an outer join has a
@@ -674,10 +656,10 @@ void RelationGraph::_join(JoinRef::Type joinType,
     }
     // Splice g into this graph.
     _vertices.splice(_vertices.end(), g._vertices);
-    _map.splice(g._map, natural, usingCols);
+    _map.fuse(g._map, natural, usingCols);
     // Add spatial edges
-    if (!isOuterJoin(joinType) && joinSpec && joinSpec->getOn()) {
-        _makeSpEdges(joinSpec->getOn(), overlap);
+    if (!outer && joinSpec && joinSpec->getOn()) {
+        _addSpEdges(joinSpec->getOn(), overlap);
     }
 }
 
@@ -721,8 +703,8 @@ RelationGraph::RelationGraph(TableRef& tr,
         }
         ColumnVertexMap m1(_vertices.front(), begin, middle);
         ColumnVertexMap m2(_vertices.back(), middle, end);
-        std::vector<std::string> _;
-        m1.splice(m2, false, _);
+        std::vector<std::string> _; // an empty column name list
+        m1.fuse(m2, false, _);
         _map.swap(m1);
     }
 }
@@ -754,7 +736,7 @@ RelationGraph::RelationGraph(QueryContext const& ctx,
     for (Iter i = joins.begin(), e = joins.end(); i != e; ++i) {
         JoinRef& j = **i;
         RelationGraph tmp(ctx, j.getRight(), overlap, pool);
-        g._join(j.getJoinType(), j.isNatural(), j.getSpec(), overlap, tmp);
+        g._fuse(j.getJoinType(), j.isNatural(), j.getSpec(), overlap, tmp);
     }
     swap(g);
 }
@@ -762,16 +744,17 @@ RelationGraph::RelationGraph(QueryContext const& ctx,
 
 namespace {
 
-// A singly-linked list of vertices. Storage for links is embedded directly
-// into the Vertex struct, which allows allows relation graph traversal to
-// proceed without memory allocation (at a small complexity cost relative to
-// using the STL).
+/// A singly-linked list of vertices, with link storage embedded directly
+/// in the Vertex struct. This allows relation graph traversal to proceed
+/// without memory allocation.
 struct VertexQueue {
-    Vertex* head;
-    Vertex* tail;
+    Vertex* head; // unowned
+    Vertex* tail; // unowned
 
     VertexQueue() : head(0), tail(0) {}
 
+    /// `dequeue` removes and returns a vertex from the queue. If the queue is
+    /// empty, a null pointer is returned.
     Vertex* dequeue() {
         if (head) {
             Vertex* v = head;
@@ -785,6 +768,8 @@ struct VertexQueue {
         return 0;
     }
 
+    /// `enqueue` inserts a vertex into the queue. If the vertex is already in
+    /// the queue, there is no effect.
     void enqueue(Vertex* v) {
         if (v->next || v == tail) {
             // v is already in the queue
@@ -799,36 +784,67 @@ struct VertexQueue {
     }
 };
 
+/// `traverse` visits all vertices linked to `v` via one or more paths and
+/// computes their minimum required overlaps (if less than or equal to
+/// `partitionOverlap`).
 void traverse(Vertex* v, double const partitionOverlap)
 {
     typedef std::vector<Edge>::const_iterator Iter;
 
     VertexQueue q;
     if (v) {
+        // The required overlap for the initial vertex is 0.
         v->overlap = 0;
     }
     while (v) {
+        // Loop over edges incident to v.
         for (Iter e = v->edges.begin(), end = v->edges.end(); e != end; ++e) {
             Vertex* u = e->vertex;
             double const prevRequiredOverlap = u->overlap;
+            // Child tables have no available overlap and directors have
+            // available overlap equal to the partition overlap. Match table
+            // joins require no overlap on one side of a 3-way equi-join. We
+            // enforce this by only allowing overlap if we are reaching a match
+            // table vertex from another match table vertex. This works because
+            // we never create relation graph edges between different match
+            // table references, i.e. a match → match edge will always be
+            // between the pair of vertices created for a single match table
+            // reference.
             double availableOverlap = 0.0;
             if (u->info->kind == TableInfo::DIRECTOR ||
-                (v->info->kind == TableInfo::MATCH &&
-                 u->info->kind == TableInfo::MATCH)) {
+                (u->info->kind == TableInfo::MATCH &&
+                 v->info->kind == TableInfo::MATCH)) {
                 availableOverlap = partitionOverlap;
             }
+            // The overlap required for u is the overlap required for v plus
+            // the angular separation threshold of the edge between them.
             double requiredOverlap = v->overlap;
             if (e->isSpatial()) {
                 requiredOverlap += e->angSep;
             }
+            // If requiredOverlap is greater than or equal to the previously
+            // computed required overlap for u, then there is no need to visit
+            // u again. Because the current path between the initial vertex and
+            // u does not have a strictly smaller edge angular separation sum,
+            // no path to vertices reachable from u starting with the current
+            // one will yield strictly smaller sums than those starting with
+            // the current minimal path. Note that the required overlap for an
+            // unvisited vertex is ∞.
+            //
+            // If requiredOverlap is greater than the available overlap for u,
+            // then either the query is not evaluable or we will reach u via
+            // some other path that has smaller required overlap, and again
+            // there is no reason to visit u.
             if (requiredOverlap <= availableOverlap &&
                 requiredOverlap < prevRequiredOverlap) {
-                // update overlap for u and add it into the processing queue
+                // Set the required overlap for u and add it to the
+                // vertex visitation queue.
                 u->overlap = requiredOverlap;
                 q.enqueue(u);
             }
         }
-        // remove a vertex from the processing queue and continue
+        // Remove a vertex from the visitation queue and repeat the process.
+        // When q is empty, v will be null and the loop terminates.
         v = q.dequeue();
     }
 }
@@ -871,10 +887,13 @@ bool RelationGraph::_validate(double overlap)
             if (isEvaluable(_vertices)) {
                 return true;
             }
+            // Some vertex still has infinite required overlap, so the
+            // graph is disconnected or too much overlap is required.
+            // Try again with another starting vertex.
         }
     }
     if (numStarts == 0) {
-        // If the input query involves only replicated tables, or just a
+        // If the input query involves only unpartitioned tables, or just a
         // single match table, it can be evaluated. If it involves more than
         // one match table, its relation graph must be disconnected.
         return _vertices.empty() || _vertices.size() == 2;
@@ -906,14 +925,14 @@ RelationGraph::RelationGraph(QueryContext const& ctx,
     typedef TableRefList::const_iterator Iter;
     for (Iter i = ++refs.begin(), e = refs.end(); i != e; ++i) {
         RelationGraph tmp(ctx, *i, overlap, pool);
-        g._join(JoinRef::CROSS, false, JoinSpec::Ptr(), overlap, tmp);
+        g._fuse(JoinRef::CROSS, false, JoinSpec::Ptr(), overlap, tmp);
     }
     // Add edges for admissible join predicates extracted from the
     // WHERE clause
     if (stmt.hasWhereClause()) {
         BoolTerm::Ptr where = stmt.getWhereClause().getRootTerm();
-        g._makeWhereEqEdges(where);
-        g._makeSpEdges(where, overlap);
+        g._addWhereEqEdges(where);
+        g._addSpEdges(where, overlap);
     }
     if (!g._validate(overlap)) {
         throw QueryNotEvaluableError(
@@ -933,7 +952,7 @@ void RelationGraph::rewrite(SelectStmtList& outputs,
         return;
     }
     if (empty()) {
-        // The input query only involves replicated tables -
+        // The input query only involves unpartitioned tables -
         // there is nothing to do.
         outputs.push_back(_query->clone());
         return;
@@ -997,11 +1016,10 @@ void RelationGraph::rewrite(SelectStmtList& outputs,
             }
         }
         // Given the use of shared_ptr by the IR classes, we could shallow
-        // copy everything except the FromList as an optimization. But the
-        // implication is that code which mutates a SelectStmt would not be
-        // able to assume that it is mutating just the SelectStmt being
-        // operated on. If the IR classes were copy-on-write, this wouldn't
-        // be an issue, but they are not, so stick to safe waters for now.
+        // copy everything except the FromList as an optimization. But then
+        // code which mutates a particular SelectStmt might in fact mutate
+        // many SelectStmt objects. If the IR classes were copy-on-write,
+        // this wouldn't be an issue.
         outputs.push_back(_query->clone());
     }
 }

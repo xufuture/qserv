@@ -258,12 +258,6 @@ public:
     boost::shared_ptr<BoolTerm> _term;
 };
 
-/// Given a BoolTerm, find the root AND term within it. If the input tree
-/// can be reduced to "subtree_1 AND subtree_2 ...", the return value will
-/// be an actual AndTerm. Otherwise, the return value will be a (multi-element)
-/// OrTerm, or a BoolFactor or UnknownTerm, and may equal the input tree.
-BoolTerm::Ptr findAndTerm(BoolTerm::Ptr tree);
-
 }}} // namespace lsst::qserv::query
 
 #endif // LSST_QSERV_QUERY_BOOLTERM_H

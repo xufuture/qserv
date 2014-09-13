@@ -46,8 +46,10 @@ namespace lsst {
 namespace qserv {
 namespace qana {
 
-/// `TableInfoPool` is a pool of pointers to owned, immutable `TableInfo`
-/// objects. Clients that obtain all `TableInfo` pointers from the same pool
+/// `TableInfoPool` is a factory and pool of owned, immutable `TableInfo`
+/// objects.
+///
+/// Clients that obtain all `TableInfo` pointers from the same pool
 /// can use pointer equality tests to check for `TableInfo` equality. There
 /// is no facility for removing pool entries, so the lifetime of all retrieved
 /// pointers is that of the pool itself.
@@ -65,16 +67,24 @@ public:
 
     /// `get` returns a pointer to metadata for the given table, creating
     /// a metadata object if necessary. The pool retains pointer ownership.
-    /// Null pointers are returned for replicated tables, as they have no
-    /// metadata and representing them is not worthwhile. Basic exception
-    /// safety is provided.
+    /// Null pointers are returned for unpartitioned tables, as they have no
+    /// metadata and representing them is not worthwhile. Newly created
+    /// metadata objects are sanity checked, and an `InvalidTableError` is
+    /// thrown if any inconsistencies are found.
+    ///
+    /// In case of an exception, the pool remains safe to use, but may
+    /// contain additional metadata objects that were not present before
+    /// the get() call. This is because some metadata objects contain
+    /// unowned pointers to other metadata objects - these can sometimes
+    /// be successfully created and added to the pool before an exception
+    /// is thrown for the directly requested object.
     TableInfo const* get(query::QueryContext const& ctx,
                          std::string const& db,
                          std::string const& table);
 
 private:
-    // Though set is a better fit semantically, the implementation uses a
-    // sorted vector since the number of entries is expected to be small.
+    // A set implemented as a sorted vector since the number of entries
+    // is expected to be small.
     typedef std::vector<TableInfo const*> Pool;
 
     // not implemented

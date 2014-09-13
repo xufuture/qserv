@@ -174,7 +174,7 @@ public:
             switch(t.getType()) {
             case query::ValueFactor::COLUMNREF:
                 // check columnref.
-                patchColumnRef(*t.getColumnRef());
+                _patchColumnRef(*t.getColumnRef());
                 break;
             case query::ValueFactor::FUNCTION:
             case query::ValueFactor::AGGFUNC:
@@ -194,7 +194,8 @@ public:
         }
     }
 
-    inline void patchColumnRef(query::ColumnRef& ref) {
+private:
+    void _patchColumnRef(query::ColumnRef& ref) {
         std::string newAlias = _getAlias(ref.db, ref.table);
         if(newAlias.empty()) { return; } //  Ignore if no replacement
                                          //  exists.
@@ -204,13 +205,12 @@ public:
         ref.table.assign(newAlias);
     }
 
-private:
-    inline void _patchFuncExpr(query::FuncExpr& fe) {
+    void _patchFuncExpr(query::FuncExpr& fe) {
         std::for_each(fe.params.begin(), fe.params.end(),
                       fixExprAlias(_defaultDb, _tableAliasReverse));
     }
 
-    inline void _patchStar(query::ValueFactor& vt) {
+    void _patchStar(query::ValueFactor& vt) {
         // TODO: No support for <db>.<table>.* in framework
         // Only <table>.* is supported.
         std::string newAlias = _getAlias("", vt.getTableStar());
@@ -219,8 +219,8 @@ private:
         else { vt.setTableStar(newAlias); }
     }
 
-    inline std::string _getAlias(std::string const& db,
-                                 std::string const& table) {
+    std::string _getAlias(std::string const& db,
+                          std::string const& table) {
         return _tableAliasReverse.get(db.empty() ? _defaultDb : db, table);
     }
 

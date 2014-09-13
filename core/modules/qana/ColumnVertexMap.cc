@@ -56,7 +56,7 @@ std::vector<Vertex*> const& ColumnVertexMap::find(
         _entries.begin(), _entries.end(), c, ColumnRefLt());
     if (p.first == p.second) {
         return NONE;
-    } else if (p.first->vertices.empty()) {
+    } else if (p.first->isAmbiguous()) {
         query::QueryTemplate qt;
         c.renderTo(qt);
         throw QueryNotEvaluableError("Column reference " + qt.generate() +
@@ -65,9 +65,9 @@ std::vector<Vertex*> const& ColumnVertexMap::find(
     return p.first->vertices;
 }
 
-void ColumnVertexMap::splice(ColumnVertexMap& m,
-                             bool natural,
-                             std::vector<std::string> const& cols)
+void ColumnVertexMap::fuse(ColumnVertexMap& m,
+                           bool natural,
+                           std::vector<std::string> const& cols)
 {
     typedef std::vector<Entry>::iterator EntryIter;
     typedef std::vector<std::string>::const_iterator StringIter;
@@ -82,34 +82,46 @@ void ColumnVertexMap::splice(ColumnVertexMap& m,
         o->swap(*i);
     }
     m._entries.clear();
-    // Merge-sort the result
+    // Merge-sort the two sorted runs of entries
     std::inplace_merge(_entries.begin(), middle, _entries.end(), ColumnRefLt());
-    // Remove duplicate column references
+    // Duplicate column references are now adjacent to eachother in _entries -
+    // remove the duplicates by merging them.
     if (!_entries.empty()) {
         ColumnRefEq eq;
-        EntryIter o = _entries.begin(), i = o, e = _entries.end();
-        StringIter cb = cols.begin(), ce = cols.end();
-        while (++i != e) {
-            if (eq(*o, *i)) {
-                if (!o->cr->table.empty() ||
-                    (!natural && std::find(cb, ce, o->cr->column) == ce)) {
-                    // duplicate is a qualified column reference
-                    // or is not a natural join or using column
-                    o->vertices.clear();
-                } else if (o->vertices.empty() || i->vertices.empty()) {
+        EntryIter cur = _entries.begin(); // Current entry
+        EntryIter i = cur; // Entry to compare to *cur
+        EntryIter end = _entries.end();
+        StringIter firstCol = cols.begin();
+        StringIter endCol = cols.end();
+        while (++i != end) {
+            if (eq(*cur, *i)) {
+                // Found an entry with the same column reference as the
+                // currrent entry
+                if (!cur->cr->table.empty() || (!natural &&
+                    std::find(firstCol, endCol, cur->cr->column) == endCol)) {
+                    // The column reference is qualified or is not a natural
+                    // join or using column, so mark it as ambiguous.
+                    cur->markAmbiguous();
+                } else if (cur->isAmbiguous() || i->isAmbiguous()) {
                     throw QueryNotEvaluableError(
-                        "Join column " + o->cr->column + " is ambiguous");
+                        "Join column " + cur->cr->column + " is ambiguous");
                 } else {
-                    // concatenate table references for natural join column
-                    o->vertices.insert(o->vertices.end(),
-                                       i->vertices.begin(),
-                                       i->vertices.end());
+                    // Add the vertices from i to the current entry (for
+                    // natural join and using columns).
+                    cur->vertices.insert(cur->vertices.end(),
+                                         i->vertices.begin(),
+                                         i->vertices.end());
                 }
             } else {
-                *(++o) = *i;
+                ++cur;
+                if (cur != i) {
+                    *cur = *i;
+                }
             }
         }
-        _entries.erase(++o, _entries.end());
+        // The entries following cur are duplicates that have been merged into
+        // entries at or before cur - erase them.
+        _entries.erase(++cur, _entries.end());
     }
 }
 
@@ -118,6 +130,9 @@ std::vector<std::string> const ColumnVertexMap::computeCommonColumns(
 {
     typedef std::vector<Entry>::const_iterator EntryIter;
     std::vector<std::string> cols;
+    // The entries for this map and m are both sorted, so we can find
+    // identical unqualified column references in linear time with a
+    // coordinated scan over both entry lists.
     ColumnRefLt lt;
     EntryIter i = _entries.begin(), iend = _entries.end();
     EntryIter j = m._entries.begin(), jend = m._entries.end();
@@ -127,9 +142,11 @@ std::vector<std::string> const ColumnVertexMap::computeCommonColumns(
         } else if (lt(*j, *i)) {
             ++j;
         } else {
+            // Found a pair of identical column references.
             if (i->cr->table.empty()) {
-                // unqualified column reference
-                if (i->vertices.empty() || j->vertices.empty()) {
+                // If the reference is unqualified and unambiguous in
+                // both entry lists, add it to the list of common columns.
+                if (i->isAmbiguous() || j->isAmbiguous()) {
                     throw QueryNotEvaluableError(
                         "Join column " + i->cr->column + " is ambiguous");
                 }

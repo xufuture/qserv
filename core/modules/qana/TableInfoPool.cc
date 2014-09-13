@@ -72,7 +72,7 @@ TableInfo const* TableInfoPool::get(query::QueryContext const& ctx,
     }
     css::Facade const& f = *ctx.cssFacade;
     int const chunkLevel = f.getChunkLevel(db_, table);
-    // replicated table
+    // unpartitioned table
     if (chunkLevel == 0) {
         return 0;
     }

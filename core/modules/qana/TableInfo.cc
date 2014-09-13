@@ -49,7 +49,7 @@ void appendColumnRefs(std::string const& column,
     if (column.empty()) {
         return;
     }
-    std::string const _;
+    std::string const _; // an empty string
     refs.push_back(boost::make_shared<query::ColumnRef>(_, _, column));
     if (!tableAlias.empty()) {
         // If a table alias has been introduced, then it is an error to
@@ -100,6 +100,81 @@ std::vector<ColumnRefConstPtr> const MatchTableInfo::makeColumnRefs(
     appendColumnRefs(fk.first, database, table, tableAlias, refs);
     appendColumnRefs(fk.second, database, table, tableAlias, refs);
     return refs;
+}
+
+bool DirTableInfo::isEqPredAdmissible(DirTableInfo const& t,
+                                      std::string const& a,
+                                      std::string const& b,
+                                      bool outer) const
+{
+    // An equality predicate between two directors is only
+    // admissible for self joins on the director primary key.
+    return *this == t && a == pk && b == t.pk;
+}
+
+bool DirTableInfo::isEqPredAdmissible(ChildTableInfo const& t,
+                                      std::string const& a,
+                                      std::string const& b,
+                                      bool outer) const
+{
+    // An equality predicate between a director D and a child is only
+    // admissible if the child's director is D, and the column names
+    // correspond to the director primary key and child foreign key.
+    return *this == *t.director && a == pk && b == t.fk;
+}
+
+bool DirTableInfo::isEqPredAdmissible(MatchTableInfo const& t,
+                                      std::string const& a,
+                                      std::string const& b,
+                                      bool outer) const
+{
+    // Equality predicates between director and match tables are not
+    // admissible in the ON clauses of outer joins.
+    if (outer) {
+        return false;
+    }
+    // Column a from this table must refer to the primary key for the
+    // predicate to be admissible.
+    if (a != pk) {
+        return false;
+    }
+    // For the predicate to be admissible, this table must be one of the
+    // match table directors and b must refer to the corresponding foreign key.
+    return (*this == *t.director.first && b == t.fk.first) ||
+           (*this == *t.director.second && b == t.fk.second);
+}
+
+bool ChildTableInfo::isEqPredAdmissible(ChildTableInfo const& t,
+                                        std::string const& a,
+                                        std::string const& b,
+                                        bool outer) const
+{
+    // An equality predicate between two child tables is only admissible
+    // if both tables have the same director, and the column names refer
+    // to their foreign keys.
+    return *director == *t.director && a == fk && b == t.fk;
+}
+
+bool ChildTableInfo::isEqPredAdmissible(MatchTableInfo const& t,
+                                        std::string const& a,
+                                        std::string const& b,
+                                        bool outer) const
+{
+    // Equality predicates between director and child tables are not
+    // admissible in the ON clauses of outer joins.
+    if (outer) {
+        return false;
+    }
+    // Column a from this table must refer to the foreign key for the
+    // predicate to be admissible.
+    if (a != fk) {
+        return false;
+    }
+    // For the predicate to be admissible, the director for this table must be
+    // one of the match table directors and b must refer to the corresponding
+    // foreign key.
+    return (*director == *t.director.first && b == t.fk.first) ||
+           (*director == *t.director.second && b == t.fk.second);
 }
 
 }}} // namespace lsst::qserv::qana

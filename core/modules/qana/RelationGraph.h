@@ -213,12 +213,12 @@
 /// Query Validation Algorithm
 /// --------------------------
 ///
-/// The query validation algorithm operates by first building an undirected
-/// graph from the input query, with vertices corresponding to partitioned
-/// table references and edges corresponding to those join predicates that
-/// can be used to make inferences about the partition of results from one
-/// table based on the partition of results from another. For example, the
-/// graph for the following query:
+/// The query validation algorithm operates on a relation graph. This is an
+/// undirected graph built from the input query, with vertices corresponding
+/// to partitioned table references and edges corresponding to those join
+/// predicates that can be used to make inferences about the partition of
+/// results from one table based on the partition of results from another.
+/// For example, the graph for the following query:
 ///
 ///     SELECT * FROM Object AS o INNER JOIN
 ///                   Source AS s ON (o.objectId = s.objectId);
@@ -228,76 +228,134 @@
 /// Object and Source rows to have the same partition, so the graph
 /// has a single edge between the Object and Source vertices.
 ///
-/// The core idea behind the validation algorithm is as follows: first pick
-/// a table reference for which no overlap will be used. (Note that if there
-/// are any references to partitioned tables in the query, then we must
-/// refrain from using overlap for at least one of them to avoid duplicate
-/// result rows.) Then, use the graph to infer that rows from all other table
-/// references have the same partition as the rows from the initial reference,
-/// or fall within its overlap. If this is possible, the input query is
-/// evaluable.
+/// Equi-join predicates are not the only ones that can be used for partition
+/// inference. Consider the query:
 ///
-/// Note that if the graph G is not connected, we will never be able to infer
-/// locality for all table references, no matter which graph vertex (table
-/// reference) we start from. In other words, Qserv must assume that it cannot
-/// evaluate the query using only worker-local data and report an error back
-/// to the user.
+///     SELECT * FROM Director1 AS d1, Director2 AS d2 WHERE
+///         scisql_angSep(d1.ra, d1.decl, d2.ra, d2.decl) < 0.01;
 ///
-/// While the connectedness of G is a necessary condition for query
-/// evaluability, it is not sufficient. Further analysis is required because
-/// some join predicates (spatial predicates, equi-join predicates for match
-/// tables) require the presence of overlap that may not be available. For
-/// example, a query that equi-joins a child C₁ of director D₁ to a match
-/// table M and then to child C₂ of director D₂ would require overlap for
-/// either C₁ or C₂. Since overlap is not stored for child tables, the query
-/// is not evaluable, even though the corresponding graph is connected. In
-/// addition, if a query references one or more director tables, then one must
-/// determine the directors for which overlap is required. These problems are
-/// tackled by performing what is essentially a series of graph traversals:
+/// The spatial constraint says that rows from d1 are within 0.01 degrees of
+/// matching rows in d2 - if that is less than or equal to the partition
+/// overlap and the directors are partitioned in the same way, then matching
+/// rows from d1 and d2 must either share the same partition, or lie in the
+/// overlap of each others partition. The spatial constraint is therefore
+/// represented by an edge tagged with the angular separation threshold
+/// (0.01 in this case).
 ///
-/// 1. Let S be the set of vertices corresponding to child or director tables.
+/// The goal of the validation algorithm is to infer result row locality for
+/// all table references in the query. If we can do this, then we've proven
+/// that results from all the table references are in the same partition or
+/// its overlap, i.e. that a Qserv worker need never consult with comrades to
+/// evaluate its share of query evaluation work.
 ///
-/// 2. Given a vertex v ∈ S, assume that the corresponding rows are strictly
-///    within a partition; that is, the overlap oᵥ required for v is 0. Set
-///    the required overlap for all other vertices to ∞, and create an empty
-///    vertex queue Q.
+/// Note that if there is a path between two vertices U and V, we know that
+/// the partitioning positions of the rows from U are within distance Σα
+/// of V (and vice-versa), where Σα is the sum of angular separations for the
+/// edges on the path between them. If there is more than one possible path
+/// between U and V, then we can say that their rows are separated by at most
+/// min(Σα) along any path between them.
 ///
-/// 3. For each edge e incident to vertex v, infer the overlap oᵤ required
-///    for vertex u reachable from v via e. If oᵤ is greater than the
-///    available overlap, ignore u. Otherwise, set the required overlap for
-///    u to the minimum of oᵤ and its current required overlap. If oᵤ was
-///    smaller than the previous required overlap and u is not already in Q,
-///    insert u into Q. oᵤ is determined from oᵥ based on the kinds of tables
-///    linked by e (v → u):
+/// If there is a pair of vertices with no path between them, then the graph
+/// is disconnected and we will never be able to infer locality of results
+/// for all table references. In other words, Qserv must assume that it cannot
+/// evaluate the query using only worker-local data and must report an error
+/// back to the user.
 ///
-///    - director → director:
-///      oᵤ = oᵥ for an equi-join edge
-///      oᵤ = oᵥ + a for a spatial edge with angular separation threshold a.
+/// At a high level, the validation algorithm operates as follows:
 ///
-///    - match → match:
-///      oᵤ = oᵥ + p, where p is the partition overlap
+/// 1. First we pick a graph vertex for which no overlap will be used. Note
+///    that if there are any references to partitioned tables in a query, then
+///    we must refrain from using overlap for at least one of them to avoid
+///    duplicate result rows. Given a partition P, the angular separation of
+///    a result row from this table reference to P is 0.
 ///
-///    - all others edges:
-///      oᵤ = oᵥ
+///    The rows for a vertex adjacent to the initial vertex will be within
+///    angular separation α of P, where α is the angular separation threshold
+///    of the edge between them (α=0 for edges corresponding to admissible
+///    equality predicates).
 ///
-///    Note: match table references are represented internally as a pair of
-///    vertices connected by a spatial match → match edge with angular
-///    separation threshold equal to the partition overlap. This is the only
-///    way match → match edges can be created. Each vertex in the pair is
-///    assigned the column references for one of the director table foreign
-///    keys.
+/// 2. We recursively visit adjacent vertices, all the while summing edge
+///    angular separation thresholds to obtain a minimum required overlap
+///    for each vertex encountered.
 ///
-/// 4. Remove a vertex from Q and repeat step 3 until there are no more
-///    vertices left to process in Q.
+/// If all vertices were visited and have required overlap less than or equal
+/// to the available overlap for the underlying table, then the query is
+/// evaluable. Note in passing that the graph traversal identifies which
+/// vertices have non-zero required overlap, which is critical information
+/// for the query rewriting stage (described in more detail below).
 ///
-/// 5. If no vertex has a required overlap of ∞ after Q has been emptied, then
-///    the query is evaluable; the directors requiring overlap will have been
-///    identified by the graph traversal above. Otherwise, choose another
-///    vertex from S, and repeat the process starting at step 2.
+/// If the validation algorithm fails to prove partition locality for a
+/// particular choice of initial vertex, we try again with a different initial
+/// vertex. If no choice of initial vertex leads to a locality proof, the input
+/// query is not evaluable, and an error is returned to the user.
 ///
-/// 6. If all graph traversals starting from vertices in S result in one or
-///    more vertices having a required overlap of ∞, then the query is not
-///    evaluable by Qserv.
+/// Consider the operation of the algorithm on the following query:
+///
+///     SELECT * FROM Director1 AS d1,
+///                   Director2 AS d2,
+///                   Director3 AS d3
+///     WHERE scisql_angSep(d1.ra, d1.decl, d2.ra, d2.decl) < 0.1 AND
+///           scisql_angSep(d2.ra, d2.decl, d3.ra, d3.decl) < 0.2;
+///
+/// Let's assume that all 3 directors are partitioned the same way, and that
+/// partition overlap is 0.25 degrees. The relation graph for this query looks
+/// like:
+///
+///     D₁ <-------> D₂ <-------> D₃
+///           0.1          0.2
+///
+/// where Dᵢ is the vertex for the i-th director. We start by
+/// picking D₁ as the initial, no-overlap vertex. From D₁ we visit D₂,
+/// determining that D₂ has required overlap 0.1. From D₂ we reach D₃,
+/// which has required overlap 0.3 (= 0.1 + 0.2), which is greater than the
+/// partition overlap. In other words, the query is not evaluable starting
+/// from D₁. So, we start from D₂ instead. We visit adjacent vertices D₁
+/// and D₃ and determine that their required overlap is 0.1 and 0.2. Both
+/// are under the partition overlap, and all vertices were visited, so we
+/// have produced a locality proof. The query can therefore be parallelized
+/// by running the equivalent of
+///
+///     SELECT * FROM (SELECT * FROM Director1_%CC%_%SS% UNION ALL
+///                    SELECT * FROM Director1FullOverlap_%CC%_%SS%) AS d1,
+///                   Director2 AS d2,
+///                   (SELECT * FROM Director3_%CC%_%SS% UNION ALL
+///                    SELECT * FROM Director3FullOverlap_%CC%_%SS%) AS d3,
+///     WHERE scisql_angSep(d1.ra, d1.decl, d2.ra, d2.decl) < 0.1 AND
+///           scisql_angSep(d2.ra, d2.decl, d3.ra, d3.decl) < 0.2;
+///
+/// over all the sub-chunks on the sky and taking the union of the results.
+///
+/// Before moving on to query rewriting, we describe a subtlety in the handling
+/// of match tables. Intuitively, these tables are materialized near-neighbor
+/// joins between two directors. We therefore model them by creating two
+/// vertices separated by a spatial edge with angular separation threshold
+/// equal to the partition overlap. Each vertex receives edges for equi-join
+/// predicates involving one of the match table foreign keys. To illustrate,
+///
+///     SELECT * FROM Child1 AS c1,
+///                   Match AS m,
+///                   Child2 AS c2
+///     WHERE c1.dirId = m.dir1Id AND m.dir2Id = c2.dirId;
+///
+/// has the following relation graph:
+///
+///     C₁ <-------------------> M₁ <------> M₂ <-------------------> C₂
+///         c1.dirId = m.dir1Id       0.25       m.dir2Id = c2.dirId
+///
+/// For now, the validation algorithm never starts with vertices for match
+/// tables. Walking through the validation algorithm steps again, we see that
+/// from initial vertex C₁ we visit M₁ and get a required overlap of 0 (from
+/// the equi-join predicate). From M₁ we jump to M₂ and obtain a required
+/// overlap of 0.25 degrees (from the spatial edge). Since C₂ is linked to
+/// M₂ via an equality predicate, it has the same required overlap of 0.25
+/// degrees.
+///
+/// Now because overlap isn't stored for child tables, that means the query
+/// isn't evaluable starting from C₁. We repeat the graph traversal and start
+/// from C₂ instead, concluding that the required overlap for C₁, also a
+/// child table, is 0.25 degrees. Again the query isn't evaluable. Since we
+/// cannot produce a locality proof from any starting vertex, we must report
+/// an error back to the user.
 ///
 /// Query Rewriting
 /// ---------------
@@ -313,10 +371,9 @@
 /// chunk-specific table name patterns. The input query is rewritten to a
 /// single output query template.
 ///
-/// If overlap is required for one or more directors things are still
-/// relatively simple conceptually. Recall that overlap is stored in a
-/// separate in-memory table per sub-chunk. Given an input query
-/// that looks like:
+/// If overlap is required for one or more directors, the task is more
+/// complicated. Recall that overlap is stored in a separate in-memory table
+/// per sub-chunk. Given an input query that looks like:
 ///
 ///     SELECT * FROM D1, D2, ... Dn ...;
 ///
@@ -416,8 +473,7 @@ struct Vertex;
 
 /// An `Edge` is a minimal representation of an admissible join predicate.
 /// An admissible join predicate is one that can be used to infer the
-/// the partition of rows in one table from the partition of rows in
-/// another.
+/// partition of rows in one table from the partition of rows in another.
 ///
 /// An edge corresponds to an equi-join predicate iff `angSep` is NaN.
 /// Otherwise, it corresponds to a spatial predicate that constrains the
@@ -430,18 +486,6 @@ struct Vertex;
 /// that can link them. Only one of the edge vertices is stored; the other owns
 /// the `Edge` and is therefore implicitly available.
 struct Edge {
-    enum Classification {
-        DIRECTOR_DIRECTOR = 0,
-        DIRECTOR_CHILD,
-        DIRECTOR_MATCH,
-        CHILD_DIRECTOR,
-        CHILD_CHILD,
-        CHILD_MATCH,
-        MATCH_DIRECTOR,
-        MATCH_CHILD,
-        MATCH_MATCH
-    };
-
     Vertex* vertex; // unowned
     double angSep;
 
@@ -452,8 +496,6 @@ struct Edge {
     bool operator<(Edge const& p) const { return vertex < p.vertex; }
     bool operator==(Edge const& p) const { return vertex == p.vertex; }
     bool operator!=(Edge const& p) const { return vertex != p.vertex; }
-
-    static inline Classification classify(Vertex const& from, Vertex const& to);
 };
 
 
@@ -462,11 +504,21 @@ struct Edge {
 /// predicates/constraints) that involve the table reference are bundled
 /// alongside.
 struct Vertex {
+    /// `tr` is a table reference from the input query IR.
     query::TableRef& tr;
+    /// `info` is an unowned pointer to metadata
+    /// for the table referenced by `tr`.
     TableInfo const* info;
+    /// `next` is unowned storage for the links in a singly-linked list.
     Vertex* next;
+    /// `overlap` is the amount of overlap that must be available in partitions
+    /// of the table referenced by `tr`. This member is used during query
+    /// validation and rewriting.
     double overlap;
-    std::vector<Edge> edges; // sorted
+    /// `edges` is the set of edges incident to this vertex, implemented
+    /// as a sorted vector. It will contain at most one edge to another
+    /// vertex in the relation graph, and will never contain a loop.
+    std::vector<Edge> edges;
 
     Vertex(query::TableRef& t, TableInfo const* i) :
         tr(t),
@@ -476,8 +528,11 @@ struct Vertex {
     {}
 
     /// `insert` adds the given join predicate to the set of predicates
-    /// involving this table reference. Inserting a duplicate of an existing
-    /// predicate has no effect.
+    /// involving this table reference. If a predicate between the same
+    /// vertices as `e` already exists, then the non-spatial predicate
+    /// is retained (if there is one). Note that if both are non-spatial,
+    /// the predicates must be duplicates of eachother. If both are spatial,
+    /// the one with the smaller angular separation threshold is retained.
     void insert(Edge const& e);
 
     /// `rewriteAsChunkTemplate` rewrites `tr` to contain a chunk specific
@@ -508,7 +563,7 @@ struct Vertex {
 /// predicate that can be used to infer the partition of rows in one table
 /// from the partition of rows in another.
 ///
-/// An empty relation graph represents a set of references to replicated
+/// An empty relation graph represents a set of references to unpartitioned
 /// tables that are joined in some arbitrary way.
 ///
 /// Methods provide only basic exception safety - if a problem occurs, no
@@ -557,16 +612,16 @@ private:
                   double overlap,
                   TableInfoPool& pool);
 
-    size_t _makeOnEqEdges(query::BoolTerm::Ptr on,
-                          query::JoinRef::Type jt,
-                          RelationGraph& g);
-    size_t _makeNaturalEqEdges(query::JoinRef::Type jt, RelationGraph& g);
-    size_t _makeUsingEqEdges(query::ColumnRef const& c,
-                             query::JoinRef::Type jt,
-                             RelationGraph& g);
-    size_t _makeWhereEqEdges(query::BoolTerm::Ptr where);
-    size_t _makeSpEdges(query::BoolTerm::Ptr term, double overlap);
-    void _join(query::JoinRef::Type joinType,
+    size_t _addOnEqEdges(query::BoolTerm::Ptr on,
+                         bool outer,
+                         RelationGraph& g);
+    size_t _addNaturalEqEdges(bool outer, RelationGraph& g);
+    size_t _addUsingEqEdges(query::ColumnRef const& c,
+                            bool outer,
+                            RelationGraph& g);
+    size_t _addWhereEqEdges(query::BoolTerm::Ptr where);
+    size_t _addSpEdges(query::BoolTerm::Ptr bt, double overlap);
+    void _fuse(query::JoinRef::Type joinType,
                bool natural,
                query::JoinSpec::Ptr const& joinSpec,
                double overlap,
@@ -575,14 +630,6 @@ private:
     // Graph validation
     bool _validate(double overlap);
 };
-
-
-inline Edge::Classification Edge::classify(Vertex const& from,
-                                           Vertex const& to)
-{
-    return static_cast<Edge::Classification>(
-        from.info->kind * TableInfo::NUM_KINDS + to.info->kind);
-}
 
 }}} // namespace lsst::qserv::qana
 

@@ -46,15 +46,40 @@ namespace qana {
 typedef boost::shared_ptr<query::ColumnRef const> ColumnRefConstPtr;
 class Vertex;
 
-/// A `ColumnVertexMap` is a mapping from column references to the relation
-/// graph vertices for the table references that column values can originate
-/// from. Most of the time values come from a single table, but there are two
-/// exceptions. Firstly, a column reference can be ambiguous, in which case its
-/// presence in the query text must be treated as an error. Secondly, natural
-/// join columns map to two or more table references. This is because the
-/// result of `A NATURAL JOIN B` contains a single column `c` for every common
-/// column `c` of `A` and `B`. Its value is `COALESCE(A.c, B.c)`, defined as
-/// `CASE WHEN A.c IS NOT NULL THEN A.c ELSE B.c END`.
+/// A `ColumnVertexMap` is a mapping from query column references to relation
+/// graph vertices, which are representations of the partitioned table
+/// references in a query. It contains all possible interesting column
+/// references for a vertex at a particular scope, not just the ones present in
+/// the query text, and is created either from a single vertex or by fusing two
+/// mappings. In this context, interesting columns are those that have some
+/// bearing on partitioning - these are director table longitude, latitude and
+/// primary key columns, and child or match table foreign key columns.
+///
+/// Every join in a query can be thought of creating a new relation from a left
+/// and right relation; fusing two mappings creates a lookup data structure for
+/// column references in the scope of the corresponding ON clause. For the last
+/// join in the query, the mapping can also be used for column references in
+/// the WHERE clause.
+///
+/// A column reference maps to a single vertex most of the time, but there
+/// are two exceptions. Firstly, a column reference can be ambiguous, in which
+/// case its presence in a query must be treated as an error. For example,
+/// if tables `A` and `C` both contain a column named `x`, and table `B` does
+/// not, then the first ON clause in the following query can contain
+/// unqualified references to `x`, while the second cannot:
+///
+///    SELECT * from (A INNER JOIN B ON ...) INNER JOIN C ON ...;
+///
+/// Secondly, natural join columns as well as columns mentioned in USING
+/// clauses map to two or more vertices. This is because the result of
+/// `A NATURAL JOIN B` contains a single column `x` for every common column
+/// `x` of `A` and `B`. Its value is `COALESCE(A.x, B.x)`, defined as
+/// `CASE WHEN A.x IS NOT NULL THEN A.x ELSE B.x END`.
+///
+/// `ColumnVertexMap` objects are built and used during relation graph
+/// construction. Their purpose is to map column references to graph vertices
+/// when deciding whether to create relation graph edges for equality
+/// predicates or angular separation constraints in ON or WHERE clauses.
 class ColumnVertexMap {
 public:
     struct Entry {
@@ -68,6 +93,8 @@ public:
             cr.swap(e.cr);
             vertices.swap(e.vertices);
         }
+        bool isAmbiguous() const { return vertices.empty(); }
+        void markAmbiguous() { vertices.clear(); }
     };
 
     ColumnVertexMap() {}
@@ -91,7 +118,7 @@ public:
     /// columns. If `c` is ambiguous, an exception is thrown.
     std::vector<Vertex*> const& find(query::ColumnRef const& c) const;
 
-    /// `splice` transfers the entries of `m` to this map, emptying `m`.
+    /// `fuse` transfers the entries of `m` to this map, emptying `m`.
     /// If `m` contains a column reference `c` that is already in this map,
     /// then `c` is marked ambiguous unless `c` is an unqualified reference,
     /// in which case behavior depends on the `natural` flag argument and
@@ -102,9 +129,9 @@ public:
     /// - Otherwise, table references for `c` from both maps are concatenated
     ///   unless `c` is already ambiguous in either map, in which case an
     ///   exception is thrown.
-    void splice(ColumnVertexMap& m,
-                bool natural,
-                std::vector<std::string> const& cols);
+    void fuse(ColumnVertexMap& m,
+              bool natural,
+              std::vector<std::string> const& cols);
 
     /// `computeCommonColumns` returns all unqualified column names that are
     /// common to this map and `m`. If any such column is ambiguous in either

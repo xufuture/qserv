@@ -30,7 +30,7 @@
 /// \page table_types Table Types
 ///
 /// There are four different kinds of tables in the Qserv system. The first
-/// and simplest is the "replicated" table. These are available in their
+/// and simplest is the "unpartitioned" table. These are available in their
 /// entirety to every worker. Arbitrary joins are allowed between them,
 /// and there is no need to validate or rewrite such joins in any way.
 ///
@@ -43,6 +43,7 @@
 /// near-neighbor queries to look outside of the spatial boundaries of a
 /// sub-chunk for matches to a position inside it without consulting other
 /// workers and incurring the attendant network and implementation costs.
+/// Currently, director tables with composite primary keys are not supported.
 ///
 /// "Child" tables are partitioned into chunks according to a director table.
 /// A child table contains (at least conceptually) a foreign key into a
@@ -81,10 +82,15 @@ namespace qana {
 
 typedef boost::shared_ptr<query::ColumnRef const> ColumnRefConstPtr;
 
+class DirTableInfo;
+class ChildTableInfo;
+class MatchTableInfo;
+
+
 /// `TableInfo` is a base class for table metadata. A subclass is provided
 /// for each [kind of table](\ref table_types) supported by Qserv except
-/// replicated tables, which are omitted because they are uninteresting for
-/// query analysis.
+/// unpartitioned tables, which are omitted because they are uninteresting
+/// for query analysis.
 struct TableInfo {
     /// `CHUNK_TAG` is a pattern that is replaced with a chunk number
     /// when generating concrete query text from a template.
@@ -101,7 +107,16 @@ struct TableInfo {
 
     TableInfo(std::string const& db, std::string const& t, Kind k) :
         database(db), table(t), kind(k) {}
+
     virtual ~TableInfo() {}
+
+    bool operator==(TableInfo const& t) const {
+        return database == t.database && table == t.table;
+    }
+    bool operator<(TableInfo const& t) const {
+        int c = table.compare(t.table);
+        return c < 0 || (c == 0 && database < t.database);
+    }
 
     /// `makeColumnRefs` returns all possible references to join columns
     /// from this table.
@@ -109,6 +124,37 @@ struct TableInfo {
         std::string const& tableAlias) const
     {
         return std::vector<ColumnRefConstPtr>();
+    }
+
+    /// `isEqPredAdmissible` returns true if the equality predicate `a = b` is
+    /// is admissible, where `a` names a column in this table and `b` names a
+    /// column in `t`. An admissible join predicate is one that can be used to
+    /// infer the partition of rows in one table from the partition of rows in
+    /// another. The `outer` flag indicates whether the predicate occurs in the
+    /// ON clause of an outer join.
+    virtual bool isEqPredAdmissible(TableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const {
+        return false;
+    }
+    virtual bool isEqPredAdmissible(DirTableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const {
+        return false;
+    }
+    virtual bool isEqPredAdmissible(ChildTableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const {
+        return false;
+    }
+    virtual bool isEqPredAdmissible(MatchTableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const {
+        return false;
     }
 
     std::string const getSubChunkDb() const {
@@ -147,6 +193,26 @@ struct DirTableInfo : TableInfo {
 
     virtual std::vector<ColumnRefConstPtr> const makeColumnRefs(
         std::string const& tableAlias) const;
+
+    virtual bool isEqPredAdmissible(TableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const {
+        // double dispatch
+        return t.isEqPredAdmissible(*this, b, a, outer);
+    }
+    virtual bool isEqPredAdmissible(DirTableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const;
+    virtual bool isEqPredAdmissible(ChildTableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const;
+    virtual bool isEqPredAdmissible(MatchTableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const;
 };
 
 
@@ -163,6 +229,29 @@ struct ChildTableInfo : TableInfo {
 
     virtual std::vector<ColumnRefConstPtr> const makeColumnRefs(
         std::string const& tableAlias) const;
+
+    virtual bool isEqPredAdmissible(TableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const {
+        // double dispatch
+        return t.isEqPredAdmissible(*this, b, a, outer);
+    }
+    virtual bool isEqPredAdmissible(DirTableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const {
+        // take advantage of symmetry to avoid code stutter
+        return t.isEqPredAdmissible(*this, b, a, outer);
+    }
+    virtual bool isEqPredAdmissible(ChildTableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const;
+    virtual bool isEqPredAdmissible(MatchTableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const;
 };
 
 
@@ -180,6 +269,28 @@ struct MatchTableInfo : TableInfo {
 
     virtual std::vector<ColumnRefConstPtr> const makeColumnRefs(
         std::string const& tableAlias) const;
+
+    virtual bool isEqPredAdmissible(TableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const {
+        // double dispatch
+        return t.isEqPredAdmissible(*this, b, a, outer);
+    }
+    virtual bool isEqPredAdmissible(DirTableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const {
+        // take advantage of symmetry to avoid code stutter
+        return t.isEqPredAdmissible(*this, b, a, outer);
+    }
+    virtual bool isEqPredAdmissible(ChildTableInfo const& t,
+                                    std::string const& a,
+                                    std::string const& b,
+                                    bool outer) const {
+        // take advantage of symmetry to avoid code stutter
+        return t.isEqPredAdmissible(*this, b, a, outer);
+    }
 };
 
 }}} // namespace lsst::qserv::qana

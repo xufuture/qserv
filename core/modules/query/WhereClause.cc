@@ -42,6 +42,20 @@ namespace lsst {
 namespace qserv {
 namespace query {
 
+namespace {
+
+    BoolTerm::Ptr skipTrivialOrTerms(BoolTerm::Ptr tree) {
+        OrTerm * ot = dynamic_cast<OrTerm *>(tree.get());
+        while (ot && ot->_terms.size() == 1) {
+            tree = ot->_terms.front();
+            ot = dynamic_cast<OrTerm *>(tree.get());
+        }
+        return tree;
+    }
+
+}
+
+
 ////////////////////////////////////////////////////////////////////////
 // WhereClause
 ////////////////////////////////////////////////////////////////////////
@@ -92,7 +106,7 @@ WhereClause::getRootAndTerm() {
     // Walk the list to find the global AND. If an OR term is root,
     // and has multiple terms, there is no global AND which means we
     // should return NULL.
-    BoolTerm::Ptr t = findAndTerm(_tree);
+    BoolTerm::Ptr t = skipTrivialOrTerms(_tree);
     return boost::dynamic_pointer_cast<AndTerm>(t);
 }
 
@@ -146,7 +160,7 @@ WhereClause::prependAndTerm(boost::shared_ptr<BoolTerm> t) {
     // Walk to AndTerm and prepend new BoolTerm in front of the
     // list. If the new BoolTerm is an instance of AndTerm, prepend
     // its terms rather than the AndTerm itself.
-    boost::shared_ptr<BoolTerm> insertPos = findAndTerm(_tree);
+    boost::shared_ptr<BoolTerm> insertPos = skipTrivialOrTerms(_tree);
 
     // FIXME: Should deal with case where AndTerm is not found.
     AndTerm* rootAnd = dynamic_cast<AndTerm*>(insertPos.get());
