@@ -88,7 +88,7 @@ void Vertex::insert(Edge const& e) {
         edges.insert(i, e);
     } else {
         // There is one. Keeping both edges around isn't useful for the query
-        // vvalidation algorithm, so we look at both e and the existing edge,
+        // validation algorithm, so we look at both e and the existing edge,
         // and retain the one that results in the smallest required overlap
         // increase when traversed by the query validation algorithm.
         bool si = i->isSpatial();
@@ -103,7 +103,7 @@ void Vertex::insert(Edge const& e) {
             // Spatial edges are only admissible between director tables,
             // and equality predicates between different directors are not
             // admissible. So, a couple sample queries that can lead to this
-            // corner are:
+            // corner case are:
             //
             // SELECT ... FROM Object AS o1 INNER JOIN Object AS o2 ON
             //     scisql_angSep(o1.ra, o1.decl, o2.ra, o2.decl) < 0.1 AND
@@ -288,7 +288,7 @@ FuncExpr::Ptr getAngSepFunc(ValueExprPtr const& ve) {
 }
 
 /// `getEqColumnRefs` returns the pair of column references in the equality
-/// predicate embedded in the given boolean factori. If that is not what
+/// predicate embedded in the given boolean factor. If that is not what
 /// the given boolean term corresponds to, a pair of nulls is returned instead.
 std::pair<ColumnRef::Ptr, ColumnRef::Ptr> const getEqColumnRefs(
     BoolTerm::Ptr const& bt)
@@ -406,7 +406,7 @@ size_t RelationGraph::_addNaturalEqEdges(bool outer, RelationGraph& g)
     typedef std::vector<Vertex*>::const_iterator VertIter;
 
     // Find interesting unqualified column names that are shared between
-    // the vertices of both this graph and g.
+    // the vertices of this graph and g.
     std::vector<std::string> const cols = _map.computeCommonColumns(g._map);
     std::string const _; // an empty string
     size_t numEdges = 0;
@@ -451,9 +451,9 @@ size_t RelationGraph::_addUsingEqEdges(ColumnRef const& c,
     return numEdges;
 }
 
-/// `_addWhereEqEdges` creates a graph edge for each admissible top-level
-/// equality predicate extracted from the WHERE clause of a query. The number
-/// of admissible predicates is returned.
+/// `_addWhereEqEdges` adds an edgefor each admissible top-level equality
+/// predicate extracted from the WHERE clause of a query. The number of
+/// admissible predicates is returned.
 size_t RelationGraph::_addWhereEqEdges(BoolTerm::Ptr where)
 {
     size_t numEdges = 0;
@@ -824,16 +824,17 @@ void traverse(Vertex* v, double const partitionOverlap)
             }
             // If requiredOverlap is greater than or equal to the previously
             // computed required overlap for u, then there is no need to visit
-            // u again. Because the current path between the initial vertex and
-            // u does not have a strictly smaller edge angular separation sum,
-            // no path to vertices reachable from u starting with the current
-            // one will yield strictly smaller sums than those starting with
-            // the current minimal path. Note that the required overlap for an
+            // u again. This is because the current path between the initial
+            // vertex and u does not have a strictly smaller sum of angular
+            // separations, so any path to vertices reachable from u containing
+            // the current path as a prefix will have an angular sum greater
+            // than or equal to the one obtained by substituting the previous
+            // path to u as the prefix. Note that the required overlap for an
             // unvisited vertex is ∞.
             //
             // If requiredOverlap is greater than the available overlap for u,
             // then either the query is not evaluable or we will reach u via
-            // some other path that has smaller required overlap, and again
+            // some other path that has smaller required overlap, so again
             // there is no reason to visit u.
             if (requiredOverlap <= availableOverlap &&
                 requiredOverlap < prevRequiredOverlap) {
@@ -844,7 +845,7 @@ void traverse(Vertex* v, double const partitionOverlap)
             }
         }
         // Remove a vertex from the visitation queue and repeat the process.
-        // When q is empty, v will be null and the loop terminates.
+        // When q is empty, v is null and the loop terminates.
         v = q.dequeue();
     }
 }

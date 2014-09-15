@@ -202,12 +202,12 @@
 /// created and populated, and those tables would not come with prebuilt
 /// indexes on their foreign keys.
 ///
-/// As in the near-neighbor case, there are 2-ways to decompose the query:
+/// As in the near-neighbor case, there are two ways to decompose the query:
 /// overlap from either `d1` or `d2` can be utilized. And again, because the
 /// union of overlap and non-overlap results is not performed within a single
 /// query, Qserv cannot support arbitrary outer equi-joins between match and
 /// director tables - LEFT and RIGHT joins involving match tables are not
-/// supported. Additionally, match → match table joins are not currently
+/// supported. Additionally, match/match table joins are not currently
 /// allowed.
 ///
 /// Query Validation Algorithm
@@ -218,15 +218,16 @@
 /// to partitioned table references and edges corresponding to those join
 /// predicates that can be used to make inferences about the partition of
 /// results from one table based on the partition of results from another.
-/// For example, the graph for the following query:
+/// Such predicates are said to be admissible. For example, the graph for the
+/// following query:
 ///
 ///     SELECT * FROM Object AS o INNER JOIN
 ///                   Source AS s ON (o.objectId = s.objectId);
 ///
 /// would contain two vertices, one for Object (a director table) and one
-/// for Source (a child table). The equi-join predicate forces matching
-/// Object and Source rows to have the same partition, so the graph
-/// has a single edge between the Object and Source vertices.
+/// for Source (a child table). Since the equi-join predicate forces matching
+/// Object and Source rows to have the same partition, it is admissible and
+/// so the graph has a single edge between the Object and Source vertices.
 ///
 /// Equi-join predicates are not the only ones that can be used for partition
 /// inference. Consider the query:
@@ -235,59 +236,54 @@
 ///         scisql_angSep(d1.ra, d1.decl, d2.ra, d2.decl) < 0.01;
 ///
 /// The spatial constraint says that rows from d1 are within 0.01 degrees of
-/// matching rows in d2 - if that is less than or equal to the partition
+/// matching rows in d2. If that is less than or equal to the partition
 /// overlap and the directors are partitioned in the same way, then matching
-/// rows from d1 and d2 must either share the same partition, or lie in the
-/// overlap of each others partition. The spatial constraint is therefore
-/// represented by an edge tagged with the angular separation threshold
-/// (0.01 in this case).
+/// rows from d1 and d2 must either belong to the same partition or each lie
+/// in the overlap of the others partition. Admissible spatial constraints are
+/// therefore represented by edges tagged with their angular separation
+/// thresholds (0.01 degrees in the example).
 ///
 /// The goal of the validation algorithm is to infer result row locality for
-/// all table references in the query. If we can do this, then we've proven
-/// that results from all the table references are in the same partition or
-/// its overlap, i.e. that a Qserv worker need never consult with comrades to
-/// evaluate its share of query evaluation work.
+/// all table references in the query. It attempts to do this by first assuming
+/// that all result rows for some initial vertex (table reference) V belong to
+/// some partition. (Note that if there are any references to partitioned tables
+/// in a query, then we must refrain from using overlap for at least one of
+/// them to avoid duplicate result rows). The algorithm then uses the incident
+/// graph edges to deduce that result rows from adjacent vertices have the same
+/// partition, or lie in its overlap. The same process is repeated on the
+/// immediately adjacent vertices to reach new graph vertices, and so on, until
+/// no new vertices are reachable. If all the vertices in the graph were
+/// visited and shown have the required locality with V, then we know that a
+/// Qserv worker need never consult with comrades to perform its share of query
+/// evaluation work.
 ///
-/// Note that if there is a path between two vertices U and V, we know that
-/// the partitioning positions of the rows from U are within distance Σα
-/// of V (and vice-versa), where Σα is the sum of angular separations for the
-/// edges on the path between them. If there is more than one possible path
-/// between U and V, then we can say that their rows are separated by at most
-/// min(Σα) along any path between them.
+/// But how exactly are the edges used to infer partition locality? Well, an
+/// edge tagged with angular separation α means that rows from adjacent
+/// vertices are no more than α degrees apart (which is less than the partition
+/// overlap). Because equality predicates say that rows from two vertices have
+/// the same partitioning position, α = 0 for the corresponding edges. So if
+/// there is a path between two vertices U and V, we know that the partitioning
+/// positions of the rows from U are within distance Σα of V, where Σα is the
+/// sum of angular separations for the edges on the path between them. If there
+/// is more than one possible path between U and V, then we can say that their
+/// rows are separated by at most min(Σα) along any path between them. If
+/// min(Σα) is not more than the partition overlap, then U and V have the
+/// required locality.
 ///
-/// If there is a pair of vertices with no path between them, then the graph
-/// is disconnected and we will never be able to infer locality of results
-/// for all table references. In other words, Qserv must assume that it cannot
-/// evaluate the query using only worker-local data and must report an error
-/// back to the user.
-///
-/// At a high level, the validation algorithm operates as follows:
-///
-/// 1. First we pick a graph vertex for which no overlap will be used. Note
-///    that if there are any references to partitioned tables in a query, then
-///    we must refrain from using overlap for at least one of them to avoid
-///    duplicate result rows. Given a partition P, the angular separation of
-///    a result row from this table reference to P is 0.
-///
-///    The rows for a vertex adjacent to the initial vertex will be within
-///    angular separation α of P, where α is the angular separation threshold
-///    of the edge between them (α=0 for edges corresponding to admissible
-///    equality predicates).
-///
-/// 2. We recursively visit adjacent vertices, all the while summing edge
-///    angular separation thresholds to obtain a minimum required overlap
-///    for each vertex encountered.
-///
-/// If all vertices were visited and have required overlap less than or equal
-/// to the available overlap for the underlying table, then the query is
-/// evaluable. Note in passing that the graph traversal identifies which
-/// vertices have non-zero required overlap, which is critical information
-/// for the query rewriting stage (described in more detail below).
+/// On the other hand, if there is no path between U and V, then the graph is
+/// disconnected and we will never be able to infer locality of results for all
+/// table references. In that case, Qserv must assume that it cannot evaluate
+/// the query using only worker-local data and must report an error back to the
+/// user.
 ///
 /// If the validation algorithm fails to prove partition locality for a
 /// particular choice of initial vertex, we try again with a different initial
-/// vertex. If no choice of initial vertex leads to a locality proof, the input
-/// query is not evaluable, and an error is returned to the user.
+/// vertex. If no choice of initial vertex V leads to a locality proof, the
+/// input query is not evaluable, and an error is returned to the user. Note in
+/// passing that since a locality proof computes min(Σα) to every graph vertex
+/// from V, it also identifies the table references requiring overlap (those
+/// with min(Σα) > 0). This is critical information for the query rewriting
+/// stage, described in more detail later.
 ///
 /// Consider the operation of the algorithm on the following query:
 ///
@@ -310,7 +306,7 @@
 /// which has required overlap 0.3 (= 0.1 + 0.2), which is greater than the
 /// partition overlap. In other words, the query is not evaluable starting
 /// from D₁. So, we start from D₂ instead. We visit adjacent vertices D₁
-/// and D₃ and determine that their required overlap is 0.1 and 0.2. Both
+/// and D₃ and determine that their required overlaps are 0.1 and 0.2. Both
 /// are under the partition overlap, and all vertices were visited, so we
 /// have produced a locality proof. The query can therefore be parallelized
 /// by running the equivalent of
@@ -342,16 +338,16 @@
 ///     C₁ <-------------------> M₁ <------> M₂ <-------------------> C₂
 ///         c1.dirId = m.dir1Id       0.25       m.dir2Id = c2.dirId
 ///
-/// For now, the validation algorithm never starts with vertices for match
-/// tables. Walking through the validation algorithm steps again, we see that
+/// For now, the validation algorithm never starts with match table vertices.
+/// Walking through the validation algorithm steps again, we see that
 /// from initial vertex C₁ we visit M₁ and get a required overlap of 0 (from
 /// the equi-join predicate). From M₁ we jump to M₂ and obtain a required
 /// overlap of 0.25 degrees (from the spatial edge). Since C₂ is linked to
 /// M₂ via an equality predicate, it has the same required overlap of 0.25
 /// degrees.
 ///
-/// Now because overlap isn't stored for child tables, that means the query
-/// isn't evaluable starting from C₁. We repeat the graph traversal and start
+/// Now because overlap isn't stored for child tables, that means the query is
+/// not evaluable starting from C₁. So we repeat the graph traversal and start
 /// from C₂ instead, concluding that the required overlap for C₁, also a
 /// child table, is 0.25 degrees. Again the query isn't evaluable. Since we
 /// cannot produce a locality proof from any starting vertex, we must report
