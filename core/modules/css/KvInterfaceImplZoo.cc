@@ -45,6 +45,9 @@
 #include <stdexcept>
 #include <string.h> // for memset
 
+// Third-party headers
+#include <boost/thread.hpp>
+
 // Local headers
 #include "css/CssError.h"
 #include "log/Logger.h"
@@ -170,7 +173,7 @@ KvInterfaceImplZoo::create(string const& key, string const& value) {
             return;
         }
 #ifdef NEWLOG
-        LOGF_WARN("zoo_create failed (err:%1%), reconnecting" % rc)
+        LOGF_WARN("zoo_create failed (err:%1%), reconnecting" % rc);
 #else
         LOGGER_WRN << "zoo_create failed (err:" << rc << "), "
                    << "reconnecting" << endl;
@@ -256,8 +259,7 @@ KvInterfaceImplZoo::_get(string const& key,
             return defaultValue;
         }
 #ifdef NEWLOG
-        LOGF_WARN("zoo_get failed (err:%1%), key: %2%, reconnecting" %
-                  rc, key)
+        LOGF_WARN("zoo_get failed (err:%1%), key: %2%, reconnecting" % rc % key);
 #else
         LOGGER_WRN << "zoo_get failed (err:" << rc << "), key: "
                    << key << ", reconnecting" << endl;
