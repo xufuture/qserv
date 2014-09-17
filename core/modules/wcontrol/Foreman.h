@@ -61,9 +61,6 @@ namespace lsst {
 namespace qserv {
 namespace wbase {
     class MsgProcessor;
-}
-namespace wlog {
-    class WLogger;
 }}} // End of forward declarations
 
 namespace lsst {
@@ -113,7 +110,7 @@ protected:
 };
 
     Foreman::Ptr
-    newForeman(Foreman::Scheduler::Ptr s, boost::shared_ptr<wlog::WLogger> log);
+    newForeman(Foreman::Scheduler::Ptr s);
 
 }}}  // namespace lsst::qserv::wcontrol
 
