@@ -26,8 +26,11 @@
 #include <cassert>
 #include <iostream>
 #include <string>
+#include <stdlib.h>
+#include <unistd.h>
 
 // Third-party headers
+#include "lsst/log/Log.h"
 #include "XProtocol/XProtocol.hh"
 #include "XrdSsi/XrdSsiLogger.hh"
 
@@ -36,31 +39,15 @@
 #include "wbase/Base.h"
 #include "wconfig/Config.h"
 #include "wcontrol/Service.h"
-#include "wlog/WLogger.h"
+#include "wlog/XrootdAppender.h"
 #include "wpublish/ChunkInventory.h"
 #include "xrdfs/XrdName.h"
 #include "xrdsvc/SsiSession.h"
 
+
+
 class XrdPosixCallBack; // Forward.
 
-
-namespace {
-using lsst::qserv::wlog::WLogger;
-
-class XrdSsiPrinter : public WLogger::Printer {
-public:
-    /// Takes ownership of XrdSsiLogger instance.
-    XrdSsiPrinter(XrdSsiLogger* log) : _ssiLog(log) {}
-
-    virtual WLogger::Printer& operator()(char const* s) {
-        //std::cerr << "Qserv " << s << std::endl;
-        _ssiLog->Msgf("Qserv", s);
-        return *this;
-    }
-    boost::shared_ptr<XrdSsiLogger> _ssiLog;
-};
-
-} // anonymous namespace
 
 namespace lsst {
 namespace qserv {
@@ -76,10 +63,8 @@ boost::shared_ptr<sql::SqlConnection> makeSqlConnection() {
 
 
 SsiService::SsiService(XrdSsiLogger* log) {
-    boost::shared_ptr<lsst::qserv::wlog::WLogger::Printer>
-        p(new XrdSsiPrinter(log));
-    _log.reset(new lsst::qserv::wlog::WLogger(p));
-    _log->info("SsiService starting..");
+    LOG_INFO("SsiService starting...");
+
     _configure();
     _initInventory();
     _setupResultPath();
@@ -87,27 +72,23 @@ SsiService::SsiService(XrdSsiLogger* log) {
     if(!_setupScratchDb()) {
         throw "Couldn't setup scratch db"; // TODO: exception
     }
-    _service.reset(new wcontrol::Service(_log));
+    _service.reset(new wcontrol::Service());
 
 }
 
 SsiService::~SsiService() {
-    _log->info("SsiService dying.");
+    LOG_INFO("SsiService dying.");
 }
 
 bool
 SsiService::Provision(XrdSsiService::Resource* r,
                       unsigned short timeOut) { // Step 2
-    std::ostringstream os;
-    os << "Got provision call where rName is:"
-       << r->rName;
-    _log->info(os.str());
+    LOGF_INFO("Got provision call where rName is: %1%" % r->rName);
 
     XrdSsiSession* session = new SsiSession(
         r->rName,
         _chunkInventory->newValidator(),
-        _service->getProcessor(),
-        _log);
+        _service->getProcessor());
     r->ProvisionDone(session); // Step 3: trigger client-side ProvisionDone()
     return true;
 }
@@ -116,11 +97,11 @@ void SsiService::_initInventory() {
     xrdfs::XrdName x;
     boost::shared_ptr<sql::SqlConnection> conn = makeSqlConnection();
     assert(conn);
-    _chunkInventory.reset(new wpublish::ChunkInventory(x.getName(), *_log, conn));
+    _chunkInventory.reset(new wpublish::ChunkInventory(x.getName(), conn));
     std::ostringstream os;
     os << "Paths exported: ";
     _chunkInventory->dbgPrint(os);
-    _log->info(os.str());
+    LOGF_INFO(os.str());
 }
 
 void SsiService::_setupResultPath() {
@@ -130,8 +111,7 @@ void SsiService::_setupResultPath() {
 
 void SsiService::_configure() {
     if(!wconfig::getConfig().getIsValid()) {
-        std::string msg("Configuration invalid: "
-                        + wconfig::getConfig().getError());
+        LOGF_ERROR("Configuration invalid: %1%" % wconfig::getConfig().getError());
         throw "XrdfsConfigError, should be exception";
     }
 }
@@ -147,17 +127,14 @@ bool SsiService::_setupScratchDb() {
     }
     sql::SqlErrorObject errObj;
     std::string dbName = wconfig::getConfig().getString("scratchDb");
-    _log->info((Pformat("Cleaning up scratchDb: %1%.")
-                % dbName).str());
+    LOGF_INFO("Cleaning up scratchDb: %1%." % dbName);
     if(!conn->dropDb(dbName, errObj, false)) {
-        _log->error((Pformat("Cfg error! couldn't drop scratchDb: %1% %2%.")
-                     % dbName % errObj.errMsg()).str());
+        LOGF_ERROR("Cfg error! couldn't drop scratchDb: %1% %2%." % dbName % errObj.errMsg());
         return false;
     }
     errObj.reset();
     if(!conn->createDb(dbName, errObj, true)) {
-        _log->error((Pformat("Cfg error! couldn't create scratchDb: %1% %2%.")
-                     % dbName % errObj.errMsg()).str());
+        LOGF_ERROR("Cfg error! couldn't create scratchDb: %1% %2%." % dbName % errObj.errMsg());
         return false;
     }
     return true;
