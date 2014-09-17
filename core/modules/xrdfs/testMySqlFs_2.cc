@@ -35,12 +35,12 @@
 #include "boost/shared_ptr.hpp"
 #include "XrdSys/XrdSysError.hh"
 #include "XrdSys/XrdSysLogger.hh"
+#include "lsst/log/Log.h"
 
 // Local headers
 #include "util/StringHash.h"
 #include "wcontrol/ResultTracker.h"
 #include "wdb/QueryRunner.h"
-#include "wlog/WLogger.h"
 #include "xrdfs/MySqlFsFile.h"
 
 // Boost unit test header
@@ -50,9 +50,7 @@
 namespace test = boost::test_tools;
 using boost::make_shared;
 
-boost::shared_ptr<lsst::qserv::wlog::WLogger> myLog =
-    make_shared<lsst::qserv::wlog::WLogger>();
-
+LOG_LOGGER myLog = LOG_GET("test");
 
 // For chunk 9980, subchunks 1,3 (tuson26 right now)
 std::string queryNonMagic =

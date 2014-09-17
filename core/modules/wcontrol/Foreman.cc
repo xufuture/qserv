@@ -33,12 +33,12 @@
 #include <boost/make_shared.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
+#include "lsst/log/Log.h"
 
 // Local headers
 #include "wbase/Base.h"
 #include "wbase/MsgProcessor.h"
 #include "wdb/QueryRunner.h"
-#include "wlog/WLogger.h"
 #include "wsched/FifoScheduler.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ namespace wcontrol {
 ////////////////////////////////////////////////////////////////////////
 class ForemanImpl : public Foreman {
 public:
-    ForemanImpl(Scheduler::Ptr s, wlog::WLogger::Ptr log);
+    ForemanImpl(Scheduler::Ptr s);
     virtual ~ForemanImpl();
 
     bool squashByHash(std::string const& hash);
@@ -84,7 +84,7 @@ public:
         RunnerMgr& _rm;
         wcontrol::Task::Ptr _task;
         bool _isPoisoned;
-        wlog::WLogger::Ptr _log;
+        LOG_LOGGER _log;
     };
     // For use by runners.
     class RunnerMgr {
@@ -96,7 +96,7 @@ public:
         void reportStart(wcontrol::Task::Ptr t);
         void signalDeath(Runner* r);
         wcontrol::Task::Ptr getNextTask(Runner* r, wcontrol::Task::Ptr previous);
-        wlog::WLogger::Ptr getLog();
+        LOG_LOGGER getLog();
         bool squashByHash(std::string const& hash);
 
     private:
@@ -117,7 +117,7 @@ private:
     Scheduler::Ptr _scheduler;
     RunnerDeque _runners;
     boost::scoped_ptr<RunnerMgr> _rManager;
-    wlog::WLogger::Ptr _log;
+    LOG_LOGGER _log;
 
     TaskQueuePtr _running;
 };
@@ -125,11 +125,11 @@ private:
 // Foreman factory function
 ////////////////////////////////////////////////////////////////////////
 Foreman::Ptr
-newForeman(Foreman::Scheduler::Ptr sched, wlog::WLogger::Ptr log) {
+newForeman(Foreman::Scheduler::Ptr sched) {
     if(!sched) {
         sched.reset(new wsched::FifoScheduler());
     }
-    ForemanImpl::Ptr fmi(new ForemanImpl(sched, log));
+    ForemanImpl::Ptr fmi(new ForemanImpl(sched));
     return fmi;;
 }
 
@@ -157,9 +157,7 @@ ForemanImpl::RunnerMgr::registerRunner(Runner* r, wcontrol::Task::Ptr t) {
         _f._runners.push_back(r);
     }
 
-    std::ostringstream os;
-    os << "Registered runner " << (void*)r;
-    _f._log->debug(os.str());
+    LOGF(_f._log, LOG_LVL_DEBUG, "Registered runner %1%" % (void*)r);
     _reportStartHelper(t);
 }
 
@@ -177,9 +175,7 @@ ForemanImpl::RunnerMgr::reportComplete(wcontrol::Task::Ptr t) {
         bool popped = popFrom(*_f._running, t);
         assert(popped);
     }
-    std::ostringstream os;
-    os << "Finished task " << *t;
-    _f._log->debug(os.str());
+    LOGF(_f._log, LOG_LVL_DEBUG, "Finished task %1%" % *t);
     _taskWatcher.markFinished(t);
 }
 
@@ -194,9 +190,7 @@ ForemanImpl::RunnerMgr::_reportStartHelper(wcontrol::Task::Ptr t) {
         boost::lock_guard<boost::mutex> lock(_f._runnersMutex);
         _f._running->push_back(t);
     }
-    std::ostringstream os;
-    os << "Started task " << *t;
-    _f._log->debug(os.str());
+    LOGF(_f._log, LOG_LVL_DEBUG, "Started task %1%" % *t);
     _taskWatcher.markStarted(t);
 }
 
@@ -226,7 +220,7 @@ ForemanImpl::RunnerMgr::getNextTask(Runner* r, wcontrol::Task::Ptr previous) {
     return tq->front();
 }
 
-wlog::WLogger::Ptr
+LOG_LOGGER
 ForemanImpl::RunnerMgr::getLog() {
     return _f._log;
 }
@@ -278,9 +272,7 @@ void ForemanImpl::Runner::operator()() {
     while(!_isPoisoned) {
         // Run my task.
         qr = _rm.newQueryRunner(_task);
-        std::stringstream ss;
-        ss << "Runner running " << *_task;
-        _log->info(ss.str());
+        LOGF(_log, LOG_LVL_INFO, "Runner running %1%" % *_task);
         qr->actOnce();
         if(_isPoisoned) break;
         // Request new work from the manager
@@ -311,16 +303,8 @@ public:
 ////////////////////////////////////////////////////////////////////////
 // ForemanImpl
 ////////////////////////////////////////////////////////////////////////
-ForemanImpl::ForemanImpl(Scheduler::Ptr s,
-                         wlog::WLogger::Ptr log)
-    : _scheduler(s), _running(new TaskQueue()) {
-    if(!log) {
-        // Make basic logger.
-        _log.reset(new wlog::WLogger());
-    } else {
-        _log.reset(new wlog::WLogger(log));
-        _log->setPrefix("Foreman:");
-    }
+ForemanImpl::ForemanImpl(Scheduler::Ptr s)
+    : _scheduler(s), _log(LOG_GET("Foreman")), _running(new TaskQueue()) {
     _rManager.reset(new RunnerMgr(*this));
     assert(s); // Cannot operate without scheduler.
 

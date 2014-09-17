@@ -25,6 +25,7 @@
 
 // Third party headers
 #include <boost/thread/mutex.hpp>
+#include "lsst/log/Log.h"
 
 // Local headers
 #include "wcontrol/Foreman.h"
@@ -32,9 +33,6 @@
 // Forward declarations
 namespace lsst {
 namespace qserv {
-namespace wlog {
-    class WLogger;
-}
 namespace wsched {
     class ChunkDisk;
 }}} // End of forward declarations
@@ -49,7 +47,7 @@ public:
     typedef boost::shared_ptr<ScanScheduler> Ptr;
     typedef std::vector<boost::shared_ptr<ChunkDisk> > ChunkDiskList;
 
-    ScanScheduler(boost::shared_ptr<wlog::WLogger> logger);
+    ScanScheduler();
     virtual ~ScanScheduler() {}
 
     virtual bool removeByHash(std::string const& hash);
@@ -71,7 +69,7 @@ private:
     bool _integrityHelper();
 
     ChunkDiskList _disks;
-    boost::shared_ptr<wlog::WLogger> _logger;
+    LOG_LOGGER _logger;
     boost::mutex _mutex;
     int _maxRunning;
 };

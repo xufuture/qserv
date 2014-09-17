@@ -30,6 +30,7 @@
 
 // Third-party headers
 #include <boost/shared_ptr.hpp>
+#include "lsst/log/Log.h"
 
 
 // Forward declarations
@@ -40,9 +41,6 @@ namespace sql {
 }
 namespace wbase {
     class SendChannel;
-}
-namespace wlog {
-    class WLogger;
 }}} // End of forward declarations
 
 namespace lsst {
@@ -64,13 +62,13 @@ public:
     void reset();
 
     /// Dump results to a file
-    bool performMysqldump(wlog::WLogger& log,
+    bool performMysqldump(LOG_LOGGER log,
                           std::string const& user,
                           std::string const& dumpFile,
                           sql::SqlErrorObject&);
 
     /// Dump results to a SendChannel
-    bool dumpToChannel(wlog::WLogger& log,
+    bool dumpToChannel(LOG_LOGGER log,
                        std::string const& user,
                        boost::shared_ptr<wbase::SendChannel> sc,
                        sql::SqlErrorObject&);

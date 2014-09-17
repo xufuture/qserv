@@ -23,6 +23,9 @@
 #ifndef LSST_QSERV_WSCHED_GROUPSCHEDULER_H
 #define LSST_QSERV_WSCHED_GROUPSCHEDULER_H
 
+// Third party headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "wcontrol/Foreman.h"
 #include "wsched/GroupedQueue.h"
@@ -38,7 +41,7 @@ class GroupScheduler : public wcontrol::Foreman::Scheduler {
 public:
     typedef boost::shared_ptr<GroupScheduler> Ptr;
 
-    GroupScheduler(boost::shared_ptr<wlog::WLogger> logger);
+    GroupScheduler();
     virtual ~GroupScheduler() {}
 
     virtual bool removeByHash(std::string const& hash);
@@ -63,7 +66,7 @@ private:
 
     Queue _queue;
     int _maxRunning;
-    boost::shared_ptr<wlog::WLogger> _logger;
+    LOG_LOGGER _logger;
 };
 
 }}} // namespace lsst::qserv::wsched

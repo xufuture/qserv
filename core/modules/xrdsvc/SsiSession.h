@@ -40,9 +40,6 @@ class XrdSsiService;
 
 namespace lsst {
 namespace qserv {
-namespace wlog {
-  class WLogger;
-}
 namespace xrdsvc {
   class SsiResponder;
 }}}
@@ -62,13 +59,11 @@ public:
 
     SsiSession(char const* sname,
                ValidatorPtr validator,
-               boost::shared_ptr<wbase::MsgProcessor> processor,
-               boost::shared_ptr<wlog::WLogger> log)
+               boost::shared_ptr<wbase::MsgProcessor> processor)
         : XrdSsiSession(strdup(sname), 0),
           XrdSsiResponder(this, (void *)0),
           _validator(validator),
-          _processor(processor),
-          _log(log)
+          _processor(processor)
         {}
 
     virtual ~SsiSession() {
@@ -89,7 +84,6 @@ private:
 
     ValidatorPtr _validator;
     boost::shared_ptr<wbase::MsgProcessor> _processor;
-    boost::shared_ptr<wlog::WLogger> _log;
     std::vector<boost::shared_ptr<wbase::SendChannel> > _channels;
 }; // class SsiSession
 }}} // namespace lsst::qserv::xrdsvc

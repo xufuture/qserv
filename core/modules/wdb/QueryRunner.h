@@ -38,6 +38,7 @@
 
 // Third-party headers
 #include "boost/thread.hpp" // for mutex support
+#include "lsst/log/Log.h"
 
 // Local headers
 #include "mysql/mysql.h"
@@ -56,9 +57,6 @@ namespace sql {
 namespace wdb {
     class QuerySql;
     class QueryPhyResult;
-}
-namespace wlog {
-    class WLogger;
 }}} // End of forward declarations
 
 
@@ -71,11 +69,11 @@ struct QueryRunnerArg {
 public:
     QueryRunnerArg() {}
 
-    QueryRunnerArg(boost::shared_ptr<wlog::WLogger> log_,
+    QueryRunnerArg(LOG_LOGGER log_,
                    wcontrol::Task::Ptr task_,
                    std::string overrideDump_=std::string())
         : log(log_), task(task_), overrideDump(overrideDump_) { }
-    boost::shared_ptr<wlog::WLogger> log;
+    LOG_LOGGER log;
     wcontrol::Task::Ptr task;
     std::string overrideDump;
 };
@@ -133,7 +131,7 @@ private:
     bool _poisonCleanup();
 
     // Fields
-    boost::shared_ptr<wlog::WLogger> _log;
+    LOG_LOGGER _log;
     sql::SqlErrorObject _errObj;
     std::string _user;
     boost::shared_ptr<wdb::QueryPhyResult> _pResult;

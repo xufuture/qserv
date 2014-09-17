@@ -29,6 +29,7 @@
 
 // Third-party headers
 #include <boost/shared_ptr.hpp>
+#include "lsst/log/Log.h"
 #include "XrdSfs/XrdSfsInterface.hh"
 
 
@@ -39,9 +40,6 @@ namespace lsst {
 namespace qserv {
 namespace wcontrol {
     class Service;
-}
-namespace wlog {
-    class WLogger;
 }
 namespace wpublish {
     class ChunkInventory;
@@ -57,8 +55,7 @@ class MySqlFs : public XrdSfsFileSystem {
 public:
     typedef std::set<std::string> StringSet;
 
-    MySqlFs(boost::shared_ptr<wlog::WLogger> log, XrdSysLogger* lp,
-            char const* cFileName);
+    MySqlFs(XrdSysLogger* lp, char const* cFileName);
     virtual ~MySqlFs(void);
 
 // Object Allocation Functions
@@ -117,7 +114,7 @@ private:
     char const* _localroot;
     boost::shared_ptr<wcontrol::Service> _service;
     boost::shared_ptr<wpublish::ChunkInventory> _chunkInventory;
-    boost::shared_ptr<wlog::WLogger> _log;
+    LOG_LOGGER _log;
 };
 
 }}} // namespace lsst::qserv::xrdfs

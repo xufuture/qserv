@@ -31,6 +31,7 @@
 
 // Third-party headers
 #include "XrdSfs/XrdSfsInterface.hh"
+#include "lsst/log/Log.h"
 
 // Local headers
 #include "mysql/mysql.h"
@@ -76,7 +77,7 @@ public:
 /// in the "file".
 class MySqlFsFile : public XrdSfsFile {
 public:
-    MySqlFsFile(boost::shared_ptr<wlog::WLogger> log, char const* user = 0,
+    MySqlFsFile(LOG_LOGGER log, char const* user = 0,
                 AddCallbackFunction::Ptr acf = AddCallbackFunction::Ptr(),
                 FileValidator::Ptr fv = FileValidator::Ptr(),
                 boost::shared_ptr<wcontrol::Service> service =
@@ -128,7 +129,7 @@ private:
 
     void _setDumpNameAsChunkId();
 
-    boost::shared_ptr<wlog::WLogger> _log;
+    LOG_LOGGER _log;
     AddCallbackFunction::Ptr _addCallbackF;
     FileValidator::Ptr _validator;
     int _chunkId;
