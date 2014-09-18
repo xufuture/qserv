@@ -171,13 +171,21 @@ Facade::tableIsSubChunked(string const& dbName,
 bool
 Facade::isMatchTable(std::string const& dbName,
                      std::string const& tableName) const {
+#ifdef NEWLOG
+    LOGF_INFO("isMatchTable(%1%.%2%)" % dbName % tableName);
+#else
     LOGGER_INF << "isMatchTable(" << dbName << ", " << tableName << ")" << endl;
+#endif
     _throwIfNotDbTbExists(dbName, tableName);
     string k = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName + "/match";
     string v = _kvI->get(k, "0");
     bool m = (v == "1");
+#ifdef NEWLOG
+    LOGF_INFO("%1%.%2% is %3% a match table" % dbName % tableName % (m?"":"not "));
+#else
     LOGGER_INF << "*** " << dbName << "." << tableName << " is "
                << (m ? "" : "not ") << " a match table.";
+#endif
     return m;
 }
 
@@ -324,7 +332,6 @@ Facade::getDirTable(string const& dbName, string const& tableName) const {
                << ")" << endl;
 #endif
     _throwIfNotDbTbExists(dbName, tableName);
-<<<<<<< HEAD
     string p = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName +
                     "/partitioning/dirTable";
     string ret = _kvI->get(p, "");
@@ -342,13 +349,21 @@ Facade::getDirTable(string const& dbName, string const& tableName) const {
   */
 string
 Facade::getDirColName(string const& dbName, string const& tableName) const {
+#ifdef NEWLOG
+    LOGF_INFO("getDirColName(%1%.%2%)" % dbName % tableName);
+#else
     LOGGER_INF << "*** Facade::getDirColName(" << dbName << ", " << tableName
                << ")" << endl;
+#endif
     _throwIfNotDbTbExists(dbName, tableName);
     string p = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName +
                     "/partitioning/dirColName";
     string ret = _kvI->get(p, "");
+#ifdef NEWLOG
+    LOGF_INFO("getDirColName, returning: '%1%'" % ret);
+#else
     LOGGER_INF << "Facade::getDirColName, returning: " << ret << endl;
+#endif
     return ret;
 }
 
@@ -357,8 +372,12 @@ Facade::getDirColName(string const& dbName, string const& tableName) const {
   */
 vector<string>
 Facade::getSecIndexColNames(string const& dbName, string const& tableName) const {
+#ifdef NEWLOG
+    LOGF_INFO("*** getSecIndexColNames(%1%.%2%)" % dbName % tableName);
+#else
     LOGGER_INF << "*** Facade::getSecIndexColNames(" << dbName << ", " << tableName
                << ")" << endl;
+#endif
     _throwIfNotDbTbExists(dbName, tableName);
     // TODO: we don't actually support multiple secondary indexes yet. So
     // the list of secondary index columnns is either empty, or contains
@@ -370,7 +389,11 @@ Facade::getSecIndexColNames(string const& dbName, string const& tableName) const
     if (!dc.empty()) {
         ret.push_back(dc);
     }
+#ifdef NEWLOG
+    LOGF_INFO("getSecIndexColNames, returning: [%1%]" % dc);
+#else
     LOGGER_INF << "Facade::getSecIndexColNames, returning: [" << dc << "]" << endl;
+#endif
     return ret;
 }
 
@@ -404,7 +427,11 @@ Facade::getDbStriping(string const& dbName) const {
   */
 double
 Facade::getOverlap(string const& dbName) const {
+#ifdef NEWLOG
+    LOGF_INFO("getOverlap(%1%)" % dbName);
+#else
     LOGGER_INF << "*** getOverlap(" << dbName << ")" << endl;
+#endif
     _throwIfNotDbExists(dbName);
     string v = _kvI->get(_prefix + "/DBS/" + dbName + "/partitioningId", "");
     if (v == "") {
@@ -425,8 +452,12 @@ Facade::getOverlap(string const& dbName) const {
 MatchTableParams
 Facade::getMatchTableParams(std::string const& dbName,
                             std::string const& tableName) const {
+#ifdef NEWLOG
+    LOGF_INFO("getMatchTableParams(%1%.%2%)" % dbName % tableName);
+#else
     LOGGER_INF << "*** getMatchTableParams(" << dbName << ", "
                << tableName << ")" << endl;
+#endif
     _throwIfNotDbTbExists(dbName, tableName);
     MatchTableParams p;
     string k = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName + "/match";
