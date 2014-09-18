@@ -324,7 +324,6 @@ Facade::getDirTable(string const& dbName, string const& tableName) const {
                << ")" << endl;
 #endif
     _throwIfNotDbTbExists(dbName, tableName);
-<<<<<<< HEAD
     string p = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName +
                     "/partitioning/dirTable";
     string ret = _kvI->get(p, "");
