@@ -64,12 +64,14 @@
 // System headers
 #include <cassert>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Qserv headers
 #include "ccontrol/TmpTableName.h"
 #include "ccontrol/ResultReceiver.h"
 #include "ccontrol/UserQueryError.h"
 #include "global/constants.h"
-#include "log/Logger.h"
 #include "proto/worker.pb.h"
 #include "proto/ProtoImporter.h"
 #include "qdisp/Executive.h"

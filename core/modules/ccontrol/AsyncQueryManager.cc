@@ -46,11 +46,13 @@
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "ccontrol/ConfigMap.h"
 #include "css/Facade.h"
 #include "global/stringTypes.h"
-#include "log/Logger.h"
 #include "log/msgCode.h"
 #include "rproc/TableMerger.h"
 #include "qdisp/ChunkQuery.h"

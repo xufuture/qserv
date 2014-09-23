@@ -51,13 +51,15 @@
 #include <fstream>
 #include <sstream>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "ccontrol/AsyncQueryManager.h"
 #include "ccontrol/SessionManagerAsync.h"
 #include "ccontrol/thread.h"
 #include "ccontrol/TmpTableName.h"
 #include "global/constants.h"
-#include "log/Logger.h"
 #include "obsolete/QservPath.h"
 #include "qproc/ChunkSpec.h"
 #include "qproc/QuerySession.h"

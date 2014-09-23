@@ -30,8 +30,9 @@
 // Third-party headers
 #include <boost/format.hpp>
 
-// Local headers
-#include "log/Logger.h"
+// LSST headers
+#include "lsst/log/Log.h"
+
 
 namespace lsst {
 namespace qserv {

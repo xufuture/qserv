@@ -31,8 +31,10 @@
 
 #include "parser/BoolTermFactory.h"
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "parser/PredicateFactory.h"
 #include "parser/parseTreeUtil.h"
 #include "parser/ParseException.h"

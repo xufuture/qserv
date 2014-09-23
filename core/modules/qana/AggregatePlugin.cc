@@ -32,8 +32,10 @@
 #include <string>
 #include <stdexcept>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "qana/QueryPlugin.h"
 #include "query/AggOp.h"
 #include "query/FuncExpr.h"

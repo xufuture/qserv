@@ -37,8 +37,10 @@
 // Third-party headers
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
    // parser: factories
 #include "parser/FromFactory.h"
 #include "parser/SelectListFactory.h"

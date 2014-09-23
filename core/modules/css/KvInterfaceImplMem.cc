@@ -51,9 +51,11 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "css/CssError.h"
-#include "log/Logger.h"
 
 using std::endl;
 using std::map;

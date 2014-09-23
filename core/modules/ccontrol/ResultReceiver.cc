@@ -27,8 +27,10 @@
 #include <cstring> // For memmove()
 #include <stdexcept>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Qserv headers
-#include "log/Logger.h"
 #include "rproc/TableMerger.h"
 
 namespace lsst {

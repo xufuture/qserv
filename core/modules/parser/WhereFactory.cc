@@ -37,8 +37,10 @@
 #include <iterator>
 #include <sstream>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "parser/BoolTermFactory.h"
 #include "parser/parserBase.h" // Handler base classes
 #include "parser/parseTreeUtil.h"

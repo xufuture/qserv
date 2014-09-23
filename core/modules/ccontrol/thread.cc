@@ -31,8 +31,10 @@
 #include <boost/make_shared.hpp>
 #include "XrdPosix/XrdPosixCallBack.hh"
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "rproc/TableMerger.h"
 #include "util/xrootd.h"
 #include "xrdc/xrdfile.h"

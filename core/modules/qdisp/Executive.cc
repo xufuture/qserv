@@ -42,9 +42,11 @@
 #include "XrdSsi/XrdSsiService.hh" // Resource
 #include "XrdOuc/XrdOucTrace.hh"
 
-// // Local headers
+// LSST headers
+#include "lsst/log/Log.h"
+
+// Local headers
 #include "global/ResourceUnit.h"
-#include "log/Logger.h"
 #include "log/msgCode.h"
 #include "qdisp/MessageStore.h"
 #include "qdisp/MergeAdapter.h"

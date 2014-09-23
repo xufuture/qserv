@@ -40,8 +40,10 @@
 #include <boost/make_shared.hpp>
 #include "SqlSQL2Parser.hpp" // applies several "using antlr::***".
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "parser/BoolTermFactory.h"
 #include "parser/parserBase.h"   // Handler base classes
 #include "parser/parseTreeUtil.h"

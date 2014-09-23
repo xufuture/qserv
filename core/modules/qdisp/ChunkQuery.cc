@@ -38,11 +38,13 @@
 #include <boost/thread.hpp>
 #include "XrdPosix/XrdPosixXrootd.hh"
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "ccontrol/AsyncQueryManager.h"
 #include "ccontrol/DynamicWorkQueue.h"
 #include "log/msgCode.h"
-#include "log/Logger.h"
 #include "qdisp/MessageStore.h"
 #include "util/xrootd.h"
 #include "util/StringHash.h"

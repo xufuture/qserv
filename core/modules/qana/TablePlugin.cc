@@ -45,13 +45,15 @@
 // System headers
 #include <string>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "QueryMapping.h"
 #include "QueryPlugin.h"
 #include "RelationGraph.h"
 #include "TableInfoPool.h"
 
-#include "log/Logger.h"
 #include "query/FromList.h"
 #include "query/FuncExpr.h"
 #include "query/GroupByClause.h"

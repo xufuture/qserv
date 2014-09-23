@@ -41,6 +41,9 @@
 // Third-party headers
 #include <boost/algorithm/string/predicate.hpp> // string iequal
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "query/FromList.h"
 #include "query/GroupByClause.h"
@@ -48,7 +51,6 @@
 #include "query/OrderByClause.h"
 #include "query/SelectList.h"
 #include "query/WhereClause.h"
-#include "log/Logger.h"
 
 
 ////////////////////////////////////////////////////////////////////////

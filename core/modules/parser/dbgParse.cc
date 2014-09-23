@@ -24,8 +24,10 @@
 // System headers
 #include <map>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Third-party headers
-#include "log/Logger.h"
 #include "parser/parserBase.h"
 #include "parser/parseTreeUtil.h"
 

@@ -30,8 +30,10 @@
 
 #include "parser/ValueExprFactory.h"
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "parser/ValueFactorFactory.h"
 #include "parser/ColumnRefH.h"
 #include "query/ValueExpr.h" // For ValueExpr, FuncExpr

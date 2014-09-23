@@ -29,8 +29,9 @@
 #include <iostream>
 #include <string>
 
-// Local headers
-#include "log/Logger.h"
+// LSST headers
+#include "lsst/log/Log.h"
+
 
 //#define FAKE_XRD 1
 //#define QSM_PROFILE_XRD 1

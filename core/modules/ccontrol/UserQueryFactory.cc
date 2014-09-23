@@ -26,6 +26,9 @@
 #include <cassert>
 #include <stdlib.h>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Qserv headers
 #include "ccontrol/ConfigMap.h"
 #include "ccontrol/UserQuery.h"

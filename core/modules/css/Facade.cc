@@ -39,11 +39,13 @@
 // Third-party headers
 #include <boost/lexical_cast.hpp>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "css/CssError.h"
 #include "css/KvInterfaceImplMem.h"
 #include "css/KvInterfaceImplZoo.h"
-#include "log/Logger.h"
 
 using std::endl;
 using std::map;

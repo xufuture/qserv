@@ -36,7 +36,10 @@
 #include <iostream>
 #include <sstream>
 
-#include "log/Logger.h"
+// LSST headers
+#include "lsst/log/Log.h"
+
+// Local headers
 #include "qdisp/ExecStatus.h"
 #include "qdisp/QueryRequest.h"
 #include "qdisp/QueryResource.h"

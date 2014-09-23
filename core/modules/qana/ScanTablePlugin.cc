@@ -31,8 +31,10 @@
 // No public interface
 #include "qana/QueryPlugin.h" // Parent class
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "query/ColumnRef.h"
 #include "query/FromList.h"
 #include "query/QsRestrictor.h"

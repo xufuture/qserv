@@ -34,8 +34,10 @@
 // System headers
 #include <stdexcept>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "parser/ColumnRefH.h"
 #include "parser/parseTreeUtil.h"
 #include "parser/ParseException.h"

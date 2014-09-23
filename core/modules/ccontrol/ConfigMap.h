@@ -36,9 +36,11 @@
 #include <boost/utility.hpp>
 #include <boost/lexical_cast.hpp>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "global/stringTypes.h"
-#include "log/Logger.h"
 
 namespace lsst {
 namespace qserv {

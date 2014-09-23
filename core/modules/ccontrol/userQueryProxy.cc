@@ -49,10 +49,12 @@
 #include "ccontrol/SessionManager.h"
 #include "ccontrol/userQueryProxy.h"
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "ccontrol/MissingUserQuery.h"
 #include "ccontrol/UserQuery.h"
-#include "log/Logger.h"
 #include "util/StringHash.h"
 
 namespace {

@@ -35,8 +35,10 @@
 #include <iterator>
 #include <stdexcept>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "query/Predicate.h"
 #include "query/QueryTemplate.h"
 #include "query/ValueExpr.h"

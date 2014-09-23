@@ -38,8 +38,10 @@
 // System headers
 #include <stdexcept>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "proto/worker.pb.h"
 #include "qproc/ChunkQuerySpec.h"
 #include "util/common.h"

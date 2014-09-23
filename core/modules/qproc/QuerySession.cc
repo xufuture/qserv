@@ -43,10 +43,12 @@
 // Third-party headers
 #include <antlr/NoViableAltException.hpp>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "css/Facade.h"
 #include "global/constants.h"
-#include "log/Logger.h"
 #include "parser/ParseException.h"
 #include "parser/parseExceptions.h"
 #include "parser/SelectParser.h"

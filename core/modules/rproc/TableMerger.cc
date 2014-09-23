@@ -47,8 +47,10 @@
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "rproc/SqlInsertIter.h"
 #include "sql/SqlConnection.h"
 #include "util/MmapFile.h"

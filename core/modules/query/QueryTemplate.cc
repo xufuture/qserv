@@ -37,9 +37,11 @@
 #include <iostream>
 #include <sstream>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "global/sqltoken.h" // sqlShouldSeparate
-#include "log/Logger.h"
 #include "query/ColumnRef.h"
 #include "query/TableRef.h"
 

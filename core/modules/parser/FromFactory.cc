@@ -35,8 +35,10 @@
 #include <deque>
 #include <iterator>
 
-// Package
-#include "log/Logger.h"
+// LSST headers
+#include "lsst/log/Log.h"
+
+// Local headers
 #include "parser/BoolTermFactory.h"
 #include "parser/ColumnRefH.h"
 #include "parser/ParseAliasMap.h"

@@ -32,8 +32,8 @@
 #include <errno.h>
 #include <iostream>
 
-// Local headers
-#include "log/Logger.h"
+// LSST headers
+#include "lsst/log/Log.h"
 
 
 namespace {

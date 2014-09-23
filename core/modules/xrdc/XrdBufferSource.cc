@@ -35,8 +35,10 @@
 #include <fcntl.h>
 #include <iostream>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
-#include "log/Logger.h"
 #include "xrdc/xrdfile.h"
 
 

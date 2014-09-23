@@ -33,8 +33,10 @@
 // System headers
 #include <iostream>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Qserv headers
-#include "log/Logger.h"
 #include "qdisp/ExecStatus.h"
 #include "qdisp/QueryReceiver.h"
 

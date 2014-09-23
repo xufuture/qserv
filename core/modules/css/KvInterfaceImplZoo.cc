@@ -48,9 +48,11 @@
 // Third-party headers
 #include <boost/thread.hpp>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "css/CssError.h"
-#include "log/Logger.h"
 
 using std::endl;
 using std::ostringstream;
