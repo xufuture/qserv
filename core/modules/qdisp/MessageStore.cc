@@ -43,17 +43,9 @@ namespace qdisp {
 
 void MessageStore::addMessage(int chunkId, int code, std::string const& description) {
     if (code < 0) {
-#ifdef NEWLOG
         LOGF_ERROR("Msg: %1% %2% %3%" % chunkId % code % description);
-#else
-        LOGGER_ERR << "Msg: " << chunkId << " " << code << " " << description << std::endl;
-#endif
     } else {
-#ifdef NEWLOG
         LOGF_DEBUG("Msg: %1% %2% %3%" % chunkId % code % description);
-#else
-        LOGGER_DBG << "Msg: " << chunkId << " " << code << " " << description << std::endl;
-#endif
     }
     {
         boost::lock_guard<boost::mutex> lock(_storeMutex);

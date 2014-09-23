@@ -26,23 +26,4 @@
 #ifndef LSST_QSERV_LOG_LOGGERINTERFACE_H
 #define LSST_QSERV_LOG_LOGGERINTERFACE_H
 
-// System headers
-#include <string>
-
-#define NEWLOG
-
-
-#ifndef NEWLOG
-
-namespace lsst {
-namespace qserv {
-namespace log {
-
-void logger_threshold(int severity);
-void logger(int severity, std::string const& s);
-
-}}} // namespace lsst::qserv::log
-
-#endif // NEWLOG
-
 #endif // LSST_QSERV_LOG_LOGGERINTERFACE_H

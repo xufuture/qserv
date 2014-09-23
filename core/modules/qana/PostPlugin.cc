@@ -147,11 +147,7 @@ PostPlugin::applyPhysical(QueryPlugin::Plan& p,
             p.stmtMerge.setOrderBy(_orderBy);
         }
     } else { // For non-chunked queries
-#ifdef NEWLOG
         LOGF_INFO("Query is non-chunked");
-#else
-        LOGGER_INF << "Query is non-chunked\n";
-#endif
         // Make sure orderby is in the "parallel" section (which is not
         // really parallel). No merge is needed.
         SelectStmtList::iterator i,e;

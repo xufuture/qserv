@@ -157,14 +157,7 @@ void UserQuery::submit() {
     std::ostringstream ss;
     proto::ProtoImporter<proto::TaskMsg> pi;
     int msgCount = 0;
-#ifdef NEWLOG
     LOGF_INFO("UserQuery beginning submission");
-#else
-    LOGGER_INF << "UserQuery beginning submission\n" << std::flush;
-    LOGGER_DBG << std::flush;
-    LOGGER_WRN << std::flush;
-    LOGGER_ERR << std::flush;
-#endif
     assert(_merger);
     qproc::QuerySession::Iter i;
     qproc::QuerySession::Iter e = _qSession->cQueryEnd();
@@ -199,18 +192,10 @@ QueryState UserQuery::join() {
     bool successful = _executive->join();
     if(successful) {
         _merger->finalize();
-#ifdef NEWLOG
         LOGF_INFO("Joined everything (success)");
-#else
-        LOGGER_INF << "Joined everything (success)" << std::endl;
-#endif
         return SUCCESS;
     } else {
-#ifdef NEWLOG
         LOGF_ERROR("Joined everything (failure!)");
-#else
-        LOGGER_ERR << "Joined everything (failure!)" << std::endl;
-#endif
         return ERROR;
     }
 }
@@ -228,11 +213,7 @@ void UserQuery::discard() {
         throw UserQueryError("merger unfinished, cannot discard");
     }
     _merger.reset();
-#ifdef NEWLOG
     LOGF_INFO("Discarded UserQuery(%1%)" % _sessionId);
-#else
-    LOGGER_INF << "Discarded UserQuery(" << _sessionId << ")" << std::endl;
-#endif
 }
 
 bool UserQuery::containsDb(std::string const& dbName) const {

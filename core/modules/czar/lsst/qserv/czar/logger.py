@@ -25,41 +25,21 @@
 # logger.py : A module with a logging interface that utilizes SWIG
 # enabled Logger class.
 
-# Toggles new, log4cxx-based logging on/off for Qserv's Python-layer
-NEWLOG = True
-
-# Package imports
-if NEWLOG:
-    # Import new logging module
-    import lsst.log as newlog
-else:
-    from lsst.qserv.czar import logger_threshold
-    from lsst.qserv.czar import logger
+# Import new logging module
+import lsst.log as newlog
 
 
 def threshold_dbg():
-    if NEWLOG:
-        newlog.setLevel("", newlog.DEBUG)
-    else:
-        logger_threshold(0)
+    newlog.setLevel("", newlog.DEBUG)
 
 def threshold_inf():
-    if NEWLOG:
-        newlog.setLevel("", newlog.INFO)
-    else:
-        logger_threshold(1)
+    newlog.setLevel("", newlog.INFO)
 
 def threshold_wrn():
-    if NEWLOG:
-        newlog.setLevel("", newlog.WARN)
-    else:
-        logger_threshold(2)
+    newlog.setLevel("", newlog.WARN)
 
 def threshold_err():
-    if NEWLOG:
-        newlog.setLevel("", newlog.ERROR)
-    else:
-        logger_threshold(3)
+    newlog.setLevel("", newlog.ERROR)
 
 def newlog_msg(level, args):
     newlog.log("", level, '%s', ' '.join(map(str, args)), depth=3)
@@ -68,26 +48,13 @@ def log_msg(level, args):
     logger(level, ' '.join(map(str, args)))
 
 def dbg(*args):
-    if NEWLOG:
-        newlog_msg(newlog.DEBUG, args)
-    else:
-        log_msg(0, args)
+    newlog_msg(newlog.DEBUG, args)
 
 def inf(*args):
-    if NEWLOG:
-        newlog_msg(newlog.INFO, args)
-    else:
-        log_msg(1, args)
+    newlog_msg(newlog.INFO, args)
 
 def wrn(*args):
-    if NEWLOG:
-        newlog_msg(newlog.WARN, args)
-    else:
-        log_msg(2, args)
+    newlog_msg(newlog.WARN, args)
 
 def err(*args):
-    if NEWLOG:
-        newlog_msg(newlog.ERROR, args)
-    else:
-        log_msg(3, args)
-
+    newlog_msg(newlog.ERROR, args)

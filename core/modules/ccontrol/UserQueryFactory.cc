@@ -138,31 +138,16 @@ void UserQueryFactory::Impl::initFacade(std::string const& cssTech,
                                         std::string const& cssConn,
                                         int timeout_msec) {
     if (cssTech == "zoo") {
-#ifdef NEWLOG
         LOGF_INFO("Initializing zookeeper-based css, with %1%, %2%msec"
                   % cssConn % timeout_msec);
-#else
-        LOGGER_INF << "Initializing zookeeper-based css, with "
-                   << cssConn << ", " << timeout_msec << std::endl;
-#endif
         facade = css::FacadeFactory::createZooFacade(cssConn, timeout_msec);
 //        _qSession.reset(new qproc::QuerySession(cssFPtr));
     } else if (cssTech == "mem") {
-#ifdef NEWLOG
         LOGF_INFO("Initializing memory-based css, with %1%" % cssConn);
-#else
-        LOGGER_INF << "Initializing memory-based css, with "
-                   << cssConn << std::endl;
-#endif
         facade = css::FacadeFactory::createMemFacade(cssConn);
 //        _qSession.reset(new qproc::QuerySession(cssFPtr));
     } else {
-#ifdef NEWLOG
         LOGF_ERROR("Unable to determine css technology, check config file.");
-#else
-        LOGGER_ERR << "Unable to determine css technology, check config file."
-                   << std::endl;
-#endif
 //        throw ConfigError("Invalid css technology, check config file.");
 // FIXME
     }

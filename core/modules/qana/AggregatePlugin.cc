@@ -242,18 +242,10 @@ AggregatePlugin::applyPhysical(QueryPlugin::Plan& p,
     std::for_each(vlist->begin(), vlist->end(), ca);
     query::QueryTemplate qt;
     pList.renderTo(qt);
-#ifdef NEWLOG
     // LOGF_INFO("pass: %1%" % qt.dbgStr());
-#else
-    // LOGGER_INF << "pass: " << qt.dbgStr() << std::endl;
-#endif
     qt.clear();
     mList.renderTo(qt);
-#ifdef NEWLOG
     // LOGF_INFO("fixup: %1%" % qt.dbgStr());
-#else
-    // LOGGER_INF << "fixup: " << qt.dbgStr() << std::endl;
-#endif
     // Also need to operate on GROUP BY.
     // update context.
     if(m.hasAggregate()) { context.needsMerge = true; }

@@ -61,11 +61,7 @@ public:
         if(i != _m.end()) {
             return i->second;
         } else {
-#ifdef NEWLOG
             LOGF_DEBUG("%1%" % errorMsg);
-#else
-            LOGGER_DBG << errorMsg << std::endl;
-#endif
             return defaultValue;
         }
     }

@@ -72,21 +72,13 @@ Semaphore TransactionCallable::_sema(120);
 
 void TransactionCallable::operator()() {
     using namespace lsst::qserv::xrdc;
-#ifdef NEWLOG
     LOGF_INFO("%1% in flight" % _spec.path);
-#else
-    LOGGER_INF << _spec.path << " in flight\n";
-#endif
     _result = xrdOpenWriteReadSaveClose(_spec.path.c_str(),
                                         _spec.query.c_str(),
                                         _spec.query.length(),
                                         _spec.bufferSize,
                                         _spec.savePath.c_str());
-#ifdef NEWLOG
     LOGF_INFO("%1% finished" % _spec.path);
-#else
-    LOGGER_INF << _spec.path << " finished\n";
-#endif
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -134,32 +126,17 @@ void Manager::run() {
         thisSize = _threads.size();
         if(thisSize > _highWaterThreads) {
             lastReap = thisReap;
-#ifdef NEWLOG
             LOGF_INFO("Reaping, %1% dispatched." % inFlight);
-#else
-            LOGGER_INF << "Reaping, "<< inFlight << " dispatched.\n";
-#endif
             _joinOne();
             time(&thisReap);
             reapSize = _threads.size();
-#ifdef NEWLOG
             LOGF_INFO("%1% Done reaping, %2% still flying, completion rate=%3%"
                       % thisReap % reapSize
                       % ((1.0+thisSize - reapSize)*1.0/(1.0+thisReap - lastReap)));
-#else
-            LOGGER_INF << thisReap << " Done reaping, " << reapSize
-                       << " still flying, completion rate="
-                       << (1.0+thisSize - reapSize)*1.0/(1.0+thisReap - lastReap)
-                       << "\n"  ;
-#endif
         }
         if(_threads.size() > 1000) break; // DEBUG early exit.
     }
-#ifdef NEWLOG
     LOGF_INFO("Joining");
-#else
-    LOGGER_INF << "Joining\n";
-#endif
     std::for_each(_threads.begin(), _threads.end(),
                   joinBoostThread<boost::shared_ptr<boost::thread> >());
 }
@@ -284,19 +261,11 @@ void QueryManager::joinEverything() {
     time_t now;
     time_t last;
     while(1) {
-#ifdef NEWLOG
         LOGF_INFO("Threads left:%1%" % _threads.size());
-#else
-        LOGGER_INF << "Threads left:" << _threads.size() << std::endl;
-#endif
         time(&last);
         _tryJoinAll();
         time(&now);
-#ifdef NEWLOG
         LOGF_INFO("Joinloop took:%1%" % (now-last));
-#else
-        LOGGER_INF << "Joinloop took:" << now-last << std::endl;
-#endif
         if(_threads.size() > 0) {
             sleep(1);
         } else {

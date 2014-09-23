@@ -103,11 +103,7 @@ ValueFactorFactory::newFactor(antlr::RefAST a) {
         a = a->getFirstChild(); // FACTOR is a parent placeholder element
     }
     eType = a->getType();
-#ifdef NEWLOG
     LOGF_DEBUG("new ValueFactor: %1%" % tokenText(a));
-#else
-    LOGGER_DBG << "new ValueFactor: " << tokenText(a) << std::endl;
-#endif
     switch(a->getType()) {
     case SqlSQL2TokenTypes::COLUMN_REF:
         a = a->getFirstChild();
@@ -142,12 +138,7 @@ ValueFactorFactory::_newColumnFactor(antlr::RefAST t) {
     boost::shared_ptr<query::ValueFactor> vt(new query::ValueFactor());
     boost::shared_ptr<query::FuncExpr> fe;
     RefAST last;
-#ifdef NEWLOG
     // LOGF_INFO("colterm: %1% %2%" % t->getType() % t->getText());
-#else
-    // LOGGER_INF << "colterm: " << t->getType() << " "
-    //           << t->getText() << std::endl;
-#endif
     int tType = t->getType();
     switch(tType) {
     case SqlSQL2TokenTypes::COLUMN_REF:
@@ -171,13 +162,8 @@ ValueFactorFactory::_newColumnFactor(antlr::RefAST t) {
         }
         return vt;
     case SqlSQL2TokenTypes::FUNCTION_SPEC:
-#ifdef NEWLOG
         // LOGF_INFO("col child (fct): %1% %2%"
         //           % child->getType() % child->getText());
-#else
-        // LOGGER_INF << "col child (fct): " << child->getType() << " "
-        //            << child->getText() << std::endl;
-#endif
         fe.reset(new query::FuncExpr());
         last = walkToSiblingBefore(child, SqlSQL2TokenTypes::LEFT_PAREN);
         fe->name = getSiblingStringBounded(child, last);
@@ -190,13 +176,8 @@ ValueFactorFactory::_newColumnFactor(antlr::RefAST t) {
             current.get(); current = current->getNextSibling()) {
             // Should be a * or a value expr.
             boost::shared_ptr<query::ValueFactor> pvt;
-#ifdef NEWLOG
             // LOGF_INFO("fctspec param: %1% %2%" 
             //           % current->getType() % current->getText());
-#else
-            // LOGGER_INF << "fctspec param: " << current->getType() << " "
-            //            << current->getText() << std::endl;
-#endif
             switch(current->getType()) {
             case SqlSQL2TokenTypes::VALUE_EXP:
                 pvt = newFactor(current->getFirstChild());
@@ -228,11 +209,7 @@ ValueFactorFactory::_newSetFctSpec(antlr::RefAST expr) {
     assert(_columnRefNodeMap);
     // ColumnRefNodeMap& cMap = *_columnRefNodeMap; // for gdb
     boost::shared_ptr<query::FuncExpr> fe(new query::FuncExpr());
-#ifdef NEWLOG
     // LOGF_INFO("set_fct_spec %1%" % walkTreeString(expr));
-#else
-    // LOGGER_INF << "set_fct_spec " << walkTreeString(expr) << std::endl;
-#endif
     RefAST nNode = expr->getFirstChild();
     if(!nNode.get()) {
         throw ParseException("Missing name node of function spec", expr);

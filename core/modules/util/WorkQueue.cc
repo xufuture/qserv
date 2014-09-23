@@ -136,20 +136,12 @@ void
 WorkQueue::signalDeath(Runner* r) {
     boost::lock_guard<boost::mutex> lock(_runnersMutex);
     RunnerDeque::iterator end = _runners.end();
-#ifdef NEWLOG
     // LOGF_INFO("%1% dying" % (void*) r);
-#else
-    // LOGGER_INF << (void*) r << " dying" << std::endl;
-#endif
     for(RunnerDeque::iterator i = _runners.begin(); i != end; ++i) {
         if(*i == r) {
             _runners.erase(i);
             _runnersEmpty.notify_all();
-#ifdef NEWLOG
             // LOGF_INFO("%1% runners left" % _runners.size());
-#else
-            // LOGGER_INF << _runners.size() << " runners left" << std::endl;
-#endif
             return;
         }
     }

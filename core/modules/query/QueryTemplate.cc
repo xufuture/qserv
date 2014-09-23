@@ -213,17 +213,10 @@ QueryTemplate::optimize() {
     }
     em.pack();
     _entries.swap(em._entries);
-#ifdef NEWLOG
     //LOGF_DEBUG("merged %1% entries to %2%"
     //           % _entries.size() % em._entries.size());
     //LOGF_DEBUG("was: %1%" % outputString(_elements));
     //LOGF_DEBUG("now: %1%" % outputString(em._entries));
-#else
-    //LOGGER_DBG << "merged " << _entries.size() << " entries to "
-    //           << em._entries.size() << std::endl;
-    //LOGGER_DBG << "was: " << outputString(_elements) << std::endl;
-    //LOGGER_DBG << "now: " << outputString(em._entries) << std::endl;
-#endif
 }
 
 }}} // namespace lsst::qserv::query

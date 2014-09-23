@@ -49,21 +49,12 @@ namespace qdisp {
 /// May not throw exceptions because the calling code comes from
 /// xrootd land and will not catch any exceptions.
 void QueryResource::ProvisionDone(XrdSsiSession* s) { // Step 3
-#ifdef NEWLOG
     LOGF_INFO("Provision done");
-#else
-    LOGGER_INF << "Provision done\n";
-#endif
     if(!s) {
         // Check eInfo in resource for error details
         int code;
         char const* msg = eInfo.Get(code);
-#ifdef NEWLOG
         LOGF_ERROR("Error provisioning, msg=%1% code=%2%" % msg % code);
-#else
-        LOGGER_ERR << "Error provisioning, msg=" << msg << " code="
-                   << code << "\n";
-#endif
         _status.report(ExecStatus::PROVISION_NACK, code, std::string(msg));
         // FIXME code may be wrong.
         _receiver->errorFlush(std::string(msg), code);
@@ -83,11 +74,7 @@ void QueryResource::ProvisionDone(XrdSsiSession* s) { // Step 3
         int code;
         char const* msg = eInfo.Get(code);
         _status.report(ExecStatus::REQUEST_ERROR, code, msg);
-#ifdef NEWLOG
         LOGF_ERROR("Failed to send request %1%" % *_request);
-#else
-        LOGGER_ERR << "Failed to send request " << *_request << std::endl;
-#endif
         delete _request;
         _request = 0;
         // Retry the request.

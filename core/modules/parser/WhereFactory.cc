@@ -69,21 +69,13 @@ public:
         RefAST current;
         RefAST nextCache;
         Iter operator++(int) {
-#ifdef NEWLOG
             // LOGF_INFO("advancingX..: %1%" % current->getText());
-#else
-            // LOGGER_INF << "advancingX..: " << current->getText() << std::endl;
-#endif
             Iter tmp = *this;
             ++*this;
             return tmp;
         }
         Iter& operator++() {
-#ifdef NEWLOG
             // LOGF_INFO("advancing..: %1%" % current->getText());
-#else
-            // LOGGER_INF << "advancing..: " << current->getText() << std::endl;
-#endif
             Check c;
             if(nextCache.get()) {
                 current = nextCache;
@@ -166,15 +158,11 @@ public:
     FromWhereH() {}
     virtual ~FromWhereH() {}
     virtual void operator()(antlr::RefAST fw) {
-#ifdef NEWLOG
         if (LOG_CHECK_INFO()) {
             std::stringstream ss;
             printDigraph("fromwhere", ss, fw);
             LOGF_INFO("fromwhere %1%" % ss.str());
         }
-#else
-        printDigraph("fromwhere", LOG_STRM(Info), fw);
-#endif
     }
 };
 ////////////////////////////////////////////////////////////////////////
@@ -205,15 +193,9 @@ void
 WhereFactory::_import(antlr::RefAST a) {
     _clause.reset(new query::WhereClause());
     _clause->_restrs.reset(new query::QsRestrictor::List);
-#ifdef NEWLOG
     // LOGF_INFO("WHERE starts with: %1% (%2%)" 
     //           % a->getText() % a->getType());
     // LOGF_INFO("WHERE indented: %1%" % walkIndentedString(a));
-#else
-    // LOGGER_INF << "WHERE starts with: " << a->getText()
-    //            << " (" << a->getType() << ")" << std::endl;
-    // LOGGER_INF << "WHERE indented: " << walkIndentedString(a) << std::endl;
-#endif
     if(a->getType() != SqlSQL2TokenTypes::SQL2RW_where) {
         throw ParseException("Bug: _import expected WHERE node", a);
     }
@@ -245,25 +227,15 @@ WhereFactory::_addQservRestrictor(antlr::RefAST a) {
     // for(ParamGenerator::Iter it = pg.begin();
     //     it != pg.end();
     //     ++it) {
-    // #ifdef NEWLOG
     //     LOGF_INFO("iterating: %1%" % *it);
-    // #else
-    //     LOGGER_INF << "iterating:" << *it << std::endl;
-    // #endif
     // }
     std::copy(pg.begin(), pg.end(), std::back_inserter(params));
-#ifdef NEWLOG
     if (LOG_CHECK_INFO()) {
         std::stringstream ss;
         std::copy(params.begin(), params.end(),
                   std::ostream_iterator<std::string>(ss, ", "));
         LOGF_INFO("Adding from %1%: %2%" % r % ss.str());
     }
-#else
-    LOGGER_INF << "Adding from " << r << " : ";
-    std::copy(params.begin(), params.end(),
-              std::ostream_iterator<std::string>(LOG_STRM(Info),", "));
-#endif
     if(!_clause->_restrs) {
         throw std::logic_error("Invalid WhereClause._restrs");
     }
@@ -307,11 +279,7 @@ WhereFactory::_addOrSibs(antlr::RefAST a) {
     }
 
     walkTreeVisit(a, p);
-#ifdef NEWLOG
     // LOGF_INFO("Adding orsibs: %1%" % p.result);
-#else
-    // LOGGER_INF << "Adding orsibs: " << p.result << std::endl;
-#endif
     // BoolTermFactory::tagPrint tp(LOG_STRM(Info), "addOr");
     // forEachSibs(a, tp);
     BoolTermFactory f(_vf);

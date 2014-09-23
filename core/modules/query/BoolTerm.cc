@@ -221,11 +221,7 @@ boost::shared_ptr<BoolTerm> BoolFactor::getReduced() {
 #if 0
         QueryTemplate qt;
         bf->renderTo(qt);
-#ifdef NEWLOG
         LOGF_DEBUG("reduced. %1%" % qt.generate());
-#else
-        LOGGER_DBG << "reduced. " << qt.generate() << std::endl;
-#endif
 #endif
         return boost::shared_ptr<BoolFactor>(bf);
     } else {

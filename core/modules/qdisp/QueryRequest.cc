@@ -46,17 +46,9 @@ inline void unprovisionSession(XrdSsiSession* session) {
     if(session) {
         bool ok = session->Unprovision();
         if(!ok) {
-#ifdef NEWLOG
             LOGF_ERROR("Error unprovisioning");
-#else
-            LOGGER_ERR << "Error unprovisioning\n";
-#endif
         } else {
-#ifdef NEWLOG
             LOGF_DEBUG("Unprovision ok.");
-#else
-            LOGGER_DBG << "Unprovision ok.\n";
-#endif
         }
     }
 }
@@ -86,11 +78,7 @@ QueryRequest::QueryRequest(XrdSsiSession* session,
       _receiver(receiver),
       _status(status) {
     _registerSelfDestruct();
-#ifdef NEWLOG
     LOGF_INFO("New QueryRequest with payload(%1%)" % payload.size());
-#else
-    LOGGER_INF << "New QueryRequest with payload(" << payload.size() << ")\n";
-#endif
 }
 
 QueryRequest::~QueryRequest() {
@@ -100,22 +88,13 @@ QueryRequest::~QueryRequest() {
 // content of request data
 char* QueryRequest::GetRequest(int& requestLength) {
     requestLength = _payload.size();
-#ifdef NEWLOG
     LOGF_DEBUG("Requesting [%1%] %2%" % requestLength % _payload);
-#else
-    LOGGER_DBG << "Requesting [" << requestLength << "] "
-               << _payload << std::endl;
-#endif
     // Andy promises that his code won't corrupt it.
     return const_cast<char*>(_payload.data());
 }
 
 void QueryRequest::RelRequestBuffer() {
-#ifdef NEWLOG
     LOGF_DEBUG("Early release of request buffer");
-#else
-    LOGGER_DBG << "Early release of request buffer\n";
-#endif
     _payload.clear();
 }
 // precondition: rInfo.rType != isNone
@@ -128,11 +107,7 @@ bool QueryRequest::ProcessResponse(XrdSsiRespInfo const& rInfo, bool isOk) {
         _status.report(ExecStatus::RESPONSE_ERROR);
         return true;
     }
-#ifdef NEWLOG
     //LOGF_DEBUG("Response type is %1%" % rInfo.State());
-#else
-    //LOGGER_DBG << "Response type is " << rInfo.State() << std::endl;
-#endif
     switch(rInfo.rType) {
     case XrdSsiRespInfo::isNone: // All responses are non-null right now
         errorDesc += "Unexpected XrdSsiRespInfo.rType == isNone";
@@ -159,11 +134,7 @@ bool QueryRequest::ProcessResponse(XrdSsiRespInfo const& rInfo, bool isOk) {
 
 bool QueryRequest::_importStream() {
     _resetBuffer();
-#ifdef NEWLOG
     LOGF_INFO("GetResponseData with buffer of %1%" % _bufferRemain);
-#else
-    LOGGER_INF << "GetResponseData with buffer of " << _bufferRemain << "\n";
-#endif
     // TODO: When the new result-protocol is ready, re-implement this to invert
     // the control scheme to reduce the amount of buffer
     // (impedance) matching done. This should be possible because
@@ -171,13 +142,7 @@ bool QueryRequest::_importStream() {
     // subsequent ProcessResponseData() call will provide exactly the requested
     // amount of bytes, unless no more bytes available from the sender.
     bool retrieveInitiated = GetResponseData(_cursor, _bufferRemain); // Step 6
-#ifdef NEWLOG
     LOGF_INFO("Initiated request %1%" % (retrieveInitiated ? "ok" : "err"));
-#else
-    LOGGER_INF << "Initiated request "
-               << (retrieveInitiated ? "ok" : "err")
-               << std::endl;
-#endif
     if(!retrieveInitiated) {
         _status.report(ExecStatus::RESPONSE_DATA_ERROR);
         bool ok = Finished();
@@ -204,21 +169,12 @@ bool QueryRequest::_importError(std::string const& msg, int code) {
 }
 
 void QueryRequest::ProcessResponseData(char *buff, int blen, bool last) { // Step 7
-#ifdef NEWLOG
     LOGF_INFO("ProcessResponse[data] with buflen=%1%" % blen);
-#else
-    LOGGER_INF << "ProcessResponse[data] with buflen=" << blen << std::endl;
-#endif
     if(blen < 0) { // error, check errinfo object.
         int eCode;
         std::string reason(eInfo.Get(eCode));
         _status.report(ExecStatus::RESPONSE_DATA_NACK, eCode, reason);
-#ifdef NEWLOG
         LOGF_ERROR("ProcessResponse[data] error(%1%,\"%2%\")" % eCode % reason);
-#else
-        LOGGER_ERR << " ProcessResponse[data] error(" << eCode
-                   <<",\"" << reason << "\")" << std::endl;
-#endif
         _receiver->errorFlush("Couldn't retrieve response data:" + reason, eCode);
         _errorFinish();
         return;
@@ -251,44 +207,24 @@ void QueryRequest::ProcessResponseData(char *buff, int blen, bool last) { // Ste
         }
     }
     if(last || (blen == 0)) {
-#ifdef NEWLOG
         LOGF_INFO("Response retrieved, bytes=%1%" % blen);
-#else
-        LOGGER_INF << "Response retrieved, bytes=" << blen << std::endl;
-#endif
         _receiver->flush(blen, last);
         _status.report(ExecStatus::RESPONSE_DONE);
         _finish();
     } else {
         std::string reason = "Response error, !last and  bufLen == 0";
-#ifdef NEWLOG
         LOGF_ERROR("%1%" % reason);
-#else
-        LOGGER_ERR << reason << std::endl;
-#endif
         _status.report(ExecStatus::RESPONSE_DATA_ERROR, -1, reason);
     }
 }
 
 void QueryRequest::_errorFinish() {
-#ifdef NEWLOG
     LOGF_DEBUG("Error finish");
-#else
-    LOGGER_DBG << "Error finish" << std::endl;
-#endif
     bool ok = Finished();
     if(!ok) {
-#ifdef NEWLOG
         LOGF_ERROR("Error cleaning up QueryRequest");
-#else
-        LOGGER_ERR << "Error cleaning up QueryRequest\n";
-#endif
     } else {
-#ifdef NEWLOG
         LOGF_INFO("Request::Finished() with error (clean).");
-#else
-        LOGGER_INF << "Request::Finished() with error (clean).\n";
-#endif
     }
     if(_retryFunc) {
         (*_retryFunc)();
@@ -298,17 +234,9 @@ void QueryRequest::_errorFinish() {
 void QueryRequest::_finish() {
     bool ok = Finished();
     if(!ok) {
-#ifdef NEWLOG
         LOGF_ERROR("Error with Finished()");
-#else
-        LOGGER_ERR << "Error with Finished()\n";
-#endif
     } else {
-#ifdef NEWLOG
         LOGF_INFO("Finished() ok.");
-#else
-        LOGGER_INF << "Finished() ok.\n";
-#endif
     }
 }
 

@@ -30,25 +30,3 @@
 
 // Local headers
 #include "log/Logger.h"
-
-#ifndef NEWLOG
-
-namespace lsst {
-namespace qserv {
-namespace log {
-
-void
-logger_threshold(int severity) {
-    Logger::Instance().setSeverityThreshold(
-        static_cast<Logger::Severity>(severity));
-}
-
-void
-logger(int severity, std::string const& s) {
-    Logger::Instance(static_cast<Logger::Severity>(severity))
-        << "<py> " << s << std::endl;
-}
-
-}}} // namespace lsst::qserv::log
-
-#endif // NEWLOG
