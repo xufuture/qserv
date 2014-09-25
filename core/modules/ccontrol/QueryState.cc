@@ -25,12 +25,13 @@ namespace lsst {
 namespace qserv {
 namespace ccontrol {
 
+static const std::string unknown("unknown");
+static const std::string waiting("waiting");
+static const std::string dispatched("dispatched");
+static const std::string success("success");
+static const std::string error("error");
+
 std::string const& getQueryStateString(QueryState const& qs) {
-    static const std::string unknown("unknown");
-    static const std::string waiting("waiting");
-    static const std::string dispatched("dispatched");
-    static const std::string success("success");
-    static const std::string error("error");
     switch(qs) {
     case UNKNOWN:
         return unknown;
