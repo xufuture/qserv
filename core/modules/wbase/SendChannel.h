@@ -34,7 +34,6 @@
 // Qserv headers
 #include "util/Callable.h"
 
-
 namespace lsst {
 namespace qserv {
 namespace wbase {
@@ -72,11 +71,14 @@ public:
             (*_release)();
         }
     }
+    /// Construct a new NopChannel that ignores everything it is asked to send
     static boost::shared_ptr<SendChannel> newNopChannel();
+    /// Construct a StringChannel, which appends all it receives into a string
+    /// provided by reference at construction.
     static boost::shared_ptr<SendChannel> newStringChannel(std::string& dest);
 
 protected:
-    ReleaseFuncPtr _release;
+    ReleaseFuncPtr _release; //< Release function
 };
 }}} // lsst::qserv::wbase
 #endif // LSST_QSERV_WBASE_SENDCHANNEL_H

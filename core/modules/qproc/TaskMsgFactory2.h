@@ -66,7 +66,7 @@ public:
 private:
     class Impl;
 
-    boost::shared_ptr<Impl> _impl;
+    boost::shared_ptr<Impl> _impl; //< PIMPL
 };
 
 }}} // namespace lsst::qserv::qproc

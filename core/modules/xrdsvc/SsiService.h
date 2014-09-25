@@ -60,6 +60,7 @@ public:
     SsiService(XrdSsiLogger* log);
     virtual ~SsiService();
 
+    /// Called by xrootd daemon to handle new resource requests
     virtual bool Provision(XrdSsiService::Resource* r,
                            unsigned short timeOut=0);
 
@@ -69,9 +70,9 @@ private:
     void _setupResultPath();
     bool _setupScratchDb();
 
-    boost::shared_ptr<wlog::WLogger> _log;
-    boost::shared_ptr<wpublish::ChunkInventory> _chunkInventory;
-    boost::shared_ptr<wcontrol::Service> _service;
+    boost::shared_ptr<wlog::WLogger> _log; //< Logging handle
+    boost::shared_ptr<wpublish::ChunkInventory> _chunkInventory; //< Inventory
+    boost::shared_ptr<wcontrol::Service> _service; //< backing service
 
 }; // class SsiService
 

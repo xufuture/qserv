@@ -72,25 +72,30 @@ public:
     ChunkInventory(std::string const& name, wlog::WLogger& log,
                    boost::shared_ptr<sql::SqlConnection> sc);
 
+    /// (helper) Create a key string from a (db, chunk) pair
     static inline std::string makeKey(std::string const& db, int chunk) {
         std::stringstream ss;
         ss << db << chunk << "**key";
         return std::string(ss.str());
     }
+
+    /// @return true if the specified db and chunk are in the inventory
     bool has(std::string const& db, int chunk,
              std::string table=std::string()) const;
 
+    /// Construct a ResourceUnit::Checker backed by this instance
     boost::shared_ptr<ResourceUnit::Checker> newValidator();
 
+    /// Print debugging information to a stream
     void dbgPrint(std::ostream& os);
 
 private:
     void _init(sql::SqlConnection& sc);
     void _fillDbChunks(ChunkInventory::StringSet& s);
 
-    ExistMap _existMap;
-    std::string _name;
-    wlog::WLogger& _log;
+    ExistMap _existMap; //< Inventory mapping
+    std::string _name; //< Self-identification
+    wlog::WLogger& _log; //< Logging handle
 };
 
 }}} // namespace lsst::qserv::wpublish

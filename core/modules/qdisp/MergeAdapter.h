@@ -34,7 +34,7 @@ namespace qserv {
 namespace qdisp {
 
 /// Skeleton adapter for adapting the Executive to work with the older
-/// file-based dispatch interface.
+/// file-based dispatch interface. Will probably be removed.
 class MergeAdapter : public QueryReceiver {
 public:
     virtual int bufferSize() const { return 0; }

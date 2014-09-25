@@ -62,9 +62,9 @@ private:
     void _load();
     void _validate();
 
-    StringMap _map;
-    bool _isValid;
-    std::string _error;
+    StringMap _map; //< Internal key-value map
+    bool _isValid; //< Does the config pass basic sanity checks?
+    std::string _error; //< Description of error, if appropriate
     boost::shared_ptr<mysql::MySqlConfig> _sqlConfig;
 };
 

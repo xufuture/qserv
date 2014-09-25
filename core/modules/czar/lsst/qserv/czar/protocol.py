@@ -22,6 +22,7 @@
 
 # protocol module for lsst.qserv.czar
 # Manages wire-protocol-related operations for qserv.
+# Should be removed, and TaskMsgFactory2 renamed to TaskMsgFactory
 import worker_pb2
 
 class TaskMsgFactory:

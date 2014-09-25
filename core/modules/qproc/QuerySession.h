@@ -74,20 +74,21 @@ public:
 
     explicit QuerySession(boost::shared_ptr<css::Facade>);
 
+    // Const accessors
     std::string const& getOriginal() const { return _original; }
     void setDefaultDb(std::string const& db);
     void setQuery(std::string const& q);
     bool hasAggregate() const;
     bool hasChunks() const;
 
+    // Constraint exchange functions: Caller exports query spatial constraints
+    // using getConstraints() after analysis, then performs geometry lookup to
+    // determine chunk coverage, then pushes chunk coverage in using addChunk.
     boost::shared_ptr<query::ConstraintVector> getConstraints() const;
     void addChunk(ChunkSpec const& cs);
 
     query::SelectStmt const& getStmt() const { return *_stmt; }
 
-    // Resulttable concept will be obsolete after we implement query result
-    // marshalling/transfer (at which point, table dump and restore will also be
-    // obsolete).
     void setResultTable(std::string const& resultTable);
     std::string const& getResultTable() const { return _resultTable; }
 
@@ -99,7 +100,7 @@ public:
     css::StripingParams getDbStriping();
     std::string const& getError() const { return _error; }
 
-    rproc::MergeFixup makeMergeFixup() const;
+    rproc::MergeFixup makeMergeFixup() const; //< as obsolete as TableMerger
     boost::shared_ptr<query::SelectStmt> getMergeStmt() const;
 
     /// Finalize a query after chunk coverage has been updated
@@ -114,7 +115,7 @@ public:
         boost::shared_ptr<css::Facade> cssFacade;
         std::string defaultDb;
     };
-    explicit QuerySession(Test& t);
+    explicit QuerySession(Test& t) //< Debug constructor
     boost::shared_ptr<query::QueryContext> dbgGetContext() { return _context; }
 
 private:
@@ -132,22 +133,22 @@ private:
     std::vector<std::string> _buildChunkQueries(ChunkSpec const& s) const;
 
     // Fields
-    boost::shared_ptr<css::Facade> _cssFacade;
-    std::string _defaultDb;
-    std::string _original;
-    boost::shared_ptr<query::QueryContext> _context;
-    boost::shared_ptr<query::SelectStmt> _stmt;
+    boost::shared_ptr<css::Facade> _cssFacade; //< Metadata access facade
+    std::string _defaultDb; //< User db context
+    std::string _original; //< Original user query
+    boost::shared_ptr<query::QueryContext> _context; //< Analysis context
+    boost::shared_ptr<query::SelectStmt> _stmt; //< Logical query statement
     /// Group of parallel statements (not a sequence)
     std::list<boost::shared_ptr<query::SelectStmt> > _stmtParallel;
-    boost::shared_ptr<query::SelectStmt> _stmtMerge;
-    bool _hasMerge;
-    std::string _tmpTable;
-    std::string _resultTable;
-    std::string _error;
-    int _isFinal;
+    boost::shared_ptr<query::SelectStmt> _stmtMerge; //< Aggregating statement
+    bool _hasMerge; //< Is a merge/aggregation statement required
+    std::string _tmpTable; //< Intermediate temp table
+    std::string _resultTable; //< Final result table
+    std::string _error; //< Error description
+    int _isFinal; //< Has query analysis/optimization completed?
 
-    ChunkSpecList _chunks;
-    boost::shared_ptr<PluginList> _plugins;
+    ChunkSpecList _chunks; //< Chunk coverage
+    boost::shared_ptr<PluginList> _plugins; //< Analysis plugin chain
 };
 
 /// Iterates over a ChunkSpecList to return ChunkQuerySpecs for execution
@@ -178,12 +179,12 @@ private:
     }
     boost::shared_ptr<ChunkQuerySpec> _buildFragment(ChunkSpecFragmenter& f) const;
 
-    QuerySession* _qs;
-    ChunkSpecList::const_iterator _pos;
-    bool _hasChunks;
-    bool _hasSubChunks;
-    mutable ChunkQuerySpec _cache;
-    mutable bool _dirty;
+    QuerySession* _qs; //< Associated QuerySession
+    ChunkSpecList::const_iterator _pos; //< Iterator position
+    bool _hasChunks; //< Chunked query?
+    bool _hasSubChunks; //< Subchunks needed?
+    mutable ChunkQuerySpec _cache; //< Query generation cache
+    mutable bool _dirty; //< Does cache need updating/refreshing?
 };
 
 }}} // namespace lsst::qserv::qproc

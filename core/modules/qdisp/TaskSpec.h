@@ -52,11 +52,12 @@ class QueryReceiver; // Forward
 /// class TaskSpec - A request unit to be sent to the worker.
 class TaskSpec {
 public:
-TaskSpec() : chunkId(-1) {}
+    TaskSpec() : chunkId(-1) {}
+
     std::string serviceHostPort; //< xrootd host:port
     ResourceUnit unit; //< Resource requested from remote
     std::string msg; //< Encoded request message
-    boost::shared_ptr<QueryReceiver> receiver;
+    boost::shared_ptr<QueryReceiver> receiver; //< Response handler
 };
 
 }}} // namespace lsst::qserv::control
