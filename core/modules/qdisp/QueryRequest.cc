@@ -227,7 +227,7 @@ void QueryRequest::ProcessResponseData(char *buff, int blen, bool last) { // Ste
         LOGF_ERROR("%1%" % reason);
         _status.report(ExecStatus::RESPONSE_DATA_ERROR, -1, reason);
     } else {
-        LOGGER_INF << "Response recv (wait) bytes=" << blen << std::endl;
+        LOGF_INFO("Response recv (wait) bytes=%1%" % blen);
     }
 }
 

@@ -201,16 +201,14 @@ bool Executive::join() {
     struct successF {
         static bool f(Executive::StatusMap::value_type const& entry) {
             ExecStatus::Info const& esI = entry.second->getInfo();
-            LOGGER_INF << "entry state:" << (void*)entry.second.get()
-                       << " " << esI << std::endl;
+            LOGF_INFO("entry state:%1% %2%)" % (void*)entry.second.get() % esI);
             return esI.state == ExecStatus::RESPONSE_DONE; } };
     int sCount = std::count_if(_statuses.begin(), _statuses.end(), successF::f);
 
     LOGF_INFO("Query exec finish. %1% dispatched." % _requestCount);
     _reportStatuses();
     if(sCount != _requestCount) {
-        LOGGER_INF << "Query exec error:. " << _requestCount << " !="
-                   << sCount << std::endl;
+        LOGF_INFO("Query exec error:. %1% != %2%" % _requestCount % sCount);
     }
     return sCount == _requestCount;
 }
@@ -273,7 +271,7 @@ void Executive::squash() {
             // Don't do this while holding _receiversMutex
             (**i).cancel();
         }
-        LOGGER_INF << "Cancelled all query receivers...done\n";
+        LOGF_INFO("Cancelled all query receivers...done");
     }
 }
 
@@ -342,8 +340,8 @@ void Executive::_setup() {
     XrdSsiErrInfo eInfo;
     _service = XrdSsiGetClientService(eInfo, _config.serviceUrl.c_str()); // Step 1
     if(!_service) {
-        LOGGER_ERR << "Error obtaining XrdSsiService in Executive: "
-                   << getErrorText(eInfo);
+        LOGF_ERROR("Error obtaining XrdSsiService in Executive: "
+                   %  getErrorText(eInfo));
     }
     assert(_service);
     _requestCount = 0;

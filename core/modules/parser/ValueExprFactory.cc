@@ -95,10 +95,12 @@ ValueExprFactory::newExpr(antlr::RefAST a) {
         expr->_factorOps.push_back(newFactorOp);
     }
 #if 0
-    LOGGER_INF << "Imported expr: ";
-    std::copy(expr->_factorOps.begin(), expr->_factorOps.end(),
-        std::ostream_iterator<query::ValueExpr::FactorOp>(LOG_STRM(Info), ","));
-    LOGGER_INF << std::endl;
+    if (LOG_CHECK_INFO()) {
+        std::stringstream ss;
+        std::copy(expr->_factorOps.begin(), expr->_factorOps.end(),
+                  std::ostream_iterator<query::ValueExpr::FactorOp>(ss, ","));
+        LOGF_INFO("Imported expr: %1%" % ss.str());
+    }
 #endif
     return expr;
 }

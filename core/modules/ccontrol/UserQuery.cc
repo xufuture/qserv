@@ -262,7 +262,7 @@ std::string UserQuery::getExecDesc() const {
 }
 /// Setup merger (for results handling and aggregation)
 void UserQuery::_setupMerger() {
-    LOGGER_INF << "UserQuery::_setupMerger()" << std::endl;
+    LOGF_INFO("UserQuery::_setupMerger()");
     _infileMergerConfig->mergeStmt = _qSession->getMergeStmt();
     _infileMerger = boost::make_shared<rproc::InfileMerger>(*_infileMergerConfig);
 }
