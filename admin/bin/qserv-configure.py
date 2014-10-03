@@ -89,22 +89,6 @@ FOR A  SETUP FROM SCRATCH.''',
 
     return args
 
-def recursive_copy(src, dest, ignore=None):
-    if os.path.isdir(src):
-        if not os.path.isdir(dest):
-            os.makedirs(dest)
-        files = os.listdir(src)
-        if ignore is not None:
-            ignored = ignore(src, files)
-        else:
-            ignored = set()
-        for fname in files:
-            if fname not in ignored:
-                recursive_copy(os.path.join(src, fname), os.path.join(dest, fname), ignore)
-    else:
-        shutil.copyfile(src, dest)
-
-
 def main():
 
     args = parseArgs()
@@ -122,7 +106,7 @@ def main():
                 )
 
     if configure.PREPARE in args.step_list:
-        template_config_dir = os.path.join(qserv_dir, "admin")
+        template_config_dir = os.path.join(qserv_dir, "templates")
 
         logging.info("Initializing template configuration in {1} using {0}"
             .format(template_config_dir, args.qserv_run_dir)
@@ -138,7 +122,7 @@ def main():
                 logging.info("Stopping Qserv configuration, please specify an other configuration directory")
                 sys.exit(1)
 
-        recursive_copy(template_config_dir, args.qserv_run_dir)
+        shutil.copytree(template_config_dir, args.qserv_run_dir)
 
         for line in fileinput.input(args.meta_config_file, inplace=1):
             print line.replace("run_base_dir =", "run_base_dir = " + args.qserv_run_dir),

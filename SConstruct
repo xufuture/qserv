@@ -72,7 +72,7 @@ else:
     python_admin = env.InstallPythonModule(target=env['python_prefix'],
                                            source=os.path.join("admin", "python"))
 
-    template_target = os.path.join(env['prefix'], "admin", "templates")
+    template_target = os.path.join(env['prefix'], "templates")
     env.RecursiveInstall(template_target, os.path.join("admin", "templates"))
 
     env.Alias("admin",
