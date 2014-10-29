@@ -9,18 +9,16 @@ set -x
 
 INSTALL_DIR=root/directory/where/qserv/stack/will/be/installed
 
-# If you are using internet-free mode, please specify the location of the local distribution
-# server, if no comment two lines below. 
-INTERNET_FREE_DISTSERVER_PARENT_DIR=shared/dir/available/to/all/nodes
-INTERNET_FREE_DISTSERVER_DIR=${INTERNET_FREE_DISTSERVER_PARENT_DIR}/distserver
+# If you are using internet-free mode, please specify the location
+# of the local distribution server, if no comment line below.
+INTERNET_FREE_DISTSERVER_DIR=shared/dir/available/to/all/nodes/distserver
 
-# If you want to remove previous configuration data, please set QSERV_RELEASE,
-# if no comment line below
+# WARN: previous configuration data contained in QSERV_RUN_DIR
+# will be removed
 QSERV_RUN_DIR=${HOME}/qserv-run/${QSERV_RELEASE}
 
 #############################
 
-# CAUTION: remove previous configuration data
 if [[ ! -z  ${QSERV_RUN_DIR} ]]; then
     rm -rf ${QSERV_RUN_DIR}
 fi
