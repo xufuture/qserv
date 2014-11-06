@@ -23,7 +23,7 @@ PASSFILE=${QSERV_RUN_DIR}/tmp/pass.txt
 cat <<EOF > ${PASSFILE}
 ${MYSQLD_PASS} 
 EOF
-cat  ${PASSFILE} | scisql-deploy.py --mysql-socket=${QSERV_RUN_DIR}/var/lib/mysql/mysql.sock
+cat  ${PASSFILE} | scisql-deploy.py --mysql-socket=${QSERV_RUN_DIR}/var/lib/mysql-worker/mysql.sock
 rm ${PASSFILE}
 ${QSERV_RUN_DIR}/etc/init.d/mysqld stop ||
 exit 1

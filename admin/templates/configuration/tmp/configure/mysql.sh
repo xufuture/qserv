@@ -60,4 +60,14 @@ ${QSERV_RUN_DIR}/etc/init.d/mysqld stop ||
     exit 1
 }
 
+rm -rf ${QSERV_RUN_DIR}/var/lib/mysql-worker/* &&
+echo "-- ." &&
+echo "-- Installing mysql database files for worker." &&
+mysql_install_db --defaults-file=${QSERV_RUN_DIR}/etc/my.worker.cnf --user=${USER}
+>/dev/null ||
+{
+    echo "ERROR : mysql_install_db failed, exiting"
+    exit 1
+}
+
 echo "INFO: MySQL initialization SUCCESSFUL"
