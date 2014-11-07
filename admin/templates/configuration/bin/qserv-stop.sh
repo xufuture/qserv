@@ -13,4 +13,4 @@ done
 # still usefull ?
 echo "Cleaning  ${QSERV_RUN_DIR}/xrootd-run/result/"
 rm -f ${QSERV_RUN_DIR}/xrootd-run/result/*
-killall mysqld_safe
+kill `cat ${QSERV_RUN_DIR}/var/run/mysqld-worker/mysqld.pid`

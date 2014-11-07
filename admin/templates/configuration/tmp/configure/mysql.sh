@@ -49,7 +49,6 @@ ${QSERV_RUN_DIR}/etc/init.d/mysqld start &&
 sleep 5 &&
 echo "-- Changing mysql root password." &&
 mysql --no-defaults -S ${MYSQLD_SOCK} -u root < ${SQL_DIR}/mysql-password.sql &&
-rm ${SQL_DIR}/mysql-password.sql &&
 echo "-- Shutting down mysql server." &&
 ${QSERV_RUN_DIR}/etc/init.d/mysqld stop || 
 {
@@ -63,11 +62,19 @@ ${QSERV_RUN_DIR}/etc/init.d/mysqld stop ||
 rm -rf ${QSERV_RUN_DIR}/var/lib/mysql-worker/* &&
 echo "-- ." &&
 echo "-- Installing mysql database files for worker." &&
+MYSQLD_SOCK_WORKER=${QSERV_RUN_DIR}/var/lib/mysql-worker/mysql.sock
 mysql_install_db --defaults-file=${QSERV_RUN_DIR}/etc/my.worker.cnf --user=${USER}
 >/dev/null ||
 {
     echo "ERROR : mysql_install_db failed, exiting"
     exit 1
 }
+
+mkdir -p ${QSERV_RUN_DIR}/var/run/mysqld-worker
+mysqld_safe --defaults-file=${QSERV_RUN_DIR}/etc/my.worker.cnf >/dev/null 2>&1 &
+sleep 1 
+mysql --no-defaults -S ${MYSQLD_SOCK_WORKER} -u root < ${SQL_DIR}/mysql-password.sql &&
+rm ${SQL_DIR}/mysql-password.sql
+kill `cat ${QSERV_RUN_DIR}/var/run/mysqld-worker/mysqld.pid`
 
 echo "INFO: MySQL initialization SUCCESSFUL"

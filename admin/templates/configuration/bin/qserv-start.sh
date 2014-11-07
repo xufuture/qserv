@@ -8,4 +8,4 @@ check_qserv_run_dir
 for service in ${SERVICES}; do
     ${QSERV_RUN_DIR}/etc/init.d/$service start
 done
-mysqld_safe --defaults-file=${QSERV_RUN_DIR}/etc/my.worker.cnf
+mysqld_safe --defaults-file=${QSERV_RUN_DIR}/etc/my.worker.cnf >/dev/null 2>&1 &
