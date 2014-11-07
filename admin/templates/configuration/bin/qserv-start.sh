@@ -5,7 +5,8 @@ QSERV_RUN_DIR={{QSERV_RUN_DIR}}
 
 check_qserv_run_dir
 
+# xrootd worker needs this one to be started
+mysqld_safe --defaults-file=${QSERV_RUN_DIR}/etc/my.worker.cnf >/dev/null 2>&1 &
 for service in ${SERVICES}; do
     ${QSERV_RUN_DIR}/etc/init.d/$service start
 done
-mysqld_safe --defaults-file=${QSERV_RUN_DIR}/etc/my.worker.cnf >/dev/null 2>&1 &

@@ -3,7 +3,8 @@ GRANT ALL ON qservResult.* TO 'qsmaster'@'localhost';
 
 -- Secondary index database (i.e. objectId/chunkId relation)
 -- created by integration test script/loader for now
-GRANT SELECT ON qservMeta.* TO 'qsmaster'@'localhost';
+CREATE DATABASE IF NOT EXISTS qservMeta;
+GRANT ALL ON qservMeta.* TO 'qsmaster'@'localhost';
 
 -- Database for business (i.e. LSST) data 
 -- In the long term:
