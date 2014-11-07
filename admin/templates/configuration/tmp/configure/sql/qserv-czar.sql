@@ -10,9 +10,8 @@ GRANT ALL ON qservMeta.* TO 'qsmaster'@'localhost';
 -- In the long term:
 --    * has to created by the dataloader
 --    * should be only on workers
+-- For now, mysql-proxy fails if this table
+-- doesn't exist in the database.
 CREATE DATABASE IF NOT EXISTS LSST;
-GRANT ALL ON LSST.* TO 'qsmaster'@'localhost';
-GRANT EXECUTE ON `LSST`.* TO 'qsmaster'@'localhost';
-
-
+GRANT SELECT ON LSST.* TO 'qsmaster'@'localhost';
 
