@@ -30,6 +30,18 @@ FOR A  SETUP FROM SCRATCH.''',
             default=False,
             help='''clean execution directory and then run all configuration steps'''
             )
+    parser.add_argument("-k", "--keep-data", dest="keep_data", action='store_true',
+            default=False,
+            help='''backup and clean execution directory, except MySQL data,  and then run
+all configuration steps which doesn't impact MySQL data.
+    * --keepdata preserves qserv_meta.conf and my.cnf. Regarding the latter, this is necessary
+because user might have customized data_dir.
+    * The structure of qserv_meta.conf and my.cnf must remain the same between
+      existing version of Qserv and the to-be-configured version of Qserv. It is
+      users's responsibility to ensure the structure did not change. Note in
+      particular, the template files (with the exception of my.cnf) should not be
+      customized'''
+            )
     # Defining option of each configuration step
     for step_name in configure.STEP_LIST:
         parser.add_argument(
