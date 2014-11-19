@@ -88,7 +88,7 @@ void TransactionCallable::operator()() {
 //////////////////////////////////////////////////////////////////////
 void Manager::setupFile(std::string const& file) {
     _file = file;
-    _reader = make_shared<qdisp::TransactionSpec::Reader>(file);
+    _reader = boost::make_shared<qdisp::TransactionSpec::Reader>(file);
 }
 void Manager::_joinOne() {
     int oldsize = _threads.size();

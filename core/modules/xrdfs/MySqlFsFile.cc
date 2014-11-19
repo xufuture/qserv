@@ -85,16 +85,16 @@ public:
                  XrdSfsAio* aioparm)
         : _fsfile(fsfile), _aioparm(aioparm), _sfsAio(aioparm->sfsAio) {}
 
-    void operator()() {
+    void operator()() const {
         _aioparm->Result = _fsfile.read(_sfsAio.aio_offset,
                                         (char*)_sfsAio.aio_buf,
                                         _sfsAio.aio_nbytes);
         _aioparm->doneRead();
     }
 private:
-    lsst::qserv::xrdfs::MySqlFsFile& _fsfile;
-    XrdSfsAio* _aioparm;
-    struct aiocb& _sfsAio;
+    mutable lsst::qserv::xrdfs::MySqlFsFile& _fsfile;
+    mutable XrdSfsAio* _aioparm;
+    mutable struct aiocb& _sfsAio;
 
 };
 
