@@ -230,14 +230,15 @@ for (pkg, opts) in shProducts.items():
     intDeps = [] # internal dependencies on .so
     if opts.has_key('shmods'):
         intDeps = [shlibs[m] for m in opts['shmods']]
-        extLibs.extend(["qserv_" + s for s in opts['shmods']])
+#        extLibs.extend(["qserv_" + s for s in opts['shmods']])
+        extLibs.extend(intDeps)
     if opts.has_key('SHLIBPREFIX'):
         out = env.SharedLibrary(pkg + ".so", srcs, LIBS=extLibs,
                                 SHLIBPREFIX=opts['SHLIBPREFIX'])
     else:
         out = env.SharedLibrary(pkg + ".so", srcs, LIBS=extLibs)
-    if intDeps:
-        env.Depends(out, intDeps)
+#    if intDeps:
+#        env.Depends(out, intDeps)
     env.Alias("build", out)
     for f in out:
         extraTgts['dist'].append((opts['distDir'], f))
