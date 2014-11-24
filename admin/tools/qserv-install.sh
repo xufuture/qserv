@@ -9,7 +9,7 @@ DIR=$(cd "$(dirname "$0")"; pwd -P)
 MODE="internet mode"
 DEV_DISTSERVER_ROOT="http://lsst-web.ncsa.illinois.edu/~fjammes/qserv-dev"
 EUPS_PKGROOT="http://sw.lsstcorp.org/eupspkg"
-NEWINSTALL_URL="http://sw.lsstcorp.org/eupspkg/newinstall.sh"
+NEWINSTALL_URL="https://sw.lsstcorp.org/eupspkg/newinstall.sh"
 VERSION="-t qserv"
 
 underline() { echo $1; echo "${1//?/${2:-=}}";}
@@ -124,14 +124,14 @@ time bash newinstall.sh ||
     exit 1
 }
 
-# TODO : warn loadLSST.sh append http://sw.lsstcorp.org/eupspkg to
+# TODO : warn loadLSST.bash append http://sw.lsstcorp.org/eupspkg to
 # EUPS_PKGROOT, this isn't compliant with internet-free mode
 # TODO : if first url in EUPS_PKGROOT isn't available eups fails without
 # trying next ones
 if [[ -n ${LOCAL_OPTION} ]]; then
     EUPS_PKG_ROOT_BACKUP=${EUPS_PKGROOT}
 fi
-. ${STACK_DIR}/loadLSST.sh ||
+. ${STACK_DIR}/loadLSST.bash ||
 {
     >&2 echo "ERROR : unable to load LSST stack environment"
     exit 1
