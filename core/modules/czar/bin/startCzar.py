@@ -39,7 +39,7 @@ from lsst.qserv.czar import server
 from lsst.qserv.czar import app
 from lsst.qserv.czar import client
 from lsst.qserv.czar import config
-from lsst.qserv.czar import indexing
+#from lsst.qserv.czar import indexing
 
 import lsst.log as newlog
 
@@ -63,7 +63,7 @@ def resetTables():
     pass
 
 def makeIndexes():
-    indexing.makeQservIndexes()
+    #indexing.makeQservIndexes()
     pass
 
 def main():
