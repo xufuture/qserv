@@ -46,6 +46,7 @@
 // Qserv headers
 #include "css/constants.h"
 #include "css/CssError.h"
+#include "css/EmptyChunks.h"
 #include "css/KvInterfaceImplMem.h"
 #include "global/stringTypes.h"
 
@@ -352,6 +353,12 @@ Facade::cssVersion() {
     return lsst::qserv::css::VERSION;
 }
 
+EmptyChunks const&
+Facade::getEmptyChunks() const {
+    assert(_emptyChunks.get());
+    return *_emptyChunks;
+}
+
 void
 Facade::_versionCheck() const {
     const string& vstr = _kvI->get(lsst::qserv::css::VERSION_KEY, string());
@@ -438,17 +445,20 @@ Facade::_tableIsSubChunked(string const& dbName,
 }
 
 boost::shared_ptr<Facade>
-FacadeFactory::createMemFacade(string const& mapPath) {
+FacadeFactory::createMemFacade(string const& mapPath,
+                               std::string const& emptyChunkPath) {
     std::ifstream f(mapPath.c_str());
     if(f.fail()) {
         throw ConnError();
     }
-    return FacadeFactory::createMemFacade(f);
+    return FacadeFactory::createMemFacade(f, emptyChunkPath);
 }
 
 boost::shared_ptr<Facade>
-FacadeFactory::createMemFacade(std::istream& mapStream) {
+FacadeFactory::createMemFacade(std::istream& mapStream,
+                               std::string const& emptyChunkPath) {
     boost::shared_ptr<css::Facade> cssFPtr(new css::Facade(mapStream));
+    cssFPtr->_emptyChunks.reset(new EmptyChunks(emptyChunkPath));
     return cssFPtr;
 }
 
@@ -553,8 +563,10 @@ Facade::Facade(boost::shared_ptr<KvInterface> kv)
 }
 
 boost::shared_ptr<Facade>
-FacadeFactory::createCacheFacade(boost::shared_ptr<KvInterface> kv) {
+FacadeFactory::createCacheFacade(boost::shared_ptr<KvInterface> kv,
+                                 std::string const& emptyChunkPath) {
     boost::shared_ptr<css::Facade> facade(new Facade(kv));
+    facade->_emptyChunks.reset(new EmptyChunks(emptyChunkPath));
     return facade;
 }
 }}} // namespace lsst::qserv::css
