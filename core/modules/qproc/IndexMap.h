@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2013-2014 LSST Corporation.
+ * Copyright 2014-2015 AURA/LSST.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -20,26 +20,40 @@
  * the GNU General Public License along with this program.  If not,
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
-#ifndef LSST_QSERV_CONSTANTS_H
-#define LSST_QSERV_CONSTANTS_H
- /**
-  * @brief  Global constants.
+#ifndef LSST_QSERV_QPROC_INDEXMAP_H
+#define LSST_QSERV_QPROC_INDEXMAP_H
+/**
+  * @file
   *
+  * @brief IndexMap to look up chunk numbers
+  *
+  * @author Daniel L. Wang, SLAC
   */
+
+// Qserv headers
+#include "css/StripingParams.h"
+#include "query/Constraint.h"
+#include "qproc/ChunkSpec.h"
 
 namespace lsst {
 namespace qserv {
-const char CHUNK_COLUMN[] = "chunkId";
-const char SUB_CHUNK_COLUMN[] = "subChunkId";
-const int DUMMY_CHUNK = 1234567890;
+namespace qproc {
 
-const char USER_DEFAULT[] = "qsmaster";
-const char SEC_INDEX_DB[] = "qservMeta";
+class SecondaryIndex;
 
-const char ENV_WRESULTPATH[] = "QSW_RESULTPATH";
-const char ENV_XRDID[] = "XRDNAME";
+class IndexMap {
+public:
+    IndexMap(css::StripingParams const& sp,
+             boost::shared_ptr<SecondaryIndex> si);
 
-const char SUBCHUNKDB_PREFIX[] = "Subchunks_";
-const char SCISQLDB_PREFIX[] = "scisql_";
-}}
-#endif // LSST_QSERV_CONSTANTS_H
+    ChunkSpecVector getAll();
+    ChunkSpecVector getIntersect(query::ConstraintVector const& cv);
+
+    class PartitioningMap;
+private:
+    boost::shared_ptr<PartitioningMap> _pm;
+    boost::shared_ptr<SecondaryIndex> _si;
+};
+
+}}} // namespace lsst::qserv::qproc
+#endif // LSST_QSERV_QPROC_INDEXMAP_H

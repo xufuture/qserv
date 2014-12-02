@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2012-2013 LSST Corporation.
+ * Copyright 2012-2015 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -33,6 +33,7 @@
 // System headers
 #include <ostream>
 #include <list>
+#include <map>
 #include <stdint.h>
 #include <vector>
 
@@ -42,20 +43,53 @@ namespace qproc {
 
 /// ChunkSpec is a value class that bundles the per-chunk information that is
 /// used to compose a concrete chunk query for a specific chunk from an input
-/// parsed query statement. Contains A specification of chunkId and subChunkId
+/// parsed query statement. Contains a specification of chunkId and subChunkId
 /// list.
+/// Do not inherit.
 struct ChunkSpec {
 public:
-    ChunkSpec() : chunkId(-1) {}
-    int32_t chunkId;
-    std::vector<int32_t> subChunks;
+    typedef std::vector<int32_t> Int32Vector;
+    static int32_t const CHUNKID_INVALID = -1;
+
+    ChunkSpec() : chunkId(CHUNKID_INVALID) {}
+    ChunkSpec(int chunkId_, Int32Vector const& subChunks_)
+        : chunkId(chunkId_), subChunks(subChunks_) {}
+
+
+    int32_t chunkId; ///< ChunkId of interest
+    /// Subchunks of interest; empty indicates all subchunks are involved.
+    Int32Vector subChunks;
+
     void addSubChunk(int s) { subChunks.push_back(s); }
     bool shouldSplit() const;
+
+    /// @return the intersection with the chunk.
+    /// If both ChunkSpecs have non-empty subChunks, but do not intersect, chunkId is set to be invalid (-1)
+    ChunkSpec intersect(ChunkSpec const& cs) const;
+    void restrict(ChunkSpec const& cs);
+//    void mergeUnion(ChunkSpec const& rhs);
+
+
+    bool operator<(ChunkSpec const& rhs) const;
+    bool operator==(ChunkSpec const& rhs) const;
+
+
+    // For testing
+    static ChunkSpec makeFake(int chunkId, bool withSubChunks=false);
 };
 std::ostream& operator<<(std::ostream& os, ChunkSpec const& c);
 
+
 typedef std::list<ChunkSpec> ChunkSpecList;
 typedef std::vector<ChunkSpec> ChunkSpecVector;
+typedef std::map<int, ChunkSpec> ChunkSpecMap;
+
+/// ChunkSpecVector intersection.
+/// Computes ChunkSpecVector intersection, overwriting dest with the result.
+///
+void intersectSorted(ChunkSpecVector& dest, ChunkSpecVector const& a);
+
+ChunkSpecVector intersect(ChunkSpecVector const& a, ChunkSpecVector const& b);
 
 /// An iterating fragmenter to reduce the number of subChunkIds per ChunkSpec
 class ChunkSpecFragmenter {
