@@ -329,6 +329,22 @@ Facade::getOverlap(string const& dbName) const {
     return boost::lexical_cast<double>(v);
 }
 
+/** Retrieves the partition overlap in degrees for a table. Throws an
+  * exception if the database or table does not exist.
+  * @return 0 for unpartitioned tables
+  */
+double
+Facade::getOverlap(string const& dbName, string const& tableName) const {
+    LOGF_INFO("getOverlap(%1%, %2%)" % dbName % tableName);
+    _throwIfNotDbTbExists(dbName, tableName);
+    string k = _prefix + "/DBS/" + dbName + "/TABLES/" + tableName + "/overlap";
+    string v = _kvI->get(k, "");
+    if (v == "") {
+        return 0.0;
+    }
+    return boost::lexical_cast<double>(v);
+}
+
 /** Retrieves match-table specific metadata for a table. Throws an
   * exception if the database and/or table does not exist, and returns
   * a MatchTableParams object containing only empty strings if the given

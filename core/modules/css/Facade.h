@@ -84,6 +84,8 @@ virtual     std::vector<std::string> getSecIndexColNames(std::string const& dbNa
                                                  std::string const& tableName) const;
 virtual     StripingParams getDbStriping(std::string const& dbName) const;
 virtual     double getOverlap(std::string const& dbName) const;
+virtual     double getOverlap(std::string const& dbName,
+                              std::string const& tableName) const;
 virtual     MatchTableParams getMatchTableParams(std::string const& dbName,
                                          std::string const& tableName) const;
 private:
