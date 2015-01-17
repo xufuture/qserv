@@ -131,8 +131,10 @@ boost::shared_ptr<QuerySession> testAndCompare(QuerySession::Test& t,
                                                std::string const& expected) {
 
     boost::shared_ptr<QuerySession> qs = testStmt3(t, stmt);
-    std::string actual = computeFirst(*qs);
-    BOOST_CHECK_EQUAL(actual, expected);
+    if(qs->getError().empty()) {
+        std::string actual = computeFirst(*qs);
+        BOOST_CHECK_EQUAL(actual, expected);
+    }
     return qs;
 }
 
@@ -805,6 +807,30 @@ BOOST_AUTO_TEST_CASE(Expression) {
         "AND scisql_fluxToAbMag(zFlux_PS)-scisql_fluxToAbMag(yFlux_PS) >=-0.40;";
     testStmt3(qsTest, stmt);
 }
+
+BOOST_AUTO_TEST_CASE(FuncExprPred) {
+    std::string stmt = "SELECT  o1.objectId "
+        "FROM Object o1 "
+        "WHERE ABS( (scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS)) -              (scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS)) ) < 1;";
+    std::string expected = "SELECT o1.objectId FROM LSST.Object_100 AS o1 WHERE ABS((scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS))-(scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS)))<1";
+    testAndCompare(qsTest, stmt, expected);
+    stmt = "SELECT  o1.objectId, o2.objectId "
+        "FROM Object o1, Object o2 "
+        "WHERE scisql_angSep(o1.ra_Test, o1.decl_Test, o2.ra_Test, o2.decl_Test) < 0.00001 "
+        "AND o1.objectId <> o2.objectId AND "
+        "ABS( (scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS)) -              (scisql_fluxToAbMag(o2.gFlux_PS)-scisql_fluxToAbMag(o2.rFlux_PS)) ) < 1;";
+    expected = "SELECT o1.objectId,o2.objectId "
+        "FROM Subchunks_LSST_100.Object_100_100000 AS o1,Subchunks_LSST_100.Object_100_100000 AS o2 "
+        "WHERE scisql_angSep(o1.ra_Test,o1.decl_Test,o2.ra_Test,o2.decl_Test)<0.00001 "
+        "AND o1.objectId<>o2.objectId AND "
+        "ABS((scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS))-(scisql_fluxToAbMag(o2.gFlux_PS)-scisql_fluxToAbMag(o2.rFlux_PS)))<1";
+    testAndCompare(qsTest, stmt, expected);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+////////////////////////////////////////////////////////////////////////
+
+BOOST_FIXTURE_TEST_SUITE(Match, ParserFixture)
 
 BOOST_AUTO_TEST_CASE(MatchTableWithoutWhere) {
     std::string stmt = "SELECT * FROM RefObjMatch;";
