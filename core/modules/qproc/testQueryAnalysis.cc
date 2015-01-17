@@ -131,8 +131,10 @@ boost::shared_ptr<QuerySession> testAndCompare(QuerySession::Test& t,
                                                std::string const& expected) {
 
     boost::shared_ptr<QuerySession> qs = testStmt3(t, stmt);
-    std::string actual = computeFirst(*qs);
-    BOOST_CHECK_EQUAL(actual, expected);
+    if(qs->getError().empty()) {
+        std::string actual = computeFirst(*qs);
+        BOOST_CHECK_EQUAL(actual, expected);
+    }
     return qs;
 }
 
@@ -806,13 +808,18 @@ BOOST_AUTO_TEST_CASE(Expression) {
     testStmt3(qsTest, stmt);
 }
 
-BOOST_AUTO_TEST_CASE(distinct) {
-    std::string stmt = "SELECT  o1.objectId, o2.objectId "
+BOOST_AUTO_TEST_CASE(FuncExprPred) {
+    std::string stmt = "SELECT  o1.objectId "
+        "FROM Object o1 "
+        "WHERE ABS( (scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS)) -              (scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS)) ) < 1;";
+    std::string expected = "SELECT DISTINCT foo FROM LSST.Filter AS f";
+    testAndCompare(qsTest, stmt, expected);
+    stmt = "SELECT  o1.objectId, o2.objectId "
         "FROM Object o1, Object o2 "
         "WHERE scisql_angSep(o1.ra_PS, o1.decl_PS, o2.ra_PS, o2.decl_PS) < 0.00001 "
         "AND o1.objectId <> o2.objectId AND "
         "ABS( (scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS)) -              (scisql_fluxToAbMag(o2.gFlux_PS)-scisql_fluxToAbMag(o2.rFlux_PS)) ) < 1;";
-    std::string expected = "SELECT DISTINCT foo FROM LSST.Filter AS f";
+    expected = "SELECT DISTINCT foo FROM LSST.Filter AS f";
     testAndCompare(qsTest, stmt, expected);
 }
 
