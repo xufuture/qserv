@@ -82,6 +82,14 @@ FuncExpr::findColumnRefs(ColumnRef::List& list) {
     }
 }
 
+boost::shared_ptr<FuncExpr>
+FuncExpr::clone() const {
+    FuncExpr::Ptr e = boost::make_shared<FuncExpr>();
+    e->name = name;
+    cloneValueExprList(e->params, params);
+    return e;
+}
+
 std::ostream&
 operator<<(std::ostream& os, FuncExpr const& fe) {
     os << "(" << fe.name << ",";

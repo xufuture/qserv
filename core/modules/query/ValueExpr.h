@@ -132,6 +132,7 @@ public:
     int _count;
 };
 
+void cloneValueExprList(ValueExprList& dest, ValueExprList const& src);
 }}} // namespace lsst::qserv::query
 
 #endif // LSST_QSERV_QUERY_VALUEEXPR_H

@@ -70,6 +70,7 @@ public:
                                  ValueExprPtr ve);
 
     void findColumnRefs(ColumnRef::List& list);
+    boost::shared_ptr<FuncExpr> clone() const;
 
     // Fields
     std::string name;

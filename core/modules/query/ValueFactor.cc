@@ -123,10 +123,10 @@ ValueFactorPtr ValueFactor::clone() const{
         expr->_columnRef = boost::make_shared<ColumnRef>(*_columnRef);
     }
     if(_funcExpr.get()) {
-        expr->_funcExpr = boost::make_shared<FuncExpr>(*_funcExpr);
+        expr->_funcExpr = _funcExpr->clone();
     }
     if(_valueExpr.get()) {
-        expr->_funcExpr = boost::make_shared<FuncExpr>(*_funcExpr);
+        expr->_valueExpr = _valueExpr->clone();
     }
     return expr;
 }
