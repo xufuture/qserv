@@ -812,14 +812,18 @@ BOOST_AUTO_TEST_CASE(FuncExprPred) {
     std::string stmt = "SELECT  o1.objectId "
         "FROM Object o1 "
         "WHERE ABS( (scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS)) -              (scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS)) ) < 1;";
-    std::string expected = "SELECT DISTINCT foo FROM LSST.Filter AS f";
+    std::string expected = "SELECT o1.objectId FROM LSST.Object_100 AS o1 WHERE ABS((scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS))-(scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS)))<1";
     testAndCompare(qsTest, stmt, expected);
     stmt = "SELECT  o1.objectId, o2.objectId "
         "FROM Object o1, Object o2 "
-        "WHERE scisql_angSep(o1.ra_PS, o1.decl_PS, o2.ra_PS, o2.decl_PS) < 0.00001 "
+        "WHERE scisql_angSep(o1.ra_Test, o1.decl_Test, o2.ra_Test, o2.decl_Test) < 0.00001 "
         "AND o1.objectId <> o2.objectId AND "
         "ABS( (scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS)) -              (scisql_fluxToAbMag(o2.gFlux_PS)-scisql_fluxToAbMag(o2.rFlux_PS)) ) < 1;";
-    expected = "SELECT DISTINCT foo FROM LSST.Filter AS f";
+    expected = "SELECT o1.objectId,o2.objectId "
+        "FROM Subchunks_LSST_100.Object_100_100000 AS o1,Subchunks_LSST_100.Object_100_100000 AS o2 "
+        "WHERE scisql_angSep(o1.ra_Test,o1.decl_Test,o2.ra_Test,o2.decl_Test)<0.00001 "
+        "AND o1.objectId<>o2.objectId AND "
+        "ABS((scisql_fluxToAbMag(o1.gFlux_PS)-scisql_fluxToAbMag(o1.rFlux_PS))-(scisql_fluxToAbMag(o2.gFlux_PS)-scisql_fluxToAbMag(o2.rFlux_PS)))<1";
     testAndCompare(qsTest, stmt, expected);
 }
 
