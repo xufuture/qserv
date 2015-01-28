@@ -48,8 +48,8 @@ namespace qproc {
 /// this is necessary: all user queries can share a single instance.
 class SecondaryIndex {
 public:
-    SecondaryIndex(mysql::MySqlConfig const& c);
-    SecondaryIndex(int); // Construct a fake instance
+    explicit SecondaryIndex(mysql::MySqlConfig const& c);
+    explicit SecondaryIndex(int); // Construct a fake instance
 
     ChunkSpecVector lookup(query::ConstraintVector const& cv);
     class Backend;

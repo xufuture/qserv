@@ -65,13 +65,6 @@ private:
     BoxRegion() {}
 };
 
-BoxRegion getBoxFromParams(std::vector<Coordinate> const& params) {
-    if(params.size() != 4) {
-        throw QueryProcessingBug("Invalid number or parameters for region");
-    }
-    return BoxRegion::fromDeg(params[0], params[1], params[2], params[3]);
-}
-
 class CircleRegion : public Region {
 public:
     // FIXME: Is circle chord squared in radians? probably...
@@ -80,16 +73,6 @@ public:
 private:
     CircleRegion() {}
 };
-
-CircleRegion getCircleFromParams(std::vector<Coordinate> const& params) {
-    // UnitVector3d uv3(lon,lat);
-    // Circle c(uv3, radius^2);
-    if(params.size() != 3) {
-        throw QueryProcessingBug("Invalid number or parameters for region");
-    }
-    UnitVector3d uv3(params[0], params[1]);
-    return CircleRegion(uv3, params[2]*params[2]);
-}
 
 class EllipseRegion : public Region {
 public:
@@ -101,26 +84,6 @@ private:
     EllipseRegion(std::vector<Coordinate> const& params) {}
 };
 
-double toRadians(double degrees) {
-    double const pi = 3.14; // FIXME!
-    return pi*degrees/180;
-}
-
-EllipseRegion getEllipseFromParams(std::vector<Coordinate> const& params) {
-    // lon, lat, semimajang, semiminang, posangle
-    // UnitVector3d uv3(lon,lat);
-    // Circle c(uv3, radius^2);
-    if(params.size() != 5) {
-        throw QueryProcessingBug("Invalid number or parameters for region");
-    }
-    UnitVector3d uv3(params[0], params[1]);
-    return EllipseRegion(
-        uv3,
-        toRadians(params[2]),
-        toRadians(params[3]),
-        toRadians(params[4]));
-}
-
 class ConvexPolyRegion : public Region {
 public:
     ConvexPolyRegion(std::vector<UnitVector3d> const& vertices) {}
@@ -128,19 +91,6 @@ public:
 private:
     ConvexPolyRegion() {}
 };
-
-ConvexPolyRegion
-getConvexPolyFromParams(std::vector<Coordinate> const& params) {
-    // polygon vertices, min 3 vertices, must get even number of params
-    if((params.size() <= 6) || ((params.size() & 1) != 0)) {
-        throw QueryProcessingBug("Invalid number or parameters for region");
-    }
-    std::vector<UnitVector3d> uv3;
-    for(unsigned i=0; i < params.size(); i += 2) {
-        uv3.push_back(UnitVector3d(params[i], params[i+1]));
-    }
-    return ConvexPolyRegion(uv3);
-}
 
 struct ChunkTuple { // Geometry will have a struct like this.
     int chunkId;

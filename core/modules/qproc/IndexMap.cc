@@ -44,6 +44,7 @@
 // Qserv headers
 #include "global/stringTypes.h"
 #include "qproc/fakeGeometry.h"
+#include "qproc/geomAdapter.h"
 #include "qproc/SecondaryIndex.h"
 #include "query/Constraint.h"
 
@@ -67,6 +68,22 @@ template <typename T>
 boost::shared_ptr<Region> make(StringVector const& v) {
         return boost::shared_ptr<Region>(new T(convertVec<Coordinate>(v)));
 }
+template <>
+boost::shared_ptr<Region> make<BoxRegion>(StringVector const& v) {
+    return lsst::qserv::qproc::getBoxFromParams(convertVec<Coordinate>(v));
+}
+template <>
+boost::shared_ptr<Region> make<CircleRegion>(StringVector const& v) {
+    return lsst::qserv::qproc::getCircleFromParams(convertVec<Coordinate>(v));
+}
+template <>
+boost::shared_ptr<Region> make<EllipseRegion>(StringVector const& v) {
+    return lsst::qserv::qproc::getEllipseFromParams(convertVec<Coordinate>(v));
+}
+template <>
+boost::shared_ptr<Region> make<ConvexPolyRegion>(StringVector const& v) {
+    return lsst::qserv::qproc::getConvexPolyFromParams(convertVec<Coordinate>(v));
+}
 
 typedef boost::shared_ptr<Region>(*MakeFunc)(StringVector const& v);
 
@@ -76,10 +93,9 @@ struct FuncMap {
         fMap["circle"] = make<CircleRegion>;
         fMap["ellipse"] = make<EllipseRegion>;
         fMap["poly"] = make<ConvexPolyRegion>;
-        fMap["qserv_areaspec_box"]  = make<BoxRegion>;
+        fMap["qserv_areaspec_box"] = make<BoxRegion>;
         fMap["qserv_areaspec_circle"] = make<CircleRegion>;
         fMap["qserv_areaspec_ellipse"] = make<EllipseRegion>;
-        fMap["qserv_areaspec_poly"] = make<ConvexPolyRegion>;
         fMap["qserv_areaspec_poly"] = make<ConvexPolyRegion>;
     }
     std::map<std::string, MakeFunc> fMap;
@@ -111,7 +127,7 @@ bool isIndex(query::Constraint const& c) {
 bool isNotIndex(query::Constraint const& c) {
     return c.name != "sIndex";
 }
-
+#if 0
 class ChunkSpecMap {
 public:
     typedef std::map<int, std::vector<int> > Map;
@@ -131,6 +147,8 @@ private:
     Map _map;
 
 };
+#endif
+
 ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
     RegionPtrVector rv;
 
@@ -143,7 +161,8 @@ ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
     std::copy(cv.begin(), cv.end(), std::back_inserter(indexConstraints));
     std::remove_if(indexConstraints.begin(), indexConstraints.end(),
                    isNotIndex);
-    SecondaryIndex si;
+    SecondaryIndex si(12312); // FIXME
+    throw 1231; // so we don't forget to fix this.
     ChunkSpecVector indexSpecs = si.lookup(indexConstraints);
 
     // Spatial portion
