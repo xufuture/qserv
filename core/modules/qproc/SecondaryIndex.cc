@@ -129,11 +129,11 @@ public:
         int subChunkId = boost::lexical_cast<int>(row[1]);
         ChunkSpecMap::iterator e = m.find(chunkId);
         if (e == m.end()) {
-            ChunkSpec& cs = m[row[0]];
+            ChunkSpec& cs = m[chunkId];
             cs.chunkId = chunkId;
             cs.subChunks.push_back(subChunkId);
         } else {
-            ChunkSpec& cs = *e;
+            ChunkSpec& cs = e->second;
             cs.subChunks.push_back(subChunkId);
         }
     }
@@ -150,15 +150,30 @@ private:
 
 };
 
+class FakeBackend : public SecondaryIndex::Backend {
+public:
+    FakeBackend() {}
+    virtual ChunkSpecVector lookup(query::ConstraintVector const& cv) {
+        ChunkSpecVector dummy;
+        return dummy;
+    }
+private:
+
+};
+
 SecondaryIndex::SecondaryIndex(mysql::MySqlConfig const& c)
     : _backend(boost::make_shared<MySqlBackend>(c)) {
+}
+
+SecondaryIndex::SecondaryIndex(int)
+    : _backend(boost::make_shared<FakeBackend>()) {
 }
 
 ChunkSpecVector SecondaryIndex::lookup(query::ConstraintVector const& cv) {
     if (_backend) {
         return _backend->lookup(cv);
     } else {
-        raise Bug("SecondaryIndex : no backend initialized");
+        throw Bug("SecondaryIndex : no backend initialized");
     }
 }
 
