@@ -44,6 +44,7 @@
 #include "mysql/MySqlConfig.h"
 #include "qdisp/Executive.h"
 #include "qproc/QuerySession.h"
+#include "qproc/SecondaryIndex.h"
 #include "rproc/InfileMerger.h"
 #include "rproc/TableMerger.h"
 
