@@ -351,6 +351,7 @@ Facade::getMatchTableParams(std::string const& dbName,
 int
 Facade::cssVersion() {
     return lsst::qserv::css::VERSION;
+}
 
 EmptyChunks const&
 Facade::getEmptyChunks() const {
