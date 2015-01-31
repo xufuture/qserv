@@ -34,68 +34,22 @@
 #include "boost/make_shared.hpp"
 #include "boost/thread.hpp"
 
-// Local headers
+// Qserv headers
 #include "global/ConfigError.h"
+#include "global/stringUtil.h"
 
 using lsst::qserv::ConfigError;
 using lsst::qserv::IntSet;
 
 namespace {
-// Workaround lack of copy_if before C++11
-template<class InputIt, class OutputIt, class UnaryPredicate>
-OutputIt
-copy_if(InputIt first, InputIt last,
-                 OutputIt d_first, UnaryPredicate pred)
-{
-    return std::remove_copy_if(first, last, d_first, std::not1(pred));
-}
-
 std::string
 makeDefaultFilename() {
     return "emptyChunks.txt";
 }
 
-bool
-isSafe(std::string::value_type const& c) {
-    std::locale loc;
-    if(std::isalnum(c)) { // Not sure that using the default locale is safe.
-        return true;
-    }
-    switch(c) { // Special cases. '_' is the only one right now.
-    case '_':
-        return true;
-    default:
-        return false;
-    }
-}
-
-struct isSafePred {
-    inline bool operator()(std::string::value_type const& c) const {
-        return isSafe(c);
-    }
-    typedef std::string::value_type argument_type;
-};
-
-std::string
-sanitizeName(std::string const& name) {
-    std::string out;
-#if 0
-    copy_if(
-        name.begin(), name.end(),
-        std::insert_iterator<std::string>(out, out.begin()),
-        isSafePred());
-#else
-    std::remove_copy_if(name.begin(), name.end(),
-                        std::insert_iterator<std::string>(out, out.begin()),
-                        std::not1(isSafePred()));
-
-#endif
-    return out;
-}
-
 std::string
 makeFilename(std::string const& db) {
-    return "empty_" + sanitizeName(db) + ".txt";
+    return "empty_" + lsst::qserv::sanitizeName(db) + ".txt";
 }
 
 void
