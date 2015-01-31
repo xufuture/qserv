@@ -41,6 +41,7 @@
 #include "global/Bug.h"
 #include "global/intTypes.h"
 #include "global/constants.h"
+#include "global/stringUtil.h"
 #include "qproc/ChunkSpec.h"
 #include "query/Constraint.h"
 #include "sql/SqlConnection.h"
@@ -49,11 +50,6 @@ namespace lsst {
 namespace qserv {
 namespace qproc {
 char const lookupSqlTemplate[] = "SELECT chunkId, subChunkId FROM %s WHERE %s IN (%s);";
-
-std::string sanitizeName(
-    std::string const& input) {
-    return input; // FIXME. need to expose sanitizeName used in css/EmptyChunks
-}
 
 std::string makeIndexTableName(
     std::string const& db,
@@ -75,24 +71,10 @@ std::string makeLookupSql(
     s += std::string("SELECT ") + CHUNK_COLUMN + "," + SUB_CHUNK_COLUMN
         + " FROM " + makeIndexTableName(db, table) + " WHERE "
         + keyColumn + " IN " + "(";
-#if 0
-    std::ostringstream os;
-    bool notFirst = false;
-    std::vector<int32_t>::const_iterator i,e;
-    for(i=keyValues.begin(), e=keyValues.end(); i != e; ++i) {
-        if (notFirst) {
-            os << ",";
-        } else {
-            notFirst = true;
-        }
-        os << *i;
-    }
-    s += os.str() + ")";
-#else
     s += stringValues + ")";
-#endif
     return s;
 }
+
 class SecondaryIndex::Backend {
 public:
     virtual ~Backend() {}
@@ -155,6 +137,7 @@ public:
     FakeBackend() {}
     virtual ChunkSpecVector lookup(query::ConstraintVector const& cv) {
         ChunkSpecVector dummy;
+        throw "FIXME";
         return dummy;
     }
 private:
