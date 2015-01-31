@@ -43,15 +43,18 @@ namespace qproc {
 
 /// ChunkSpec is a value class that bundles the per-chunk information that is
 /// used to compose a concrete chunk query for a specific chunk from an input
-/// parsed query statement. Contains A specification of chunkId and subChunkId
+/// parsed query statement. Contains a specification of chunkId and subChunkId
 /// list.
 /// Do not inherit.
 struct ChunkSpec {
 public:
     typedef std::vector<int32_t> Int32Vector;
-
-    ChunkSpec() : chunkId(-1) {}
     static int32_t const CHUNKID_INVALID = -1;
+
+    ChunkSpec() : chunkId(CHUNKID_INVALID) {}
+    ChunkSpec(int chunkId_, Int32Vector const& subChunks_)
+        : chunkId(chunkId_), subChunks(subChunks_) {}
+
 
     int32_t chunkId; ///< ChunkId of interest
     /// Subchunks of interest; empty indicates all subchunks are involved.
