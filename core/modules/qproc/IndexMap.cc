@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2014 AURA/LSST.
+ * Copyright 2014-2015 AURA/LSST.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -37,6 +37,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <set>
+#include <vector>
 
 // Third-party headers
 #include "boost/lexical_cast.hpp"
@@ -127,50 +128,108 @@ bool isIndex(query::Constraint const& c) {
 bool isNotIndex(query::Constraint const& c) {
     return c.name != "sIndex";
 }
-#if 0
-class ChunkSpecMap {
+
+class ChunkSpecSet {
 public:
     typedef std::map<int, std::vector<int> > Map;
 
-    ChunkSpecMap(ChunkSpecVector const& a) {
+    ChunkSpecSet(ChunkSpecVector const& a) {
         ChunkSpecVector::const_iterator i, e;
         for(i = a.begin(), e = a.end(); i != e; ++i) {
             ChunkSpec const& cs = *i;
-            _intersect(_map[cs.chunkId], cs.subChunks);
+            Map::iterator existing = _map.find(cs.chunkId);
+            if(existing != _map.end()) {
+                _union(existing->second, cs.subChunks);
+            } else {
+                // Ensure sorted.
+                _map.insert(Map::value_type(cs.chunkId, cs.subChunks));
+                std::vector<int>& v = _map.find(cs.chunkId)->second;
+                std::sort(v.begin(), v.end());
+            }
         }
     }
+    /// Restrict the existing ChunkSpecSet by r, that is, the ChunkSpecSet is
+    /// replaced by the intersection of the existing with r. Assume that r
+    /// contains no duplicates in chunkId.
+    void restrict(ChunkSpecVector const& r) {
+        Map both;
+        for(ChunkSpecVector::const_iterator i=r.begin(), e=r.end();
+            i != e; ++i) {
+            ChunkSpec const& cs = *i;
+            Map::iterator existing = _map.find(cs.chunkId);
+            if(existing != _map.end()) {
+                std::vector<int> rs(cs.subChunks.begin(), cs.subChunks.end());
+                std::sort(rs.begin(), rs.end());
+                std::vector<int> intersection;
+                std::set_intersection(
+                    existing->second.begin(),
+                    existing->second.end(),
+                    rs.begin(),
+                    rs.end(),
+                    std::back_inserter<std::vector<int> >(intersection));
+                both[cs.chunkId] = intersection;
+            } else { // No match? Leave it alone
+            }
+            _map.swap(both);
+        }
+    }
+    boost::shared_ptr<ChunkSpecVector> getSet() const {
+        boost::shared_ptr<ChunkSpecVector> r
+            = boost::make_shared<ChunkSpecVector>();
+        for(Map::const_iterator i=_map.begin(), e=_map.end();
+            i != e; ++i) {
+            r->push_back(ChunkSpec(i->first, i->second));
+        }
+        return r;
+    }
 private:
+    void _union(std::vector<int>& left, std::vector<int> const& right) {
+        // left <- left union right
+        std::vector<int> r1(right.begin(), right.end());
+        std::vector<int> l1;
+        l1.swap(left);
+        std::sort(r1.begin(), r1.end());
+        std::set_union(l1.begin(), l1.end(), r1.begin(), r1.end(),
+                       std::back_inserter<std::vector<int> >(left));
+    }
     ///
     void _intersect(std::vector<int>& left, std::vector<int> const& right) {
+        // left = left intersect right
 
     }
     Map _map;
 
 };
-#endif
+
 
 ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
-    RegionPtrVector rv;
-
     // Index lookups
     query::ConstraintVector indexConstraints;
     //    std::copy_if(cv.begin(), cv.end(), std::back_inserter(indexConstraints),
     //                 isIndex);
     // copy_if not available before c++11
-
     std::copy(cv.begin(), cv.end(), std::back_inserter(indexConstraints));
     std::remove_if(indexConstraints.begin(), indexConstraints.end(),
                    isNotIndex);
-    SecondaryIndex si(12312); // FIXME
-    throw 1231; // so we don't forget to fix this.
-    ChunkSpecVector indexSpecs = si.lookup(indexConstraints);
+    if(!_si) {
+        throw Bug("Invalid SecondaryIndex in IndexMap. Check IndexMap(...)");
+    }
+    ChunkSpecVector indexSpecs = _si->lookup(indexConstraints);
 
-    // Spatial portion
+    // Spatial area lookups
+    RegionPtrVector rv;
     std::transform(cv.begin(), cv.end(), std::back_inserter(rv), getRegion);
     ChunkRegion cr = _pm->getIntersect(rv);
     ChunkSpecVector csv;
     std::transform(cr.begin(), cr.end(),
                    std::back_inserter(csv), convertChunkTuple);
+
+    // Index and spatial lookup are supported in AND format only right now.
+    // If both exist, compute the AND.
+    if(indexSpecs.size() && csv.size()) {
+        ChunkSpecSet specSet(indexSpecs);
+        specSet.restrict(csv);
+    }
     return csv;
 }
 
