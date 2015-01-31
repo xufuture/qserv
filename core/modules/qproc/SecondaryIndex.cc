@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2014 AURA/LSST.
+ * Copyright 2014-2015 AURA/LSST.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -32,6 +32,7 @@
 #include "qproc/SecondaryIndex.h"
 
 // System headers
+#include <algorithm>
 
 // Third-party headers
 #include "boost/make_shared.hpp" // switch to make_unique
@@ -137,11 +138,23 @@ public:
     FakeBackend() {}
     virtual ChunkSpecVector lookup(query::ConstraintVector const& cv) {
         ChunkSpecVector dummy;
-        throw "FIXME";
+        if(_hasSecondary(cv)) {
+            for(int i=100; i < 103; ++i) {
+                int bogus[] = {1,2,3};
+                std::vector<int> subChunks(bogus, bogus+3);
+                dummy.push_back(ChunkSpec(i, subChunks));
+            }
+        }
         return dummy;
     }
 private:
-
+    struct _checkIndex {
+        bool operator()(query::Constraint const& c) {
+            return c.name == "sIndex"; }
+    };
+    bool _hasSecondary(query::ConstraintVector const& cv) {
+        return cv.end() != std::find_if(cv.begin(), cv.end(), _checkIndex());
+    }
 };
 
 SecondaryIndex::SecondaryIndex(mysql::MySqlConfig const& c)
