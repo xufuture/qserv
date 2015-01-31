@@ -204,7 +204,7 @@ bool ChunkSpecFragmenter::isDone() {
 ChunkSpecSingle::List ChunkSpecSingle::makeList(ChunkSpec const& spec) {
     List list;
     if(spec.subChunks.empty()) {
-        throw std::logic_error("Attempted subchunk spec list without subchunks.");
+        throw Bug("Attempted subchunk spec list without subchunks.");
     }
     ChunkSpecSingle s;
     s.chunkId = spec.chunkId;
