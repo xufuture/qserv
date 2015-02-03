@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2012-2013 LSST Corporation.
+ * Copyright 2012-2015 LSST Corporation.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -66,7 +66,9 @@ public:
     /// @return the intersection with the chunk.
     /// If both ChunkSpecs have non-empty subChunks, but do not intersect, chunkId is set to be invalid (-1)
     ChunkSpec intersect(ChunkSpec const& cs) const;
-    void merge(ChunkSpec const& rhs);
+    void restrict(ChunkSpec const& cs);
+//    void mergeUnion(ChunkSpec const& rhs);
+
 
     bool operator<(ChunkSpec const& rhs) const;
     bool operator==(ChunkSpec const& rhs) const;

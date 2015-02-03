@@ -84,7 +84,7 @@ void intersectSorted(ChunkSpecVector& dest, ChunkSpecVector const& a) {
         if(ai->chunkId == di->chunkId) {
             ChunkSpec cs = *di;
             // On a match, perform the intersection.
-            cs.merge(*ai);
+            cs.restrict(*ai);
             if(di->chunkId != ChunkSpec::CHUNKID_INVALID) {
                 dest.push_back(cs);
             }
@@ -113,11 +113,11 @@ bool ChunkSpec::shouldSplit() const {
 
 ChunkSpec ChunkSpec::intersect(ChunkSpec const& cs) const {
     ChunkSpec output(*this);
-    output.merge(cs);
+    output.restrict(cs);
     return output;
 }
 
-void ChunkSpec::merge(ChunkSpec const& rhs) {
+void ChunkSpec::restrict(ChunkSpec const& rhs) {
     if(chunkId != rhs.chunkId) {
         throw Bug("ChunkSpec::merge with different chunkId");
     }
