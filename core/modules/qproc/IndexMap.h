@@ -44,7 +44,6 @@ namespace qproc {
 
 class PartitioningMap;
 class Region;
-
 class SecondaryIndex;
 
 boost::shared_ptr<Region> getRegion(query::Constraint const& c);
@@ -61,8 +60,5 @@ private:
     boost::shared_ptr<SecondaryIndex> _si;
 };
 
-
-
 }}} // namespace lsst::qserv::qproc
-
 #endif // LSST_QSERV_QPROC_INDEXMAP_H
