@@ -129,9 +129,10 @@ bool isNotIndex(query::Constraint const& c) {
     return c.name != "sIndex";
 }
 
+#if 0 // Duplicates functionality in ChunkSpec
 class ChunkSpecSet {
 public:
-    typedef std::map<int, std::vector<int> > Map;
+    typedef std::map<int, ChunkSpec> Map;
 
     ChunkSpecSet(ChunkSpecVector const& a) {
         ChunkSpecVector::const_iterator i, e;
@@ -139,12 +140,9 @@ public:
             ChunkSpec const& cs = *i;
             Map::iterator existing = _map.find(cs.chunkId);
             if(existing != _map.end()) {
-                _union(existing->second, cs.subChunks);
+                existing->second.mergeUnion(cs);// _union(existing->second, cs.subChunks);
             } else {
-                // Ensure sorted.
-                _map.insert(Map::value_type(cs.chunkId, cs.subChunks));
-                std::vector<int>& v = _map.find(cs.chunkId)->second;
-                std::sort(v.begin(), v.end());
+                _map.insert(Map::value_type(cs.chunkId, cs));
             }
         }
     }
@@ -158,16 +156,7 @@ public:
             ChunkSpec const& cs = *i;
             Map::iterator existing = _map.find(cs.chunkId);
             if(existing != _map.end()) {
-                std::vector<int> rs(cs.subChunks.begin(), cs.subChunks.end());
-                std::sort(rs.begin(), rs.end());
-                std::vector<int> intersection;
-                std::set_intersection(
-                    existing->second.begin(),
-                    existing->second.end(),
-                    rs.begin(),
-                    rs.end(),
-                    std::back_inserter<std::vector<int> >(intersection));
-                both[cs.chunkId] = intersection;
+                both[cs.chunkId] = existing->second.intersect(cs);
             } else { // No match? Leave it alone
             }
             _map.swap(both);
@@ -178,7 +167,7 @@ public:
             = boost::make_shared<ChunkSpecVector>();
         for(Map::const_iterator i=_map.begin(), e=_map.end();
             i != e; ++i) {
-            r->push_back(ChunkSpec(i->first, i->second));
+            r->push_back(i->second);
         }
         return r;
     }
@@ -200,7 +189,7 @@ private:
     Map _map;
 
 };
-
+#endif
 
 ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
     // Index lookups
@@ -211,26 +200,30 @@ ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
     std::copy(cv.begin(), cv.end(), std::back_inserter(indexConstraints));
     std::remove_if(indexConstraints.begin(), indexConstraints.end(),
                    isNotIndex);
-    if(!_si) {
-        throw Bug("Invalid SecondaryIndex in IndexMap. Check IndexMap(...)");
+    ChunkSpecVector indexSpecs;
+    if(!indexConstraints.empty()) {
+        if(!_si) {
+            throw Bug("Invalid SecondaryIndex in IndexMap. Check IndexMap(...)");
+        }
+        indexSpecs = _si->lookup(indexConstraints);
     }
-    ChunkSpecVector indexSpecs = _si->lookup(indexConstraints);
 
     // Spatial area lookups
-    RegionPtrVector rv;
-    std::transform(cv.begin(), cv.end(), std::back_inserter(rv), getRegion);
-    ChunkRegion cr = _pm->getIntersect(rv);
-    ChunkSpecVector csv;
-    std::transform(cr.begin(), cr.end(),
-                   std::back_inserter(csv), convertChunkTuple);
-
-    // Index and spatial lookup are supported in AND format only right now.
-    // If both exist, compute the AND.
-    if(indexSpecs.size() && csv.size()) {
-        ChunkSpecSet specSet(indexSpecs);
-        specSet.restrict(csv);
+    if(indexConstraints.size() == cv.size()) {
+        // No spatial constraints?
+        return indexSpecs;
+    } else {
+        // Index and spatial lookup are supported in AND format only right now.
+        // If both exist, compute the AND.
+        RegionPtrVector rv;
+        std::transform(cv.begin(), cv.end(), std::back_inserter(rv), getRegion);
+        ChunkRegion cr = _pm->getIntersect(rv);
+        ChunkSpecVector csv;
+        std::transform(cr.begin(), cr.end(),
+                       std::back_inserter(csv), convertChunkTuple);
+        intersectSorted(csv, indexSpecs);
+        return csv;
     }
-    return csv;
 }
 
 
