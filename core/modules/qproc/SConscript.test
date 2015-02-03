@@ -60,6 +60,8 @@ programs.append(p)
 
 p = env.Program(["testChunkSpec.cc"] + myDeps + deps, LIBS=findLibs(extDeps))
 programs.append(p)
+p = env.Program(["testIndexMap.cc"] + myDeps + deps, LIBS=findLibs(extDeps))
+programs.append(p)
 
 # add a unit test which runs on every build
 utest = env.UnitTest(p)
