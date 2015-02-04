@@ -25,7 +25,7 @@
   * (through some delegated behavior) for constructing SelectStmt (and
   * SelectList, etc.) from an ANTLR parse tree.
   *
-  * Includes parse handlers: SelectListH, SelectStarH, ColumnAliasH
+  * Includes parse handlers: SelectStarH, ColumnAliasH
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -49,19 +49,6 @@
 namespace lsst {
 namespace qserv {
 namespace parser {
-
-////////////////////////////////////////////////////////////////////////
-// SelectListFactory::SelectListH
-////////////////////////////////////////////////////////////////////////
-class SelectListFactory::SelectListH : public VoidOneRefFunc {
-public:
-    explicit SelectListH(SelectListFactory& f) : _f(f) {}
-    virtual ~SelectListH() {}
-    virtual void operator()(RefAST a) {
-        _f._import(a); // Trigger select list construction
-    }
-    SelectListFactory& _f;
-};
 
 ////////////////////////////////////////////////////////////////////////
 // SelectListFactory::SelectStarH
@@ -110,9 +97,7 @@ SelectListFactory::SelectListFactory(boost::shared_ptr<ParseAliasMap> aliasMap,
 
 void
 SelectListFactory::attachTo(SqlSQL2Parser& p) {
-//    _selectListH.reset(new SelectListH(*this)); // deprecated
     _columnAliasH = boost::make_shared<ColumnAliasH>(_aliases);
-//    p._selectListHandler = _selectListH; // deprecated
     p._selectStarHandler.reset(new SelectStarH(*this));
     p._columnAliasHandler = _columnAliasH;
 }

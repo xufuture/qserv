@@ -575,7 +575,7 @@ qualified_name :
 //{ Rule #474 <select_list>
 select_list : 
     astr:ASTERISK {handleSelectStar(astr_AST);}
-    | a:select_sublist (COMMA! select_sublist)* {        
+    | select_sublist (COMMA! select_sublist)* {
             #select_list = #([SELECT_LIST,"SELECT_LIST"], #select_list); }
 ;
 //}

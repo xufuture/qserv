@@ -67,7 +67,6 @@ public:
 private:
     friend class SelectFactory;
 
-    class SelectListH;
     class SelectStarH;
     friend class SelectStarH;
     class ColumnAliasH;
@@ -86,7 +85,6 @@ private:
     ValueExprPtr _newSetFctSpec(antlr::RefAST expr);
 
     // Delegate handlers
-    boost::shared_ptr<SelectListH> _selectListH;
     boost::shared_ptr<ColumnAliasH> _columnAliasH;
 
     // data

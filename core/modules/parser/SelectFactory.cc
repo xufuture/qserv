@@ -27,7 +27,6 @@
   * (through some delegated behavior) for constructing SelectStmt (and
   * SelectList, etc.) from an ANTLR parse tree.
   *
-  * Includes parse handlers: SelectListH, SelectStarH, ColumnAliasH
   *
   * @author Daniel L. Wang, SLAC
   */
