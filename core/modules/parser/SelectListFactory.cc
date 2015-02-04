@@ -95,16 +95,13 @@ SelectListFactory::SelectListFactory(boost::shared_ptr<ParseAliasMap> aliasMap,
       _valueExprList(boost::make_shared<ValueExprList>()) {
 }
 
+/// attach the column alias handler. This is needed until we implement code to
+/// visit the tree to handle column aliases. We can probably put the visit code
+/// in a function to be called at the beginning of the import() call.
 void
 SelectListFactory::attachTo(SqlSQL2Parser& p) {
     _columnAliasH = boost::make_shared<ColumnAliasH>(_aliases);
-    p._selectStarHandler.reset(new SelectStarH(*this));
     p._columnAliasHandler = _columnAliasH;
-}
-
-void
-SelectListFactory::import(antlr::RefAST a) {
-    _import(a);
 }
 
 boost::shared_ptr<query::SelectList> SelectListFactory::getProduct() {
@@ -114,7 +111,7 @@ boost::shared_ptr<query::SelectList> SelectListFactory::getProduct() {
 }
 
 void
-SelectListFactory::_import(RefAST selectRoot) {
+SelectListFactory::import(RefAST selectRoot) {
     for(; selectRoot.get();
         selectRoot = selectRoot->getNextSibling()) {
         RefAST child = selectRoot->getFirstChild();

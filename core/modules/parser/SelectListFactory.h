@@ -74,11 +74,9 @@ private:
     // For "friends"
     SelectListFactory(boost::shared_ptr<ParseAliasMap> aliasMap,
                       boost::shared_ptr<ValueExprFactory> vf);
-    void attachTo(SqlSQL2Parser& p); ///< deprecated
+    void attachTo(SqlSQL2Parser& p); ///< For column alias handling
 
     // Really private
-    void _import(antlr::RefAST selectRoot); ///< deprecated
-
     void _addSelectColumn(antlr::RefAST expr);
     void _addSelectStar(antlr::RefAST child=antlr::RefAST());
     ValueExprPtr _newColumnExpr(antlr::RefAST expr);
