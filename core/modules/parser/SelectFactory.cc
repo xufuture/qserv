@@ -125,13 +125,23 @@ public:
                   break;
               case SqlSQL2TokenTypes::SELECT_LIST:
                   child = a->getFirstChild();
+
                   if(!child.get()) {
                       throw ParseException("Expected select list", a);
                   } else {
                       _slf.import(child);
                   }
                   break;
+              case SqlSQL2TokenTypes::ASTERISK:
+                  _slf.importStar(a);
+                  break;
+              case SqlSQL2TokenTypes::FROM_CLAUSE:
+              case SqlSQL2TokenTypes::WHERE_CLAUSE:
+                  // For now, defer FROM and WHERE handling to parse handlers.
+                  // Good place to call those handlers in the future.
+                  break;
               default:
+                  std::cout << "Unhandled queryspec node:" << tokenText(a) << std::endl;
                   // For now, ignore into_clause and table_exp
                   // and let the other parse handlers take it.
                   break;

@@ -64,6 +64,7 @@ class SelectListFactory {
 public:
     boost::shared_ptr<query::SelectList> getProduct();
     void import(antlr::RefAST selectRoot);
+    void importStar(antlr::RefAST asterisk);
 private:
     friend class SelectFactory;
 

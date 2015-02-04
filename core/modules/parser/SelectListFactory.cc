@@ -130,14 +130,18 @@ SelectListFactory::import(RefAST selectRoot) {
             break;
         case SqlSQL2TokenTypes::ASTERISK: // Not sure this will be
                                           // handled here.
-            _addSelectStar();
-            // should only have a single unqualified "*"
+            throw ParseException("Unexpected * in SELECT_LIST", selectRoot);
             break;
         default:
-            throw ParseException("Invalid SelectList token type",selectRoot);
+            throw ParseException("Invalid SelectList token type", selectRoot);
 
         } // end switch
     } // end for-each select_list child.
+}
+
+void
+SelectListFactory::importStar(RefAST selectRoot) {
+    _addSelectStar();
 }
 
 void
