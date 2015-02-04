@@ -141,7 +141,8 @@ public:
                   // Good place to call those handlers in the future.
                   break;
               default:
-                  std::cout << "Unhandled queryspec node:" << tokenText(a) << std::endl;
+                  //std::cout << "Unhandled queryspec node:"
+                  //          << tokenText(a) << std::endl;
                   // For now, ignore into_clause and table_exp
                   // and let the other parse handlers take it.
                   break;
