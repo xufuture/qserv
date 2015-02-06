@@ -36,30 +36,40 @@
 // Other external headers
 #include "boost/make_shared.hpp"
 
+// LSST headers
+#include "sg/Box.h"
+#include "sg/Circle.h"
+#include "sg/Ellipse.h"
+#include "sg/ConvexPolygon.h"
+
 // Qserv headers
 #include "css/StripingParams.h"
 #include "qproc/QueryProcessingBug.h"
 
+
 namespace lsst {
 namespace qserv {
 namespace qproc {
-inline boost::shared_ptr<BoxRegion>
+typedef double Coordinate;
+
+inline boost::shared_ptr<sg::Box>
 getBoxFromParams(std::vector<Coordinate> const& params) {
     if(params.size() != 4) {
         throw QueryProcessingBug("Invalid number or parameters for region");
     }
-    return boost::make_shared<BoxRegion>(BoxRegion::fromDeg(params[0], params[1], params[2], params[3]));
+    return boost::make_shared<sg::Box>(sg::Box::fromDegrees(params[0], params[1], params[2], params[3]));
 }
 
-inline boost::shared_ptr<CircleRegion>
+inline boost::shared_ptr<sg::Circle>
 getCircleFromParams(std::vector<Coordinate> const& params) {
     // UnitVector3d uv3(lon,lat);
     // Circle c(uv3, radius^2);
     if(params.size() != 3) {
         throw QueryProcessingBug("Invalid number or parameters for region");
     }
-    UnitVector3d uv3(params[0], params[1]);
-    return boost::make_shared<CircleRegion>(uv3, params[2]*params[2]);
+    sg::LonLat center = sg::LonLat::fromDegrees(params[0], params[1]);
+    sg::Angle a = sg::Angle::fromDegrees(params[2]);
+    return boost::make_shared<sg::Circle>(sg::UnitVector3d(center), a);
 }
 
 
@@ -68,7 +78,7 @@ inline double toRadians(double degrees) {
     return pi*degrees/180;
 }
 
-inline boost::shared_ptr<EllipseRegion>
+inline boost::shared_ptr<sg::Ellipse>
 getEllipseFromParams(std::vector<Coordinate> const& params) {
     // lon, lat, semimajang, semiminang, posangle
     // UnitVector3d uv3(lon,lat);
@@ -76,25 +86,26 @@ getEllipseFromParams(std::vector<Coordinate> const& params) {
     if(params.size() != 5) {
         throw QueryProcessingBug("Invalid number or parameters for region");
     }
-    UnitVector3d uv3(params[0], params[1]);
-    return boost::make_shared<EllipseRegion>(
+    sg::UnitVector3d uv3(sg::LonLat::fromDegrees(params[0], params[1]));
+    return boost::make_shared<sg::Ellipse>(
         uv3,
-        toRadians(params[2]),
-        toRadians(params[3]),
-        toRadians(params[4]));
+        sg::Angle::fromDegrees(params[2]),
+        sg::Angle::fromDegrees(params[3]),
+        sg::Angle::fromDegrees(params[4]));
 }
 
-inline boost::shared_ptr<ConvexPolyRegion>
+inline boost::shared_ptr<sg::ConvexPolygon>
 getConvexPolyFromParams(std::vector<Coordinate> const& params) {
     // polygon vertices, min 3 vertices, must get even number of params
     if((params.size() <= 6) || ((params.size() & 1) != 0)) {
         throw QueryProcessingBug("Invalid number or parameters for region");
     }
-    std::vector<UnitVector3d> uv3;
+    std::vector<sg::UnitVector3d> uv3;
     for(unsigned i=0; i < params.size(); i += 2) {
-        uv3.push_back(UnitVector3d(params[i], params[i+1]));
+        sg::LonLat vx = sg::LonLat::fromDegrees(params[i], params[i+1]);
+        uv3.push_back(sg::UnitVector3d(vx));
     }
-    return boost::make_shared<ConvexPolyRegion>(uv3);
+    return boost::make_shared<sg::ConvexPolygon>(uv3);
 }
 
 }}} // namespace lsst::qserv::qproc

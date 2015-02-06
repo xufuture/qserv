@@ -46,9 +46,9 @@ namespace qproc {
 
 // Temporary
 typedef double Coordinate;
-class Region {
+class Region2 {
 public:
-    virtual ~Region() {}
+    virtual ~Region2() {}
 };
 typedef boost::shared_ptr<Region> RegionPtr;
 typedef std::vector<RegionPtr> RegionPtrVector;

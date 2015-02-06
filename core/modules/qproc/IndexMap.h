@@ -35,6 +35,7 @@
 //#include "qproc/fakeGeometry.h"
 
 // Qserv headers
+#include "css/StripingParams.h"
 #include "query/Constraint.h"
 #include "qproc/ChunkSpec.h"
 
@@ -43,16 +44,21 @@ namespace qserv {
 namespace qproc {
 
 class PartitioningMap;
-class Region;
 class SecondaryIndex;
 
-boost::shared_ptr<Region> getRegion(query::Constraint const& c);
+//boost::shared_ptr<Region> getRegion(query::Constraint const& c);
 
 class IndexMap {
 public:
     IndexMap(boost::shared_ptr<PartitioningMap> pm,
              boost::shared_ptr<SecondaryIndex> si)
         : _pm(pm), _si(si) {}
+    IndexMap(css::StripingParams const& sp,
+             boost::shared_ptr<SecondaryIndex> si)
+        : _si(si) {
+        throw "FIXME, need to construct pm.!";
+
+    }
     ChunkSpecVector getIntersect(query::ConstraintVector const& cv);
 
 private:

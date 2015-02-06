@@ -71,7 +71,7 @@
 
 // LSST headers
 #include "lsst/log/Log.h"
-#include "qproc/fakeGeometry.h" // Temporary
+#include "qproc/geomAdapter.h" // Temporary
 
 // Qserv headers
 #include "ccontrol/MergingRequester.h"
@@ -297,9 +297,7 @@ void UserQuery::_setupChunking() {
         // self.pmap = self._makePmap(self.dominantDb, self.dbStriping)
         css::StripingParams partStriping = _qSession->getDbStriping();
         boost::shared_ptr<qproc::SecondaryIndex> si; // FIXME
-        boost::shared_ptr<qproc::PartitioningMap> pm
-            = boost::make_shared<qproc::PartitioningMap>(partStriping);
-        im = boost::make_shared<qproc::IndexMap>(pm, si);
+        im = boost::make_shared<qproc::IndexMap>(partStriping, si);
         qproc::ChunkSpecVector csv = im->getIntersect(*constraints);
         _qSession->addChunk(im->getIntersect(*constraints));
     }

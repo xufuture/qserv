@@ -41,21 +41,27 @@
 
 // Third-party headers
 #include "boost/lexical_cast.hpp"
-
+// LSST headers
+#include "sg/Chunker.h"
 // Qserv headers
 #include "global/stringTypes.h"
-#include "qproc/fakeGeometry.h"
+//#include "qproc/fakeGeometry.h"
+
 #include "qproc/geomAdapter.h"
 #include "qproc/SecondaryIndex.h"
 #include "query/Constraint.h"
 
 using lsst::qserv::StringVector;
-using lsst::qserv::qproc::Region;
-using lsst::qserv::qproc::BoxRegion;
-using lsst::qserv::qproc::CircleRegion;
-using lsst::qserv::qproc::EllipseRegion;
-using lsst::qserv::qproc::ConvexPolyRegion;
+using lsst::sg::Region;
+using lsst::sg::Box;
+using lsst::sg::Circle;
+using lsst::sg::Ellipse;
+using lsst::sg::ConvexPolygon;
+using lsst::sg::SubChunks;
 using lsst::qserv::qproc::Coordinate;
+
+// Tmp:
+typedef std::vector<SubChunks> SubChunksVector;
 
 namespace { // File-scope helpers
 template <typename T>
@@ -70,19 +76,19 @@ boost::shared_ptr<Region> make(StringVector const& v) {
         return boost::shared_ptr<Region>(new T(convertVec<Coordinate>(v)));
 }
 template <>
-boost::shared_ptr<Region> make<BoxRegion>(StringVector const& v) {
+boost::shared_ptr<Region> make<Box>(StringVector const& v) {
     return lsst::qserv::qproc::getBoxFromParams(convertVec<Coordinate>(v));
 }
 template <>
-boost::shared_ptr<Region> make<CircleRegion>(StringVector const& v) {
+boost::shared_ptr<Region> make<Circle>(StringVector const& v) {
     return lsst::qserv::qproc::getCircleFromParams(convertVec<Coordinate>(v));
 }
 template <>
-boost::shared_ptr<Region> make<EllipseRegion>(StringVector const& v) {
+boost::shared_ptr<Region> make<Ellipse>(StringVector const& v) {
     return lsst::qserv::qproc::getEllipseFromParams(convertVec<Coordinate>(v));
 }
 template <>
-boost::shared_ptr<Region> make<ConvexPolyRegion>(StringVector const& v) {
+boost::shared_ptr<Region> make<ConvexPolygon>(StringVector const& v) {
     return lsst::qserv::qproc::getConvexPolyFromParams(convertVec<Coordinate>(v));
 }
 
@@ -90,14 +96,14 @@ typedef boost::shared_ptr<Region>(*MakeFunc)(StringVector const& v);
 
 struct FuncMap {
     FuncMap() {
-        fMap["box"] = make<BoxRegion>;
-        fMap["circle"] = make<CircleRegion>;
-        fMap["ellipse"] = make<EllipseRegion>;
-        fMap["poly"] = make<ConvexPolyRegion>;
-        fMap["qserv_areaspec_box"] = make<BoxRegion>;
-        fMap["qserv_areaspec_circle"] = make<CircleRegion>;
-        fMap["qserv_areaspec_ellipse"] = make<EllipseRegion>;
-        fMap["qserv_areaspec_poly"] = make<ConvexPolyRegion>;
+        fMap["box"] = make<Box>;
+        fMap["circle"] = make<Circle>;
+        fMap["ellipse"] = make<Ellipse>;
+        fMap["poly"] = make<ConvexPolygon>;
+        fMap["qserv_areaspec_box"] = make<Box>;
+        fMap["qserv_areaspec_circle"] = make<Circle>;
+        fMap["qserv_areaspec_ellipse"] = make<Ellipse>;
+        fMap["qserv_areaspec_poly"] = make<ConvexPolygon>;
     }
     std::map<std::string, MakeFunc> fMap;
 };
@@ -108,16 +114,17 @@ static FuncMap funcMap;
 namespace lsst {
 namespace qserv {
 namespace qproc {
+typedef std::vector<boost::shared_ptr<Region> > RegionPtrVector;
 
 boost::shared_ptr<Region> getRegion(query::Constraint const& c) {
     return funcMap.fMap[c.name](c.params);
 }
 
-ChunkSpec convertChunkTuple(ChunkTuple const& ct) {
+ChunkSpec convertSgSubChunks(SubChunks const& sc) {
     ChunkSpec cs;
-    cs.chunkId = ct.chunkId;
-    cs.subChunks.resize(ct.subChunkIds.size());
-    std::copy(ct.subChunkIds.begin(), ct.subChunkIds.end(),
+    cs.chunkId = sc.chunkId;
+    cs.subChunks.resize(sc.subChunkIds.size());
+    std::copy(sc.subChunkIds.begin(), sc.subChunkIds.end(),
               cs.subChunks.begin());
     return cs;
 }
@@ -217,10 +224,12 @@ ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
         // If both exist, compute the AND.
         RegionPtrVector rv;
         std::transform(cv.begin(), cv.end(), std::back_inserter(rv), getRegion);
-        ChunkRegion cr = _pm->getIntersect(rv);
+        SubChunksVector scv; // = _pm->getIntersect(rv);
+
+        throw "FIXME: do partitioningmap!";
         ChunkSpecVector csv;
-        std::transform(cr.begin(), cr.end(),
-                       std::back_inserter(csv), convertChunkTuple);
+        std::transform(scv.begin(), scv.end(),
+                       std::back_inserter(csv), convertSgSubChunks);
         intersectSorted(csv, indexSpecs);
         return csv;
     }
