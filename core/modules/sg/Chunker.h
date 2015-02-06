@@ -28,7 +28,12 @@
 /// \brief This file declares a class for partitioning the sky into chunks
 ///        and sub-chunks.
 
+
+#if __cplusplus <= 199711L
+#include <stdint.h>
+#else
 #include <cstdint>
+#endif
 #include <vector>
 
 #include "Angle.h"
