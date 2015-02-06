@@ -194,6 +194,15 @@ Box Circle::boundingBox() const {
     return Box(c, w, h);
 }
 
+int Circle::relate(UnitVector3d const & v) const {
+    if (contains(v)) {
+        return CONTAINS | INTERSECTS;
+    } else if (isEmpty()) {
+        return DISJOINT | WITHIN;
+    }
+    return DISJOINT;
+}
+
 int Circle::relate(Box const & b) const {
     // Box-Circle relations are implemented by Box.
     return invertSpatialRelations(b.relate(*this));

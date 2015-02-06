@@ -60,7 +60,7 @@ UnitVector3d UnitVector3d::northFrom(Vector3d const & v) {
                v.x() * v.x() + v.y() * v.y());
     if (n == Vector3d()) {
         UnitVector3d u;
-        u._v.x() = -std::copysign(1.0, v.z());
+        u._v.x() = -::copysign(1.0, v.z());
         return u;
     }
     return UnitVector3d(n);

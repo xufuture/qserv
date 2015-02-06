@@ -210,15 +210,6 @@ public:
     Circle & erodeBy(Angle r) { return dilateBy(-r); }
     Circle erodedBy(Angle r) const { return dilatedBy(-r); }
 
-    int relate(UnitVector3d const & v) const {
-        if (contains(v)) {
-            return CONTAINS | INTERSECTS;
-        } else if (isEmpty()) {
-            return DISJOINT | WITHIN;
-        }
-        return DISJOINT;
-    }
-
     /// `area` returns the area of this circle in steradians.
     double area() const {
         return PI * std::max(0.0, std::min(_squaredChordLength, 4.0));
@@ -233,6 +224,8 @@ public:
 
     /// `complemented` returns the closure of the complement of this circle.
     Circle complemented() const { return Circle(*this).complement(); }
+
+    int relate(UnitVector3d const & v) const;
 
     // Region interface
     virtual Circle * clone() const { return new Circle(*this); }

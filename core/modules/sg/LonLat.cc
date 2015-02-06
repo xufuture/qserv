@@ -41,7 +41,7 @@ Angle LonLat::latitudeOf(Vector3d const & v) {
     if (v(2) != 0.0) {
         lat = std::atan2(v(2), sqrt(d2));
         if (std::fabs(lat) > 0.5 * PI) {
-            lat = std::copysign(0.5 * PI, lat);
+            lat = ::copysign(0.5 * PI, lat);
         }
     }
     return Angle(lat);

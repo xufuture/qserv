@@ -202,8 +202,8 @@ Circle Box::boundingCircle() const {
         double phi1, phi2, phi3;
         double c = cos(0.5 * w);
         if (c == 0.0) {
-            phi1 = std::copysign(0.5 * PI, _lat.a().radians());
-            phi2 = std::copysign(0.5 * PI, _lat.b().radians());
+            phi1 = ::copysign(0.5 * PI, _lat.a().radians());
+            phi2 = ::copysign(0.5 * PI, _lat.b().radians());
             phi3 = 0.0;
         } else {
             phi1 = std::atan(tan(_lat.a()) / c);

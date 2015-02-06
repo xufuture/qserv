@@ -27,7 +27,7 @@
 /// \author Serge Monkewitz
 /// \brief This file declares a class for arbitrary precision integers.
 
-#include <cstdint>
+#include <stdint.h>
 #include <cstring>
 #include <stdexcept>
 
