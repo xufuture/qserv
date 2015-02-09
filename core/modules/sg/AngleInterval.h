@@ -24,7 +24,6 @@
 #define LSST_SG_ANGLEINTERVAL_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file defines a class for representing angle intervals.
 
 #include "Angle.h"
@@ -34,7 +33,7 @@
 namespace lsst {
 namespace sg {
 
-/// `AngleInterval` is closed interval of arbitrary angles.
+/// `AngleInterval` represents closed intervals of arbitrary angles.
 class AngleInterval : public Interval<AngleInterval, Angle> {
     typedef Interval<AngleInterval, Angle> Base;
 public:
@@ -43,18 +42,22 @@ public:
         return AngleInterval(Angle::fromDegrees(x),
                              Angle::fromDegrees(y));
     }
+
     static AngleInterval fromRadians(double x, double y) {
         return AngleInterval(Angle::fromRadians(x),
                              Angle::fromRadians(y));
     }
+
     static AngleInterval empty() {
         return AngleInterval();
     }
+
     static AngleInterval full() {
         return AngleInterval(Angle(-std::numeric_limits<double>::infinity()),
                              Angle(std::numeric_limits<double>::infinity()));
     }
 
+    // Delegation to base class constructors
     AngleInterval() : Base() {}
 
     explicit AngleInterval(Angle x) : Base(x) {}

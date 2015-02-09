@@ -24,7 +24,6 @@
 #define LSST_SG_MATRIX3D_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains a class representing 3x3 real matrices.
 
 #include <iosfwd>
@@ -177,8 +176,8 @@ public:
         return inv;
     }
 
-    /// `print` writes this matrix to given output stream. Each line of output
-    /// is indented by the given number of spaces.
+    /// `print` writes this matrix to the given output stream. Each line of
+    /// output is indented by the given number of spaces.
     void print(std::ostream & os, int indent) const;
 
 private:

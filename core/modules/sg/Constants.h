@@ -24,7 +24,6 @@
 #define LSST_SG_CONSTANTS_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains common constants.
 
 

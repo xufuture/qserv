@@ -24,7 +24,6 @@
 #define LSST_SG_NORMALIZEDANGLEINTERVAL_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file declares a class representing closed intervals of
 ///        normalized angles, i.e. intervals of the unit circle.
 
@@ -61,12 +60,15 @@ public:
         return NormalizedAngleInterval(Angle::fromDegrees(a),
                                        Angle::fromDegrees(b));
     }
+
     static NormalizedAngleInterval fromRadians(double a, double b) {
         return NormalizedAngleInterval(Angle(a), Angle(b));
     }
+
     static NormalizedAngleInterval empty() {
         return NormalizedAngleInterval();
     }
+
     static NormalizedAngleInterval full() {
         return NormalizedAngleInterval(NormalizedAngle(0.0),
                                        NormalizedAngle(2.0 * PI));
@@ -75,12 +77,15 @@ public:
     /// This constructor creates an empty interval.
     NormalizedAngleInterval() :
         _a(NormalizedAngle::nan()), _b(NormalizedAngle::nan()) {}
+
     /// This constructor creates a closed interval containing only
     /// the normalization of x.
     explicit NormalizedAngleInterval(Angle const & x) : _a(x), _b(_a) {}
+
     /// This constructor creates a closed interval containing only x.
     explicit NormalizedAngleInterval(NormalizedAngle const & x) :
         _a(x), _b(x) {}
+
     /// This constructor creates an interval from the given endpoints.
     /// If both x and y lie in the range [0, 2π), then y may be less than x.
     /// For example, passing in x = 3π/2 and y = π/2 will result in an interval
@@ -88,6 +93,7 @@ public:
     /// or equal to y, and the interval will correspond to the the set of
     /// angles produced by normalizing the elements of the interval [x, y].
     NormalizedAngleInterval(Angle x, Angle y);
+
     /// This constructor creates an interval with the given endpoints.
     NormalizedAngleInterval(NormalizedAngle x, NormalizedAngle y) :
         _a(x), _b(y) {}
@@ -96,6 +102,7 @@ public:
     bool operator==(NormalizedAngleInterval const & i) const {
         return (_a == i._a && _b == i._b) || (isEmpty() && i.isEmpty());
     }
+
     bool operator!=(NormalizedAngleInterval const & i) const {
         return !(*this == i);
     }
@@ -104,6 +111,7 @@ public:
     bool operator==(NormalizedAngle x) const {
         return (_a == x && _b == x) || (x.isNan() && isEmpty());
     }
+
     bool operator!=(NormalizedAngle x) const { return !(*this == x); }
 
     ///@{
@@ -121,10 +129,12 @@ public:
     /// `isEmpty` returns true if this interval does not contain any
     /// normalized angles.
     bool isEmpty() const { return _a.isNan() || _b.isNan(); }
+
     /// `isFull` returns true if this interval contains all normalized angles.
     bool isFull() const {
         return _a.radians() == 0.0 && _b.radians() == 2.0 * PI;
     }
+
     /// `wraps` returns true if the interval "wraps" around the 0/2π
     /// angle discontinuity, i.e. consists of `[a(), 2π) ∪ [0, b()]`.
     bool wraps() const { return _a > _b; }
@@ -132,6 +142,7 @@ public:
     /// `center` returns the center of this interval. It is NaN for empty
     /// intervals, and arbitrary for full intervals.
     NormalizedAngle center() const { return NormalizedAngle::center(_a, _b); }
+
     /// `size` returns the size (length, width) of this interval. It is zero
     /// for single-point intervals, and NaN for empty intervals. Note
     /// that due to rounding errors, an interval with size `2 * PI` is not
@@ -148,6 +159,7 @@ public:
         }
         return wraps() ? (x <= _b || _a <= x) : (_a <= x && x <= _b);
     }
+
     bool contains(NormalizedAngleInterval const & x) const;
     ///@}
 
@@ -157,6 +169,7 @@ public:
     bool isDisjointFrom(NormalizedAngle x) const {
         return !intersects(x);
     }
+
     bool isDisjointFrom(NormalizedAngleInterval const & x) const;
     ///@}
 
@@ -166,6 +179,7 @@ public:
     bool intersects(NormalizedAngle x) const {
         return wraps() ? (x <= _b || _a <= x) : (_a <= x && x <= _b);
     }
+
     bool intersects(NormalizedAngleInterval const & x) const {
         return !isDisjointFrom(x);
     }
@@ -177,6 +191,7 @@ public:
     bool isWithin(NormalizedAngle x) const {
         return (_a == x && _b == x) || isEmpty();
     }
+
     bool isWithin(NormalizedAngleInterval const & x) const {
         return x.contains(*this);
     }
@@ -190,26 +205,27 @@ public:
     int relate(NormalizedAngleInterval const & x) const;
     ///@}
 
-    /// `shrinkTo` shrinks this interval until all its points are in x.
-    NormalizedAngleInterval & shrinkTo(NormalizedAngle x) {
-        *this = shrunkTo(x);
+    /// `clipTo` shrinks this interval until all its points are in x.
+    NormalizedAngleInterval & clipTo(NormalizedAngle x) {
+        *this = clippedTo(x);
         return *this;
     }
 
-    /// `x.shrinkTo(y)` sets x to the smallest interval containing the
+    /// `x.clipTo(y)` sets x to the smallest interval containing the
     /// intersection of x and y. The result is not always unique, and
-    /// `x.shrinkTo(y)` is not guaranteed to equal `y.shrinkTo(x)`.
-    NormalizedAngleInterval & shrinkTo(NormalizedAngleInterval const & x);
+    /// `x.clipTo(y)` is not guaranteed to equal `y.clipTo(x)`.
+    NormalizedAngleInterval & clipTo(NormalizedAngleInterval const & x);
 
-    /// `shrunkTo` returns the intersection of this interval and x.
-    NormalizedAngleInterval shrunkTo(NormalizedAngle x) const {
+    /// `clippedTo` returns the intersection of this interval and x.
+    NormalizedAngleInterval clippedTo(NormalizedAngle x) const {
         return contains(x) ? NormalizedAngleInterval(x) : empty();
     }
-    /// `shrunkTo` returns the smallest interval containing the intersection
+
+    /// `clippedTo` returns the smallest interval containing the intersection
     /// of this interval and x. The result is not always unique, and
-    /// `x.shrunkTo(y)` is not guaranteed to equal `y.shrunkTo(x)`.
-    NormalizedAngleInterval shrunkTo(NormalizedAngleInterval const & x) const {
-        return NormalizedAngleInterval(*this).shrinkTo(x);
+    /// `x.clippedTo(y)` is not guaranteed to equal `y.clippedTo(x)`.
+    NormalizedAngleInterval clippedTo(NormalizedAngleInterval const & x) const {
+        return NormalizedAngleInterval(*this).clipTo(x);
     }
 
     ///@{
@@ -227,6 +243,7 @@ public:
     NormalizedAngleInterval expandedTo(NormalizedAngle x) const {
         return NormalizedAngleInterval(*this).expandTo(x);
     }
+
     NormalizedAngleInterval expandedTo(NormalizedAngleInterval const & x) const {
         return NormalizedAngleInterval(*this).expandTo(x);
     }
@@ -243,6 +260,7 @@ public:
         *this = dilatedBy(x);
         return *this;
     }
+
     NormalizedAngleInterval & erodeBy(Angle x) { return dilateBy(-x); }
 
 private:

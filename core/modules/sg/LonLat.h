@@ -24,7 +24,6 @@
 #define LSST_SG_LONLAT_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains a class representing spherical coordinates.
 
 #include <iosfwd>
@@ -45,6 +44,7 @@ public:
         return LonLat(NormalizedAngle::fromDegrees(lon),
                       Angle::fromDegrees(lat));
     }
+
     static LonLat fromRadians(double lon, double lat) {
         return LonLat(NormalizedAngle::fromRadians(lon),
                       Angle::fromRadians(lat));
@@ -73,11 +73,13 @@ public:
     bool operator==(LonLat const & p) const {
         return _lon == p._lon && _lat == p._lat;
     }
+
     bool operator!=(LonLat const & p) const {
         return _lon != p._lon || _lat != p._lat;
     }
 
     NormalizedAngle lon() const { return _lon; }
+
     Angle lat() const { return _lat; }
 
 private:

@@ -24,7 +24,6 @@
 #define LSST_SG_CHUNKER_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file declares a class for partitioning the sky into chunks
 ///        and sub-chunks.
 
@@ -54,9 +53,9 @@ struct SubChunks {
 };
 
 
-/// `Chunker` subdivides the sphere into longitude-latitude boxes.
+/// `Chunker` subdivides the unit sphere into longitude-latitude boxes.
 ///
-/// The celestial sphere is divided into latitude angle "stripes" of fixed
+/// The unit sphere is divided into latitude angle "stripes" of fixed
 /// height H. For each stripe, a width W is computed such that any two points
 /// in the stripe with longitude angles separated by at least W have angular
 /// separation of at least H. The stripe is then broken into an integral number
@@ -66,17 +65,18 @@ struct SubChunks {
 /// subchunks.
 class Chunker {
 public:
-    Chunker(Angle overlap,
-            int32_t numStripes,
+    Chunker(int32_t numStripes,
             int32_t numSubStripesPerStripe);
     ~Chunker();
 
-    Angle getOverlap() const {
-        return _overlap;
-    }
+    /// `getNumStripes` returns the number of fixed-height latitude intervals
+    /// in the sky subdivision.
     int32_t getNumStripes() const {
         return _numStripes;
     }
+
+    /// `getNumSubStripesPerStripe` returns the number of fixed-height latitude
+    /// sub-intervals in each stripe.
     int32_t getNumSubStripesPerStripe() const {
         return _numSubStripesPerStripe;
     }
@@ -89,10 +89,13 @@ public:
     /// intersect the given region.
     std::vector<SubChunks> subChunksIntersecting(Region const & r) const;
 
-    /// `storeAllSubChunks` stores the complete set of sub-chunk IDs
+    /// `getAllChunks` returns the complete set of chunk IDs for the unit
+    /// sphere.
+    std::vector<int32_t> getAllChunks(int32_t chunkId) const;
+
+    /// `getAllSubChunks` returns the complete set of sub-chunk IDs
     /// for the given chunk.
-    void storeAllSubChunks(std::vector<int32_t> & subChunkIds,
-                           int32_t chunkId) const;
+    std::vector<int32_t> getAllSubChunks(int32_t chunkId) const;
 
 private:
     struct Stripe {
@@ -146,7 +149,6 @@ private:
     int32_t _numSubStripesPerStripe;
     int32_t _numSubStripes;
     int32_t _maxSubChunksPerSubStripeChunk;
-    Angle _overlap;
     Angle _subStripeHeight;
     std::vector<Stripe> _stripes;
     std::vector<SubStripe> _subStripes;

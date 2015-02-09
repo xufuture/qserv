@@ -21,7 +21,6 @@
  */
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains the LonLat class implementation.
 
 #include "LonLat.h"

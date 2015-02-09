@@ -24,7 +24,6 @@
 #define LSST_SG_CIRCLE_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file declares a class for representing circular
 ///        regions on the unit sphere.
 
@@ -48,9 +47,17 @@ namespace sg {
 class Circle : public Region {
 public:
     static Circle empty() { return Circle(); }
+
     static Circle full() { return Circle(UnitVector3d::Z(), 4.0); }
 
+    /// `squaredChordLengthFor` computes and returns the squared chord length
+    /// between points in S² that are separated by the given angle. The squared
+    /// chord length l² and angle θ are related by l² = 4 sin²(θ/2).
     static double squaredChordLengthFor(Angle openingAngle);
+
+    /// `openingAngleFor` computes and returns the angular separation between
+    /// points in S² that are separated by the given squared chord length. The
+    /// squared chord length l² and angle θ are related by l² = 4 sin²(θ/2).
     static Angle openingAngleFor(double squaredChordLength);
 
     /// This constructor creates an empty circle.
@@ -102,6 +109,7 @@ public:
         // Return true when _squaredChordLength is negative or NaN.
         return !(_squaredChordLength >= 0.0);
     }
+
     bool isFull() const { return _squaredChordLength >= 4.0; }
 
     /// `center` returns the center of this circle as a unit vector.
@@ -120,33 +128,13 @@ public:
 
     /// `contains` returns true if the intersection of this circle and x
     /// is equal to x.
-    bool contains(Circle const & x) const {
-        if (isFull() || x.isEmpty()) {
-            return true;
-        }
-        if (isEmpty() || x.isFull()) {
-            return false;
-        }
-        NormalizedAngle cc(_center, x._center);
-        return _openingAngle >
-               cc + x._openingAngle + 4.0 * Angle(MAX_ASIN_ERROR);
-    }
+    bool contains(Circle const & x) const;
 
     ///@{
     /// `isDisjointFrom` returns true if the intersection of this circle and x
     /// is empty.
     bool isDisjointFrom(UnitVector3d const & x) const { return !contains(x); }
-    bool isDisjointFrom(Circle const & x) const {
-        if (isEmpty() || x.isEmpty()) {
-            return true;
-        }
-        if (isFull() || x.isFull()) {
-            return false;
-        }
-        NormalizedAngle cc(_center, x._center);
-        return cc > _openingAngle + x._openingAngle +
-                    4.0 * Angle(MAX_ASIN_ERROR);
-    }
+    bool isDisjointFrom(Circle const & x) const;
     ///@}
 
     ///@{
@@ -164,20 +152,21 @@ public:
     ///@}
 
     ///@{
-    /// `shrinkTo` sets this circle to the minimal bounding circle for the
+    /// `clipTo` sets this circle to the minimal bounding circle for the
     /// intersection of this circle and x.
-    Circle & shrinkTo(UnitVector3d const & x);
-    Circle & shrinkTo(Circle const & x);
+    Circle & clipTo(UnitVector3d const & x);
+    Circle & clipTo(Circle const & x);
     ///@}
 
     ///@{
-    /// `shrunkTo` returns the minimal bounding circle for the intersection
+    /// `clippedTo` returns the minimal bounding circle for the intersection
     /// of this circle and x.
-    Circle shrunkTo(UnitVector3d const & x) const {
-        return Circle(*this).shrinkTo(x);
+    Circle clippedTo(UnitVector3d const & x) const {
+        return Circle(*this).clipTo(x);
     }
-    Circle shrunkTo(Circle const & x) const {
-        return Circle(*this).shrinkTo(x);
+
+    Circle clippedTo(Circle const & x) const {
+        return Circle(*this).clipTo(x);
     }
     ///@}
 
@@ -193,6 +182,7 @@ public:
     Circle expandedTo(UnitVector3d const & x) const {
         return Circle(*this).expandTo(x);
     }
+
     Circle expandedTo(Circle const & x) const {
         return Circle(*this).expandTo(x);
     }
@@ -242,6 +232,7 @@ public:
         // Dispatch on the type of r.
         return invertSpatialRelations(r.relate(*this));
     }
+
     virtual int relate(Box const &) const;
     virtual int relate(Circle const &) const;
     virtual int relate(ConvexPolygon const &) const;

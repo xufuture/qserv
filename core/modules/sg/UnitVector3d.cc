@@ -21,7 +21,6 @@
  */
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains the Vector3d class implementation.
 
 #include "UnitVector3d.h"
@@ -64,6 +63,16 @@ UnitVector3d UnitVector3d::northFrom(Vector3d const & v) {
         return u;
     }
     return UnitVector3d(n);
+}
+
+UnitVector3d::UnitVector3d(Angle lon, Angle lat) {
+    double sinLon = sin(lon);
+    double cosLon = cos(lon);
+    double sinLat = sin(lat);
+    double cosLat = cos(lat);
+    _v.x() = cosLon * cosLat;
+    _v.y() = sinLon * cosLat;
+    _v.z() = sinLat;
 }
 
 std::ostream & operator<<(std::ostream & os, UnitVector3d const & v) {

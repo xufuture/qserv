@@ -21,7 +21,6 @@
  */
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains the NormalizedAngle class implementation.
 
 #include "NormalizedAngle.h"
@@ -32,6 +31,30 @@
 
 namespace lsst {
 namespace sg {
+
+NormalizedAngle NormalizedAngle::between(NormalizedAngle const & a,
+                                         NormalizedAngle const & b)
+{
+    NormalizedAngle x;
+    double a1 = std::fabs(a.radians() - b.radians());
+    double a2 = 2.0 * PI - a1;
+    x._a = Angle(std::min(a1, a2));
+    return x;
+}
+
+NormalizedAngle NormalizedAngle::center(NormalizedAngle const & a,
+                                        NormalizedAngle const & b)
+{
+    NormalizedAngle x;
+    double c = 0.5 * (a.radians() + b.radians());
+    if (a <= b) {
+        x._a = Angle(c);
+    } else {
+        // The result is (a + b + 2π) / 2, normalized to [0, 2π)
+        x._a = Angle((c < PI) ? (c + PI) : (c - PI));
+    }
+    return x;
+}
 
 NormalizedAngle::NormalizedAngle(LonLat const & p1, LonLat const & p2) {
     double x = sin((p1.lon() - p2.lon()) * 0.5);

@@ -24,7 +24,6 @@
 #define LSST_SG_VECTOR3D_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file declares a class for representing vectors in ℝ³.
 
 #include <cmath>
@@ -46,23 +45,16 @@ class Vector3d {
 public:
     /// The default constructor creates a zero vector.
     Vector3d() { _v[0] = 0.0; _v[1] = 0.0; _v[2] = 0.0; }
+
     /// This constructor creates a vector with the given components.
     Vector3d(double x, double y, double z) { _v[0] = x; _v[1] = y; _v[2] = z; }
 
     bool operator==(Vector3d const & v) const {
         return _v[0] == v._v[0] && _v[1] == v._v[1] && _v[2] == v._v[2];
     }
+
     bool operator!=(Vector3d const & v) const {
         return _v[0] != v._v[0] || _v[1] != v._v[1] || _v[2] != v._v[2];
-    }
-    bool operator<(Vector3d const & v) const {
-        if (_v[0] == v._v[0]) {
-            if (_v[1] == v._v[1]) {
-                return _v[2] < v._v[2];
-            }
-            return _v[1] < v._v[1];
-        }
-        return _v[0] < v._v[0];
     }
 
     ///@{
@@ -111,33 +103,7 @@ public:
     /// components except for (0, 0, 0), including those with norms that
     /// overflow. Trying to normalize (0, 0, 0) will cause a std::runtime_error
     /// to be thrown.
-    double normalize() {
-        double scale = 1.0;
-        double invScale = 1.0;
-        double n2 = squaredNorm();
-        if (n2 < 4.008336720017946e-292) {
-            // If n2 is below 2^(-1022 + 54), i.e. close to the smallest normal
-            // double precision value, scale each component by 2^563 and
-            // recompute the squared norm.
-            scale = 3.019169939857233e+169;
-            invScale = 3.312168642111238e-170;
-            n2 = ((*this) * scale).squaredNorm();
-            if (n2 == 0.0) {
-                throw std::runtime_error("Cannot normalize zero vector");
-            }
-        } else if (n2 == std::numeric_limits<double>::infinity()) {
-            // In case of overflow, scale each component by 2^-513 and
-            // recompute the squared norm.
-            scale = 3.7291703656001034e-155;
-            invScale = 2.6815615859885194e+154;
-            n2 = ((*this) * scale).squaredNorm();
-        }
-        double norm = std::sqrt(n2);
-        _v[0] = (_v[0] * scale) / norm;
-        _v[1] = (_v[1] * scale) / norm;
-        _v[2] = (_v[2] * scale) / norm;
-        return norm * invScale;
-    }
+    double normalize();
 
     /// `isNormalized` returns true if this vectors norm is very close to 1.
     bool isNormalized() const {

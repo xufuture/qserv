@@ -24,7 +24,6 @@
 #define LSST_SG_CONVEXPOLYGON_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file declares a class for representing convex
 ///        polygons with great circle edges on the unit sphere.
 
@@ -78,7 +77,8 @@ public:
         return _vertices;
     }
 
-    // Centroid returns the centroid of this convex polygon
+    /// The centroid of a polygon is its center of mass projected onto
+    /// S², assuming a uniform mass distribution over the polygon surface.
     UnitVector3d centroid() const;
 
     // Region interface
@@ -86,6 +86,7 @@ public:
 
     virtual Box boundingBox() const;
     virtual Circle boundingCircle() const;
+
     virtual bool contains(UnitVector3d const & v) const;
 
     virtual int relate(Region const & r) const {

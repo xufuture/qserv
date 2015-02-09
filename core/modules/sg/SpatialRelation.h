@@ -24,7 +24,6 @@
 #define LSST_SG_SPATIALRELATION_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains an enumeration of supported spatial relations.
 
 namespace lsst {
@@ -34,13 +33,13 @@ namespace sg {
 /// objects. Because more than one relation can hold at once, the values are
 /// powers of two that can be used as bitmasks.
 enum SpatialRelation {
-	/// A contains B  ⇔  A ⋂ B = B
+    /// A contains B  ⇔  A ⋂ B = B
     CONTAINS = 1,
     /// A is disjoint from B  ⇔  A ⋂ B = ∅
     DISJOINT = 2,
     /// A intersects B  ⇔  A ⋂ B ≠ ∅
     INTERSECTS = 4,
-	/// A is within B  ⇔  A ⋂ B = A
+    /// A is within B  ⇔  A ⋂ B = A
     WITHIN = 8,
 };
 
@@ -49,6 +48,9 @@ enum SpatialRelation {
 /// returns the bitfield describing the relations between B and A
 /// (`B.relate(A)`).
 inline int invertSpatialRelations(int relations) {
+    // The DISJOINT and INTERSECTS relations commute, so leave the
+    // corresponding bits unchanged. If A CONTAINS B, then B is WITHIN A,
+    // so the bits corresponding to CONTAINS and WITHIN must be swapped.
 	return (relations & (DISJOINT | INTERSECTS)) |
 	       ((relations & CONTAINS) << 3) |
 	       ((relations & WITHIN) >> 3);

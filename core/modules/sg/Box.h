@@ -24,7 +24,6 @@
 #define LSST_SG_BOX_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file declares a class for representing
 ///        longitude/latitude angle boxes on the unit sphere.
 
@@ -59,11 +58,14 @@ public:
         return Box(NormalizedAngleInterval::fromDegrees(lon1, lon2),
                    AngleInterval::fromDegrees(lat1, lat2));
     }
+
     static Box fromRadians(double lon1, double lat1, double lon2, double lat2) {
         return Box(NormalizedAngleInterval::fromRadians(lon1, lon2),
                    AngleInterval::fromRadians(lat1, lat2));
     }
+
     static Box empty() { return Box(); }
+
     static Box full() { return Box(allLongitudes(), allLatitudes()); }
 
     /// `halfWidthForCircle` computes the half-width of bounding boxes
@@ -77,6 +79,7 @@ public:
     static NormalizedAngleInterval allLongitudes() {
         return NormalizedAngleInterval::full();
     }
+
     /// `allLatitudes` returns an angle interval containing all valid
     /// latitude angles.
     static AngleInterval allLatitudes() {
@@ -85,6 +88,7 @@ public:
 
     /// This constructor creates an empty box.
     Box() {}
+
     /// This constructor creates a box containing a single point.
     explicit Box(LonLat const & p) :
         _lon(p.lon()),
@@ -92,6 +96,7 @@ public:
     {
         _enforceInvariants();
     }
+
     /// This constructor creates a box spanning the longitude interval
     /// [p1.lon(), p2.lon()] and latitude interval [p1.lat(), p2.lat()].
     Box(LonLat const & p1, LonLat const & p2) :
@@ -100,6 +105,7 @@ public:
     {
         _enforceInvariants();
     }
+
     /// This constructor creates a box with center p, width
     /// (in longitude angle) w and height (in latitude angle) h.
     Box(LonLat const & p, Angle w, Angle h) :
@@ -108,6 +114,7 @@ public:
     {
         _enforceInvariants();
     }
+
     /// This constructor creates a box spanning the given
     /// longitude and latitude intervals.
     Box(NormalizedAngleInterval const & lon, AngleInterval const & lat) :
@@ -121,29 +128,29 @@ public:
     bool operator==(Box const & b) const {
         return _lon == b._lon && _lat == b._lat;
     }
+
     bool operator!=(Box const & b) const { return !(*this == b); }
 
     /// A box is equal to a point p if it contains only p.
     bool operator==(LonLat const & p) const {
         return _lat == p.lat() && _lon == p.lon();
     }
+
     bool operator!=(LonLat const & p) const { return !(*this == p); }
 
-    ///@{
     /// `lon` returns the longitude interval of this box.
     NormalizedAngleInterval const & lon() const { return _lon; }
-    ///@}
 
-    ///@{
     /// `lat` returns the latitude interval of this box.
     AngleInterval const & lat() const { return _lat; }
-    ///@}
 
     /// `isEmpty` returns true if this box does not contain any points.
     bool isEmpty() const { return _lat.isEmpty(); }
+
     /// `isFull` returns true if this box contains all points on
     /// the unit sphere.
     bool isFull() const { return _lon.isFull() && _lat == allLatitudes(); }
+
     /// `center` returns the center of this box. It is NaN for empty
     /// boxes and arbitrary for full boxes.
     LonLat center() const { return LonLat(_lon.center(), _lat.center()); }
@@ -151,6 +158,7 @@ public:
     /// `width` returns the width in longitude angle of this box. It is NaN
     /// for empty boxes.
     NormalizedAngle width() const { return _lon.size(); }
+
     /// `height` returns the height in latitude angle of this box. It is
     /// negative or NaN for empty boxes.
     Angle height() const { return _lat.size(); }
@@ -161,6 +169,7 @@ public:
     bool contains(LonLat const & x) const {
         return _lat.contains(x.lat()) && _lon.contains(x.lon());
     }
+
     bool contains(Box const & x) const {
         return _lat.contains(x._lat) && _lon.contains(x._lon);
     }
@@ -170,6 +179,7 @@ public:
     /// `isDisjointFrom` returns true if the intersection of this box
     /// and x is empty.
     bool isDisjointFrom(LonLat const & x) const { return !intersects(x); }
+
     bool isDisjointFrom(Box const & x) const { return !intersects(x); }
     ///@}
 
@@ -179,6 +189,7 @@ public:
     bool intersects(LonLat const & x) const {
         return _lat.intersects(x.lat()) && _lon.intersects(x.lon());
     }
+
     bool intersects(Box const & x) const {
         return _lat.intersects(x._lat) && _lon.intersects(x._lon);
     }
@@ -190,33 +201,36 @@ public:
     bool isWithin(LonLat const & x) const {
         return _lat.isWithin(x.lat()) && _lon.isWithin(x.lon());
     }
+
     bool isWithin(Box const & x) const {
         return _lat.isWithin(x._lat) && _lon.isWithin(x._lon);
     }
     ///@}
 
-    /// `shrinkTo` shrinks this box until it contains only x. If this box
+    /// `clipTo` shrinks this box until it contains only x. If this box
     /// does not contain x, it is emptied.
-    Box & shrinkTo(LonLat const & x) {
-        _lon.shrinkTo(x.lon());
-        _lat.shrinkTo(x.lat());
-        return *this;
-    }
-    /// `x.shrinkTo(y)` sets x to the smallest box containing the intersection
-    /// of x and y. The result is not always unique, and `x.shrinkTo(y)` is not
-    /// guaranteed to equal `y.shrinkTo(x)`.
-    Box & shrinkTo(Box const & x) {
-        _lon.shrinkTo(x.lon());
-        _lat.shrinkTo(x.lat());
+    Box & clipTo(LonLat const & x) {
+        _lon.clipTo(x.lon());
+        _lat.clipTo(x.lat());
         return *this;
     }
 
-    /// `shrunkTo` returns the intersection of this box and x.
-    Box shrunkTo(LonLat const & x) const { return Box(*this).shrinkTo(x); }
-    /// `shrunkTo` returns the smallest box containing the intersection
+    /// `x.clipTo(y)` sets x to the smallest box containing the intersection
+    /// of x and y. The result is not always unique, and `x.clipTo(y)` is not
+    /// guaranteed to equal `y.clipTo(x)`.
+    Box & clipTo(Box const & x) {
+        _lon.clipTo(x.lon());
+        _lat.clipTo(x.lat());
+        return *this;
+    }
+
+    /// `clippedTo` returns the intersection of this box and x.
+    Box clippedTo(LonLat const & x) const { return Box(*this).clipTo(x); }
+
+    /// `clippedTo` returns the smallest box containing the intersection
     /// of this box and x. The result is not always unique, and
-    /// `x.shrunkTo(y)` is not guaranteed to equal `y.shrunkTo(x)`.
-    Box shrunkTo(Box const & x) const { return Box(*this).shrinkTo(x); }
+    /// `x.clippedTo(y)` is not guaranteed to equal `y.clippedTo(x)`.
+    Box clippedTo(Box const & x) const { return Box(*this).clipTo(x); }
 
     ///@{
     /// `expandTo` minimally expands this box to contain x. The result
@@ -227,6 +241,7 @@ public:
         _lat.expandTo(x.lat());
         return *this;
     }
+
     Box & expandTo(Box const & x) {
         _lon.expandTo(x.lon());
         _lat.expandTo(x.lat());
@@ -309,7 +324,7 @@ public:
 private:
     void _enforceInvariants() {
         // Make sure that _lat ⊆ [-π/2, π/2].
-        _lat.shrinkTo(allLatitudes());
+        _lat.clipTo(allLatitudes());
         // Make sure that both longitude and latitude intervals are
         // empty, or neither is. This simplifies the implementation
         // of the spatial relation tests.

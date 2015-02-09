@@ -21,7 +21,6 @@
  */
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains the Matrix3d class implementation.
 
 #include "Matrix3d.h"

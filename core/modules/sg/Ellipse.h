@@ -24,7 +24,6 @@
 #define LSST_SG_ELLIPSE_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file declares a class for representing elliptical
 ///        regions on the unit sphere.
 
@@ -170,6 +169,7 @@ namespace sg {
 class Ellipse : public Region {
 public:
     static Ellipse empty() { return Ellipse(); }
+
     static Ellipse full() { return Ellipse().complement(); }
 
     /// This constructor creates an empty ellipse.
@@ -210,11 +210,15 @@ public:
     bool operator==(Ellipse const & e) const {
         return _S == e._S && _a == e._a && _b == e._b;
     }
+
     bool operator!=(Ellipse const & e) const { return !(*this == e); }
 
     bool isEmpty() const { return Angle(0.5 * PI) + _a < _gamma; }
+
     bool isFull() const { return Angle(0.5 * PI) - _a <= _gamma; }
+
     bool isGreatCircle() const { return _a.radians() == 0.0; }
+
     bool isCircle() const { return _a == _b; }
 
     /// `transformMatrix` returns the orthogonal matrix that maps vectors
@@ -226,11 +230,13 @@ public:
     UnitVector3d center() const {
         return UnitVector3d::fromNormalized(_S(2,0), _S(2,1), _S(2,2));
     }
+
     /// `f1` returns the first focal point of the ellipse.
     UnitVector3d f1() const {
         UnitVector3d n = UnitVector3d::fromNormalized(_S(1,0), _S(1,1), _S(1,2));
         return center().rotatedAround(n, -_gamma);
     }
+
     /// `f2` returns the second focal point of the ellipse.
     UnitVector3d f2() const {
         UnitVector3d n = UnitVector3d::fromNormalized(_S(1,0), _S(1,1), _S(1,2));
@@ -276,6 +282,7 @@ public:
         // Dispatch on the type of r.
         return invertSpatialRelations(r.relate(*this));
     }
+
     virtual int relate(Box const &) const;
     virtual int relate(Circle const &) const;
     virtual int relate(ConvexPolygon const &) const;

@@ -21,7 +21,7 @@
  */
 
 /// \file
-/// \author Serge Monkewitz
+/// \brief This file contains utility method implementations.
 
 #include "Utils.h"
 

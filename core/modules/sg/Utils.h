@@ -24,7 +24,7 @@
 #define LSST_SG_UTILS_H_
 
 /// \file
-/// \author Serge Monkewitz
+/// \brief This file declares miscellaneous utility methods.
 
 #include "Angle.h"
 

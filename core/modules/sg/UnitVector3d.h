@@ -24,7 +24,6 @@
 #define LSST_SG_UNITVECTOR3D_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file declares a class for representing unit vectors in ℝ³.
 
 #include "LonLat.h"
@@ -87,9 +86,11 @@ public:
     static UnitVector3d X() {
         return UnitVector3d();
     }
+
     static UnitVector3d Y() {
         UnitVector3d u; u._v = Vector3d(0.0, 1.0, 0.0); return u;
     }
+
     static UnitVector3d Z() {
         UnitVector3d u; u._v = Vector3d(0.0, 0.0, 1.0); return u;
     }
@@ -104,6 +105,7 @@ public:
     explicit UnitVector3d(Vector3d const & v) : _v(v) {
         _v.normalize();
     }
+
     UnitVector3d(double x, double y, double z) : _v(x, y, z) {
         _v.normalize();
     }
@@ -114,17 +116,10 @@ public:
     explicit UnitVector3d(LonLat const & p) {
         *this = UnitVector3d(p.lon(), p.lat());
     }
+
     /// This constructor creates a unit vector corresponding to
     /// the given spherical coordinates.
-    UnitVector3d(Angle lon, Angle lat) {
-        double sinLon = sin(lon);
-        double cosLon = cos(lon);
-        double sinLat = sin(lat);
-        double cosLat = cos(lat);
-        _v.x() = cosLon * cosLat;
-        _v.y() = sinLon * cosLat;
-        _v.z() = sinLat;
-    }
+    UnitVector3d(Angle lon, Angle lat);
 
     /// This conversion operator returns a const reference to the underlying
     /// Vector3d. It allows a UnitVector3d to transparently replace a Vector3d
@@ -133,16 +128,19 @@ public:
 
     bool operator==(Vector3d const & v) const { return _v == v; }
     bool operator!=(Vector3d const & v) const { return _v != v; }
-    bool operator<(Vector3d const & v) const { return _v < v; }
 
     /// `data` returns a pointer to the 3 components of this unit vector.
     double const * data() const { return _v.data(); }
+
     /// The function call operator returns the `i`-th component of this vector.
     double operator()(int i) const { return _v(i); }
+
     /// `x` returns the first component of this unit vector.
     double x() const { return _v.x(); }
+
     /// `y` returns the second component of this unit vector.
     double y() const { return _v.y(); }
+
     /// `z` returns the third component of this unit vector.
     double z() const { return _v.z(); }
 

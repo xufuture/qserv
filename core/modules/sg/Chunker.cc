@@ -21,7 +21,6 @@
  */
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains the Chunker class implementation.
 
 #include "Chunker.h"
@@ -46,14 +45,12 @@ int32_t segments(AngleInterval const & lat, Angle width) {
 
 Angle const Chunker::EPSILON(5.0e-12); // ~ 1 micro-arcsecond
 
-Chunker::Chunker(Angle overlap,
-                 int32_t numStripes,
+Chunker::Chunker(int32_t numStripes,
                  int32_t numSubStripesPerStripe) :
     _numStripes(numStripes),
     _numSubStripesPerStripe(numSubStripesPerStripe),
     _numSubStripes(numStripes*numSubStripesPerStripe),
     _maxSubChunksPerSubStripeChunk(0),
-    _overlap(overlap),
     _subStripeHeight(Angle(PI) / _numSubStripes)
 {
     if (numStripes < 1 || numSubStripesPerStripe < 1) {
@@ -63,15 +60,7 @@ Chunker::Chunker(Angle overlap,
     if (numStripes * numSubStripesPerStripe > 180*3600) {
         throw std::runtime_error("Sub-stripes are too small");
     }
-    if (overlap < Angle(0.0) || overlap > Angle::fromDegrees(10.0)) {
-        throw std::runtime_error("The overlap angle must be between "
-                                 "0 and 10 deg");
-    }
     Angle const stripeHeight = Angle(PI) / _numStripes;
-    if (_subStripeHeight < _overlap) {
-        throw std::runtime_error("The overlap angle is greater than "
-                                 "the sub-stripe height");
-    }
     _stripes.reserve(_numStripes);
     _subStripes.reserve(_numSubStripes);
     for (int32_t s = 0; s < _numStripes; ++s) {
@@ -199,7 +188,7 @@ void Chunker::_findSubChunks(std::vector<SubChunks> & chunks,
     if (r.relate(_chunkBoundingBox(stripe, chunk)) & CONTAINS) {
         // r contains the entire chunk, so there is no need to test sub-chunks
         // for intersection with r.
-        storeAllSubChunks(subChunks.subChunkIds, subChunks.chunkId);
+        subChunks.subChunkIds = getAllSubChunks(subChunks.chunkId);
     } else {
         // Find the sub-stripes to iterator over.
         minSS = std::max(minSS, stripe * _numSubStripesPerStripe);
@@ -255,14 +244,21 @@ void Chunker::_findSubChunks(std::vector<SubChunks> & chunks,
     }
 }
 
-void Chunker::storeAllSubChunks(std::vector<int32_t> & subChunkIds,
-                                int32_t chunkId) const
-{
+std::vector<int32_t> Chunker::getAllChunks() const {
+    std::vector<int32_t> chunkIds;
+    for (int32_t s = 0; s < _numStripes; ++s) {
+        int32_t nc = _stripes[s].numChunksPerStripe;
+        for (int32_t c = 0; c < nc; ++c) {
+            chunkIds.push_back(_getChunkId(s, c));
+        }
+    }
+    return chunkIds;
+}
+
+std::vector<int32_t> Chunker::getAllSubChunks(int32_t chunkId) const {
+    std::vector<int32_t> subChunkIds;
     int32_t s = _getStripe(chunkId);
     subChunkIds.reserve(_stripes.at(s).numSubChunksPerChunk);
-    // No subsequent operation throws, so we can modify subChunkIds and
-    // still provide the strong exception safety guarantee.
-    subChunkIds.clear();
     int32_t ss = s * _numSubStripesPerStripe;
     int32_t const ssEnd = ss + _numSubStripesPerStripe;
     for (; ss < ssEnd; ++ss) {
@@ -272,6 +268,7 @@ void Chunker::storeAllSubChunks(std::vector<int32_t> & subChunkIds,
             subChunkIds.push_back(subChunkIdBase + sc);
         }
     }
+    return subChunkIds;
 }
 
 Box Chunker::_chunkBoundingBox(int32_t stripe, int32_t chunk) const {

@@ -21,7 +21,6 @@
  */
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains the Box class implementation.
 
 #include "Box.h"
@@ -102,12 +101,9 @@ Box & Box::dilateBy(Angle w, Angle h) {
     }
     _lon.dilateBy(w);
     if (!h.isNan()) {
-        if (_lat.a() > Angle(-0.5 * PI)) {
-            _lat.a() = _lat.a() - h;
-        }
-        if (_lat.b() < Angle(0.5 * PI)) {
-            _lat.b() = _lat.b() + h;
-        }
+        Angle a = (_lat.a() > Angle(-0.5 * PI)) ? _lat.a() - h : _lat.a();
+        Angle b = (_lat.b() < Angle(0.5 * PI)) ? _lat.b() + h : _lat.b();
+        _lat = AngleInterval(a, b);
     }
     _enforceInvariants();
     return *this;

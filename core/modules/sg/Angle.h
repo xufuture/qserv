@@ -24,7 +24,6 @@
 #define LSST_SG_ANGLE_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file declares a class for representing angles.
 
 #include <cmath>
@@ -46,11 +45,14 @@ public:
     static Angle nan() {
         return Angle(std::numeric_limits<double>::quiet_NaN());
     }
+
     static Angle fromDegrees(double a) { return Angle(a * RAD_PER_DEG); }
+
     static Angle fromRadians(double a) { return Angle(a); }
 
     /// This constructor creates an Angle with a value of zero.
     Angle() : _rad(0.0) {}
+
     /// This constructor creates an Angle with the given value in radians.
     explicit Angle(double a) : _rad(a) {}
 
@@ -70,6 +72,7 @@ public:
     Angle operator/(double a) const { return Angle(_rad / a); }
     double operator/(Angle a) const { return _rad / a._rad; }
 
+    // In-place arithmetic operators
     Angle & operator+=(Angle const & a) { *this = *this + a; return *this; }
     Angle & operator-=(Angle const & a) { *this = *this - a; return *this; }
     Angle & operator*=(double a) { *this = *this * a; return *this; }
@@ -77,6 +80,7 @@ public:
 
     /// `degrees` returns the value of this angle in units of degrees.
     double degrees() const { return _rad * DEG_PER_RAD; }
+
     /// `radians` returns the value of this angle in units of radians.
     double radians() const { return _rad; }
 
@@ -98,6 +102,7 @@ std::ostream & operator<<(std::ostream &, Angle const &);
 inline double sin(Angle const & a) { return std::sin(a.radians()); }
 inline double cos(Angle const & a) { return std::cos(a.radians()); }
 inline double tan(Angle const & a) { return std::tan(a.radians()); }
+
 inline Angle abs(Angle const & a) { return Angle(std::fabs(a.radians())); }
 
 }} // namespace lsst::sg

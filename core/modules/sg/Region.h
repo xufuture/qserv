@@ -24,7 +24,6 @@
 #define LSST_SG_REGION_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file defines an interface for spherical regions.
 
 namespace lsst {
@@ -53,7 +52,7 @@ class UnitVector3d;
 ///
 ///     virtual int relate(R const &) const = 0;
 ///
-/// All other other Region subclasses must then implement this method. In
+/// All other Region subclasses must then implement this method. In
 /// addition, R is expected to contain the following implementation of the
 /// generic relate method:
 ///
@@ -72,10 +71,16 @@ class UnitVector3d;
 class Region {
 public:
     virtual ~Region() {}
+
     /// `clone` returns a deep copy of this region.
+    ///
+    /// TODO(smm): Once Qserv moves to C++11, change this to return a
+    ///            std::unique_ptr<Region> rather than a raw pointer.
     virtual Region * clone() const = 0;
+
     /// `boundingBox` returns a bounding-box for this region.
     virtual Box boundingBox() const = 0;
+
     /// `boundingCircle` returns a bounding-circle for this region.
     virtual Circle boundingCircle() const = 0;
 

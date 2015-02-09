@@ -21,7 +21,6 @@
  */
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains the NormalizedAngleInterval class implementation.
 
 #include "NormalizedAngleInterval.h"
@@ -161,7 +160,7 @@ int NormalizedAngleInterval::relate(NormalizedAngleInterval const & x) const {
     return (_a <= x._b && _b >= x._a) ? INTERSECTS : DISJOINT;
 }
 
-NormalizedAngleInterval & NormalizedAngleInterval::shrinkTo(
+NormalizedAngleInterval & NormalizedAngleInterval::clipTo(
     NormalizedAngleInterval const & x)
 {
     if (x.isEmpty()) {

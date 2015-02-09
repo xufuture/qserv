@@ -21,7 +21,6 @@
  */
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains the Circle class implementation.
 
 #include "Circle.h"
@@ -43,33 +42,52 @@ double Circle::squaredChordLengthFor(Angle a) {
     if (a.radians() >= PI) {
         return 4.0;
     }
-    // The squared chord length l² and opening angle θ are
-    // related by l² = 4 sin²(θ/2).
     double s = sin(0.5 * a);
     return 4.0 * s * s;
 }
 
-// Note: the maximum error in the opening angle and circle bounding box width
-// computations is ~ 2 * MAX_ASIN_ERROR.
-
 Angle Circle::openingAngleFor(double squaredChordLength) {
+    // Note: the maximum error in the opening angle (and circle bounding box
+    // width) computations is ~ 2 * MAX_ASIN_ERROR.
     if (squaredChordLength < 0.0) {
         return Angle(-1.0);
     }
     if (squaredChordLength >= 4.0) {
         return Angle(PI);
     }
-    // The squared chord length l² and opening angle θ are
-    // related by l² = 4 sin²(θ/2).
     return Angle(2.0 * std::asin(0.5 * std::sqrt(squaredChordLength)));
 }
 
-Circle & Circle::shrinkTo(UnitVector3d const & x) {
+bool Circle::contains(Circle const & x) const {
+    if (isFull() || x.isEmpty()) {
+        return true;
+    }
+    if (isEmpty() || x.isFull()) {
+        return false;
+    }
+    NormalizedAngle cc(_center, x._center);
+    return _openingAngle >
+           cc + x._openingAngle + 4.0 * Angle(MAX_ASIN_ERROR);
+}
+
+bool Circle::isDisjointFrom(Circle const & x) const {
+    if (isEmpty() || x.isEmpty()) {
+        return true;
+    }
+    if (isFull() || x.isFull()) {
+        return false;
+    }
+    NormalizedAngle cc(_center, x._center);
+    return cc > _openingAngle + x._openingAngle +
+                4.0 * Angle(MAX_ASIN_ERROR);
+}
+
+Circle & Circle::clipTo(UnitVector3d const & x) {
     *this = contains(x) ? Circle(x) : empty();
     return *this;
 }
 
-Circle & Circle::shrinkTo(Circle const & x) {
+Circle & Circle::clipTo(Circle const & x) {
     if (isEmpty() || x.isFull()) {
         return *this;
     }

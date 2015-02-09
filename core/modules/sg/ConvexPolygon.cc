@@ -21,7 +21,6 @@
  */
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains the ConvexPolygon class implementation.
 
 #include "ConvexPolygon.h"
@@ -47,6 +46,18 @@ char const * const FOUND_ANTIPODAL_POINT =
 char const * const NOT_ENOUGH_POINTS =
     "The convex hull of a point set containing less than "
     "3 distinct, non-coplanar points is not a convex polygon";
+
+struct Vector3dLessThan {
+    bool operator()(Vector3d const & v0, Vector3d const & v1) const {
+        if (v0.x() == v1.x()) {
+            if (v0.y() == v1.y()) {
+                return v0.z() < v1.z();
+            }
+            return v0.y() < v1.y();
+        }
+        return v0.x() < v1.x();
+    }
+};
 
 // `findPlane` rearranges the entries of `points` such that the first two
 // entries are distinct. If it is unable to do so, or if it encounters any
@@ -240,8 +251,9 @@ void computeHull(std::vector<UnitVector3d> & points) {
     // operator== for ConvexPolygon to be implemented simply by comparing
     // vertices.
     VertexIterator minVertex = points.begin();
+    Vector3dLessThan lessThan;
     for (VertexIterator v = minVertex + 1, e = points.end(); v != e; ++v) {
-        if (*v < *minVertex) {
+        if (lessThan(*v, *minVertex)) {
             minVertex = v;
         }
     }
@@ -288,9 +300,7 @@ bool ConvexPolygon::operator==(ConvexPolygon const & p) const {
 }
 
 UnitVector3d ConvexPolygon::centroid() const {
-    // We define the centroid of the polygon as its center of mass projected
-    // back onto S², assuming a uniform mass distribution over the polygon
-    // surface. The center of mass is obtained via trivial generalization of
+    // The center of mass is obtained via trivial generalization of
     // the formula for spherical triangles from:
     //
     // The centroid and inertia tensor for a spherical triangle

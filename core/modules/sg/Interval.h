@@ -24,7 +24,6 @@
 #define LSST_SG_INTERVAL_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file defines a template representing closed real intervals.
 
 #include <algorithm>
@@ -51,8 +50,10 @@ class Interval {
 public:
     /// This constructor creates an empty interval.
     Interval() : _a(1.0), _b(0.0) {}
+
     /// This constructor creates a closed interval containing only x.
     explicit Interval(Scalar x) : _a(x), _b(x) {}
+
     /// This constructor creates an interval from the given endpoints.
     Interval(Scalar x, Scalar y) : _a(x), _b(y) {}
 
@@ -61,27 +62,23 @@ public:
     bool operator==(Interval const & i) const {
         return (_a == i._a && _b == i._b) || (i.isEmpty() && isEmpty());
     }
+
     bool operator!=(Interval const & i) const { return !(*this == i); }
 
     /// A closed interval is equal to a point x if both endpoints equal x.
     bool operator==(Scalar x) const {
         return (_a == x && _b == x) || (x != x && isEmpty());
     }
+
     bool operator!=(Scalar x) const { return !(*this == x); }
 
-    ///@{
     /// `a` returns the lower endpoint of this interval. The return value
     /// for empty intervals is arbitrary.
     Scalar a() const { return _a; }
-    Scalar & a() { return _a; }
-    ///@}
 
-    ///@{
     /// `b` returns the upper endpoint of this interval. The return value
     /// for empty intervals is arbitrary.
     Scalar b() const { return _b; }
-    Scalar & b() { return _b; }
-    ///@}
 
     /// `isEmpty` returns true if this interval does not contain any points.
     bool isEmpty() const {
@@ -91,6 +88,7 @@ public:
     /// `center` returns the center of this interval. It is arbitrary
     /// for empty intervals.
     Scalar center() const { return 0.5 * (_a + _b); }
+
     /// `size` returns the size (length, width) of this interval. It is zero
     /// for single-point intervals, and NaN or negative for empty intervals.
     Scalar size() const { return _b - _a; }
@@ -101,6 +99,7 @@ public:
     bool contains(Scalar x) const {
         return (_a <= x && x <= _b) || x != x;
     }
+
     bool contains(Interval const & x) const {
         if (x.isEmpty()) {
             return true;
@@ -117,6 +116,7 @@ public:
     bool isDisjointFrom(Scalar x) const {
         return !intersects(x);
     }
+
     bool isDisjointFrom(Interval const & x) const {
         if (isEmpty() || x.isEmpty()) {
             return true;
@@ -129,6 +129,7 @@ public:
     /// `intersects` returns true if the intersection of this interval and x
     /// is non-empty.
     bool intersects(Scalar x) const { return _a <= x && x <= _b; }
+
     bool intersects(Interval const & x) const {
         return !isDisjointFrom(x);
     }
@@ -140,6 +141,7 @@ public:
     bool isWithin(Scalar x) const {
         return (_a == x && _b == x) || isEmpty();
     }
+
     bool isWithin(Interval const & x) const {
         return x.contains(*this);
     }
@@ -155,8 +157,8 @@ public:
     ///@}
 
     ///@{
-    /// `shrinkTo` shrinks this interval until all its points are in x.
-    Interval & shrinkTo(Scalar x) {
+    /// `clipTo` shrinks this interval until all its points are in x.
+    Interval & clipTo(Scalar x) {
         if (x != x) {
             _a = x;
             _b = x;
@@ -166,7 +168,8 @@ public:
         }
         return *this;
     }
-    Interval & shrinkTo(Interval const & x) {
+
+    Interval & clipTo(Interval const & x) {
         if (x.isEmpty()) {
             *this = x;
         } else if (!isEmpty()) {
@@ -178,10 +181,11 @@ public:
     ///@}
 
     ///@{
-    /// `shrunkTo` returns the intersection of this interval and x.
-    Derived shrunkTo(Scalar x) const { return Interval(*this).shrinkTo(x); }
-    Derived shrunkTo(Interval const & x) const {
-        return Interval(*this).shrinkTo(x);
+    /// `clippedTo` returns the intersection of this interval and x.
+    Derived clippedTo(Scalar x) const { return Interval(*this).clipTo(x); }
+
+    Derived clippedTo(Interval const & x) const {
+        return Interval(*this).clipTo(x);
     }
     ///@}
 
@@ -198,6 +202,7 @@ public:
         }
         return *this;
     }
+
     Interval & expandTo(Interval const & x) {
         if (isEmpty()) {
             *this = x;
@@ -213,6 +218,7 @@ public:
     /// `expandedTo` returns the smallest interval containing the union
     /// of this interval and x.
     Derived expandedTo(Scalar x) const { return Interval(*this).expandTo(x); }
+
     Derived expandedTo(Interval const & x) const {
         return Interval(*this).expandTo(x);
     }
@@ -230,8 +236,8 @@ public:
         }
         return *this;
     }
-    Interval & erodeBy(Scalar x) { return dilateBy(-x); }
 
+    Interval & erodeBy(Scalar x) { return dilateBy(-x); }
     Derived dilatedBy(Scalar x) const { return Interval(*this).dilateBy(x); }
     Derived erodedBy(Scalar x) const { return Interval(*this).erodeBy(x); }
 

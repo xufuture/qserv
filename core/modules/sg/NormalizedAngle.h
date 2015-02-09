@@ -24,7 +24,6 @@
 #define LSST_SG_NORMALIZEDANGLE_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file declares a class for representing normalized angles.
 
 #include "Angle.h"
@@ -44,9 +43,11 @@ public:
     static NormalizedAngle nan() {
         return NormalizedAngle(std::numeric_limits<double>::quiet_NaN());
     }
+
     static NormalizedAngle fromDegrees(double a) {
         return NormalizedAngle(a * RAD_PER_DEG);
     }
+
     static NormalizedAngle fromRadians(double a) {
         return NormalizedAngle(a);
     }
@@ -59,39 +60,24 @@ public:
     /// then `between` can be thought of as computing the arc length of the
     /// shortest unit circle segment between the points for a and b.
     static NormalizedAngle between(NormalizedAngle const & a,
-                                   NormalizedAngle const & b)
-    {
-        NormalizedAngle x;
-        double a1 = std::fabs(a.radians() - b.radians());
-        double a2 = 2.0 * PI - a1;
-        x._a = Angle(std::min(a1, a2));
-        return x;
-    }
+                                   NormalizedAngle const & b);
 
     /// For two normalized angles a and b, `center(a, b)` returns the angle m
     /// such that `a.angleTo(m)` is equal to `m.angleTo(b)`.
     static NormalizedAngle center(NormalizedAngle const & a,
-                                  NormalizedAngle const & b)
-    {
-        NormalizedAngle x;
-        double c = 0.5 * (a.radians() + b.radians());
-        if (a <= b) {
-            x._a = Angle(c);
-        } else {
-            // The result is (a + b + 2π) / 2, normalized to [0, 2π)
-            x._a = Angle((c < PI) ? (c + PI) : (c - PI));
-        }
-        return x;
-    }
+                                  NormalizedAngle const & b);
 
     /// This constructor creates a NormalizedAngle with a value of zero.
     NormalizedAngle() {}
+
     /// This constructor creates a copy of a.
     NormalizedAngle(NormalizedAngle const & a) : _a(a._a) {}
+
     /// This constructor creates a normalized copy of a.
     explicit NormalizedAngle(Angle const & a) {
         *this = NormalizedAngle(a.radians());
     }
+
     /// This constructor creates a NormalizedAngle with the given value in
     /// radians, normalized to be in the range [0, 2π).
     explicit NormalizedAngle(double a) {
@@ -105,9 +91,11 @@ public:
             _a = Angle(a);
         }
     }
+
     /// This constructor creates a NormalizedAngle equal to the angle between
     /// the given points on the unit sphere.
     NormalizedAngle(LonLat const &, LonLat const &);
+
     /// This constructor creates a NormalizedAngle equal to the angle between
     /// the given 3-vectors, which need not have unit norm.
     NormalizedAngle(Vector3d const &, Vector3d const &);
@@ -135,8 +123,10 @@ public:
 
     /// `degrees` returns the value of this angle in units of degrees.
     double degrees() const { return _a.degrees(); }
+
     /// `radians` returns the value of this angle in units of radians.
     double radians() const { return _a.radians(); }
+
     /// `isNan` returns true if the angle value is NaN.
     bool isNan() const { return _a.isNan(); }
 

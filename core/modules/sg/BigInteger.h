@@ -24,7 +24,6 @@
 #define LSST_SG_BIGINTEGER_H_
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file declares a class for arbitrary precision integers.
 
 #include <stdint.h>
@@ -66,14 +65,19 @@ public:
 
     /// `sign` returns -1, 0 or 1 if this integer is negative, zero or positive.
     int sign() const { return _sign; }
+
     /// `size` returns the number of digits in the value of this integer.
     unsigned size() const { return _size; }
+
     /// `capacity` returns the number of digits in the underlying digit array.
     unsigned capacity() const { return _capacity; }
+
     /// `digits` returns the underlying digit array.
     uint32_t const * digits() const { return _digits; }
+
     /// `zero` sets this integer to zero.
     void zero() { _sign = 0; _size = 0; }
+
     /// `set` assigns the given signed 64 bit integer to this integer.
     void set(int64_t x) {
         if (x < 0) {
@@ -83,6 +87,7 @@ public:
             set(static_cast<uint64_t>(x));
         }
     }
+
     /// `set` assigns the given unsigned 64 bit integer to this integer.
     void set(uint64_t x) {
         ensure(2);
@@ -91,14 +96,19 @@ public:
         _size = (_digits[1] == 0) ? (_digits[0] != 0) : 2;
         _sign = (_size != 0);
     }
+
     /// `negate` multiplies this integer by -1.
     void negate() { _sign = -_sign; }
+
     /// `add` adds b to this integer.
     BigInteger & add(BigInteger const & b);
+
     /// `subtract` subtracts b from this integer.
     BigInteger & subtract(BigInteger const & b);
+
     /// `multiplyPow2` multiplies this integer by 2ⁿ.
     BigInteger & multiplyPow2(unsigned n);
+
     /// `multiply` multiplies this integer by b.
     BigInteger & multiply(BigInteger const & b);
 

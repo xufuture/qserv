@@ -21,7 +21,6 @@
  */
 
 /// \file
-/// \author Serge Monkewitz
 /// \brief This file contains the BigInteger class implementation.
 
 #include "BigInteger.h"
