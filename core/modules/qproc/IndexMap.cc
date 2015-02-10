@@ -44,6 +44,7 @@
 // LSST headers
 #include "sg/Chunker.h"
 // Qserv headers
+#include "global/intTypes.h"
 #include "global/stringTypes.h"
 //#include "qproc/fakeGeometry.h"
 
@@ -105,7 +106,8 @@ struct FuncMap {
         fMap["qserv_areaspec_ellipse"] = make<Ellipse>;
         fMap["qserv_areaspec_poly"] = make<ConvexPolygon>;
     }
-    std::map<std::string, MakeFunc> fMap;
+    typedef std::map<std::string, MakeFunc> Map;
+    Map fMap;
 };
 
 static FuncMap funcMap;
@@ -117,7 +119,11 @@ namespace qproc {
 typedef std::vector<boost::shared_ptr<Region> > RegionPtrVector;
 
 boost::shared_ptr<Region> getRegion(query::Constraint const& c) {
-    return funcMap.fMap[c.name](c.params);
+    FuncMap::Map::const_iterator i = funcMap.fMap.find(c.name);
+    if(i != funcMap.fMap.end()) {
+        return i->second(c.params);
+    }
+    return boost::shared_ptr<Region>();
 }
 
 ChunkSpec convertSgSubChunks(SubChunks const& sc) {
@@ -197,6 +203,65 @@ private:
 
 };
 #endif
+////////////////////////////////////////////////////////////////////////
+// IndexMap::PartitioningMap definition and implementation
+////////////////////////////////////////////////////////////////////////
+class IndexMap::PartitioningMap {
+public:
+    explicit PartitioningMap(css::StripingParams const& sp) {
+        sg::Angle overlap(0.000001); // Dummy.
+        _chunker = boost::make_shared<sg::Chunker>(sp.stripes,
+                                                   sp.subStripes);
+
+    }
+    /// @return un-canonicalized vector<SubChunks> of concatenated region
+    /// results. Regions are assumed to be joined by implicit "OR" and not "AND"
+    ///
+    SubChunksVector getIntersect(RegionPtrVector const& rv) {
+        SubChunksVector scv;
+        for(RegionPtrVector::const_iterator i=rv.begin(), e=rv.end();
+            i != e;
+            ++i) {
+            if(*i) {
+                SubChunksVector area = getCoverage(**i);
+                scv.insert(scv.end(), area.begin(), area.end());
+            } else {
+                throw Bug("Null region ptr in IndexMap");
+            }
+        }
+        return scv;
+    }
+
+    inline SubChunksVector getCoverage(Region const& r) {
+        return _chunker->subChunksIntersecting(r);
+    }
+    ChunkSpecVector getAllChunks() const {
+        IntVector allChunks = _chunker->getAllChunks();
+        ChunkSpecVector csv;
+        csv.reserve(allChunks.size());
+        for(IntVector::const_iterator i=allChunks.begin(), e=allChunks.end();
+            i != e; ++i) {
+            csv.push_back(ChunkSpec(*i, _chunker->getAllSubChunks(*i)));
+        }
+        return csv;
+    }
+private:
+    boost::shared_ptr<sg::Chunker> _chunker;
+};
+
+////////////////////////////////////////////////////////////////////////
+// IndexMap implementation
+////////////////////////////////////////////////////////////////////////
+IndexMap::IndexMap(css::StripingParams const& sp,
+                   boost::shared_ptr<SecondaryIndex> si)
+    : _pm(boost::make_shared<PartitioningMap>(sp)),
+      _si(si) {
+
+}
+
+ChunkSpecVector IndexMap::getAll() {
+    return _pm->getAllChunks();
+}
 
 ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
     // Index lookups
@@ -205,8 +270,10 @@ ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
     //                 isIndex);
     // copy_if not available before c++11
     std::copy(cv.begin(), cv.end(), std::back_inserter(indexConstraints));
-    std::remove_if(indexConstraints.begin(), indexConstraints.end(),
-                   isNotIndex);
+    query::ConstraintVector::const_iterator newEnd;
+    newEnd = std::remove_if(indexConstraints.begin(), indexConstraints.end(),
+                            isNotIndex);
+    indexConstraints.resize(newEnd - indexConstraints.begin());
     ChunkSpecVector indexSpecs;
     if(!indexConstraints.empty()) {
         if(!_si) {
@@ -217,20 +284,24 @@ ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
 
     // Spatial area lookups
     if(indexConstraints.size() == cv.size()) {
-        // No spatial constraints?
-        return indexSpecs;
+        if(indexConstraints.empty()) { // No constraints -> full-sky
+            return _pm->getAllChunks();
+        } else {
+            // No spatial constraints?
+            return indexSpecs;
+        }
     } else {
         // Index and spatial lookup are supported in AND format only right now.
         // If both exist, compute the AND.
         RegionPtrVector rv;
         std::transform(cv.begin(), cv.end(), std::back_inserter(rv), getRegion);
-        SubChunksVector scv; // = _pm->getIntersect(rv);
 
-        throw "FIXME: do partitioningmap!";
+        SubChunksVector scv = _pm->getIntersect(rv);
+
         ChunkSpecVector csv;
         std::transform(scv.begin(), scv.end(),
                        std::back_inserter(csv), convertSgSubChunks);
-        intersectSorted(csv, indexSpecs);
+        intersectSorted(csv, indexSpecs); // performs "AND"
         return csv;
     }
 }

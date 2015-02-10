@@ -43,24 +43,19 @@ namespace lsst {
 namespace qserv {
 namespace qproc {
 
-class PartitioningMap;
 class SecondaryIndex;
 
 //boost::shared_ptr<Region> getRegion(query::Constraint const& c);
 
 class IndexMap {
 public:
-    IndexMap(boost::shared_ptr<PartitioningMap> pm,
-             boost::shared_ptr<SecondaryIndex> si)
-        : _pm(pm), _si(si) {}
     IndexMap(css::StripingParams const& sp,
-             boost::shared_ptr<SecondaryIndex> si)
-        : _si(si) {
-        throw "FIXME, need to construct pm.!";
+             boost::shared_ptr<SecondaryIndex> si);
 
-    }
+    ChunkSpecVector getAll();
     ChunkSpecVector getIntersect(query::ConstraintVector const& cv);
 
+    class PartitioningMap;
 private:
     boost::shared_ptr<PartitioningMap> _pm;
     boost::shared_ptr<SecondaryIndex> _si;
