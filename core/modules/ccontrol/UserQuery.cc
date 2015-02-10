@@ -316,7 +316,7 @@ void UserQuery::_setupChunking() {
         for(qproc::ChunkSpecVector::const_iterator i=csv.begin(), e=csv.end();
             i != e;
             ++i) {
-            if(eSet->count(i->chunkId) != 0) {
+            if(eSet->count(i->chunkId) == 0) { // chunk not in empty?
                 _qSession->addChunk(*i);
             }
         }
