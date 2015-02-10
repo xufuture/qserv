@@ -114,7 +114,7 @@ UserQueryFactory::newUserQuery(std::string const& query,
             = new rproc::InfileMergerConfig(_impl->infileMergerConfigTemplate);
         ict->targetTable = resultTable;
         uq->_infileMergerConfig.reset(ict);
-        if (false) {
+        if (true) { // Enable C++ geom
             uq->_setupChunking();
         }
     } else {
@@ -158,7 +158,7 @@ void UserQueryFactory::Impl::readConfigFacade(
     ConfigMap cm(m);
 
     std::string emptyChunkPath = cm.get(
-        "partitioning.emptyChunkPath",
+        "partitioner.emptychunkpath",
         "Error, missing path for Empty chunk file, using '.'.",
         ".");
     if (!kvi) {

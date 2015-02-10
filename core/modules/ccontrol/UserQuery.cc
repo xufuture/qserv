@@ -287,48 +287,41 @@ void UserQuery::_setupChunking() {
         // FIXME: mark error.
         return;
     }
-    { //            self._computeConstraintsAsHints()
-        // """Retrieve discovered constraints from the query and
-        // evaluate chunk coverage against them."""
-        boost::shared_ptr<query::ConstraintVector> constraints
-            = _qSession->getConstraints();
-        // map constraints into hintsdict and hintlist
-
-        // self.pmap = self._makePmap(self.dominantDb, self.dbStriping)
-        css::StripingParams partStriping = _qSession->getDbStriping();
-        boost::shared_ptr<qproc::SecondaryIndex> si; // FIXME
-        im = boost::make_shared<qproc::IndexMap>(partStriping, si);
-        qproc::ChunkSpecVector csv = im->getIntersect(*constraints);
-        _qSession->addChunk(im->getIntersect(*constraints));
-    }
 
     boost::shared_ptr<IntSet const> eSet = _qSession->getEmptyChunks();
     {
         //self._emptyChunks = metadata.getEmptyChunks(self.dominantDb)
         eSet = _qSession->getEmptyChunks();
         if(!eSet) {
+            eSet = boost::make_shared<IntSet>();
             // FIXME: mark error, no empty chunks
         }
     }
     if (_qSession->hasChunks()) {
-        //   iterate chunk
-        int count = 0;
-        int chunkId = 1234;
-        for(; false; ) { // Iterate over pm, filtering out emptychunks
-            ++count;
-            if (eSet->find(chunkId) == eSet->end()) {
-                // log: skipping empty chunk
-                continue;
-            }
-            //addChunk(chunkSpec);
-            ++count;
+        boost::shared_ptr<query::ConstraintVector> constraints
+            = _qSession->getConstraints();
+        // map constraints into hintsdict and hintlist
+
+        // self.pmap = self._makePmap(self.dominantDb, self.dbStriping)
+        css::StripingParams partStriping = _qSession->getDbStriping();
+
+        im = boost::make_shared<qproc::IndexMap>(partStriping, _secondaryIndex);
+        qproc::ChunkSpecVector csv;
+        if(constraints) {
+            csv = im->getIntersect(*constraints);
+        } else { // Unconstrained: full-sky
+            csv = im->getAll();
         }
-    } else {
-        //addChunk(dummychunk);
+        // Filter out empty chunks
+        for(qproc::ChunkSpecVector::const_iterator i=csv.begin(), e=csv.end();
+            i != e;
+            ++i) {
+            if(eSet->count(i->chunkId) != 0) {
+                _qSession->addChunk(*i);
+            }
+        }
+    } else { // querysession will add dummy chunk when no chunks added.
     }
-
-    // self._addChunks()
-
 }
 
 }}} // lsst::qserv::ccontrol
