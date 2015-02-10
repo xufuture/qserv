@@ -75,7 +75,7 @@ void intersectSorted(ChunkSpecVector& dest, ChunkSpecVector const& a) {
     ChunkSpecVector::iterator de = tmp.end();
     ChunkSpecVector::const_iterator ai = a.begin();
     ChunkSpecVector::const_iterator ae = a.end();
-    while(di != de) { // march down dest vector
+    for(; (di != de) && (ai != ae); ++di) { // march down dest vector
         // For each item in dest, advance through a to find a matching chunkId.
         while(ai->chunkId < di->chunkId) {
             ++ai;
@@ -89,7 +89,6 @@ void intersectSorted(ChunkSpecVector& dest, ChunkSpecVector const& a) {
                 dest.push_back(cs);
             }
         }
-        ++di;
     }
 }
 
