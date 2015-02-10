@@ -66,12 +66,8 @@ from string import Template
 
 # Package imports
 import logger
-import metadata
-import spatial
 import lsst.qserv.css
 import lsst.qserv.czar.config
-from lsst.geom.geometry import SphericalBox
-from lsst.geom.geometry import SphericalConvexPolygon, convexHull
 from lsst.qserv.czar.db import TaskDb as Persistence
 from lsst.qserv.czar.db import Db
 
@@ -437,7 +433,7 @@ class InbandQueryAction:
                                                              self._resultName)
         errorMsg = UserQuery_getError(self.sessionId)
         if errorMsg: raise ParseError(errorMsg)
-        if True: # Turn off for c++ geometry
+        if False: # Turn off for c++ geometry
             self.dominantDb = UserQuery_getDominantDb(self.sessionId)
             if not UserQuery_containsDb(self.sessionId, self.dominantDb):
                 raise ParseError("Illegal db")
