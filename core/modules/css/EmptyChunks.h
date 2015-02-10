@@ -59,7 +59,9 @@ namespace css {
 /// group may be extremely sparse).
 class EmptyChunks {
 public:
-    EmptyChunks(std::string const& path=".") : _path(path) {}
+    EmptyChunks(std::string const& path=".",
+                std::string const& fallbackFile="emptyChunks.txt")
+        : _path(path), _fallbackFile(fallbackFile) {}
 
     // accessors
 
@@ -75,8 +77,8 @@ public:
 
 private:
     typedef std::map<std::string, IntSetPtr> IntSetMap;
-
     std::string _path; ///< Search path for empty chunks files
+    std::string _fallbackFile; ///< Fallback path for empty chunks
     mutable IntSetMap _sets; ///< Container for empty chunks sets (cache)
     mutable boost::mutex _setsMutex;
 };

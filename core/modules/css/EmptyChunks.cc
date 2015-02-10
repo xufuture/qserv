@@ -42,10 +42,6 @@ using lsst::qserv::ConfigError;
 using lsst::qserv::IntSet;
 
 namespace {
-std::string
-makeDefaultFilename() {
-    return "emptyChunks.txt";
-}
 
 std::string
 makeFilename(std::string const& db) {
@@ -53,17 +49,19 @@ makeFilename(std::string const& db) {
 }
 
 void
-populate(std::string const& path, IntSet& s, std::string const& db) {
+populate(std::string const& path,
+         std::string const& fallbackFile,
+         IntSet& s,
+         std::string const& db) {
     std::string best = path + "/" + makeFilename(db);
-    std::string fallback = path + "/" + makeDefaultFilename();
     std::ifstream rawStream(best.c_str());
     if(!rawStream.good()) { // On error, try using default filename
         rawStream.close();
-        rawStream.open(fallback.c_str());
+        rawStream.open(fallbackFile.c_str());
     }
     if(!rawStream.good()) {
         throw ConfigError("No such empty chunks file: " + best
-                          + " or " + fallback);
+                          + " or " + fallbackFile);
     }
     std::istream_iterator<int> chunkStream(rawStream);
     std::istream_iterator<int> eos;
@@ -85,7 +83,7 @@ EmptyChunks::getEmpty(std::string const& db) const {
     }
     IntSetPtr newSet = boost::make_shared<IntSet>();
     _sets.insert(IntSetMap::value_type(db, newSet));
-    populate(_path, *newSet, db); // Populate reference
+    populate(_path, _fallbackFile, *newSet, db); // Populate reference
     return IntSetConstPtr(newSet);
 }
 
