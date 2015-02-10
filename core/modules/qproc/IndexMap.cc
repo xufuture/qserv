@@ -301,7 +301,9 @@ ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
         ChunkSpecVector csv;
         std::transform(scv.begin(), scv.end(),
                        std::back_inserter(csv), convertSgSubChunks);
-        intersectSorted(csv, indexSpecs); // performs "AND"
+        if(!indexSpecs.empty()) {
+            intersectSorted(csv, indexSpecs); // performs "AND"
+        }
         return csv;
     }
 }
