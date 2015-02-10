@@ -98,6 +98,9 @@ public:
         return std::sqrt(squaredNorm());
     }
 
+    /// `isZero` returns true if all the components of this vector are zero.
+    bool isZero() const { return *this == Vector3d(); }
+
     /// `normalize` scales this vector to have unit norm and returns its norm
     /// prior to scaling. It will accurately normalize any vector with finite
     /// components except for (0, 0, 0), including those with norms that

@@ -47,7 +47,7 @@ UnitVector3d UnitVector3d::orthogonalTo(Vector3d const & v1,
                                         Vector3d const & v2)
 {
     Vector3d n = (v2 + v1).cross(v2 - v1);
-    if (n == Vector3d()) {
+    if (n.isZero()) {
         return orthogonalTo(v1);
     }
     return UnitVector3d(n);
@@ -57,7 +57,7 @@ UnitVector3d UnitVector3d::northFrom(Vector3d const & v) {
     Vector3d n(-v.x() * v.z(),
                -v.y() * v.z(),
                v.x() * v.x() + v.y() * v.y());
-    if (n == Vector3d()) {
+    if (n.isZero()) {
         UnitVector3d u;
         u._v.x() = -::copysign(1.0, v.z());
         return u;

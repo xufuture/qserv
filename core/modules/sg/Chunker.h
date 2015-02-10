@@ -67,7 +67,6 @@ class Chunker {
 public:
     Chunker(int32_t numStripes,
             int32_t numSubStripesPerStripe);
-    ~Chunker();
 
     /// `getNumStripes` returns the number of fixed-height latitude intervals
     /// in the sky subdivision.
@@ -91,7 +90,7 @@ public:
 
     /// `getAllChunks` returns the complete set of chunk IDs for the unit
     /// sphere.
-    std::vector<int32_t> getAllChunks(int32_t chunkId) const;
+    std::vector<int32_t> getAllChunks() const;
 
     /// `getAllSubChunks` returns the complete set of sub-chunk IDs
     /// for the given chunk.
