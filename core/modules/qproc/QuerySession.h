@@ -84,6 +84,8 @@ public:
     boost::shared_ptr<query::ConstraintVector> getConstraints() const;
     void addChunk(ChunkSpec const& cs);
     void addChunk(ChunkSpecVector const& cs);
+    void setDummy();
+
 
     query::SelectStmt const& getStmt() const { return *_stmt; }
 
@@ -145,6 +147,7 @@ private:
     std::list<boost::shared_ptr<query::SelectStmt> > _stmtParallel;
     boost::shared_ptr<query::SelectStmt> _stmtMerge;
     bool _hasMerge;
+    bool _isDummy; ///< Use dummy chunk, disabling subchunks or any real chunks
     std::string _tmpTable;
     std::string _resultTable;
     std::string _error;

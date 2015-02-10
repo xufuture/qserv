@@ -178,6 +178,16 @@ void QuerySession::addChunk(ChunkSpecVector const& csv) {
     _context->chunkCount += csv.size();
 }
 
+void QuerySession::setDummy() {
+    _isDummy = true;
+    // Clear out chunk counts and _chunks, and replace with dummy chunk.
+    _context->chunkCount = 1;
+    _chunks.clear();
+    IntVector v;
+    v.push_back(1); // Dummy subchunk
+    _chunks.push_back(ChunkSpec(DUMMY_CHUNK, v));
+}
+
 void QuerySession::setResultTable(std::string const& resultTable) {
     _resultTable = resultTable;
 }
@@ -248,9 +258,7 @@ void QuerySession::finalize() {
     }
     // Make up for no chunks (chunk-less query): add the dummy chunk.
     if(_chunks.empty()) {
-        ChunkSpec cs;
-        cs.chunkId = DUMMY_CHUNK;
-        addChunk(cs);
+        setDummy();
     }
     _cssFacade.reset(); // Release handle on cssFacade so it can be reclaimed.
     _context->cssFacade.reset();
@@ -303,6 +311,7 @@ void QuerySession::_applyLogicPlugins() {
 
 void QuerySession::_generateConcrete() {
     _hasMerge = false;
+    _isDummy = false;
     // In making a statement concrete, the query's execution is split
     // into a parallel portion and a merging/aggregation portion.  In
     // many cases, not much needs to be done for the latter, since
