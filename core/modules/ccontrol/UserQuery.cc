@@ -71,7 +71,6 @@
 
 // LSST headers
 #include "lsst/log/Log.h"
-#include "qproc/geomAdapter.h" // Temporary
 
 // Qserv headers
 #include "ccontrol/MergingRequester.h"
@@ -83,6 +82,7 @@
 #include "proto/ProtoImporter.h"
 #include "qdisp/Executive.h"
 #include "qdisp/MessageStore.h"
+#include "qproc/geomAdapter.h"
 #include "qproc/IndexMap.h"
 #include "qproc/QuerySession.h"
 #include "qproc/TaskMsgFactory2.h"

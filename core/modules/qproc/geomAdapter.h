@@ -62,8 +62,7 @@ getBoxFromParams(std::vector<Coordinate> const& params) {
 
 inline boost::shared_ptr<sg::Circle>
 getCircleFromParams(std::vector<Coordinate> const& params) {
-    // UnitVector3d uv3(lon,lat);
-    // Circle c(uv3, radius^2);
+    // lon, lat radius_deg
     if(params.size() != 3) {
         throw QueryProcessingBug("Invalid number or parameters for region");
     }
@@ -72,17 +71,9 @@ getCircleFromParams(std::vector<Coordinate> const& params) {
     return boost::make_shared<sg::Circle>(sg::UnitVector3d(center), a);
 }
 
-
-inline double toRadians(double degrees) {
-    double const pi = 3.14; // FIXME!
-    return pi*degrees/180;
-}
-
 inline boost::shared_ptr<sg::Ellipse>
 getEllipseFromParams(std::vector<Coordinate> const& params) {
     // lon, lat, semimajang, semiminang, posangle
-    // UnitVector3d uv3(lon,lat);
-    // Circle c(uv3, radius^2);
     if(params.size() != 5) {
         throw QueryProcessingBug("Invalid number or parameters for region");
     }
