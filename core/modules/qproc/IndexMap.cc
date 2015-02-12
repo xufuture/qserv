@@ -233,7 +233,7 @@ public:
     }
 
     inline SubChunksVector getCoverage(Region const& r) {
-        return _chunker->subChunksIntersecting(r);
+        return _chunker->getSubChunksIntersecting(r);
     }
     ChunkSpecVector getAllChunks() const {
         IntVector allChunks = _chunker->getAllChunks();
