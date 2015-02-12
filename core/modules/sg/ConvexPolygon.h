@@ -73,19 +73,19 @@ public:
     bool operator==(ConvexPolygon const & p) const;
     bool operator!=(ConvexPolygon const & p) const { return !(*this == p); }
 
-    std::vector<UnitVector3d> const & vertices() const {
+    std::vector<UnitVector3d> const & getVertices() const {
         return _vertices;
     }
 
     /// The centroid of a polygon is its center of mass projected onto
     /// S², assuming a uniform mass distribution over the polygon surface.
-    UnitVector3d centroid() const;
+    UnitVector3d getCentroid() const;
 
     // Region interface
     virtual ConvexPolygon * clone() const { return new ConvexPolygon(*this); }
 
-    virtual Box boundingBox() const;
-    virtual Circle boundingCircle() const;
+    virtual Box getBoundingBox() const;
+    virtual Circle getBoundingCircle() const;
 
     virtual bool contains(UnitVector3d const & v) const;
 

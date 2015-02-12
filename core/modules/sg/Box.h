@@ -47,10 +47,10 @@ namespace sg {
 ///
 /// For any instance b of this class, the following properties hold:
 ///
-/// - b.isEmpty() == b.lat().isEmpty()
-/// - b.lat().isEmpty() == b.lon().isEmpty()
-/// - Box::allLatitudes().contains(b.lat())
-/// - Box::allLongitudes().contains(b.lon())
+/// - b.isEmpty() == b.getLat().isEmpty()
+/// - b.getLat().isEmpty() == b.getLon().isEmpty()
+/// - Box::allLatitudes().contains(b.getLat())
+/// - Box::allLongitudes().contains(b.getLon())
 class Box : public Region {
 public:
     // Factory functions
@@ -91,17 +91,18 @@ public:
 
     /// This constructor creates a box containing a single point.
     explicit Box(LonLat const & p) :
-        _lon(p.lon()),
-        _lat(p.lat())
+        _lon(p.getLon()),
+        _lat(p.getLat())
     {
         _enforceInvariants();
     }
 
     /// This constructor creates a box spanning the longitude interval
-    /// [p1.lon(), p2.lon()] and latitude interval [p1.lat(), p2.lat()].
+    /// [p1.getLon(), p2.getLon()] and latitude interval
+    /// [p1.getLat(), p2.getLat()].
     Box(LonLat const & p1, LonLat const & p2) :
-        _lon(p1.lon(), p2.lon()),
-        _lat(p1.lat(), p2.lat())
+        _lon(p1.getLon(), p2.getLon()),
+        _lat(p1.getLat(), p2.getLat())
     {
         _enforceInvariants();
     }
@@ -109,8 +110,8 @@ public:
     /// This constructor creates a box with center p, width
     /// (in longitude angle) w and height (in latitude angle) h.
     Box(LonLat const & p, Angle w, Angle h) :
-        _lon(NormalizedAngleInterval(p.lon()).dilatedBy(w)),
-        _lat(AngleInterval(p.lat()).dilatedBy(h))
+        _lon(NormalizedAngleInterval(p.getLon()).dilatedBy(w)),
+        _lat(AngleInterval(p.getLat()).dilatedBy(h))
     {
         _enforceInvariants();
     }
@@ -133,16 +134,16 @@ public:
 
     /// A box is equal to a point p if it contains only p.
     bool operator==(LonLat const & p) const {
-        return _lat == p.lat() && _lon == p.lon();
+        return _lat == p.getLat() && _lon == p.getLon();
     }
 
     bool operator!=(LonLat const & p) const { return !(*this == p); }
 
-    /// `lon` returns the longitude interval of this box.
-    NormalizedAngleInterval const & lon() const { return _lon; }
+    /// `getLon` returns the longitude interval of this box.
+    NormalizedAngleInterval const & getLon() const { return _lon; }
 
-    /// `lat` returns the latitude interval of this box.
-    AngleInterval const & lat() const { return _lat; }
+    /// `getLat` returns the latitude interval of this box.
+    AngleInterval const & getLat() const { return _lat; }
 
     /// `isEmpty` returns true if this box does not contain any points.
     bool isEmpty() const { return _lat.isEmpty(); }
@@ -151,23 +152,25 @@ public:
     /// the unit sphere.
     bool isFull() const { return _lon.isFull() && _lat == allLatitudes(); }
 
-    /// `center` returns the center of this box. It is NaN for empty
+    /// `getCenter` returns the center of this box. It is NaN for empty
     /// boxes and arbitrary for full boxes.
-    LonLat center() const { return LonLat(_lon.center(), _lat.center()); }
+    LonLat getCenter() const {
+        return LonLat(_lon.getCenter(), _lat.getCenter());
+    }
 
-    /// `width` returns the width in longitude angle of this box. It is NaN
+    /// `getWidth` returns the width in longitude angle of this box. It is NaN
     /// for empty boxes.
-    NormalizedAngle width() const { return _lon.size(); }
+    NormalizedAngle getWidth() const { return _lon.getSize(); }
 
-    /// `height` returns the height in latitude angle of this box. It is
+    /// `getHeight` returns the height in latitude angle of this box. It is
     /// negative or NaN for empty boxes.
-    Angle height() const { return _lat.size(); }
+    Angle getHeight() const { return _lat.getSize(); }
 
     ///@{
     /// `contains` returns true if the intersection of this box and x
     /// is equal to x.
     bool contains(LonLat const & x) const {
-        return _lat.contains(x.lat()) && _lon.contains(x.lon());
+        return _lat.contains(x.getLat()) && _lon.contains(x.getLon());
     }
 
     bool contains(Box const & x) const {
@@ -187,7 +190,7 @@ public:
     /// `intersects` returns true if the intersection of this box and x
     /// is non-empty.
     bool intersects(LonLat const & x) const {
-        return _lat.intersects(x.lat()) && _lon.intersects(x.lon());
+        return _lat.intersects(x.getLat()) && _lon.intersects(x.getLon());
     }
 
     bool intersects(Box const & x) const {
@@ -199,7 +202,7 @@ public:
     /// `isWithin` returns true if the intersection of this box and x
     /// is this box.
     bool isWithin(LonLat const & x) const {
-        return _lat.isWithin(x.lat()) && _lon.isWithin(x.lon());
+        return _lat.isWithin(x.getLat()) && _lon.isWithin(x.getLon());
     }
 
     bool isWithin(Box const & x) const {
@@ -210,8 +213,8 @@ public:
     /// `clipTo` shrinks this box until it contains only x. If this box
     /// does not contain x, it is emptied.
     Box & clipTo(LonLat const & x) {
-        _lon.clipTo(x.lon());
-        _lat.clipTo(x.lat());
+        _lon.clipTo(x.getLon());
+        _lat.clipTo(x.getLat());
         return *this;
     }
 
@@ -219,8 +222,8 @@ public:
     /// of x and y. The result is not always unique, and `x.clipTo(y)` is not
     /// guaranteed to equal `y.clipTo(x)`.
     Box & clipTo(Box const & x) {
-        _lon.clipTo(x.lon());
-        _lat.clipTo(x.lat());
+        _lon.clipTo(x.getLon());
+        _lat.clipTo(x.getLat());
         return *this;
     }
 
@@ -237,14 +240,14 @@ public:
     /// is not always unique, and `x.expandTo(y)` is not guaranteed to equal
     /// `y.expandTo(x)`.
     Box & expandTo(LonLat const & x) {
-        _lon.expandTo(x.lon());
-        _lat.expandTo(x.lat());
+        _lon.expandTo(x.getLon());
+        _lat.expandTo(x.getLat());
         return *this;
     }
 
     Box & expandTo(Box const & x) {
-        _lon.expandTo(x.lon());
-        _lat.expandTo(x.lat());
+        _lon.expandTo(x.getLon());
+        _lat.expandTo(x.getLat());
         return *this;
     }
     ///@}
@@ -287,15 +290,15 @@ public:
 
     int relate(LonLat const & p) const { return relate(Box(p)); }
 
-    /// `area` returns the area of this box in steradians.
-    double area() const;
+    /// `getArea` returns the area of this box in steradians.
+    double getArea() const;
 
     // Region interface
     virtual Box * clone() const { return new Box(*this); }
 
-    virtual Box boundingBox() const { return *this; }
+    virtual Box getBoundingBox() const { return *this; }
 
-    virtual Circle boundingCircle() const;
+    virtual Circle getBoundingCircle() const;
 
     virtual bool contains(UnitVector3d const & v) const {
         return contains(LonLat(v));

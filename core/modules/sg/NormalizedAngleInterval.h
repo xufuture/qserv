@@ -114,17 +114,11 @@ public:
 
     bool operator!=(NormalizedAngle x) const { return !(*this == x); }
 
-    ///@{
-    /// `a` returns the first endpoint of this interval.
-    NormalizedAngle a() const { return _a; }
-    NormalizedAngle & a() { return _a; }
-    ///@}
+    /// `getA` returns the first endpoint of this interval.
+    NormalizedAngle getA() const { return _a; }
 
-    ///@{
-    /// `b` returns the second endpoint of this interval.
-    NormalizedAngle b() const { return _b; }
-    NormalizedAngle & b() { return _b; }
-    ///@}
+    /// `getB` returns the second endpoint of this interval.
+    NormalizedAngle getB() const { return _b; }
 
     /// `isEmpty` returns true if this interval does not contain any
     /// normalized angles.
@@ -132,23 +126,22 @@ public:
 
     /// `isFull` returns true if this interval contains all normalized angles.
     bool isFull() const {
-        return _a.radians() == 0.0 && _b.radians() == 2.0 * PI;
+        return _a.asRadians() == 0.0 && _b.asRadians() == 2.0 * PI;
     }
 
     /// `wraps` returns true if the interval "wraps" around the 0/2π
-    /// angle discontinuity, i.e. consists of `[a(), 2π) ∪ [0, b()]`.
+    /// angle discontinuity, i.e. consists of `[getA(), 2π) ∪ [0, getB()]`.
     bool wraps() const { return _a > _b; }
 
-    /// `center` returns the center of this interval. It is NaN for empty
+    /// `getCenter` returns the center of this interval. It is NaN for empty
     /// intervals, and arbitrary for full intervals.
-    NormalizedAngle center() const { return NormalizedAngle::center(_a, _b); }
+    NormalizedAngle getCenter() const { return NormalizedAngle::center(_a, _b); }
 
-    /// `size` returns the size (length, width) of this interval. It is zero
-    /// for single-point intervals, and NaN for empty intervals. Note
-    /// that due to rounding errors, an interval with size `2 * PI` is not
-    /// necessarily full, and an interval with size 0 may contain more than a
-    /// single point.
-    NormalizedAngle size() const { return _a.angleTo(_b); }
+    /// `getSize` returns the size (length, width) of this interval. It is zero
+    /// for single-point intervals, and NaN for empty intervals. Note that due
+    /// to rounding errors, an interval with size `2 * PI` is not necessarily
+    /// full, and an interval with size 0 may contain more than a single point.
+    NormalizedAngle getSize() const { return _a.getAngleTo(_b); }
 
     ///@{
     /// `contains` returns true if the intersection of this interval and x

@@ -42,31 +42,31 @@ class UnitVector3d;
 /// returns the squared chord length between p and v. Otherwise it returns 4 -
 /// the maximum squared chord length between any pair of points on the unit
 /// sphere.
-double minSquaredChordLength(Vector3d const & v,
-                             Vector3d const & a,
-                             Vector3d const & b,
-                             Vector3d const & n);
+double getMinSquaredChordLength(Vector3d const & v,
+                                Vector3d const & a,
+                                Vector3d const & b,
+                                Vector3d const & n);
 
 /// Let p be the unit vector furthest from v that lies on the plane with
 /// normal n in the direction of the cross product of a and b. If p is in the
 /// interior of the great circle segment from a to b, then this helper function
 /// returns the squared chord length between p and v. Otherwise it returns 0 -
 /// the minimum squared chord length between any pair of points on the sphere.
-double maxSquaredChordLength(Vector3d const & v,
-                             Vector3d const & a,
-                             Vector3d const & b,
-                             Vector3d const & n);
+double getMaxSquaredChordLength(Vector3d const & v,
+                                Vector3d const & a,
+                                Vector3d const & b,
+                                Vector3d const & n);
 
-/// `minAngleToCircle` returns the minimum angular separation between a point
-/// at latitude x and the points on the circle of constant latitude c.
-inline Angle minAngleToCircle(Angle x, Angle c) {
+/// `getMinAngleToCircle` returns the minimum angular separation between a
+/// point at latitude x and the points on the circle of constant latitude c.
+inline Angle getMinAngleToCircle(Angle x, Angle c) {
     return abs(x - c);
 }
 
-/// `maxAngleToCircle` returns the maximum angular separation between a point
-/// at latitude x and the points on the circle of constant latitude c.
-inline Angle maxAngleToCircle(Angle x, Angle c) {
-    Angle a = minAngleToCircle(x, c);
+/// `getMaxAngleToCircle` returns the maximum angular separation between a
+/// point at latitude x and the points on the circle of constant latitude c.
+inline Angle getMaxAngleToCircle(Angle x, Angle c) {
+    Angle a = getMinAngleToCircle(x, c);
     if (abs(x) <= abs(c)) {
         return a + Angle(PI) - 2.0 * abs(c);
     }
@@ -76,12 +76,12 @@ inline Angle maxAngleToCircle(Angle x, Angle c) {
     return Angle(PI) + 2.0 * abs(c) - a;
 }
 
-/// `weightedCentroid` returns the center of mass of the given spherical
+/// `getWeightedCentroid` returns the center of mass of the given spherical
 /// triangle (assuming a uniform mass distribution over the triangle surface),
 /// weighted by the triangle area.
-Vector3d weightedCentroid(UnitVector3d const & v0,
-                          UnitVector3d const & v1,
-                          UnitVector3d const & v2);
+Vector3d getWeightedCentroid(UnitVector3d const & v0,
+                             UnitVector3d const & v1,
+                             UnitVector3d const & v2);
 
 }} // namespace lsst::sg
 

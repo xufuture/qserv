@@ -82,63 +82,74 @@ public:
     }
 
     ///@{
-    /// `col` returns the `c`-th matrix column. Bounds are not checked.
-    Vector3d & col(int c) { return _c[c]; }
-    Vector3d const & col(int c) const { return _c[c]; }
+    /// `getColumn` returns the `c`-th matrix column. Bounds are not checked.
+    Vector3d & getColumn(int c) { return _c[c]; }
+    Vector3d const & getColumn(int c) const { return _c[c]; }
     ///@}
 
     ///@{
     /// The function call operator returns the scalar at row `r` and column `c`.
     /// Bounds are not checked.
-    double & operator()(int r, int c) { return col(c)(r); }
-    double operator()(int r, int c) const { return col(c)(r); }
+    double & operator()(int r, int c) { return getColumn(c)(r); }
+    double operator()(int r, int c) const { return getColumn(c)(r); }
     ///@}
 
     /// `inner` returns the Frobenius inner product of this matrix with `m`.
     double inner(Matrix3d const & m) const {
         Matrix3d p = cwiseProduct(m);
-        Vector3d sum = p.col(0) + p.col(1) + p.col(2);
+        Vector3d sum = p.getColumn(0) + p.getColumn(1) + p.getColumn(2);
         return sum(0) + sum(1) + sum(2);
     }
 
-    /// `squaredNorm` returns the Frobenius inner product of this matrix with itself.
-    double squaredNorm() const { return inner(*this); }
+    /// `getSquaredNorm` returns the Frobenius inner product of this matrix
+    /// with itself.
+    double getSquaredNorm() const { return inner(*this); }
 
-    /// `norm` returns the L2 (Frobenius) norm of this matrix.
-    double norm() const { return std::sqrt(squaredNorm()); }
+    /// `getNorm` returns the L2 (Frobenius) norm of this matrix.
+    double getNorm() const { return std::sqrt(getSquaredNorm()); }
 
     /// The multiplication operator returns the product of this matrix
     /// with vector `v`.
     Vector3d operator*(Vector3d const & v) const {
-        return Vector3d(col(0) * v(0) + col(1) * v(1) + col(2) * v(2));
+        return Vector3d(getColumn(0) * v(0) +
+                        getColumn(1) * v(1) +
+                        getColumn(2) * v(2));
     }
 
     /// The multiplication operator returns the product of this matrix
     /// with matrix `m`.
     Matrix3d operator*(Matrix3d const & m) const {
         Matrix3d r;
-        for (int i = 0; i < 3; ++i) { r.col(i) = this->operator*(m.col(i)); }
+        for (int i = 0; i < 3; ++i) {
+            r.getColumn(i) = this->operator*(m.getColumn(i));
+        }
         return r;
     }
 
     /// The addition operator returns the sum of this matrix and `m`.
     Matrix3d operator+(Matrix3d const & m) const {
         Matrix3d r;
-        for (int i = 0; i < 3; ++i) { r.col(i) = col(i) + m.col(i); }
+        for (int i = 0; i < 3; ++i) {
+            r.getColumn(i) = getColumn(i) + m.getColumn(i);
+        }
         return r;
     }
 
     /// The subtraction operator returns the difference between this matrix and `m`.
     Matrix3d operator-(Matrix3d const & m) const {
         Matrix3d r;
-        for (int i = 0; i < 3; ++i) { r.col(i) = col(i) - m.col(i); }
+        for (int i = 0; i < 3; ++i) {
+            r.getColumn(i) = getColumn(i) - m.getColumn(i);
+        }
         return r;
     }
 
     /// `cwiseProduct` returns the component-wise product of this matrix and `m`.
     Matrix3d cwiseProduct(Matrix3d const & m) const {
         Matrix3d r;
-        for (int i = 0; i < 3; ++i) { r.col(i) = col(i).cwiseProduct(m.col(i)); }
+        for (int i = 0; i < 3; ++i) {
+            r.getColumn(i) = getColumn(i).cwiseProduct(m.getColumn(i));
+        }
         return r;
     }
 
@@ -166,7 +177,7 @@ public:
         // the first row of m with the first column of Adj(m).
         double rdet = 1.0 / (a0(0) * m(0,0) + a0(1) * m(0,1) + a0(2) * m(0,2));
         // The inverse of m is Adj(m)/det(m); compute it column by column.
-        inv.col(0) = a0 * rdet;
+        inv.getColumn(0) = a0 * rdet;
         inv(0,1) = (m(0, 2) * m(2, 1) - m(2, 2) * m(0, 1)) * rdet;
         inv(1,1) = (m(0, 0) * m(2, 2) - m(2, 0) * m(0, 2)) * rdet;
         inv(2,1) = (m(0, 1) * m(2, 0) - m(2, 1) * m(0, 0)) * rdet;

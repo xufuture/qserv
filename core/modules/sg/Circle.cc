@@ -36,10 +36,10 @@ namespace lsst {
 namespace sg {
 
 double Circle::squaredChordLengthFor(Angle a) {
-    if (a.radians() < 0.0) {
+    if (a.asRadians() < 0.0) {
         return -1.0;
     }
-    if (a.radians() >= PI) {
+    if (a.asRadians() >= PI) {
         return 4.0;
     }
     double s = sin(0.5 * a);
@@ -179,7 +179,8 @@ Circle & Circle::expandTo(Circle const & x) {
 }
 
 Circle & Circle::dilateBy(Angle r) {
-    if (!isEmpty() && !isFull() && (r.radians() > 0.0 || r.radians() < 0.0)) {
+    if (!isEmpty() && !isFull() &&
+        (r.asRadians() > 0.0 || r.asRadians() < 0.0)) {
         Angle o = _openingAngle + r;
         _squaredChordLength = squaredChordLengthFor(o);
         _openingAngle = o;
@@ -204,10 +205,10 @@ Circle & Circle::complement() {
     return *this;
 }
 
-Box Circle::boundingBox() const {
+Box Circle::getBoundingBox() const {
     LonLat c(_center);
     Angle h = _openingAngle + 2.0 * Angle(MAX_ASIN_ERROR);
-    NormalizedAngle w(Box::halfWidthForCircle(h, c.lat()) +
+    NormalizedAngle w(Box::halfWidthForCircle(h, c.getLat()) +
                       Angle(MAX_ASIN_ERROR));
     return Box(c, w, h);
 }
@@ -270,8 +271,8 @@ int Circle::relate(Ellipse const & e) const {
 }
 
 std::ostream & operator<<(std::ostream & os, Circle const & c) {
-    return os << "Circle(" << c.center() << ", "
-              << c.squaredChordLength() << ')';
+    return os << "Circle(" << c.getCenter() << ", "
+              << c.getSquaredChordLength() << ')';
 }
 
 }} // namespace lsst::sg

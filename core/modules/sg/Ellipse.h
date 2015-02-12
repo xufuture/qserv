@@ -184,7 +184,7 @@ public:
 
     /// This constructor creates an ellipse corresponding to the given circle.
     explicit Ellipse(Circle const & c) {
-        *this = Ellipse(c.center(), c.center(), c.openingAngle());
+        *this = Ellipse(c.getCenter(), c.getCenter(), c.getOpeningAngle());
     }
 
     /// This constructor creates an ellipse corresponding to the circle with
@@ -217,45 +217,45 @@ public:
 
     bool isFull() const { return Angle(0.5 * PI) - _a <= _gamma; }
 
-    bool isGreatCircle() const { return _a.radians() == 0.0; }
+    bool isGreatCircle() const { return _a.asRadians() == 0.0; }
 
     bool isCircle() const { return _a == _b; }
 
-    /// `transformMatrix` returns the orthogonal matrix that maps vectors
+    /// `getTransformMatrix` returns the orthogonal matrix that maps vectors
     /// to the basis in which the quadratic form corresponding to this ellipse
     /// is diagonal.
-    Matrix3d const & transformMatrix() const { return _S; }
+    Matrix3d const & getTransformMatrix() const { return _S; }
 
-    /// `center` returns the center of the ellipse as a unit vector.
-    UnitVector3d center() const {
+    /// `getCenter` returns the center of the ellipse as a unit vector.
+    UnitVector3d getCenter() const {
         return UnitVector3d::fromNormalized(_S(2,0), _S(2,1), _S(2,2));
     }
 
-    /// `f1` returns the first focal point of the ellipse.
-    UnitVector3d f1() const {
+    /// `getF1` returns the first focal point of the ellipse.
+    UnitVector3d getF1() const {
         UnitVector3d n = UnitVector3d::fromNormalized(_S(1,0), _S(1,1), _S(1,2));
-        return center().rotatedAround(n, -_gamma);
+        return getCenter().rotatedAround(n, -_gamma);
     }
 
-    /// `f2` returns the second focal point of the ellipse.
-    UnitVector3d f2() const {
+    /// `getF2` returns the second focal point of the ellipse.
+    UnitVector3d getF2() const {
         UnitVector3d n = UnitVector3d::fromNormalized(_S(1,0), _S(1,1), _S(1,2));
-        return center().rotatedAround(n, _gamma);
+        return getCenter().rotatedAround(n, _gamma);
     }
 
-    /// `alpha` returns α, the first semi-axis length of the ellipse. It is
+    /// `getAlpha` returns α, the first semi-axis length of the ellipse. It is
     /// negative for empty ellipses, ≥ π for full ellipses and in [0, π)
     /// otherwise.
-    Angle alpha() const { return Angle(0.5 * PI) + _a; }
+    Angle getAlpha() const { return Angle(0.5 * PI) + _a; }
 
-    /// `beta` returns β, the second semi-axis length of the ellipse. It is
+    /// `getBeta` returns β, the second semi-axis length of the ellipse. It is
     /// negative for empty ellipses, ≥ π for full ellipses and in [0, π)
     /// otherwise.
-    Angle beta() const { return Angle(0.5 * PI) + _b; }
+    Angle getBeta() const { return Angle(0.5 * PI) + _b; }
 
-    /// `gamma` returns ɣ ∈ [0, π/2], half of the angle between the foci. The
+    /// `getGamma` returns ɣ ∈ [0, π/2], half of the angle between the foci. The
     /// return value is arbitrary for empty and full ellipses.
-    Angle gamma() const { return _gamma; }
+    Angle getGamma() const { return _gamma; }
 
     /// `complement` sets this ellipse to the closure of its complement.
     Ellipse & complement() {
@@ -272,9 +272,9 @@ public:
     // Region interface
     virtual Ellipse * clone() const { return new Ellipse(*this); }
 
-    virtual Box boundingBox() const;
+    virtual Box getBoundingBox() const;
 
-    virtual Circle boundingCircle() const;
+    virtual Circle getBoundingCircle() const;
 
     virtual bool contains(UnitVector3d const &v) const;
 

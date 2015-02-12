@@ -60,7 +60,7 @@ NormalizedAngle LonLat::longitudeOf(Vector3d const & v) {
 
 
 LonLat::LonLat(NormalizedAngle lon, Angle lat) : _lon(lon), _lat(lat) {
-    if (std::fabs(_lat.radians()) > 0.5 * PI) {
+    if (std::fabs(_lat.asRadians()) > 0.5 * PI) {
         throw std::invalid_argument("invalid latitude angle");
     }
     _enforceInvariants();
@@ -80,7 +80,7 @@ void LonLat::_enforceInvariants() {
 }
 
 std::ostream & operator<<(std::ostream & os, LonLat const & p) {
-    return os << "LonLat(" << p.lon() << ", " << p.lat() << ")";
+    return os << "LonLat(" << p.getLon() << ", " << p.getLat() << ")";
 }
 
 }} // namespace lsst::sg

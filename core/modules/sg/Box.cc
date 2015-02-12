@@ -90,7 +90,7 @@ Box & Box::dilateBy(Angle r) {
     if (isEmpty() || isFull() || r <= Angle(0.0)) {
         return *this;
     }
-    Angle maxAbsLatitude = std::max(abs(_lat.a()), abs(_lat.b()));
+    Angle maxAbsLatitude = std::max(abs(_lat.getA()), abs(_lat.getB()));
     NormalizedAngle w = halfWidthForCircle(r, maxAbsLatitude);
     return dilateBy(w, r);
 }
@@ -101,15 +101,15 @@ Box & Box::dilateBy(Angle w, Angle h) {
     }
     _lon.dilateBy(w);
     if (!h.isNan()) {
-        Angle a = (_lat.a() > Angle(-0.5 * PI)) ? _lat.a() - h : _lat.a();
-        Angle b = (_lat.b() < Angle(0.5 * PI)) ? _lat.b() + h : _lat.b();
+        Angle a = (_lat.getA() > Angle(-0.5 * PI)) ? _lat.getA() - h : _lat.getA();
+        Angle b = (_lat.getB() < Angle(0.5 * PI)) ? _lat.getB() + h : _lat.getB();
         _lat = AngleInterval(a, b);
     }
     _enforceInvariants();
     return *this;
 }
 
-double Box::area() const {
+double Box::getArea() const {
     if (isEmpty()) {
         return 0.0;
     }
@@ -117,27 +117,27 @@ double Box::area() const {
     // correctly rounded, b > a does not imply that std::sin(b) > std::sin(a).
     // To avoid potentially returning a negative area, defensively take an
     // absolute value.
-    double dz = sin(_lat.b()) - sin(_lat.a());
-    return std::fabs(_lon.size().radians() * dz);
+    double dz = sin(_lat.getB()) - sin(_lat.getA());
+    return std::fabs(_lon.getSize().asRadians() * dz);
 }
 
-Circle Box::boundingCircle() const {
+Circle Box::getBoundingCircle() const {
     if (isEmpty()) {
         return Circle::empty();
     }
     if (isFull()) {
         return Circle::full();
     }
-    NormalizedAngle w = width();
+    NormalizedAngle w = getWidth();
     // The minimal bounding circle center p lies on the meridian bisecting
     // this box. Let δ₁ and δ₂ be the minimum and maximum box latitudes.
-    if (w.radians() <= PI) {
+    if (w.asRadians() <= PI) {
         UnitVector3d p;
         UnitVector3d boxVerts[4] = {
-            UnitVector3d(_lon.a(), _lat.a()),
-            UnitVector3d(_lon.a(), _lat.b()),
-            UnitVector3d(_lon.b(), _lat.a()),
-            UnitVector3d(_lon.b(), _lat.b())
+            UnitVector3d(_lon.getA(), _lat.getA()),
+            UnitVector3d(_lon.getA(), _lat.getB()),
+            UnitVector3d(_lon.getB(), _lat.getA()),
+            UnitVector3d(_lon.getB(), _lat.getB())
         };
         // We take advantage of rotational symmetry to fix the bisecting
         // meridian at a longitude of zero. The box vertices then have
@@ -198,19 +198,21 @@ Circle Box::boundingCircle() const {
         double phi1, phi2, phi3;
         double c = cos(0.5 * w);
         if (c == 0.0) {
-            phi1 = ::copysign(0.5 * PI, _lat.a().radians());
-            phi2 = ::copysign(0.5 * PI, _lat.b().radians());
+            // This code should never execute. If it does, the implementation
+            // of std::cos is broken.
+            phi1 = ::copysign(0.5 * PI, _lat.getA().asRadians());
+            phi2 = ::copysign(0.5 * PI, _lat.getB().asRadians());
             phi3 = 0.0;
         } else {
-            phi1 = std::atan(tan(_lat.a()) / c);
-            phi2 = std::atan(tan(_lat.b()) / c);
-            phi3 = std::atan(c * tan(_lat.center()));
+            phi1 = std::atan(tan(_lat.getA()) / c);
+            phi2 = std::atan(tan(_lat.getB()) / c);
+            phi3 = std::atan(c * tan(_lat.getCenter()));
         }
         if (phi1 <= phi3 && phi3 <= phi2) {
-            p = UnitVector3d(_lon.center(), Angle(phi3));
+            p = UnitVector3d(_lon.getCenter(), Angle(phi3));
         } else {
-            UnitVector3d p1 = UnitVector3d(_lon.center(), Angle(phi1));
-            UnitVector3d p2 = UnitVector3d(_lon.center(), Angle(phi2));
+            UnitVector3d p1 = UnitVector3d(_lon.getCenter(), Angle(phi1));
+            UnitVector3d p2 = UnitVector3d(_lon.getCenter(), Angle(phi2));
             if (p1.dot(boxVerts[0]) > p2.dot(boxVerts[1])) {
                 p = p2;
             } else {
@@ -220,9 +222,9 @@ Circle Box::boundingCircle() const {
         // Compute the maximum squared chord length between p and the box
         // vertices, so that each one is guaranteed to lie in the bounding
         // circle, regardless of numerical error in the above.
-        double cl2 = (p - boxVerts[0]).squaredNorm();
+        double cl2 = (p - boxVerts[0]).getSquaredNorm();
         for (int i = 1; i < 4; ++i) {
-            cl2 = std::max(cl2, (p - boxVerts[i]).squaredNorm());
+            cl2 = std::max(cl2, (p - boxVerts[i]).getSquaredNorm());
         }
         // Add double the maximum squared-chord-length error, so that the
         // bounding circle we return also reliably CONTAINS this box.
@@ -232,12 +234,12 @@ Circle Box::boundingCircle() const {
     // of the bounding circles centered at the north and south pole.
     Angle r;
     UnitVector3d v;
-    if (abs(_lat.a()) <= abs(_lat.b())) {
+    if (abs(_lat.getA()) <= abs(_lat.getB())) {
         v = UnitVector3d::Z();
-        r = Angle(0.5 * PI) - _lat.a();
+        r = Angle(0.5 * PI) - _lat.getA();
     } else {
         v = -UnitVector3d::Z();
-        r = _lat.b() + Angle(0.5 * PI);
+        r = _lat.getB() + Angle(0.5 * PI);
     }
     // If the box does not span all longitude angles, we also consider the
     // equatorial bounding circle with center longitude equal to the longitude
@@ -245,7 +247,7 @@ Circle Box::boundingCircle() const {
     // circles is returned.
     if (!_lon.isFull() && 0.5 * w < r) {
         r = 0.5 * w;
-        v = UnitVector3d(_lon.center(), Angle(0.0));
+        v = UnitVector3d(_lon.getCenter(), Angle(0.0));
     }
     return Circle(v, r + 4.0 * Angle(MAX_ASIN_ERROR));
 }
@@ -273,21 +275,21 @@ int Box::relate(Circle const & c) const {
     // If the box vertices are not all inside or all outside of c, then the
     // boundaries cross.
     LonLat vertLonLat[4] = {
-        LonLat(_lon.a(), _lat.a()),
-        LonLat(_lon.a(), _lat.b()),
-        LonLat(_lon.b(), _lat.a()),
-        LonLat(_lon.b(), _lat.b())
+        LonLat(_lon.getA(), _lat.getA()),
+        LonLat(_lon.getA(), _lat.getB()),
+        LonLat(_lon.getB(), _lat.getA()),
+        LonLat(_lon.getB(), _lat.getB())
     };
     UnitVector3d verts[4];
     bool inside = false;
     for (int i = 0; i < 4; ++i) {
         verts[i] = UnitVector3d(vertLonLat[i]);
-        double d = (verts[i] - c.center()).squaredNorm();
-        if (std::fabs(d - c.squaredChordLength()) < MAX_SCL_ERROR) {
+        double d = (verts[i] - c.getCenter()).getSquaredNorm();
+        if (std::fabs(d - c.getSquaredChordLength()) < MAX_SCL_ERROR) {
             // A box vertex is close to the circle boundary.
             return INTERSECTS;
         }
-        bool b = d < c.squaredChordLength();
+        bool b = d < c.getSquaredChordLength();
         if (i == 0) {
             inside = b;
         } else if (inside != b) {
@@ -296,28 +298,28 @@ int Box::relate(Circle const & c) const {
         }
     }
     UnitVector3d norms[2] = {
-        UnitVector3d::orthogonalTo(_lon.a()),
-        UnitVector3d::orthogonalTo(_lon.b())
+        UnitVector3d::orthogonalTo(_lon.getA()),
+        UnitVector3d::orthogonalTo(_lon.getB())
     };
     if (inside) {
         // All box vertices are inside c. Look for points in the box edge
         // interiors that are outside c.
         for (int i = 0; i < 2; ++i) {
-            double d = maxSquaredChordLength(
-                c.center(), verts[2 * i + 1], verts[2 * i], norms[i]);
-            if (d > c.squaredChordLength() - MAX_SCL_ERROR) {
+            double d = getMaxSquaredChordLength(
+                c.getCenter(), verts[2 * i + 1], verts[2 * i], norms[i]);
+            if (d > c.getSquaredChordLength() - MAX_SCL_ERROR) {
                 return INTERSECTS;
             }
         }
-        LonLat cc(-c.center());
-        if (_lon.contains(cc.lon())) {
+        LonLat cc(-c.getCenter());
+        if (_lon.contains(cc.getLon())) {
             // The points furthest from the center of c on the small circles
             // defined by the box edges with constant latitude are in the box
             // edge interiors. Find the largest squared chord length to either.
-            Angle a = std::min(minAngleToCircle(cc.lat(), _lat.a()),
-                               minAngleToCircle(cc.lat(), _lat.b()));
+            Angle a = std::min(getMinAngleToCircle(cc.getLat(), _lat.getA()),
+                               getMinAngleToCircle(cc.getLat(), _lat.getB()));
             double d = Circle::squaredChordLengthFor(Angle(PI) - a);
-            if (d > c.squaredChordLength() - MAX_SCL_ERROR) {
+            if (d > c.getSquaredChordLength() - MAX_SCL_ERROR) {
                 return INTERSECTS;
             }
         }
@@ -339,21 +341,21 @@ int Box::relate(Circle const & c) const {
     // All box vertices are outside c. Look for points in the box edge
     // interiors that are inside c.
     for (int i = 0; i < 2; ++i) {
-        double d = minSquaredChordLength(
-            c.center(), verts[2 * i + 1], verts[2 * i], norms[i]);
-        if (d < c.squaredChordLength() + MAX_SCL_ERROR) {
+        double d = getMinSquaredChordLength(
+            c.getCenter(), verts[2 * i + 1], verts[2 * i], norms[i]);
+        if (d < c.getSquaredChordLength() + MAX_SCL_ERROR) {
             return INTERSECTS;
         }
     }
-    LonLat cc(c.center());
-    if (_lon.contains(cc.lon())) {
+    LonLat cc(c.getCenter());
+    if (_lon.contains(cc.getLon())) {
         // The points closest to the center of c on the small circles
         // defined by the box edges with constant latitude are in the box
         // edge interiors. Find the smallest squared chord length to either.
-        Angle a = std::min(minAngleToCircle(cc.lat(), _lat.a()),
-                           minAngleToCircle(cc.lat(), _lat.b()));
+        Angle a = std::min(getMinAngleToCircle(cc.getLat(), _lat.getA()),
+                           getMinAngleToCircle(cc.getLat(), _lat.getB()));
         double d = Circle::squaredChordLengthFor(a);
-        if (d < c.squaredChordLength() + MAX_SCL_ERROR) {
+        if (d < c.getSquaredChordLength() + MAX_SCL_ERROR) {
             return INTERSECTS;
         }
     }
@@ -377,7 +379,7 @@ int Box::relate(Ellipse const & e) const {
 }
 
 std::ostream & operator<<(std::ostream & os, Box const & b) {
-    return os << "Box(" << b.lon() << ", " << b.lat() << ')';
+    return os << "Box(" << b.getLon() << ", " << b.getLat() << ')';
 }
 
 }} // namespace lsst::sg

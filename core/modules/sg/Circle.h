@@ -112,19 +112,19 @@ public:
 
     bool isFull() const { return _squaredChordLength >= 4.0; }
 
-    /// `center` returns the center of this circle as a unit vector.
+    /// `getCenter` returns the center of this circle as a unit vector.
     /// It is arbitrary for empty and full circles.
-    UnitVector3d const & center() const { return _center; }
+    UnitVector3d const & getCenter() const { return _center; }
 
-    /// `squaredChordLength` returns the squared length of chords between
+    /// `getSquaredChordLength` returns the squared length of chords between
     /// the circle center and points on the circle boundary. It is negative
     /// or NaN for empty circles, and at least 4 for full circles.
-    double squaredChordLength() const { return _squaredChordLength; }
+    double getSquaredChordLength() const { return _squaredChordLength; }
 
-    /// `openingAngle` returns the opening angle of this circle - that is,
+    /// `getOpeningAngle` returns the opening angle of this circle - that is,
     /// the angle between its center vector and points on its boundary. It
     /// is negative or NaN for empty circles, and at least PI for full circles.
-    Angle openingAngle() const { return _openingAngle; }
+    Angle getOpeningAngle() const { return _openingAngle; }
 
     /// `contains` returns true if the intersection of this circle and x
     /// is equal to x.
@@ -200,8 +200,8 @@ public:
     Circle & erodeBy(Angle r) { return dilateBy(-r); }
     Circle erodedBy(Angle r) const { return dilatedBy(-r); }
 
-    /// `area` returns the area of this circle in steradians.
-    double area() const {
+    /// `getArea` returns the area of this circle in steradians.
+    double getArea() const {
         return PI * std::max(0.0, std::min(_squaredChordLength, 4.0));
     }
 
@@ -220,12 +220,13 @@ public:
     // Region interface
     virtual Circle * clone() const { return new Circle(*this); }
 
-    virtual Box boundingBox() const;
+    virtual Box getBoundingBox() const;
 
-    virtual Circle boundingCircle() const { return *this; }
+    virtual Circle getBoundingCircle() const { return *this; }
 
     virtual bool contains(UnitVector3d const & v) const {
-        return isFull() || (v - _center).squaredNorm() <= _squaredChordLength;
+        return isFull() ||
+               (v - _center).getSquaredNorm() <= _squaredChordLength;
     }
 
     virtual int relate(Region const & r) const {

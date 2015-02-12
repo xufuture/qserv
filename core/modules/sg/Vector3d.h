@@ -59,8 +59,8 @@ public:
 
     ///@{
     /// `data` returns a pointer to the 3 components of this vector.
-    double * data() { return _v; }
-    double const * data() const { return _v; }
+    double * getData() { return _v; }
+    double const * getData() const { return _v; }
     ///@}
 
     ///@{
@@ -91,11 +91,11 @@ public:
     double dot(Vector3d const & v) const {
         return _v[0] * v._v[0] + _v[1] * v._v[1] + _v[2] * v._v[2];
     }
-    /// `squaredNorm` returns the inner product of this vector with itself.
-    double squaredNorm() const { return dot(*this); }
-    /// `norm` returns the L2 norm of this vector.
-    double norm() const {
-        return std::sqrt(squaredNorm());
+    /// `getSquaredNorm` returns the inner product of this vector with itself.
+    double getSquaredNorm() const { return dot(*this); }
+    /// `getNorm` returns the L2 norm of this vector.
+    double getNorm() const {
+        return std::sqrt(getSquaredNorm());
     }
 
     /// `isZero` returns true if all the components of this vector are zero.
@@ -110,7 +110,7 @@ public:
 
     /// `isNormalized` returns true if this vectors norm is very close to 1.
     bool isNormalized() const {
-        return std::fabs(1.0 - squaredNorm()) <= 1e-15;
+        return std::fabs(1.0 - getSquaredNorm()) <= 1e-15;
     }
 
     /// `cross` returns the cross product of this vector and `v`.

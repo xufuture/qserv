@@ -55,7 +55,7 @@ public:
 
     BigInteger & operator=(BigInteger const & b) {
         if (this != &b) {
-            ensure(b._size);
+            _checkCapacity(b._size);
             _sign = b._sign;
             _size = b._size;
             std::memcpy(_digits, b._digits, sizeof(uint32_t) * b._size);
@@ -63,34 +63,36 @@ public:
         return *this;
     }
 
-    /// `sign` returns -1, 0 or 1 if this integer is negative, zero or positive.
-    int sign() const { return _sign; }
+    /// `getSign` returns -1, 0 or 1 if this integer is negative, zero or
+    /// positive.
+    int getSign() const { return _sign; }
 
-    /// `size` returns the number of digits in the value of this integer.
-    unsigned size() const { return _size; }
+    /// `getSize` returns the number of digits in the value of this integer.
+    unsigned getSize() const { return _size; }
 
-    /// `capacity` returns the number of digits in the underlying digit array.
-    unsigned capacity() const { return _capacity; }
+    /// `getCapacity` returns the number of digits in the underlying digit
+    /// array.
+    unsigned getCapacity() const { return _capacity; }
 
-    /// `digits` returns the underlying digit array.
-    uint32_t const * digits() const { return _digits; }
+    /// `getDigits` returns the underlying digit array.
+    uint32_t const * getDigits() const { return _digits; }
 
-    /// `zero` sets this integer to zero.
-    void zero() { _sign = 0; _size = 0; }
+    /// `setToZero` sets this integer to zero.
+    void setToZero() { _sign = 0; _size = 0; }
 
-    /// `set` assigns the given signed 64 bit integer to this integer.
-    void set(int64_t x) {
+    /// `setTo` sets this integer to the given signed 64 bit integer value.
+    void setTo(int64_t x) {
         if (x < 0) {
-            set(static_cast<uint64_t>(-x));
+            setTo(static_cast<uint64_t>(-x));
             _sign = -1;
         } else {
-            set(static_cast<uint64_t>(x));
+            setTo(static_cast<uint64_t>(x));
         }
     }
 
-    /// `set` assigns the given unsigned 64 bit integer to this integer.
-    void set(uint64_t x) {
-        ensure(2);
+    /// `setTo` sets this integer to the given unsigned 64 bit integer value.
+    void setTo(uint64_t x) {
+        _checkCapacity(2);
         _digits[0] = static_cast<uint32_t>(x);
         _digits[1] = static_cast<uint32_t>(x >> 32);
         _size = (_digits[1] == 0) ? (_digits[0] != 0) : 2;
@@ -112,13 +114,14 @@ public:
     /// `multiply` multiplies this integer by b.
     BigInteger & multiply(BigInteger const & b);
 
-    void ensure(unsigned n) {
+private:
+
+    void _checkCapacity(unsigned n) const {
         if (_capacity < n) {
             throw std::runtime_error("BigInteger capacity is too small");
         }
     }
 
-private:
     uint32_t * _digits; // Unowned
     unsigned _capacity;
     unsigned _size;

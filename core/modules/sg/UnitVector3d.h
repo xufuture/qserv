@@ -114,7 +114,7 @@ public:
     /// This constructor creates the unit vector corresponding to the
     /// point `p` on the unit sphere.
     explicit UnitVector3d(LonLat const & p) {
-        *this = UnitVector3d(p.lon(), p.lat());
+        *this = UnitVector3d(p.getLon(), p.getLat());
     }
 
     /// This constructor creates a unit vector corresponding to
@@ -129,8 +129,8 @@ public:
     bool operator==(Vector3d const & v) const { return _v == v; }
     bool operator!=(Vector3d const & v) const { return _v != v; }
 
-    /// `data` returns a pointer to the 3 components of this unit vector.
-    double const * data() const { return _v.data(); }
+    /// `getData` returns a pointer to the 3 components of this unit vector.
+    double const * getData() const { return _v.getData(); }
 
     /// The function call operator returns the `i`-th component of this vector.
     double operator()(int i) const { return _v(i); }
@@ -185,7 +185,7 @@ public:
     }
 
     /// `rotatedAround` returns a copy of this unit vector, rotated around the
-    /// unit vector k by angle a according to the right hand rule.
+    /// unit vector `k` by angle `a` according to the right hand rule.
     UnitVector3d rotatedAround(UnitVector3d const & k, Angle a) const {
         return UnitVector3d(_v.rotatedAround(k, a));
     }

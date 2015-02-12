@@ -33,10 +33,10 @@
 namespace lsst {
 namespace sg {
 
-double minSquaredChordLength(Vector3d const & v,
-                             Vector3d const & a,
-                             Vector3d const & b,
-                             Vector3d const & n)
+double getMinSquaredChordLength(Vector3d const & v,
+                                Vector3d const & a,
+                                Vector3d const & b,
+                                Vector3d const & n)
 {
     Vector3d vxn = v.cross(n);
     if (vxn.dot(a) > 0.0 && vxn.dot(b) < 0.0) {
@@ -47,7 +47,7 @@ double minSquaredChordLength(Vector3d const & v,
         // and ‖v‖ ‖n‖ cos θ = ‖v × n‖. The desired squared chord length is
         // 4 sin²(θ/2).
         double s = std::fabs(v.dot(n));
-        double c = vxn.norm();
+        double c = vxn.getNorm();
         double theta = (c == 0.0) ? 0.5 * PI : std::atan(s / c);
         double d = std::sin(0.5 * theta);
         return 4.0 * d * d;
@@ -55,10 +55,10 @@ double minSquaredChordLength(Vector3d const & v,
     return 4.0;
 }
 
-double maxSquaredChordLength(Vector3d const & v,
-                             Vector3d const & a,
-                             Vector3d const & b,
-                             Vector3d const & n)
+double getMaxSquaredChordLength(Vector3d const & v,
+                                Vector3d const & a,
+                                Vector3d const & b,
+                                Vector3d const & n)
 {
     Vector3d vxn = v.cross(n);
     if (vxn.dot(a) < 0.0 && vxn.dot(b) > 0.0) {
@@ -69,16 +69,16 @@ double maxSquaredChordLength(Vector3d const & v,
         // and ‖v‖ ‖n‖ cos θ = -‖v × n‖. The desired squared chord length is
         // 4 sin²(θ/2).
         double s = std::fabs(v.dot(n));
-        double c = - vxn.norm();
+        double c = - vxn.getNorm();
         double d = std::sin(0.5 * std::atan2(s, c));
         return 4.0 * d * d;
     }
     return 0.0;
 }
 
-Vector3d weightedCentroid(UnitVector3d const & v0,
-                          UnitVector3d const & v1,
-                          UnitVector3d const & v2)
+Vector3d getWeightedCentroid(UnitVector3d const & v0,
+                             UnitVector3d const & v1,
+                             UnitVector3d const & v2)
 {
     // For the details, see:
     //

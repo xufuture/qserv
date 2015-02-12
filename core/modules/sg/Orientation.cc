@@ -64,10 +64,10 @@ void computeProduct(BigFloat & p, double d0, double d1, double d2) {
     double m1 = std::frexp(d1, &e1) * SCALE;
     double m2 = std::frexp(d2, &e2) * SCALE;
     // Compute the product of the 3 input doubles using exact arithmetic.
-    p.mantissa->set(static_cast<int64_t>(m0));
-    i.set(static_cast<int64_t>(m1));
+    p.mantissa->setTo(static_cast<int64_t>(m0));
+    i.setTo(static_cast<int64_t>(m1));
     p.mantissa->multiply(i);
-    i.set(static_cast<int64_t>(m2));
+    i.setTo(static_cast<int64_t>(m2));
     p.mantissa->multiply(i);
     // Finally, adjust the exponent of the result to compensate for the 3
     // multiplications by 2^53 performed above.
@@ -131,7 +131,7 @@ int orientationExact(Vector3d const & a,
         accumulator.multiplyPow2(products[i - 1].exponent - products[i].exponent);
         accumulator.add(*products[i].mantissa);
     }
-    return accumulator.sign();
+    return accumulator.getSign();
 }
 
 int orientation(UnitVector3d const & a,

@@ -78,11 +78,11 @@ public:
     Angle & operator*=(double a) { *this = *this * a; return *this; }
     Angle & operator/=(double a) { *this = *this / a; return *this; }
 
-    /// `degrees` returns the value of this angle in units of degrees.
-    double degrees() const { return _rad * DEG_PER_RAD; }
+    /// `asDegrees` returns the value of this angle in units of degrees.
+    double asDegrees() const { return _rad * DEG_PER_RAD; }
 
-    /// `radians` returns the value of this angle in units of radians.
-    double radians() const { return _rad; }
+    /// `asRadians` returns the value of this angle in units of radians.
+    double asRadians() const { return _rad; }
 
     /// `isNormalized` returns true if this angle lies in the range [0, 2π).
     bool isNormalized() const { return _rad >= 0.0 && _rad <= 2.0 * PI; }
@@ -99,11 +99,11 @@ inline Angle operator*(double a, Angle const & b) { return b * a; }
 
 std::ostream & operator<<(std::ostream &, Angle const &);
 
-inline double sin(Angle const & a) { return std::sin(a.radians()); }
-inline double cos(Angle const & a) { return std::cos(a.radians()); }
-inline double tan(Angle const & a) { return std::tan(a.radians()); }
+inline double sin(Angle const & a) { return std::sin(a.asRadians()); }
+inline double cos(Angle const & a) { return std::cos(a.asRadians()); }
+inline double tan(Angle const & a) { return std::tan(a.asRadians()); }
 
-inline Angle abs(Angle const & a) { return Angle(std::fabs(a.radians())); }
+inline Angle abs(Angle const & a) { return Angle(std::fabs(a.asRadians())); }
 
 }} // namespace lsst::sg
 

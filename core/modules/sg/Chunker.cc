@@ -30,14 +30,23 @@ namespace sg {
 
 namespace {
 
-int32_t segments(AngleInterval const & lat, Angle width) {
-    Angle maxAbsLat = std::max(abs(lat.a()), abs(lat.b()));
-    Angle w = 2.0 * Box::halfWidthForCircle(maxAbsLat, width);
-    double n = std::floor(Angle(2.0 * PI) / w);
-    if (n < 1.0) {
+int32_t computeNumSegments(AngleInterval const & latitudes, Angle width) {
+    // TODO(smm): Document this.
+    if (width.asRadians() > PI) {
         return 1;
     }
-    return static_cast<int32_t>(n);
+    Angle maxAbsLat = std::max(abs(latitudes.getA()), abs(latitudes.getB()));
+    if (maxAbsLat.asRadians() > 0.5 * PI - 4.85e-6) {
+        return 1;
+    }
+    double cosWidth = cos(width);
+    double sinLat = sin(maxAbsLat);
+    double cosLat = cos(maxAbsLat);
+    double x = cosWidth - sinLat * sinLat;
+    double u = cosLat * cosLat;
+    double y = std::sqrt(std::fabs(u * u - x * x));
+    return static_cast<int32_t>(
+        std::floor(2.0 * PI / std::fabs(std::atan2(y, x))));
 }
 
 } // unnamed namespace
@@ -49,7 +58,7 @@ Chunker::Chunker(int32_t numStripes,
                  int32_t numSubStripesPerStripe) :
     _numStripes(numStripes),
     _numSubStripesPerStripe(numSubStripesPerStripe),
-    _numSubStripes(numStripes*numSubStripesPerStripe),
+    _numSubStripes(numStripes * numSubStripesPerStripe),
     _maxSubChunksPerSubStripeChunk(0),
     _subStripeHeight(Angle(PI) / _numSubStripes)
 {
@@ -68,7 +77,7 @@ Chunker::Chunker(int32_t numStripes,
         AngleInterval sLat(s * stripeHeight - Angle(0.5 * PI),
                            (s + 1) * stripeHeight - Angle(0.5 * PI));
         Stripe stripe;
-        int32_t const nc = segments(sLat, stripeHeight);
+        int32_t const nc = computeNumSegments(sLat, stripeHeight);
         stripe.chunkWidth = Angle(2.0 * PI) / nc;
         stripe.numChunksPerStripe = nc;
         int32_t ss = s * _numSubStripesPerStripe;
@@ -78,7 +87,7 @@ Chunker::Chunker(int32_t numStripes,
             AngleInterval ssLat(ss * _subStripeHeight - Angle(0.5 * PI),
                                 (ss + 1) * _subStripeHeight - Angle(0.5 * PI));
             SubStripe subStripe;
-            int32_t const nsc = segments(ssLat, _subStripeHeight) / nc;
+            int32_t const nsc = computeNumSegments(ssLat, _subStripeHeight) / nc;
             stripe.numSubChunksPerChunk += nsc;
             subStripe.numSubChunksPerChunk = nsc;
             if (nsc > _maxSubChunksPerSubStripeChunk) {
@@ -91,12 +100,12 @@ Chunker::Chunker(int32_t numStripes,
     }
 }
 
-std::vector<int32_t> Chunker::chunksIntersecting(Region const & r) const {
+std::vector<int32_t> Chunker::getChunksIntersecting(Region const & r) const {
     std::vector<int32_t> chunkIds;
     // Find the stripes that intersect the bounding box of r.
-    Box b = r.boundingBox().dilatedBy(EPSILON);
-    double ya = std::floor((b.lat().a() + Angle(0.5 * PI)) / _subStripeHeight);
-    double yb = std::floor((b.lat().b() + Angle(0.5 * PI)) / _subStripeHeight);
+    Box b = r.getBoundingBox().dilatedBy(EPSILON);
+    double ya = std::floor((b.getLat().getA() + Angle(0.5 * PI)) / _subStripeHeight);
+    double yb = std::floor((b.getLat().getB() + Angle(0.5 * PI)) / _subStripeHeight);
     int32_t minSS = std::min(static_cast<int32_t>(ya), _numSubStripes - 1);
     int32_t maxSS = std::min(static_cast<int32_t>(yb), _numSubStripes - 1);
     int32_t minS = minSS / _numSubStripesPerStripe;
@@ -105,29 +114,29 @@ std::vector<int32_t> Chunker::chunksIntersecting(Region const & r) const {
         // Find the chunks of s that intersect the bounding box of r.
         Angle chunkWidth = _stripes[s].chunkWidth;
         int32_t nc = _stripes[s].numChunksPerStripe;
-        double xa = std::floor(b.lon().a() / chunkWidth);
-        double xb = std::floor(b.lon().b() / chunkWidth);
+        double xa = std::floor(b.getLon().getA() / chunkWidth);
+        double xb = std::floor(b.getLon().getB() / chunkWidth);
         int32_t ca = std::min(static_cast<int32_t>(xa), nc - 1);
         int32_t cb = std::min(static_cast<int32_t>(xb), nc - 1);
-        if (ca == cb && b.lon().wraps()) {
+        if (ca == cb && b.getLon().wraps()) {
             ca = 0;
             cb = nc - 1;
         }
         // Examine each chunk overlapping the bounding box of r.
         if (ca <= cb) {
             for (int32_t c = ca; c <= cb; ++c) {
-                if (r.relate(_chunkBoundingBox(s, c)) & INTERSECTS) {
+                if (r.relate(_getChunkBoundingBox(s, c)) & INTERSECTS) {
                     chunkIds.push_back(_getChunkId(s, c));
                 }
             }
         } else {
             for (int32_t c = 0; c <= cb; ++c) {
-                if (r.relate(_chunkBoundingBox(s, c)) & INTERSECTS) {
+                if (r.relate(_getChunkBoundingBox(s, c)) & INTERSECTS) {
                     chunkIds.push_back(_getChunkId(s, c));
                 }
             }
             for (int32_t c = ca; c < nc; ++c) {
-                if (r.relate(_chunkBoundingBox(s, c)) & INTERSECTS) {
+                if (r.relate(_getChunkBoundingBox(s, c)) & INTERSECTS) {
                     chunkIds.push_back(_getChunkId(s, c));
                 }
             }
@@ -136,12 +145,14 @@ std::vector<int32_t> Chunker::chunksIntersecting(Region const & r) const {
     return chunkIds;
 }
 
-std::vector<SubChunks> Chunker::subChunksIntersecting(Region const & r) const {
+std::vector<SubChunks> Chunker::getSubChunksIntersecting(
+    Region const & r) const
+{
     std::vector<SubChunks> chunks;
     // Find the stripes that intersect the bounding box of r.
-    Box b = r.boundingBox().dilatedBy(EPSILON);
-    double ya = std::floor((b.lat().a() + Angle(0.5 * PI)) / _subStripeHeight);
-    double yb = std::floor((b.lat().b() + Angle(0.5 * PI)) / _subStripeHeight);
+    Box b = r.getBoundingBox().dilatedBy(EPSILON);
+    double ya = std::floor((b.getLat().getA() + Angle(0.5 * PI)) / _subStripeHeight);
+    double yb = std::floor((b.getLat().getB() + Angle(0.5 * PI)) / _subStripeHeight);
     int32_t minSS = std::min(static_cast<int32_t>(ya), _numSubStripes - 1);
     int32_t maxSS = std::min(static_cast<int32_t>(yb), _numSubStripes - 1);
     int32_t minS = minSS / _numSubStripesPerStripe;
@@ -150,42 +161,42 @@ std::vector<SubChunks> Chunker::subChunksIntersecting(Region const & r) const {
         // Find the chunks of s that intersect the bounding box of r.
         Angle chunkWidth = _stripes[s].chunkWidth;
         int32_t nc = _stripes[s].numChunksPerStripe;
-        double xa = std::floor(b.lon().a() / chunkWidth);
-        double xb = std::floor(b.lon().b() / chunkWidth);
+        double xa = std::floor(b.getLon().getA() / chunkWidth);
+        double xb = std::floor(b.getLon().getB() / chunkWidth);
         int32_t ca = std::min(static_cast<int32_t>(xa), nc - 1);
         int32_t cb = std::min(static_cast<int32_t>(xb), nc - 1);
-        if (ca == cb && b.lon().wraps()) {
+        if (ca == cb && b.getLon().wraps()) {
             ca = 0;
             cb = nc - 1;
         }
         // Examine sub-chunks for each chunk overlapping the bounding box of r.
         if (ca <= cb) {
             for (int32_t c = ca; c <= cb; ++c) {
-                _findSubChunks(chunks, r, b.lon(), s, c, minSS, maxSS);
+                _getSubChunks(chunks, r, b.getLon(), s, c, minSS, maxSS);
             }
         } else {
             for (int32_t c = 0; c <= cb; ++c) {
-                _findSubChunks(chunks, r, b.lon(), s, c, minSS, maxSS);
+                _getSubChunks(chunks, r, b.getLon(), s, c, minSS, maxSS);
             }
             for (int32_t c = ca; c < nc; ++c) {
-                _findSubChunks(chunks, r, b.lon(), s, c, minSS, maxSS);
+                _getSubChunks(chunks, r, b.getLon(), s, c, minSS, maxSS);
             }
         }
     }
     return chunks;
 }
 
-void Chunker::_findSubChunks(std::vector<SubChunks> & chunks,
-                             Region const & r,
-                             NormalizedAngleInterval const & lon,
-                             int32_t stripe,
-                             int32_t chunk,
-                             int32_t minSS,
-                             int32_t maxSS) const
+void Chunker::_getSubChunks(std::vector<SubChunks> & chunks,
+                            Region const & r,
+                            NormalizedAngleInterval const & lon,
+                            int32_t stripe,
+                            int32_t chunk,
+                            int32_t minSS,
+                            int32_t maxSS) const
 {
     SubChunks subChunks;
     subChunks.chunkId = _getChunkId(stripe, chunk);
-    if (r.relate(_chunkBoundingBox(stripe, chunk)) & CONTAINS) {
+    if (r.relate(_getChunkBoundingBox(stripe, chunk)) & CONTAINS) {
         // r contains the entire chunk, so there is no need to test sub-chunks
         // for intersection with r.
         subChunks.subChunkIds = getAllSubChunks(subChunks.chunkId);
@@ -198,8 +209,8 @@ void Chunker::_findSubChunks(std::vector<SubChunks> & chunks,
             // Find the sub-chunks of ss to iterate over.
             Angle subChunkWidth = _subStripes[ss].subChunkWidth;
             int32_t const nsc = _subStripes[ss].numSubChunksPerChunk;
-            double xa = std::floor(lon.a() / subChunkWidth);
-            double xb = std::floor(lon.b() / subChunkWidth);
+            double xa = std::floor(lon.getA() / subChunkWidth);
+            double xb = std::floor(lon.getB() / subChunkWidth);
             int32_t sca = std::min(static_cast<int32_t>(xa), nc * nsc - 1);
             int32_t scb = std::min(static_cast<int32_t>(xb), nc * nsc - 1);
             if (sca == scb && lon.wraps()) {
@@ -213,7 +224,7 @@ void Chunker::_findSubChunks(std::vector<SubChunks> & chunks,
                 minSC = std::max(sca, minSC);
                 maxSC = std::min(scb, maxSC);
                 for (int32_t sc = minSC; sc <= maxSC; ++sc) {
-                    if (r.relate(_subChunkBoundingBox(ss, sc)) & INTERSECTS) {
+                    if (r.relate(_getSubChunkBoundingBox(ss, sc)) & INTERSECTS) {
                         subChunks.subChunkIds.push_back(
                             _getSubChunkId(stripe, ss, chunk, sc));
                     }
@@ -222,13 +233,13 @@ void Chunker::_findSubChunks(std::vector<SubChunks> & chunks,
                 sca = std::max(sca, minSC);
                 scb = std::min(scb, maxSC);
                 for (int32_t sc = sca; sc <= maxSC; ++sc) {
-                    if (r.relate(_subChunkBoundingBox(ss, sc)) & INTERSECTS) {
+                    if (r.relate(_getSubChunkBoundingBox(ss, sc)) & INTERSECTS) {
                         subChunks.subChunkIds.push_back(
                             _getSubChunkId(stripe, ss, chunk, sc));
                     }
                 }
                 for (int32_t sc = minSC; sc <= scb; ++sc) {
-                    if (r.relate(_subChunkBoundingBox(ss, sc)) & INTERSECTS) {
+                    if (r.relate(_getSubChunkBoundingBox(ss, sc)) & INTERSECTS) {
                         subChunks.subChunkIds.push_back(
                             _getSubChunkId(stripe, ss, chunk, sc));
                     }
@@ -271,7 +282,7 @@ std::vector<int32_t> Chunker::getAllSubChunks(int32_t chunkId) const {
     return subChunkIds;
 }
 
-Box Chunker::_chunkBoundingBox(int32_t stripe, int32_t chunk) const {
+Box Chunker::_getChunkBoundingBox(int32_t stripe, int32_t chunk) const {
     Angle chunkWidth = _stripes[stripe].chunkWidth;
     NormalizedAngleInterval lon(chunkWidth * chunk,
                                 chunkWidth * (chunk + 1));
@@ -282,7 +293,7 @@ Box Chunker::_chunkBoundingBox(int32_t stripe, int32_t chunk) const {
     return Box(lon, lat).dilatedBy(EPSILON);
 }
 
-Box Chunker::_subChunkBoundingBox(int32_t subStripe, int32_t subChunk) const {
+Box Chunker::_getSubChunkBoundingBox(int32_t subStripe, int32_t subChunk) const {
     Angle subChunkWidth = _subStripes[subStripe].subChunkWidth;
     NormalizedAngleInterval lon(subChunkWidth * subChunk,
                                 subChunkWidth * (subChunk + 1));

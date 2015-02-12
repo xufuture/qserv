@@ -78,11 +78,11 @@ public:
     ///            std::unique_ptr<Region> rather than a raw pointer.
     virtual Region * clone() const = 0;
 
-    /// `boundingBox` returns a bounding-box for this region.
-    virtual Box boundingBox() const = 0;
+    /// `getBoundingBox` returns a bounding-box for this region.
+    virtual Box getBoundingBox() const = 0;
 
-    /// `boundingCircle` returns a bounding-circle for this region.
-    virtual Circle boundingCircle() const = 0;
+    /// `getBoundingCircle` returns a bounding-circle for this region.
+    virtual Circle getBoundingCircle() const = 0;
 
     /// `contains` tests whether the given unit vector is inside this region.
     virtual bool contains(UnitVector3d const &) const = 0;

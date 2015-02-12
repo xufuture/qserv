@@ -167,7 +167,7 @@ BigInteger & BigInteger::add(BigInteger const & b) {
     // When adding two magnitudes, the maximum number of bits in the result is
     // one greater than the number of bits B in the larger input. When
     // subtracting them, the maximum result size is B.
-    ensure(std::max(_size, b._size) + 1);
+    _checkCapacity(std::max(_size, b._size) + 1);
     if (_sign == b._sign) {
         // If the signs of both integers match, add their magnitudes.
         _size = _add(_digits, _digits, b._digits, _size, b._size);
@@ -187,7 +187,7 @@ BigInteger & BigInteger::add(BigInteger const & b) {
         int i = _size;
         for (; i > 0 && _digits[i - 1] == b._digits[i - 1]; --i) {}
         if (i == 0) {
-            zero();
+            setToZero();
         } else if (_digits[i - 1] > b._digits[i - 1]) {
             _size = _sub(_digits, _digits, b._digits, i, i);
         } else {
@@ -206,7 +206,7 @@ BigInteger & BigInteger::subtract(BigInteger const & b) {
         add(b);
         negate();
     } else {
-        zero();
+        setToZero();
     }
     return *this;
 }
@@ -220,7 +220,7 @@ BigInteger & BigInteger::multiplyPow2(unsigned n) {
     unsigned const z = (n >> 5);
     unsigned const s = (n & 0x1f);
     unsigned const size = _size + z;
-    ensure(size + 1);
+    _checkCapacity(size + 1);
     if (s == 0) {
         // Right-shifting an unsigned 32 bit integer by 32 bits is undefined
         // behavior. Avoid that using this special case code.
@@ -252,6 +252,7 @@ BigInteger & BigInteger::multiply(BigInteger const & b) {
         _size = 0;
         return *this;
     }
+    _checkCapacity(_size + b._size);
     if (_size >= b._size) {
         _size = _mul(_digits, _digits, b._digits, _size, b._size);
     } else {

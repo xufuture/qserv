@@ -36,7 +36,7 @@ NormalizedAngle NormalizedAngle::between(NormalizedAngle const & a,
                                          NormalizedAngle const & b)
 {
     NormalizedAngle x;
-    double a1 = std::fabs(a.radians() - b.radians());
+    double a1 = std::fabs(a.asRadians() - b.asRadians());
     double a2 = 2.0 * PI - a1;
     x._a = Angle(std::min(a1, a2));
     return x;
@@ -46,7 +46,7 @@ NormalizedAngle NormalizedAngle::center(NormalizedAngle const & a,
                                         NormalizedAngle const & b)
 {
     NormalizedAngle x;
-    double c = 0.5 * (a.radians() + b.radians());
+    double c = 0.5 * (a.asRadians() + b.asRadians());
     if (a <= b) {
         x._a = Angle(c);
     } else {
@@ -57,11 +57,11 @@ NormalizedAngle NormalizedAngle::center(NormalizedAngle const & a,
 }
 
 NormalizedAngle::NormalizedAngle(LonLat const & p1, LonLat const & p2) {
-    double x = sin((p1.lon() - p2.lon()) * 0.5);
+    double x = sin((p1.getLon() - p2.getLon()) * 0.5);
     x *= x;
-    double y = sin((p1.lat() - p2.lat()) * 0.5);
+    double y = sin((p1.getLat() - p2.getLat()) * 0.5);
     y *= y;
-    double z = cos((p1.lat() + p2.lat()) * 0.5);
+    double z = cos((p1.getLat() + p2.getLat()) * 0.5);
     z *= z;
     // Compute the square of the sine of half of the desired angle. This is
     // easily shown to be be one fourth of the squared Euclidian distance
@@ -78,7 +78,7 @@ NormalizedAngle::NormalizedAngle(LonLat const & p1, LonLat const & p2) {
 }
 
 NormalizedAngle::NormalizedAngle(Vector3d const & v1, Vector3d const & v2) {
-    double s = v1.cross(v2).norm();
+    double s = v1.cross(v2).getNorm();
     double c = v1.dot(v2);
     if (s == 0.0 && c == 0.0) {
         // Avoid the atan2(±0, -0) = ±PI special case.

@@ -172,7 +172,7 @@ NormalizedAngleInterval & NormalizedAngleInterval::clipTo(
             // or the intersection consists of [_a,x._b] ⋃ [x._a,_b].
             // In both cases, the envelope of the intersection is the shorter
             // of the two intervals.
-            if (size() >= x.size()) {
+            if (getSize() >= x.getSize()) {
                 *this = x;
             }
         } else {
@@ -192,7 +192,7 @@ NormalizedAngleInterval & NormalizedAngleInterval::expandTo(
     if (isEmpty()) {
         *this = NormalizedAngleInterval(x);
     } else if (!contains(x)) {
-        if (x.angleTo(_a) > _b.angleTo(x)) {
+        if (x.getAngleTo(_a) > _b.getAngleTo(x)) {
             _b = x;
         } else {
             _a = x;
@@ -220,7 +220,7 @@ NormalizedAngleInterval & NormalizedAngleInterval::expandTo(
             _a = x._a;
         } else if (isEmpty() || x.contains(_a)) {
             *this = x;
-        } else if (_b.angleTo(x._a) < x._b.angleTo(_a)) {
+        } else if (_b.getAngleTo(x._a) < x._b.getAngleTo(_a)) {
             _b = x._b;
         } else {
             _a = x._a;
@@ -284,7 +284,7 @@ NormalizedAngleInterval NormalizedAngleInterval::dilatedBy(Angle x) const {
 std::ostream & operator<<(std::ostream & os,
                           NormalizedAngleInterval const & i)
 {
-    return os << '[' << i.a() << ", " << i.b() << ']';
+    return os << '[' << i.getA() << ", " << i.getB() << ']';
 }
 
 }} // namespace lsst::sg

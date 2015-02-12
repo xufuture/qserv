@@ -37,7 +37,7 @@ namespace lsst {
 namespace sg {
 
 Ellipse::Ellipse(UnitVector3d const & f1, UnitVector3d const & f2, Angle alpha) :
-    _a(alpha.radians() - 0.5 * PI),
+    _a(alpha.asRadians() - 0.5 * PI),
     _gamma(0.5 * NormalizedAngle(f1, f2))
 {
     if (alpha.isNan()) {
@@ -50,7 +50,7 @@ Ellipse::Ellipse(UnitVector3d const & f1, UnitVector3d const & f2, Angle alpha) 
         *this = full();
         return;
     }
-    if (_gamma.radians() == 0.0) {
+    if (_gamma.asRadians() == 0.0) {
         // The foci are identical, so this ellipse is a circle centered at
         // the common focal point. Pick an orthonormal basis containing f1
         // and use it to construct an orthogonal matrix that maps f1 to
@@ -80,9 +80,9 @@ Ellipse::Ellipse(UnitVector3d const & f1, UnitVector3d const & f2, Angle alpha) 
     // Compute _b.
     double r = std::min(1.0, std::max(-1.0, cos(alpha) / cos(_gamma)));
     _b = Angle(std::acos(r) - 0.5 * PI);
-    if (_a.radians() <= 0.0 && _b > _a) {
+    if (_a.asRadians() <= 0.0 && _b > _a) {
         _b = _a;
-    } else if (_a.radians() > 0.0 && _b < _a) {
+    } else if (_a.asRadians() > 0.0 && _b < _a) {
         _b = _a;
     }
     _tana = std::fabs(tan(_a));
@@ -95,21 +95,21 @@ Ellipse::Ellipse(UnitVector3d const & center,
                  Angle beta,
                  Angle orientation)
 {
-    if (!std::isfinite(orientation.radians())) {
+    if (!std::isfinite(orientation.asRadians())) {
         throw std::invalid_argument("Invalid ellipse orientation");
     }
     if (alpha.isNan() ||
         beta.isNan() ||
-        (alpha.radians() <  0.5 * PI && beta.radians() >= 0.5 * PI) ||
-        (alpha.radians() >  0.5 * PI && beta.radians() <= 0.5 * PI) ||
-        (alpha.radians() == 0.5 * PI && beta.radians() != 0.5 * PI)) {
+        (alpha.asRadians() <  0.5 * PI && beta.asRadians() >= 0.5 * PI) ||
+        (alpha.asRadians() >  0.5 * PI && beta.asRadians() <= 0.5 * PI) ||
+        (alpha.asRadians() == 0.5 * PI && beta.asRadians() != 0.5 * PI)) {
         throw std::invalid_argument("Invalid ellipse semi-axis angle(s)");
     }
-    if (alpha.radians() < 0.0 || beta.radians() < 0.0) {
+    if (alpha.asRadians() < 0.0 || beta.asRadians() < 0.0) {
         *this = empty();
         return;
-    } else if (alpha.radians() > PI || beta.radians() > PI ||
-               (alpha.radians() == PI && beta.radians() == PI)) {
+    } else if (alpha.asRadians() > PI || beta.asRadians() > PI ||
+               (alpha.asRadians() == PI && beta.asRadians() == PI)) {
         *this = full();
         return;
     }
@@ -129,8 +129,8 @@ Ellipse::Ellipse(UnitVector3d const & center,
         _tanb = _tana;
         return;
     }
-    if ((alpha.radians() < 0.5 * PI && alpha < beta) ||
-        (alpha.radians() > 0.5 * PI && alpha > beta)) {
+    if ((alpha.asRadians() < 0.5 * PI && alpha < beta) ||
+        (alpha.asRadians() > 0.5 * PI && alpha > beta)) {
         std::swap(alpha, beta);
         orientation = orientation + Angle(0.5 * PI);
     }
@@ -149,7 +149,7 @@ Ellipse::Ellipse(UnitVector3d const & center,
 }
 
 bool Ellipse::contains(UnitVector3d const & v) const {
-    UnitVector3d const c = center();
+    UnitVector3d const c = getCenter();
     double vdotc = v.dot(c);
     Vector3d u;
     double scz;
@@ -171,14 +171,14 @@ bool Ellipse::contains(UnitVector3d const & v) const {
     double y = u.y() * _tanb;
     double z = u.z() + scz;
     double d = (x * x + y * y) - z * z;
-    if (_a.radians() > 0.0) {
+    if (_a.asRadians() > 0.0) {
         return z >= 0.0 || d >= 0.0;
     } else {
         return z >= 0.0 && d <= 0.0;
     }
 }
 
-Box Ellipse::boundingBox() const {
+Box Ellipse::getBoundingBox() const {
     // For now, simply return the bounding box of the ellipse bounding circle.
     //
     // Improving on this seems difficult, mainly because error bounds must be
@@ -222,16 +222,16 @@ Box Ellipse::boundingBox() const {
     // boundary and then solving for the zeros of the derivative of z with
     // respect to the parameter. This looks to be more involved than the
     // longitude bound calculation, and I haven't worked through the details.
-    return boundingCircle().boundingBox();
+    return getBoundingCircle().getBoundingBox();
 }
 
-Circle Ellipse::boundingCircle() const {
-    Angle r = std::max(alpha(), beta()) + 2.0 * Angle(MAX_ASIN_ERROR);
-    return Circle(center(), r);
+Circle Ellipse::getBoundingCircle() const {
+    Angle r = std::max(getAlpha(), getBeta()) + 2.0 * Angle(MAX_ASIN_ERROR);
+    return Circle(getCenter(), r);
 }
 
 int Ellipse::relate(Box const & b) const {
-    return boundingCircle().relate(b) & (INTERSECTS | WITHIN | DISJOINT);
+    return getBoundingCircle().relate(b) & (INTERSECTS | WITHIN | DISJOINT);
 }
 
 // For now, implement ellipse-circle and ellipse-ellipse relation
@@ -312,24 +312,24 @@ int Ellipse::relate(Box const & b) const {
 //   between them and the degenerate quadratic forms they engender?
 
 int Ellipse::relate(Circle const & c) const {
-    return boundingCircle().relate(c) & (INTERSECTS | WITHIN | DISJOINT);
+    return getBoundingCircle().relate(c) & (INTERSECTS | WITHIN | DISJOINT);
 }
 
 int Ellipse::relate(ConvexPolygon const & p) const {
     // ConvexPolygon-Box relations are implemented by ConvexPolygon.
-    return boundingCircle().relate(p) & (INTERSECTS | WITHIN | DISJOINT);
+    return getBoundingCircle().relate(p) & (INTERSECTS | WITHIN | DISJOINT);
 }
 
 int Ellipse::relate(Ellipse const & e) const {
-    return boundingCircle().relate(e.boundingCircle()) & (INTERSECTS | DISJOINT);
+    return getBoundingCircle().relate(e.getBoundingCircle()) & (INTERSECTS | DISJOINT);
 }
 
 std::ostream & operator<<(std::ostream & os, Ellipse const & e) {
     os << "Ellipse(\n";
-    e.transformMatrix().print(os, 4);
+    e.getTransformMatrix().print(os, 4);
     os << ",\n"
-       << "    " << e.alpha() << ",\n"
-       << "    " << e.beta() << "\n"
+       << "    " << e.getAlpha() << ",\n"
+       << "    " << e.getBeta() << "\n"
        << ")";
     return os;
 }

@@ -53,8 +53,8 @@ public:
     }
 
     /// For two angles a and b, `between(a, b)` returns the smaller of
-    /// `a.angleTo(b)` and `b.angleTo(a)`. The result will be in the range
-    /// [0, π].
+    /// `a.getAngleTo(b)` and `b.getAngleTo(a)`. The result will be in the
+    /// range [0, π].
     ///
     /// If one interprets an angle in [0, 2π) as a point on the unit circle,
     /// then `between` can be thought of as computing the arc length of the
@@ -63,7 +63,7 @@ public:
                                    NormalizedAngle const & b);
 
     /// For two normalized angles a and b, `center(a, b)` returns the angle m
-    /// such that `a.angleTo(m)` is equal to `m.angleTo(b)`.
+    /// such that `a.getAngleTo(m)` is equal to `m.getAngleTo(b)`.
     static NormalizedAngle center(NormalizedAngle const & a,
                                   NormalizedAngle const & b);
 
@@ -75,7 +75,7 @@ public:
 
     /// This constructor creates a normalized copy of a.
     explicit NormalizedAngle(Angle const & a) {
-        *this = NormalizedAngle(a.radians());
+        *this = NormalizedAngle(a.asRadians());
     }
 
     /// This constructor creates a NormalizedAngle with the given value in
@@ -121,24 +121,24 @@ public:
     Angle operator/(double a) const { return _a / a; }
     double operator/(Angle a) const { return _a / a; }
 
-    /// `degrees` returns the value of this angle in units of degrees.
-    double degrees() const { return _a.degrees(); }
+    /// `asDegrees` returns the value of this angle in units of degrees.
+    double asDegrees() const { return _a.asDegrees(); }
 
-    /// `radians` returns the value of this angle in units of radians.
-    double radians() const { return _a.radians(); }
+    /// `asRadians` returns the value of this angle in units of radians.
+    double asRadians() const { return _a.asRadians(); }
 
     /// `isNan` returns true if the angle value is NaN.
     bool isNan() const { return _a.isNan(); }
 
-    /// `angleTo` computes the angle α ∈ [0, 2π) such that adding α to this
+    /// `getAngleTo` computes the angle α ∈ [0, 2π) such that adding α to this
     /// angle and then normalizing the result yields `a`.
     ///
     /// If one interprets an angle in [0, 2π) as a point on the unit circle,
     /// then this method can be thought of as computing the positive rotation
     /// angle required to map this point to `a`.
-    NormalizedAngle angleTo(NormalizedAngle const & a) const {
+    NormalizedAngle getAngleTo(NormalizedAngle const & a) const {
         NormalizedAngle x;
-        double d = a.radians() - radians();
+        double d = a.asRadians() - asRadians();
         x._a = Angle((d < 0.0) ? 2.0 * PI + d : d);
         return x;
     }

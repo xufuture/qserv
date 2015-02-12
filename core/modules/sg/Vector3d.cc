@@ -38,14 +38,14 @@ namespace sg {
 double Vector3d::normalize() {
     double scale = 1.0;
     double invScale = 1.0;
-    double n2 = squaredNorm();
+    double n2 = getSquaredNorm();
     if (n2 < 4.008336720017946e-292) {
         // If n2 is below 2^(-1022 + 54), i.e. close to the smallest normal
         // double precision value, scale each component by 2^563 and
         // recompute the squared norm.
         scale = 3.019169939857233e+169;
         invScale = 3.312168642111238e-170;
-        n2 = ((*this) * scale).squaredNorm();
+        n2 = ((*this) * scale).getSquaredNorm();
         if (n2 == 0.0) {
             throw std::runtime_error("Cannot normalize zero vector");
         }
@@ -54,7 +54,7 @@ double Vector3d::normalize() {
         // recompute the squared norm.
         scale = 3.7291703656001034e-155;
         invScale = 2.6815615859885194e+154;
-        n2 = ((*this) * scale).squaredNorm();
+        n2 = ((*this) * scale).getSquaredNorm();
     }
     double norm = std::sqrt(n2);
     _v[0] = (_v[0] * scale) / norm;

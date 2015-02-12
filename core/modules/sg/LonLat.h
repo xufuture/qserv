@@ -78,9 +78,9 @@ public:
         return _lon != p._lon || _lat != p._lat;
     }
 
-    NormalizedAngle lon() const { return _lon; }
+    NormalizedAngle getLon() const { return _lon; }
 
-    Angle lat() const { return _lat; }
+    Angle getLat() const { return _lat; }
 
 private:
     void _enforceInvariants();

@@ -72,26 +72,26 @@ public:
 
     bool operator!=(Scalar x) const { return !(*this == x); }
 
-    /// `a` returns the lower endpoint of this interval. The return value
+    /// `getA` returns the lower endpoint of this interval. The return value
     /// for empty intervals is arbitrary.
-    Scalar a() const { return _a; }
+    Scalar getA() const { return _a; }
 
-    /// `b` returns the upper endpoint of this interval. The return value
+    /// `getB` returns the upper endpoint of this interval. The return value
     /// for empty intervals is arbitrary.
-    Scalar b() const { return _b; }
+    Scalar getB() const { return _b; }
 
     /// `isEmpty` returns true if this interval does not contain any points.
     bool isEmpty() const {
         return !(_a <= _b); // returns true when _a and/or _b is NaN
     }
 
-    /// `center` returns the center of this interval. It is arbitrary
+    /// `getCenter` returns the center of this interval. It is arbitrary
     /// for empty intervals.
-    Scalar center() const { return 0.5 * (_a + _b); }
+    Scalar getCenter() const { return 0.5 * (_a + _b); }
 
-    /// `size` returns the size (length, width) of this interval. It is zero
+    /// `getSize` returns the size (length, width) of this interval. It is zero
     /// for single-point intervals, and NaN or negative for empty intervals.
-    Scalar size() const { return _b - _a; }
+    Scalar getSize() const { return _b - _a; }
 
     ///@{
     /// `contains` returns true if the intersection of this interval and x
@@ -299,7 +299,7 @@ template <typename Derived, typename Scalar>
 std::ostream & operator<<(std::ostream & os,
                           Interval<Derived, Scalar> const & x)
 {
-    return os << '[' << x.a() << ", " << x.b() << ']';
+    return os << '[' << x.getA() << ", " << x.getB() << ']';
 }
 
 }} // namespace lsst::sg

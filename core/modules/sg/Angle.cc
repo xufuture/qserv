@@ -33,7 +33,7 @@ namespace sg {
 
 std::ostream & operator<<(std::ostream & os, Angle const & a) {
     char buf[32];
-    std::snprintf(buf, sizeof(buf), "%.17g rad", a.radians());
+    std::snprintf(buf, sizeof(buf), "%.17g rad", a.asRadians());
     return os << buf;
 }
 

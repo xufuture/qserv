@@ -299,7 +299,7 @@ bool ConvexPolygon::operator==(ConvexPolygon const & p) const {
     return true;
 }
 
-UnitVector3d ConvexPolygon::centroid() const {
+UnitVector3d ConvexPolygon::getCentroid() const {
     // The center of mass is obtained via trivial generalization of
     // the formula for spherical triangles from:
     //
@@ -320,8 +320,8 @@ UnitVector3d ConvexPolygon::centroid() const {
     return UnitVector3d(cm);
 }
 
-Circle ConvexPolygon::boundingCircle() const {
-    UnitVector3d c = centroid();
+Circle ConvexPolygon::getBoundingCircle() const {
+    UnitVector3d c = getCentroid();
     // Compute the maximum squared chord length between the centroid and
     // all vertices.
     VertexIterator const end = _vertices.end();
@@ -329,14 +329,14 @@ Circle ConvexPolygon::boundingCircle() const {
     VertexIterator j = _vertices.begin();
     double cl2 = 0.0;
     for (; j != end; i = j, ++j) {
-        cl2 = std::max(cl2, (*j - *i).squaredNorm());
+        cl2 = std::max(cl2, (*j - *i).getSquaredNorm());
     }
     // Add double the maximum squared-chord-length error, so that the
     // bounding circle we return also reliably CONTAINS this polygon.
     return Circle(c, cl2 + 2.0 * MAX_SCL_ERROR);
 }
 
-Box ConvexPolygon::boundingBox() const {
+Box ConvexPolygon::getBoundingBox() const {
     Angle const eps(5.0e-10); // ~ 0.1 milli-arcseconds
     Box bbox;
     VertexIterator const end = _vertices.end();
@@ -386,11 +386,11 @@ Box ConvexPolygon::boundingBox() const {
             double znj = j->y() * n.x() - j->x() * n.y();
             // Check if v or -v is in the edge interior.
             if (zni > 0.0 && znj < 0.0) {
-                bbox = Box(bbox.lon(),
-                           bbox.lat().expandedTo(LonLat::latitudeOf(v) + eps));
+                bbox = Box(bbox.getLon(), bbox.getLat().expandedTo(
+                    LonLat::latitudeOf(v) + eps));
             } else if (zni < 0.0 && znj > 0.0) {
-                bbox = Box(bbox.lon(),
-                           bbox.lat().expandedTo(LonLat::latitudeOf(-v) - eps));
+                bbox = Box(bbox.getLon(), bbox.getLat().expandedTo(
+                    LonLat::latitudeOf(-v) - eps));
             }
         }
     }
@@ -420,7 +420,7 @@ bool ConvexPolygon::contains(UnitVector3d const & v) const {
 
 int ConvexPolygon::relate(Box const & b) const {
     // TODO(smm): be more accurate when computing box relations.
-    return boundingBox().relate(b) & (WITHIN | INTERSECTS | DISJOINT);
+    return getBoundingBox().relate(b) & (WITHIN | INTERSECTS | DISJOINT);
 }
 
 int ConvexPolygon::relate(Circle const & c) const {
@@ -436,12 +436,12 @@ int ConvexPolygon::relate(Circle const & c) const {
     bool inside = false;
     for (VertexIterator v = _vertices.begin(), e = _vertices.end();
          v != e; ++v) {
-        double d = (*v - c.center()).squaredNorm();
-        if (std::fabs(d - c.squaredChordLength()) < MAX_SCL_ERROR) {
+        double d = (*v - c.getCenter()).getSquaredNorm();
+        if (std::fabs(d - c.getSquaredChordLength()) < MAX_SCL_ERROR) {
             // A polygon vertex is close to the circle boundary.
             return INTERSECTS;
         }
-        bool b = d < c.squaredChordLength();
+        bool b = d < c.getSquaredChordLength();
         if (v == _vertices.begin()) {
             inside = b;
         } else if (inside != b) {
@@ -455,8 +455,8 @@ int ConvexPolygon::relate(Circle const & c) const {
         for (VertexIterator a = _vertices.end(), b = _vertices.begin(), e = a;
              b != e; a = b, ++b) {
             Vector3d n = a->robustCross(*b);
-            double d = maxSquaredChordLength(c.center(), *a, *b, n);
-            if (d > c.squaredChordLength() - MAX_SCL_ERROR) {
+            double d = getMaxSquaredChordLength(c.getCenter(), *a, *b, n);
+            if (d > c.getSquaredChordLength() - MAX_SCL_ERROR) {
                 return INTERSECTS;
             }
         }
@@ -464,7 +464,7 @@ int ConvexPolygon::relate(Circle const & c) const {
         // case that the circle punches a hole in the polygon. We check that
         // the polygon does not contain the complement of c by testing whether
         // or not it contains the anti-center of c.
-        if (contains(-c.center())) {
+        if (contains(-c.getCenter())) {
             return INTERSECTS;
         }
         return INTERSECTS | WITHIN;
@@ -474,15 +474,15 @@ int ConvexPolygon::relate(Circle const & c) const {
     for (VertexIterator a = _vertices.end(), b = _vertices.begin(), e = a;
          b != e; a = b, ++b) {
         Vector3d n = a->robustCross(*b);
-        double d = minSquaredChordLength(c.center(), *a, *b, n);
-        if (d < c.squaredChordLength() + MAX_SCL_ERROR) {
+        double d = getMinSquaredChordLength(c.getCenter(), *a, *b, n);
+        if (d < c.getSquaredChordLength() + MAX_SCL_ERROR) {
             return INTERSECTS;
         }
     }
     // The polygon boundary is conclusively outside of c. If the polygon
     // contains the circle center, then the polygon contains c. Otherwise, the
     // polygon and circle are disjoint.
-    if (contains(c.center())) {
+    if (contains(c.getCenter())) {
         return CONTAINS | INTERSECTS;
     }
     return DISJOINT;
@@ -501,16 +501,17 @@ int ConvexPolygon::relate(ConvexPolygon const &) const {
 }
 
 int ConvexPolygon::relate(Ellipse const & e) const {
-    return relate(e.boundingCircle()) & (CONTAINS | INTERSECTS | DISJOINT);
+    return relate(e.getBoundingCircle()) & (CONTAINS | INTERSECTS | DISJOINT);
 }
 
 std::ostream & operator<<(std::ostream & os, ConvexPolygon const & p) {
     typedef std::vector<UnitVector3d>::const_iterator VertexIterator;
     os << "ConvexPolygon(\n"
           "    ";
-    for (VertexIterator v = p.vertices().begin(), end = p.vertices().end();
-         v != end; ++v) {
-        if (v != p.vertices().begin()) {
+    VertexIterator v = p.getVertices().begin();
+    VertexIterator const end = p.getVertices().end();
+    for (; v != end; ++v) {
+        if (v != p.getVertices().begin()) {
             os << ",\n"
                   "    ";
         }

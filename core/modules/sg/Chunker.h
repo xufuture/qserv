@@ -80,13 +80,13 @@ public:
         return _numSubStripesPerStripe;
     }
 
-    /// `chunksIntersecting` returns all the chunks that potentially
+    /// `getChunksIntersecting` returns all the chunks that potentially
     /// intersect the given region.
-    std::vector<int32_t> chunksIntersecting(Region const & r) const;
+    std::vector<int32_t> getChunksIntersecting(Region const & r) const;
 
-    /// `subChunksIntersecting` returns all the sub-chunks that potentially
+    /// `getSubChunksIntersecting` returns all the sub-chunks that potentially
     /// intersect the given region.
-    std::vector<SubChunks> subChunksIntersecting(Region const & r) const;
+    std::vector<SubChunks> getSubChunksIntersecting(Region const & r) const;
 
     /// `getAllChunks` returns the complete set of chunk IDs for the unit
     /// sphere.
@@ -134,15 +134,15 @@ private:
         return y * _maxSubChunksPerSubStripeChunk + x;
     }
 
-    void _findSubChunks(std::vector<SubChunks> & subChunks,
-                        Region const & r,
-                        NormalizedAngleInterval const & lon,
-                        int32_t stripe,
-                        int32_t chunk,
-                        int32_t minSS,
-                        int32_t maxSS) const;
-    Box _chunkBoundingBox(int32_t stripe, int32_t chunk) const;
-    Box _subChunkBoundingBox(int32_t subStripe, int32_t subChunk) const;
+    void _getSubChunks(std::vector<SubChunks> & subChunks,
+                       Region const & r,
+                       NormalizedAngleInterval const & lon,
+                       int32_t stripe,
+                       int32_t chunk,
+                       int32_t minSS,
+                       int32_t maxSS) const;
+    Box _getChunkBoundingBox(int32_t stripe, int32_t chunk) const;
+    Box _getSubChunkBoundingBox(int32_t subStripe, int32_t subChunk) const;
 
     int32_t _numStripes;
     int32_t _numSubStripesPerStripe;
