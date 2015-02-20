@@ -49,58 +49,43 @@ from lsst.qserv.admin import commons
 
 class DataDuplicator(object):
 
-    def __init__(self, data_reader):
+    def __init__(self, data_reader, cfg_dir, out_dir):
 
-        self.config = config
         self.dataConfig = data_reader
-        self._dbName = db_name
-
-        self._out_dirname = out_dirname
-
         self.logger = logging.getLogger(__name__)
-        self.sock_params = {
-            'config': self.config,
-            'mode': const.MYSQL_SOCK
-        }
 
-        self._sqlInterface = dict()
+        self.cfg_dirname = cfg_dir
+        self.out_dirname = out_dir
 
-
-def runIndex(cfg_dir,out_dir,tables):
+    def runIndex(self):
     """
     Run sph-htm-index as step 1 of the duplication process
     """
-
-    # Specify the tables to run over
-    #tables = ['Object','Source']
-
+        
     for table in tables:        
         if os.path.isfile(cfg_dir+table+".cfg")==False:
-            logging.error("Path to indexing config file not found")
-
+            self.logger.error("Path to indexing config file not found")
+            
         run_index = commons.run_command(["sph-htm-index",
                                          "--config-file=" + cfg_dir + table + ".cfg",
                                          "--config-file=" + cfg_dir + "common.cfg",
                                          "--in=" + cfg_dir + table + ".txt",
                                          "--verbose",
                                          "--out.dir=" + out_dir +"index/" + table])
-
-
-def runDuplicate(cfg_dir,out_dir,tables):
+                    
+                    
+    def runDuplicate(self):
     """
     Run sph-duplicate to set up partitioned data that the data loader needs
     """
-     
-    # Specify the tables to run over
-    #tables = ['Object','Source']
 
     # Run Indexer first
-    RunIndex(cfg_dir,out_dir,tables)
+    runIndex()
     
     for table in tables:
         if os.path.isfile(cfg_dir + "common.cfg")==False:
-            logging.error("Path to duplicator config file not found")
-            
+            self.logger.error("Path to duplicator config file not found")
+                            
         run_dupl = commons.run_command(["sph-duplicate",
                                         "--config-file=" + cfg_dir + table + ".cfg",
                                         "--config-file=" + cfg_dir + "common.cfg",
