@@ -24,8 +24,6 @@ Script that runs data duplicator for integration tests.
 Simply running the duplicator as listed in the documentation example here:
 https://github.com/LSST/partition/blob/master/docs/duplication.md
 
-Currently using a small .tsv  file from a "Object-only" table.
-
 @author  Vaikunth Thukral, TAMU/SLAC
 """
 
@@ -39,6 +37,7 @@ import subprocess
 #-----------------------------
 # Imports for other modules --
 #-----------------------------
+from lsst.qserv.admin import commons
 
 #----------------------------------
 # Local non-exported definitions --
@@ -48,71 +47,68 @@ import subprocess
 # Exported definitions --
 #------------------------
 
-# Directory holding the config files 
-cfg_dir = '/home/vaikunth/src/partition/'
+class DataDuplicator(object):
+
+    def __init__(self, data_reader):
+
+        self.config = config
+        self.dataConfig = data_reader
+        self._dbName = db_name
+
+        self._out_dirname = out_dirname
+
+        self.logger = logging.getLogger(__name__)
+        self.sock_params = {
+            'config': self.config,
+            'mode': const.MYSQL_SOCK
+        }
+
+        self._sqlInterface = dict()
 
 
-def RunIndex():
+def runIndex(cfg_dir,out_dir,tables):
     """
     Run sph-htm-index as step 1 of the duplication process
     """
 
     # Specify the tables to run over
-    tables = ['Object']
+    #tables = ['Object','Source']
 
     for table in tables:        
         if os.path.isfile(cfg_dir+table+".cfg")==False:
             logging.error("Path to indexing config file not found")
 
-        run_index = subprocess.Popen(["sph-htm-index",
-                                      "--config-file=" + cfg_dir + table + ".cfg",
-                                      "--htm.level=8",
-                                      "--in.csv.null=NULL",
-                                      "--in.csv.delimiter=\t",
-                                      "--in.csv.escape=\\",
-                                      "--in.csv.quote=\"",
-                                      "--in=" + cfg_dir + table + ".tsv",
-                                      "--verbose",
-                                      "--mr.num-worker=6",
-                                      "--mr.pool-size=32768",
-                                      "--mr.block-size=16",
-                                      "--out.dir=index/" + table])
-
-        run_index.wait()
+        run_index = commons.run_command(["sph-htm-index",
+                                         "--config-file=" + cfg_dir + table + ".cfg",
+                                         "--config-file=" + cfg_dir + "common.cfg",
+                                         "--in=" + cfg_dir + table + ".txt",
+                                         "--verbose",
+                                         "--out.dir=" + out_dir +"index/" + table])
 
 
-def RunDuplicate():
+def runDuplicate(cfg_dir,out_dir,tables):
     """
     Run sph-duplicate to set up partitioned data that the data loader needs
     """
      
     # Specify the tables to run over
-    tables = ['Object']
+    #tables = ['Object','Source']
 
     # Run Indexer first
-    RunIndex()
+    RunIndex(cfg_dir,out_dir,tables)
     
     for table in tables:
         if os.path.isfile(cfg_dir + "common.cfg")==False:
             logging.error("Path to duplicator config file not found")
             
-        run_dupl = subprocess.Popen(["sph-duplicate",
-                                     "--config-file=" + cfg_dir + table + ".cfg",
-                                     "--config-file=" + cfg_dir + "common.cfg",
-                                     "--in.csv.null=\\N",
-                                     "--in.csv.delimiter=\t",
-                                     "--in.csv.escape=\\",
-                                     "--in.csv.no-quote=true",
-                                     "--index=index/" + table + "/htm_index.bin",
-                                     "--part.index=index/Object/htm_index.bin",                                    
-                                     "--verbose",
-                                     "--lon-min=60",
-                                     "--lon-max=72",
-                                     "--lat-min=-30",
-                                     "--lat-max=-18",
-                                     "--mr.num-worker=6",
-                                     "--mr.pool-size=32768",
-                                     "--mr.block-size=16",
-                                     "--out.dir=chunks/" + table])
-
-        run_dupl.wait()
+        run_dupl = commons.run_command(["sph-duplicate",
+                                        "--config-file=" + cfg_dir + table + ".cfg",
+                                        "--config-file=" + cfg_dir + "common.cfg",
+                                        "--index=" + out_dir + "index/" + table + "/htm_index.bin",
+                                        "--part.index=" + out_dir + "index/Object/htm_index.bin",                                    
+                                        "--verbose",
+                                        "--lon-min=60",
+                                        "--lon-max=72",
+                                        "--lat-min=-30",
+                                        "--lat-max=-18",
+                                        "--out.dir=" + out_dir + "chunks/" + table])
