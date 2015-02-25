@@ -32,7 +32,6 @@ https://github.com/LSST/partition/blob/master/docs/duplication.md
 #--------------------------------
 import logging
 import os
-import subprocess
 import sys
 
 #-----------------------------
@@ -76,8 +75,8 @@ class DataDuplicator(object):
             run_index = commons.run_command(["sph-htm-index",
                                              "--config-file=" + os.path.join(self._cfgDirname, table + ".cfg"),
                                              "--config-file=" + os.path.join(self._cfgDirname, "common.cfg"),
-                                             "--in=" + os.path.join(self._cfgDirname, table + ".txt"),
                                              "--verbose",
+                                             "--in=" + os.path.join(self._cfgDirname, table + ".txt"),
                                              "--out.dir=" + os.path.join(self._outDirname, "index/", table)])
                 
   
@@ -95,7 +94,7 @@ class DataDuplicator(object):
                                             "--config-file=" + os.path.join(self._cfgDirname, table + ".cfg"),
                                             "--config-file=" + os.path.join(self._cfgDirname, "common.cfg"),
                                             "--index=" + os.path.join(self._outDirname, "index/", table, "htm_index.bin"),
-                                            "--part.index=" + os.path.join(self._outDirname, "index/Object/htm_index.bin"),                                    
+                                            "--part.index=" + os.path.join(self._outDirname, "index/Object/htm_index.bin"),
                                             "--verbose",
                                             "--lon-min=60",
                                             "--lon-max=72",
