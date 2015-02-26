@@ -32,7 +32,6 @@ https://github.com/LSST/partition/blob/master/docs/duplication.md
 #--------------------------------
 import logging
 import os
-import sys
 
 #-----------------------------
 # Imports for other modules --
@@ -57,6 +56,7 @@ class DataDuplicator(object):
         self._cfgDirname = cfg_dir
         self._outDirname = out_dir
         self._tables = data_reader.duplicatedTables
+        self._directorTable = data_reader.directors[0]
 
     def run(self):
         self._runIndex()
@@ -75,7 +75,6 @@ class DataDuplicator(object):
             run_index = commons.run_command(["sph-htm-index",
                                              "--config-file=" + os.path.join(self._cfgDirname, table + ".cfg"),
                                              "--config-file=" + os.path.join(self._cfgDirname, "common.cfg"),
-                                             "--verbose",
                                              "--in=" + os.path.join(self._cfgDirname, table + ".txt"),
                                              "--out.dir=" + os.path.join(self._outDirname, "index/", table)])
                 
@@ -88,16 +87,11 @@ class DataDuplicator(object):
         for table in self._tables:
             if os.path.isfile(os.path.join(self._cfgDirname, 'common.cfg'))==False:
                 self.logger.error("Path to duplicator config file not found")
-                
+
             self.logger.info("Running duplicator for table %s" % table)
             run_dupl = commons.run_command(["sph-duplicate",
                                             "--config-file=" + os.path.join(self._cfgDirname, table + ".cfg"),
                                             "--config-file=" + os.path.join(self._cfgDirname, "common.cfg"),
                                             "--index=" + os.path.join(self._outDirname, "index/", table, "htm_index.bin"),
-                                            "--part.index=" + os.path.join(self._outDirname, "index/Object/htm_index.bin"),
-                                            "--verbose",
-                                            "--lon-min=60",
-                                            "--lon-max=72",
-                                            "--lat-min=-30",
-                                            "--lat-max=-18",
+                                            "--part.index=" + os.path.join(self._outDirname, "index", self._directorTable, "htm_index.bin"),
                                             "--out.dir=" + os.path.join(self._outDirname, "chunks/", table)])
