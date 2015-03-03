@@ -336,6 +336,9 @@ void Executive::_dispatchQuery(int refNum,
         // handle error
     }
     LOGF_DEBUG("Provision was ok");
+    // FIXME: For squashing, need to hold ptr to QueryResource, so we can
+    // instruct it to call XrdSsiRequest::Finished(cancel=true). Also, can send
+    // cancellation into requester.
 }
 
 void Executive::_setup() {
