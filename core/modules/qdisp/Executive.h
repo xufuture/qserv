@@ -52,6 +52,7 @@ namespace lsst {
 namespace qserv {
 namespace qdisp {
 class MessageStore;
+class QueryResource;
 class ResponseRequester;
 
 /// class Executive manages the execution of tasks for a UserQuery, while
@@ -74,6 +75,12 @@ public:
         std::string request; // encoded request
         boost::shared_ptr<ResponseRequester> requester;
     };
+
+    struct Entry {
+        ExecStatus::Ptr status;
+        QueryResource* resource;
+    };
+    typedef std::map<int, Entry> EntryMap;
 
     Executive(Config::Ptr c, boost::shared_ptr<MessageStore> ms);
 
@@ -111,11 +118,12 @@ private:
     friend class DispatchAction;
     void _dispatchQuery(int refNum,
                         Spec const& spec,
-                        ExecStatus& status);
+                        Entry& status);
 
     void _setup();
     bool _shouldRetry(int refNum);
     ExecStatus& _insertNewStatus(int refNum, ResourceUnit const& r);
+    Entry _insertNewEntry(int refNum, ResourceUnit const& r);
 
     bool _track(int refNum, RequesterPtr r);
     void _unTrack(int refNum);
@@ -133,14 +141,17 @@ private:
     RequesterMap _requesters; ///< RequesterMap for results from submitted tasks
     StatusMap _statuses; ///< Statuses of submitted tasks
     int _requestCount; ///< Count of submitted tasks
+    EntryMap _entries;
 
     // Mutexes
     boost::mutex _requestersMutex;
     boost::condition_variable _requestersEmpty;
-
+    boost::mutex _entriesMutex;
     boost::mutex _retryMutex;
+
     typedef std::map<int,int> IntIntMap;
     IntIntMap _retryMap; ///< Counter for task retries.
+
 }; // class Executive
 }}} // namespace lsst::qserv::qdisp
 
