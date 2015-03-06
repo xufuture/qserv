@@ -320,7 +320,7 @@ public:
         Cancel(wbase::Task::Ptr t, Scheduler::Ptr s) : _t(t), _s(s) {}
         virtual void operator()() {
             _t->poison();
-            _s->squashByHash(t->hash);
+            _s->removeByHash(_t->hash);
         }
         wbase::Task::Ptr _t;
         Scheduler::Ptr _s;
