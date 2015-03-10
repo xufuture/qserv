@@ -136,6 +136,7 @@ std::string const& UserQuery::getError() const {
 
 /// Attempt to kill in progress.
 void UserQuery::kill() {
+    LOGF_INFO("UserQuery kill");
     _executive->squash();
 }
 
