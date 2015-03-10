@@ -303,3 +303,7 @@ XrdOssGetStorageSystem(XrdOss       *native_oss,
 }
 } // extern C
 
+// As recommended by XrdOss/XrdOss.h, declare the version.
+#include "XrdVersion.hh"
+// Compiler complains if we terminate with a ';'
+XrdVERSIONINFO(XrdOssGetStorageSystem,QservOssGeneric)
