@@ -563,9 +563,6 @@ void Executive::_printState(std::ostream& os) {
                   printMapSecond<RequesterMap::value_type>(os, "\n"));
     os << std::endl << getProgressDesc() << std::endl;
 
-//    std::copy(_statuses.begin(), _statuses.end(),
-//              std::ostream_iterator<StatusMap::value_type>(os, "\n"));
-
     std::copy(_entries.begin(), _entries.end(),
               std::ostream_iterator<EntryMap::value_type>(os, "\n"));
 }
