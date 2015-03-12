@@ -84,7 +84,7 @@ shProducts = { "xrdoss" : {'mods' : """wlog mysql obsolete sql util
                              'shmods' : ['css'],
                              'libs' : """ssl crypto antlr log
                                       mysqlclient_r protobuf
-                                      XrdClient XrdPosix XrdSsi XrdUtils
+                                      XrdClient XrdSsi XrdUtils
                                       boost_regex boost_thread boost_system
                                       boost_signals zookeeper_mt""".split(),
                                'SHLIBPREFIX' : '',

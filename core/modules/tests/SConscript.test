@@ -34,7 +34,7 @@ deps.sort(key=lambda n: n.str_for_display())
 
 myDeps = filter(lambda i: not str(i).startswith("test"), env.Glob("*.cc"))
 ubuntuDeps = ["pthread"]
-extDeps = ubuntuDeps + "boost_regex mysqlclient_r boost_thread boost_system crypto log log4cxx protobuf XrdPosix XrdPosixPreload XrdClient XrdUtils".split()
+extDeps = ubuntuDeps + "boost_regex mysqlclient_r boost_thread boost_system crypto log log4cxx protobuf".split()
 p = env.Program(["testIter.cc"] + deps, LIBS=findLibs(extDeps))
 
 programs.append(p)

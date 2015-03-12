@@ -218,12 +218,12 @@ def findXrootdLibPath(libName, pathList):
     return None
 
 def checkXrootdLink(env, autoadd=0):
-    libList = "XrdUtils XrdClient XrdPosix XrdPosixPreload".split()
+    libList = "XrdUtils XrdClient".split()
  #   libList = "XrdPosix".split()
     header = "XrdSsi/XrdSsiErrInfo.hh"
 
     #print "ldpath", env.Dump("LIBPATH")
-    xrdLibPath = findXrootdLibPath("XrdCl", env["LIBPATH"])
+    xrdLibPath = findXrootdLibPath("XrdSsi", env["LIBPATH"])
     if xrdLibPath:
         env.Append(RPATH=[xrdLibPath])
     conf = env.Configure(custom_tests={
