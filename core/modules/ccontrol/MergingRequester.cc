@@ -24,9 +24,6 @@
 // Class header
 #include "ccontrol/MergingRequester.h"
 
-// System headers
-#include <cassert>
-
 // LSST headers
 #include "lsst/log/Log.h"
 

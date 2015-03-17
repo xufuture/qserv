@@ -36,7 +36,7 @@ import lsst.qserv.czar.db
 import time
 import thread
 
-from lsst.qserv.czar import queryMsgGetCount, queryMsgGetMsg, UserQuery_discard
+from lsst.qserv.czar import UserQuery_getMsgCount, UserQuery_getMsg, UserQuery_discard
 
 
 class Lock:
@@ -92,9 +92,9 @@ class Lock:
     def _saveQueryMessages(self):
         if not self._sessionId: # No object to read.
             return
-        msgCount = queryMsgGetCount(self._sessionId)
+        msgCount = UserQuery_getMsgCount(self._sessionId)
         for i in range(msgCount):
-            msg, chunkId, code, timestamp = queryMsgGetMsg(self._sessionId, i)
+            msg, chunkId, code, timestamp = UserQuery_getMsg(self._sessionId, i)
             self.db.applySql(Lock.writeTmpl.format(self._tableName), (chunkId, code, msg, timestamp))
 
 

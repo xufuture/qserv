@@ -63,9 +63,6 @@
 // Class header
 #include "ccontrol/UserQuery.h"
 
-// System headers
-#include <cassert>
-
 // Third-party headers
 #include "boost/make_shared.hpp"
 
@@ -74,21 +71,19 @@
 
 // Qserv headers
 #include "ccontrol/MergingRequester.h"
+#include "ccontrol/MissingUserQuery.h"
+#include "ccontrol/SessionManager.h"
 #include "ccontrol/TmpTableName.h"
 #include "ccontrol/UserQueryError.h"
-#include "global/constants.h"
 #include "global/MsgReceiver.h"
 #include "proto/worker.pb.h"
 #include "proto/ProtoImporter.h"
 #include "qdisp/Executive.h"
 #include "qdisp/MessageStore.h"
-#include "qproc/geomAdapter.h"
 #include "qproc/IndexMap.h"
 #include "qproc/QuerySession.h"
 #include "qproc/TaskMsgFactory2.h"
 #include "rproc/InfileMerger.h"
-#include "rproc/TableMerger.h"
-#include "util/Callable.h"
 
 namespace lsst {
 namespace qserv {
@@ -127,11 +122,27 @@ public:
 // UserQuery implementation
 namespace ccontrol {
 
-std::string const& UserQuery::getError() const {
+class UserQuery::SessionManager : public ccontrol::SessionManager<UserQuery::Ptr>
+{
+public:
+    SessionManager() {}
+    UserQuery::Ptr get(int id) {
+        UserQuery::Ptr p = getSession(id);
+        if(!p) throw MissingUserQuery(id);
+        return p;
+    }
+};
+
+UserQuery::SessionManager UserQuery::_sessionManager;
+
+UserQuery::Ptr UserQuery::get(int id) {
+    return _sessionManager.get(id);
+}
+
+std::string UserQuery::getError() const {
     std::string div = (_errorExtra.size() && _qSession->getError().size())
         ? " " : "";
-    _errorExtraCache = _qSession->getError() + div + _errorExtra;
-    return _errorExtraCache;
+    return _qSession->getError() + div + _errorExtra;
 }
 
 /// Attempt to kill in progress.
@@ -233,6 +244,7 @@ void UserQuery::discard() {
         // Silence merger discarding errors, because this object is being released.
         // client no longer cares about merger errors.
     }
+    _sessionManager.discardSession(_sessionId);
     LOGF_INFO("Discarded UserQuery(%1%)" % _sessionId);
 }
 
@@ -241,6 +253,7 @@ UserQuery::UserQuery(boost::shared_ptr<qproc::QuerySession> qs)
     :  _messageStore(boost::make_shared<qdisp::MessageStore>()),
        _qSession(qs), _sequence(0) {
     // Some configuration done by factory: See UserQueryFactory
+    _sessionId = _sessionManager.newSession(Ptr(this));
 }
 /// @return a plaintext description of query execution progress
 std::string UserQuery::getExecDesc() const {

@@ -48,13 +48,10 @@ def parseKillId(killQuery):
 # interface, which is intended to make a friendly wrapper around the
 # functionality from the app module.
 #
-# AppInterface instances can underlie an HTTP or XML-RPC server (via
-# server.py), or be used directly by test programs or
-# development/administrative code.
-#
-# Ideally, AppInterface objects can be used from standalone Python
-# programs, facilitating testing and usage without bringing up a qserv
-# czar daemon. It is unclear whether this still works.
+# AppInterface instances can underlie an HTTP or an XML-RPC server
+# (via server.py), or be used directly by test programs or
+# development/administrative code to facilitate testing without
+# bringing up a qzerv czar daemon.
 class AppInterface:
     """An implemented interface to the Qserv czar application logic. """
     def __init__(self, threadFunc=None):

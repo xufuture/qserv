@@ -21,22 +21,21 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-
-// SessionManager -- tracks sessions that the frontend dispatches out.
-// A "session" maps to a user-issued query, which the frontend should
-// break apart into many chunk queries.
-
+// SessionManager -- tracks "sessions" (template parameter "Value")
+// by id.
+//
 // Implementation notes:
 // * The session manager reuses ids like a coat check system with lots
-//   of tags.
+//   of tags.  Makes assumption that the coat check will never be
+//   entirely full.
 // * If you store objects, you probably want to store shared_ptrs.
 // * The session manager makes a copy of the Value that is stored.
-//
+
 #ifndef LSST_QSERV_CCONTROL_SESSIONMANAGER_H
 #define LSST_QSERV_CCONTROL_SESSIONMANAGER_H
 
 // Third-party headers
-#include "boost/thread.hpp" // for mutex primitives
+#include "boost/thread/mutex.hpp"
 
 namespace lsst {
 namespace qserv {
@@ -74,11 +73,12 @@ private:
     int _getNextId() {
         int goodId = _nextId++; // Dispense the next id.
         while(true) {
-            if(_nextId < _idLimit) { // Still within limit?
-                MapIterator i = _map.find(_nextId);
-                if(i == _map.end()) { // Not already assigned?
-                    break;
-                }
+            if(_nextId > _idLimit) {
+                _nextId = 1;
+            }
+            MapIterator i = _map.find(_nextId);
+            if(i == _map.end()) { // Not already assigned?
+                break;
             }
             ++_nextId;
         }

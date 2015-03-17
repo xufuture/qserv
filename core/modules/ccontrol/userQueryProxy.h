@@ -36,32 +36,22 @@
 
 // Local headers
 #include "ccontrol/QueryState.h"
-#include "css/StripingParams.h"
-#include "qproc/ChunkSpec.h"
-#include "query/Constraint.h"
 
 namespace lsst {
 namespace qserv {
 namespace ccontrol {
-class UserQuery;
-
-// Set UserQueryEnable=1 to enable code that prefers UserQuery framework
-// UserQueryEnable=0 to prefer AsyncQueryManager
-enum _userQueryProxyConst {UserQueryEnable=1};
 
 /// @return error description
-std::string const& UserQuery_getError(int session);
+std::string UserQuery_getError(int session);
 
 /// @return a string describing the progress on the query at a chunk-by-chunk
-/// level. Userful for diagnosis when queries are squashed or return errors.
+/// level. Useful for diagnosis when queries are squashed or return errors.
 std::string UserQuery_getExecDesc(int session);
-
-/// Add a chunk spec for execution
-void UserQuery_addChunk(int session, lsst::qserv::qproc::ChunkSpec const& cs);
 
 /// Dispatch all chunk queries for this query
 void UserQuery_submit(int session);
 
+/// Block until execution succeeds or fails completely
 QueryState UserQuery_join(int session);
 
 /// Kill this user query immediately (system is shutting down now)
@@ -70,12 +60,11 @@ void UserQuery_kill(int session);
 /// Release resources held for this user query
 void UserQuery_discard(int session);
 
-/// @return sessionId
-int UserQuery_takeOwnership(UserQuery* uq);
+int UserQuery_getMsgCount(int session);
 
-/// For peer python-interface code. Not to be called directly from
-/// the Python layer.
-UserQuery& UserQuery_get(int session);
+std::string UserQuery_getMsg(int session, int idx, int* chunkId, int* code, time_t* timestamp);
+
+void UserQuery_addMsg(int session, int chunkId, int code, std::string const& message);
 
 }}} // namespace lsst::qserv:ccontrol
 

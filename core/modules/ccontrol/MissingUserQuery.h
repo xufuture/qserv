@@ -30,7 +30,6 @@
 
 // System headers
 #include <exception>
-#include <sstream>
 #include <string.h>
 
 // Third party headers

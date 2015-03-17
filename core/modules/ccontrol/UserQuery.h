@@ -37,9 +37,7 @@
 
 // Local headers
 #include "ccontrol/QueryState.h"
-#include "css/StripingParams.h"
 #include "qproc/ChunkSpec.h"
-#include "query/Constraint.h"
 
 // Forward decl
 namespace lsst {
@@ -53,8 +51,6 @@ class QuerySession;
 class SecondaryIndex;
 }
 namespace rproc {
-class TableMerger;
-class TableMergerConfig;
 class InfileMerger;
 class InfileMergerConfig;
 }}}
@@ -62,6 +58,7 @@ class InfileMergerConfig;
 namespace lsst {
 namespace qserv {
 namespace ccontrol {
+
 class UserQueryFactory;
 
 /// UserQuery : top-level class for user query data. Not thread-safe, although
@@ -69,13 +66,19 @@ class UserQueryFactory;
 class UserQuery : public boost::noncopyable {
 public:
     typedef boost::shared_ptr<UserQuery> Ptr;
+
     friend class UserQueryFactory;
+
+    // All UserQuery instances are tracked in a single session manager.
+    // This facilitates having a handle-oriented Python API (as defined
+    // in UserQueryProxy.h)
+    static Ptr get(int session);
 
     // Accessors
 
     /// @return a non-empty string describing the current error state
     /// Returns an empty string if no errors have been detected.
-    std::string const& getError() const;
+    std::string getError() const;
 
     /// @return a description of the current execution state.
     std::string getExecDesc() const;
@@ -104,7 +107,7 @@ public:
 
 private:
     explicit UserQuery(boost::shared_ptr<qproc::QuerySession> qs);
-    void setSessionId(int session) { _sessionId = session; }
+
     void _setupMerger();
     void _discardMerger();
     void _setupChunking();
@@ -117,10 +120,13 @@ private:
     boost::shared_ptr<rproc::InfileMerger> _infileMerger;
     boost::shared_ptr<qproc::SecondaryIndex> _secondaryIndex;
 
+    class SessionManager;
+    static SessionManager _sessionManager;
     int _sessionId; ///< External reference number
+
     int _sequence; ///< Sequence number for subtask ids
     std::string _errorExtra; ///< Additional error information
-    mutable std::string _errorExtraCache; ///< Cache so getError can return a ref
+
 };
 
 }}} // namespace lsst::qserv:ccontrol

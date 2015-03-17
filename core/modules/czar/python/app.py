@@ -75,16 +75,14 @@ from lsst.qserv.czar import SUCCESS as QueryState_SUCCESS
 
 # UserQuery
 from lsst.qserv.czar import UserQueryFactory
+from lsst.qserv.czar import UserQuery_addMsg
 from lsst.qserv.czar import UserQuery_getExecDesc
 from lsst.qserv.czar import UserQuery_getError
 from lsst.qserv.czar import UserQuery_submit
 from lsst.qserv.czar import UserQuery_join
 from lsst.qserv.czar import UserQuery_kill
 from lsst.qserv.czar import UserQuery_discard
-
-# queryMsg
 from lsst.qserv.czar import msgCode
-from lsst.qserv.czar import queryMsgAddMsg
 
 # Experimental interactive prompt (not currently working)
 import code, traceback, signal
@@ -341,7 +339,7 @@ class InbandQueryAction:
 
     def _reportError(self, chunkId, code, message):
         logger.dbg("reporting", chunkId, code, message)
-        queryMsgAddMsg(self.sessionId, chunkId, code, message)
+        UserQuery_addMsg(self.sessionId, chunkId, code, message)
 
     def invoke(self):
         """Begin execution of the query"""

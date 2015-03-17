@@ -30,15 +30,7 @@
   * for use with this proxy. The query is parsed and prepared for
   * execution as much as possible, without knowing partition coverage.
   *
-  *
   * UserQuery_getError(int session) // See if there are errors
-  *
-  * UserQuery_getConstraints(int session)  // Retrieve the detected
-  * constraints so that we can apply them to see which chunks we
-  * need. (done in Python)
-  *
-  * UserQuery_addChunk(int session, ChunkSpec const& cs )
-  * // add the computed chunks to the query
   *
   * UserQuery_submit(int session) // Trigger the dispatch of all chunk
   * queries for the UserQuery
@@ -53,80 +45,70 @@
 #include "lsst/log/Log.h"
 
 // Qserv headers
-#include "ccontrol/MissingUserQuery.h"
-#include "ccontrol/SessionManager.h"
 #include "ccontrol/UserQuery.h"
-#include "util/StringHash.h"
-
-namespace {
-} // anonymous namespace
-
+#include "qdisp/MessageStore.h"
 
 namespace lsst {
 namespace qserv {
 namespace ccontrol {
 
-class UserQueryManager : public SessionManager<UserQuery::Ptr> {
-public:
-    UserQueryManager() {}
-    UserQuery::Ptr get(int id) {
-        UserQuery::Ptr p = getSession(id);
-        if(!p) {
-            throw MissingUserQuery(id);
-        }
-        return p;
-    }
-};
-static UserQueryManager uqManager;
-
-std::string const& UserQuery_getError(int session) {
-    return uqManager.get(session)->getError();
+/// @return a string describing the error state of the query
+std::string UserQuery_getError(int session) {
+    return UserQuery::get(session)->getError();
 }
 
 /// @return a string describing the progress on the query at a chunk-by-chunk
-/// level. Userful for diagnosis when queries are squashed or return errors.
+/// level.  Useful for diagnosis when queries are squashed or return errors.
 std::string UserQuery_getExecDesc(int session) {
-    return uqManager.get(session)->getExecDesc();
+    return UserQuery::get(session)->getExecDesc();
 }
 
 /// Abort a running query
 void UserQuery_kill(int session) {
     LOGF_INFO("EXECUTING UserQuery_kill(%1%)" % session);
-    uqManager.get(session)->kill();
+    UserQuery::get(session)->kill();
 }
 
 /// Add a chunk spec for execution
 void UserQuery_addChunk(int session, qproc::ChunkSpec const& cs) {
-    uqManager.get(session)->addChunk(cs);
+    UserQuery::get(session)->addChunk(cs);
 }
 
 /// Dispatch all chunk queries for this query
 void UserQuery_submit(int session) {
     LOGF_DEBUG("EXECUTING UserQuery_submit(%1%)" % session);
-    uqManager.get(session)->submit();
+    UserQuery::get(session)->submit();
 }
 
 /// Block until execution succeeds or fails completely
+/// @return a QueryState constant indicating SUCCESS or ERROR
 QueryState UserQuery_join(int session) {
-    return uqManager.get(session)->join();
+    return UserQuery::get(session)->join();
 }
 
-/// Discard the UserQuery by destroying it and forgetting about its id.
+/// Discard the UserQuery by destroying it and forgetting about its id
 void UserQuery_discard(int session) {
-    UserQuery::Ptr p = uqManager.get(session);
-    p->discard();
-    p.reset();
-    uqManager.discardSession(session);
+    UserQuery::get(session)->discard();
 }
 
-/// Take ownership of a UserQuery object and return a sessionId
-int UserQuery_takeOwnership(UserQuery* uq) {
-    UserQuery::Ptr uqp(uq);
-    return uqManager.newSession(uqp);
+/// @return count of messages in UserQuery's message store
+int UserQuery_getMsgCount(int session) {
+    return UserQuery::get(session)->getMessageStore()->messageCount();
 }
 
-UserQuery& UserQuery_get(int session) {
-    return *uqManager.get(session);
+/// @return message info from the UserQuery's message store
+/// Python call syntax: message, chunkId, code, timestamp = UserQuery_getMesg(session, idx)
+std::string UserQuery_getMsg(int session, int idx, int* chunkId, int* code, time_t* timestamp) {
+    qdisp::QueryMessage msg = UserQuery::get(session)->getMessageStore()->getMessage(idx);
+    *chunkId = msg.chunkId;
+    *code = msg.code;
+    *timestamp = msg.timestamp;
+    return msg.description;
+}
+
+/// Add a message to the UserQuery's message store
+void UserQuery_addMsg(int session, int chunkId, int code, std::string const& message) {
+    UserQuery::get(session)->getMessageStore()->addMessage(chunkId, code, message);
 }
 
 }}} // namespace lsst::qserv::ccontrol

@@ -7,10 +7,6 @@ import pytarget
 
 Import('env')
 Import('extraTgts')
-#env.Tool('swig')
-#env['SWIGFLAGS'] = ['-python', '-c++', '-Iinclude'],
-#env.Append(CPPPATH = [distutils.sysconfig.get_python_inc()])
-#env['SHLIBPREFIX'] = "" # Pushed to higher level SConscript
 
 def _debug_dist_target():
     if state.log.verbose:
@@ -40,18 +36,6 @@ swigged = env.SharedObject(source="czarLib.i",
                            LDMODULEPREFIX='_',
                            LDMODULESUFFIX = '.so',
                            )
-
-
-# swigged = env.swig(source="czarLib.i",
-#                    SWIGPATH=['..',
-#                              distutils.sysconfig.get_python_inc()],
-#                    LDMODULEPREFIX='_', LDMODULESUFFIX = '.so'
-#                    )
-
-#env.Append(SWIGPATH=['..', distutils.sysconfig.get_python_inc()])
-#swigged = [env.File("czarLib.i")]
-
-# print swigged # prints ['czarLib_wrap.os']
 
 swigged_tgt = []
 for f in swigged:

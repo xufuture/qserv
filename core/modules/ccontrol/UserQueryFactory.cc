@@ -24,10 +24,6 @@
 // Class header
 #include "ccontrol/UserQueryFactory.h"
 
-// System headers
-#include <cassert>
-#include <stdlib.h>
-
 // Third-party headers
 #include "boost/make_shared.hpp"
 
@@ -38,7 +34,6 @@
 #include "ccontrol/ConfigMap.h"
 #include "ccontrol/ConfigError.h"
 #include "ccontrol/UserQuery.h"
-#include "ccontrol/userQueryProxy.h"
 #include "css/Facade.h"
 #include "css/KvInterfaceImplMem.h"
 #include "mysql/MySqlConfig.h"
@@ -46,7 +41,6 @@
 #include "qproc/QuerySession.h"
 #include "qproc/SecondaryIndex.h"
 #include "rproc/InfileMerger.h"
-#include "rproc/TableMerger.h"
 
 namespace lsst {
 namespace qserv {
@@ -118,13 +112,10 @@ UserQueryFactory::newUserQuery(std::string const& query,
         sessionValid = false;
     }
     UserQuery* uq = new UserQuery(qs);
-    int sessionId = UserQuery_takeOwnership(uq);
-    uq->_sessionId = sessionId;
     uq->_secondaryIndex = _impl->secondaryIndex;
     if(sessionValid) {
         uq->_executive = boost::make_shared<qdisp::Executive>(
                 _impl->executiveConfig, uq->_messageStore);
-
         rproc::InfileMergerConfig* ict
             = new rproc::InfileMergerConfig(_impl->infileMergerConfigTemplate);
         ict->targetTable = resultTable;
@@ -133,7 +124,7 @@ UserQueryFactory::newUserQuery(std::string const& query,
     } else {
         uq->_errorExtra += errorExtra;
     }
-    return sessionId;
+    return uq->_sessionId;
 }
 
 void UserQueryFactory::Impl::readConfig(StringMap const& m) {

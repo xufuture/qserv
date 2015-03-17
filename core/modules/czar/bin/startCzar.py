@@ -37,7 +37,6 @@ import ConfigParser
 from lsst.qserv.czar.appTest import TestAppFunctions
 from lsst.qserv.czar import server
 from lsst.qserv.czar import app
-from lsst.qserv.czar import client
 from lsst.qserv.czar import config
 
 import lsst.log as newlog
