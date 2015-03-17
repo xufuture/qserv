@@ -202,7 +202,7 @@ void QuerySession::setResultTable(std::string const& resultTable) {
     _resultTable = resultTable;
 }
 
-std::string const& QuerySession::getDominantDb() const {
+std::string QuerySession::getDominantDb() const {
     return _context->dominantDb; // parsed query's dominant db (via TablePlugin)
 }
 

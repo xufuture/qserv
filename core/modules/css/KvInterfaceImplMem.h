@@ -54,6 +54,7 @@ public:
     KvInterfaceImplMem() {}
     KvInterfaceImplMem(std::istream& mapStream);
     KvInterfaceImplMem(std::string const& filename);
+    KvInterfaceImplMem(std::map<std::string, std::string> &&keysAndVals);
 
     virtual ~KvInterfaceImplMem();
 

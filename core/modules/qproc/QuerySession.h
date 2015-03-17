@@ -96,17 +96,17 @@ public:
     // marshalling/transfer (at which point, table dump and restore will also be
     // obsolete).
     void setResultTable(std::string const& resultTable);
-    std::string const& getResultTable() const { return _resultTable; }
+    std::string getResultTable() const { return _resultTable; }
 
     /// Dominant database is the database that will be used for query
     /// dispatch. This is distinct from the default database, which is what is
     /// used for unqualified table and column references
-    std::string const& getDominantDb() const;
+    std::string getDominantDb() const;
     bool containsDb(std::string const& dbName) const;
     bool validateDominantDb() const;
     css::StripingParams getDbStriping();
     boost::shared_ptr<IntSet const> getEmptyChunks();
-    std::string const& getError() const { return _error; }
+    std::string getError() const { return _error; }
 
     rproc::MergeFixup makeMergeFixup() const; ///< as obsolete as TableMerger
     boost::shared_ptr<query::SelectStmt> getMergeStmt() const;

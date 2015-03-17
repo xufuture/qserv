@@ -1,0 +1,28 @@
+# -*- python -*-
+# SConscript for ccontrol
+
+Import('env')
+Import('libProducts')
+Import('defaultTgts')
+Import('findLibs')
+Import('cacheObjs')
+
+import os
+import itertools
+
+programs = []
+
+extDeps = 'boost_thread boost_system crypto log log4cxx protobuf pthread'.split()
+
+modDeps = 'css global log proto util'.split() # deps on other modules
+pDeps = itertools.chain(*map(lambda m: libProducts[m], modDeps))
+pDeps = cacheObjs(env, pDeps, ".o")
+
+localDeps = 'MergingRequester.cc QueryState.cc UserQuery.cc UserQueryFactory.cc userQueryProxy.cc'.split()
+lDeps = map(env.Object, localDeps)
+
+p = env.Program(['testCControl.cc'] + lDeps + pDeps, LIBS=findLibs(extDeps))
+programs.append(p)
+env.Append(UNIT_TESTS=env.UnitTest(p))
+
+Return('programs')

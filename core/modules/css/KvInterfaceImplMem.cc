@@ -93,6 +93,11 @@ KvInterfaceImplMem::KvInterfaceImplMem(std::string const& filename) {
     _init(f);
 }
 
+KvInterfaceImplMem::KvInterfaceImplMem(std::map<std::string, std::string> &&keysAndVals)
+    : _kvMap(keysAndVals)
+{
+}
+
 KvInterfaceImplMem::~KvInterfaceImplMem() {
 }
 

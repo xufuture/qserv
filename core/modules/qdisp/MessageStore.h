@@ -56,6 +56,12 @@ struct QueryMessage {
            timestamp(timestamp_) {
     }
 
+    QueryMessage()
+        :   chunkId(0),
+            code(0),
+            timestamp(0)
+    {}
+
     int chunkId;
     int code;
     std::string description;
