@@ -124,7 +124,7 @@ class AppInterface:
         """Process a kill query command (experimental).  Params: query, taskId."""
         ## Disable query killing DM-1715
         a = app.KillQueryAction(sessionId)
-        self._callWithThread(a.invoke)
+        self._maybeCallWithThread(a.invoke)
         return "Attempt query kill: " + str(sessionId)
 
     def killQueryUgly(self, killStr, clientId):
@@ -137,9 +137,13 @@ class AppInterface:
             print "mapping:", self._clientToServerId
             sessionId = self._clientToServerId[(clientThreadId, clientId)]
             self.killQuery(sessionId)
-        except:
-            return "Error parsing or finding task to kill: %s, %s" % (
+        except Exception, e:
+            traceStr = traceback.format_exc()
+            info = "Error parsing or finding task to kill: %s, %s" % (
                 killStr, clientId)
+            logger.wrn("Error killing query: " + info + "\n" + traceStr)
+            return info
+
         return True
 
     ### Deprecated/unused: the Lua interface is single-threaded and doesn't
