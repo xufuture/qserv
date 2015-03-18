@@ -147,14 +147,21 @@ void Task::poison() {
     _poisoned = true;
 }
 void Task::setPoison(boost::shared_ptr<util::VoidCallable<void> > poisonFunc) {
-    boost::lock_guard<boost::mutex> lock(_mutex);
-    // Were we poisoned without a poison function available?
-    if(_poisoned && !_poisonFunc) {
-        if(poisonFunc) { // Call the poison function.
-            (*poisonFunc)();
+    bool shouldCall = false;
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+        // Were we poisoned without a poison function available?
+        if(_poisoned && !_poisonFunc) {
+            if(poisonFunc) { // Call the poison function.
+                shouldCall = true;
+            }
         }
     }
-    _poisonFunc = poisonFunc;
+    if(shouldCall) {
+        (*poisonFunc)();
+    } else {
+        _poisonFunc = poisonFunc;
+    }
 }
 
 std::ostream& operator<<(std::ostream& os, Task const& t) {
