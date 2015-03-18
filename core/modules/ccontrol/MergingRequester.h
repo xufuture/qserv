@@ -97,8 +97,12 @@ public:
         return _error;
     }
 
+    /// Cancel operations on the Receiver.
+    /// This cancels internal state and calls _cancelFunc .
+    ///
+    virtual void cancel();
+
     using ResponseRequester::registerCancel;
-    using ResponseRequester::cancel;
 
 private:
     void _initState();

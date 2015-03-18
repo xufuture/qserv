@@ -147,6 +147,10 @@ bool MergingRequester::reset() {
     return true;
 }
 
+void MergingRequester::cancel() {
+    _setError(log::MSG_EXEC_SQUASHED, "Cancellation requested");
+    _flushed = true; // prevent future state pushing.
+}
 
 std::ostream& MergingRequester::print(std::ostream& os) const {
     return os << "MergingRequester(" << _tableName << ", flushed="
