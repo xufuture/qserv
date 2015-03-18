@@ -143,7 +143,7 @@ private:
     Executive& _executive;
     int _refNum;
     Spec _spec;
-    Entry& _entry; ///< Reference back to exec Entry
+    Entry _entry; ///< Shallow copy of Exec's Entry,
 };
 
 class NotifyExecutive : public util::UnaryCallable<void, bool> {
