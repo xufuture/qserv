@@ -120,6 +120,8 @@ private:
     MsgState _state; ///< Received message state
     boost::shared_ptr<proto::WorkerResponse> _response; ///< protobufs msg buf
     bool _flushed; ///< flushed to InfileMerger?
+    boost::mutex _cancelledMutex; ///< Protect check/write of cancel flag.
+    bool _cancelled; ///< Cancelled?
 };
 
 }}} // namespace lsst::qserv::qdisp
