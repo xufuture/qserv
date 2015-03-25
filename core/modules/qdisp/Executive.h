@@ -127,10 +127,11 @@ private:
 
     bool _track(int refNum, RequesterPtr r);
     void _unTrack(int refNum);
-    void _waitUntilEmpty();
 
     void _reapRequesters(boost::unique_lock<boost::mutex> const& requestersLock);
     void _reportStatuses();
+
+    void _waitUntilEmpty();
 
     // for debugging
     void _printState(std::ostream& os);
@@ -142,12 +143,14 @@ private:
     StatusMap _statuses; ///< Statuses of submitted tasks
     int _requestCount; ///< Count of submitted tasks
     EntryMap _entries;
+    bool _cancelled; ///< Has execution been cancelled?
 
     // Mutexes
     boost::mutex _requestersMutex;
     boost::condition_variable _requestersEmpty;
     boost::mutex _entriesMutex;
     boost::mutex _retryMutex;
+    boost::mutex _cancelledMutex;
 
     typedef std::map<int,int> IntIntMap;
     IntIntMap _retryMap; ///< Counter for task retries.

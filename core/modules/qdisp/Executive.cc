@@ -113,7 +113,8 @@ struct printMapSecond {
 ////////////////////////////////////////////////////////////////////////
 Executive::Executive(Config::Ptr c, boost::shared_ptr<MessageStore> ms)
     : _config(*c),
-      _messageStore(ms) {
+      _messageStore(ms),
+      _cancelled(false) {
     _setup();
 }
 
@@ -167,6 +168,17 @@ private:
 
 /// Add a spec to be executed. Not thread-safe.
 void Executive::add(int refNum, Executive::Spec const& s) {
+    bool alreadyCancelled = false;
+    {
+        boost::lock_guard<boost::mutex> lock(_cancelledMutex);
+        if(_cancelled) {
+            alreadyCancelled = true;
+        }
+    }
+    if(alreadyCancelled) {
+        LOGF_INFO("Ignoring add(%1%), already cancelled" % refNum);
+        return;
+    }
     bool trackOk = _track(refNum, s.requester); // Remember so we can join
     if(!trackOk) {
         LOGF_WARN("Ignoring duplicate add(%1%)" % refNum);
@@ -279,6 +291,19 @@ void Executive::requestSquash(int refNum) {
 }
 
 void Executive::squash() {
+    bool alreadyCancelled = false;
+    {
+        boost::lock_guard<boost::mutex> lock(_cancelledMutex);
+        if(_cancelled) {
+            alreadyCancelled = true;
+        }
+        _cancelled = true;
+    }
+    if(alreadyCancelled) {
+        LOGF_WARN("Executive::squash() already cancelled! refusing.");
+        return;
+    }
+
     LOGF_INFO("Trying to cancel all queries...");
     std::vector<RequesterPtr> pendingRequesters;
     std::ostringstream os;
