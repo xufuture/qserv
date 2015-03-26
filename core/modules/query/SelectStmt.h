@@ -114,6 +114,8 @@ public:
     HavingClause& getHaving() { return *_having; }
     void setHaving(boost::shared_ptr<HavingClause> h) { _having = h; }
 
+    void writeDigraphNode(Digraph& dg);
+
  private:
     // Declarations
     friend class parser::SelectFactory;

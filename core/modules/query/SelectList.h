@@ -81,6 +81,8 @@ public:
         return _valueExprList;
     }
 
+    void writeDigraphNode(Digraph& dg) {}
+
     friend class parser::SelectListFactory;
 private:
     friend std::ostream& operator<<(std::ostream& os, SelectList const& sl);

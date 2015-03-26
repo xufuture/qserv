@@ -48,6 +48,7 @@ namespace qserv {
 namespace parser {
     // Forward
     class ModFactory;
+    class Digraph;
 }
 
 namespace query {
@@ -96,6 +97,7 @@ public:
     void renderTo(QueryTemplate& qt) const;
     boost::shared_ptr<OrderByClause> clone() const;
     boost::shared_ptr<OrderByClause> copySyntax();
+    void writeDigraphNode(Digraph& dg) {}
 
     void findValueExprs(ValueExprPtrVector& list);
 private:

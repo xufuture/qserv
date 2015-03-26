@@ -52,6 +52,7 @@ namespace parser {
 }
 namespace query {
     class BoolTerm;
+    class Digraph;
 }}} // End of forward declarations
 
 
@@ -78,6 +79,8 @@ public:
     void renderTo(QueryTemplate& qt) const;
     boost::shared_ptr<WhereClause> clone() const;
     boost::shared_ptr<WhereClause> copySyntax();
+
+    void writeDigraphNode(Digraph& dg) {}
 
     void findValueExprs(ValueExprPtrVector& list);
 

@@ -229,4 +229,14 @@ std::string SelectStmt::_generateDbg() {
     return getTemplate().dbgStr();
 }
 
+
+void SelectStmt::writeDigraphNode(Digraph& dg) {
+    dg.addNode(this, "SelectStmt");
+    dg.addLinkedNode(this, _selectList.get());
+    dg.addLinkedNode(this, _fromList.get());
+    dg.addLinkedNode(this, _whereClause.get());
+    dg.addLinkedNode(this, _orderBy.get());
+    dg.addLinkedNode(this, _having.get());
+}
+
 }}} // namespace lsst::qserv::query

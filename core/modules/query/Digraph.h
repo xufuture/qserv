@@ -1,7 +1,7 @@
 // -*- LSST-C++ -*-
 /*
  * LSST Data Management System
- * Copyright 2013-2014 LSST Corporation.
+ * Copyright 2015 AURA/LSST.
  *
  * This product includes software developed by the
  * LSST Project (http://www.lsst.org/).
@@ -21,58 +21,53 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
 
-#ifndef LSST_QSERV_QUERY_HAVINGCLAUSE_H
-#define LSST_QSERV_QUERY_HAVINGCLAUSE_H
+#ifndef LSST_QSERV_QUERY_DIGRAPH_H
+#define LSST_QSERV_QUERY_DIGRAPH_H
 /**
   * @file
   *
   * @author Daniel L. Wang, SLAC
   */
 
+// System headers
+#include <iostream>
+
 // Third-party headers
 #include "boost/shared_ptr.hpp"
 
 // Local headers
-#include "query/BoolTerm.h"
+#include "global/stringTypes.h"
+#include "query/QueryTemplate.h"
 
 // Forward declarations
 namespace lsst {
 namespace qserv {
 namespace parser {
-    class ModFactory;
+    class SelectFactory;
 }
+
 namespace query {
-    class BoolTerm;
-    class QueryTemplate;
-    class Digraph;
-}}}
+class Digraph {
+    Digraph() {}
+    
+    void addNode(uint64_t id, std::string const& descr);
+    void addNode(void* ptr, std::string const& descr);
 
+    void addEdge(uint64_t src, uint64_t dest);
+    void addEdge(void* srcP, void* destP);
+    
+    template<class T>
+    inline void addLinkedNode(void* srcP, T* destP) {
+        if(srcP && destP) {
+            dg.addEdge(srcP, destP);
+            destP->writeDigraphNode(dg);
+        }
+    }
+}
 
-namespace lsst {
-namespace qserv {
-namespace query {
-
-/// HavingClause: a representation of SQL HAVING. Support for this construct is
-/// incomplete.
-class HavingClause {
-public:
-    HavingClause() {}
-    ~HavingClause() {}
-
-    std::string getGenerated() const;
-    void renderTo(QueryTemplate& qt) const;
-    boost::shared_ptr<HavingClause> clone() const;
-    boost::shared_ptr<HavingClause> copySyntax();
-    void writeDigraphNode(Digraph& dg) {}
-    void findValueExprs(ValueExprPtrVector& list);
-
-private:
-    friend std::ostream& operator<<(std::ostream& os, HavingClause const& h);
-    friend class parser::ModFactory;
-    boost::shared_ptr<BoolTerm> _tree;
+    void emitDot(std::ostream& os);
 };
 
 }}} // namespace lsst::qserv::query
 
-#endif // LSST_QSERV_QUERY_HAVINGCLAUSE_H
-
+#endif // LSST_QSERV_QUERY_SELECTSTMT_H

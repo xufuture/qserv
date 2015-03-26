@@ -44,6 +44,7 @@ namespace qserv {
 namespace parser {
     // Forward
     class FromFactory;
+    class Digraph;
 }
 
 namespace query {
@@ -70,6 +71,8 @@ public:
     boost::shared_ptr<FromList> clone() const;
     /// Shallow copy this node, sharing its linked objects.
     boost::shared_ptr<FromList> copySyntax();
+
+    void writeDigraphNode(Digraph& dg) {}
 
 private:
     friend std::ostream& operator<<(std::ostream& os, FromList const& fl);
