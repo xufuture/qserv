@@ -118,11 +118,11 @@ private:
     friend class DispatchAction;
     void _dispatchQuery(int refNum,
                         Spec const& spec,
-                        Entry& status);
+                        boost::shared_ptr<ExecStatus> execStatus);
 
     void _setup();
     bool _shouldRetry(int refNum);
-    ExecStatus& _insertNewStatus(int refNum, ResourceUnit const& r);
+    ExecStatus::Ptr _insertNewStatus(int refNum, ResourceUnit const& r);
     Entry _insertNewEntry(int refNum, ResourceUnit const& r);
 
     bool _track(int refNum, RequesterPtr r);
@@ -142,13 +142,14 @@ private:
     RequesterMap _requesters; ///< RequesterMap for results from submitted tasks
     StatusMap _statuses; ///< Statuses of submitted tasks
     int _requestCount; ///< Count of submitted tasks
-    EntryMap _entries;
+//    EntryMap _entries;
     bool _cancelled; ///< Has execution been cancelled?
 
     // Mutexes
     boost::mutex _requestersMutex;
     boost::condition_variable _requestersEmpty;
-    boost::mutex _entriesMutex;
+//    boost::mutex _entriesMutex;
+    mutable boost::mutex _statusesMutex;
     boost::mutex _retryMutex;
     boost::mutex _cancelledMutex;
 
