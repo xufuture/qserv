@@ -76,10 +76,6 @@ public:
         boost::shared_ptr<ResponseRequester> requester;
     };
 
-    struct Entry {
-        ExecStatus::Ptr status;
-        QueryResource* resource;
-    };
     typedef std::map<int, Entry> EntryMap;
 
     Executive(Config::Ptr c, boost::shared_ptr<MessageStore> ms);
@@ -142,13 +138,11 @@ private:
     RequesterMap _requesters; ///< RequesterMap for results from submitted tasks
     StatusMap _statuses; ///< Statuses of submitted tasks
     int _requestCount; ///< Count of submitted tasks
-//    EntryMap _entries;
     bool _cancelled; ///< Has execution been cancelled?
 
     // Mutexes
     boost::mutex _requestersMutex;
     boost::condition_variable _requestersEmpty;
-//    boost::mutex _entriesMutex;
     mutable boost::mutex _statusesMutex;
     boost::mutex _retryMutex;
     boost::mutex _cancelledMutex;

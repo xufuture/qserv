@@ -144,7 +144,7 @@ private:
     Executive& _executive;
     int _refNum;
     Spec _spec;
-    ExecStatus::Ptr _execStatus;
+    ExecStatus::Ptr _execStatus; ///< Points at status in Executive::_statusMap
 };
 
 class NotifyExecutive : public util::UnaryCallable<void, bool> {
@@ -185,8 +185,6 @@ void Executive::add(int refNum, Executive::Spec const& s) {
         return;
     }
     ExecStatus::Ptr execStatus = _insertNewStatus(refNum, s.resource);
-    //Entry entry = _insertNewEntry(refNum, s.resource);
-    //ExecStatus& status = *entry.status;
 
     ++_requestCount;
     std::string msg = "Exec add pth=" + s.resource.path();
@@ -209,20 +207,12 @@ bool Executive::join() {
             LOGF_INFO("entry state:%1% %2%)" % (void*)entry.second.get() % esI);
             return (esI.state == ExecStatus::RESPONSE_DONE)
                 || (esI.state == ExecStatus::COMPLETE); }
-        // static bool f(Executive::EntryMap::value_type const& entry) {
-        //     ExecStatus::Info const& esI = entry.second.status->getInfo();
-        //     LOGF_INFO("entry state:%1% %2%)" % (void*)entry.second.status.get() % esI);
-        //     return (esI.state == ExecStatus::RESPONSE_DONE)
-        //         || (esI.state == ExecStatus::COMPLETE); }
     };
 
     int sCount = 0;
     {
         boost::lock_guard<boost::mutex> lock(_statusesMutex);
-        //     boost::lock_guard<boost::mutex> lock(_entriesMutex);
-        //     sCount = std::count_if(_entries.begin(), _entries.end(), successF::f)
         sCount = std::count_if(_statuses.begin(), _statuses.end(), successF::f);
-;
     }
 
     LOGF_INFO("Query exec finish. %1% dispatched." % _requestCount);
@@ -251,8 +241,6 @@ void Executive::markCompleted(int refNum, bool success) {
             }
         }
         {
-        //     boost::lock_guard<boost::mutex> lock(_entriesMutex);
-        //     _entries[refNum].status->report(ExecStatus::RESULT_ERROR, 1);
             boost::lock_guard<boost::mutex> lock(_statusesMutex);
             _statuses[refNum]->report(ExecStatus::RESULT_ERROR, 1);
         }
@@ -391,7 +379,6 @@ void Executive::_dispatchQuery(int refNum,
     bool provisionOk = _service->Provision(r);  // 2
 
     if(!provisionOk) {
-        //lock.release();
         // handle error
         LOGF_ERROR("Resource provision error %1%" % spec.resource.path());
         populateState(*execStatus, ExecStatus::PROVISION_ERROR, r->eInfo);
@@ -399,7 +386,6 @@ void Executive::_dispatchQuery(int refNum,
         delete r;
         return;
     }
-    //entry.resource = r;
     
     LOGF_DEBUG("Provision was ok");
     // FIXME: For squashing, need to hold ptr to QueryResource, so we can
@@ -443,18 +429,6 @@ ExecStatus::Ptr Executive::_insertNewStatus(int refNum,
     _statuses.insert(StatusMap::value_type(refNum, es));
     return es;
 }
-
-#if 0
-Executive::Entry Executive::_insertNewEntry(int refNum,
-                                  ResourceUnit const& r) {
-    // Thread-safe. Please don't hold _entriesMutex before entering
-    boost::lock_guard<boost::mutex> lock(_entriesMutex);
-    ExecStatus::Ptr es = boost::make_shared<ExecStatus>(r);
-    Entry e = {es, NULL};
-    _entries.insert(EntryMap::value_type(refNum, e));
-    return e;
-}
-#endif
 
 template <typename Map, typename Ptr>
 bool trackHelper(void* caller, Map& m, typename Map::key_type key,
@@ -528,11 +502,6 @@ void Executive::_reportStatuses() {
     StatusMap::const_iterator i,e;
     for(i=_statuses.begin(), e=_statuses.end(); i != e; ++i) {
         ExecStatus::Info info = i->second->getInfo();
-    // boost::lock_guard<boost::mutex> lock(_entriesMutex);
-    // EntryMap::const_iterator i,e;
-    // for(i=_entries.begin(), e=_entries.end(); i != e; ++i) {
-    // ExecStatus::Info info = i->second.status->getInfo();
-
         std::ostringstream os;
         os << ExecStatus::stateText(info.state)
            << " " << info.stateCode;
@@ -595,8 +564,6 @@ void Executive::_printState(std::ostream& os) {
     std::for_each(_requesters.begin(), _requesters.end(),
                   printMapSecond<RequesterMap::value_type>(os, "\n"));
     os << std::endl << getProgressDesc() << std::endl;
-//    std::copy(_entries.begin(), _entries.end(),
-//              std::ostream_iterator<EntryMap::value_type>(os, "\n"));
 }
 
 }}} // namespace lsst::qserv::qdisp
