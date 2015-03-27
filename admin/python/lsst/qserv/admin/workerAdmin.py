@@ -52,7 +52,7 @@ from lsst.db.db import Db
 #----------------------------------
 # Local non-exported definitions --
 #----------------------------------
-_LOG = logging.getLogger('WADM')
+_LOG = logging.getLogger(__name__)
 
 
 _Exception = produceExceptionClass('WorkerAdminException', [
@@ -84,7 +84,7 @@ class _SSHCommand(object):
     # - known_hosts file has tendency to become inconsistent, ignore it
     sshOptions = ['StrictHostKeyChecking=no']
 
-    def __init__(self, host, cwd=None):
+    def __init__(self, host, cwd=None, kerberos=False):
         """
         Start ssh and wait for commands.
 
@@ -93,6 +93,10 @@ class _SSHCommand(object):
         """
 
         args = ['ssh', '-n', '-T', '-x']
+
+        if kerberos:
+            args.append('-K')
+
         for option in self.sshOptions:
             args += ['-o', option]
         args += [host]
@@ -237,8 +241,9 @@ class WorkerAdmin(object):
 
             self.host = host
             self.runDir = runDir
-            self.mysqlConnStr = mysqlConn
-            self._name = host + ':' + mysqlConn
+            if mysqlConn:
+                self.mysqlConnStr = mysqlConn
+                self._name = host + ':' + mysqlConn
 
     def name(self):
         """
@@ -334,3 +339,7 @@ class WorkerAdmin(object):
 
         cmd = _SSHCommand(self.host, self.runDir)
         return cmd.execute(command, capture)
+
+    def getSshCmd(self):
+        cmd = _SSHCommand(self.host, self.runDir)
+        return cmd.cmd
