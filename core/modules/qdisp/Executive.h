@@ -76,8 +76,6 @@ public:
         boost::shared_ptr<ResponseRequester> requester;
     };
 
-    typedef std::map<int, Entry> EntryMap;
-
     Executive(Config::Ptr c, boost::shared_ptr<MessageStore> ms);
 
     /// Backwards-compatible add() interface to Executive
@@ -119,7 +117,6 @@ private:
     void _setup();
     bool _shouldRetry(int refNum);
     ExecStatus::Ptr _insertNewStatus(int refNum, ResourceUnit const& r);
-    Entry _insertNewEntry(int refNum, ResourceUnit const& r);
 
     bool _track(int refNum, RequesterPtr r);
     void _unTrack(int refNum);

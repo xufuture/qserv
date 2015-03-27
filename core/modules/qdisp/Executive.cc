@@ -26,10 +26,10 @@
   *
   * @brief Executive. It executes things.
   *
-  * TODO: Consider merging RequesterMap and EntryMap. Originally, RequesterMap
+  * TODO: Consider merging RequesterMap and StatusMap. Originally, RequesterMap
   * was separate from StatusMap to reduce contention when things are just
   * updating statuses, but if the contention is small, we can simplify by
-  * combining all three (Requester, status, queryresource) into a single map.
+  * combining them (Requester, status) into a single map.
   *
   * @author Daniel L. Wang, SLAC
   */
@@ -331,13 +331,6 @@ struct printMapEntry {
         os << es;
         first = false;
     }
-    void operator()(Executive::EntryMap::value_type const& entry) {
-        if(!first) { os << sep; }
-        os << "Ref=" << entry.first << " ";
-        ExecStatus const& es = *entry.second.status;
-        os << es;
-        first = false;
-    }
     std::ostream& os;
     std::string const& sep;
     bool first;
@@ -352,7 +345,6 @@ std::string Executive::getProgressDesc() const {
     boost::lock_guard<boost::mutex> lock(_statusesMutex);
     std::ostringstream os;
     std::for_each(_statuses.begin(), _statuses.end(), printMapEntry(os, "\n"));
-    //std::for_each(_entries.begin(), _entries.end(), printMapEntry(os, "\n"));
     LOGF_ERROR("%1%" % os.str());
     return os.str();
 }
@@ -548,13 +540,6 @@ void Executive::_waitUntilEmpty() {
 std::ostream& operator<<(std::ostream& os,
                          Executive::StatusMap::value_type const& v) {
     ExecStatus const& es = *(v.second);
-    os << v.first << ": " << es;
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os,
-                         Executive::EntryMap::value_type const& v) {
-    ExecStatus const& es = *(v.second.status);
     os << v.first << ": " << es;
     return os;
 }
