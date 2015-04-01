@@ -84,7 +84,7 @@ class _SSHCommand(object):
     # - known_hosts file has tendency to become inconsistent, ignore it
     sshOptions = ['StrictHostKeyChecking=no']
 
-    def __init__(self, host, cwd=None, kerberos=False):
+    def __init__(self, host, cwd=None, kerberos=False, user=None):
         """
         Start ssh and wait for commands.
 
@@ -97,11 +97,22 @@ class _SSHCommand(object):
         if kerberos:
             args.append('-K')
 
+        if user:
+            args += ['-l', user]
+
         for option in self.sshOptions:
             args += ['-o', option]
         args += [host]
         self.cmd = args
         self.cwd = cwd
+
+    def getCommand(self, command):
+        cmd = ""
+        if self.cwd:
+            cmd = "cd '{0}' && ".format(self.cwd)
+        cmd += command
+        args = self.cmd + [cmd]
+        return args
 
     def execute(self, command, capture=False):
         """
@@ -114,12 +125,8 @@ class _SSHCommand(object):
                         command is captured and returned as string
         """
 
-        cmd = ""
-        if self.cwd:
-            cmd = "cd '{0}'; ".format(self.cwd)
-        cmd += command
-        args = self.cmd + [cmd]
-        _LOG.debug('ssh tunnel: executing %s', args)
+        args = self.getCommand(command)
+        _LOG.debug('ssh command: executing %s', args)
         if capture:
             result = subprocess.check_output(args, subprocess.STDOUT, close_fds=True)
             return result
@@ -199,7 +206,8 @@ class WorkerAdmin(object):
     Class representing administration/communication endpoint for qserv worker.
     """
 
-    def __init__(self, name=None, qservAdmin=None, host=None, runDir=None, mysqlConn=None):
+    def __init__(self, name=None, qservAdmin=None, host=None, runDir=None,
+                 mysqlConn=None, kerberos=False, ssh_user=None):
         """
         Make new endpoint for remote worker. Worker can be specified
         either by its name or by the complete set of parameters. If name
@@ -218,6 +226,8 @@ class WorkerAdmin(object):
         @param mysqlConn:   comma-separated set of mysql connection options.
                             Optional, only needed if name is not provided and methods
                             that need this parameter are called.
+        @param kerberos:    Use kerberos authentication (with ssh command only)
+        @param ssh_user:    ssh user account used (with ssh command only)
         """
 
         if name:
@@ -234,6 +244,9 @@ class WorkerAdmin(object):
             self.mysqlConnStr = params.get('mysqlConn')
             self._name = name
 
+            self._kerberos = params.get('kerberos')
+            self._ssh_user = params.get('ssh_user')
+
         else:
 
             if not host:
@@ -244,6 +257,9 @@ class WorkerAdmin(object):
             if mysqlConn:
                 self.mysqlConnStr = mysqlConn
                 self._name = host + ':' + mysqlConn
+
+            self._kerberos = kerberos
+            self._ssh_user = ssh_user
 
     def name(self):
         """
@@ -320,6 +336,10 @@ class WorkerAdmin(object):
 
         return db
 
+    def _createSSHCommand(self):
+        cmd = _SSHCommand(self.host, self.runDir, self._kerberos, self._ssh_user)
+        return cmd
+
     def execCommand(self, command, capture=False):
         """
         Execute command on worker host.
@@ -337,9 +357,9 @@ class WorkerAdmin(object):
                         command is captured and returned as string
         """
 
-        cmd = _SSHCommand(self.host, self.runDir)
+        cmd = self._createSSHCommand()
         return cmd.execute(command, capture)
 
-    def getSshCmd(self):
-        cmd = _SSHCommand(self.host, self.runDir)
-        return cmd.cmd
+    def getSshCmd(self, command):
+        cmd = self._createSSHCommand()
+        return cmd.getCommand(command)

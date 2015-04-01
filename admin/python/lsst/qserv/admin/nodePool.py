@@ -70,7 +70,7 @@ class NodePool(object):
     Class representing administration/communication endpoint for qserv worker.
     """
 
-    def __init__(self, workerAdmins=None):
+    def __init__(self, workerAdmins=None, max_task=None):
         """
         Make new endpoint for remote worker. Worker can be specified
         either by its name or by the complete set of parameters. If name
@@ -94,6 +94,11 @@ class NodePool(object):
 
         self.nodes = workerAdmins
 
+        if max_task:
+            self._max_task = max_task
+        else:
+            self._max_task = cpu_count()
+
     def execParallel(self, command):
         """
         Exec commands in parallel in multiple process
@@ -113,25 +118,26 @@ class NodePool(object):
         max_task = cpu_count()
         _LOG.info("max_task: %s", max_task)
         processes = []
+        node_id=0
         while True:
             while nodes_to_run and len(processes) < max_task:
+                node_id += 1
                 node = nodes_to_run.pop()
 
-                cmd = ""
-                if node.runDir:
-                    cmd = "cd '{0}'; ".format(node.runDir)
-                    cmd += command
-
-                task = node.getSshCmd() + [cmd];
+                task = node.getSshCmd(command);
                 _LOG.info("Running: %s", list2cmdline(task))
-                with open(str(node)+"-stdout.txt","wb") as out, open(str(node)+"-stderr.txt","wb") as err:
-                    processes.append(Popen(task, stdout=out,stderr=err))
+                out = "{0}-{1}-stdout.txt".format(node.host, node_id)
+                err = "{0}-{1}-stderr.txt".format(node.host, node_id)
+                with open(out,"wb") as out, open(err,"wb") as err:
+                    processes.append([Popen(task, stdout=out,stderr=err), node.host, node_id])
 
             for p in processes:
-                if done(p):
-                    if success(p):
+                [process, host, n_id] = p
+                if done(process):
+                    if success(process):
                         processes.remove(p)
                     else:
+                        _LOG.error("Failed to run command #%s on host %s", n_id, host)
                         fail()
 
             if not processes and not nodes_to_run:

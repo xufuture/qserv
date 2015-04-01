@@ -42,44 +42,27 @@ import lsst.qserv.admin.nodePool as nodePool
 logging.basicConfig(level=logging.INFO)
 _LOG = logging.getLogger('TEST')
 
-def _makeAdmin(data=None):
-    """
-    Create QservAdmin instance with some pre-defined data.
-    """
-    if data is None:
-        # read from /dev/null
-        connection = '/dev/null'
-    else:
-        # make temp file and save data in it
-        file = tempfile.NamedTemporaryFile(delete=False)
-        connection = file.name
-        file.write(data)
-        file.close()
-
-    # make an instance
-    config = dict(technology='mem', connection=connection)
-    admin = qservAdmin.QservAdmin(config=config)
-
-    # remove tmp file
-    if connection != '/dev/null':
-        os.unlink(connection)
-
-    return admin
-
-
 class TestNodePool(unittest.TestCase):
 
     def test_NodePoolExecParallel(self):
-        """ Check execution of simple command in parallel, TODO change CWD
+        """ Check execution of simple command in parallel,
+
         """
 
-        nb_node=3
+        host_tpl = "ccqserv{0}"
+        node_start = 100
+        node_stop = 120
+        user = "fjammes"
+        krb = True
 
         # setup for direct connection
-        wAdmins = [workerAdmin.WorkerAdmin(host="localhost", runDir="/bin") for x in range(nb_node)]
+        wAdmins = [workerAdmin.WorkerAdmin(host=host_tpl.format(n),
+                                           runDir="/bin",
+                                           kerberos=krb,
+                                           ssh_user=user)
+                   for n in range(node_start, node_stop)]
         nPool = nodePool.NodePool(wAdmins)
-        output = nPool.execParallel('./ls')
-        self.assertIs(output, None)
+        nPool.execParallel('./ls')
 
 #
 #     def test_NodePoolExecParallel_Fail(self):
