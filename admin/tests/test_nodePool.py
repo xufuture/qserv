@@ -21,9 +21,9 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
 """
-This is a unit test for workerAdmin module.
+This is a unit test for nodePool module.
 
-@author  Andy Salnikov, SLAC
+@author  Fabrice Jammes, IN2P3
 
 """
 
@@ -32,7 +32,6 @@ import os
 import socket
 import tempfile
 import unittest
-from threading import Thread
 
 import lsst.qserv.admin.workerAdmin as workerAdmin
 import lsst.qserv.admin.qservAdmin as qservAdmin
