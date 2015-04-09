@@ -60,7 +60,6 @@ Usage: `basename $0` [options]
 
   Available options:
     -h                this message
-    -w                set up worker node, if not specified install master node
     -M hostname       DNS name of the master node for this instance,
                       default: $MASTER
     -s shared_dir     full path to stack directory which will be duplicated on
@@ -77,13 +76,11 @@ EOD
 }
 
 # Do not edit these default values
-NODE_TYPE='master'
 SYNC=true
 
-while getopts hwM:s:i:R:N c ; do
+while getopts hM:s:i:R:N c ; do
     case $c in
             h) usage ; exit 0 ;;
-            w) NODE_TYPE='worker' ;;
             M) MASTER="$OPTARG" ;;
             s) SHARED_DIR="$OPTARG" ;;
             i) INSTALL_DIR="$OPTARG" ;;
@@ -97,6 +94,12 @@ shift `expr $OPTIND - 1`
 if [ $# -ne 0 ] ; then
     usage
     exit 2
+fi
+
+if [ $(hostname) == "$MASTER" ]; then
+    NODE_TYPE='worker'
+else
+    NODE_TYPE='master'
 fi
 
 function check_path {

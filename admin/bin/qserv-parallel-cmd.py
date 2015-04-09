@@ -62,6 +62,7 @@ class ParallelCmd(object):
     """
     Application class for parallel command application
     """
+    logger = logging.getLogger(__name__)
 
     def __init__(self):
         """
@@ -81,8 +82,19 @@ class ParallelCmd(object):
         group.add_argument('-H', '--host', dest='hosts', default=[],
                            action='append', metavar='HOST',
                            help='DNS name for Qserv node, may be specified '
-                           'more than once. If missing then template host name '
+                           'more than once. If missing then --host-template '
                            'option is used')
+        group.add_argument('-T', '--host-template', dest='host_tpl', default=None,
+                           help='Template for node names, for example qserv{0}.mydomain.edu.'
+                                ' Used only if --host isn\'t provided.')
+        group.add_argument('-f', '--node-first', dest='node_first', default=0,
+                           type=int,
+                           help='First node number'
+                           ' default: %(default)s.')
+        group.add_argument('-l', '--node-last', dest='node_last', default=None,
+                           type=int,
+                           help='Last node number'
+                           ' default: %(default)s.')
         group.add_argument('-u', '--user', dest='user', default=None,
                            help='User name to use when connecting to server.')
         group.add_argument('-p', '--password', dest='password', default=None,
@@ -115,8 +127,8 @@ class ParallelCmd(object):
             hosts = self.args.hosts
         else:
             hosts = [self.args.host_tpl.format(n)
-                     for n in range(self.args.node_start,
-                                    self.args.node_stop)]
+                     for n in range(self.args.node_first,
+                                    self.args.node_last)]
 
         nodes = [WorkerAdmin(host=h,
                              runDir=self.args.run_dir,
@@ -134,7 +146,7 @@ class ParallelCmd(object):
         """
         cmd = self.args.command
         self.nodePool.execParallel(cmd)
-        logger.info('Run sucessfully command %s', cmd)
+        logger.info("Run successfully command: '%s'", cmd)
         return 0
 
 
@@ -143,5 +155,5 @@ if __name__ == "__main__":
         parallelCmd = ParallelCmd()
         sys.exit(parallelCmd.run())
     except Exception as exc:
-        logging.critical('Exception occured: %s', exc, exc_info=True)
+        logger.critical('Exception occured: %s', exc, exc_info=True)
         sys.exit(1)
