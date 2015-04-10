@@ -118,6 +118,9 @@ class NodePool(object):
         processes = []
         process_id=0
         nodes_failed = []
+
+        _LOG.info("Running command %s", command)
+
         while True:
 
             # batch processes
@@ -126,7 +129,8 @@ class NodePool(object):
                 node = nodes_remaining.pop()
 
                 task = node.getSshCmd(command);
-                _LOG.info("Running: %s", list2cmdline(task))
+                if _LOG.isEnabledFor(logging.DEBUG):
+                    _LOG.debug("Running: %s", list2cmdline(task))
                 out = "{0}-{1}-stdout.txt".format(node.host, process_id)
                 err = "{0}-{1}-stderr.txt".format(node.host, process_id)
                 with open(out,"wb") as out, open(err,"wb") as err:
@@ -137,9 +141,11 @@ class NodePool(object):
                 [process, host, p_id] = p
                 if done(process):
                     processes.remove(p)
-                    if not success(process):
-                        _LOG.error("Failed to run command #%s on host %s", p_id, host)
-                        nodes_failed.append((process_id, host))
+                    if success(process):
+                        _LOG.info("Success on %s (#%s)", host, p_id)
+                    else:
+                        _LOG.error("Failure on %s (#%s)", host, p_id)
+                        nodes_failed.append((host, p_id))
 
             if not processes and not nodes_remaining:
                 break
@@ -147,6 +153,7 @@ class NodePool(object):
                 time.sleep(0.05)
 
         if nodes_failed:
-            _LOG.error("Command failed on nodes: %s" nodes_failed)
+
+            _LOG.error("%s failure(s): %s", len(nodes_failed), nodes_failed)
         else:
-            _LOG.info("Command succeed on all nodes")
+            _LOG.info("Success on all hosts")
