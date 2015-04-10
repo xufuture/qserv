@@ -96,8 +96,6 @@ class ParallelCmd(object):
                            ' default: %(default)s.')
         group.add_argument('-u', '--user', dest='user', default=None,
                            help='User name to use when connecting to server.')
-        group.add_argument('-p', '--password', dest='password', default=None,
-                           help='Password to use when connecting to server.')
         group.add_argument('-P', '--port', dest='sshPort', default=22,
                            metavar='PORT_NUMBER', type=int,
                            help='Port number to use for ssh connection,'
@@ -110,9 +108,18 @@ class ParallelCmd(object):
                                           'Options related to Qserv machines')
         group.add_argument('command',
                            help='ssh command to launch on all nodes')
-        group.add_argument("-R", "--run-dir", dest="run_dir",
-                           default="/bin",
-                           help="absolute path to the directory where the command is runned"
+        group.add_argument('-R', '--run-dir', dest='run_dir',
+                           default='/bin',
+                           help='absolute path to the directory where the command is runned'
+                           )
+        group.add_argument('-s', '--sudo-user', dest='sudo_user',
+                           default=None,
+                           help='sudo to this user account before launching command'
+                           )
+        group.add_argument('-p', '--sudo-password', dest='sudo_password',
+                           default=None,
+                           help='sudo-user password, WARNING: insecure, prefer'
+                           'passwordless sudo'
                            )
 
         # parse all arguments
@@ -141,9 +148,20 @@ class ParallelCmd(object):
         """
         Run a command on a set of nodes  based on parameters defined in
         constructor. This will throw exception if anything goes wrong.
-        : TODO check if true
+        : TODO check if exception is effectively launched
         """
-        cmd = self.args.command
+        params = {'command': self.args.command}
+        cmd_tpl='{command}'
+        if self.args.sudo_user:
+            params['sudo_user'] = self.args.sudo_user
+            params['stdin_opt'] = None
+            cmd_tpl = '/bin/sudo {stdin_opt} su {sudo_user} -c "{command}"'
+            if self.args.sudo_password:
+                params['stdin_opt'] = '-kS'
+                params['sudo_password'] = self.args.sudo_password
+                cmd_tpl = "/bin/echo '{sudo_password}' | " + cmd_tpl
+
+        cmd = cmd_tpl.format(**params)
         self.nodePool.execParallel(cmd)
         _LOG.info("Run successfully command: '%s'", cmd)
         return 0
@@ -152,7 +170,8 @@ class ParallelCmd(object):
 if __name__ == "__main__":
     try:
         parallelCmd = ParallelCmd()
-        sys.exit(parallelCmd.run())
+        r = parallelCmd.run()
+        sys.exit(r)
     except Exception as exc:
         _LOG.critical('Exception occured: %s', exc, exc_info=True)
         sys.exit(1)
