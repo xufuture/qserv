@@ -49,7 +49,7 @@ SHARED_DIR=/sps/lsst/Qserv/stack/
 INSTALL_DIR=/qserv/stack
 
 # override with -R option
-QSERV_RUN_DIR=/qserv/qserv-run
+QSERV_RUN_DIR=/qserv/run
 
 SETUP_OPTS='-t latestbuild -t qserv'
 
@@ -60,13 +60,13 @@ Usage: `basename $0` [options]
 
   Available options:
     -h                this message
-    -M hostname       DNS name of the master node for this instance,
+    -M hostname       Fully qualified domain  name of Qserv master node,
                       default: $MASTER
     -s shared_dir     full path to stack directory which will be duplicated on
                       all nodes, default: ${SHARED_DIR}
     -i install_dir    full path to install directory, default: ${INSTALL_DIR}
     -R qserv_run_dir  full path to install directory, default: ${QSERV_RUN_DIR}
-    -N                do not synchronize install with shared-dir
+    -N                do not synchronize install with shared_dir
 
   Copies a LSST stack from a shared directory to a local directory, load LSST
   environment, setup qserv_distrib, and configure and start Qserv. Options
@@ -96,10 +96,10 @@ if [ $# -ne 0 ] ; then
     exit 2
 fi
 
-if [ $(hostname) == "$MASTER" ]; then
-    NODE_TYPE='worker'
-else
+if [ $(hostname --fqdn) == "$MASTER" ]; then
     NODE_TYPE='master'
+else
+    NODE_TYPE='worker'
 fi
 
 function check_path {
