@@ -52,7 +52,7 @@ import lsst.qserv.admin.logger
 # ----------------------------------
 # Local non-exported definitions  --
 # ----------------------------------
-logger = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 # ------------------------
@@ -62,7 +62,6 @@ class ParallelCmd(object):
     """
     Application class for parallel command application
     """
-    logger = logging.getLogger(__name__)
 
     def __init__(self):
         """
@@ -146,7 +145,7 @@ class ParallelCmd(object):
         """
         cmd = self.args.command
         self.nodePool.execParallel(cmd)
-        logger.info("Run successfully command: '%s'", cmd)
+        _LOG.info("Run successfully command: '%s'", cmd)
         return 0
 
 
@@ -155,5 +154,5 @@ if __name__ == "__main__":
         parallelCmd = ParallelCmd()
         sys.exit(parallelCmd.run())
     except Exception as exc:
-        logger.critical('Exception occured: %s', exc, exc_info=True)
+        _LOG.critical('Exception occured: %s', exc, exc_info=True)
         sys.exit(1)
