@@ -100,6 +100,9 @@ class _SSHCommand(object):
         if user:
             args += ['-l', user]
 
+        if _LOG.isEnabledFor(logging.DEBUG):
+            args += ['-vvv']
+
         for option in self.sshOptions:
             args += ['-o', option]
         args += [host]
