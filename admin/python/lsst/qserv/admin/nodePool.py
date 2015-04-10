@@ -104,7 +104,7 @@ class NodePool(object):
         Exec commands in parallel in multiple process
         (as much as we have CPU)
         """
-        nodes_to_run = self.nodes
+        nodes_remaining = self.nodes
 
         if not command: return # empty list
 
@@ -112,35 +112,41 @@ class NodePool(object):
             return p.poll() is not None
         def success(p):
             return p.returncode == 0
-        def fail():
-            sys.exit(1)
 
         max_task = cpu_count()
         _LOG.info("max_task: %s", max_task)
         processes = []
-        node_id=0
+        process_id=0
+        nodes_failed = []
         while True:
-            while nodes_to_run and len(processes) < max_task:
-                node_id += 1
-                node = nodes_to_run.pop()
+
+            # batch processes
+            while nodes_remaining and len(processes) < max_task:
+                process_id += 1
+                node = nodes_remaining.pop()
 
                 task = node.getSshCmd(command);
                 _LOG.info("Running: %s", list2cmdline(task))
-                out = "{0}-{1}-stdout.txt".format(node.host, node_id)
-                err = "{0}-{1}-stderr.txt".format(node.host, node_id)
+                out = "{0}-{1}-stdout.txt".format(node.host, process_id)
+                err = "{0}-{1}-stderr.txt".format(node.host, process_id)
                 with open(out,"wb") as out, open(err,"wb") as err:
-                    processes.append([Popen(task, stdout=out,stderr=err), node.host, node_id])
+                    processes.append([Popen(task, stdout=out,stderr=err), node.host, process_id])
 
+            # check for ended processes
             for p in processes:
-                [process, host, n_id] = p
+                [process, host, p_id] = p
                 if done(process):
-                    if success(process):
-                        processes.remove(p)
-                    else:
-                        _LOG.error("Failed to run command #%s on host %s", n_id, host)
-                        fail()
+                    processes.remove(p)
+                    if not success(process):
+                        _LOG.error("Failed to run command #%s on host %s", p_id, host)
+                        nodes_failed.append((process_id, host))
 
-            if not processes and not nodes_to_run:
+            if not processes and not nodes_remaining:
                 break
             else:
                 time.sleep(0.05)
+
+        if nodes_failed:
+            _LOG.error("Command failed on nodes: %s" nodes_failed)
+        else:
+            _LOG.info("Command succeed on all nodes")
