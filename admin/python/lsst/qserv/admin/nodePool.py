@@ -144,7 +144,7 @@ class NodePool(object):
                 if _LOG.isEnabledFor(logging.DEBUG):
                     _LOG.debug("Running: %s", list2cmdline(task))
 
-                with open(logfile('stdout'), "wb") as out, open(logfile('sdterr'), "wb") as err:
+                with open(logfile('stdout'), "wb") as out, open(logfile('stderr'), "wb") as err:
                     processes.append([Popen(task, stdout=out,stderr=err), node.host, process_id])
 
             # check for ended processes
