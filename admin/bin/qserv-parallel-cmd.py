@@ -76,6 +76,7 @@ class ParallelCmd(object):
                             const=None,
                             help='More verbose output, can use several times.')
         parser = lsst.qserv.admin.logger.add_logfile_opt(parser)
+
         group = parser.add_argument_group('Nodes options',
                                           'Options related to Qserv machines')
         group.add_argument('-H', '--host', dest='hosts', default=[],
@@ -125,8 +126,16 @@ class ParallelCmd(object):
         # parse all arguments
         self.args = parser.parse_args()
 
-        # configure logging
-        lsst.qserv.admin.logger.setup_logging(self.args.log_conf)
+        verbosity = len(self.args.verbose)
+        if verbosity != 0:
+            levels = {0: logging.WARNING, 1: logging.INFO, 2: logging.DEBUG}
+            simple_format = "[%(levelname)s] %(name)s: %(message)s"
+            level = levels.get(verbosity, logging.DEBUG)
+            logging.basicConfig(format=simple_format, level=level)
+        else:
+            # if -v(vv) option isn't used then
+            # switch to global configuration file for logging
+            lsst.qserv.admin.logger.setup_logging(self.args.log_conf)
 
         # instantiate nodes
         if self.args.hosts:
