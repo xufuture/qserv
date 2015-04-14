@@ -116,7 +116,7 @@ class NodePool(object):
                 raise
 
         def logfile(name):
-            f = "{0}-{1}-{3}.txt".format(node.host, process_id, name)
+            f = "{0}-{1}-{2}.txt".format(node.host, process_id, name)
             return os.path.join(logdir, f)
 
         def done(p):
