@@ -42,7 +42,6 @@ a set of parameters to constructor.
 import logging
 import os
 from subprocess import Popen, list2cmdline
-import sys
 import time
 
 #-----------------------------
@@ -106,10 +105,23 @@ class NodePool(object):
         """
         nodes_remaining = self.nodes
 
-        if not command: return # empty list
+        if not command:
+            return  # empty list
+
+        try:
+            logdir = "parallel-cmd-log"
+            os.makedirs(logdir)
+        except OSError:
+            if not os.path.isdir(logdir):
+                raise
+
+        def logfile(name):
+            f = "{0}-{1}-{3}.txt".format(node.host, process_id, name)
+            return os.path.join(logdir, f)
 
         def done(p):
             return p.poll() is not None
+
         def success(p):
             return p.returncode == 0
 
@@ -131,9 +143,8 @@ class NodePool(object):
                 task = node.getSshCmd(command);
                 if _LOG.isEnabledFor(logging.DEBUG):
                     _LOG.debug("Running: %s", list2cmdline(task))
-                out = "{0}-{1}-stdout.txt".format(node.host, process_id)
-                err = "{0}-{1}-stderr.txt".format(node.host, process_id)
-                with open(out,"wb") as out, open(err,"wb") as err:
+
+                with open(logfile('stdout'), "wb") as out, open(logfile('sdterr'), "wb") as err:
                     processes.append([Popen(task, stdout=out,stderr=err), node.host, process_id])
 
             # check for ended processes
