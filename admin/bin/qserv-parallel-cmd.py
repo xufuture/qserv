@@ -154,7 +154,7 @@ class ParallelCmd(object):
         cmd_tpl='{command}'
         if self.args.sudo_user:
             params['sudo_user'] = self.args.sudo_user
-            params['stdin_opt'] = None
+            params['stdin_opt'] = ''
             cmd_tpl = '/bin/sudo {stdin_opt} su {sudo_user} -c "{command}"'
             if self.args.sudo_password:
                 params['stdin_opt'] = '-kS'
