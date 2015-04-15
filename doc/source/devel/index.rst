@@ -12,3 +12,6 @@ Development reference
    package-internet-free-distserver
    build-partition-without-eups
    css
+
+   principles
+   future-work
