@@ -33,10 +33,10 @@
 // System headers
 #include <deque>
 #include <set>
+#include <memory>
 #include <string>
 
 // Third-party headers
-#include "boost/shared_ptr.hpp"
 #include "XrdOss/XrdOss.hh"
 
 // Local headers
@@ -115,7 +115,7 @@ private:
     bool _checkExist(std::string const& db, int chunk);
 
     // fields (non-static)
-    boost::shared_ptr<wpublish::ChunkInventory> _chunkInventory;
+    std::unique_ptr<wpublish::ChunkInventory> _chunkInventory;
     std::string _cfgFn;
     std::string _cfgParams;
     std::string _name;
