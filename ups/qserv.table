@@ -1,7 +1,7 @@
 setupRequired(antlr)
 setupRequired(boost)
 setupRequired(db)
-setupRequired(flask)
+#setupRequired(flask)
 setupRequired(kazoo)
 setupRequired(log)
 setupRequired(luaxmlrpc)
