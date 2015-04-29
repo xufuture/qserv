@@ -23,10 +23,12 @@
 #ifndef LSST_QSERV_QDISP_QUERYREQUEST_H
 #define LSST_QSERV_QDISP_QUERYREQUEST_H
 
-// Third-party headers
+// System headers
 #include <exception>
 #include <memory>
 #include <string>
+
+// Third-party headers
 #include "boost/shared_ptr.hpp"
 #include "boost/make_shared.hpp"
 #include "boost/thread/mutex.hpp"
@@ -87,7 +89,8 @@ public:
 /// cancellation function with its client that maintains a pointer to the
 /// QueryRequest. After Finished(), the cancellation function must be prevented
 /// from accessing the QueryRequest instance.
-class QueryRequest : public XrdSsiRequest {
+class QueryRequest : public XrdSsiRequest,
+                     public std::enable_shared_from_this<QueryRequest> {
 public:
     QueryRequest(
         XrdSsiSession* session,
@@ -116,6 +119,10 @@ public:
     virtual void cancel();
     virtual bool cancelled();
 
+    void transferOwnership(std::shared_ptr<QueryRequest> qr) {
+        _self = qr;
+    }
+
 private:
     bool _importStream();
     bool _importError(std::string const& msg, int code);
@@ -131,6 +138,8 @@ private:
     int _bufferRemain; ///< Remaining size (_cursor to end)
     std::string _payload; ///< Request buffer
     boost::shared_ptr<ResponseRequester> _requester; ///< Response requester
+
+    std::shared_ptr<QueryRequest> _self; ///< self deletion control
 
     /// To be called when the request completes
     boost::shared_ptr<util::UnaryCallable<void, bool> > _finishFunc;

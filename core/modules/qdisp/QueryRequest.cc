@@ -62,12 +62,12 @@ inline void unprovisionSession(XrdSsiSession* session) {
 ////////////////////////////////////////////////////////////////////////
 class QueryRequest::Canceller : public util::VoidCallable<void> {
 public:
-    Canceller(QueryRequest& qr) : _queryRequest(qr) {}
+    Canceller(std::shared_ptr<QueryRequest> qr) : _queryRequest(qr) {}
     virtual void operator()() {
-        _queryRequest.cancel();
+        _queryRequest->cancel();
     }
 private:
-    QueryRequest& _queryRequest;
+    std::shared_ptr<QueryRequest> _queryRequest;
 };
 ////////////////////////////////////////////////////////////////////////
 // QueryRequest
@@ -242,7 +242,6 @@ bool QueryRequest::cancelled() {
 /// Finalize under error conditions and retry or report completion
 /// This function will destroy this object.
 void QueryRequest::_errorFinish(bool shouldCancel) {
-    boost::lock_guard<boost::mutex> lock(_requester->cancelMutex());
     LOGF_DEBUG("Error finish");
     bool ok = Finished(shouldCancel);
     if(!ok) {
@@ -270,13 +269,11 @@ void QueryRequest::_errorFinish(bool shouldCancel) {
             (*finish)(false);
         }
     }
-    _requester->unregisterCancel(lock);
-    delete this;
+    _self.reset();
 }
 
 /// Finalize under success conditions and report completion.
 void QueryRequest::_finish() {
-    boost::lock_guard<boost::mutex> lock(_requester->cancelMutex());
     bool ok = Finished();
     if(!ok) {
         LOGF_ERROR("Error with Finished()");
@@ -291,14 +288,13 @@ void QueryRequest::_finish() {
     if(finish) {
         (*finish)(true);
     }
-    _requester->unregisterCancel(lock);
-    delete this;
+    _self.reset();
 }
 
 /// Register a cancellation function with the query receiver in order to receive
 /// notifications upon errors detected in the receiver.
 void QueryRequest::_registerSelfDestruct() {
-    boost::shared_ptr<Canceller> canceller(new Canceller(*this));
+    boost::shared_ptr<Canceller> canceller(new Canceller(_self));
     _requester->registerCancel(canceller);
 }
 
