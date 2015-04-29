@@ -242,6 +242,7 @@ bool QueryRequest::cancelled() {
 /// Finalize under error conditions and retry or report completion
 /// This function will destroy this object.
 void QueryRequest::_errorFinish(bool shouldCancel) {
+    boost::lock_guard<boost::mutex> lock(_requester->cancelMutex());
     LOGF_DEBUG("Error finish");
     bool ok = Finished(shouldCancel);
     if(!ok) {
@@ -249,27 +250,49 @@ void QueryRequest::_errorFinish(bool shouldCancel) {
     } else {
         LOGF_INFO("Request::Finished() with error (clean).");
     }
-    if(_retryFunc) {
-        (*_retryFunc)();
-    } else if(_finishFunc) {
-        (*_finishFunc)(false);
-    }
 
-    delete this; // Self-cleanup is expected.
+    if(_retryFunc) { // Protect against multiple calls of retry or finish.
+        boost::shared_ptr<util::VoidCallable<void> > retry;
+        {
+            boost::lock_guard<boost::mutex> lock(_finishMutex);
+            retry.swap(_retryFunc);
+        }
+        if(retry) {
+            (*retry)();
+        }
+    } else if(_finishFunc) {
+        boost::shared_ptr<util::UnaryCallable<void, bool> > finish;
+        {
+            boost::lock_guard<boost::mutex> lock(_finishMutex);
+            finish.swap(_finishFunc);
+        }
+        if(finish) {
+            (*finish)(false);
+        }
+    }
+    _requester->unregisterCancel(lock);
+    delete this;
 }
 
 /// Finalize under success conditions and report completion.
 void QueryRequest::_finish() {
+    boost::lock_guard<boost::mutex> lock(_requester->cancelMutex());
     bool ok = Finished();
     if(!ok) {
         LOGF_ERROR("Error with Finished()");
     } else {
         LOGF_INFO("Finished() ok.");
     }
-    if(_finishFunc) {
-        (*_finishFunc)(true);
+    boost::shared_ptr<util::UnaryCallable<void, bool> > finish;
+    {
+        boost::lock_guard<boost::mutex> lock(_finishMutex);
+        finish.swap(_finishFunc);
     }
-    delete this; // Self-cleanup is expected.
+    if(finish) {
+        (*finish)(true);
+    }
+    _requester->unregisterCancel(lock);
+    delete this;
 }
 
 /// Register a cancellation function with the query receiver in order to receive

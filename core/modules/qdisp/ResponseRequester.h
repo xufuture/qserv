@@ -85,6 +85,13 @@ public:
         _cancelFunc = cancelFunc;
     }
 
+
+    /// Clear the registered cancellation function, while holding the mutex
+    /// @param lock should be constructed from cancelMutex()
+    virtual void unregisterCancel(boost::lock_guard<boost::mutex>& lock) {
+        _cancelFunc.reset();
+    }
+
     /// Cancel operations on the Receiver. This calls _cancelFunc and propagates
     /// cancellation towards the buffer-filler.
     /// Default behavior invokes registered function.
