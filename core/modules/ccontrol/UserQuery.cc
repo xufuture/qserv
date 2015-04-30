@@ -137,7 +137,10 @@ std::string const& UserQuery::getError() const {
 /// Attempt to kill in progress.
 void UserQuery::kill() {
     LOGF_INFO("UserQuery kill");
-    _executive->squash();
+    boost::lock_guard<boost::mutex> lock(_killMutex);
+    if(!_killed) {
+        _executive->squash();
+    }
 }
 
 /// Add a chunk to be executed
