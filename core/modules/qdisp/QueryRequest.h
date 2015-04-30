@@ -89,8 +89,7 @@ public:
 /// cancellation function with its client that maintains a pointer to the
 /// QueryRequest. After Finished(), the cancellation function must be prevented
 /// from accessing the QueryRequest instance.
-class QueryRequest : public XrdSsiRequest,
-                     public std::enable_shared_from_this<QueryRequest> {
+class QueryRequest : public XrdSsiRequest {
 public:
     QueryRequest(
         XrdSsiSession* session,
@@ -119,9 +118,7 @@ public:
     virtual void cancel();
     virtual bool cancelled();
 
-    void transferOwnership(std::shared_ptr<QueryRequest> qr) {
-        _self = qr;
-    }
+    //void transferOwnership(std::shared_ptr<QueryRequest> qr);
 
 private:
     bool _importStream();
@@ -139,7 +136,7 @@ private:
     std::string _payload; ///< Request buffer
     boost::shared_ptr<ResponseRequester> _requester; ///< Response requester
 
-    std::shared_ptr<QueryRequest> _self; ///< self deletion control
+    //std::shared_ptr<QueryRequest> _self; ///< self deletion control
 
     /// To be called when the request completes
     boost::shared_ptr<util::UnaryCallable<void, bool> > _finishFunc;

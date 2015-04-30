@@ -62,12 +62,13 @@ inline void unprovisionSession(XrdSsiSession* session) {
 ////////////////////////////////////////////////////////////////////////
 class QueryRequest::Canceller : public util::VoidCallable<void> {
 public:
-    Canceller(std::shared_ptr<QueryRequest> qr) : _queryRequest(qr) {}
+    Canceller(QueryRequest* qr) : _queryRequest(qr) {}
+    virtual ~Canceller() { delete _queryRequest; }
     virtual void operator()() {
         _queryRequest->cancel();
     }
 private:
-    std::shared_ptr<QueryRequest> _queryRequest;
+    QueryRequest* _queryRequest;
 };
 ////////////////////////////////////////////////////////////////////////
 // QueryRequest
@@ -86,8 +87,8 @@ QueryRequest::QueryRequest(
       _retryFunc(retryFunc),
       _status(status),
       _cancelled(false) {
-    _registerSelfDestruct();
     LOGF_INFO("New QueryRequest with payload(%1%)" % payload.size());
+    _registerSelfDestruct();
 }
 
 QueryRequest::~QueryRequest() {
@@ -239,6 +240,12 @@ bool QueryRequest::cancelled() {
     return _cancelled;
 }
 
+#if 0
+void QueryRequest::transferOwnership(std::shared_ptr<QueryRequest> qr) {
+    _self = qr;
+}
+#endif
+
 /// Finalize under error conditions and retry or report completion
 /// This function will destroy this object.
 void QueryRequest::_errorFinish(bool shouldCancel) {
@@ -269,7 +276,7 @@ void QueryRequest::_errorFinish(bool shouldCancel) {
             (*finish)(false);
         }
     }
-    _self.reset();
+    // canceller is responsible for deleting upon destruction
 }
 
 /// Finalize under success conditions and report completion.
@@ -288,13 +295,13 @@ void QueryRequest::_finish() {
     if(finish) {
         (*finish)(true);
     }
-    _self.reset();
+    // canceller is responsible for deleting upon destruction
 }
 
 /// Register a cancellation function with the query receiver in order to receive
 /// notifications upon errors detected in the receiver.
 void QueryRequest::_registerSelfDestruct() {
-    boost::shared_ptr<Canceller> canceller(new Canceller(_self));
+    boost::shared_ptr<Canceller> canceller(new Canceller(this));
     _requester->registerCancel(canceller);
 }
 
