@@ -139,7 +139,13 @@ void UserQuery::kill() {
     LOGF_INFO("UserQuery kill");
     boost::lock_guard<boost::mutex> lock(_killMutex);
     if(!_killed) {
-        _executive->squash();
+        _killed = true;
+        try {
+            _executive->squash();
+        } catch(UserQueryError e) {
+            // Silence merger discarding errors, because this object is being
+            // released. Client no longer cares about merger errors.
+        }
     }
 }
 
@@ -223,6 +229,12 @@ void UserQuery::_discardMerger() {
 
 /// Release resources.
 void UserQuery::discard() {
+    {
+        boost::lock_guard<boost::mutex> lock(_killMutex);
+        if(_killed) {
+            return;
+        }
+    }
     // Make sure resources are released.
     if(_executive && _executive->getNumInflight() > 0) {
         throw UserQueryError("Executive unfinished, cannot discard");
