@@ -93,11 +93,6 @@ public:
         _cancelFunc = cancelFunc;
     }
 
-    virtual void swapCancel(boost::shared_ptr<CancelFunc> cancelFunc) {
-        boost::lock_guard<boost::mutex> lock(_cancelMutex);
-        _cancelFunc = cancelFunc;
-    }
-
     /// Cancel operations on the Receiver. This calls _cancelFunc and propagates
     /// cancellation towards the buffer-filler.
     /// Default behavior invokes registered function.

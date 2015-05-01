@@ -115,12 +115,11 @@ public:
     /// Called by xrootd when new data is available.
     virtual void ProcessResponseData(char *buff, int blen, bool last);
 
-    virtual void cancel();
-    virtual bool cancelled();
-
-    //void transferOwnership(std::shared_ptr<QueryRequest> qr);
+    void cancel();
 
 private:
+    bool cancelled();
+
     bool _importStream();
     bool _importError(std::string const& msg, int code);
     void _errorFinish(bool shouldCancel=false);
@@ -136,15 +135,12 @@ private:
     std::string _payload; ///< Request buffer
     boost::shared_ptr<ResponseRequester> _requester; ///< Response requester
 
-    //std::shared_ptr<QueryRequest> _self; ///< self deletion control
-
     /// To be called when the request completes
     boost::shared_ptr<util::UnaryCallable<void, bool> > _finishFunc;
     /// To be called to retry a failed request
     boost::shared_ptr<util::VoidCallable<void> > _retryFunc;
     /// Reference to an updatable Status
     ExecStatus& _status;
-    std::string _errorDesc; ///< Error description
 
     boost::mutex _finishStatusMutex;
     enum FinishStatus { ACTIVE, FINISHED, CANCELLED, ERROR } _finishStatus;

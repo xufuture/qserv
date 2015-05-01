@@ -114,7 +114,7 @@ bool QueryRequest::ProcessResponse(XrdSsiRespInfo const& rInfo, bool isOk) {
     std::string errorDesc;
     bool shouldStop = cancelled();
     if(shouldStop) {
-        cancel();
+        cancel(); // calls _errorFinish() which deletes this
         return true;
     }
     if(!isOk) {
@@ -169,7 +169,6 @@ bool QueryRequest::_importStream() {
     } else {
         return true;
     }
-
 }
 
 /// Process an incoming error.
@@ -240,22 +239,16 @@ bool QueryRequest::cancelled() {
     return _finishStatus == CANCELLED;
 }
 
-#if 0
-void QueryRequest::transferOwnership(std::shared_ptr<QueryRequest> qr) {
-    _self = qr;
-}
-#endif
-
 /// Finalize under error conditions and retry or report completion
 /// This function will destroy this object.
 void QueryRequest::_errorFinish(bool shouldCancel) {
     LOGF_DEBUG("Error finish");
     boost::shared_ptr<util::UnaryCallable<void, bool>> finish;
-    boost::shared_ptr<util::VoidCallable<void> > retry;
+    boost::shared_ptr<util::VoidCallable<void>> retry;
     {
         boost::lock_guard<boost::mutex> lock(_finishStatusMutex);
         if (_finishStatus != ACTIVE) {
-            return;    
+            return;
         }
         bool ok = Finished(shouldCancel);
         if(!ok) {
@@ -284,7 +277,7 @@ void QueryRequest::_finish() {
     {
         boost::lock_guard<boost::mutex> lock(_finishStatusMutex);
         if (_finishStatus != ACTIVE) {
-            return;    
+            return;
         }
         bool ok = Finished();
         if(!ok) {
