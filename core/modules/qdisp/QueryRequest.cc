@@ -86,7 +86,7 @@ QueryRequest::QueryRequest(
       _finishFunc(finishFunc),
       _retryFunc(retryFunc),
       _status(status),
-      _cancelled(false) {
+      _finishStatus(QueryRequest::ACTIVE) {
     LOGF_INFO("New QueryRequest with payload(%1%)" % payload.size());
     _registerSelfDestruct();
 }
@@ -224,11 +224,11 @@ void QueryRequest::ProcessResponseData(char *buff, int blen, bool last) { // Ste
 
 void QueryRequest::cancel() {
     {
-        boost::lock_guard<boost::mutex> lock(_cancelledMutex);
-        if(_cancelled) {
+        boost::lock_guard<boost::mutex> lock(_finishStatusMutex);
+        if(_finishStatus == CANCELLED) {
             return; // Don't do anything if already cancelled.
         }
-        _cancelled = true;
+        _finishStatus = CANCELLED;
         _retryFunc.reset(); // Prevent retries.
     }
     _status.report(ExecStatus::CANCEL);
@@ -236,8 +236,8 @@ void QueryRequest::cancel() {
 }
 
 bool QueryRequest::cancelled() {
-    boost::lock_guard<boost::mutex> lock(_cancelledMutex);
-    return _cancelled;
+    boost::lock_guard<boost::mutex> lock(_finishStatusMutex);
+    return _finishStatus == CANCELLED;
 }
 
 #if 0
@@ -250,47 +250,50 @@ void QueryRequest::transferOwnership(std::shared_ptr<QueryRequest> qr) {
 /// This function will destroy this object.
 void QueryRequest::_errorFinish(bool shouldCancel) {
     LOGF_DEBUG("Error finish");
-    bool ok = Finished(shouldCancel);
-    if(!ok) {
-        LOGF_ERROR("Error cleaning up QueryRequest");
-    } else {
-        LOGF_INFO("Request::Finished() with error (clean).");
-    }
-
-    if(_retryFunc) { // Protect against multiple calls of retry or finish.
-        boost::shared_ptr<util::VoidCallable<void> > retry;
-        {
-            boost::lock_guard<boost::mutex> lock(_finishMutex);
+    boost::shared_ptr<util::UnaryCallable<void, bool>> finish;
+    boost::shared_ptr<util::VoidCallable<void> > retry;
+    {
+        boost::lock_guard<boost::mutex> lock(_finishStatusMutex);
+        if (_finishStatus != ACTIVE) {
+            return;    
+        }
+        bool ok = Finished(shouldCancel);
+        if(!ok) {
+            LOGF_ERROR("Error cleaning up QueryRequest");
+        } else {
+            LOGF_INFO("Request::Finished() with error (clean).");
+        }
+        if(_retryFunc) { // Protect against multiple calls of retry or finish.
             retry.swap(_retryFunc);
-        }
-        if(retry) {
-            (*retry)();
-        }
-    } else if(_finishFunc) {
-        boost::shared_ptr<util::UnaryCallable<void, bool> > finish;
-        {
-            boost::lock_guard<boost::mutex> lock(_finishMutex);
+        } else if(_finishFunc) {
             finish.swap(_finishFunc);
         }
-        if(finish) {
-            (*finish)(false);
-        }
+        _finishStatus = ERROR;
+    }
+    if(retry) {
+        (*retry)();
+    } else if(finish) {
+        (*finish)(false);
     }
     // canceller is responsible for deleting upon destruction
 }
 
 /// Finalize under success conditions and report completion.
 void QueryRequest::_finish() {
-    bool ok = Finished();
-    if(!ok) {
-        LOGF_ERROR("Error with Finished()");
-    } else {
-        LOGF_INFO("Finished() ok.");
-    }
-    boost::shared_ptr<util::UnaryCallable<void, bool> > finish;
+    boost::shared_ptr<util::UnaryCallable<void, bool>> finish;
     {
-        boost::lock_guard<boost::mutex> lock(_finishMutex);
+        boost::lock_guard<boost::mutex> lock(_finishStatusMutex);
+        if (_finishStatus != ACTIVE) {
+            return;    
+        }
+        bool ok = Finished();
+        if(!ok) {
+            LOGF_ERROR("Error with Finished()");
+        } else {
+            LOGF_INFO("Finished() ok.");
+        }
         finish.swap(_finishFunc);
+        _finishStatus = FINISHED;
     }
     if(finish) {
         (*finish)(true);

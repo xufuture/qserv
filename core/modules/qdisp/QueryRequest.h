@@ -146,9 +146,9 @@ private:
     ExecStatus& _status;
     std::string _errorDesc; ///< Error description
 
-    boost::mutex _finishMutex;
-    boost::mutex _cancelledMutex;
-    bool _cancelled;
+    boost::mutex _finishStatusMutex;
+    enum FinishStatus { ACTIVE, FINISHED, CANCELLED, ERROR } _finishStatus;
+
     class Canceller;
     friend class Canceller;
 }; // class QueryRequest
