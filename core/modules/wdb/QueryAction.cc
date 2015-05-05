@@ -141,9 +141,12 @@ class QueryAction::Impl::Poisoner : public util::VoidCallable<void> {
 public:
     Poisoner(std::shared_ptr<Impl> i) : _i(i) {}
     void operator()() {
-        _i->poison();
+        std::shared_ptr<Impl> iSharedPtr(_i.lock());
+        if (iSharedPtr) {
+            iSharedPtr->poison();
+        }
     }
-    std::shared_ptr<Impl> _i;
+    std::weak_ptr<Impl> _i;
 };
 
 ////////////////////////////////////////////////////////////////////////
