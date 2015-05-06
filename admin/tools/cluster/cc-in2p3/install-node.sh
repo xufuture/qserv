@@ -51,6 +51,9 @@ INSTALL_DIR=/qserv/stack
 # override with -R option
 QSERV_RUN_DIR=/qserv/run
 
+# override with -D option
+QSERV_DATA_DIR=/qserv/data
+
 SETUP_OPTS='-t latestbuild -t qserv'
 
 usage() {
@@ -66,6 +69,7 @@ Usage: `basename $0` [options]
                       all nodes, default: ${SHARED_DIR}
     -i install_dir    full path to install directory, default: ${INSTALL_DIR}
     -R qserv_run_dir  full path to install directory, default: ${QSERV_RUN_DIR}
+    -D qserv_data_dir full path to data directory, default: ${QSERV_DATA_DIR}
     -N                do not synchronize install with shared_dir
 
   Copies a LSST stack from a shared directory to a local directory, load LSST
@@ -85,6 +89,7 @@ while getopts hM:s:i:R:N c ; do
             s) SHARED_DIR="$OPTARG" ;;
             i) INSTALL_DIR="$OPTARG" ;;
             R) QSERV_RUN_DIR="$OPTARG" ;;
+            D) QSERV_DATA_DIR="$OPTARG" ;;
             N) SYNC=false ;;
             \?) usage ; exit 2 ;;
     esac
@@ -128,8 +133,9 @@ echo "Setup qserv_distrib in eups with options: $SETUP_OPTS"
 setup qserv_distrib $SETUP_OPTS
 
 echo "Configure Qserv $NODE_TYPE"
-qserv-configure.py --qserv-run-dir $QSERV_RUN_DIR --force \
-    --prepare
+qserv-configure.py --init --force \
+    --qserv-run-dir $QSERV_RUN_DIR \
+    --qserv-data-dir $QSERV_DATA_DIR
 
 # Customize meta configuration file
 sed -i "s/node_type = mono/node_type = $NODE_TYPE/" \

@@ -17,7 +17,10 @@ And then for each developer:
    # Stack path must be the same on all nodes
    source /qserv/stack/loadLSST.bash
    cd ~/src/qserv/
+   setup -r .
    eupspkg -erd install
+   # if it fails, a recent version of git might be needed
+   setup git
    # Add latestbuild tag to $EUPS_PATH/ups_db/global.tags, if not exists
    grep -q -F 'latestbuild' $EUPS_PATH/ups_db/global.tags || echo 'latestbuild' >> $EUPS_PATH/ups_db/global.tags
    # declare Qserv
