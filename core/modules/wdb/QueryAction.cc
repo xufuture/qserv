@@ -146,6 +146,11 @@ public:
             iSharedPtr->poison();
         }
     }
+
+    // Poisoners are potentially long-lived, so weak_ptr is better,
+    // otherwise we would unnecessarily hold resources corresponding
+    // to work that has been completed (and we wouldn't be able to do
+    // poisoning for these resources anyway).
     std::weak_ptr<Impl> _i;
 };
 
