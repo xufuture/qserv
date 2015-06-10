@@ -96,7 +96,8 @@ BOOST_AUTO_TEST_CASE(OrderByLimit) { // Test flipped syntax in DM-661
     auto querySession = check(qsTest, good, expected);
 
     auto mergeStmt = querySession->getMergeStmt();
-    if (mergeStmt!=nullptr) {
+    std::shared_ptr<SelectStmt> _nullptr;
+    if (mergeStmt != _nullptr) {
         LOGF_INFO("mergeStmt->toString() %1%" % mergeStmt->toString());
         //LOGF_INFO("mergeStmt->toQueryTemplateString() %1%" % mergeStmt->toQueryTemplateString());
     }

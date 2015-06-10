@@ -246,10 +246,11 @@ QuerySession::makeMergeFixup() const {
 /// If a post-execution merge fixup is not needed, return a NULL pointer.
 std::shared_ptr<query::SelectStmt>
 QuerySession::getMergeStmt() const {
+    std::shared_ptr<query::SelectStmt> _nullptr;
     if(_context->needsMerge) {
         return _stmtMerge;
     } else {
-        return nullptr;
+        return _nullptr;
     }
 }
 
