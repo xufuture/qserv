@@ -207,9 +207,10 @@ inline OS& generate(OS& os, char const label[], std::shared_ptr<T> t) {
 template<class T>
 void nil_string_helper(std::ostringstream& oss,
 		       const std::shared_ptr<T> &ptr) {
-        std::shared_ptr<T> _nullptr;
-	if (ptr != _nullptr)
-		oss << *ptr << " ";
+    std::shared_ptr<T> nullPtr;
+    if (ptr != nullPtr) {
+        oss << *ptr << " ";
+    }
 }
 
 } // anonymous
