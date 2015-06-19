@@ -41,7 +41,7 @@
 #include "lsst/log/Log.h"
 
 // Qserv headers
-#include "qdisp/ExecStatus.h"
+#include "qdisp/JobStatus.h"
 #include "qdisp/QueryRequest.h"
 #include "qdisp/QueryResource.h"
 #include "qdisp/ResponseRequester.h"
@@ -59,7 +59,7 @@ void QueryResource::ProvisionDone(XrdSsiSession* s) { // Step 3
         int code = 0;
         std::string msg = eInfoGet(code);
         LOGF_ERROR("Error provisioning, msg=%1% code=%2%" % msg % code);
-        _status.report(ExecStatus::PROVISION_NACK, code, msg);
+        _status.report(JobStatus::PROVISION_NACK, code, msg);
         // FIXME code may be wrong.
         _requester->errorFlush(msg, code);
         delete this;
@@ -78,12 +78,12 @@ void QueryResource::ProvisionDone(XrdSsiSession* s) { // Step 3
                                               _status);
 
     // Hand off the request.
-    _status.report(ExecStatus::REQUEST);
+    _status.report(JobStatus::REQUEST);
     bool requestSent = _session->ProcessRequest(request);
     if(!requestSent) {
         int code = 0;
         std::string msg = eInfoGet(code);
-        _status.report(ExecStatus::REQUEST_ERROR, code, msg);
+        _status.report(JobStatus::REQUEST_ERROR, code, msg);
         // It is unclear whether it is safe to refer to request here, say for
         // better log messages. It may have been deleted by another thread.
         LOGF_ERROR("Failed to send request");
