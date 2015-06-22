@@ -261,7 +261,7 @@ void Executive::markCompleted(int jobId, bool success) {
             }
         }
         LOGF(getLogger(), LOG_LVL_ERROR,
-             "Executive: error executing jobId=%1%: %2%" % jobId % err);
+             "Executive: error executing jobId=%1%: %2% (status: %3%)" % jobId % err % err.status);
         {
             std::lock_guard<std::mutex> lock(_statusesMutex);
             _statuses[jobId]->updateInfo(JobStatus::RESULT_ERROR, err.code, err.msg);
