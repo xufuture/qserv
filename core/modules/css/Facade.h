@@ -38,6 +38,9 @@
 #include <string>
 #include <vector>
 
+// LSST headers
+#include "lsst/log/Log.h"
+
 // Local headers
 #include "css/KvInterface.h"
 #include "css/MatchTableParams.h"
@@ -123,6 +126,7 @@ private:
 private:
     std::shared_ptr<KvInterface> _kvI;
     std::auto_ptr<EmptyChunks> _emptyChunks;
+    static LOG_LOGGER _log;
 
 protected:
     Facade() {}
