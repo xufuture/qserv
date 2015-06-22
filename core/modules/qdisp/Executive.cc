@@ -231,12 +231,13 @@ bool Executive::join() {
         std::lock_guard<std::mutex> lock(_statusesMutex);
         sCount = std::count_if(_statuses.begin(), _statuses.end(), successF::f);
     }
-
-    LOGF_INFO("Query exec finish. %1% dispatched." % _requestCount);
-    _logStatusesToMessages();
-    if(sCount != _requestCount) {
-        LOGF_INFO("Query exec:. %1% != %2%" % _requestCount % sCount);
+    if(sCount == _requestCount) {
+        LOGF_INFO("Query execution succeed: %1% jobs dispatched and completed." % _requestCount);
     }
+    else {
+        LOGF_ERROR("Query execution failed: %1% jobs dispatched, but only %2% jobs completed" % _requestCount % sCount);
+    }
+    _updateProxyMessages();
     bool empty = (sCount == _requestCount);
     _empty.set(empty);
     LOGF_DEBUG("Flag set to _empty=%1% sCount=%2% requestCount=%3%" % empty % sCount % _requestCount);
@@ -370,16 +371,6 @@ std::string Executive::getProgressDesc() const {
     {
         std::lock_guard<std::mutex> lock(_statusesMutex);
         std::for_each(_statuses.begin(), _statuses.end(), printMapEntry(os, "\n"));
-    }
-    LOGF(getLogger(), LOG_LVL_ERROR, "%1%" % os.str());
-    return os.str();
-}
-
-std::string Executive::getExecutionError() const {
-    std::ostringstream os;
-    {
-        std::lock_guard<std::mutex> lock(_errorsMutex);
-        os << _multiError;
     }
     LOGF(getLogger(), LOG_LVL_ERROR, "%1%" % os.str());
     return os.str();
@@ -533,7 +524,8 @@ void Executive::_reapRequesters(std::unique_lock<std::mutex> const&) {
     }
 }
 
-void Executive::_logStatusesToMessages() {
+void Executive::_updateProxyMessages() {
+	{
     std::lock_guard<std::mutex> lock(_statusesMutex);
     for(auto i=_statuses.begin(), e=_statuses.end(); i != e; ++i) {
         JobStatus::Info info = i->second->getInfo();
@@ -549,6 +541,13 @@ void Executive::_logStatusesToMessages() {
         _messageStore->addMessage(info.resourceUnit.chunk(),
                                   info.state, os.str());
     }
+	}
+	{
+		std::lock_guard<std::mutex> lock(_errorsMutex);
+		if (_multiError.size()>0) {
+			_messageStore->addErrorMessage(_multiError.toString());
+		}
+	}
 }
 
 /// This function blocks until it has reaped all the requesters.
