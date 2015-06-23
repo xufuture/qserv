@@ -64,6 +64,10 @@ public:
     UserQueryFactory(std::map<std::string,std::string> const& m,
                      KviPtr kvi=KviPtr());
 
+    void createFacade(std::shared_ptr<css::KvInterface> kvi);
+    void purgeFacades();
+    int cssRefreshFreq() const;
+
     /// @return a handle to the new UserQuery object to be used with the
     /// userQueryProxy interface.
     int newUserQuery(std::string const& query,

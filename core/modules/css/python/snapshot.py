@@ -40,10 +40,6 @@ from lsst.db.exception import produceExceptionClass
 from cssLib import KvInterfaceImplMem
 from kvInterface import KvInterface
 
-def getSnapshot(kvi):
-    pass
-
-
 class Unpacker:
     def __init__(self, target):
         """accepts css.python KvInterface instance"""
@@ -96,10 +92,7 @@ class Unpacker:
 
 class Snapshot(object):
     """
-    @brief Constructs CssCache objects that contain snapshots of the
-    Central State Service CSS).
-    Maintains own current snapshot (modifiable) and a copy(Read-only,
-    shared among clients).
+    @brief Constructs an in-memory snapshot of data from Central State Service CSS).
     """
     def __init__(self, kvi):
         """

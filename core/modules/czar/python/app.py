@@ -245,9 +245,13 @@ class IndexLookup:
 class Context:
     """Context for InbandQueryAction construction.
     Hides management of UserQueryFactory object so that it can be
-    shared among InbandQueryActions."""
+    shared among InbandQueryActions. Manages updates of the CSS cache
+    used by UserQueryFactory."""
 
-    _uqFactory = None # Shared UserQueryFactory object
+    _uqFactory = None      # Shared UserQueryFactory object
+    _cssKvi = None         # Shared CSS KVInterface object
+    _cssLastRefresh = 0    # Time of the most recent CSS cache refresh
+    _cssRefreshFreq = 0    # Frequency of refreshing CSS cache in seconds
 
     def __init__(self, conditions):
         """Construct a context to pass bulk user conditions to InbandQueryAction.
@@ -255,26 +259,27 @@ class Context:
 
         @param conditions dict containing query hints and context
         """
+        logger.dbg("Creating Context")
         if not Context._uqFactory:
-            Context._initFactory()
+            logger.dbg("Creating Factory")
+            cfg = lsst.qserv.czar.config.getStringMap()
+            cssItems = dict(lsst.qserv.czar.config.config.items("css"))
+            Context._cssKvi = lsst.qserv.css.getKvi(config=cssItems)
+            snap = lsst.qserv.css.getSnapshot(Context._cssKvi)
+            Context._uqFactory = UserQueryFactory(cfg, snap.clone())
+            Context._cssLastRefresh = time.time()
+            Context._cssRefreshFreq = Context._uqFactory.cssRefreshFreq()
+            logger.dbg("CSS refreshe frequency set to: ", Context._cssRefreshFreq)
+        if time.time() - Context._cssLastRefresh >= Context._cssRefreshFreq:
+            # t1 = time.time()
+            snap = lsst.qserv.css.getSnapshot(Context._cssKvi)
+            logger.dbg("Creating new facade")
+            Context._uqFactory.createFacade(snap.clone())
+            # logger.dbg("CSS snapshot time = ", time.time() - t1)
+            Context._cssLastRefresh = time.time()
+            Context._uqFactory.purgeFacades()
         self.uqFactory = Context._uqFactory
         self.conditions = conditions
-
-    @classmethod
-    def destroyShared(cls):
-        """Destroy shared state, e.g., the UserQueryFactory object. Calling
-        this is not generally necessary unless the configuration changes."""
-        cls._uqFactory = None
-
-    @classmethod
-    def _initFactory(cls):
-        """Initialize the UserQueryFactory instance from our configuration"""
-        cfg = lsst.qserv.czar.config.getStringMap()
-        cssItems = dict(lsst.qserv.czar.config.config.items("css"))
-        kvi = lsst.qserv.css.getKvi(config=cssItems)
-        snap = lsst.qserv.css.getSnapshot(kvi)
-        cls._uqFactory = UserQueryFactory(cfg, snap.clone())
-        cls._cssKvi = kvi
 
 
 ########################################################################

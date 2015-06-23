@@ -26,6 +26,7 @@
 
 // System headers
 #include <cassert>
+#include <sstream>
 #include <stdlib.h>
 
 // Third-party headers
@@ -56,27 +57,26 @@ LOG_LOGGER UserQueryFactory::_log = LOG_GET("lsst.qserv.ccontrol.UserQueryFactor
 /// Implementation class (PIMPL-style) for UserQueryFactory.
 class UserQueryFactory::Impl {
 public:
-    /// Import non-Facade-related config from caller
+    /// Import config from caller
     void readConfig(StringMap const& m);
 
-    /// Import facade config and construct Facade
-    void readConfigFacade(StringMap const& m,
-                          std::shared_ptr<css::KvInterface> kvi);
-
-    void initFacade(std::string const& cssTech, std::string const& cssConn,
-                    int timeout,
-                    std::string const& emptyChunkPath);
-
-    void initFacade(std::shared_ptr<css::KvInterface> kvi,
-                    std::string const& emptyChunkPath);
+    void createFacade(std::shared_ptr<css::KvInterface> kvi);
+    void purgeFacades();
+    int cssRefreshFreq() const {return _cssRefreshFreq;}
 
     void initMergerTemplate(); ///< Construct template config for merger
 
     /// State shared between UserQueries
     qdisp::Executive::Config::Ptr executiveConfig;
-    std::shared_ptr<css::Facade> facade;
     rproc::InfileMergerConfig infileMergerConfigTemplate;
     std::shared_ptr<qproc::SecondaryIndex> secondaryIndex;
+    std::vector<std::shared_ptr<css::Facade>> facades;
+
+private:
+    std::string _emptyChunkPath;
+    std::string _cssTech;
+    std::string _cssConn;
+    int _cssRefreshFreq;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -86,7 +86,22 @@ UserQueryFactory::UserQueryFactory(StringMap const& m,
     ::putenv((char*)"XRDDEBUG=1");
     assert(_impl);
     _impl->readConfig(m);
-    _impl->readConfigFacade(m, kvi);
+    _impl->createFacade(kvi);
+}
+
+void
+UserQueryFactory::createFacade(std::shared_ptr<css::KvInterface> kvi) {
+    _impl->createFacade(kvi);
+}
+
+void
+UserQueryFactory::purgeFacades() {
+    _impl->purgeFacades();
+}
+
+int
+UserQueryFactory::cssRefreshFreq() const {
+    return _impl->cssRefreshFreq();
 }
 
 int
@@ -95,14 +110,17 @@ UserQueryFactory::newUserQuery(std::string const& query,
                                std::string const& resultTable) {
     bool sessionValid = true;
     std::string errorExtra;
+    // Use the last facade, it has the most recent snapshot
+    LOGF(_log, LOG_LVL_DEBUG,
+         "Using CSS Facade %1%" % _impl->facades.back().get());
     qproc::QuerySession::Ptr qs =
-            std::make_shared<qproc::QuerySession>(_impl->facade);
+        std::make_shared<qproc::QuerySession>(_impl->facades.back());
     try {
         qs->setResultTable(resultTable);
         qs->setDefaultDb(defaultDb);
         qs->setQuery(query);
     } catch (...) {
-        errorExtra = "Unknown failure occured setting up QuerySession (query is invalid).";
+        errorExtra = "Unknown failure when creating QuerySession (query is invalid).";
         LOGF(_log, LOG_LVL_ERROR, errorExtra);
         sessionValid = false;
     }
@@ -110,17 +128,8 @@ UserQueryFactory::newUserQuery(std::string const& query,
         LOGF(_log, LOG_LVL_ERROR, "Invalid query: %s" % qs->getError());
         sessionValid = false;
     }
-    if(!qs->getError().empty()) {
-        LOGF(_log, LOG_LVL_INFO, "Invalid query: %s" % qs->getError());
-        sessionValid = false;
-    }
-    if(!qs->getError().empty()) {
-        LOGF(_log, LOG_LVL_INFO, "Invalid query: %s" % qs->getError());
-        sessionValid = false;
-    }
     UserQuery* uq = new UserQuery(qs);
-    int sessionId = UserQuery_takeOwnership(uq);
-    uq->_sessionId = sessionId;
+    uq->_sessionId = UserQuery_takeOwnership(uq);
     uq->_secondaryIndex = _impl->secondaryIndex;
     if(sessionValid) {
         uq->_executive = std::make_shared<qdisp::Executive>(
@@ -134,7 +143,7 @@ UserQueryFactory::newUserQuery(std::string const& query,
     } else {
         uq->_errorExtra += errorExtra;
     }
-    return sessionId;
+    return uq->_sessionId;
 }
 
 void UserQueryFactory::Impl::readConfig(StringMap const& m) {
@@ -164,55 +173,62 @@ void UserQueryFactory::Impl::readConfig(StringMap const& m) {
     mc.dbName = infileMergerConfigTemplate.targetDb; // any valid db is ok.
     mc.socket = infileMergerConfigTemplate.socket;
     secondaryIndex = std::make_shared<qproc::SecondaryIndex>(mc);
-}
 
-void UserQueryFactory::Impl::readConfigFacade(
-    StringMap const& m,
-    std::shared_ptr<css::KvInterface> kvi) {
-    ConfigMap cm(m);
-
-    std::string emptyChunkPath = cm.get(
+    _emptyChunkPath = cm.get(
         "partitioner.emptychunkpath",
         "Error, missing path for Empty chunk file, using '.'.",
         ".");
-    if (!kvi) {
-        std::string cssTech = cm.get(
-            "css.technology",
-            "Error, css.technology not found.",
-            "invalid");
-        std::string cssConn = cm.get(
-            "css.connection",
-            "Error, css.connection not found.",
-            "");
-        int cssTimeout = cm.getTyped<int>(
-            "css.timeout",
-            "Error, css.timeout not found.",
-            10000);
+    _cssTech = cm.get("css.technology",
+                      "Error, css.technology not found.",
+                      "invalid");
+    _cssConn = cm.get("css.connection",
+                      "Error, css.connection not found.",
+                      "");
+    std::string rfStr =
+        cm.get("css.refreshFrequency",
+               "Warning, css.refreshFrequency not found, using 15 sec",
+               "15");
+    std::istringstream (rfStr) >> _cssRefreshFreq;
+}
 
-        initFacade(cssTech, cssConn, cssTimeout, emptyChunkPath);
+void
+UserQueryFactory::Impl::createFacade(std::shared_ptr<css::KvInterface> kvi) {
+    if (kvi) {
+        LOGF(_log, LOG_LVL_DEBUG, "Creating CSS CacheFacade");
+        facades.push_back(
+            css::FacadeFactory::createCacheFacade(kvi, _emptyChunkPath));
+        LOGF(_log, LOG_LVL_DEBUG,
+             "Created CSS CacheFacade %1%" % facades.back().get());
+        return;
+    }
+    if (_cssTech == "mem") {
+        LOGF(_log, LOG_LVL_DEBUG, "Creating CSS MemFacade with %1%" % _cssConn);
+        facades.push_back(
+            css::FacadeFactory::createMemFacade(_cssConn, _emptyChunkPath));
+        LOGF(_log, LOG_LVL_DEBUG,
+             "Created CSS MemFacade %1%" % facades.back().get());
     } else {
-        initFacade(kvi, emptyChunkPath);
+        const std::string errMsg("Invalid CSS technology, check config file.");
+        LOGF(_log, LOG_LVL_ERROR, errMsg);
+        throw ConfigError(errMsg);
     }
 }
 
-void UserQueryFactory::Impl::initFacade(std::string const& cssTech,
-                                        std::string const& cssConn,
-                                        int timeout_msec,
-                                        std::string const& emptyChunkPath) {
-    if (cssTech == "mem") {
-        LOGF(_log, LOG_LVL_INFO, "Initializing memory-based css, with %1%" % cssConn);
-        facade = css::FacadeFactory::createMemFacade(cssConn, emptyChunkPath);
-    } else {
-        LOGF(_log, LOG_LVL_ERROR, "Unable to determine css technology, check config file.");
-        throw ConfigError("Invalid css technology, check config file.");
+void
+UserQueryFactory::Impl::purgeFacades() {
+    if (facades.size() < 2) {
+        return;
     }
-}
-
-void UserQueryFactory::Impl::initFacade(
-    std::shared_ptr<css::KvInterface> kvi,
-    std::string const& emptyChunkPath) {
-    facade = css::FacadeFactory::createCacheFacade(kvi, emptyChunkPath);
-    LOGF(_log, LOG_LVL_INFO, "Initializing cache-based css facade");
+    for(auto itr = facades.begin(); itr != facades.end()-1;) {
+        if(itr->use_count() == 1) {
+            LOGF(_log, LOG_LVL_DEBUG, "Erasing CSS Facade %1%" % itr->get());
+            itr = facades.erase(itr);
+        } else {
+            LOGF(_log, LOG_LVL_DEBUG,
+                 "Can't purge CSS Facade%1% (in use)" % itr->get());
+            ++itr;
+        }
+    }
 }
 
 }}} // lsst::qserv::ccontrol
