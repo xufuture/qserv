@@ -62,7 +62,8 @@ MergingRequester::MergingRequester(
       _tableName(tableName),
       _response{new WorkerResponse()},
       _flushed{false},
-      _cancelled{false} {
+      _cancelled{false},
+      _wName{"~"}{
     _initState();
 }
 
@@ -81,11 +82,11 @@ const char* MergingRequester::getStateStr(MsgState const& state) {
 }
 
 bool MergingRequester::flush(int bLen, bool last) {
-    LOGF_INFO("flush state=%1% blen=%2% last=%3%" % getStateStr(_state) % bLen % last);
+    LOGF_INFO("From:%4% flush state=%1% blen=%2% last=%3%" % getStateStr(_state) % bLen % last % _wName);
     if((bLen < 0) || (bLen != (int)_buffer.size())) {
         if(_state != MsgState::RESULT_EXTRA) {
-            LOGF_ERROR("MergingRequester size mismatch: expected %1% got %2%"
-                       % _buffer.size() % bLen);
+            LOGF_ERROR("From:%3% MergingRequester size mismatch: expected %1% got %2%"
+                       % _buffer.size() % bLen % _wName);
             // Worker sent corrupted data, or there is some other error.
         }
     }
@@ -98,7 +99,10 @@ bool MergingRequester::flush(int bLen, bool last) {
             _state = MsgState::HEADER_ERR;
             return false;
         }
-        LOGF_DEBUG("HEADER_SIZE_WAIT: Resizing buffer to %1%" % _response->protoHeader.size());
+        if (_wName.compare("~") == 0) {
+            _wName = _response->protoHeader.wname();
+        }
+        LOGF_DEBUG("HEADER_SIZE_WAIT: From:%1% Resizing buffer to %2%" % _wName % _response->protoHeader.size());
         _buffer.resize(_response->protoHeader.size());
         _state = MsgState::RESULT_WAIT;
         return true;
@@ -106,7 +110,7 @@ bool MergingRequester::flush(int bLen, bool last) {
     case MsgState::RESULT_WAIT:
         if(!_verifyResult()) { return false; }
         if(!_setResult()) { return false; }
-        LOGF_INFO("_buffer %1%" % util::prettyCharList(_buffer, 5));
+        LOGF_INFO("From:%1% _buffer %2%" % _wName % util::prettyCharList(_buffer, 5));
         {
             bool msgContinues = _response->result.continues();
             _buffer.resize(0); // Nothing further needed
@@ -116,8 +120,8 @@ bool MergingRequester::flush(int bLen, bool last) {
                 _state = MsgState::RESULT_EXTRA;
                 _buffer.resize(proto::ProtoHeaderWrap::PROTO_HEADER_SIZE);
             }
-            LOGF_INFO("Flushed msgContinues=%1% last=%2% for tableName=%3%" %
-                    msgContinues % last % _tableName);
+            LOGF_INFO("From:%1% Flushed msgContinues=%2% last=%3% for tableName=%4%" %
+                    _wName % msgContinues % last % _tableName);
 
             auto success = _merge();
             if(msgContinues) {
@@ -137,7 +141,7 @@ bool MergingRequester::flush(int bLen, bool last) {
         _state = MsgState::RESULT_WAIT;
         return true;
     case MsgState::RESULT_RECV:
-        LOGF_DEBUG("RESULT_RECV last = %1%" % last);
+        LOGF_DEBUG("From:%1% RESULT_RECV last = %2%" %_wName % last);
         if (!last) {
             _state = MsgState::BUFFER_DRAIN;
             _buffer.resize(1);
@@ -146,8 +150,8 @@ bool MergingRequester::flush(int bLen, bool last) {
     case MsgState::BUFFER_DRAIN:
         // The buffer should always be empty, but last is not always set to true by xrootd
         // unless we ask xrootd to read at least one character.
-        LOGF_INFO("BUFFER_DRAIN last=%1% bLen=%2% buffer=%3%" %
-                last % bLen % util::prettyCharList(_buffer));
+        LOGF_INFO("From:%1% BUFFER_DRAIN last=%2% bLen=%3% buffer=%4%" %
+                _wName % last % bLen % util::prettyCharList(_buffer));
         _buffer.resize(1);
         return true;
     case MsgState::HEADER_ERR:
