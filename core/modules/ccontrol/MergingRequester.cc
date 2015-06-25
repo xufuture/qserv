@@ -26,6 +26,7 @@
 
 // System headers
 #include <cassert>
+#include <sstream>
 
 // LSST headers
 #include "lsst/log/Log.h"
@@ -84,18 +85,22 @@ const char* MergingRequester::getStateStr(MsgState const& state) {
 bool MergingRequester::flush(int bLen, bool last) {
     LOGF_INFO("From:%4% flush state=%1% blen=%2% last=%3%" % getStateStr(_state) % bLen % last % _wName);
     if((bLen < 0) || (bLen != (int)_buffer.size())) {
-        if(_state != MsgState::RESULT_EXTRA) {
-            LOGF_ERROR("From:%3% MergingRequester size mismatch: expected %1% got %2%"
-                       % _buffer.size() % bLen % _wName);
+  	std::ostringstream os;
+        os << "MergingRequester size mismatch: expected " << _buffer.size() << " got " << bLen;
+        if(bLen < 0 || _state != MsgState::BUFFER_DRAIN) {
+            LOGF_ERROR(os.str());
             // Worker sent corrupted data, or there is some other error.
+        } else {
+            LOGF_WARN(os.str());
         }
     }
     switch(_state) {
     case MsgState::HEADER_SIZE_WAIT:
         _response->headerSize = static_cast<unsigned char>(_buffer[0]);
         if (!proto::ProtoHeaderWrap::unwrap(_response, _buffer)) {
-            _setError(log::MSG_RESULT_DECODE,
-                std::string("Error decoding proto header for ") + getStateStr(_state));
+            ostringstream os;
+            os << "From:" << _wName << "Error decoding proto header for " << getStateStr(_state);
+            _setError(log::MSG_RESULT_DECODE, os);
             _state = MsgState::HEADER_ERR;
             return false;
         }
