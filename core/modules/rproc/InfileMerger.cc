@@ -367,6 +367,7 @@ bool InfileMerger::_applySqlLocal(std::string const& sql) {
     return true;
 }
 
+/* &&&
 /// Read a ProtoHeader message from a buffer and return the number of bytes
 /// consumed.
 int InfileMerger::_readHeader(ProtoHeader& header, char const* buffer, int length) {
@@ -389,6 +390,7 @@ int InfileMerger::_readResult(proto::Result& result, char const* buffer, int len
     // result.PrintDebugString();
     return length;
 }
+*/
 
 /// Verify that the sessionId is the same as what we were expecting.
 /// This is an additional safety check to protect from importing a message from

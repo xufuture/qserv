@@ -59,6 +59,7 @@ bool ProtoHeaderWrap::unwrap(std::shared_ptr<proto::WorkerResponse>& response, s
     response->headerSize = static_cast<unsigned char const>(buffer[0]);
     if(!proto::ProtoImporter<proto::ProtoHeader>::setMsgFrom(
             response->protoHeader, &buffer[1], response->headerSize)) {
+	LOGF_ERROR("ProtoHeaderWrap::unwrap failed to parse protobuffer");
         return false;
     }
     LOGF_INFO("buffer size=%1% -> %2%" % buffer.size() % util::prettyCharList(buffer, 5));
