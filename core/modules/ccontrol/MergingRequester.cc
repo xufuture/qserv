@@ -105,9 +105,9 @@ bool MergingRequester::flush(int bLen, bool last) {
     case MsgState::HEADER_SIZE_WAIT:
         _response->headerSize = static_cast<unsigned char>(_buffer[0]);
         if (!proto::ProtoHeaderWrap::unwrap(_response, _buffer)) {
-            ostringstream os;
+            std::ostringstream os;
             os << "From:" << _wName << "Error decoding proto header for " << getStateStr(_state);
-            _setError(log::MSG_RESULT_DECODE, os);
+            _setError(log::MSG_RESULT_DECODE, os.str());
             _state = MsgState::HEADER_ERR;
             return false;
         }
