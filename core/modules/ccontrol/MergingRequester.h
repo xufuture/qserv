@@ -114,6 +114,7 @@ private:
 
     std::shared_ptr<MsgReceiver> _msgReceiver; ///< Message code receiver
     std::shared_ptr<rproc::InfileMerger> _infileMerger; ///< Merging delegate
+    int _initCount; // count calls to _initState()
     std::string _tableName; ///< Target table name
     std::vector<char> _buffer; ///< Raw response buffer, resized for each msg
     Error _error; ///< Error description
@@ -124,6 +125,7 @@ private:
     std::mutex _cancelledMutex; ///< Protect check/write of cancel flag.
     bool _cancelled; ///< Cancelled?
     std::string _wName; /// Name of the worker host sending the message.
+    int _seq; // identifier for this instance for logging.
 };
 
 }}} // namespace lsst::qserv::qdisp

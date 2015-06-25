@@ -41,11 +41,15 @@
 #include "rproc/InfileMerger.h"
 #include "util/common.h"
 #include "util/StringHash.h"
+#include "util/threadSafe.h"
 
 using lsst::qserv::proto::ProtoImporter;
 using lsst::qserv::proto::ProtoHeader;
 using lsst::qserv::proto::Result;
 using lsst::qserv::proto::WorkerResponse;
+
+
+static lsst::qserv::util::Sequential<int> sequential{0};
 
 namespace lsst {
 namespace qserv {
@@ -59,11 +63,14 @@ MergingRequester::MergingRequester(
     std::string const& tableName)
     : _msgReceiver{msgReceiver},
       _infileMerger{merger},
+      _initCount{0},
       _tableName(tableName),
       _response{new WorkerResponse()},
       _flushed{false},
       _cancelled{false},
       _wName{"~"}{
+    _seq = sequential.incr();
+    LOGF_DEBUG("MergingRequester::MergingRequester _seq=%1%" % _seq);
     _initState();
 }
 
@@ -82,7 +89,7 @@ const char* MergingRequester::getStateStr(MsgState const& state) {
 }
 
 bool MergingRequester::flush(int bLen, bool last) {
-    LOGF_INFO("From:%4% flush state=%1% blen=%2% last=%3%" % getStateStr(_state) % bLen % last % _wName);
+    LOGF_INFO("From:%4% flush state=%1% blen=%2% last=%3% _seq=%4%" % getStateStr(_state) % bLen % last % _wName % _seq);
     if((bLen < 0) || (bLen != (int)_buffer.size())) {
         if(_state != MsgState::RESULT_EXTRA) {
             LOGF_ERROR("From:%3% MergingRequester size mismatch: expected %1% got %2%"
@@ -206,6 +213,8 @@ std::ostream& MergingRequester::print(std::ostream& os) const {
 ////////////////////////////////////////////////////////////////////////
 
 void MergingRequester::_initState() {
+    ++_initCount;
+    LOGF_DEBUG("MergingRequester::_initState _seq=%1% _initCount=%2%" % _seq % _initCount);
     _buffer.resize(proto::ProtoHeaderWrap::PROTO_HEADER_SIZE);
     _state = MsgState::HEADER_SIZE_WAIT;
     _setError(0, "");
