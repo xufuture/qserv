@@ -103,6 +103,15 @@ public:
     /// @return a description of the current execution progress.
     std::string getProgressDesc() const;
 
+    /** In case a query fails at execution, return the final error message
+     *
+     * Can be used to print error messages to the
+     * mysql command-line interface
+     *
+     * @return an error message
+     */
+    std::string getExecutionError() const;
+
     static std::shared_ptr<util::UnaryCallable<void, bool> > newNotifier(Executive& e, int refNum);
 
 
