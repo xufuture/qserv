@@ -358,7 +358,9 @@ std::string Executive::getProgressDesc() const {
     std::lock_guard<std::mutex> lock(_statusesMutex);
     std::ostringstream os;
     std::for_each(_statuses.begin(), _statuses.end(), printMapEntry(os, "\n"));
-    LOGF_ERROR("%1%" % os.str());
+    LOGF(getLogger(), LOG_LVL_ERROR, "%1%" % os.str());
+    return os.str();
+}
 
 std::string Executive::getExecutionError() const {
     std::lock_guard<std::mutex> lock(_statusesMutex);
