@@ -90,7 +90,7 @@ const char* MergingRequester::getStateStr(MsgState const& state) {
 }
 
 bool MergingRequester::flush(int bLen, bool last) {
-    LOGF_INFO("From:%4% flush state=%1% blen=%2% last=%3% _seq=%4%" % getStateStr(_state) % bLen % last % _wName % _seq);
+    LOGF_INFO("From:%4% flush state=%1% blen=%2% last=%3% _seq=%5%" % getStateStr(_state) % bLen % last % _wName % _seq);
     if((bLen < 0) || (bLen != (int)_buffer.size())) {
   	std::ostringstream os;
         os << "MergingRequester size mismatch: expected " << _buffer.size() << " got " << bLen;
