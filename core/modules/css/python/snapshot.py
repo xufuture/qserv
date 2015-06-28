@@ -39,7 +39,7 @@ from kazoo.exceptions import NodeExistsError, NoNodeError
 
 # local imports
 from lsst.db.exception import produceExceptionClass
-from cssLib import KvInterfaceImplMem
+from lsst.qserv.css import KvInterfaceImplMem
 from kvInterface import KvInterface
 
 class Unpacker:
@@ -67,6 +67,9 @@ class Unpacker:
                 #print "Creating kvi key: %s = %s" % (path, data)
                 self.target.set(str(path), str(data))
             pass
+
+        # Create "/" in the snapshot
+        self.target.set("/", str(inputKvi.get("/")))
 
         # Take a snapshot of version
         inputKvi.visitPrefix("/css_meta", nodeFunc, acceptFunc)
@@ -153,81 +156,3 @@ class Snapshot(object):
         self.visitPrefix("/", np.dataFunc,
                     lambda p: p != "/zookeeper")
         return "\n".join(np.entries)
-
-
-class FakeStat:
-    def __init__(self, lastModified):
-        self.lastModified = lastModified
-        pass
-    pass
-
-class FakeZk:
-    def __init__(self):
-        dummyStat = FakeStat(lastModified=time.time())
-        dummyData = ("(dummy)", dummyStat)
-        def makeFakeData(txt):
-            return (txt, dummyStat)
-        recipe = json.dumps({ "name":"Apple Pie",
-                              "cost":"$200",
-                              "generation":3,
-                              })
-        lockData = json.dumps({"password" : "123password",
-                               "lastSet" : time.time() })
-
-        self.getDict = {
-            "/" : dummyData,
-            "/DBS/alice" : dummyData,
-            "/DBS/bob" : dummyData,
-            "/DBS/eve" : dummyData,
-            "/DBS/alice/secret" : makeFakeData("My dog has fleas"),
-            "/DBS/alice/secret.json" : makeFakeData(recipe),
-            "/DBS/eve/LOCK" : dummyData,
-            "/DBS/eve/LOCK.json" : makeFakeData(lockData)
-            }
-        self.getChildDict = {
-            "/DBS" : "alice bob eve".split(),
-            "/DBS/alice" : "secret secret.json".split(),
-            "/DBS/eve" : "LOCK LOCK.json".split()
-            }
-        pass
-    def get(self, key):
-        return self.getDict[key]
-    def get_children(self, key):
-        return self.getChildDict.get(key, [])
-
-class TestKvi(KvInterface):
-    def __init__(self):
-        self.zk = FakeZk()
-
-    def get(self, key):
-        return self.zk.get(key)[0]
-
-    def getChildren(self, key):
-        return self.zk.get_children(key)
-
-class Test:
-    """Test basic css module behavior"""
-
-    def testFake(self):
-        kvi = TestKvi()
-        s = Snapshot(kvi)
-        mykvi = KvInterface.newImpl(config={
-                "technology" : "mem",
-                "connection" : s.snapshot})
-        mykvi.dumpAll()
-        getFunc = mykvi.get
-        assert mykvi.get("DBS/alice/secret") == "My dog has fleas"
-        assert mykvi.get("DBS/eve/LOCK/password") == "123password"
-
-    # def tryZkConstruct(self):
-    #     cf = CssCacheFactory(connInfo="localhost:2181")
-    #     print "Dump of zk",cf.dump()
-    #     mykvi = cf.getSnapshot()
-
-    def go(self):
-#        self.tryZkConstruct()
-        self.testFake()
-
-def selftest():
-    t = Test()
-    t.go()
