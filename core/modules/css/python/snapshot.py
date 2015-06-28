@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # LSST Data Management System
-# Copyright 2014 AURA/LSST.
+# Copyright 2014-2015 AURA/LSST.
 #
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -28,6 +28,8 @@ in lower levels (c++ execution).
 # standard library imports
 import logging
 import json
+import os
+import socket
 import sys
 import time
 
@@ -41,9 +43,14 @@ from cssLib import KvInterfaceImplMem
 from kvInterface import KvInterface
 
 class Unpacker:
+
+    # this produces a string in a form: 198.129.220.176_2899, used for unique id
+    _addrPort = str(socket.getaddrinfo(socket.gethostname(), None)[0][4][0]) + '_' + str(os.getpid())
+
     def __init__(self, target):
         """accepts css.python KvInterface instance"""
         self.target = target
+        self._uniqueLockId = 0
         pass
 
     def readTree(self, inputKvi):
@@ -60,7 +67,27 @@ class Unpacker:
                 #print "Creating kvi key: %s = %s" % (path, data)
                 self.target.set(str(path), str(data))
             pass
-        inputKvi.visitPrefix("/", nodeFunc, acceptFunc)
+
+        # Take a snapshot of version
+        inputKvi.visitPrefix("/css_meta", nodeFunc, acceptFunc)
+
+        # Take a snapshot of /DBS tree, pay attention to locks
+        dbs = inputKvi.getChildren("/DBS")
+        for db in dbs:
+            dbKey = "/DBS/%s" % db
+            with inputKvi.getLockObject(dbKey, self._uniqueId()):
+                inputKvi.visitPrefix(dbKey, nodeFunc, acceptFunc)
+
+        # Take a snapshot of /PARTITIONING tree. Locking is not
+        # necessary (partitioning information is guaranteed to be
+        # available for each db that was successfully added to the
+        # /DBS snapshot a moment ago. Why? We are creating it when
+        # db info is locked, and we never delete partitioning info).
+        pts = inputKvi.getChildren("/PARTITIONING")
+        for pt in pts:
+            ptKey = "/PARTITIONING/%s" % pt
+            inputKvi.visitPrefix(ptKey, nodeFunc, acceptFunc)
+
 
     def insertObj(self, path, obj):
         """Save an object into the kvi. This is equivalent to
@@ -90,9 +117,17 @@ class Unpacker:
             self.target.create(str(path), "")
         pass
 
+    def _uniqueId(self):
+        self._uniqueLockId += 1
+        return Unpacker._addrPort + '_' + str(self._uniqueLockId)
+
+
 class Snapshot(object):
     """
-    @brief Constructs an in-memory snapshot of data from Central State Service CSS).
+    @brief Constructs in-memory snapshot of data realated to databases from Central State Service (CSS).
+
+    It takes snapshot of /DBS and /PARTITIONING branches. It plays nicely with our internal locking
+    mechanism, thus it is save even if new databases/tables are created or deleted.
     """
     def __init__(self, kvi):
         """
@@ -141,18 +176,18 @@ class FakeZk:
 
         self.getDict = {
             "/" : dummyData,
-            "/alice" : dummyData,
-            "/bob" : dummyData,
-            "/eve" : dummyData,
-            "/alice/secret" : makeFakeData("My dog has fleas"),
-            "/alice/secret.json" : makeFakeData(recipe),
-            "/eve/LOCK" : dummyData,
-            "/eve/LOCK.json" : makeFakeData(lockData)
+            "/DBS/alice" : dummyData,
+            "/DBS/bob" : dummyData,
+            "/DBS/eve" : dummyData,
+            "/DBS/alice/secret" : makeFakeData("My dog has fleas"),
+            "/DBS/alice/secret.json" : makeFakeData(recipe),
+            "/DBS/eve/LOCK" : dummyData,
+            "/DBS/eve/LOCK.json" : makeFakeData(lockData)
             }
         self.getChildDict = {
-            "/" : "alice bob eve".split(),
-            "/alice" : "secret secret.json".split(),
-            "/eve" : "LOCK LOCK.json".split()
+            "/DBS" : "alice bob eve".split(),
+            "/DBS/alice" : "secret secret.json".split(),
+            "/DBS/eve" : "LOCK LOCK.json".split()
             }
         pass
     def get(self, key):
@@ -181,8 +216,8 @@ class Test:
                 "connection" : s.snapshot})
         mykvi.dumpAll()
         getFunc = mykvi.get
-        assert mykvi.get("/alice/secret") == "My dog has fleas"
-        assert mykvi.get("/eve/LOCK/password") == "123password"
+        assert mykvi.get("DBS/alice/secret") == "My dog has fleas"
+        assert mykvi.get("DBS/eve/LOCK/password") == "123password"
 
     # def tryZkConstruct(self):
     #     cf = CssCacheFactory(connInfo="localhost:2181")
@@ -196,4 +231,3 @@ class Test:
 def selftest():
     t = Test()
     t.go()
-
