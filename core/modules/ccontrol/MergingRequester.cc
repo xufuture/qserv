@@ -80,8 +80,9 @@ const char* MergingRequester::getStateStr(MsgState const& state) {
     return "unknown";
 }
 
-bool MergingRequester::flush(int bLen, bool last) {
-    LOGF_INFO("flush state=%1% blen=%2% last=%3%" % getStateStr(_state) % bLen % last);
+bool MergingRequester::flush(int bLen, bool& last) {
+    LOGF_INFO("From:%4% flush state=%1% blen=%2% last=%3%" %
+              getStateStr(_state) % bLen % last % _wName);
     if((bLen < 0) || (bLen != (int)_buffer.size())) {
         if(_state != MsgState::RESULT_EXTRA) {
             LOGF_ERROR("MergingRequester size mismatch: expected %1% got %2%"
@@ -115,6 +116,9 @@ bool MergingRequester::flush(int bLen, bool last) {
                 LOGF_INFO("Messages continues, waiting for next header.");
                 _state = MsgState::RESULT_EXTRA;
                 _buffer.resize(proto::ProtoHeaderWrap::PROTO_HEADER_SIZE);
+            } else {
+              LOGF_INFO("Messages ends, setting last=true");
+              last = true;
             }
             LOGF_INFO("Flushed msgContinues=%1% last=%2% for tableName=%3%" %
                     msgContinues % last % _tableName);
@@ -137,7 +141,8 @@ bool MergingRequester::flush(int bLen, bool last) {
         _state = MsgState::RESULT_WAIT;
         return true;
     case MsgState::RESULT_RECV:
-        LOGF_DEBUG("RESULT_RECV last = %1%" % last);
+        // We shouldn't wind up here, ever
+        LOGF_DEBUG("From:%1% RESULT_RECV last = %2%" %_wName % last);
         if (!last) {
             _state = MsgState::BUFFER_DRAIN;
             _buffer.resize(1);

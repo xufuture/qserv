@@ -25,9 +25,11 @@
 
 // System headers
 #include <exception>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <sstream>
 
 // Third-party headers
 #include "XrdSsi/XrdSsiRequest.hh"
