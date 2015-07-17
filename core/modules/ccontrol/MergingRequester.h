@@ -56,7 +56,7 @@ public:
     /// Possible MergingRequester message state
     enum class MsgState { INVALID, HEADER_SIZE_WAIT,
                     RESULT_WAIT, RESULT_EXTRA,
-                    RESULT_RECV, BUFFER_DRAIN,
+                    RESULT_RECV, 
                     HEADER_ERR, RESULT_ERR };
     static const char* getStateStr(MsgState const& st);
 
@@ -123,6 +123,7 @@ private:
     bool _flushed; ///< flushed to InfileMerger?
     std::mutex _cancelledMutex; ///< Protect check/write of cancel flag.
     bool _cancelled; ///< Cancelled?
+    std::string _wName; // worker name
 };
 
 }}} // namespace lsst::qserv::qdisp
