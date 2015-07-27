@@ -36,6 +36,10 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <boost/lexical_cast.hpp>
+
+#include "util/Issue.h"
+#include "sql/SqlErrorObject.h"
 
 namespace lsst {
 namespace qserv {
@@ -66,6 +70,12 @@ class NoSuchKey : public CssError {
 public:
     NoSuchKey(std::string const& keyName)
         : CssError("Key '" + keyName + "' does not exist.") {}
+
+    NoSuchKey(sql::SqlErrorObject const& sqlErr)
+        : CssError("Error from mysql: ("
+                + boost::lexical_cast<std::string>(sqlErr.errNo())
+                + ") "
+                + sqlErr.errMsg()) {}
 };
 
 /**
@@ -104,6 +114,12 @@ class KeyExistsError : public CssError {
 public:
     KeyExistsError(std::string const& key)
         : CssError("Key '" + key +"' already exists.") {}
+
+    KeyExistsError(sql::SqlErrorObject const& sqlErr)
+        : CssError("Error from mysql: ("
+                + boost::lexical_cast<std::string>(sqlErr.errNo())
+                + ") "
+                + sqlErr.errMsg()) {}
 };
 
 /**
@@ -133,6 +149,20 @@ public:
     VersionMismatchError(std::string const& expected, std::string const& actual)
         : CssError("CSS version number mismatch: expected=" + expected +", actual=" + actual) {}
 };
+
+/**
+ * Specialized run-time error: generic error interacting with mysql
+ */
+class SqlError : public CssError {
+public:
+    SqlError(sql::SqlErrorObject const& sqlErr)
+        : CssError("Error from mysql: ("
+                + boost::lexical_cast<std::string>(sqlErr.errNo())
+                + ") "
+                + sqlErr.errMsg())
+    {}
+};
+
 
 }}} // namespace lsst::qserv::css
 

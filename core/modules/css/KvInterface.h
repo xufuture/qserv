@@ -91,6 +91,7 @@ public:
      */
     virtual std::vector<std::string> getChildren(std::string const& key) = 0;
 
+    // todo the documented error is wrong. Probably we want to verify these throughout
     /**
      * Delete a key.
      * Throws CssRunTimeError on failure.
