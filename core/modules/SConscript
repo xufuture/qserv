@@ -103,7 +103,7 @@ shProducts = { "xrdoss" : {'mods' : """global mysql sql util wconfig
 
 # external libs for shmods
 shmodLibs = {
-  'css': ['log', 'boost_system', 'mysqlclient_r']
+  'css': ['log', 'boost_system', 'boost_thread', 'mysqlclient_r']
 }
 
 # extra modules to include into shmod
