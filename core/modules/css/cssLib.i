@@ -33,7 +33,10 @@ Access to the classes from the qserv_css library
 #include "css/constants.h"
 #include "css/KvInterface.h"
 #include "css/KvInterfaceImplMem.h"
+#include "css/KvInterfaceImplMySql.h"
 #include "global/constants.h"
+#include "mysql/MySqlConfig.h"
+#include "mysql/MySqlConnection.h"
 %}
 
 %include typemaps.i
@@ -50,4 +53,10 @@ namespace std {
 %include "css/constants.h"
 %include "css/KvInterface.h"
 %include "css/KvInterfaceImplMem.h"
+
+// must be included before KvInterfaceImplMySql
+%include "mysql/MySqlConfig.h" 
+%include "sql/SqlConnection.h"
+
+%include "css/KvInterfaceImplMySql.h"
 %include "global/constants.h"

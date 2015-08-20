@@ -31,7 +31,21 @@ import logging
 import os
 import time
 import unittest
-from kvInterface import KvInterface, KvException
+#from kvInterface import KvInterface, KvException
+
+from lsst.qserv.css import cssLib
+from cssLib import KvInterface
+
+import ConfigParser
+def getConfig():
+    """loads the configuration information needed to test KvInterface with a running mysql server"""
+    cfgFile = os.path.join(os.path.expanduser("~", ".lsst", "KvInterfaceImplMySql-testRemote.txt"))
+    cfgParser = ConfigParser.ConfigParser()
+    filesRead = cfg.read(cfgFile)
+    if not cfgFile in filesRead:
+        return None
+    cfg = cssLib.MySqlConfig()
+
 
 class TestKvInterface(unittest.TestCase):
     def setUp(self):
