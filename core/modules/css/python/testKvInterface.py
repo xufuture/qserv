@@ -27,6 +27,7 @@ This is a unittest for the Central State System Interface class.
 
 """
 
+import ConfigParser
 import logging
 import os
 import time
@@ -34,34 +35,84 @@ import unittest
 #from kvInterface import KvInterface, KvException
 
 from lsst.qserv.css import cssLib
-from cssLib import KvInterface
+from lsst.qserv.css.cssLib import KvInterfaceImplMySql
 
-import ConfigParser
-def getConfig():
-    """loads the configuration information needed to test KvInterface with a running mysql server"""
-    cfgFile = os.path.join(os.path.expanduser("~", ".lsst", "KvInterfaceImplMySql-testRemote.txt"))
+sqlConn = None
+cfg = None
+
+def initConfig():
+    """
+    @brief loads the configuration information needed to test KvInterface with a running mysql server
+    @return a formatted MySqlConfig object
+    """
+    cfgFile = os.path.join(os.path.expanduser("~"), ".lsst", "KvInterfaceImplMySql-testRemote.txt")
     cfgParser = ConfigParser.ConfigParser()
-    filesRead = cfg.read(cfgFile)
+    filesRead = cfgParser.read(cfgFile)
     if not cfgFile in filesRead:
         return None
     cfg = cssLib.MySqlConfig()
+    cfg.username = cfgParser.get('mysql', 'user')
+    cfg.password = cfgParser.get('mysql', 'passwd')
+    cfg.hostname = cfgParser.get('mysql', 'host')
+    cfg.port = cfgParser.getint('mysql', 'port')
+
+    
+def initConnection():
+    """
+    @brief connects to the database and sets up a table with the schema to run the tests
+    @return True if conected & schema loaded, else false
+    """
+    # need config without database name
+    sqlConfigLocal = sqlConfig
+    sqlConfigLocal.dbName = ""
+    print "config:%s" % sqlConfigLocal.asString();
+    sqlConn = cssLib.SqlConnection(sqlConfigLocal)
+
+    
+def initDatabase():
+    """
+    todo
+    """
+    sqlConfig.dbName = "testCSSZ012sdrt";
+    # todo: how to find the schema file at this location? or where should it go?
+    # this mechanism of opening it seems way wrong.
+    schemaFile = open('../../admin/templates/configuration/tmp/configure/sql/CssData.sql', 'r')
+    # read whole file into buffer
+    schema = schemaFile.read()
+    # replace production schema name with test schema
+    schema.replace("qservCssData", sqlConfig.dbName);
+    errObj = cssLib.SqlErrorObject()
+    sqlConn.runQuery(schema, errObj);
+    if errObj.isSet():
+        print "setupDatabase error:%s" %(errObj.printErrMsg())
+        return False
+    return True 
 
 
 class TestKvInterface(unittest.TestCase):
     def setUp(self):
-        self._kvI = KvInterface.newImpl(connInfo='127.0.0.1:12181')
+        print "running setUp"
+        #self._kvI = KvInterface.newImpl(connInfo='127.0.0.1:12181')
+        
+        #cfg = getConfig()
+        #if (cfg is None):
+        #    self
+        self._kvI = KvInterfaceImplMySql(cfg)
 
     def testCreateGetSetDelete(self):
+        print "running testCreateGetSetDelete"
+        
         # first delete everything
-        self._kvI.delete("/unittest", recursive=True)
+        #self._kvI.deleteKey("/unittest")
         # try second time, just for fun, that should work too
-        self._kvI.delete("/unittest", recursive=True)
+        #self._kvI.deleteKey("/unittest")
         # define key/value for testing
         k1 = "/unittest/my/first/testX"
         k2 = "/unittest/my/testY"
         v1 = "aaa"
         v2 = "AAA"
         # create the key
+        print "calling create(%s, %s)" %(k1, v1)
         self._kvI.create(k1, v1)
         # and another one
         self._kvI.create(k2, v2)
@@ -108,17 +159,34 @@ class TestKvInterface(unittest.TestCase):
 
 
 ####################################################################################
-def setLogging():
-    logging.basicConfig(
-        #filename="/tmp/testKvInterface.log",
-        format='%(asctime)s %(name)s %(levelname)s: %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S',
-        level=logging.DEBUG)
-    logging.getLogger("kazoo.client").setLevel(logging.ERROR)
+#def setLogging():
+#    logging.basicConfig(
+#        #filename="/tmp/testKvInterface.log",
+#        format='%(asctime)s %(name)s %(levelname)s: %(message)s',
+#        datefmt='%m/%d/%Y %I:%M:%S',
+#        level=logging.DEBUG)
+#    logging.getLogger("kazoo.client").setLevel(logging.ERROR)
 
 def main():
-    setLogging()
+#    setLogging()
+    print "running main"
     unittest.main()
 
 if __name__ == "__main__":
+    initConfig()
+    initConnection()
+    initDatabase()
+
     main()
+
+#    cfg = getConfig()
+#    if cfg is not None and cfg.isValid():
+#        #todo check password - if not there, query. 
+#        if setupDatabase(cfg):
+#            main()
+#        else:
+#            print "error setting up database"
+#    else:
+#        print "error with config"
+    #todo emit a warning if cfg is not valid or db not set up
+ 

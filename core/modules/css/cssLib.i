@@ -35,8 +35,10 @@ Access to the classes from the qserv_css library
 #include "css/KvInterfaceImplMem.h"
 #include "css/KvInterfaceImplMySql.h"
 #include "global/constants.h"
+#include "global/stringTypes.h"
 #include "mysql/MySqlConfig.h"
-#include "mysql/MySqlConnection.h"
+#include "sql/SqlErrorObject.h"
+#include "sql/SqlConnection.h"
 %}
 
 %include typemaps.i
@@ -50,12 +52,16 @@ namespace std {
     %template(StringVector) vector<string>;
 };
 
+
+
 %include "css/constants.h"
 %include "css/KvInterface.h"
 %include "css/KvInterfaceImplMem.h"
 
 // must be included before KvInterfaceImplMySql
+%include "global/stringTypes.h"
 %include "mysql/MySqlConfig.h" 
+%include "sql/SqlErrorObject.h"
 %include "sql/SqlConnection.h"
 
 %include "css/KvInterfaceImplMySql.h"
