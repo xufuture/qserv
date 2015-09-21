@@ -31,9 +31,7 @@
 
 // System headers
 #include <memory>
-
-// Third-party headers
-#include "boost/regex.hpp"
+#include <regex>
 
 // Local headers
 #include "util/PacketBuffer.h"
@@ -45,9 +43,9 @@ namespace rproc {
 class SqlInsertIter {
 public:
     typedef char const* BufIter;
-    typedef boost::regex_iterator<BufIter> Iter;
-    typedef boost::match_results<BufIter> Match;
-    typedef boost::sub_match<BufIter> Value;
+    typedef std::regex_iterator<BufIter> Iter;
+    typedef std::match_results<BufIter> Match;
+    typedef std::sub_match<BufIter> Value;
 
     SqlInsertIter() : _allowNull(false), _lastUsed(NULL), _blockFound(false) {}
 
@@ -95,9 +93,9 @@ private:
     class BufferMgr;
     // should be scoped_ptr, but requires exposed defn of BufferMgr
     std::shared_ptr<BufferMgr> _bufferMgr;
-    boost::regex _blockExpr;
-    boost::regex _insExpr;
-    boost::regex _nullExpr;
+    std::regex _blockExpr;
+    std::regex _insExpr;
+    std::regex _nullExpr;
 
     static Iter _nullIter;
 };

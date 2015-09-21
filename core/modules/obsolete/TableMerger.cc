@@ -42,12 +42,12 @@
 #include <cassert>
 #include <cstddef>
 #include <iostream>
+#include <regex>
 #include <sstream>
 #include <sys/time.h>
 
 // Third-party headers
 #include "boost/format.hpp"
-#include "boost/regex.hpp"
 
 // LSST headers
 #include "lsst/log/Log.h"
@@ -114,7 +114,7 @@ std::string extractReplacedCreateStmt(char const* s, ::off_t size,
                                       bool dropQuote) {
     LOGF_DEBUG("EXECUTING TableMerger::extractReplacedCreateStmt()");
 
-    boost::regex createExp("(CREATE TABLE )(`?)(" + oldTable + ")(`?)( ?[^;]+?;)");
+    std::regex createExp("(CREATE TABLE )(`?)(" + oldTable + ")(`?)( ?[^;]+?;)");
     std::string newForm;
     if(dropQuote) {
         newForm = "\\1" + newTable + "\\5";
@@ -124,9 +124,10 @@ std::string extractReplacedCreateStmt(char const* s, ::off_t size,
     std::string out;
     std::stringstream ss;
     std::ostream_iterator<char,char> oi(ss);
-    regex_replace(oi, s, s+size, createExp, newForm,
-                  boost::match_default | boost::format_perl
-                  | boost::format_no_copy | boost::format_first_only);
+    std::regex_replace(oi, s, s+size, createExp, newForm,
+                  std::regex_constants::match_default
+                  | std::regex_constants::format_no_copy
+                  | std::regex_constants::format_first_only);
     out = ss.str();
     return out;
 }

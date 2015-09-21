@@ -47,7 +47,6 @@
 
 // Third-party headers
 #include "boost/format.hpp"
-#include "boost/regex.hpp"
 
 // LSST headers
 #include "lsst/log/Log.h"

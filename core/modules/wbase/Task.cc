@@ -31,9 +31,6 @@
 // Class header
 #include "wbase/Task.h"
 
-// Third-party headers
-#include "boost/regex.hpp"
-
 // LSST headers
 #include "lsst/log/Log.h"
 

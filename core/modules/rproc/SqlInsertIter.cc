@@ -42,28 +42,28 @@
 namespace {
 
 // Helpers to make regex's
-boost::regex makeLockInsertRegex(std::string const& tableName) {
-    return boost::regex("LOCK TABLES `?" + tableName + "`? WRITE;"
+std::regex makeLockInsertRegex(std::string const& tableName) {
+    return std::regex("LOCK TABLES `?" + tableName + "`? WRITE;"
                         "(.*?)(INSERT INTO[^;]*?;)+(.*?)"
                         "UNLOCK TABLES;");
 }
 
-boost::regex makeLockInsertOpenRegex(std::string const& tableName) {
-    return boost::regex("LOCK TABLES `?" + tableName + "`? WRITE;"
+std::regex makeLockInsertOpenRegex(std::string const& tableName) {
+    return std::regex("LOCK TABLES `?" + tableName + "`? WRITE;"
                         "(.*?)(INSERT INTO[^;]*?;)+");
 }
 
-boost::regex makeLockOpenRegex(std::string const& tableName) {
-    return boost::regex("LOCK TABLES `?" + tableName + "`? WRITE;");
+std::regex makeLockOpenRegex(std::string const& tableName) {
+    return std::regex("LOCK TABLES `?" + tableName + "`? WRITE;");
 }
 
-boost::regex makeInsertRegex(std::string const& tableName) {
-    return boost::regex("(INSERT INTO `?" + tableName +
+std::regex makeInsertRegex(std::string const& tableName) {
+    return std::regex("(INSERT INTO `?" + tableName +
                         "`? [^;]+?;)");// [~;]*?;)");
 }
 
-boost::regex makeNullInsertRegex(std::string const& tableName) {
-    return boost::regex("(INSERT INTO `?" + tableName +
+std::regex makeNullInsertRegex(std::string const& tableName) {
+    return std::regex("(INSERT INTO `?" + tableName +
                         "`? +VALUES ?[(]NULL(,NULL)*[)];)");
 }
 
@@ -200,14 +200,14 @@ SqlInsertIter::SqlInsertIter(util::PacketBuffer::Ptr p,
     // Continue.
     LOGF_DEBUG("EXECUTING SqlInsertIter(PacketIter::Ptr, %1%, %2%)"
                % tableName % allowNull);
-    boost::regex lockInsertExpr(makeLockInsertOpenRegex(tableName));
-    boost::regex lockExpr(makeLockOpenRegex(tableName));
+    std::regex lockInsertExpr(makeLockInsertOpenRegex(tableName));
+    std::regex lockExpr(makeLockOpenRegex(tableName));
     bool found = false;
     while(!found) {
         // need to add const to help compiler
         char const* buf = _bufferMgr->getStart();
         char const* bufEnd = _bufferMgr->getEnd();
-        found = boost::regex_search(buf, bufEnd, _blockMatch, lockInsertExpr);
+        found = std::regex_search(buf, bufEnd, _blockMatch, lockInsertExpr);
         if(found) {
             LOGF_DEBUG("Matched Lock statement within SqlInsertIter");
             break;
@@ -219,7 +219,7 @@ SqlInsertIter::SqlInsertIter(util::PacketBuffer::Ptr p,
             // Verify presence of Lock statement.
             buf = _bufferMgr->getStart();
             bufEnd = _bufferMgr->getEnd();
-            if(boost::regex_search(buf, bufEnd, _blockMatch, lockExpr)) {
+            if(std::regex_search(buf, bufEnd, _blockMatch, lockExpr)) {
                 return;
             } else {
                 errno = ENOTRECOVERABLE;
@@ -248,9 +248,9 @@ void SqlInsertIter::_initRegex(std::string const& tableName) {
 
 void SqlInsertIter::_init(char const* buf, off_t bufSize,
                           std::string const& tableName) {
-    boost::regex lockInsertRegex(makeLockInsertRegex(tableName));
+    std::regex lockInsertRegex(makeLockInsertRegex(tableName));
     assert(buf < (buf+bufSize));
-    _blockFound = boost::regex_search(buf, buf+bufSize,
+    _blockFound = std::regex_search(buf, buf+bufSize,
                                       _blockMatch, lockInsertRegex);
     if(_blockFound) {
         _initRegex(tableName);
@@ -265,7 +265,7 @@ void SqlInsertIter::_init(char const* buf, off_t bufSize,
 bool SqlInsertIter::isNullInsert() const {
     // Avoid constructing a string > 1MB just to check for null.
     if(_iter->length() > (1<<20)) return false;
-    return boost::regex_match(_iter->str(), _nullExpr);
+    return std::regex_match(_iter->str(), _nullExpr);
 }
 
 SqlInsertIter& SqlInsertIter::operator++() {

@@ -29,10 +29,8 @@
 #include <cassert>
 #include <exception>
 #include <iostream>
+#include <regex>
 #include <sstream>
-
-// Third-party headers
-#include "boost/regex.hpp"
 
 // LSST headers
 #include "lsst/log/Log.h"
@@ -97,11 +95,11 @@ void fetchDbs(std::string const& instanceName,
 /// Functor to be called per-table name
 class doTable {
 public:
-    doTable(boost::regex& regex, ChunkInventory::ChunkMap& chunkMap)
+    doTable(std::regex& regex, ChunkInventory::ChunkMap& chunkMap)
         : _regex(regex), _chunkMap(chunkMap) {}
     void operator()(std::string const& tableName) {
-        boost::smatch what;
-        if(boost::regex_match(tableName, what, _regex)) {
+        std::smatch what;
+        if(std::regex_match(tableName, what, _regex)) {
             //std::cout << "Found chunk table: " << what[1]
             //<< "(" << what[2] << ")" << std::endl;
             // Get chunk# slot. Append/set table name.
@@ -112,7 +110,7 @@ public:
         }
     }
 private:
-    boost::regex _regex;
+    std::regex _regex;
     ChunkInventory::ChunkMap& _chunkMap;
 };
 
@@ -148,7 +146,7 @@ struct addDbItem {
 class doDb {
 public:
     doDb(SqlConnection& conn,
-         boost::regex& regex,
+         std::regex& regex,
          ChunkInventory::ExistMap& existMap)
         : _conn(conn),
           _regex(regex),
@@ -192,7 +190,7 @@ public:
         }
 private:
     SqlConnection& _conn;
-    boost::regex& _regex;
+    std::regex& _regex;
     ChunkInventory::ExistMap& _existMap;
 };
 
@@ -272,7 +270,7 @@ void ChunkInventory::dbgPrint(std::ostream& os) {
 
 void ChunkInventory::_init(SqlConnection& sc) {
     std::string chunkedForm("(\\w+)_(\\d+)");
-    boost::regex regex(chunkedForm);
+    std::regex regex(chunkedForm);
     // Check metadata for databases to track
 
     std::deque<std::string> dbs;
