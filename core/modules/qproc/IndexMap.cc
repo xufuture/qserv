@@ -121,13 +121,19 @@ struct FuncMap {
 };
 static FuncMap funcMap;
 
+/*  Computes region covered by a given spherical geometry UDF call
+ *
+ *  @param c:   Constraint containing name and parameter of UDF call
+ *  @return:    Pointer to Region covered by c, or nullptr if empty
+ */
 std::shared_ptr<Region> getRegion(lsst::qserv::query::Constraint const& c) {
+    std::shared_ptr<Region> covered_region = nullptr;
     FuncMap::Map::const_iterator i = funcMap.fMap.find(c.name);
     if(i != funcMap.fMap.end()) {
         LOGF(getLogger(), LOG_LVL_TRACE, "Region for %1%: %2%" % c % i->first);
-        return i->second(c.params);
+        covered_region = i->second(c.params);
     }
-    return std::shared_ptr<Region>();
+    return covered_region;
 }
 
 lsst::qserv::qproc::ChunkSpec convertSgSubChunks(SubChunks const& sc) {
