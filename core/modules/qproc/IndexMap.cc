@@ -217,12 +217,15 @@ IndexMap::IndexMap(css::StripingParams const& sp,
       _si(si) {
 }
 
-ChunkSpecVector IndexMap::getAll() {
+// Compute the chunks list for the whole partitioning scheme
+ChunkSpecVector IndexMap::getAllChunks() {
     return _pm->getAllChunks();
 }
 
-ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
-    // Index lookups
+//  Compute chunks coverage of spatial and secondary index constraints
+ChunkSpecVector IndexMap::getChunks(query::ConstraintVector const& cv) {
+
+    // Secondary Index lookups
     if(!_si) {
         throw Bug("Invalid SecondaryIndex in IndexMap. Check IndexMap(...)");
     }
@@ -253,7 +256,7 @@ ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
     std::transform(scv.begin(), scv.end(),
                    std::back_inserter(regionSpecs), convertSgSubChunks);
 
-    // Index and spatial lookup are supported in AND format only right now.
+    // FIXME: Index and spatial lookup are supported in AND format only right now.
     if(hasIndex && hasRegion) {
         // Perform AND with index and spatial
         normalize(indexSpecs);
@@ -265,7 +268,7 @@ ChunkSpecVector IndexMap::getIntersect(query::ConstraintVector const& cv) {
     } else if(hasRegion) {
         return regionSpecs;
     } else {
-        return _pm->getAllChunks();
+        return getAllChunks();
     }
 }
 
