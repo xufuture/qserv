@@ -4,7 +4,7 @@
 
 # @author  Fabrice Jammes, IN2P3/SLAC
 
-apt-get install gcc-4.8 g++-4.8
+apt-get install --yes gcc-4.8 g++-4.8
 update-alternatives --remove-all gcc
 update-alternatives --remove-all g++
 
@@ -16,3 +16,5 @@ update-alternatives --set cc /usr/bin/gcc
 
 update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 30
 update-alternatives --set c++ /usr/bin/g++
+
+echo "Compiler: $(gcc --version)"

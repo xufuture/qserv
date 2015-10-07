@@ -9,6 +9,10 @@ RUN apt-get -y upgrade && apt-get -y clean
 COPY scripts/install-deps.sh /root/install-deps.sh
 RUN /root/install-deps.sh
 
+# Boost doesn't build with gcc 4.9
+COPY scripts/gcc-4.8.sh /root/gcc-4.8.sh
+RUN /root/gcc-4.8.sh
+
 RUN groupadd qserv && \
     useradd -m -g qserv qserv && \
     usermod -s /bin/bash qserv && \
