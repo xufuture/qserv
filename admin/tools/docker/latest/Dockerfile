@@ -9,7 +9,7 @@ RUN apt-get -y upgrade && apt-get -y clean
 COPY scripts/install-deps.sh /root/install-deps.sh
 RUN /root/install-deps.sh
 
-# Boost doesn't build with gcc 4.9
+# Set gcc 4.8 as default
 COPY scripts/gcc-4.8.sh /root/gcc-4.8.sh
 RUN /root/gcc-4.8.sh
 
