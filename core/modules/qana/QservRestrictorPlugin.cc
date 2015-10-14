@@ -129,18 +129,6 @@ struct extractLiteral {
     }
 };
 
-
-inline void
-push_back(std::shared_ptr<query::QsRestrictor::PtrVector>& preds,
-        query::QsRestrictor::Ptr p) {
-    if (p) {
-        if (!preds) {
-            preds = std::make_shared<query::QsRestrictor::PtrVector>();
-        }
-        preds->push_back(p);
-    }
-}
-
 /**  Create a QsRestrictor from the column ref and the set of specified values or NULL if one of the values is a non-literal.
  *
  *   @param restrictorType: The type of restrictor, only secondary index restrictors are handled
@@ -224,11 +212,11 @@ query::QsRestrictor::Ptr newRestrictor(
  *
  *   @return:         Qserv restrictors list
  */
-std::shared_ptr<query::QsRestrictor::PtrVector> getSecIndexRestrictors(query::QueryContext& context,
-                                         query::AndTerm::Ptr andTerm) {
-    std::shared_ptr<query::QsRestrictor::PtrVector> secIndexRestrictors;
+query::QsRestrictor::PtrVector getSecIndexRestrictors(query::QueryContext& context,
+                                                      query::AndTerm::Ptr andTerm) {
+    query::QsRestrictor::PtrVector result;
 
-    if (not andTerm) return nullptr;
+    if (not andTerm) return result;
 
     for (auto i = andTerm->iterBegin(); i != andTerm->iterEnd(); ++i) {
         query::BoolFactor* factor = dynamic_cast<query::BoolFactor*>(i->get());
@@ -284,12 +272,12 @@ std::shared_ptr<query::QsRestrictor::PtrVector> getSecIndexRestrictors(query::Qu
             }
 
             if (restrictor) {
-                push_back(secIndexRestrictors, restrictor);
+                result.push_back(restrictor);
             }
 
         }
     }
-    return secIndexRestrictors;
+    return result;
 }
 
 query::PassTerm::Ptr newPass(std::string const& s) {
@@ -608,13 +596,13 @@ QservRestrictorPlugin::applyLogical(query::SelectStmt& stmt,
 
     std::shared_ptr<query::QsRestrictor::PtrVector const> restrsPtr = wc.getRestrs();
     query::AndTerm::Ptr originalAnd(wc.getRootAndTerm());
-    std::shared_ptr<query::QsRestrictor::PtrVector> secIndexPreds = getSecIndexRestrictors(context, originalAnd);
-    query::AndTerm::Ptr newTerm;
+    query::QueryContext::RestrList restrictors;
     // Now handle the explicit restrictors
-    if (restrsPtr && !restrsPtr->empty()) {
+    if (restrsPtr && not restrsPtr->empty()) {
+
+        query::AndTerm::Ptr newTerm;
         // spatial restrictions
         query::QsRestrictor::PtrVector const& restrs = *restrsPtr;
-        context.restrictors = std::make_shared<query::QueryContext::RestrList>();
         newTerm = std::make_shared<query::AndTerm>();
 
         // At least one table should exist in the restrictor entries
@@ -634,28 +622,26 @@ QservRestrictorPlugin::applyLogical(query::SelectStmt& stmt,
             if ((**i)._name == "qserv_objectId") {
                 // Convert to secIndex restrictor
                 query::QsRestrictor::Ptr p = _convertObjectId(context, **i);
-                context.restrictors->push_back(p);
+                restrictors.push_back(p);
             } else {
                 // Save restrictor in QueryContext.
-                context.restrictors->push_back(*i);
+                restrictors.push_back(*i);
             }
         }
+
+        wc.prependAndTerm(newTerm);
     }
     wc.resetRestrs();
-    // Merge in the implicit restrictors
-    if (secIndexPreds) {
-        if (!context.restrictors) {
-            context.restrictors = secIndexPreds;
-        } else {
-            context.restrictors->insert(context.restrictors->end(),
-                                        secIndexPreds->begin(),
-                                        secIndexPreds->end());
-        }
+
+    // Merge in the implicit (i.e. secondary index) restrictors
+    query::QsRestrictor::PtrVector const& secIndexPreds = getSecIndexRestrictors(context, originalAnd);
+    restrictors.insert(restrictors.end(),
+                       secIndexPreds.begin(),
+                       secIndexPreds.end());
+
+    if (not restrictors.empty()) {
+        context.restrictors = std::make_shared<query::QueryContext::RestrList>(restrictors);
     }
-    if (context.restrictors && context.restrictors->empty()) {
-        context.restrictors.reset();
-    }
-    if (newTerm) { wc.prependAndTerm(newTerm); }
 }
 
 void
