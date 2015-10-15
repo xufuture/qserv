@@ -110,30 +110,25 @@ lookupSecIndex(query::QueryContext& context,
     return std::find(sics.begin(), sics.end(), cr->column) != sics.end();
 }
 
-
-inline bool isValidLiteral(query::ValueExprPtr p) {
-    return p && !p->copyAsLiteral().empty();
+bool hasInvalidLiteral(query::ValueExprPtrVector const& values) {
+    for (auto v : values) {
+        if (not v || v->copyAsLiteral().empty()) {
+            return true;
+        }
+    }
+    return false;
 }
 
-struct validateLiteral {
-    validateLiteral(bool& isValid_) : isValid(isValid_) {}
-    inline void operator()(query::ValueExprPtr p) {
-        isValid = isValid && isValidLiteral(p);
-    }
-    bool& isValid;
+std::string extractLiteral(query::ValueExprPtr p) {
+    return p->copyAsLiteral();
 };
 
-struct extractLiteral {
-    inline std::string operator()(query::ValueExprPtr p) {
-        return p->copyAsLiteral();
-    }
-};
-
-/**  Create a QsRestrictor from the column ref and the set of specified values or NULL if one of the values is a non-literal.
+/**  Create a QsRestrictor from the column ref and the set of specified literal values.
  *
  *   @param restrictorType: The type of restrictor, only secondary index restrictors are handled
  *   @param context:        Context, used to get database schema informations
- *   @param cr:             Represent the column on which secondary index will be queried
+ *   @param cr:             Represent the column on which secondary index will be queried.
+ *   @param values:         Set of literal values used to search cr column in secondary index
  *   @return:               A Qserv restrictor or NULL if at least one element in values is a non-literal.
  */
 query::QsRestrictor::Ptr newRestrictor(
@@ -143,9 +138,7 @@ query::QsRestrictor::Ptr newRestrictor(
     query::ValueExprPtrVector const& values)
 {
     // Extract the literals, bailing out if we see a non-literal
-    bool isValid = true;
-    std::for_each(values.begin(), values.end(), validateLiteral(isValid));
-    if (!isValid) {
+    if (hasInvalidLiteral(values)) {
         return query::QsRestrictor::Ptr();
     }
 
@@ -153,8 +146,7 @@ query::QsRestrictor::Ptr newRestrictor(
     query::QsRestrictor::Ptr restrictor = std::make_shared<query::QsRestrictor>();
     if (restrictorType==SECONDARY_INDEX_IN) {
         restrictor->_name = "sIndex";
-    }
-    else if (restrictorType==SECONDARY_INDEX_BETWEEN) {
+    } else if (restrictorType==SECONDARY_INDEX_BETWEEN) {
         restrictor->_name = "sIndexBetween";
     }
     // sIndex and sIndexBetween have parameters as follows:
@@ -200,7 +192,7 @@ query::QsRestrictor::Ptr newRestrictor(
         restrictor->_params.push_back(cr->column);
     }
     std::transform(values.begin(), values.end(),
-                   std::back_inserter(restrictor->_params), extractLiteral());
+                   std::back_inserter(restrictor->_params), extractLiteral);
     return restrictor;
 }
 
@@ -256,7 +248,7 @@ query::QsRestrictor::PtrVector getSecIndexRestrictors(query::QueryContext& conte
                     LOGF(getLogger(), LOG_LVL_TRACE, "Add SECONDARY_INDEX_IN restrictor: %s, for '=' predicate" % *restrictor);
                 }
             } else if (auto const betweenPredicate = std::dynamic_pointer_cast<query::BetweenPredicate>(factorTerm)) {
-            // BETWEEN predicate
+                // BETWEEN predicate
                 column_ref = resolveAsColumnRef(context, betweenPredicate->value);
                 if (column_ref && lookupSecIndex(context, column_ref)) {
                     query::ValueExprPtrVector cands;
@@ -581,13 +573,13 @@ QservRestrictorPlugin::applyLogical(query::SelectStmt& stmt,
     query::FromList& fList = stmt.getFromList();
     query::TableRefList& tList = fList.getTableRefList();
     RestrictorEntries entries;
-    if (!context.css) {
+    if (not context.css) {
         throw AnalysisBug("Missing metadata in context");
     }
     getTable gt(*context.css, entries);
     std::for_each(tList.begin(), tList.end(), gt);
 
-    if (!stmt.hasWhereClause()) { return; }
+    if (not stmt.hasWhereClause()) { return; }
 
     // Prepare to patch the WHERE clause
     query::WhereClause& wc = stmt.getWhereClause();
