@@ -609,21 +609,19 @@ QservRestrictorPlugin::applyLogical(query::SelectStmt& stmt,
         }
 
         // Now, for each of the qserv restrictors:
-        for (query::QsRestrictor::PtrVector::const_iterator i=restrs.begin();
-            i != restrs.end(); ++i) {
+        for (auto const i : restrs) {
             // for each restrictor entry
             // generate a restrictor condition.
-            for (RestrictorEntries::const_iterator j = entries.begin();
-                j != entries.end(); ++j) {
-                newTerm->_terms.push_back(_makeCondition(*i, *j));
+            for (auto const j : entries) {
+                newTerm->_terms.push_back(_makeCondition(i, j));
             }
-            if ((**i)._name == "qserv_objectId") {
+            if ((*i)._name == "qserv_objectId") {
                 // Convert to secIndex restrictor
-                query::QsRestrictor::Ptr p = _convertObjectId(context, **i);
+                query::QsRestrictor::Ptr p = _convertObjectId(context, *i);
                 restrictors.push_back(p);
             } else {
                 // Save restrictor in QueryContext.
-                restrictors.push_back(*i);
+                restrictors.push_back(i);
             }
         }
 
