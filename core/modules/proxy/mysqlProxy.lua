@@ -257,6 +257,7 @@ function queryType()
         if string.find(qU, "^SELECT @@VERSION_COMMENT LIMIT") or
            string.find(qU, "^SELECT @@SESSION.AUTO_INCREMENT_INCREMENT") or
            string.find(qU, "^SELECT @@TX_ISOLATION") or
+           string.find(qU, "^SELECT @@max_allowed_packet") or
            string.find(qU, "^SHOW ") or
            string.find(qU, "^SET ") or
            string.find(qU, "^DESCRIBE ") or
