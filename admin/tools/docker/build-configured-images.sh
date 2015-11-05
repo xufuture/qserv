@@ -64,8 +64,8 @@ DOCKERDIR="$DIR/cfg"
 
 # Build the master image
 
-sed 's/{{NODE_TYPE_OPT}}/-m/g' cfg/Dockerfile.tpl | \
-    sed "s/{{MASTER_FQDN_OPT}}/${MASTER}/g" > $DOCKERDIR/Dockerfile
+sed 's/{{NODE_TYPE_OPT}}/-m/g' "$DOCKERDIR/Dockerfile.tpl" | \
+    sed "s/{{MASTER_FQDN_OPT}}/${MASTER}/g" > "$DOCKERDIR/Dockerfile"
 
 VERSION=master-${MASTER}
 TAG="fjammes/qserv:$VERSION"
@@ -76,8 +76,8 @@ printf "Image %s built successfully\n" "$TAG"
 
 # Build the worker image
 
-sed 's/{{NODE_TYPE_OPT}}//g' cfg/Dockerfile.tpl | \
-    sed "s/{{MASTER_FQDN_OPT}}/${MASTER}/g" > $DOCKERDIR/Dockerfile
+sed 's/{{NODE_TYPE_OPT}}//g' "$DOCKERDIR/Dockerfile.tpl" | \
+    sed "s/{{MASTER_FQDN_OPT}}/${MASTER}/g" > "$DOCKERDIR/Dockerfile"
 
 VERSION=worker-${MASTER}
 TAG="fjammes/qserv:$VERSION"
