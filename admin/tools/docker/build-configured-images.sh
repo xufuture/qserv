@@ -60,7 +60,7 @@ fi
 MASTER=$1
 
 DIR=$(cd "$(dirname "$0")"; pwd -P)
-DOCKERDIR="$DIR/cfg"
+DOCKERDIR="$DIR/configured"
 
 # Build the master image
 

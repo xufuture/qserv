@@ -16,3 +16,4 @@ WORKDIR /home/qserv/src/qserv
 RUN git checkout {{GIT_TAG_OPT}} 
 
 RUN bash -c ". /qserv/stack/loadLSST.bash && setup -r . -t qserv-dev && eupspkg -er install"
+RUN bash -c ". /qserv/stack/loadLSST.bash && eupspkg -er install -t qserv_latest"

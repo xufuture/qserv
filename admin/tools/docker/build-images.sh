@@ -38,7 +38,8 @@ Usage: `basename $0` [options]
 
   Available options:
     -h          this message
-    -R          Qserv release to be packaged, default to $VERSION
+    -v          Qserv release to be packaged, default to $VERSION
+    -C          Rebuild the images from scratch
     -d path     directory containing dependency scripts, default to
                 \$QSERV_DIR/admin/bootstrap
 
@@ -48,9 +49,10 @@ EOD
 }
 
 # get the options
-while getopts hd:v: c ; do
+while getopts hd:v:C c ; do
     case $c in
             h) usage ; exit 0 ;;
+            C) CACHE_OPT="--no-cache=true" ;;
             d) DEPS_DIR="$OPTARG" ;;
             v) VERSION="$OPTARG" ;;
             \?) usage ; exit 2 ;;
@@ -93,7 +95,7 @@ ln -f "$TPL_DEPS_SCRIPT" "$SCRIPT_DIR/install-deps.sh"
 # Build the release image
 TAG="fjammes/qserv:$VERSION"
 printf "Building latest release image %s from %s\n" "$TAG" "$DOCKERDIR"
-docker build --tag="$TAG" "$DOCKERDIR"
+docker build $CACHE_OPT --tag="$TAG" "$DOCKERDIR"
 
 # Use 'latest' as tag alias
 LATEST_VERSION=$(basename "$DOCKERDIR")
@@ -106,6 +108,6 @@ DOCKERDIR="$DIR/dev"
 VERSION=$(basename "$DOCKERDIR")                                                                                                                                                                                   
 TAG="fjammes/qserv:$VERSION"
 printf "Building development image %s from %s\n" "$TAG" "$DOCKERDIR"
-docker build --tag="$TAG" "$DOCKERDIR"
+docker build $CACHE_OPT --tag="$TAG" "$DOCKERDIR"
 
 printf "Image %s built successfully\n" "$TAG"
