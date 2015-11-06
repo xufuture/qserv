@@ -25,6 +25,8 @@
 # @author  Fabrice Jammes, IN2P3/SLAC
 
 set -e
+            
+DOCKER_IMAGE="fjammes/qserv:latest"
 
 usage() {
   cat << EOD
@@ -33,13 +35,12 @@ Usage: `basename $0` [options] host
 
   Available options:
     -h          this message
+    -i          Docker image to be used as input, default to $DOCKER_IMAGE
 
   Create docker images containing Qserv master and worker instances,
-  use a Docker image containing latest Qserv stack as input.
-  Qserv master fqdn must be provided as unique argument.
+  use an existing Qserv Docker image as input.
+  Qserv master fqdn or ip adress must be provided as unique argument.
 
-  Once completed, run an interactive session on this container with:
-  docker run -i --hostname="qserv-host" -t "fjammes/qserv:<VERSION>" /bin/bash
 EOD
 }
 
@@ -47,6 +48,7 @@ EOD
 while getopts hi: c ; do
     case $c in
             h) usage ; exit 0 ;;
+            i) DOCKER_IMAGE="$OPTARG" ;;
             \?) usage ; exit 2 ;;
     esac
 done
@@ -65,10 +67,10 @@ DOCKERDIR="$DIR/configured"
 # Build the master image
 
 sed 's/{{NODE_TYPE_OPT}}/-m/g' "$DOCKERDIR/Dockerfile.tpl" | \
+	sed "s/{{DOCKER_IMAGE_OPT}}/$DOCKER_IMAGE/g" | \
     sed "s/{{MASTER_FQDN_OPT}}/${MASTER}/g" > "$DOCKERDIR/Dockerfile"
 
-VERSION=master-${MASTER}
-TAG="fjammes/qserv:$VERSION"
+TAG="${DOCKER_IMAGE}_master_${MASTER}"
 printf "Building development image %s from %s\n" "$TAG" "$DOCKERDIR"
 docker build --tag="$TAG" "$DOCKERDIR"
 
@@ -79,8 +81,7 @@ printf "Image %s built successfully\n" "$TAG"
 sed 's/{{NODE_TYPE_OPT}}//g' "$DOCKERDIR/Dockerfile.tpl" | \
     sed "s/{{MASTER_FQDN_OPT}}/${MASTER}/g" > "$DOCKERDIR/Dockerfile"
 
-VERSION=worker-${MASTER}
-TAG="fjammes/qserv:$VERSION"
+TAG="${DOCKER_IMAGE}_worker_${MASTER}"
 printf "Building development image %s from %s\n" "$TAG" "$DOCKERDIR"
 docker build --tag="$TAG" "$DOCKERDIR"
 

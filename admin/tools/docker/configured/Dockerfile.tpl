@@ -1,4 +1,4 @@
-FROM fjammes/qserv:latest
+FROM {{DOCKER_IMAGE_OPT}}
 MAINTAINER Fabrice Jammes <fabrice.jammes@in2p3.fr>
 
 USER qserv
