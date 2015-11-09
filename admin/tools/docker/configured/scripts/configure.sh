@@ -69,8 +69,8 @@ echo "Setup qserv_distrib in eups with options: $SETUP_OPTS"
 if setup qserv_distrib $SETUP_OPT_GIT $SETUP_OPT_DEV
 then
     echo "Setup Qserv build from source version"
-elif
-    setup qserv_distrib $SETUP_OPT_DEV
+elif setup qserv_distrib $SETUP_OPT_DEV
+then
     echo "Setup Qserv development version"
 else
     setup qserv_distrib -t qserv_latest

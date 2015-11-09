@@ -1,9 +1,14 @@
 FROM {{DOCKER_IMAGE_OPT}}
 MAINTAINER Fabrice Jammes <fabrice.jammes@in2p3.fr>
 
-USER qserv
-
 WORKDIR /qserv
+
+COPY scripts/*.sh scripts/
+
+USER root
+RUN chown -R qserv:qserv /qserv/scripts/
+
+USER qserv
 
 RUN /qserv/scripts/configure.sh {{NODE_TYPE_OPT}} {{MASTER_FQDN_OPT}}
 

@@ -13,4 +13,5 @@ RUN bash -c ". /qserv/stack/loadLSST.bash && eups distrib install qserv_distrib 
 
 RUN mkdir src && cd src && git clone -b {{GIT_TAG_OPT}} --single-branch https://github.com/LSST/qserv
 WORKDIR /home/qserv/src/qserv
-RUN bash -c ". /qserv/stack/loadLSST.bash && setup -r . -t qserv-dev && eupspkg -er install && eupspkg -er decl"
+RUN bash -c ". /qserv/stack/loadLSST.bash && setup -r . -t qserv-dev && eupspkg -er install"
+RUN bash -c ". /qserv/stack/loadLSST.bash && setup -r . -t qserv-dev && eupspkg -er decl -t qserv-dev"

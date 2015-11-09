@@ -49,4 +49,4 @@ QSERV_DATA_DIR="$INSTALL_BASE/data"
 # add it to ~/.eups/startup.py
 SETUP_OPT_GIT='-t git'
 
-SETUP_OPT_RELEASE='-t qserv'
+SETUP_OPT_DEV='-t qserv-dev'
