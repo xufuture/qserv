@@ -66,16 +66,17 @@ DIR=$(cd "$(dirname "$0")"; pwd -P)
 echo "Setup qserv_distrib in eups with options: $SETUP_OPTS"
 . $INSTALL_DIR/loadLSST.bash
 
-if setup qserv_distrib $SETUP_OPT_GIT $SETUP_OPT_DEV
+if setup qserv_distrib $SETUP_OPT_GIT -t qserv-dev
 then
-    echo "Setup Qserv build from source version"
-elif setup qserv_distrib $SETUP_OPT_DEV
+    echo "SETUP QSERV BUILD FROM SOURCE VERSION"
+elif setup qserv_distrib -t qserv-dev
 then
-    echo "Setup Qserv development version"
+    echo "SETUP QSERV DEVELOPMENT VERSION"
 else
     setup qserv_distrib -t qserv_latest
-    echo "Setup Qserv release"
+    echo "SETUP QSERV RELEASE"
 fi
+echo "Using Qserv from $QSERV_DIR"
 
 echo "Configure Qserv $NODE_TYPE"
 qserv-configure.py --init --force \

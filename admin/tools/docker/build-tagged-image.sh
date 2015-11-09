@@ -27,6 +27,9 @@
 set -e
 set -x
 
+
+DOCKER_USER=$(whoami)
+
 usage() {
   cat << EOD
 
@@ -34,6 +37,7 @@ Usage: `basename $0` [options] git-tag
 
   Available options:
     -h          this message
+    -u          User login in docker hub
 
   Create a docker image from using a git-tagged Qserv version 
   use a Docker image containing latest Qserv stack as input.
@@ -42,9 +46,10 @@ EOD
 }
 
 # Get the options
-while getopts hi: c ; do
+while getopts hu: c ; do
     case $c in
             h) usage ; exit 0 ;;
+            u) DOCKER_USER="$OPTARG" ;;
             \?) usage ; exit 2 ;;
     esac
 done
@@ -65,7 +70,7 @@ sed "s,{{GIT_TAG_OPT}},${GIT_TAG},g" "$DOCKERDIR/Dockerfile.tpl" > "$DOCKERDIR/D
 
 # Docker tag doesn't stand '/'
 VERSION=$(echo ${GIT_TAG} | tr '/' '_')
-TAG="fjammes/qserv:$VERSION"
+TAG="$DOCKER_USER/qserv:$VERSION"
 printf "Building development image %s from %s\n" "$TAG" "$DOCKERDIR"
 docker build --tag="$TAG" "$DOCKERDIR"
 
