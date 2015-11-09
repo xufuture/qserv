@@ -25,7 +25,7 @@
 # @author  Fabrice Jammes, IN2P3/SLAC
 
 set -e
-            
+
 DOCKER_IMAGE="fjammes/qserv:latest"
 
 usage() {
