@@ -66,9 +66,11 @@ DOCKERDIR="$DIR/configured"
 
 # Build the master image
 
-sed 's/{{NODE_TYPE_OPT}}/-m/g' "$DOCKERDIR/Dockerfile.tpl" | \
-	sed "s/{{DOCKER_IMAGE_OPT}}/$DOCKER_IMAGE/g" | \
-    sed "s/{{MASTER_FQDN_OPT}}/${MASTER}/g" > "$DOCKERDIR/Dockerfile"
+DOCKERFILE="$DOCKERDIR/Dockerfile"
+cp "$DOCKERDIR/Dockerfile.tpl" "$DOCKERFILE"
+sed -i 's/{{NODE_TYPE_OPT}}/-m/g' "$DOCKERFILE"
+sed -i "s,{{DOCKER_IMAGE_OPT}},$DOCKER_IMAGE,g" "$DOCKERFILE"
+sed -i "s/{{MASTER_FQDN_OPT}}/${MASTER}/g" "$DOCKERFILE"
 
 TAG="${DOCKER_IMAGE}_master_${MASTER}"
 printf "Building development image %s from %s\n" "$TAG" "$DOCKERDIR"
@@ -78,8 +80,10 @@ printf "Image %s built successfully\n" "$TAG"
 
 # Build the worker image
 
-sed 's/{{NODE_TYPE_OPT}}//g' "$DOCKERDIR/Dockerfile.tpl" | \
-    sed "s/{{MASTER_FQDN_OPT}}/${MASTER}/g" > "$DOCKERDIR/Dockerfile"
+cp "$DOCKERDIR/Dockerfile.tpl" "$DOCKERFILE"
+sed -i 's/{{NODE_TYPE_OPT}}//g' "$DOCKERFILE"
+sed -i "s,{{DOCKER_IMAGE_OPT}},$DOCKER_IMAGE,g" "$DOCKERFILE"
+sed -i "s/{{MASTER_FQDN_OPT}}/${MASTER}/g" "$DOCKERFILE"
 
 TAG="${DOCKER_IMAGE}_worker_${MASTER}"
 printf "Building development image %s from %s\n" "$TAG" "$DOCKERDIR"
