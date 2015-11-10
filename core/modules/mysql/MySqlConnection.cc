@@ -30,6 +30,7 @@
 
 // System headers
 #include <cstddef>
+#include <iostream>
 
 // Third-party headers
 #include "boost/format.hpp"
@@ -118,7 +119,11 @@ MySqlConnection::queryUnbuffered(std::string const& query) {
         _isExecuting = true;
         _interrupted = false;
     }
+
     rc = mysql_real_query(_mysql, query.c_str(), query.length());
+
+    std::cout << "In MySqlConnection::queryUnbuffered: " << query << ", " << rc << std::endl; 
+
     if (rc) { return false; }
     _mysql_res = mysql_use_result(_mysql);
     _isExecuting = false;
@@ -150,6 +155,9 @@ MySqlConnection::cancel() {
     int threadId = mysql_thread_id(_mysql);
     std::string const killSql = "KILL QUERY " + std::to_string(threadId);
     rc = mysql_real_query(killMysql, killSql.c_str(), killSql.size());
+
+    std::cout << "In MySqlConnection::cancel: " << rc << std::endl; 
+    
     mysql_close(killMysql);
     if (rc) {
         return 2;

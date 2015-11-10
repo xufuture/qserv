@@ -27,6 +27,7 @@
 // System headers
 #include <cstdio>
 #include <cstddef>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -126,16 +127,30 @@ SqlConnection::~SqlConnection() {
 
 bool
 SqlConnection::connectToDb(SqlErrorObject& errObj) {
-    assert(_connection.get());
-    if (_connection->connected()) return true;
-    if (!_connection->connect()) {
-        _setErrorObject(errObj);
-        return false;
-    } else {
-        return true;
-    }
-}
+    assert(_connection != nullptr);
+    static int lastChecked = 0;
+    time_t currentTime = time(0);
 
+    if (_connection->connected()) {
+      if (currentTime < lastChecked+60) {
+	return true;
+      }
+      int rc = mysql_ping(_connection->getMySql()); 
+      if (rc == 0) {
+	lastChecked = currentTime;
+	return true;
+      }
+      mysql_close(_connection->getMySql());
+    }
+    
+    if (!_connection->connect()) {
+      _setErrorObject(errObj);
+      return false;
+    }
+    lastChecked = currentTime;
+    return true;
+}
+  
 bool
 SqlConnection::selectDb(std::string const& dbName, SqlErrorObject& errObj) {
     if (!connectToDb(errObj)) return false;

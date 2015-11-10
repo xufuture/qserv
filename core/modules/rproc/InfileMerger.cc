@@ -242,6 +242,9 @@ bool InfileMerger::Mgr::applyMysql(std::string const& query) {
     // bool result = _mysqlConn.queryUnbuffered(query);  // expects a result
     int rc = mysql_real_query(_mysqlConn.getMySql(),
                               query.data(), query.size());
+    
+    std::cout << "In InfileMerger::Mgr::applyMysql: " << rc << std::endl;
+
     return rc == 0;
 }
 
