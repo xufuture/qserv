@@ -1,4 +1,5 @@
-MASTER=ccqserv00.in2p3.fr
-WORKERS=$(echo ccqserv{01..03}.in2p3.fr)
+MASTER=docker-1
+WORKERS=$(echo docker-{2,3})
+XRD_MASTER=$MASTER
 
 alias shmux=/usr/local/bin/shmux
