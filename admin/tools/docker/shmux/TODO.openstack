@@ -1,0 +1,5 @@
+Add this to each openstack machine:
+ubuntu@docker-1:~$ cat /etc/hosts
+172.16.1.238 docker-1
+172.16.1.239 docker-2
+172.16.1.240 docker-3
