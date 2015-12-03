@@ -230,7 +230,7 @@ bool InfileMerger::Mgr::_doMerge(std::shared_ptr<proto::WorkerResponse>& respons
 
 bool InfileMerger::Mgr::applyMysql(std::string const& query) {
     std::lock_guard<std::mutex> lock(_mysqlMutex);
-    if (!_mysqlConn.connected()) {
+    if (/*!_mysqlConn.connected() &&*/ !mysql_ping(_mysqlConn.getMySql()) ) {
         // should have connected during Mgr construction
         // Try reconnecting--maybe we timed out.
         if (!_setupConnection()) {

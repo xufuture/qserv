@@ -104,6 +104,15 @@ MySqlConnection::connect() {
     // Cleanup garbage
     if (_mysql) { mysql_close(_mysql); }
     _isConnected = false;
+
+    // Reconnect if possible
+    /*int rc = mysql_ping(_mysql);
+    if(rc == 0) {
+      _isConnected = true;
+      return _isConnected;
+    }
+    mysql_close(_mysql);*/
+    
     // Make myself a thread
     _mysql = _connectHelper();
     _isConnected = (_mysql != nullptr);

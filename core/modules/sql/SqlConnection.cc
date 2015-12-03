@@ -130,19 +130,21 @@ SqlConnection::connectToDb(SqlErrorObject& errObj) {
     assert(_connection != nullptr);
     static int lastChecked = 0;
     time_t currentTime = time(0);
-
+    
     if (_connection->connected()) {
-      if (currentTime < lastChecked+60) {
-	return true;
-      }
       int rc = mysql_ping(_connection->getMySql()); 
       if (rc == 0) {
+	if (currentTime < lastChecked+60) {
+	  return true;
+	}
 	lastChecked = currentTime;
 	return true;
+      } else {
+	mysql_close(_connection->getMySql());
+	_connection->connect();
       }
-      mysql_close(_connection->getMySql());
     }
-    
+
     if (!_connection->connect()) {
       _setErrorObject(errObj);
       return false;
