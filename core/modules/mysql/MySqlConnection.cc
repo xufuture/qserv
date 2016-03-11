@@ -95,14 +95,23 @@ MySqlConnection::~MySqlConnection() {
             while((row = mysql_fetch_row(_mysql_res))); // Drain results.
             _mysql_res = nullptr;
         }
-        mysql_close(_mysql);
+        closeMySqlConn();
     }
 }
+
+void
+MySqlConnection::closeMySqlConn() {
+    mysql_close(_mysql);
+    std::cout << "MySQL obj pointer after deallocation is: " << _mysql << std::endl;
+    _mysql = nullptr;
+    std::cout << "MySQL obj pointer after NULL is: " << _mysql << std::endl;
+}
+
 
 bool
 MySqlConnection::connect() {
     // Cleanup garbage
-    if (_mysql) { mysql_close(_mysql); }
+  if (_mysql) { closeMySqlConn(); }
     _isConnected = false;
 
     // Reconnect if possible

@@ -127,6 +127,7 @@ SqlConnection::~SqlConnection() {
 
 bool
 SqlConnection::connectToDb(SqlErrorObject& errObj) {
+    std::cout << "MySQL obj pointer is: " << _connection->getMySql() << std::endl;
     assert(_connection != nullptr);
     static int lastChecked = 0;
     time_t currentTime = time(0);
@@ -140,7 +141,7 @@ SqlConnection::connectToDb(SqlErrorObject& errObj) {
 	lastChecked = currentTime;
 	return true;
       } else {
-	mysql_close(_connection->getMySql());
+	_connection->closeMySqlConn();
 	_connection->connect();
       }
     }
