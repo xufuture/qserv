@@ -45,6 +45,10 @@ PROXY_PASSWD = ''
 # CSS_CONFIG is a dictionary as accepted by CssAccess.createFromConfig() method,
 # all values in a dictionary must be strings even if they represent numbers
 USE_CSS = True
+
+# CSS hostname can be set using environment variable
+hostname=os.getenv('CSS_HOST', {{QSERV_MASTER}})
+
 CSS_CONFIG = {
     'technology': 'mysql',
     'hostname': '{{QSERV_MASTER}}',

@@ -10,16 +10,16 @@
 # don't start cmsd
 ###################################################################################
 
-if defined ?~XROOTD_MANAGER_HOSTNAME
-    set master = $XROOTD_MANAGER_HOSTNAME
+if defined ?~XROOTD_MANAGER_HOST
+    set manager_host = $XROOTD_MANAGER_HOST
 else
-    set master = {{XROOTD_MANAGER_HOST}}
+    set manager_host = {{QSERV_MASTER}}
 fi
 
 ############
 # if manager
 ############
-{{COMMENT_MONO_NODE}}if $master
+{{COMMENT_MONO_NODE}}if $manager_host
 # Use manager mode
 {{COMMENT_MONO_NODE}}all.role manager
 
@@ -62,7 +62,7 @@ all.pidpath {{QSERV_PID_DIR}}
 all.adminpath {{XROOTD_ADMIN_DIR}}
 
 # host:port of manager instance (2131 is default)
-{{COMMENT_MONO_NODE}}all.manager {{XROOTD_MANAGER_HOST}}:{{CMSD_MANAGER_PORT}}
+{{COMMENT_MONO_NODE}}all.manager $manager_host:{{CMSD_MANAGER_PORT}}
 
 # Do not change. This specifies valid virtual paths that can be accessed.
 # "nolock" directive prevents write-locking and is important for qserv

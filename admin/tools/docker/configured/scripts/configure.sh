@@ -69,7 +69,7 @@ qserv-configure.py --init --force \
 # Customize meta configuration file
 sed -i "s/node_type = mono/node_type = $NODE_TYPE/" \
     $QSERV_RUN_DIR/qserv-meta.conf
-sed -i "s/master = 127.0.0.1/# master set via \$XROOTD_MANAGER_HOSTNAME/" \
+sed -i "s/master = 127.0.0.1/# Set services location using \CSS_HOST and \$XROOTD_MANAGER_HOST./" \
     $QSERV_RUN_DIR/qserv-meta.conf
 
 qserv-configure.py --qserv-run-dir $QSERV_RUN_DIR --force
