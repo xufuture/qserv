@@ -19,7 +19,8 @@ Available options:
   -S          Path to local git repository used for the build.
               Working tree must point on current branch HEAD.
               Use the latest commit of the current branch.
-  -T          Name of the produced image
+  -T          Prefix for the name of the produced images, default is
+              to deduce it from git branch name.
 
 Create Docker image containing Qserv build performed using a given git
 branch/tag:
@@ -66,23 +67,22 @@ elif [ -n "$GIT_REF" -a -n "$SRC_DIR" ]; then
     exit 2
 elif [ -n "$GIT_REF" ] ; then
     printf "Using remote branch/tag %s from %s\n" "$GIT_REF" "$GITHUB_REPO"
-	TMP_DIR=$(mktemp --directory --suffix "_qserv")
     # git archive is not supported by GitHub
-    git clone -b "$GIT_REF" --single-branch "$GITHUB_REPO" "$TMP_DIR"
-    SRC_DIR="$TMP_DIR"
+    GIT_REPO="$GITHUB_REPO"
 else
     GIT_REF=$(git rev-parse --abbrev-ref HEAD)
     # strip trailing slash
     SRC_DIR=$(echo "$SRC_DIR" | sed 's%\(.*[^/]\)/*%\1%')
     printf "Using local branch %s from %s\n" "$GIT_REF" "$SRC_DIR"
     # Put source code inside Docker build directory
+    GIT_REPO="$SRC_DIR"
 fi
 
-git archive --remote "$SRC_DIR" --output "$DOCKERDIR/src/qserv_src.tar" "$GIT_REF"
-
-if [ -n "$TMP_DIR" ]; then
-	rm -rf "$TMP_DIR"
+if [ -n "$DOCKERDIR/src/qserv" ]; then
+	rm -rf "$DOCKERDIR/src/qserv"
 fi
+
+git clone -b "$GIT_REF" --single-branch "$GIT_REPO" "$DOCKERDIR/src/qserv"
 
 if [ -z "$DOCKERTAG" ]; then
     # Docker tags must not contain '/'
