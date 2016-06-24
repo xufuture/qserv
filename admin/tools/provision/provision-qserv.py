@@ -36,83 +36,106 @@ import cloudmanager
 # Exported definitions --
 # -----------------------
 
-def get_swarm_cloudconfig():
+DOCKER_NODE = "docker_node"
+SWARM_MANAGER = "swarm_manager"
+SWARM_NODE = "swarm_node"
+
+def build_cloudconfig(server_profile=DOCKER_NODE):
     """
-    Get cloudconfig configuration for a Swarm instance
+    Build cloudconfig configuration for a given server profile
     """
     username = cloudManager.get_safe_username()
     # cloud config
-    cloud_config_tpl = '''
-    #cloud-config
+    cloud_config = '#cloud-config'
 
-    write_files:
-    - path: /tmp/swarm-env.sh
-      permissions: "0754"
-      owner: "root:docker"
-      content: |
-        #!/bin/sh
+    if server_profile == SWARM_MANAGER:
+        cloud_config += '''
 
-        # Cluster parameters used to run
-        # swarm and docker
+write_files:
+- path: /tmp/swarm-env.sh
+  permissions: "0754"
+  owner: "root:docker"
+  content: |
+    #!/bin/sh
 
-        # @author  Fabrice Jammes, IN2P3
+    # Cluster parameters used to run
+    # swarm and docker
 
-        INSTANCE_LAST_ID={instance_last_id}
-        HOSTNAME_TPL="{username}-qserv-"
+    # @author  Fabrice Jammes, IN2P3
 
-        DOCKER_PORT=2375
+    INSTANCE_LAST_ID={instance_last_id}
+    HOSTNAME_TPL="{username}-qserv-"
 
-        SWARM_HOSTNAME="{username}-qserv-swarm"
-        SWARM_PORT=3376
+    DOCKER_PORT=2375
 
-    users:
-    - name: qserv
-      gecos: Qserv daemon
-      groups: docker
-      lock-passwd: true
-      shell: /bin/bash
-      ssh-authorized-keys:
-      - {key}
-      sudo: ALL=(ALL) NOPASSWD:ALL
+    SWARM_HOSTNAME="{username}-qserv-swarm"
+    SWARM_PORT=3376'''
 
-    packages:
-    - git
+    cloud_config += '''
 
-    runcmd:
-      - [/tmp/detect_end_cloud_config.sh]
-      # Allow docker to start via cloud-init, see https://github.com/projectatomic/docker-storage-setup/issues/77
-      - [sed, -i, -e, 's/After=cloud-final.service/# After=cloud-final.service/g', /usr/lib/systemd/system/docker-storage-setup.service]
-      # docker-storage-driver fails using default setup
-      - [sed, -i, -e, '$a STORAGE_DRIVER=overlay', /etc/sysconfig/docker-storage-setup ]
-      # overlay and selinux are not compliant in docker 1.9
-      - [sed, -i, -e, "s/OPTIONS='--selinux-enabled'/# OPTIONS='--selinux-enabled'/", /etc/sysconfig/docker ]
-      - [/bin/systemctl, daemon-reload]
-      - [/bin/systemctl, restart,  docker.service]
-      - [su, qserv, -c, "git clone -b {branch} --single-branch https://github.com/lsst/qserv.git /home/qserv/src/qserv"]
-      - [cp, /tmp/swarm-env.sh, /home/qserv/src/qserv/admin/tools/docker/deployment/swarm]
-    '''
+users:
+- name: qserv
+  gecos: Qserv daemon
+  groups: docker
+  lock-passwd: true
+  shell: /bin/bash
+  ssh-authorized-keys:
+  - {key}
+  sudo: ALL=(ALL) NOPASSWD:ALL'''
 
-    cmd = ['git', 'rev-parse', '--abbrev-ref', 'HEAD']
-    try:
-        branch = subprocess.check_output(cmd).strip()
-    except subprocess.CalledProcessError:
-        logging.debug("Unable to retrieve current git branch, "
-                      "using qserv master branch"
-                      "to retrieve swarm procedure code.")
-        branch = "master"
+    if server_profile == SWARM_MANAGER:
+        cloud_config += '''
 
-    logging.info("Cloning swarm procedure code from "
-                 "https://github.com/lsst/qserv.git (branch: {})".format(branch))
+packages:
+- git'''
+
+    cloud_config += '''
+
+runcmd:
+  - [/tmp/detect_end_cloud_config.sh]
+  # Allow docker to start via cloud-init, see https://github.com/projectatomic/docker-storage-setup/issues/77
+  - [sed, -i, -e, 's/After=cloud-final.service/# After=cloud-final.service/g', /usr/lib/systemd/system/docker-storage-setup.service]
+  # docker-storage-driver fails using default setup
+  - [sed, -i, -e, '$a STORAGE_DRIVER=overlay', /etc/sysconfig/docker-storage-setup ]
+  # overlay and selinux are not compliant in docker 1.9
+  - [sed, -i, -e, "s/OPTIONS='--selinux-enabled'/# OPTIONS='--selinux-enabled'/", /etc/sysconfig/docker ]'''
+
+    if server_profile == SWARM_NODE:
+        cloud_config += '''
+  # Open Docker tcp socket on all nodes to enable Swarm registration
+  - [ sed, -i, -e, 's%DOCKER_NETWORK_OPTIONS=%DOCKER_NETWORK_OPTIONS=-H unix:///var/run/docker.sock -H tcp://0.0.0.0:2375%g', /etc/sysconfig/docker-network]'''
+
+    cloud_config += '''
+  - [/bin/systemctl, daemon-reload]
+  - [/bin/systemctl, restart,  docker.service]'''
+
+    branch = "master"
+    if server_profile == SWARM_MANAGER:
+        cloud_config += '''
+  - [su, qserv, -c, "git clone -b {branch} --single-branch https://github.com/lsst/qserv.git /home/qserv/src/qserv"]
+  - [cp, /tmp/swarm-env.sh, /home/qserv/src/qserv/admin/tools/docker/deployment/swarm]'''
+
+        cmd = ['git', 'rev-parse', '--abbrev-ref', 'HEAD']
+        try:
+            branch = subprocess.check_output(cmd).strip()
+        except subprocess.CalledProcessError:
+            logging.debug("Unable to retrieve current git branch, "
+                          "using qserv master branch"
+                          "to retrieve swarm procedure code.")
+
+        logging.debug("Cloning swarm procedure code from "
+                      "https://github.com/lsst/qserv.git "
+                      "(branch: {})".format(branch))
 
     fpubkey = open(os.path.expanduser(cloudManager.key_filename + ".pub"))
     public_key = fpubkey.read()
 
-    userdata = cloud_config_tpl.format(branch=branch,
-                                       instance_last_id=args.nbServers-1,
-                                       key=public_key,
-                                       username=username)
+    userdata = cloud_config.format(branch=branch,
+                                   instance_last_id=args.nbServers-1,
+                                   key=public_key,
+                                   username=username)
 
-
+    logging.debug("cloud-config userdata: \n%s", userdata)
     return userdata
 
 def launch_integration_tests(swarm_instance):
@@ -141,52 +164,11 @@ def run_command(command):
     rc = process.poll()
     return rc
 
-def get_cloudconfig():
-    """
-    Return cloud init configuration in a string
-    """
-    cloud_config_tpl = '''
-#cloud-config
-users:
-- name: qserv
-  gecos: Qserv daemon
-  groups: docker
-  lock-passwd: true
-  shell: /bin/bash
-  ssh-authorized-keys:
-  - {key}
-  sudo: ALL=(ALL) NOPASSWD:ALL
-
-runcmd:
-- ['/tmp/detect_end_cloud_config.sh']
-- [mkdir, -p, '/qserv/data']
-- [mkdir, -p, '/qserv/log']
-- [chown, "1000:1000", '/qserv/data']
-- [chown, "1000:1000", '/qserv/log']
-# Allow docker to start via cloud-init
-# see https://github.com/projectatomic/docker-storage-setup/issues/77
-- [ sed, -i, -e, 's/After=cloud-final.service/#After=cloud-final.service/g',
-  /usr/lib/systemd/system/docker-storage-setup.service]
-# 'overlay' seems more robust than default setting
-- [ sed, -i, -e, '$a STORAGE_DRIVER=overlay', /etc/sysconfig/docker-storage-setup ]
-# overlay and selinux are not compliant in docker 1.9
-- [ sed, -i, -e, "s/OPTIONS='--selinux-enabled'/# OPTIONS='--selinux-enabled'/", /etc/sysconfig/docker ]
-# Open tcp socket on all nodes to enable Swarm
-- [ sed, -i, -e, 's%DOCKER_NETWORK_OPTIONS=%DOCKER_NETWORK_OPTIONS=-H unix:///var/run/docker.sock -H tcp://0.0.0.0:2375%g', /etc/sysconfig/docker-network]
-- [ /bin/systemctl, daemon-reload]
-- [ /bin/systemctl, restart,  docker.service]
-'''
-    fpubkey = open(os.path.expanduser(cloudManager.key_filename + ".pub"))
-    public_key=fpubkey.read()
-    userdata = cloud_config_tpl.format(key=public_key)
-
-    return userdata
-
 def main():
     cloudManager.manage_ssh_key()
 
-    userdata_provision = get_cloudconfig()
-    userdata_swarm = get_swarm_cloudconfig()
+    userdata_provision = build_cloudconfig(SWARM_NODE)
+    userdata_swarm = build_cloudconfig(SWARM_MANAGER)
 
     # Create instances list
     instances = []
@@ -249,8 +231,8 @@ if __name__ == "__main__":
         # Define command-line arguments
         parser = argparse.ArgumentParser(description='Boot instances from image containing Docker.')
         parser.add_argument('-n', '--nb-servers', dest='nbServers',
-                           required=False, default=3, type=int,
-                           help='Choose the number of servers to boot')
+                            required=False, default=3, type=int,
+                            help='Choose the number of servers to boot')
 
         cloudmanager.add_parser_args(parser)
         args = parser.parse_args()
