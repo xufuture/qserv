@@ -131,6 +131,9 @@ class CloudManager(object):
 
         self.key_filename = '~/.ssh/id_rsa'
 
+    def get_safe_username(self):
+        return self._safe_username
+
     def nova_image_create(self, instance):
         """
         Create an OpenStack image containing Docker

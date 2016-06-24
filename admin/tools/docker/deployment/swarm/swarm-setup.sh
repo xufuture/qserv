@@ -39,6 +39,8 @@ do
     STATUS=$(docker -H tcp://$SWARM_HOSTNAME:$SWARM_PORT info | grep "Status: " || true)
     if [ -n "$STATUS" ]; then
         PENDING=$(echo "$STATUS" | grep "Pending" || true)
+        echo "Waiting for all swarm node to reach 'Healthy' status"
+        sleep 1
     fi
 done
 
