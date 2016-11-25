@@ -1,0 +1,12 @@
+export STACK_NAME=KubernetesStack
+export NUMBER_OF_MINIONS=3
+export MAX_NUMBER_OF_MINIONS=3
+export MASTER_FLAVOR=m1.small
+export MINION_FLAVOR=m1.small
+export EXTERNAL_NETWORK=ext-net
+export DNS_SERVER=8.8.8.8
+export CREATE_IMAGE=false
+export OPENSTACK_IMAGE_NAME=centos-7-kubernetes
+export SWIFT_SERVER_URL=http://nebula.ncsa.illinois.edu:8080/v1/AUTH_8c1ba1e0b84d486fbe7a665c30030113 
+export ENABLE_PROXY=false
+export CLIENT_PUBLIC_KEY_PATH=~/.ssh/id_rsa_openstack.pub
