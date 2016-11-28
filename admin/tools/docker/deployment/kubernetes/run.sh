@@ -15,7 +15,7 @@ echo "Start Qserv on Kubernetes cluster"
 
 scp -F "$SSH_CFG" "$DIR/env-infrastructure.sh" "${SWARM_NODE}:/home/qserv/orchestration"
 scp -F "$SSH_CFG" -r "$DIR/orchestration" "$SWARM_NODE":/home/qserv
-#ssh -F "$SSH_CFG" "$SWARM_NODE" "/home/qserv/orchestration/start-qserv.sh"
+ssh -F "$SSH_CFG" "$SWARM_NODE" "/home/qserv/orchestration/start-qserv.sh"
 
 while true 
 do
