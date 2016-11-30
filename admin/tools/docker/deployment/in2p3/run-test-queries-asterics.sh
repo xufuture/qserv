@@ -14,14 +14,15 @@ setup mariadbclient
 #time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "SHOW tables"
 
 echo "Trivial query that retrieves one row, using index"
-echo "-------------------------------------------------"
-SQL="SELECT ra, decl FROM Object WHERE deepSourceId = 2322920177142607;"
+echo
+SQL="SELECT ra, decl, raVar, declVar, radeclCov, u_psfFlux, \
+u_psfFluxSigma, u_apFlux FROM Object WHERE deepSourceId = 2322920177142607;"
 echo "$SQL"
 time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
 echo
 
 echo "Counts"
-echo "------"
+echo
 SQL="SELECT count(*) FROM Object"
 echo "$SQL"
 time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
@@ -40,9 +41,10 @@ echo
 echo "Spatially restricted query, small area of sky, should return small \
     number of rows (say <100)"
 
-SQL="SELECT COUNT( * ) FROM Object WHERE ra_PS BETWEEN 1 AND 2 AND decl_PS BETWEEN 3 AND 4"
+SQL="SELECT COUNT( * ) FROM Object WHERE ra BETWEEN 1 AND 2 AND decl BETWEEN 3 AND 4"
 echo "$SQL"
 time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
+echo
 
 echo "Full table scan, use some column in WHERE that is not indexes, make \
 sure the number of results returned is sane (eg thousands, not millions)"
