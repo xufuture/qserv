@@ -11,43 +11,75 @@ DIR=$(cd "$(dirname "$0")"; pwd -P)
 . /qserv/stack/loadLSST.bash
 
 setup mariadbclient
-#time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "SHOW tables"
 
+#echo "COUNTS"
+#echo
+#SQL="SELECT count(*) FROM Object"
+#echo "$SQL"
+#time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
+#echo
+#
+#SQL="SELECT count(*) FROM Source"
+#echo "$SQL"
+#time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
+#echo
+#
+#SQL="SELECT count(*) FROM ForcedSource"
+#echo "$SQL"
+#time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
+#echo
+#
+echo "SHORT-RUNNING QUERIES"
+echo 
 echo "Trivial query that retrieves one row, using index"
 echo
+
 SQL="SELECT ra, decl, raVar, declVar, radeclCov, u_psfFlux, \
 u_psfFluxSigma, u_apFlux FROM Object WHERE deepSourceId = 2322920177142607;"
 echo "$SQL"
 time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
 echo
 
-echo "Counts"
-echo
-SQL="SELECT count(*) FROM Object"
-echo "$SQL"
-time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
-echo
-
-SQL="SELECT count(*) FROM Source"
-echo "$SQL"
-time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
-echo
-
-SQL="SELECT count(*) FROM ForcedSource"
-echo "$SQL"
-time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
-echo
-
 echo "Spatially restricted query, small area of sky, should return small \
-    number of rows (say <100)"
-
-SQL="SELECT COUNT( * ) FROM Object WHERE ra BETWEEN 1 AND 2 AND decl BETWEEN 3 AND 4"
+number of rows (say <100)"
+SQL="SELECT ra, decl FROM Object WHERE qserv_areaspec_box(0.95, 19.171, 1.0, 19.175);"
 echo "$SQL"
 time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
 echo
 
-echo "Full table scan, use some column in WHERE that is not indexes, make \
+echo "FULL TABLE SCANS"
+echo
+
+echo "Full table scan, use some column in WHERE that is not indexed, make \
 sure the number of results returned is sane (eg thousands, not millions)"
+
+SQL="SELECT COUNT(*)  FROM Object WHERE y_instFlux > 5"
+echo "$SQL"
+time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
+echo
+
+SQL="select min(ra), max(ra), min(decl), max(decl) from Object;"
+echo "$SQL"
+time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
+echo
+
+SQL="select count(*) from Source where flux_sinc between 1 and 2;"
+echo "$SQL"
+time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
+echo
+
+SQL="select count(*) from Source where flux_sinc between 2 and 3;"
+echo "$SQL"
+time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
+echo
+
+SQL="select count(*) from ForcedSource where psfFlux between 0.1 and 0.2;"
+echo "$SQL"
+time mysql --host "$MASTER" --port 4040 --user qsmaster LSST -e "$SQL"
+echo
+
+echo "JOINS"
+echo
 
 SQL="SELECT objectId, ra_PS, decl_PS, <few other columns> \
 FROM Object \
