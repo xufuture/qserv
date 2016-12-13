@@ -8,6 +8,7 @@ DIR=$(cd "$(dirname "$0")"; pwd -P)
 
 . "$DIR/env.sh"
 
+export -f mysql_query 
 export MASTER
 
 echo "SHARED SCANS"
