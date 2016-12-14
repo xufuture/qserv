@@ -87,11 +87,10 @@ def main():
 
     remote_script = "/tmp/count.sh"
     shutil.copy('count.sh', remote_script)
-    cmd = '''cp count.sh /tmp/count.sh && \
-           echo /tmp/count.sh | \
-           parallel --files --onall \
-           --slf qserv.slf \"sh -c '{}'\"'''
-    outfiles = subprocess.check_output(cmd, shell=True)
+    cmd = ['parallel', '--files', '--onall',
+           '--slf', 'qserv.slf',
+           'sh -c "{}"', ':::', remote_script]
+    outfiles = subprocess.check_output(cmd)
     os.remove(remote_script)
 
     logging.debug("Chunk queries results files (per node): %s", outfiles)
@@ -113,7 +112,6 @@ def main():
         chunk_results.append(r['result'])
 
     logging.debug("Chunk results: %s", chunk_results)
-
 
 if __name__ == "__main__":
     main()
