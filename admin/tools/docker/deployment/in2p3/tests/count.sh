@@ -39,4 +39,4 @@ RESULTS=$(docker exec "$CONTAINER" \
 	setup mariadb && \
 	mysql -N -B --socket $SOCKET \
 	--user=$USER $DB -e \"$SQL"\")
-echo "results: \"$RESULTS\""
+echo "result: \"$RESULTS\""

@@ -35,17 +35,14 @@ from __future__ import print_function
 import argparse
 import logging
 import os
-import pprint
-import random
 from sets import Set
-import subprocess 
-import time
-import yaml 
+import shutil
+import subprocess
+import yaml
 
 # ----------------------------
 # Imports for other modules --
 # ----------------------------
-import MySQLdb
 
 # ---------------------------------
 # Local non-exported definitions --
@@ -76,7 +73,6 @@ def main():
     try:
         os.makedirs(args.output_dir)
     except OSError:
-        print("XXXXXXX ", os.path.isdir(args.output_dir))
         if not os.path.isdir(args.output_dir):
             raise
 
@@ -85,15 +81,18 @@ def main():
               3: logging.DEBUG}
     logformat = "[%(levelname)s] %(name)s: %(message)s"
     level = levels.get(verbosity)
-    logfile = os.path.join(args.output_dir, "regression.log")
-    #logging.basicConfig(format=logformat, level=level, filename=logfile)
+    # logfile = os.path.join(args.output_dir, "regression.log")
+    # logging.basicConfig(format=logformat, level=level, filename=logfile)
     logging.basicConfig(format=logformat, level=level)
 
-    cmd='''cp count.sh /tmp/count.sh && \
+    remote_script = "/tmp/count.sh"
+    shutil.copy('count.sh', remote_script)
+    cmd = '''cp count.sh /tmp/count.sh && \
            echo /tmp/count.sh | \
            parallel --files --onall \
            --slf qserv.slf \"sh -c '{}'\"'''
     outfiles = subprocess.check_output(cmd, shell=True)
+    os.remove(remote_script)
 
     logging.debug("Chunk queries results files (per node): %s", outfiles)
 
@@ -101,20 +100,17 @@ def main():
     chunk_tables = Set()
     for f in outfiles.split():
         with open(f, 'r') as stream:
-            try:
-                r = yaml.safe_load(stream)
-                chunk_results.append(r)
-                for t in r['tables'].split():
-                    if t in chunk_tables:
-                        logging.fatal("Duplicate chunk table %s in node %s",
-                                      t, r['node'])
-                        raise ValueError("Duplicate chunk table")
-                    elif t != "Object_1234567890":
-                        logging.debug("Adding chunk table %s from node %s",
-                                      t, r['node'])
-                        chunk_tables.add(t)
-            except yaml.YAMLError as exc:
-                print(exc)
+            r = yaml.safe_load(stream)
+        for t in r['tables'].split():
+            if t in chunk_tables:
+                logging.fatal("Duplicate chunk table %s in node %s",
+                              t, r['node'])
+                raise ValueError("Duplicate chunk table")
+            elif t != "Object_1234567890":
+                logging.debug("Adding chunk table %s from node %s",
+                              t, r['node'])
+                chunk_tables.add(t)
+        chunk_results.append(r['result'])
 
     logging.debug("Chunk results: %s", chunk_results)
 
