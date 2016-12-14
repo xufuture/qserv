@@ -7,9 +7,9 @@
 
 set -e
 
-DB="qservTest_case01_qserv"
+DB="LSST"
 
-CONTAINER="worker1.localdomain"
+CONTAINER="qserv"
 
 USER="qsmaster"
 SOCKET="/qserv/run/var/lib/mysql/mysql.sock"

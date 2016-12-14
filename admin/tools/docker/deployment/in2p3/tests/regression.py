@@ -87,10 +87,15 @@ def main():
 
     remote_script = "/tmp/count.sh"
     shutil.copy('count.sh', remote_script)
-    cmd = ['parallel', '--files', '--onall',
-           '--slf', 'qserv.slf',
+    cmd = ['parallel', '--files', '--onall', '--transfer',
+           '--slf', 'qserv.slf', 'stderr=STDOUT',
            'sh -c "{}"', ':::', remote_script]
-    outfiles = subprocess.check_output(cmd)
+    try:
+        outfiles = subprocess.check_output(cmd)
+    except subprocess.CalledProcessError as exc:
+        logging.fatal("cmd failed: '%s' (%s, %s)", " ".join(cmd),
+                      exc.returncode, exc.output)
+        raise
     os.remove(remote_script)
 
     logging.debug("Chunk queries results files (per node): %s", outfiles)
@@ -112,6 +117,8 @@ def main():
         chunk_results.append(r['result'])
 
     logging.debug("Chunk results: %s", chunk_results)
-
+    r = map(int, chunk_results)
+    res = sum(r)
+    print(res)
 if __name__ == "__main__":
     main()
