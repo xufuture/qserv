@@ -11,13 +11,17 @@ DB="qservTest_case01_qserv"
 
 CONTAINER="worker1.localdomain"
 
+USER="qsmaster"
+SOCKET="/qserv/run/var/lib/mysql/mysql.sock"
+
+echo "node: $(hostname)"
 SQL1="show tables like 'Object\_%'"
 TABLES=$(docker exec $CONTAINER \
 	bash -c ". /qserv/stack/loadLSST.bash && \
 	setup mariadb && \
-	mysql -N -B --socket /qserv/run/var/lib/mysql/mysql.sock \
-	--user=root --password=CHANGEME $DB -e \"$SQL1\"")
-
+	mysql -N -B --socket $SOCKET \
+	--user=$USER $DB -e \"$SQL1\"")
+echo "tables: \"$TABLES\""
 i=0
 for t in $TABLES
 do
@@ -30,8 +34,9 @@ do
 done
 SQL="${SQL}) as o;"
 
-docker exec "$CONTAINER" \
+RESULTS=$(docker exec "$CONTAINER" \
 	bash -c ". /qserv/stack/loadLSST.bash && \
 	setup mariadb && \
-	mysql -N -B --socket /qserv/run/var/lib/mysql/mysql.sock \
-	--user=root --password=CHANGEME '$DB' -e '$SQL'"
+	mysql -N -B --socket $SOCKET \
+	--user=$USER $DB -e \"$SQL"\")
+echo "results: \"$RESULTS\""

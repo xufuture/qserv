@@ -6,7 +6,9 @@
 
 DIR=$(cd "$(dirname "$0")"; pwd -P)
 
-. "${DIR}/env.sh"
+cd "${DIR}/.."
+. /env.sh
+cd -
 
 . /qserv/stack/loadLSST.bash
 
