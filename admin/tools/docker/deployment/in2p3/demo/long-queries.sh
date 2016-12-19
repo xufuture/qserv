@@ -36,7 +36,7 @@ SQL="select count(*) from Object o, Source s WHERE o.deepSourceId=s.objectId \
 AND s.flux_sinc BETWEEN 0.13 AND 0.14;"
 mysql_query "$SQL"
 
-SQL="select (*) FROM Object o, ForcedSource f WHERE \
+SQL="select count(*) FROM Object o, ForcedSource f WHERE \
 o.deepSourceId=f.deepSourceId AND f.psfFlux BETWEEN 0.13 AND 0.14;"
 mysql_query "$SQL"
 
