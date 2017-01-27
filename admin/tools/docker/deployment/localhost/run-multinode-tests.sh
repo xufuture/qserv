@@ -66,7 +66,21 @@ do
     CSS_INFO="${CSS_INFO}CREATE NODE worker${i} type=worker port=5012 host=worker${i}.$DNS_DOMAIN;
 "
 done
-docker exec "$MASTER" bash -c ". /qserv/stack/loadLSST.bash && \
-    setup qserv_distrib -t qserv-dev && \
-    echo \"$CSS_INFO\" | qserv-admin.py && \
-    qserv-test-integration.py"
+
+TMP_FILE=$(mktemp)
+cat <<EOF > "$TMP_FILE"
+#!/bin/bash
+
+set -e
+
+. /qserv/stack/loadLSST.bash
+setup qserv_distrib -t qserv-dev
+echo "$CSS_INFO" | qserv-admin.py
+qserv-test-integration.py
+EOF
+
+DOCKER_TMP_FILE="/tmp/test.sh"
+
+docker cp "$TMP_FILE" "$MASTER:$DOCKER_TMP_FILE"
+docker exec -u root "$MASTER" chmod 755 "$DOCKER_TMP_FILE" 
+docker exec "$MASTER" bash -c "/tmp/test.sh"
