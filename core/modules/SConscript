@@ -213,8 +213,8 @@ shlibs["qserv_qmeta"] = dict(mods="""qmeta""",
 
 # library with all czar C++ code
 shlibs["qserv_czar"] = dict(mods="""ccontrol czar parser qana query qdisp qproc rproc tests""",
-                            libs="""qserv_css qserv_qmeta qserv_common antlr sphgeom
-                                 log XrdSsiLib boost_regex""")
+                            libs="""qserv_css qserv_qmeta qserv_common antlr sphgeom qhttp
+                                 log XrdSsiLib boost_regex boost_system""")
 
 # library with Lua bindings for czar C++ code
 shlibs["czarProxy"] = dict(mods="""proxy""",

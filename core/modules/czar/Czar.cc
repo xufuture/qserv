@@ -94,6 +94,20 @@ Czar::Czar(std::string const& configPath, std::string const& czarName)
     LOGS(_log, LOG_LVL_DEBUG, "Czar config: " << _czarConfig);
 
     _uqFactory.reset(new ccontrol::UserQueryFactory(_czarConfig, _czarName));
+
+    _webServer = qhttp::Server::create(_webService, 8765);
+    _webServer->addHandler("GET", "/", [](qhttp::Request::Ptr req, qhttp::Response::Ptr resp){
+        resp->send("<!doctype html><html><head><title>Czar</title></head><body><h2>Czar!</h2></body></html>");
+    });
+    _webServer->accept();
+    _webServiceThread = std::thread([this](){
+        _webService.run();
+    });
+}
+
+Czar::~Czar() {
+    _webService.stop();
+    _webServiceThread.join();
 }
 
 SubmitResult

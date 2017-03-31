@@ -29,9 +29,11 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 // Third-party headers
+#include "boost/asio.hpp"
 
 // Qserv headers
 #include "ccontrol/UserQuery.h"
@@ -41,6 +43,7 @@
 #include "global/stringTypes.h"
 #include "mysql/MySqlConfig.h"
 #include "qdisp/LargeResultMgr.h"
+#include "qhttp/Server.h"
 #include "util/ConfigStore.h"
 
 namespace lsst {
@@ -62,6 +65,8 @@ public:
 
     Czar(Czar const&) = delete;
     Czar& operator=(Czar const&) = delete;
+
+    ~Czar();
 
     /**
      * Submit query for execution.
@@ -125,6 +130,10 @@ private:
     std::mutex _mutex;                  ///< protects both _uqFactory and _clientToQuery
 
     qdisp::LargeResultMgr::Ptr _largeResultMgr; ///< Large result manager for all user queries.
+
+    qhttp::Server::Ptr _webServer;
+    boost::asio::io_service _webService;
+    std::thread _webServiceThread;
 };
 
 }}} // namespace lsst::qserv::czar
