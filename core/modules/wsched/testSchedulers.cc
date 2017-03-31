@@ -44,6 +44,7 @@
 #include "wsched/FifoScheduler.h"
 #include "wsched/GroupScheduler.h"
 #include "wsched/ScanScheduler.h"
+#include "wsched/SlowTableHeap.h"
 
 // Boost unit test header
 #define BOOST_TEST_MODULE WorkerScheduler
@@ -874,7 +875,7 @@ BOOST_AUTO_TEST_CASE(BlendScheduleQueryBootTaskTest) {
 
 
 BOOST_AUTO_TEST_CASE(SlowTableHeapTest) {
-    wsched::ChunkTasks::SlowTableHeap heap{};
+    wsched::SlowTableHeap heap{};
     lsst::qserv::QueryId qIdInc = 1;
 
     BOOST_CHECK(heap.empty() == true);
