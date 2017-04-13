@@ -73,7 +73,7 @@ void Path::parse(std::string const& pattern)
     static boost::regex patternRe{
         // Match escaped characters that would otherwise appear in future matches.
         // This allows the user to escape special characters that won't transform.
-        R"((\\.)|)"
+        R"((\.)|)"
         // Match Express-style parameters and un-named parameters with a prefix
         // and optional suffixes. Matches appear as:
         // "/:test(\\d+)?" => [ "/", "test", "\d+", -----, "?", --- ]
