@@ -107,7 +107,8 @@ SsiService::SsiService(XrdSsiLogger* log, wconfig::WorkerConfig const& workerCon
     int maxReserve = 2;
     auto group = std::make_shared<wsched::GroupScheduler>(
         "SchedGroup", maxThread, maxReserve,
-        workerConfig.getMaxGroupSize(), wsched::SchedulerBase::getMaxPriority());
+        //workerConfig.getMaxGroupSize(), wsched::SchedulerBase::getMaxPriority()); &&&
+        2, wsched::SchedulerBase::getMaxPriority());
 
     int const fastest = lsst::qserv::proto::ScanInfo::Rating::FASTEST;
     int const fast    = lsst::qserv::proto::ScanInfo::Rating::FAST;

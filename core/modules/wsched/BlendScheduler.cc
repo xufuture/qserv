@@ -180,7 +180,8 @@ void BlendScheduler::queCmd(util::Command::Ptr const& cmd) {
     }
     */
     bool interactive = task->getScanInteractive();
-    if (scanTables.size() <= 0 || interactive) {
+    //if (scanTables.size() <= 0 || interactive) {
+    if (true) {
         // If there are no scan tables, no point in putting on a shared scan.
         LOGS(_log, LOG_LVL_DEBUG, "Blend chose group scanTables.size=" << scanTables.size()
              << " interactive=" << interactive);
