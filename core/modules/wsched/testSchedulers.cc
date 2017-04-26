@@ -463,7 +463,7 @@ private:
     double _maxScanTimeFast{oneHr}; ///< Don't hit time limit in tests.
     int _examineAllSleep{0}; ///< Don't run _examineThread when 0
 };
-
+#if 0
 BOOST_AUTO_TEST_CASE(BlendScheduleTest) {
     // Test that space is appropriately reserved for each scheduler as Tasks are started and finished.
     // In this case, memMan->lock(..) always returns true (really HandleType::ISEMPTY).
@@ -871,7 +871,7 @@ BOOST_AUTO_TEST_CASE(BlendScheduleQueryBootTaskTest) {
     LOGS(_log, LOG_LVL_DEBUG, "BlendScheduleQueryBootTaskTest done");
 }
 
-
+#endif
 
 BOOST_AUTO_TEST_CASE(SlowTableHeapTest) {
     wsched::ChunkTasks::SlowTableHeap heap{};
