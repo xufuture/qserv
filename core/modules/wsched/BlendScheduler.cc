@@ -141,7 +141,15 @@ void BlendScheduler::queCmd(util::Command::Ptr const& cmd) {
     // Check for scan tables
     SchedulerBase::Ptr s{nullptr};
     auto const& scanTables = task->getScanInfo().infoTables;
-    if (scanTables.size() > 0) {
+    bool interactive = task->getScanInteractive();
+    if (scanTables.size() <= 0 || interactive) {
+        // If there are no scan tables, no point in putting on a shared scan.
+        LOGS(_log, LOG_LVL_DEBUG, "Blend chose group scanTables.size=" << scanTables.size()
+             << " interactive=" << interactive);
+        task->setOnInteractive(true);
+        s = _group;
+    } else {
+        task->setOnInteractive(false);
         int scanPriority = task->getScanInfo().scanRating;
         if (LOG_CHECK_LVL(_log, LOG_LVL_DEBUG)) {
             std::ostringstream ss;
@@ -173,9 +181,6 @@ void BlendScheduler::queCmd(util::Command::Ptr const& cmd) {
                       << scanPriority << " adding to scanSnail");
             s = _scanSnail;
         }
-    } else {
-        LOGS(_log, LOG_LVL_DEBUG, "Blend chose group");
-        s = _group;
     }
     task->setTaskScheduler(s);
 

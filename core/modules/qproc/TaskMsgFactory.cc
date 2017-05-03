@@ -83,6 +83,7 @@ std::shared_ptr<proto::TaskMsg> TaskMsgFactory::_makeMsg(ChunkQuerySpec const& c
     }
 
     taskMsg->set_scanpriority(chunkQuerySpec.scanInfo.scanRating);
+    taskMsg->set_scaninteractive(chunkQuerySpec.scanInteractive);
 
     // per-chunk
     taskMsg->set_chunkid(chunkQuerySpec.chunkId);
@@ -125,11 +126,7 @@ void TaskMsgFactory::_addFragment(proto::TaskMsg& taskMsg, std::string const& re
      }
 
      proto::TaskMsg_Subchunk sc;
-     /* &&&
-     for(auto i=subChunkTables.begin(); i != subChunkTables.end(); ++i) {
-         sc.add_table(*i);
-     }
-     */
+
      for(auto& tbl : subChunkTables) {
          sc.add_table(tbl);
      }

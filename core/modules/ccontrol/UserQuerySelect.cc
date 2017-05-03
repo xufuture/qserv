@@ -385,6 +385,7 @@ void UserQuerySelect::setupChunking() {
     } else {
         LOGS(_log, LOG_LVL_TRACE, getQueryIdString() << " No chunks added, QuerySession will add dummy chunk");
     }
+    _qSession->setScanInteractive();
 }
 
 // register query in qmeta database
