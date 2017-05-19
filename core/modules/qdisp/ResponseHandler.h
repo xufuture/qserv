@@ -31,6 +31,7 @@
 
 // Qserv headers
 #include "util/Error.h"
+#include "util/InstanceCount.h" // &&&
 
 namespace lsst {
 namespace qserv {
@@ -84,6 +85,8 @@ public:
 
 private:
     std::weak_ptr<JobQuery> _jobQuery;
+
+    util::InstanceCount _ic{"ResponseHandler"}; // &&&
 };
 
 inline std::ostream& operator<<(std::ostream& os, ResponseHandler const& r) {

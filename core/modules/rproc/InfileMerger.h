@@ -41,6 +41,7 @@
 #include "sql/SqlConnection.h"
 #include "util/Error.h"
 #include "util/EventThread.h"
+#include "util/InstanceCount.h" // &&&
 
 // Forward declarations
 namespace lsst {
@@ -170,6 +171,8 @@ private:
     int _sizeCheckRowCount{0}; ///< Number of rows read since last size check.
     int _checkSizeEveryXRows{1000}; ///< Check the size of the result table after every x number of rows.
     size_t _maxResultTableSizeMB{5000}; ///< Max result table size.
+
+    util::InstanceCount ic{"InfileMerger"}; // &&&
 };
 
 }}} // namespace lsst::qserv::rproc

@@ -99,7 +99,7 @@ void LargeResultMgr::decrOutGoingQueries() {
 void LargeResultMgr::_setDelayAllPosts(bool delayAll) {
     if (delayAll == _delayAllPosts) return;
     _delayAllPosts = delayAll;
-    LOGS(_log, LOG_LVL_INFO, " change delayAll=" << _delayAllPosts);
+    LOGS(_log, LOG_LVL_INFO, "LargeResult change delayAll=" << _delayAllPosts);
     if (!_delayAllPosts) {
         _freeDelayedPosts();
     }
@@ -133,7 +133,7 @@ void LargeResultMgr::_freeDelayedPosts() {
         --_delayedPosts;
     }
     if (delayedPosts != _delayedPosts) {
-        LOGS(_log, LOG_LVL_DEBUG, "freeDelayedPosts delayedPosts changed from " << delayedPosts
+        LOGS(_log, LOG_LVL_DEBUG, "LargeResult freeDelayedPosts delayedPosts changed from " << delayedPosts
                 << " to " << _delayedPosts);
     }
 }
