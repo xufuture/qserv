@@ -53,8 +53,8 @@ pidfile=${QSERV_PID_DIR}/mysql-proxy.pid
 PROXY_CONFIG=${QSERV_RUN_DIR}/etc/my-proxy.cnf
 lockfile=${QSERV_RUN_DIR}/var/lock/subsys/$NAME
 
-#VALG=""  &&&
-VALG="valgrind --leak-check=full"
+VALG=""
+#VALG="valgrind --leak-check=full"
 #VALG="valgrind --leak-check=no"
 #VALG="valgrind --tool=callgrind"
 
