@@ -24,6 +24,7 @@
 #include "czar/Czar.h"
 
 // System headers
+#include <mcheck.h> // &&&
 #include <sys/time.h>
 #include <thread>
 
@@ -68,6 +69,8 @@ Czar::Ptr Czar::createCzar(std::string const& configPath, std::string const& cza
 Czar::Czar(std::string const& configPath, std::string const& czarName)
     : _czarName(czarName), _czarConfig(configPath),
       _idCounter(), _uqFactory(), _clientToQuery(), _mutex() {
+
+    mtrace(); // &&&
 
     // set id counter to milliseconds since the epoch, mod 1 year.
     struct timeval tv;
