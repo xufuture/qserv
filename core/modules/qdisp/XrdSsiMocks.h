@@ -29,12 +29,12 @@
 
 // External headers
 #include "XrdSsi/XrdSsiService.hh"
-#include "XrdSsi/XrdSsiSession.hh"
 #include "XrdSsi/XrdSsiRequest.hh"
+#include "XrdSsi/XrdSsiResource.hh"
+#include "XrdSsi/XrdSsiResponder.hh"
 
 // Local headers
 #include "qdisp/QueryRequest.h"
-#include "qdisp/QueryResource.h"
 #include "util/threadSafe.h"
 
 namespace lsst {
@@ -45,38 +45,26 @@ class Executive;
 
 /** A greatly simplified version of XrdSsiService for testing the Executive class.
  */
-class XrdSsiServiceMock : public XrdSsiService
+class XrdSsiServiceMock : public XrdSsiService, public XrdSsiResponder
 {
 public:
-    virtual void Provision(Resource *resP, unsigned short timeOut=0, bool userConn=false);
+     virtual void   ProcessRequest(XrdSsiRequest  &reqRef,
+                                   XrdSsiResource &resRef
+                                  ) override;
+
+     virtual void   Finished(XrdSsiRequest&        rqstR,
+                             XrdSsiRespInfo const& rInfo,
+                             bool cancel=false) override;
+
     XrdSsiServiceMock(Executive *executive) {};
     void setGo(bool go) {
         _go.exchangeNotify(go);
     }
-protected:
-    void mockProvisionTest(QueryResource *resP, unsigned short timeOut);
 public:
     virtual ~XrdSsiServiceMock() {}
     static util::FlagNotify<bool> _go;
     static util::Sequential<int> _count;
-};
-
-/** Class used to fake calls to XrdSsiSession::ProcessRequest.
- */
-class XrdSsiSessionMock : public XrdSsiSession
-{
-public:
-    XrdSsiSessionMock(char *sname, char *sloc=0) : XrdSsiSession(sname, sloc) {}
-    virtual ~XrdSsiSessionMock() {}
-    static const char* getMockString() {
-        return "MockTrue";
-    }
-    virtual void ProcessRequest(XrdSsiRequest *reqP, unsigned short tOut);
-
-    virtual bool Unprovision(bool forced=false){return true;};
-
-protected:
-    virtual void RequestFinished(XrdSsiRequest  *rqstP, const XrdSsiRespInfo &rInfo, bool cancel=false) {};
+    static const char* getMockString() {return "MockTrue";}
 };
 
 }}} // namespace

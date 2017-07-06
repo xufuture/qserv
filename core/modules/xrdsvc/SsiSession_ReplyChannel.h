@@ -36,7 +36,7 @@ namespace xrdsvc {
 
 class ChannelStream; // Forward declaration
 
-/// ReplyChannel is a SendChannel implementation that adapts XrdSsiSession
+/// ReplyChannel is a SendChannel implementation that adapts SsiSession
 /// objects as backend data acceptors. ReplyChannel channel instances are
 /// tightly coupled to SsiSession instances, and make use of protected fields in
 /// XrdSsiResponder (which SsiSession inherits from).

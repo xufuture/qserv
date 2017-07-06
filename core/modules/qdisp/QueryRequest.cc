@@ -57,8 +57,8 @@ namespace qdisp {
 ////////////////////////////////////////////////////////////////////////
 // QueryRequest
 ////////////////////////////////////////////////////////////////////////
-QueryRequest::QueryRequest( XrdSsiSession* session, JobQuery::Ptr const& jobQuery) :
-  _session(session), _jobQuery(jobQuery),
+QueryRequest::QueryRequest( JobQuery::Ptr const& jobQuery) :
+  _jobQuery(jobQuery),
   _jobIdStr(jobQuery->getIdStr()) {
     LOGS(_log, LOG_LVL_DEBUG, _jobIdStr <<" New QueryRequest with payload:"
          << _jobQuery->getDescription().payload().size());
@@ -67,13 +67,6 @@ QueryRequest::QueryRequest( XrdSsiSession* session, JobQuery::Ptr const& jobQuer
 
 QueryRequest::~QueryRequest() {
     LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " ~QueryRequest");
-    if (_session) {
-        if (_session->Unprovision()) {
-            LOGS(_log, LOG_LVL_DEBUG, "Unprovision ok.");
-        } else {
-            LOGS(_log, LOG_LVL_ERROR, "Unprovision Error.");
-        }
-    }
 }
 
 // content of request data
@@ -87,19 +80,16 @@ char* QueryRequest::GetRequest(int& requestLength) {
     }
     requestLength = jq->getDescription().payload().size();
     LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " Requesting, payload size: " << requestLength);
-    // Andy promises that his code won't corrupt it.
+    // AndyS promises that his code won't corrupt it.
     return const_cast<char*>(jq->getDescription().payload().data());
 }
 
-// Deleting the buffer (payload) would cause us problems, as this class is not the owner.
-void QueryRequest::RelRequestBuffer() {
-    LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " RelRequestBuffer");
-}
 // precondition: rInfo.rType != isNone
 // Must not throw exceptions: calling thread cannot trap them.
 // Callback function for XrdSsiRequest.
-// See QueryResource::ProvisionDone which invokes ProcessRequest(QueryRequest*))
-bool QueryRequest::ProcessResponse(XrdSsiRespInfo const& rInfo, bool isOk) {
+// See Executive::StartQuery which invokes ProcessRequest(QueryRequest&, ...)
+bool QueryRequest::ProcessResponse(XrdSsiErrInfo  const& eInfo,
+                                   XrdSsiRespInfo const& rInfo) {
     LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " ProcessResponse");
     std::string errorDesc = _jobIdStr + " ";
     if (isQueryCancelled()) {
@@ -109,6 +99,7 @@ bool QueryRequest::ProcessResponse(XrdSsiRespInfo const& rInfo, bool isOk) {
     }
 
     // Make a copy of the _jobQuery shared_ptr in case _jobQuery gets reset by a call to  cancel()
+    //ABH: This obviously won't work because no lock protects this assignment!
     auto jq = _jobQuery;
     {
         std::lock_guard<std::mutex> lock(_finishStatusMutex);
@@ -118,9 +109,9 @@ bool QueryRequest::ProcessResponse(XrdSsiRespInfo const& rInfo, bool isOk) {
             return true;
         }
     }
-    if (!isOk) {
+    if (eInfo.hasError()) {
         std::ostringstream os;
-        os << _jobIdStr << "ProcessResponse request failed " << getXrootdErr(nullptr);
+        os << _jobIdStr << "ProcessResponse request failed " << eInfo.Get();
         jq->getDescription().respHandler()->errorFlush(os.str(), -1);
         jq->getStatus()->updateInfo(JobStatus::RESPONSE_ERROR);
         _errorFinish();
@@ -151,29 +142,15 @@ bool QueryRequest::ProcessResponse(XrdSsiRespInfo const& rInfo, bool isOk) {
 /// Retrieve and process results in using the XrdSsi stream mechanism
 /// Uses a copy of JobQuery::Ptr instead of _jobQuery as a call to cancel() would reset _jobQuery.
 bool QueryRequest::_importStream(JobQuery::Ptr const& jq) {
-    bool success = false;
     // Pass ResponseHandler's buffer directly.
     std::vector<char>& buffer = jq->getDescription().respHandler()->nextBuffer();
     LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " _importStream buffer.size=" << buffer.size());
     const void* pbuf = (void*)(&buffer[0]);
     LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " _importStream->GetResponseData size="
          << buffer.size() << " " << pbuf << " " << util::prettyCharList(buffer, 5));
-    success = GetResponseData(&buffer[0], buffer.size());
-    LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " Initiated request " << (success ? "ok" : "err"));
-
-    if (!success) {
-        jq->getStatus()->updateInfo(JobStatus::RESPONSE_DATA_ERROR);
-        if (Finished()) {
-            jq->getStatus()->updateInfo(JobStatus::RESPONSE_DATA_ERROR_OK);
-            LOGS_ERROR(_jobIdStr << " QueryRequest::_importStream Finished() !ok " << getXrootdErr(nullptr));
-        } else {
-            jq->getStatus()->updateInfo(JobStatus::RESPONSE_DATA_ERROR_CORRUPT);
-        }
-        _errorFinish();
-        return false;
-    } else {
-        return true;
-    }
+    GetResponseData(&buffer[0], buffer.size());
+    LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " Initiated data request");
+    return true;
 }
 
 /// Process an incoming error.
@@ -201,7 +178,8 @@ void QueryRequest::_setHoldState(HoldState state) {
 }
 
 
-XrdSsiRequest::PRD_Xeq QueryRequest::ProcessResponseData(char *buff, int blen, bool last) { // Step 7
+XrdSsiRequest::PRD_Xeq QueryRequest::ProcessResponseData(XrdSsiErrInfo const& eInfo,
+                                                         char *buff, int blen, bool last) { // Step 7
     LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " ProcessResponseData with buflen=" << blen
          << " " << (last ? "(last)" : "(more)"));
 
@@ -251,9 +229,7 @@ XrdSsiRequest::PRD_Xeq QueryRequest::ProcessResponseData(char *buff, int blen, b
         LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " holdState=" << _holdState
                 << " _importStream->GetResponseData size=" << buffer.size() << " "
                 << pbuf << " " << util::prettyCharList(buffer, 5));
-        if (!GetResponseData(&buffer[0], buffer.size())) {
-            _errorFinish();
-        }
+        GetResponseData(&buffer[0], buffer.size());
     };
 
     // Get data for large response and prepare for merge on next ProcessResponseData call.
@@ -266,7 +242,7 @@ XrdSsiRequest::PRD_Xeq QueryRequest::ProcessResponseData(char *buff, int blen, b
 
     if (blen < 0) { // error, check errinfo object.
         int eCode;
-        auto reason = getXrootdErr(&eCode);
+        auto reason = eInfo.Get(eCode);
         jq->getStatus()->updateInfo(JobStatus::RESPONSE_DATA_NACK, eCode, reason);
         LOGS(_log, LOG_LVL_ERROR, _jobIdStr << " ProcessResponse[data] error(" << eCode
              << " " << reason << ")");
@@ -410,14 +386,14 @@ void QueryRequest::_errorFinish(bool shouldCancel) {
     // Make the calls outside of the mutex lock.
     bool ok = Finished(shouldCancel);
     if (!ok) {
-        LOGS(_log, LOG_LVL_ERROR, _jobIdStr << " QueryRequest::_errorFinish !ok " << getXrootdErr(nullptr));
+        LOGS(_log, LOG_LVL_ERROR, _jobIdStr << " QueryRequest::_errorFinish !ok");
     } else {
         LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " QueryRequest::_errorFinish ok");
     }
 
     if (!_retried.exchange(true) && !shouldCancel) {
         // There's a slight race condition here. _jobQuery::runJob() creates a
-        // new QueryResource object which is used to create a new QueryRequest object
+        // new QueryRequest object via a call to Executive::StartQuery() and
         // which will replace this one in _jobQuery. The replacement could show up
         // before this one's cleanup() is called, so this will keep this alive.
         LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " QueryRequest::_errorFinish retrying");
@@ -448,7 +424,7 @@ void QueryRequest::_finish() {
     }
     bool ok = Finished();
     if (!ok) {
-        LOGS(_log, LOG_LVL_ERROR, _jobIdStr << " QueryRequest::finish Finished() !ok " << getXrootdErr(nullptr));
+        LOGS(_log, LOG_LVL_ERROR, _jobIdStr << " QueryRequest::finish Finished() !ok");
     } else {
         LOGS(_log, LOG_LVL_DEBUG, _jobIdStr << " QueryRequest::finish Finished() ok.");
     }
@@ -469,21 +445,6 @@ void QueryRequest::_callMarkComplete(bool success) {
 std::ostream& operator<<(std::ostream& os, QueryRequest const& qr) {
     os << "QueryRequest " << qr._jobIdStr;
     return os;
-}
-
-
-/// @return The error text and code that xrootd set.
-/// if eCode != nullptr, it is set to the error code set by xrootd.
-std::string QueryRequest::getXrootdErr(int *eCode) {
-    int errNum;
-    auto errText = eInfo.Get(errNum);
-    if (eCode != nullptr) {
-        *eCode = errNum;
-    }
-    if (errText==nullptr) errText = "";
-    std::ostringstream os;
-    os << "xrootdErr(" << errNum << ":" << errText << ")";
-    return os.str();
 }
 
 }}} // lsst::qserv::qdisp

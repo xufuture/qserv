@@ -34,7 +34,6 @@
 // Qserv headers
 #include "qdisp/Executive.h"
 #include "qdisp/QueryRequest.h"
-#include "qdisp/QueryResource.h"
 
 namespace {
 LOG_LOGGER _log = LOG_GET("lsst.qserv.qdisp.JobQuery");
@@ -73,25 +72,26 @@ bool JobQuery::runJob() {
     }
     bool cancelled = executive->getCancelled();
     bool handlerReset = _jobDescription.respHandler()->reset();
+
+    // If we haven't been cancelled and the request handler is clean, tell the
+    // executive to start the query. We must do this under the control of
+    // _rmutex in order to atomically track where we are relative to SSI for
+    // cancellation purposes.
     if (!cancelled && handlerReset) {
-        auto qr = std::make_shared<QueryResource>(shared_from_this());
+        std::shared_ptr<JobQuery> jq(this);
         std::lock_guard<std::recursive_mutex> lock(_rmutex);
         if ( _runAttemptsCount < _getMaxRetries() ) {
             ++_runAttemptsCount;
+            _inSSI = executive->StartQuery(jq);
+            if (_inSSI) {
+               _jobStatus->updateInfo(JobStatus::REQUEST);
+               return true;
+            }
         } else {
             LOGS(_log, LOG_LVL_ERROR, getIdStr() << " hit maximum number of retries ("
                  << _runAttemptsCount << ") Canceling user query!");
             executive->squash(); // This should kill all jobs in this user query.
             return false;
-        }
-        _jobStatus->updateInfo(JobStatus::PROVISION);
-
-        // To avoid a cancellation race condition, _queryResourcePtr = qr if and
-        // only if the executive has not already been cancelled. The cancellation
-        // procedure changes significantly once the executive calls xrootd's Provision().
-        bool success = executive->xrdSsiProvision(_queryResourcePtr, qr);
-        if (success) {
-            return true;
         }
     }
 
@@ -100,33 +100,14 @@ bool JobQuery::runJob() {
     return false;
 }
 
-void JobQuery::provisioningFailed(std::string const& msg, int code) {
-    LOGS(_log, LOG_LVL_ERROR, getIdStr() << " provisioning failed, msg=" << msg
-         << " code=" << code << "\n    desc=" << _jobDescription);
-    _jobStatus->updateInfo(JobStatus::PROVISION_NACK, code, msg);
-    _jobDescription.respHandler()->errorFlush(msg, code);
-    LOGS(_log, LOG_LVL_INFO, getIdStr() << " will retry");
-    // Running in a separate thread as xrootd is waiting for this one to return.
-    auto retryFunc = [](std::weak_ptr<JobQuery> jqWeak, int sleepSeconds) {
-        sleep(sleepSeconds);
-        auto jobQuery = jqWeak.lock();
-        if (jobQuery == nullptr) return;
-        LOGS(_log, LOG_LVL_DEBUG, jobQuery->getIdStr() << " retrying provisioningFailed");
-        jobQuery->runJob();
-    };
-    std::weak_ptr<JobQuery> jqWeak = shared_from_this();
-    std::thread retryThrd(retryFunc, jqWeak, _getRetrySleepSeconds());
-    retryThrd.detach();
-}
-
 /// Cancel response handling. Return true if this is the first time cancel has been called.
 bool JobQuery::cancel() {
     LOGS_DEBUG(getIdStr() << " JobQuery::cancel()");
     if (_cancelled.exchange(true) == false) {
         std::lock_guard<std::recursive_mutex> lock(_rmutex);
-        // If _queryRequestPtr is not nullptr, then this job has been passed to xrootd and
+        // If _inSSI is true, then this job has been passed to SSI and
         // cancellation is complicated.
-        if (_queryRequestPtr != nullptr) {
+        if (_inSSI) {
             LOGS_DEBUG(getIdStr() << " cancel QueryRequest in progress");
             _queryRequestPtr->cancel();
         } else {
@@ -146,20 +127,6 @@ bool JobQuery::cancel() {
     }
     LOGS_DEBUG(getIdStr() << " cancel, skipping, already cancelled.");
     return false;
-}
-
-
-/// Reset the QueryResource pointer, but only if called by the current QueryResource.
-void JobQuery::freeQueryResource(QueryResource* qr) {
-    std::lock_guard<std::recursive_mutex> lock(_rmutex);
-    // There is the possibility during a retry that _queryResourcePtr would be set
-    // to the new object before the old thread calls this. This check prevents us
-    // reseting the pointer in that case.
-    if (qr == _queryResourcePtr.get()) {
-        _queryResourcePtr.reset();
-    } else {
-        LOGS(_log, LOG_LVL_WARN, "freeQueryResource called by wrong QueryResource.");
-    }
 }
 
 

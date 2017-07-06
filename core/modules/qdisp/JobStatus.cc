@@ -27,7 +27,7 @@
   * @brief JobStatus implementation
   *
   * Store information message issused by a job
-  * running a chunkQuery on a xrootd ressource
+  * running a chunkQuery on an SSI ressource
   *
   * @author Fabrice Jammes, IN2P3
   */
