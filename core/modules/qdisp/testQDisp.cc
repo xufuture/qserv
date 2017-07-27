@@ -168,6 +168,7 @@ void addFakeRequests(qdisp::Executive::Ptr const& ex, SequentialInt &sequence, s
                 millisecs, // Request = stringified milliseconds
                 rv[j]);
         auto jobQuery = ex->add(job); // ex->add() is not thread safe.
+        std::cerr <<"Add jq=" <<std::hex <<jobQuery <<std::dec<<'\n'<<std::flush;
     }
 }
 
@@ -207,7 +208,31 @@ void timeoutFunc(util::Flag<bool>& flagDone, int millisecs) {
 BOOST_AUTO_TEST_SUITE(Suite)
 
 BOOST_AUTO_TEST_CASE(Executive) {
-    LOGS_DEBUG("Executive test 1");
+    util::Flag<bool> done(false);
+    int millisInt = 200;
+    std::thread timeoutT(&timeoutFunc, std::ref(done), millisInt*10);
+    std::string millis(boost::lexical_cast<std::string>(millisInt));
+    int jobs = 0;
+
+   {LOGS_DEBUG("Executive test 1");
+    // Modeled after ccontrol::UserQuery::submit()
+    std::string str = qdisp::Executive::Config::getMockStr();
+    qdisp::Executive::Config::Ptr conf = std::make_shared<qdisp::Executive::Config>(str);
+    std::shared_ptr<qdisp::MessageStore> ms = std::make_shared<qdisp::MessageStore>();
+    qdisp::LargeResultMgr::Ptr lgResMgr = std::make_shared<qdisp::LargeResultMgr>();
+    qdisp::Executive::Ptr ex = qdisp::Executive::newExecutive(conf, ms, lgResMgr);
+    SequentialInt sequence(0);
+    SequentialInt chunkId(1234);
+    // test single instance
+    ++jobs;
+    executiveTest(ex, sequence, chunkId, millis, 1);
+    LOGS_DEBUG("jobs=" << jobs);
+    ex->join();
+    BOOST_CHECK(ex->getEmpty() == true);
+   }
+
+    // test adding 4 jobs
+   {LOGS_DEBUG("Executive test 2");
     util::Flag<bool> done(false);
     // Modeled after ccontrol::UserQuery::submit()
     std::string str = qdisp::Executive::Config::getMockStr();
@@ -217,26 +242,23 @@ BOOST_AUTO_TEST_CASE(Executive) {
     qdisp::Executive::Ptr ex = qdisp::Executive::newExecutive(conf, ms, lgResMgr);
     SequentialInt sequence(0);
     SequentialInt chunkId(1234);
-    int jobs = 0;
-    // test single instance
-    int millisInt = 200;
-    std::thread timeoutT(&timeoutFunc, std::ref(done), millisInt*10);
-    std::string millis(boost::lexical_cast<std::string>(millisInt));
-    ++jobs;
-    executiveTest(ex, sequence, chunkId, millis, 1);
-    LOGS_DEBUG("jobs=" << jobs);
-    ex->join();
-    BOOST_CHECK(ex->getEmpty() == true);
-
-    // test adding 4 jobs
-    LOGS_DEBUG("Executive test 2");
     executiveTest(ex, sequence, chunkId, millis, 4);
     jobs += 4;
     ex->join();
     BOOST_CHECK(ex->getEmpty() == true);
+   }
 
     // Test that we can detect ex._empty == false.
     LOGS_DEBUG("Executive test 3");
+   {util::Flag<bool> done(false);
+    // Modeled after ccontrol::UserQuery::submit()
+    std::string str = qdisp::Executive::Config::getMockStr();
+    qdisp::Executive::Config::Ptr conf = std::make_shared<qdisp::Executive::Config>(str);
+    std::shared_ptr<qdisp::MessageStore> ms = std::make_shared<qdisp::MessageStore>();
+    qdisp::LargeResultMgr::Ptr lgResMgr = std::make_shared<qdisp::LargeResultMgr>();
+    qdisp::Executive::Ptr ex = qdisp::Executive::newExecutive(conf, ms, lgResMgr);
+    SequentialInt sequence(0);
+    SequentialInt chunkId(1234);
     qdisp::XrdSsiServiceMock::_go.exchangeNotify(false);
     executiveTest(ex, sequence, chunkId, millis, 5);
     jobs += 5;
@@ -251,6 +273,7 @@ BOOST_AUTO_TEST_CASE(Executive) {
     LOGS_DEBUG("ex->join() joined");
     BOOST_CHECK(ex->getEmpty() == true);
     done.exchange(true);
+   }
     timeoutT.join();
     LOGS_DEBUG("Executive test end");
 }

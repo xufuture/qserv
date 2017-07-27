@@ -100,7 +100,14 @@ bool QueryRequest::ProcessResponse(XrdSsiErrInfo  const& eInfo,
 
     // Make a copy of the _jobQuery shared_ptr in case _jobQuery gets reset by a call to  cancel()
     //ABH: This obviously won't work because no lock protects this assignment!
+    std::cerr <<pthread_self()<<" JQ-QR1: "<<' '<<std::hex<<this<<std::dec<<" jq="<<_jobQuery.use_count()<<'\n'<<std::flush;
     auto jq = _jobQuery;
+    std::cerr <<pthread_self()<<" JQ-QR2: "<<' '<<std::hex<<this<<std::dec<<" jq="<<jq.use_count()<<'\n'<<std::flush;
+    if (jq.use_count() < 1) {
+       std::cerr <<"QueryRequest:103 jq is null; returning false\n" <<std::flush;
+       return false;
+    }
+
     {
         std::lock_guard<std::mutex> lock(_finishStatusMutex);
         if (_finishStatus != ACTIVE) {

@@ -54,10 +54,12 @@ JobQuery::JobQuery(Executive::Ptr const& executive, JobDescription const& jobDes
   _idStr{QueryIdHelper::makeIdStr(qid, getIdInt())} {
       _largeResultMgr = executive->getLargeResultMgr();
     LOGS(_log, LOG_LVL_DEBUG, "JobQuery " << getIdStr() << " desc=" << _jobDescription);
+  std::cerr <<"JobQuery alloc@" <<std::hex<<this<<std::dec<<'\n'<<std::flush;
 }
 
 JobQuery::~JobQuery() {
     LOGS(_log, LOG_LVL_DEBUG, "~JobQuery " << getIdStr());
+  std::cerr <<pthread_self()<<" JobQuery dstry@" <<std::hex<<this<<std::dec<<'\n'<<std::flush;
 }
 
 /** Attempt to run the job on a worker.
