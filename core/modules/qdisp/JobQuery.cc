@@ -80,15 +80,15 @@ bool JobQuery::runJob() {
     // _rmutex in order to atomically track where we are relative to SSI for
     // cancellation purposes.
     if (!cancelled && handlerReset) {
-        std::shared_ptr<JobQuery> jq(this);
+        std::shared_ptr<JobQuery> jq(shared_from_this());
         std::lock_guard<std::recursive_mutex> lock(_rmutex);
         if ( _runAttemptsCount < _getMaxRetries() ) {
             ++_runAttemptsCount;
-            _inSSI = executive->StartQuery(jq);
-            if (_inSSI) {
+            _inSSI = true;
+            if (executive->StartQuery(jq)) {
                _jobStatus->updateInfo(JobStatus::REQUEST);
                return true;
-            }
+            } else _inSSI = false;
         } else {
             LOGS(_log, LOG_LVL_ERROR, getIdStr() << " hit maximum number of retries ("
                  << _runAttemptsCount << ") Canceling user query!");
