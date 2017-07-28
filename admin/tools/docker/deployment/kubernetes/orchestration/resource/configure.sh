@@ -58,6 +58,7 @@ if [ $# -ne 0 ] ; then
     exit 2
 fi
 
+QSERV_DATA_DIR=/qserv/data
 QSERV_RUN_DIR=/qserv/run
 QSERV_CUSTOM_DIR=/qserv/custom
 # QSERV_MASTER is set using k8s yaml configuration
