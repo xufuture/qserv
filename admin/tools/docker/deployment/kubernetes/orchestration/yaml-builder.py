@@ -177,7 +177,7 @@ if __name__ == "__main__":
         #
         container_id = _get_container_id('mariadb')
         if container_id is not None:
-            yaml_data['spec']['containers'][container_id]['image'] = config.get('spec', 'image')
+            yaml_data['spec']['containers'][container_id]['image'] = config.get('spec', 'image_mariadb')
             scriptpath = os.path.join(resourcePath, 'start-mariadb.sh')
             script = open(scriptpath, 'r').read()
             command = ["bash", "-c", script]
@@ -211,11 +211,15 @@ if __name__ == "__main__":
 
         if _get_container_id('worker') is not None:
             yaml_data['spec']['initContainers'].append(initContainer)
+
             # Attach qserv-run-dir to worker containers
+            #
             _add_emptydir_volume(run_volume_name)
             _mount_volume('mariadb', run_mount_path, run_volume_name)
             _mount_volume('worker', run_mount_path, run_volume_name)
+
             # Attach qserv-data-dir to worker containers
+            #
             _add_volume(config.get('spec', 'host_data_dir'), data_volume_name)
             _mount_volume('mariadb', data_mount_path, data_volume_name)
             # xrootd mmap/mlock *.MYD files and need to access mysql.sock

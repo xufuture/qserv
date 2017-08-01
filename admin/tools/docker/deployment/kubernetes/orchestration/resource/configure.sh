@@ -88,6 +88,6 @@ qserv-configure.py --qserv-run-dir "$QSERV_RUN_DIR" --force
 
 # Scisql plugin must be installed in MariaDB container
 # TODO: improve mariadb container configuration (see DM-11126)
-cp "$MARIADB_DIR"/lib/plugin/libscisql-scisql_*.so "$QSERV_RUN_DIR"
+cp "$SCISQL_DIR"/lib/libscisql-scisql_*.so "$QSERV_RUN_DIR"
 
 mkdir "$QSERV_CUSTOM_DIR"

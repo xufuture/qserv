@@ -25,15 +25,19 @@ else
     echo "Container timezone not modified"
 fi
 
-. /qserv/run/etc/sysconfig/qserv
+# All data in volumes belong to user with UID 1000
+# TODO change group to 1000
+usermod -u 1000 mysql
+
+QSERV_RUN_DIR="/qserv/run"
 
 # Install scisql plugin
 #
 # TODO: see DM-11126
 MARIADB_BIN_DIR=$(dirname $(which mysql))
-cp "$QSERV_RUN_DIR"/libscisql-scisql_*.so "$MARIADB_BIN_DIR/../lib/plugin/"
+cp "$QSERV_RUN_DIR"/libscisql-scisql_*.so "/usr/lib/mysql/plugin/"
 
 # Start mariadb
 #
-mysqld_safe --defaults-file=${QSERV_RUN_DIR}/etc/my.cnf
+mysqld_safe --defaults-file=${QSERV_RUN_DIR}/etc/my.cnf --user=mysql
 
