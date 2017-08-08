@@ -77,7 +77,7 @@ host_log_dir: $HOST_LOG_DIR
 host_tmp_dir: $HOST_TMP_DIR
 host: $host
 image: $CONTAINER_IMAGE
-image_mariadb: mariadb:10.1.25
+image_mariadb: qserv/mariadb_scisql:10.1.25
 master_hostname: $MASTER
 pod_name: worker-$j
 EOF
