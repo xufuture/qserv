@@ -185,47 +185,6 @@ if __name__ == "__main__":
 
         yaml_data['spec']['nodeSelector']['kubernetes.io/hostname'] = config.get('spec', 'host')
 
-        yaml_data['spec']['initContainers'] = []
-
-        # Configure qserv-run-dir and qserv-data-dir
-        #
-        data_volume_name = 'data-volume'
-        data_mount_path = '/qserv/data'
-        run_volume_name = 'run-volume'
-        run_mount_path = '/qserv/run'
-        initContainer = dict()
-        scriptpath = os.path.join(resourcePath, 'configure.sh')
-        script = open(scriptpath, 'r').read()
-        command = ["bash", "-c", script]
-        initContainer['command'] = command
-        env = dict()
-        env['name'] = 'QSERV_MASTER'
-        env['value'] = config.get('spec', 'master_hostname')
-        initContainer['env'] = [env]
-        initContainer['image'] = config.get('spec', 'image')
-        initContainer['imagePullPolicy'] = 'Always'
-        initContainer['name'] = 'init-run-dir'
-        initContainer['volumeMounts'] = []
-        initContainer['volumeMounts'].append({'mountPath': data_mount_path, 'name': data_volume_name})
-        initContainer['volumeMounts'].append({'mountPath': run_mount_path, 'name': run_volume_name})
-
-        if _get_container_id('worker') is not None:
-            yaml_data['spec']['initContainers'].append(initContainer)
-
-            # Attach qserv-run-dir to worker containers
-            #
-            _add_emptydir_volume(run_volume_name)
-            _mount_volume('mariadb', run_mount_path, run_volume_name)
-            _mount_volume('worker', run_mount_path, run_volume_name)
-
-            # Attach qserv-data-dir to worker containers
-            #
-            _add_volume(config.get('spec', 'host_data_dir'), data_volume_name)
-            _mount_volume('mariadb', data_mount_path, data_volume_name)
-            # xrootd mmap/mlock *.MYD files and need to access mysql.sock
-            # qserv-wmgr require access to mysql.sock
-            _mount_volume('worker', data_mount_path, data_volume_name)
-
         # Configure custom-dir
         #
         if config.get('spec', 'host_custom_dir'):
@@ -255,6 +214,45 @@ if __name__ == "__main__":
             _mount_volume('master', mount_path, volume_name)
             _mount_volume('mariadb', mount_path, volume_name)
             _mount_volume('worker', mount_path, volume_name)
+
+        if _get_container_id('worker') is not None:
+
+            # initContainer: configure qserv-run-dir using qserv image
+            #
+            yaml_data['spec']['initContainers'] = []
+            run_volume_name = 'run-volume'
+            run_mount_path = '/qserv/run'
+            init_container_worker = dict()
+            scriptpath = os.path.join(resourcePath, 'configure.sh')
+            script = open(scriptpath, 'r').read()
+            command = ["bash", "-c", script]
+            init_container_worker['command'] = command
+            env = dict()
+            env['name'] = 'QSERV_MASTER'
+            env['value'] = config.get('spec', 'master_hostname')
+            init_container_worker['env'] = [env]
+            init_container_worker['image'] = config.get('spec', 'image')
+            init_container_worker['imagePullPolicy'] = 'Always'
+            init_container_worker['name'] = 'init-run-dir'
+            init_container_worker['volumeMounts'] = []
+            init_container_worker['volumeMounts'].append({'mountPath': run_mount_path, 'name': run_volume_name})
+
+            # Attach qserv-run-dir to worker containers
+            #
+            _add_emptydir_volume(run_volume_name)
+            _mount_volume('worker', run_mount_path, run_volume_name)
+
+            # Attach qserv-data-dir to worker containers
+            #
+            data_volume_name = 'data-volume'
+            data_mount_path = '/qserv/data'
+            _add_volume(config.get('spec', 'host_data_dir'), data_volume_name)
+            _mount_volume('mariadb', data_mount_path, data_volume_name)
+            # xrootd mmap/mlock *.MYD files and need to access mysql.sock
+            # qserv-wmgr require access to mysql.sock
+            _mount_volume('worker', data_mount_path, data_volume_name)
+
+            yaml_data['spec']['initContainers'].append(init_container_worker)
 
         with open(args.yamlFile, 'w') as f:
             f.write(yaml.dump(yaml_data, default_flow_style=False))

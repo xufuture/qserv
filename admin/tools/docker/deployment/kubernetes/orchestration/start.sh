@@ -79,6 +79,7 @@ host: $host
 image: $CONTAINER_IMAGE
 image_mariadb: qserv/mariadb_scisql:10.1.25
 master_hostname: $MASTER
+mysql_root_password: CHANGEME
 pod_name: worker-$j
 EOF
     "$DIR"/yaml-builder.py -i "$INI_FILE" -r "$RESOURCE_DIR" -t "$YAML_WORKER_TPL" -o "$YAML_FILE"

@@ -16,6 +16,6 @@ for node in $MASTER $WORKERS
 do
     echo "Remove Qserv data on $node"
 	ssh $SSH_CFG_OPT "$node" "sudo -u centos -- \
-        rm -r $DATA_DIR/*"
+        rm -rf $DATA_DIR/*"
 done
 

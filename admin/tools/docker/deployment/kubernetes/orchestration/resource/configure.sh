@@ -84,7 +84,9 @@ awk \
   print}' /tmp/qserv-meta.conf.orig > "$QSERV_RUN_DIR/qserv-meta.conf"
 
 echo "Configure Qserv $NODE_TYPE (master hostname: $QSERV_MASTER)"
-qserv-configure.py --qserv-run-dir "$QSERV_RUN_DIR" --force
+qserv-configure.py --disable-db-init \
+                   --qserv-run-dir "$QSERV_RUN_DIR" \
+                   --force
 
 # Scisql plugin must be installed in MariaDB container
 # TODO: improve mariadb container configuration (see DM-11126)

@@ -7,16 +7,32 @@ RUN apt-get -y update && \
     apt-get -y upgrade && \
     apt-get -y clean
 
-RUN apt-get -y install git python gcc
-RUN apt-get -y install libmariadbclient-dev make
+RUN apt-get -y install gcc git make libmariadbclient-dev python
 
+# All data files belong to user 1000 on host
+#
 RUN usermod -u 1000 mysql && \
     groupmod -g 1000 mysql
 
+# Create directory for qserv data and logs
+#
+RUN mkdir /qserv && \
+    chown mysql:mysql /qserv
+
+# Install scisql
+# TODO use eups
+#
 RUN cd /usr/local/src && \
     git clone https://github.com/smonkewitz/scisql.git && \
     cd scisql && \
-    ./configure --mysql-includes=/usr/include/mysql && \
+    ./configure --mysql-includes=/usr/include/mysql --&& \
     make && \
     make install
+ENV PYTHONPATH=/usr/local/python
 
+# Override default mysql configuration
+# Add mysql, scisql, qserv dabatase initialisation scripts
+# WARN: cannot copy to / because /tmp acl are changed
+#
+COPY resources/etc/ /etc/
+COPY resources/tmp /tmp/
