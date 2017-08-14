@@ -44,6 +44,7 @@ class SwigScanner(SCons.Scanner.ClassicCPP):
             cre = self.cpp_expr
         return cre.findall(node.get_text_contents())
 
+
 # use one global scanner instance
 _scanner = SwigScanner()
 
@@ -65,7 +66,7 @@ def generate(env):
 
     # replace SWIG scanners
     scanners = [_repl(scanner) for scanner in env['SCANNERS']]
-    env.Replace(SCANNERS = scanners)
+    env.Replace(SCANNERS=scanners)
 
 
 def exists(env):
