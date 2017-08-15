@@ -28,6 +28,11 @@ Access to the classes from the qserv_css library
 %enddef
 
 %module("threads"=1, package="lsst.qserv.css") cssLib
+
+%begin %{
+#define SWIG_PYTHON_2_UNICODE
+%}
+
 %{
 #define SWIG_FILE_WITH_INIT
 #include "css/constants.h"

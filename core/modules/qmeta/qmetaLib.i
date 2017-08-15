@@ -7,6 +7,11 @@ Access to the qmeta classes
 %enddef
 
 %module("threads"=1, package="lsst.qserv.qmeta") qmetaLib
+
+%begin %{
+#define SWIG_PYTHON_2_UNICODE
+%}
+
 %{
 #define SWIG_FILE_WITH_INIT
 #include "qmeta/Exceptions.h"

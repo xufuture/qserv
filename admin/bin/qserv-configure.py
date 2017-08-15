@@ -44,7 +44,13 @@ from __future__ import absolute_import, division, print_function
 #  Imports of standard modules --
 # -------------------------------
 import argparse
-import configparser
+try:
+    # Backported configparser returns unicode which causes troubles
+    # with SWIG in python2, stick to native ConfigParser.
+    # TODO: Remove when we switch to pybind11 or Python3-only
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
 import logging
 import os
 import re
@@ -78,7 +84,7 @@ class Configurator(object):
         Constructor parse all arguments and prepares for execution.
         """
 
-        qserv_version = check_output(["qserv-version.sh"])
+        qserv_version = check_output(["qserv-version.sh"]).decode()
         qserv_version = qserv_version.strip(' \t\n\r')
         valid_dir_name = re.sub('[^\w_.-]', '_', qserv_version)
         default_qserv_run_dir = os.path.join(
